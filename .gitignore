@@ -1,0 +1,34 @@
+# Root .gitignore — cross-cutting only.
+# Stack-specific rules live in backend/.gitignore and frontend/.gitignore.
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+
+# Editors / IDEs
+.idea/
+*.swp
+*.swo
+*~
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# Secrets — never commit real env files anywhere in the repo
+.env
+.env.*
+!.env.example
+
+# Local tooling / scratch
+*.log
+.cache/
+tmp/
+scratch/
+
+# Claude Code local state (project instructions in CLAUDE.md ARE committed)
+.claude/settings.local.json
