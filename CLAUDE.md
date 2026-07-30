@@ -6,7 +6,9 @@ This file is loaded automatically every session. It tells Claude (and any develo
 
 ## What this project is
 
-**Kindergarten Management System (KG-CRM)** — an enterprise SaaS platform combining **CRM + ERP + LMS** for kindergartens. MVP is a staff-facing back-office; the architecture is designed to grow into parent/teacher portals, online payments, and multi-branch without rewrites.
+**Kindergarten Management System (KG-CRM)** — a **hosted multi-tenant SaaS** platform combining **CRM + ERP + LMS** for kindergartens. MVP is a staff-facing back-office; the architecture is designed to grow into parent/teacher portals and online payments without rewrites.
+
+**Commercial model** ([01 §4](./docs/01_Project_Vision.md)): each customer is an **organization** with unlimited branches under **one subscription**, priced per enrolled child — base 500 000 UZS/month including 50 children, +80 000 per additional 10. Payment terms: monthly (0 %), semi-annual (−15 %), annual (−25 %). 15-day risk-free trial; on conversion the first paid month is dated from the trial start, disclosed at signup.
 
 ---
 
@@ -48,13 +50,14 @@ On large projects, the two things that kill quality are (1) **lost context** and
 Never violate these without a superseding ADR:
 
 1. **Modular monolith + service layer.** Business logic lives in `services.py`; reads in `selectors.py`. Modules communicate via services/selectors/events — **never by importing another app's models into a view**.
-2. **`branch_id` on every operational entity.** All queries are branch-scoped; Super Admin is the only cross-branch role.
+2. **`organization_id` on every operational entity — the tenant boundary nothing bypasses** (ADR-9). `organization` is the tenancy root and billing boundary; `branch_id` is the operational scope inside it. Org Owner reads across their own branches; **no role reads across organizations.** Cross-tenant access returns `404`, never `403`.
 3. **Money & stock are append-only ledgers.** `child_ledger_entry` and `stock_movement` are immutable truth; balances/stock are derived. Corrections are counter-entries, never `UPDATE`/`DELETE`.
 4. **Debtors is a derived view over the ledger**, not a stored table.
-5. **RBAC is data-driven, deny-by-default, enforced on the backend.** The frontend only hides what the backend forbids.
+5. **RBAC is data-driven, deny-by-default, enforced on the backend.** The frontend only hides what the backend forbids. **Vendor (platform) staff are a separate access plane** with no implicit tenant data access (ADR-10) — there is no `Super Admin`.
 6. **API is a versioned product** under `/api/v1/` with one success envelope and one error format ([02 §13](./docs/02_Software_Architecture.md), [04](./docs/04_Backend_API_Specification.md)).
-7. **Frontend is feature-based; TanStack Query owns all server state.** Context holds only small global client state (auth, branch, theme). No Redux.
-8. **Integrity is enforced in the database** (FKs, CHECKs, unique/partial indexes, insert-only audit) — not just in the app.
+7. **Frontend is feature-based; TanStack Query owns all server state.** Context holds only small global client state (auth, organization, branch, theme). No Redux.
+8. **Integrity is enforced in the database** (FKs, CHECKs, unique/partial indexes, insert-only audit, `ON DELETE RESTRICT` on every path from `organization`) — not just in the app.
+9. **Subscription billing is its own domain with an append-only usage ledger** (ADR-11). Every charge traces to an immutable `usage_snapshot`; `subscriptions` and tuition `finance` never share tables. Watch the naming: "plan", "invoice", and "payment" exist in **both** domains ([01 §4.6](./docs/01_Project_Vision.md)).
 
 ---
 
@@ -73,8 +76,31 @@ Never violate these without a superseding ADR:
 - API conventions (versioning, pagination, filtering, envelope, errors): [02 §13](./docs/02_Software_Architecture.md) and [04](./docs/04_Backend_API_Specification.md).
 - Build order and Definition of Done: [06](./docs/06_Development_Roadmap.md).
 
+### Two checks before every backend PR
+
+1. **Does every new table carry `organization_id NOT NULL`?** The only exceptions are `permission` and `subscription_plan` ([03 §6.2](./docs/03_Database_Design.md)).
+2. **Does every new endpoint have a cross-tenant test** proving org A cannot reach org B's row, and that the response is `404` not `403`?
+
+These are not style preferences. A cross-tenant leak of children's records is unrecoverable in a way that a wrong balance is not.
+
+---
+
+## Repository Layout
+
+```
+kg-crm/
+├── docs/        # single source of truth (00–06)
+├── backend/     # Django + DRF (Sprint 0)
+├── frontend/    # React + TS + Vite SPA
+└── CLAUDE.md
+```
+
+Each stack has its own `.gitignore`; the root one covers only OS/editor/`.env`.
+
 ---
 
 ## Current Phase
 
-**Pre-development — architecture & design complete (docs 01–06).** No application code exists yet. Next step is Sprint 0 (project scaffolding) per [06_Development_Roadmap](./docs/06_Development_Roadmap.md).
+**Pre-development — architecture & design complete (docs 01–06, v1.1 multi-tenant SaaS).** No application code exists yet; `frontend/` holds a UI skeleton on mock data. Next step is Sprint 0 (scaffolding + **the tenancy foundation**) per [06_Development_Roadmap](./docs/06_Development_Roadmap.md).
+
+> The frontend skeleton still shows the pre-v1.1 `Super Admin` label in its mock settings/sidebar copy. It is display-only mock data and will be replaced by real `Org Owner` role data in Sprint 1.

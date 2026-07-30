@@ -22,7 +22,9 @@ The system unifies three enterprise domains:
 - **ERP** — the operations side: payments, debts, payroll, expenses, kitchen & warehouse.
 - **LMS** — the future learning side: homework, meal planning, teacher & parent portals.
 
-We deliver an **administrative back-office MVP** first (staff-facing), then grow into parent/teacher-facing and multi-branch capabilities **without re-architecting** (see [06_Development_Roadmap](./06_Development_Roadmap.md)).
+We deliver an **administrative back-office MVP** first (staff-facing), then grow into parent/teacher-facing capabilities **without re-architecting** (see [06_Development_Roadmap](./06_Development_Roadmap.md)).
+
+The product is delivered as a **hosted multi-tenant SaaS** sold on a per-child subscription — see [§4](#4-business-model--multi-tenant-saas). Every kindergarten (organization) is a tenant on shared infrastructure operated by the vendor.
 
 ---
 
@@ -57,37 +59,129 @@ Kindergartens today typically operate with:
 8. **SMS notifications** (payment receipts, debt reminders).
 9. **Role-based access** so each staff member sees only what they should.
 10. Full **audit trail** for money and administrative actions.
+11. **Multi-tenant isolation** — an organization can never read or write another organization's data.
+12. **Subscription lifecycle & billing** — trial, conversion, per-child metering, invoicing, suspension (§4).
+13. **Self-service onboarding** — an organization can sign up, import its children from Excel/CSV, and be operational inside the trial window without vendor intervention.
+
+> **Goal 13 is not a convenience feature.** A kindergarten only feels value after 50–200 children are in the system. If data entry consumes the trial, the trial fails regardless of product quality. Bulk import is therefore MVP-critical.
 
 ### 3.2 Non-Goals (explicitly out of MVP scope)
 - Parent-facing or teacher-facing portals (designed for, not built yet).
-- Online/card payment gateway integration.
+- Online/card payment gateway for **tuition** (parent payments stay cash/transfer at MVP; subscription payments are a separate flow — §4).
 - Medical records, meal planning, homework/LMS features.
 - Native mobile app.
-- Multi-branch operation *enabled* (the data model supports it; the MVP runs single-branch).
+- Vendor-side analytics/CRM for managing the customer pipeline (spreadsheet is acceptable at MVP scale).
+- Automated recurring card debit for subscriptions — MVP issues invoices; payment is manual (§4.3).
+
+> Multi-branch is **in scope**, not deferred: one subscription covers unlimited branches (§4.1), so the branch selector and cross-branch views ship with the MVP.
 
 > Non-goals are **designed for** at the architecture/data layer (see [02](./02_Software_Architecture.md) §22, [03](./03_Database_Design.md) §6) so they become additive later, never a rewrite.
 
 ---
 
-## 4. Target Users (Personas & Roles)
+## 4. Business Model — Multi-Tenant SaaS
 
-The MVP is **internal / staff-facing**. Five roles (full permission matrix in [02_Software_Architecture](./02_Software_Architecture.md) §11):
+KG-CRM is **not** delivered as an on-premise install per kindergarten. It is a **single hosted multi-tenant SaaS product**: the vendor operates and pays for all infrastructure, and customers pay a recurring subscription for access.
+
+This is a *product* decision with hard architectural consequences, recorded as **ADR-9/10/11** in [02 §2](./02_Software_Architecture.md).
+
+### 4.1 The tenancy hierarchy
+
+```
+Organization  ← the CUSTOMER; the subscription and all billing attach here
+  └── Branch  ← a physical kindergarten location
+       └── children, invoices, payments, staff, stock, …
+```
+
+- **Organization** is the tenancy root and the **billing boundary**. Data must never cross an organization boundary — for any role, including the customer's own owner.
+- **Branch** remains the *operational* boundary inside an organization (reporting, staff scope, invoice numbering).
+- **One subscription covers unlimited branches.** A customer running five locations manages all of them from one dashboard under one subscription, and pays only for children.
+
+### 4.2 Pricing
+
+Billing is **per enrolled child**, with a base package that acts as a revenue floor.
+
+| Element | Value |
+|---------|-------|
+| Base package | **500 000 UZS / month**, includes up to **50 children** |
+| Minimum billable children | **50** — an organization with fewer children still pays the base |
+| Overage | **+80 000 UZS per each additional 10 children** (step, not per-child) |
+| Currency | UZS |
+
+Worked examples: 50 children → 500 000 · 80 children → 740 000 · 150 children → 1 300 000 · 300 children → 2 500 000.
+
+**Why a 10-child step instead of per-child:** customers are legal entities paying by bank transfer against an invoice (schyot-faktura). A bill that changes by a few thousand UZS every month creates accounting friction and disputes. The step keeps the invoice stable until the count crosses a boundary, while preserving the revenue floor.
+
+**Built-in volume discount:** effective per-child price falls from 10 000 (at 50) to ~8 300 (at 300) with no separate enterprise tier.
+
+### 4.3 Payment terms
+
+| Term | Payments per year | Discount |
+|------|:-----------------:|:--------:|
+| Monthly | 12 | — |
+| Semi-annual | 2 | **15 %** |
+| Annual | 1 | **25 %** |
+
+- The discount applies to the **base package**. Prepayment covers the base at the child count committed at purchase.
+- **Growth is billed as it happens:** if the child count rises above the prepaid tier mid-term, the overage steps are invoiced monthly from the month they occur, at the same discount rate.
+- If the child count falls, the overage stops; the base is never refunded (it is the floor).
+
+### 4.4 Trial
+
+**15-day risk-free trial** — no card, no upfront payment.
+
+- If the customer converts, the **first monthly payment is dated from the trial start**, i.e. the paid month absorbs the trial period. This is disclosed **in the offer at signup**, never at the end of the trial.
+- If the customer declines, they pay **nothing**.
+- Marketing must never describe the trial as "100 % free". The accurate claim is *"15-day trial — pay nothing if it isn't for you."*
+- Because customers are legal entities, a bank transfer takes days to clear. A converting organization enters a **`pending_payment` grace state with full access** (7 days) once the invoice is issued — access is never cut off mid-transfer.
+- A declining organization keeps **read-only access + data export for 30 days**, then the data is purged.
+
+### 4.5 What is never metered
+
+**Branches and staff user accounts are unlimited.** Charging per user is not merely unattractive — it causes staff to share one login, which destroys the audit trail that money handling depends on (P7). Unlimited users is therefore a **data-integrity requirement**, not a sales concession.
+
+### 4.6 Two billing domains that must never be confused
+
+| Domain | Who bills whom | Module | Documents |
+|--------|----------------|--------|-----------|
+| **Tuition** | Kindergarten → parent/guardian | `finance` | `tariff_plan`, `invoice`, `payment`, `child_ledger_entry` |
+| **Subscription** | Vendor (platform) → kindergarten | `subscriptions` | `subscription_plan`, `subscription_invoice`, `subscription_payment`, `usage_snapshot` |
+
+These share vocabulary ("plan", "invoice", "payment") but are **separate domains with separate tables and separate ledgers**. Naming must always be explicit; `subscriptions` never writes to `finance` tables and vice versa.
+
+---
+
+## 5. Target Users (Personas & Roles)
+
+The MVP is **staff-facing**. Five customer roles, plus the vendor, on **two separate access planes** ([02 §11](./02_Software_Architecture.md)):
+
+**Organization plane** — the customer's own staff:
 
 | Role | Persona | Primary jobs |
 |------|---------|--------------|
-| **Super Admin** | System owner / technical admin | Manage users, roles, settings; full cross-branch access |
+| **Org Owner** | Kindergarten owner / director of a group of branches | Manage users, roles, settings, **billing & subscription**; full access across **their own** branches |
 | **Director** | Kindergarten head | Full operational & financial oversight of the branch; reports |
 | **Manager** | Operations manager | Children, attendance oversight, kitchen/warehouse, expenses |
 | **Cashier** | Front-desk / accountant | Payments, invoices, debtor follow-up |
 | **Attendance Manager** | Teacher/monitor | Records and manages daily attendance |
 
-**Future personas** (roadmap): Parent, Teacher — they slot into the same data-driven RBAC without code changes.
+**Platform plane** — the vendor (us):
+
+| Role | Persona | Primary jobs |
+|------|---------|--------------|
+| **Platform Admin** | SaaS operator | Organizations, trials, subscription status, invoices, suspension — **metadata only**, never a customer's children or payments |
+
+> **There is no role that can read across organizations' operational data.** The old "Super Admin" — a role defined as bypassing all scoping — was removed for exactly this reason (ADR-10). Vendor support access to a tenant requires an explicit, time-boxed grant that the customer can see in their own audit log.
+
+**Future personas** (roadmap): Parent, Teacher — they slot into the same data-driven RBAC without code changes, scoped to one organization like every other user.
 
 ---
 
-## 5. Scope — Modules
+## 6. Scope — Modules
 
-### 5.1 MVP Modules (12)
+### 6.1 MVP Modules (15)
+
+Modules 1–12 are **customer-facing** (used by kindergarten staff). Modules 13–15 exist because the product is sold as SaaS (§4).
 
 | # | Module | Purpose | Backed by (Django app) |
 |---|--------|---------|------------------------|
@@ -103,16 +197,21 @@ The MVP is **internal / staff-facing**. Five roles (full permission matrix in [0
 | 10 | **Notifications** | SMS dispatch, templates, delivery log | `notifications` |
 | 11 | **Settings** | System configuration, feature flags | `settings_app` |
 | 12 | **Users & Roles** | User & role/permission management | `accounts` |
+| 13 | **Branches** | Create/manage branches, switch between them, cross-branch views | `branches` |
+| 14 | **Billing & Subscription** *(customer view)* | Current plan, billable child count, projected bill, invoices, payment term | `subscriptions` |
+| 15 | **Platform Console** *(vendor-only)* | Organizations, trials, subscription status, usage snapshots, suspension | `platform` |
 
-### 5.2 Future Modules (roadmap — architecture already supports)
+> **Module 14 is a retention feature, not a receipt viewer.** A customer must be able to see their current child count and projected charge *before* the invoice arrives. Surprise invoices are the leading cause of SaaS churn.
 
-Parent Portal · Teacher Portal · Online Payments · Medical Records · Meal Planning · Homework/LMS · Gallery · AI Assistant · Multiple Branches · Mobile App · Advanced Analytics.
+### 6.2 Future Modules (roadmap — architecture already supports)
+
+Parent Portal · Teacher Portal · Online Payments · Medical Records · Meal Planning · Homework/LMS · Gallery · AI Assistant · Mobile App · Advanced Analytics · Automated card debit for subscriptions.
 
 Mapping of *how each plugs in* is in [02_Software_Architecture](./02_Software_Architecture.md) §22.
 
 ---
 
-## 6. Functional Requirements (high level, per module)
+## 7. Functional Requirements (high level, per module)
 
 > Detailed API contracts are in [04_Backend_API_Specification](./04_Backend_API_Specification.md). This section states **what** each module must do.
 
@@ -133,7 +232,7 @@ Mapping of *how each plugs in* is in [02_Software_Architecture](./02_Software_Ar
 
 ---
 
-## 7. Non-Functional Requirements (NFRs)
+## 8. Non-Functional Requirements (NFRs)
 
 | Category | Requirement | Where addressed |
 |----------|-------------|-----------------|
@@ -150,7 +249,7 @@ Mapping of *how each plugs in* is in [02_Software_Architecture](./02_Software_Ar
 
 ---
 
-## 8. Success Criteria (MVP)
+## 9. Success Criteria (MVP)
 
 The MVP is "done" when a kindergarten can, **entirely in the system**:
 1. Enroll a child with guardians, assign a group and tariff.
@@ -168,42 +267,56 @@ The MVP is "done" when a kindergarten can, **entirely in the system**:
 
 ---
 
-## 9. Constraints & Assumptions
+## 10. Constraints & Assumptions
 
 | Type | Statement |
 |------|-----------|
-| Constraint | Deployment target is a single **Linux server** with Docker; no managed cloud services assumed for MVP. |
+| Constraint | Deployment target is a single **Linux server** with Docker; no managed cloud services assumed for MVP. Infrastructure is **vendor-operated and vendor-funded** (§4). |
+| Constraint | ⚠️ **Data residency** — the system stores personal data of minors who are citizens of Uzbekistan. Uzbek personal-data legislation imposes localization requirements on such data. **Hosting jurisdiction must be confirmed with legal counsel before the first paying customer**; it constrains the choice of hosting provider, not just the deployment script. |
 | Constraint | Notifications MVP channel is **SMS** via a third-party gateway (provider abstracted). |
-| Constraint | Currency default **UZS**; timezone default **Asia/Tashkent** (branch-configurable). |
+| Constraint | Currency default **UZS**; timezone default **Asia/Tashkent** (branch-configurable). Subscription prices are **version-dated** — under UZS inflation, existing customers stay on their purchased price while new customers get current pricing. |
+| Constraint | Customers are **legal entities** paying by bank transfer against an invoice/act. Subscription billing must support the invoice-and-transfer flow, not card-only. |
 | Assumption | Staff have desktop/laptop browser access; mobile browser usable but not the primary target. |
 | Assumption | Internet connectivity is generally available (SMS and app are online). |
-| Assumption | Single branch operates at MVP launch; multi-branch is a later switch. |
+| Assumption | Most organizations run one branch at launch; the data model and UI support unlimited branches per subscription from day one (§4.1). |
+| Assumption | Per-child revenue is **seasonal** — enrollment falls in summer, so subscription revenue falls with it. Annual prepayment terms (§4.3) exist partly to smooth this. |
 
 ---
 
-## 10. Glossary
+## 11. Glossary
+
+> **Naming discipline:** "plan", "invoice", and "payment" exist in **two unrelated domains** (§4.6). Terms below are marked **[tuition]** (kindergarten → parent) or **[subscription]** (vendor → kindergarten). Never use the bare word where the domain is ambiguous.
 
 | Term | Meaning |
 |------|---------|
-| **Branch** | A physical kindergarten location; the tenancy boundary for all data. |
+| **Organization** | The customer — one kindergarten business, possibly with several branches. The **tenancy root** and the billing boundary. All data belongs to exactly one organization. |
+| **Branch** | A physical kindergarten location **inside** an organization; the operational scope for staff, reporting, and invoice numbering. Not a tenancy boundary. |
+| **Tenant** | Synonym for Organization. Used when discussing isolation and data scoping. |
 | **Guardian** | A parent/caregiver linked to a child; the SMS recipient. |
 | **Group** | A kindergarten class (e.g. "Sunflowers"). |
 | **Enrollment** | A dated membership of a child in a group. |
-| **Tariff / Plan** | The recurring fee definition applied to a child. |
-| **Invoice** | A billing document for a child for one period. |
-| **Ledger** | The append-only record of all financial charges/payments per child; the source of truth for balances. |
-| **Debtor** | A child whose ledger balance is positive (owes money) — a *derived* state, not a stored table. |
+| **Tariff Plan** *[tuition]* | The recurring fee definition applied to a child. |
+| **Invoice** *[tuition]* | A billing document issued to a guardian for a child for one period. |
+| **Ledger** *[tuition]* | The append-only record of all charges/payments per child; the source of truth for balances. |
+| **Debtor** *[tuition]* | A child whose ledger balance is positive (owes money) — a *derived* state, not a stored table. |
+| **Subscription Plan** *[subscription]* | The vendor's pricing definition: base price, included children, overage step, currency, effective dates (§4.2). |
+| **Subscription** *[subscription]* | An organization's active commercial agreement: plan, payment term, status, period dates. |
+| **Usage Snapshot** *[subscription]* | An immutable per-period record of an organization's billable child count and how it was measured. The evidence behind every subscription invoice. |
+| **Subscription Invoice** *[subscription]* | A billing document issued by the vendor to an organization. |
+| **Trial** | The 15-day risk-free evaluation period (§4.4). |
 | **Payroll Run** | A monthly batch that computes salaries for all employees. |
 | **Stock Movement** | An immutable in/out record for a product; source of truth for stock levels. |
 | **RBAC** | Role-Based Access Control — permissions granted via roles. |
+| **Platform Admin** | Vendor-side staff operating the SaaS. **Not** a customer role and not a row in the customer role matrix ([02 §11](./02_Software_Architecture.md)). |
+| **Org Owner** | The customer's own top administrator — full control across all branches **of their own organization only**. |
 | **Audit Log** | Immutable record of who did what to which record. |
 
 ---
 
-## 11. Document Governance
+## 12. Document Governance
 
 - This document is **upstream of all others**. A functional/scope change starts here.
 - Downstream docs ([02](./02_Software_Architecture.md)–[06](./06_Development_Roadmap.md)) must remain **consistent** with this vision; conflicts are resolved in favor of an explicit decision recorded here or as an ADR in [02](./02_Software_Architecture.md) §2.
 - The build sequence that realizes this scope is in [06_Development_Roadmap](./06_Development_Roadmap.md).
 
-*End of Project Vision v1.0.*
+*End of Project Vision v1.1 — multi-tenant SaaS business model added (§4); see [00_INDEX](./00_INDEX.md) change log.*

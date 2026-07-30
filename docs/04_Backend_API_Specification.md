@@ -28,9 +28,11 @@
 13. [Expenses](#13-expenses)
 14. [Reports & Dashboard](#14-reports--dashboard)
 15. [Notifications](#15-notifications)
-16. [Settings](#16-settings)
+16. [Settings & Branches](#16-settings--branches)
 17. [Audit Log](#17-audit-log)
-18. [HTTP Status Codes](#18-http-status-codes)
+18. [Billing & Subscription (customer-facing)](#18-billing--subscription-customer-facing)
+19. [Platform Console (vendor-only)](#19-platform-console-vendor-only)
+20. [HTTP Status Codes](#20-http-status-codes)
 
 ---
 
@@ -47,8 +49,10 @@
 | **Actions** | Non-CRUD operations as sub-resources: `POST /invoices/{id}/payments`, `POST /payroll/runs/{id}/finalize`. |
 | **Timestamps** | ISO 8601 UTC (`2026-07-24T09:30:00Z`). |
 | **Money** | Decimal strings (e.g. `"1500000.00"`) to avoid float rounding. |
-| **Branch scope** | Applied automatically from the JWT; clients never pass `branch_id` (except Super Admin cross-branch tooling). |
+| **Tenant scope** | Applied automatically from the JWT's `organization_id`. Clients **never** send it and **cannot** override it. A request referencing another organization's resource returns `404`, never `403` (P10, [02 §11.3](./02_Software_Architecture.md)). |
+| **Branch scope** | Applied automatically from the JWT. Org Owner may pass `branch_id` to filter across their own organization's branches; other roles are bound to their branch and the parameter is ignored. |
 | **Idempotency** | Mutating money endpoints accept optional `Idempotency-Key` header to safely retry. |
+| **Subscription gate** | If the caller's organization is `suspended`, all write verbs return `402 SUBSCRIPTION_INACTIVE`; reads continue to work ([03 §20.6](./03_Database_Design.md)). |
 
 ---
 
@@ -106,11 +110,14 @@
 | 400 | `VALIDATION_ERROR` | Field validation failed (`details` per field) |
 | 401 | `AUTHENTICATION_REQUIRED` | Missing/expired/invalid token |
 | 403 | `PERMISSION_DENIED` | RBAC or branch scope denies |
-| 404 | `NOT_FOUND` | Resource missing or outside branch scope |
+| 404 | `NOT_FOUND` | Resource missing, outside branch scope, **or in another organization** |
+| 402 | `SUBSCRIPTION_INACTIVE` | Organization is suspended — writes blocked, reads allowed ([03 §20.6](./03_Database_Design.md)) |
 | 409 | `CONFLICT` | Duplicate / state conflict (e.g. duplicate invoice period) |
 | 422 | `BUSINESS_RULE_VIOLATION` | Valid input, violates a domain rule (e.g. insufficient stock) |
 | 429 | `RATE_LIMITED` | Throttled |
 | 500 | `INTERNAL_ERROR` | Unhandled (no internals leaked) |
+
+> **Why cross-tenant access is `404` and not `403`:** a `403` confirms the resource exists, which leaks the fact that another customer holds that id. Tenant boundary violations must be indistinguishable from "no such thing". This is the one place where a deliberately less-informative error is the correct design.
 
 ---
 
@@ -142,11 +149,27 @@ Public (no token) except `/me`, `/logout`, `/password/change`.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
+| POST | `/auth/signup` | public | Create an organization + Org Owner, start the 15-day trial |
 | POST | `/auth/login` | public | Exchange credentials for tokens |
+| POST | `/auth/select-organization` | pending token | Choose organization when the email belongs to several |
 | POST | `/auth/refresh` | public (valid refresh) | Rotate access (+refresh) token |
 | POST | `/auth/logout` | authenticated | Blacklist refresh token |
-| GET | `/auth/me` | authenticated | Current user profile + role + permissions |
+| GET | `/auth/me` | authenticated | Current user profile + role + permissions + org/subscription state |
 | POST | `/auth/password/change` | authenticated | Change own password |
+
+**`POST /auth/signup` — request**
+```json
+{
+  "organization_name": "Premium Bog'cha",
+  "contact_email": "owner@premium.uz",
+  "contact_phone": "+998901234567",
+  "full_name": "Aziz Karimov",
+  "password": "••••••••"
+}
+```
+Creates `organization` + first `branch` + Org Owner user + `subscription` in `trialing`, and seeds the system roles for that organization. **No card, no payment.** Response `201` returns tokens plus the trial end date.
+
+> The offer text shown above this form must state that the first paid month is dated from the trial start ([01 §4.4](./01_Project_Vision.md)). The API enforces the policy; the UI is responsible for it being disclosed rather than discovered.
 
 **`POST /auth/login` — request**
 ```json
@@ -162,21 +185,30 @@ Public (no token) except `/me`, `/logout`, `/password/change`.
     "user": {
       "id": "…", "full_name": "Dilnoza K.", "email": "cashier@kg.uz",
       "role": { "code": "cashier", "name": "Cashier" },
+      "organization": { "id": "…", "name": "Premium Bog'cha", "slug": "premium" },
       "branch": { "id": "…", "name": "Main Branch" },
       "permissions": ["payments.read","payments.create","debtors.read","children.read","notifications.create"]
-    }
+    },
+    "subscription": { "status": "active", "trial_ends_at": null, "read_only": false }
   }
 }
 ```
+
+**Multi-organization login.** Email is unique *per organization* ([03 §10.6](./03_Database_Design.md)), so one address may exist in several. When it does, `/auth/login` returns `200` with a short-lived **pending token** and the list of organizations; the client then calls `/auth/select-organization` to obtain real tokens.
+
+> The pending-token step must **never** reveal organizations whose credentials didn't match — it lists only those the supplied password authenticated against. Otherwise login becomes an oracle for "which kindergartens use this email".
+
 **Errors:** `401 AUTHENTICATION_REQUIRED` (bad credentials — generic message), `429 RATE_LIMITED` (login is throttled to defend against brute force).
 
-**`GET /auth/me`** returns the same `user` object — the frontend calls this on boot to hydrate auth state and drive role-based routing ([05](./05_Frontend_Architecture.md)).
+**`GET /auth/me`** returns the same `user` object plus the live `subscription` block — the frontend calls this on boot to hydrate auth state, drive role-based routing, and switch the whole app into read-only mode when the subscription is suspended ([05](./05_Frontend_Architecture.md)).
 
 ---
 
 ## 6. Users & Roles
 
-Module: `users` (backed by `accounts`). Managed by **Super Admin** (Director read-only within branch).
+Module: `users` (backed by `accounts`). Managed by **Org Owner** (Director read-only within branch). New users are always created inside the caller's organization — `organization_id` is never accepted from the client.
+
+> **User accounts are unlimited on every plan.** Charging per seat would push staff to share one login and destroy the audit trail that money handling depends on ([01 §4.5](./01_Project_Vision.md)).
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -515,7 +547,7 @@ Modules: `reports` + Dashboard (aggregation). **Read-only.** Exports are async.
 | POST | `/reports/{type}/export` | `reports.export` | Queue an Excel/PDF export → returns `job_id` |
 | GET | `/reports/exports/{jobId}` | `reports.read` | Poll export status / download link |
 
-> Report reads may route to a replica; heavy aggregations are served from materialized views ([03 §24](./03_Database_Design.md)).
+> Report reads may route to a replica; heavy aggregations are served from materialized views ([03 §25](./03_Database_Design.md)).
 
 ---
 
@@ -546,33 +578,111 @@ Module: `notifications`. Channel-agnostic (SMS now; Telegram/Email later).
 
 ---
 
-## 16. Settings
+## 16. Settings & Branches
 
-Module: `settings_app`. Managed by Super Admin (Director read-only).
+Module: `settings_app` + `branches`. Managed by Org Owner (Director read-only).
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/settings` | `settings.read` | List effective settings (branch overrides global) |
+| GET | `/settings` | `settings.read` | List effective settings (branch overrides organization) |
 | GET | `/settings/{key}` | `settings.read` | Single setting |
 | PUT | `/settings/{key}` | `settings.update` | Set a value (JSONB) |
-| GET | `/branches` | `settings.read` | List branches |
-| POST | `/branches` | `settings.update` | Create branch (multi-branch enablement) |
-| PATCH | `/branches/{id}` | `settings.update` | Update branch (currency, timezone) |
+| GET | `/branches` | `branches.read` | List the organization's branches |
+| POST | `/branches` | `branches.create` | Create branch |
+| PATCH | `/branches/{id}` | `branches.update` | Update branch (currency, timezone) |
+| DELETE | `/branches/{id}` | `branches.delete` | Soft-delete (blocked if it holds children/employees) |
+
+> **`POST /branches` is never rate-limited by plan and never returns a quota error.** Branch count is not billed ([01 §4.5](./01_Project_Vision.md)); adding a location is exactly the growth we want, and it raises the bill only through the children it brings.
 
 ---
 
 ## 17. Audit Log
 
-Module: `audit`. **Read-only** (insert-only at DB level). Super Admin + Director.
+Module: `audit`. **Read-only** (insert-only at DB level). Org Owner + Director.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/audit-logs` | `audit.read` | List (filters: `actor`, `entity_type`, `entity_id`, `action`, date range) |
 | GET | `/audit-logs/{id}` | `audit.read` | Detail (before/after diff) |
+| GET | `/audit-logs/platform-access` | `audit.read` | **Vendor access to this organization** — every support grant and platform read ([02 §20.3](./02_Software_Architecture.md)) |
+
+> The last endpoint exists so vendor access is *visible to the customer*, not merely logged for the vendor. A tenant can always see when we looked at their data.
 
 ---
 
-## 18. HTTP Status Codes
+## 18. Billing & Subscription (customer-facing)
+
+Module: `subscriptions`. **Org Owner only** ([02 §11.2](./02_Software_Architecture.md)). All paths are implicitly scoped to the caller's organization — there is no way to address another organization's billing.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/billing/subscription` | `billing.read` | Current plan, status, term, discount, period dates, trial end |
+| GET | `/billing/usage` | `billing.read` | Current billable child count + **projected** charge for the open period |
+| GET | `/billing/usage/history` | `billing.read` | Past `usage_snapshot` rows — the evidence behind each invoice |
+| GET | `/billing/invoices` | `billing.read` | Subscription invoices (filters: `status`, date range) |
+| GET | `/billing/invoices/{id}` | `billing.read` | Detail with base/overage/discount breakdown |
+| GET | `/billing/invoices/{id}/document` | `billing.read` | Download invoice / act (PDF) |
+| POST | `/billing/accept-trial` | `billing.update` | Convert the trial → issues the first invoice, enters `pending_payment` |
+| POST | `/billing/payment-term` | `billing.update` | Request a term change (monthly / semiannual / annual) |
+| POST | `/billing/export` | `billing.update` | Request a full data export (async job) |
+
+**`GET /billing/usage` — response**
+```json
+{
+  "success": true,
+  "data": {
+    "period": { "year": 2026, "month": 7 },
+    "billable_children": 73,
+    "peak_children": 73,
+    "included_children": 50,
+    "overage_steps": 3,
+    "projected": {
+      "base_amount": "500000.00",
+      "overage_amount": "240000.00",
+      "discount_amount": "0.00",
+      "total_amount": "740000.00",
+      "currency": "UZS"
+    },
+    "is_projection": true
+  }
+}
+```
+
+> `is_projection: true` is not decoration — it marks the number as *not yet charged*. The billed amount always comes from a closed `usage_snapshot` ([03 §20.3](./03_Database_Design.md)). Exposing this endpoint at all is a retention decision: a customer who can see the count moving never receives a surprise invoice.
+
+**`POST /billing/export`** must work in **every** subscription status, including `cancelled`. A customer's own operational data is never held hostage to a billing dispute.
+
+---
+
+## 19. Platform Console (vendor-only)
+
+Module: `platform`. **Not part of the customer API surface** — separate auth path, mandatory 2FA, every call audited (ADR-10, [02 §11.0](./02_Software_Architecture.md)).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/platform/organizations` | List all organizations — **metadata only** (name, plan, status, child count, MRR) |
+| GET | `/platform/organizations/{id}` | Organization detail + subscription + usage history |
+| POST | `/platform/organizations/{id}/suspend` | Move to `suspended` (read-only for the customer) |
+| POST | `/platform/organizations/{id}/reactivate` | Restore access |
+| POST | `/platform/organizations/{id}/extend-trial` | Extend the trial (reason required) |
+| POST | `/platform/organizations/{id}/support-grant` | Request time-boxed operational access (reason required, customer-visible) |
+| GET | `/platform/subscriptions/expiring` | Trials ending, invoices overdue — the daily work list |
+| GET | `/platform/invoices` | All subscription invoices across organizations |
+| POST | `/platform/invoices/{id}/payments` | Record a received bank transfer |
+| GET | `/platform/plans` | Plan versions |
+| POST | `/platform/plans` | Create a **new plan version** (never edits an existing one) |
+
+**Hard constraints on this surface:**
+
+- No endpoint here returns children, guardians, payments, payroll, or attendance rows. Aggregate counts only.
+- Reading a tenant's operational data requires an approved `support-grant` and happens through the **normal customer API** under that grant — not through a privileged bypass. There is no second code path to audit.
+- Every call writes a platform audit row, and grant-related rows surface to the customer via `/audit-logs/platform-access`.
+
+> **Why no cross-tenant data endpoints at all:** the moment one exists, it becomes the thing an attacker targets and the thing a bug misuses. Keeping the vendor console to metadata means the blast radius of a compromised platform account is "knows who our customers are", not "reads every child's record in the country".
+
+---
+
+## 20. HTTP Status Codes
 
 | Code | Used for |
 |------|----------|
@@ -593,7 +703,9 @@ Module: `audit`. **Read-only** (insert-only at DB level). Super Admin + Director
 
 ## Cross-References
 - Conventions & security: [02_Software_Architecture](./02_Software_Architecture.md) §13, §20.
+- Tenant scoping and the two access planes: [02_Software_Architecture](./02_Software_Architecture.md) §11.
 - Entities, constraints, transactional rules behind these endpoints: [03_Database_Design](./03_Database_Design.md).
+- Subscription lifecycle and metering: [03_Database_Design](./03_Database_Design.md) §20; commercial terms: [01_Project_Vision](./01_Project_Vision.md) §4.
 - How the frontend consumes these (query keys, interceptors, forms): [05_Frontend_Architecture](./05_Frontend_Architecture.md).
 
-*End of Backend API Specification v1.0. Contract only — no implementation.*
+*End of Backend API Specification v1.1 — signup/tenant scoping, billing (§18) and platform console (§19) added. Contract only — no implementation.*

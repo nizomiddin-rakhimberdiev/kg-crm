@@ -77,6 +77,9 @@ frontend/
 │   │   ├── reports/
 │   │   ├── notifications/
 │   │   ├── settings/
+│   │   ├── branches/               # Branch CRUD + switcher
+│   │   ├── billing/                # Subscription, usage, projected bill, invoices
+│   │   ├── onboarding/             # Signup, first-branch setup, children import wizard
 │   │   └── users/
 │   │
 │   ├── lib/
@@ -198,7 +201,7 @@ graph TD
 | Layout | Used by | Contains |
 |--------|---------|----------|
 | **PublicLayout** | login, forgot-password | Centered card, branding, no nav. |
-| **AppLayout** | all authenticated pages | Persistent **Sidebar** (nav filtered by permissions), **Topbar** (user menu, branch selector [future multi-branch], notifications bell, theme toggle), and `<Outlet/>` content area. |
+| **AppLayout** | all authenticated pages | Persistent **Sidebar** (nav filtered by permissions), **Topbar** (user menu, **branch selector** — Org Owner sees all their branches, notifications bell, theme toggle), a **trial/read-only banner** when the subscription requires one, and `<Outlet/>` content area. |
 
 Navigation items come from `config/navigation.ts`, each tagged with the permission required to show it — the sidebar renders only what the user can access (driven by `useCan`).
 
@@ -294,11 +297,26 @@ Decision tree (F2) — matches [02 §15](./02_Software_Architecture.md):
 | State kind | Tool | Examples |
 |-----------|------|----------|
 | **Server data** | **TanStack Query** (default) | children, invoices, dashboard KPIs, any API data |
-| **Global client** | **React Context** (thin) | authenticated user + permissions, current branch, theme |
+| **Global client** | **React Context** (thin) | authenticated user + permissions, **current organization**, current branch, **subscription read-only flag**, theme |
 | **Local UI** | `useState` / `useReducer` | modal open, selected rows, tab, filter draft |
 | **Forms** | **React Hook Form + Zod** | every create/edit form |
 
 **No Redux.** Never copy server data into Context. If a genuinely complex *client* state machine appears later (multi-step wizard), use Zustand **locally**, not globally.
+
+### Tenancy and the query cache
+
+The organization is **never** a request parameter — the backend derives it from the JWT ([04 §1](./04_Backend_API_Specification.md)). But it **must** be part of every query key:
+
+```ts
+// queryKeys.ts — organization first, always
+children: (orgId: string, filters: Filters) => ['org', orgId, 'children', filters] as const
+```
+
+> **Why, when the client never sends it:** a user who switches organization (or logs out and another user logs in on a shared front-desk machine) would otherwise see the previous tenant's cached rows rendered from memory. The server would never have sent them — the leak is entirely client-side, and it looks exactly like a real breach to the person seeing it. Scoping the cache key makes it structurally impossible; clearing the cache on organization switch is the belt to that braces.
+
+### Read-only mode
+
+When `/auth/me` reports a `suspended` subscription, the app enters a global **read-only mode**: a persistent banner explains why, and all mutating controls are disabled. Writes would fail with `402` anyway ([04 §2](./04_Backend_API_Specification.md)); disabling them client-side is UX, not enforcement. Reads keep working — a customer behind on payment must still be able to see their own financial history.
 
 ---
 
@@ -388,7 +406,7 @@ Matches [02 §21](./02_Software_Architecture.md):
 | Components | `PascalCase.tsx`; one component per file. |
 | Hooks | `useThing.ts`, return typed values. |
 | Feature imports | Only via the feature's `index.ts` barrel. |
-| Query keys | Array form via `queryKeys` factory; never inline strings. |
+| Query keys | Array form via `queryKeys` factory; never inline strings. **Always organization-scoped** (§10). |
 | Zod schemas | `<entity>.schema.ts`; export schema + inferred type. |
 | Types | No `any`; API types derive from Zod or `types/api.ts`. |
 | Styling | Tailwind classes via `cn()` helper; no inline styles except dynamic values. |
@@ -399,9 +417,9 @@ Matches [02 §21](./02_Software_Architecture.md):
 ---
 
 ## Cross-References
-- What the UI is for: [01_Project_Vision](./01_Project_Vision.md).
-- System-level frontend decisions: [02_Software_Architecture](./02_Software_Architecture.md) §14–15.
+- What the UI is for: [01_Project_Vision](./01_Project_Vision.md); commercial model the `billing` feature surfaces: [01 §4](./01_Project_Vision.md).
+- System-level frontend decisions: [02_Software_Architecture](./02_Software_Architecture.md) §14–15; the two access planes: [02 §11.0](./02_Software_Architecture.md).
 - Endpoints, permissions, and payloads consumed here: [04_Backend_API_Specification](./04_Backend_API_Specification.md).
 - Build order: [06_Development_Roadmap](./06_Development_Roadmap.md).
 
-*End of Frontend Architecture v1.0.*
+*End of Frontend Architecture v1.1 — organization-scoped query cache, read-only mode, `billing`/`branches`/`onboarding` features added.*

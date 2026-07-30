@@ -76,10 +76,12 @@ Every decision in this document traces back to these principles.
 | P3 | **Separation of concerns (layered)** | API layer → Service layer → Data layer. Business logic lives in services, never in views or serializers. |
 | P4 | **Explicit contracts** | Modules talk through documented service interfaces and typed API responses. Contracts are stable; internals are free to change. |
 | P5 | **Security by default** | Every endpoint is authenticated and authorized unless explicitly public. Deny-by-default RBAC. |
-| P6 | **Multi-branch aware from day one** | Even though MVP is single-branch, every core entity carries a `branch` boundary so multi-branch is a config change, not a rewrite. |
+| P6 | **Multi-branch aware from day one** | Every core entity carries a `branch` boundary. One subscription covers unlimited branches ([01 §4.1](./01_Project_Vision.md)). |
 | P7 | **Auditability** | Money and children are sensitive. Every financial and administrative mutation is audit-logged. |
 | P8 | **Idempotent & async where it matters** | Notifications, reports, and heavy aggregation run in background workers, never in the request/response cycle. |
 | P9 | **The API is a product** | Versioned, consistent envelope, predictable errors. The mobile app and parent portal will be first-class consumers. |
+| P10 | **Tenant isolation is absolute** | Every operational row carries `organization_id`. **No role — including the customer's own owner — can read across organizations.** Branch scoping is a business rule that some roles bypass; organization scoping is a security boundary that **nothing** bypasses. |
+| P11 | **Metering is evidence, not a counter** | Every subscription charge traces to an immutable `usage_snapshot` that records what was counted, when, and how. A bill we cannot reconstruct is a bill we cannot defend. |
 
 ### Key Architectural Decision Records (condensed)
 
@@ -93,6 +95,9 @@ Every decision in this document traces back to these principles.
 | ADR-6 | Redis for cache + Celery broker | RabbitMQ, DB-backed cache | One infra component serves caching, sessions, rate-limit counters, and task queue. |
 | ADR-7 | Debtors as a *derived* domain | Debtors as a stored table | A debtor is a computed state of the finance ledger, not a separate entity — avoids data duplication and drift. |
 | ADR-8 | Frontend SPA (Vite + React) | Django templates / SSR | Rich internal dashboard UX, decoupled from API, reusable by mobile. |
+| **ADR-9** | **`organization` is the tenancy root; `branch` sits inside it** | Branch as tenancy root (original design); schema-per-tenant; DB-per-tenant | The product is sold per **organization**, and one subscription covers unlimited branches ([01 §4](./01_Project_Vision.md)). Branch cannot be the tenancy root because a customer legitimately reads across their own branches. Shared-schema row scoping keeps cross-branch reporting trivial and can graduate to RLS/partitioning without a data migration. **Supersedes the branch-as-tenancy-root model in [03 §6](./03_Database_Design.md).** |
+| **ADR-10** | **Platform staff live outside the customer RBAC matrix** | Add a "Platform Admin" row to the existing role matrix | The original **Super Admin** was defined as bypassing all scoping. In a multi-tenant system that role, granted to a customer, would expose every other customer's children. Vendor access is a *different kind of subject* with a different auth path, mandatory audit, and no implicit data access — not a stronger customer role. |
+| **ADR-11** | **Subscription billing is its own bounded module with an append-only usage ledger** | Reuse the `finance` app; compute charges on demand at invoice time | Vendor→customer billing and kindergarten→parent billing share vocabulary but nothing else ([01 §4.6](./01_Project_Vision.md)); merging them would corrupt both. Charges derive from immutable `usage_snapshot` rows (P11) so any invoice can be reconstructed and defended months later — the same discipline as ADR-7's ledger. |
 
 ---
 
@@ -102,8 +107,12 @@ Every decision in this document traces back to these principles.
 
 ```mermaid
 graph TB
-    subgraph Users["Internal Users (MVP)"]
-        SA[Super Admin]
+    subgraph Vendor["Platform Plane — vendor (ADR-10)"]
+        PA[Platform Admin]
+    end
+
+    subgraph Users["Organization Plane — kindergarten staff (MVP)"]
+        SA[Org Owner]
         DIR[Director]
         MGR[Manager]
         CASH[Cashier]
@@ -267,8 +276,11 @@ backend/
 │
 ├── apps/                        # ALL business modules live here
 │   ├── core/                    # Shared kernel (base classes, mixins, utils)
+│   ├── organizations/           # TENANCY ROOT — the customer entity (ADR-9)
+│   ├── subscriptions/           # Plans, subscriptions, usage metering, vendor invoices (ADR-11)
+│   ├── platform/                # Vendor-side console & platform staff (ADR-10)
 │   ├── accounts/                # Users, auth, roles, RBAC
-│   ├── branches/                # Branch/tenant boundary (multi-branch ready)
+│   ├── branches/                # Branch — operational scope inside an organization
 │   ├── children/                # Children, guardians, groups, enrollment
 │   ├── attendance/              # Daily attendance
 │   ├── finance/                 # Payments, invoices, tariffs, debtors (derived)
@@ -336,9 +348,12 @@ Modules map to apps, but **not 1:1** — some UI modules are *views* over a shar
 
 | Django App | Backs UI Module(s) | Responsibility | Why it exists as its own app |
 |-----------|-------------------|----------------|------------------------------|
-| **core** | (none — shared) | Base model (`created_at`, `updated_at`, `is_active`, `branch`), mixins, pagination, exceptions, common utils, base permissions | A shared kernel prevents copy-paste and enforces cross-cutting concerns (soft delete, timestamps, branch scoping) in one place. |
+| **core** | (none — shared) | Base model (`created_at`, `updated_at`, `is_active`, `organization`, `branch`), mixins, pagination, exceptions, common utils, base permissions, **the tenant-scoping queryset mixin** | A shared kernel prevents copy-paste and enforces cross-cutting concerns (soft delete, timestamps, org + branch scoping) in one place. Tenant scoping lives here so it is inherited, not re-implemented per app (P10). |
+| **organizations** | (implicit in every module) | The `organization` entity — the tenancy root; onboarding/signup; org-level profile and legal-entity details | The customer is the billing and isolation boundary (ADR-9). Every other app's rows point here. Kept minimal and separate from `subscriptions` so *who the customer is* stays independent of *what they pay*. |
+| **subscriptions** | Billing & Subscription | Subscription plans, an organization's subscription, trial lifecycle, per-child usage metering, subscription invoices & payments | Vendor→customer money is a distinct domain from tuition (ADR-11). Isolating it prevents the two "invoice" concepts from bleeding into each other and keeps the usage ledger auditable (P11). |
+| **platform** | Platform Console (vendor-only) | Platform staff identity, cross-organization console, trial/suspension operations, platform-level audit | Vendor access is not a customer role (ADR-10). A separate app means the cross-tenant capability lives in exactly one auditable place instead of being a flag scattered through business apps. |
 | **accounts** | Users & Roles, Auth | Custom User, authentication, Role, Permission, role assignment, JWT issuance | Identity is foundational and security-sensitive; it must be isolated and hardened. |
-| **branches** | Settings (branch), future Multiple Branches | Branch entity; the tenancy boundary all data is scoped to | Introducing the branch boundary now makes multi-branch a data/config change later, not a migration nightmare (P6). |
+| **branches** | Branches, Settings (branch) | Branch entity; the operational scope inside an organization | Branch drives staff scope, reporting, and invoice numbering. It is **not** the tenancy boundary (ADR-9) — an organization's own roles legitimately read across their branches. |
 | **children** | Children | Child profiles, guardians, child↔guardian links, groups/classes, enrollment lifecycle | The CRM core. Central entity referenced by attendance, finance, and future portals. |
 | **attendance** | Attendance | Daily attendance records, check-in/out, absence reasons | High-write, date-partitioned domain with its own reporting needs; kept separate for performance isolation. |
 | **finance** | Payments, Debtors | Tariffs/plans, invoices, invoice lines, payments, discounts, the financial **ledger** | Money is the ERP heart. All balances/debts are derived from one consistent ledger — no duplicated "debt" tables (ADR-7). |
@@ -598,11 +613,43 @@ POST /api/v1/auth/password/change
 
 Authorization is **role-based, deny-by-default, and enforced on the backend** (the frontend only *hides* what the backend *forbids*). We use a **custom Role + Permission model**, not raw Django groups (ADR-4), because roles are business concepts, are branch-scoped, and are managed through the UI.
 
-### 11.1 Roles
+### 11.0 Two access planes (ADR-10)
+
+Authorization operates on **two planes that never merge**:
+
+```mermaid
+graph TB
+    subgraph PLANE1["PLATFORM PLANE — the vendor"]
+        PA[Platform Admin<br/>apps/platform]
+        PS[Platform Support]
+    end
+    subgraph PLANE2["ORGANIZATION PLANE — the customer"]
+        OO[Org Owner]
+        DIR2[Director]
+        MGR2[Manager]
+        CASH2[Cashier]
+        ATT2[Attendance Mgr]
+    end
+    PA -.->|"explicit, time-boxed,<br/>audited grant only"| PLANE2
+```
+
+| | Platform plane | Organization plane |
+|---|---|---|
+| Who | Vendor staff | Kindergarten staff |
+| Lives in | `apps/platform`, separate table | `accounts.User` + `accounts.Role` |
+| Login path | Separate endpoint, mandatory 2FA | Standard `/auth/login` |
+| Data access | **None by default.** Sees organization *metadata* (name, plan, status, child count) — never children, payments, or payroll. | Full access to their own organization, per role |
+| Cross-organization | Yes, metadata only | **Never, under any role** |
+
+> **The rule that makes this safe:** `organization_id` scoping is applied by the **base queryset**, and platform staff are not exempt from it — they simply have no organization. Reading a customer's operational data requires an explicit, time-boxed, customer-visible support grant that is written to the audit log. There is no "god flag" that silently unlocks tenant data.
+
+### 11.1 Organization roles
+
+> **`Super Admin` no longer exists.** It was defined as bypassing all scoping, which in a multi-tenant system would expose every customer's data to whoever held it. It is replaced by **Org Owner** (customer, org-scoped) and **Platform Admin** (vendor, different plane) — ADR-10.
 
 | Role | Scope | Description |
 |------|-------|-------------|
-| **Super Admin** | All branches, system | Full control including Users & Roles, Settings, all financial and operational data. Technical/owner role. |
+| **Org Owner** | All branches **of their own organization** | Full control of their organization: Users & Roles, Settings, Billing & Subscription, all financial and operational data across their branches. Cannot see any other organization — this is enforced, not conventional. |
 | **Director** | Branch (all modules) | Full operational visibility & control within a branch: children, finance, payroll, inventory, expenses, reports. Cannot manage system-level settings/roles beyond their branch. |
 | **Manager** | Branch (operations) | Day-to-day operations: children, attendance oversight, inventory/kitchen, expenses. Limited financial write; read reports. No payroll, no role management. |
 | **Cashier** | Branch (finance) | Payments intake, invoices, debtor follow-up. Read children. No payroll, no settings, no user management. |
@@ -612,8 +659,8 @@ Authorization is **role-based, deny-by-default, and enforced on the backend** (t
 
 Legend: **F** = Full (CRUD), **W** = Create/Update, **R** = Read-only, **—** = No access.
 
-| Module | Super Admin | Director | Manager | Cashier | Attendance Mgr |
-|--------|:----------:|:--------:|:-------:|:-------:|:--------------:|
+| Module | Org Owner | Director | Manager | Cashier | Attendance Mgr |
+|--------|:---------:|:--------:|:-------:|:-------:|:--------------:|
 | Dashboard | F | F | R | R | R |
 | Children | F | F | W | R | R |
 | Payments | F | F | R | F | — |
@@ -625,26 +672,38 @@ Legend: **F** = Full (CRUD), **W** = Create/Update, **R** = Read-only, **—** =
 | Reports | F | F | R | R (finance only) | R (attendance only) |
 | Notifications | F | F | W | W (payment/debt) | — |
 | Settings | F | R | — | — | — |
+| **Branches** | **F** | **R** | **—** | **—** | **—** |
+| **Billing & Subscription** | **F** | **—** | **—** | **—** | **—** |
 | Users & Roles | F | R (branch) | — | — | — |
 | Audit Log | F | R | — | — | — |
+
+> **Billing is Org Owner only.** A Director who can see the subscription invoice can infer the vendor's pricing for every branch; more importantly, changing the payment term is a commercial commitment for the legal entity, not a branch operation.
 
 ### 11.3 How it's enforced
 
 ```mermaid
 graph LR
     REQ[Request + JWT] --> AUTH[JWT Auth<br/>identify user]
-    AUTH --> LOAD[Load Role + Permissions<br/>+ Branch scope]
+    AUTH --> ORG{Organization scope<br/>NEVER bypassable}
+    ORG -->|Mismatch| D404A[404]
+    ORG -->|OK| SUB{Subscription active<br/>or in grace?}
+    SUB -->|Suspended| RO[Read-only mode<br/>writes → 402]
+    SUB -->|OK| LOAD[Load Role + Permissions<br/>+ Branch scope]
     LOAD --> PERM{Permission class<br/>module.action allowed?}
     PERM -->|No| D403[403 Forbidden]
-    PERM -->|Yes| SCOPE{Branch scope<br/>object in user's branch?}
+    PERM -->|Yes| SCOPE{Branch scope<br/>role-dependent}
     SCOPE -->|No| D404[404 / 403]
     SCOPE -->|Yes| OK[View executes]
 ```
 
 - **Permission model:** `permission = "<module>.<action>"` e.g. `payments.create`, `children.read`. Roles hold a set of permissions.
 - **DRF Permission classes** in each app's `permissions.py` check `module.action` against the user's role.
-- **Object-level / branch scoping:** a base queryset mixin filters every list/detail by the user's `branch` (P6). Super Admin bypasses branch scoping.
+- **Organization scoping (P10):** the base queryset mixin filters **every** query by the authenticated user's `organization_id`. This is applied first, before any permission logic, and **no role bypasses it**. A cross-organization reference returns `404`, never `403` — a `403` would confirm the row exists in another tenant.
+- **Branch scoping (P6):** applied *after* organization scoping. Org Owner reads across all branches **within their organization**; every other role is bound to their branch.
+- **Subscription gate:** a suspended organization degrades to **read-only** — writes return `402 Payment Required`. Data is never deleted or hidden for non-payment ([01 §4.4](./01_Project_Vision.md)).
 - **Frontend mirroring:** the `config/rbac.ts` map and an `useCan(permission)` hook hide/disable UI the user can't use — **UX only**, never a security boundary.
+
+> **The failure mode this ordering prevents:** a developer writing a new endpoint forgets the tenant filter. Because scoping lives in the shared base queryset and is applied before the view's own logic, forgetting it is not possible without deliberately opting out — and opting out is greppable. Defense in depth is added by Postgres **Row-Level Security** on `organization_id` before the first paying customer ([03 §6](./03_Database_Design.md)).
 
 > **Design note:** permissions are **data**, not code. New roles or permission tweaks are configuration changes, and future roles (Teacher, Parent) slot into the same matrix without code changes — critical for the Parent/Teacher Portal roadmap.
 
@@ -656,7 +715,8 @@ graph LR
 
 ### 12.1 Cross-cutting conventions
 
-- Every business table inherits from a **base entity**: `id (UUID)`, `created_at`, `updated_at`, `is_active` (soft delete), and — where applicable — `branch_id` (P6).
+- Every business table inherits from a **base entity**: `id (UUID)`, `created_at`, `updated_at`, `is_active` (soft delete), **`organization_id` (P10 — mandatory on every operational table)**, and — where applicable — `branch_id` (P6).
+- **`organization_id` is denormalized onto every operational table**, not derived by joining through `branch`. The extra UUID column buys two things: every scoping filter is a single hop (no forgotten join can leak across tenants), and Postgres RLS policies stay simple. This is the one denormalization we accept without a consistency trigger, because the value is immutable for the row's lifetime.
 - **UUID primary keys** for externally-referenced entities (children, payments) to avoid enumeration and ease future distribution; sequential IDs internally are acceptable for high-volume append-only tables (attendance) if needed.
 - **Soft delete** by default (`is_active=false`) for anything audited; hard delete only for truly transient data.
 - **Money** stored as `Decimal` (never float), with an explicit currency at the branch/settings level.
@@ -1105,7 +1165,8 @@ Security is layered — no single control is trusted alone.
 ### 20.3 Audit log (P7)
 - Written from the **service layer** (and select signals) so it can't be bypassed by a view.
 - Covers: payments, invoices, payroll runs, role/permission changes, user create/deactivate, settings changes, stock adjustments.
-- Read-only in the UI (Super Admin / Director), filterable by actor/entity/date.
+- Read-only in the UI (Org Owner / Director), filterable by actor/entity/date.
+- **Platform-plane actions are audited separately and immutably** (ADR-10): every support grant, suspension, plan change, and cross-organization metadata read is logged with the platform actor's identity. This log is visible to the affected customer — vendor access to a tenant is never invisible to that tenant.
 
 ---
 
@@ -1157,8 +1218,7 @@ To add, e.g., **Meal Planning**:
 
 | Future module | Where it plugs in | What already supports it |
 |---------------|-------------------|--------------------------|
-| **Multiple Branches** | Flip single→multi; `branch_id` already on every entity; add branch selector UI | P6 baked in from day one — the single biggest future-proofing win. |
-| **Parent Portal** | New `parents` app + new **Parent role** in RBAC matrix; reuses children/finance/attendance **selectors** & the same versioned API | RBAC is data-driven; API is a product; guardian/child model exists. |
+| **Parent Portal** | New `parents` app + new **Parent role** in RBAC matrix; reuses children/finance/attendance **selectors** & the same versioned API | RBAC is data-driven; API is a product; guardian/child model exists. Portal users are scoped to one organization by the same base queryset (P10). |
 | **Teacher Portal** | New **Teacher role**; `hr.Employee`↔`User` link already anticipated; reuses attendance/children | Employee/User separation + RBAC. |
 | **Online Payments** | New payment **gateway adapter** in finance + webhook endpoint; writes to the **same ledger** | Ledger-based finance + adapter pattern (like notifications). |
 | **Medical Records** | New `medical` app linked to `children` (1—N) | Bounded module + child entity. |
@@ -1167,7 +1227,9 @@ To add, e.g., **Meal Planning**:
 | **Gallery** | New `gallery` app on top of the **storage abstraction** | Private storage + async media processing. |
 | **AI Assistant** | New service consuming read **selectors** + a task queue; composes notifications | Clean read layer + Celery + Python/AI-ready stack. |
 | **Mobile App** | New client against the **same `/api/v1`**; JWT auth already stateless | API-as-a-product, stateless auth. |
-| **Analytics** | Read replica + `reports` extensions / warehouse export | Read-only reporting layer + replica-ready. |
+| **Analytics** | Read replica + `reports` extensions / warehouse export | Read-only reporting layer + replica-ready. Cross-tenant aggregates are **vendor-plane only** and must be anonymized. |
+| **Automated card debit** (subscriptions) | New payment-gateway adapter in `subscriptions` + webhook endpoint; writes the same subscription payment records | Adapter pattern (as in `notifications`); invoice-and-transfer flow already models the money, so cards become an additional settlement path, not a new domain. |
+| **Tenant data isolation hardening** | Postgres **RLS** policies on `organization_id`; optional partition-by-organization for the largest tables | `organization_id` on every row from day one (ADR-9) means RLS is a policy addition, never a migration. |
 
 ### 22.3 Scaling axes
 ```mermaid
@@ -1252,6 +1314,6 @@ graph TB
 4. **Ledger-based finance with derived debtors** — one source of financial truth; online payments plug into the same ledger.
 5. **Adapter patterns for notifications & storage + a versioned API-as-product** — new channels, new storage backends, and new clients (mobile, portals) are additive.
 
-> Build the MVP against these seams and the roadmap — Parent Portal, Online Payments, Meal Planning, AI Assistant, Multiple Branches, Mobile — arrives as *new folders*, not *big refactors*.
+> Build the MVP against these seams and the roadmap — Parent Portal, Online Payments, Meal Planning, AI Assistant, Mobile, automated card debit — arrives as *new folders*, not *big refactors*.
 
 *End of Software Architecture Document v1.0.*

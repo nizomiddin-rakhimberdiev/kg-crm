@@ -1,8 +1,13 @@
 # KG-CRM — Bog'cha boshqaruv tizimi
 
-Bog'chalar uchun **CRM + ERP + LMS** ni birlashtirgan enterprise SaaS platforma.
-MVP — xodimlar uchun back-office; arxitektura parent/teacher portallari, onlayn to'lovlar
-va ko'p filiallilikka **qayta yozmasdan** o'sadigan qilib loyihalangan.
+Bog'chalar uchun **CRM + ERP + LMS** ni birlashtirgan **multi-tenant SaaS** platforma.
+MVP — xodimlar uchun back-office; arxitektura parent/teacher portallari va onlayn
+to'lovlarga **qayta yozmasdan** o'sadigan qilib loyihalangan.
+
+**Biznes modeli** ([docs/01 §4](./docs/01_Project_Vision.md)): har bir mijoz — **tashkilot**,
+bitta obuna ostida **cheksiz filial**. Narx bola soniga qarab: baza 500 000 so'm/oy
+(50 bolagacha), undan yuqorisi har 10 bola uchun +80 000. To'lov: oylik (0%),
+yarim yillik (−15%), yillik (−25%). 15 kunlik risksiz sinov.
 
 ## Repozitoriy tuzilishi
 

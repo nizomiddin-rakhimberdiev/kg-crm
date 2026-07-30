@@ -20,11 +20,11 @@
 3. [Standard Data Types](#3-standard-data-types)
 4. [Standard (Base) Columns](#4-standard-base-columns)
 5. [Enum & Reference-Data Strategy](#5-enum--reference-data-strategy)
-6. [Multi-Branch Tenancy Model](#6-multi-branch-tenancy-model)
+6. [Multi-Tenancy Model](#6-multi-tenancy-model-adr-9)
 7. [Soft Delete Strategy](#7-soft-delete-strategy)
 8. [Normalization Analysis](#8-normalization-analysis)
 9. [High-Level ERD](#9-high-level-erd)
-10. [Schema Domain: Identity & Access](#10-schema-domain-identity--access)
+10. [Schema Domain: Tenancy, Identity & Access](#10-schema-domain-tenancy-identity--access)
 11. [Schema Domain: Children (CRM)](#11-schema-domain-children-crm)
 12. [Schema Domain: Attendance](#12-schema-domain-attendance)
 13. [Schema Domain: Finance](#13-schema-domain-finance)
@@ -34,13 +34,14 @@
 17. [Schema Domain: Notifications](#17-schema-domain-notifications)
 18. [Schema Domain: Settings](#18-schema-domain-settings)
 19. [Schema Domain: Audit](#19-schema-domain-audit)
-20. [Referential Integrity — ON DELETE Matrix](#20-referential-integrity--on-delete-matrix)
-21. [Business-Rule Constraints Catalog](#21-business-rule-constraints-catalog)
-22. [Indexing Strategy](#22-indexing-strategy)
-23. [Triggers & Computed Data](#23-triggers--computed-data)
-24. [Views & Materialized Views](#24-views--materialized-views)
-25. [Concurrency, Transactions & Integrity](#25-concurrency-transactions--integrity)
-26. [Partitioning & Scaling](#26-partitioning--scaling)
+20. [Schema Domain: Subscriptions & Metering](#20-schema-domain-subscriptions--metering-adr-11)
+21. [Referential Integrity — ON DELETE Matrix](#21-referential-integrity--on-delete-matrix)
+22. [Business-Rule Constraints Catalog](#22-business-rule-constraints-catalog)
+23. [Indexing Strategy](#23-indexing-strategy)
+24. [Triggers & Computed Data](#24-triggers--computed-data)
+25. [Views & Materialized Views](#25-views--materialized-views)
+26. [Concurrency, Transactions & Integrity](#26-concurrency-transactions--integrity)
+27. [Partitioning & Scaling](#27-partitioning--scaling)
 
 ---
 
@@ -49,9 +50,9 @@
 | # | Principle | Consequence in this schema |
 |---|-----------|----------------------------|
 | D1 | **Integrity is enforced in the database, not just the app** | Foreign keys, `CHECK`, `UNIQUE`, and `NOT NULL` guard every invariant. The app is one client; the DB is the last line of defense. |
-| D2 | **Normalize to 3NF, denormalize only with proof** | The base model is fully normalized. A handful of cached/derived columns exist for performance and are always kept consistent by a transaction or trigger (documented in §23). |
+| D2 | **Normalize to 3NF, denormalize only with proof** | The base model is fully normalized. A handful of cached/derived columns exist for performance and are always kept consistent by a transaction or trigger (documented in §24). |
 | D3 | **Money and stock are append-only ledgers** | Balances and stock levels are **derived from immutable movement records**, never overwritten in place. This kills the #1 finance bug: silent drift. |
-| D4 | **Every business row is branch-scoped** | `branch_id` on every operational table — multi-branch is a data reality from day one (see [02_Software_Architecture.md §22](./02_Software_Architecture.md)). |
+| D4 | **Every business row is organization-scoped, then branch-scoped** | `organization_id` **and** `branch_id` on every operational table. `organization_id` is the tenant/security boundary (never bypassable); `branch_id` is the operational scope (ADR-9, [02 §11](./02_Software_Architecture.md)). |
 | D5 | **Soft delete for master data, hard delete for transients** | Financial and referenced records are never physically deleted; they are deactivated for auditability. |
 | D6 | **UUID surface keys** | Externally-referenced entities use UUID PKs to prevent enumeration and ease future distribution/sharding. |
 | D7 | **Time is always `timestamptz` (UTC)** | No naive timestamps ever. Presentation converts to branch timezone. |
@@ -101,7 +102,7 @@ Deliberate, consistent type choices across the whole database.
 | Boolean | `BOOLEAN` | With explicit default. |
 | Enum-like status | `VARCHAR` + `CHECK` | See §5 — portable and easy to evolve. |
 | Flexible config / snapshots | `JSONB` | Settings values, audit diffs. Indexable via GIN. |
-| Full-text search | `TSVECTOR` (generated) + GIN | Child/guardian search (§22). |
+| Full-text search | `TSVECTOR` (generated) + GIN | Child/guardian search (§23). |
 
 ---
 
@@ -116,9 +117,12 @@ Every table inherits a base set. To avoid repetition, the per-table definitions 
 | `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` (trigger-maintained) | all mutable tables |
 | `is_active` | `BOOLEAN` | `NOT NULL DEFAULT true` | **master data only** (soft delete) |
 | `created_by` | `UUID` | `NULL`, FK → `user(id)` `ON DELETE SET NULL` | user-authored records |
+| `organization_id` | `UUID` | `NOT NULL`, FK → `organization(id)` `ON DELETE RESTRICT` | **every operational table** (D4, P10) |
 | `branch_id` | `UUID` | `NOT NULL`, FK → `branch(id)` `ON DELETE RESTRICT` | all branch-scoped tables |
 
-> **Append-only tables** (`child_ledger_entry`, `stock_movement`, `audit_log`, `attendance_record`) intentionally have **no `updated_at`/`is_active`** — they are immutable facts. Corrections are new rows, not edits (D3).
+> **Append-only tables** (`child_ledger_entry`, `stock_movement`, `audit_log`, `attendance_record`, `usage_snapshot`) intentionally have **no `updated_at`/`is_active`** — they are immutable facts. Corrections are new rows, not edits (D3).
+
+> **`organization_id` has no exceptions among operational tables.** The only tables that omit it are the two vendor-owned reference tables, `permission` and `subscription_plan` (§6.2). A new table without `organization_id` should fail code review by default.
 
 ---
 
@@ -137,13 +141,19 @@ Native PG enums are painful to alter (adding/reordering values, removing values 
 
 ---
 
-## 6. Multi-Branch Tenancy Model
+## 6. Multi-Tenancy Model (ADR-9)
 
-**Model: shared database, shared schema, row-level scoping by `branch_id`** (D4).
+**Model: shared database, shared schema, row-level scoping by `organization_id` (security) + `branch_id` (operations)** (D4).
+
+> **This section supersedes the earlier branch-as-tenancy-root design.** The product is sold per **organization**, and one subscription covers unlimited branches ([01 §4](./01_Project_Vision.md)). Branch cannot be the tenancy root, because a customer's own Org Owner legitimately reads across their branches — while no one may ever read across organizations.
+
+### 6.1 The two scoping levels
 
 ```mermaid
 graph TD
-    B[branch] -->|1 - N| U[user]
+    O[organization<br/>TENANT — security boundary] -->|1 - N| B[branch<br/>operational scope]
+    O -->|1 - 1| S[subscription]
+    B -->|1 - N| U[user]
     B -->|1 - N| C[child]
     B -->|1 - N| E[employee]
     B -->|1 - N| INV[invoice]
@@ -151,13 +161,27 @@ graph TD
     B -->|1 - N| EX[expense]
 ```
 
-- Every operational table carries `branch_id NOT NULL`.
-- The application filters every query by the user's branch (enforced in the service/selector layer per architecture doc).
-- **Super Admin** operates cross-branch; all other roles are branch-bound.
-- **Global (branch-less) data**: `permission`, and `system_setting`/`role`/`notification_template` rows where `branch_id IS NULL` mean "applies to all branches."
-- **Uniqueness is branch-scoped** where appropriate: e.g. group name is unique *within a branch*, invoice number is unique *within a branch*.
+| Level | Column | Nature | Who may cross it |
+|-------|--------|--------|------------------|
+| **Organization** | `organization_id NOT NULL` | **Security boundary** | **Nobody.** Not Org Owner, not platform staff via the normal API. |
+| **Branch** | `branch_id` | Business scope | Org Owner (all branches in their org); other roles are branch-bound. |
 
-> **Why not schema-per-tenant or DB-per-tenant now?** Overkill for the current scale and it complicates cross-branch reporting (which the Director/Owner will want). Row-scoping keeps reporting simple and can graduate to Postgres **Row-Level Security (RLS)** or partitioning-by-branch later without a data migration.
+### 6.2 Rules
+
+- Every operational table carries **both** `organization_id NOT NULL` and `branch_id`.
+- `organization_id` is **denormalized onto every table**, not reached through `branch`. One extra UUID per row buys single-hop filtering and simple RLS policies; the value is immutable for the row's lifetime, so no consistency trigger is needed ([02 §12.1](./02_Software_Architecture.md)).
+- The base queryset applies the organization filter **before** any permission or branch logic. A cross-organization id returns **404**, never 403 — a 403 would confirm the row exists in another tenant.
+- **Uniqueness is scoped to the organization, not globally.** Two different kindergartens may both have a branch coded `MAIN` or a group named "Sunflowers". Every unique index that was `UNIQUE (branch_id, …)` must include or be rooted in `organization_id`; anything that was globally unique (e.g. `branch.code`) becomes `UNIQUE (organization_id, code)`.
+- **Platform-global data** (no organization): `permission`, `subscription_plan`. These are vendor-owned reference tables with `organization_id` absent by design — the only tables allowed to omit it.
+- **Organization-global data**: `role`, `system_setting`, `notification_template` rows with `branch_id IS NULL` mean "applies to all branches **of this organization**" — they still carry `organization_id`.
+
+### 6.3 Defense in depth — Row-Level Security
+
+App-layer scoping is the primary control, but a single forgotten filter in a new endpoint would leak children's data across customers. Before the first paying customer, add Postgres **RLS** policies on `organization_id` for every operational table, with the tenant id set per connection/transaction.
+
+RLS is a *policy addition*, not a migration, precisely because `organization_id` is present from the first migration. This is the payoff of deciding tenancy before any code exists.
+
+> **Why not schema-per-tenant or DB-per-tenant?** Both isolate better but make cross-organization vendor operations (usage metering, platform reporting, migrations across hundreds of tenants) painful and slow, and neither is needed at this scale. Shared-schema + RLS is the standard trade-off; the escape hatch is partition-by-organization or extracting a large tenant, and `organization_id` on every row keeps both open.
 
 ---
 
@@ -165,8 +189,9 @@ graph TD
 
 | Data class | Deletion | Reason |
 |-----------|----------|--------|
+| **Organization (tenant root)** | **Soft**, then an explicit audited **purge job** after the export window | Churn is `is_active=false`; the customer keeps read-only access + export for 30 days ([01 §4.4](./01_Project_Vision.md)). Physical deletion is a deliberate, logged operation with a known table order — never a cascade (§21). |
 | Master/reference (child, employee, product, user, group, tariff, category) | **Soft** — set `is_active = false` | Referenced by history; must never break FKs or reports (D5). |
-| Financial/append-only (ledger, payment, invoice, stock movement, payroll) | **Never deleted** — status/reversal rows | Legal/audit integrity. A cancelled invoice gets `status='cancelled'`, not a `DELETE`. |
+| Financial/append-only (ledger, payment, invoice, stock movement, payroll, **usage snapshot, subscription invoice/payment**) | **Never deleted** — status/reversal rows | Legal/audit integrity. A cancelled invoice gets `status='cancelled'`, not a `DELETE`. |
 | Transient (unsent notification draft, expired export, session token) | **Hard delete** allowed | No historical value. |
 
 **Uniqueness with soft delete:** partial unique indexes ignore inactive rows where re-use should be allowed, e.g. `UNIQUE (branch_id, name) WHERE is_active` for groups.
@@ -198,7 +223,7 @@ Denormalization is allowed **only** when (a) it removes a proven hot aggregation
 | `payroll_run.total_net` etc. | `payroll_item` rows | payroll finalize service (txn) | Run summary display. |
 | `group.enrolled_count` *(optional)* | active `enrollment` rows | trigger | Capacity checks and dashboards. |
 
-> **The discipline (D3):** the ledger / movement tables are **the truth**; caches can always be rebuilt by re-aggregating. Any money-affecting operation recomputes from the ledger under a lock (§25) rather than trusting the cached column.
+> **The discipline (D3):** the ledger / movement tables are **the truth**; caches can always be rebuilt by re-aggregating. Any money-affecting operation recomputes from the ledger under a lock (§26) rather than trusting the cached column.
 
 ---
 
@@ -208,6 +233,13 @@ Domain-level view (details per domain follow). Bridge tables shown where they ca
 
 ```mermaid
 erDiagram
+    ORGANIZATION ||--o{ BRANCH : owns
+    ORGANIZATION ||--|| SUBSCRIPTION : subscribes
+    SUBSCRIPTION_PLAN ||--o{ SUBSCRIPTION : prices
+    SUBSCRIPTION ||--o{ USAGE_SNAPSHOT : meters
+    USAGE_SNAPSHOT ||--o{ SUBSCRIPTION_INVOICE : justifies
+    SUBSCRIPTION_INVOICE ||--o{ SUBSCRIPTION_PAYMENT : settled_by
+
     BRANCH ||--o{ USER : has
     BRANCH ||--o{ CHILD : enrolls
     BRANCH ||--o{ EMPLOYEE : employs
@@ -249,36 +281,62 @@ erDiagram
 
 ---
 
-## 10. Schema Domain: Identity & Access
+## 10. Schema Domain: Tenancy, Identity & Access
 
-### 10.1 `branch`
-The tenancy root. Every operational row points here.
+### 10.1 `organization` (the tenancy root — ADR-9)
+One paying customer: a kindergarten business, with one or more branches. **Every operational row in the database points here.**
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
+| `name` | `VARCHAR(200)` | `NOT NULL` | Trading name |
+| `slug` | `VARCHAR(50)` | `NOT NULL`, `UNIQUE` | URL/support identifier — globally unique |
+| `legal_name` | `VARCHAR(255)` | `NULL` | Registered entity name (for invoices/acts) |
+| `tax_id` | `VARCHAR(20)` | `NULL` | INN/STIR — required before the first subscription invoice |
+| `contact_email` | `CITEXT` | `NOT NULL` | Billing contact |
+| `contact_phone` | `VARCHAR(20)` | `NULL` | |
+| `country` | `CHAR(2)` | `NOT NULL DEFAULT 'UZ'` | ISO 3166-1; drives data-residency handling |
+| `locale` | `VARCHAR(10)` | `NOT NULL DEFAULT 'uz'` | Default UI language |
+| `onboarded_at` | `TIMESTAMPTZ` | `NULL` | First successful data import — the trial clock reference ([01 §4.4](./01_Project_Vision.md)) |
+
+**Business rules:**
+- An organization is **never hard-deleted.** Churn sets `is_active=false`; data is retained for the export window, then purged by an explicit, audited job.
+- `slug` is globally unique (it appears in support tooling and URLs); everything else is scoped beneath it.
+- Deleting an organization row is blocked by `ON DELETE RESTRICT` from every child table — by design.
+
+### 10.2 `branch`
+An operational location **inside an organization**. Not the tenancy root (ADR-9).
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `organization_id` | `UUID` | `NOT NULL` FK → organization `ON DELETE RESTRICT` | Tenant owner |
 | `name` | `VARCHAR(150)` | `NOT NULL` | Display name |
-| `code` | `VARCHAR(20)` | `NOT NULL`, `UNIQUE` | Short code (used in invoice numbering) |
+| `code` | `VARCHAR(20)` | `NOT NULL` | Short code (used in invoice numbering) |
 | `address` | `TEXT` | `NULL` | |
 | `phone` | `VARCHAR(20)` | `NULL` | |
 | `currency` | `CHAR(3)` | `NOT NULL DEFAULT 'UZS'` | ISO 4217 |
 | `timezone` | `VARCHAR(40)` | `NOT NULL DEFAULT 'Asia/Tashkent'` | For presentation |
 
-**Business rules:** `code` unique globally; a branch cannot be hard-deleted while it has children/employees (soft delete only).
+**Constraint:** `uq_branch_org_code` — `UNIQUE (organization_id, code)`. Code is unique **within an organization**, not globally — two unrelated kindergartens may both use `MAIN`.
 
-### 10.2 `role`
+**Business rules:** a branch cannot be hard-deleted while it has children/employees (soft delete only). There is **no limit on branches per organization** — branch count is never billed ([01 §4.5](./01_Project_Vision.md)).
+
+### 10.3 `role`
 Business roles (not Django groups). Branch-scoped or global.
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
 | `name` | `VARCHAR(80)` | `NOT NULL` | e.g. "Cashier" |
-| `code` | `VARCHAR(40)` | `NOT NULL` | `super_admin`, `director`, `manager`, `cashier`, `attendance_manager` |
+| `code` | `VARCHAR(40)` | `NOT NULL` | `org_owner`, `director`, `manager`, `cashier`, `attendance_manager` |
 | `description` | `TEXT` | `NULL` | |
 | `is_system` | `BOOLEAN` | `NOT NULL DEFAULT false` | System roles can't be deleted/renamed |
-| `branch_id` | `UUID` | `NULL` FK → branch | `NULL` = global role |
+| `organization_id` | `UUID` | `NOT NULL` FK → organization | Roles are per-organization |
+| `branch_id` | `UUID` | `NULL` FK → branch | `NULL` = applies to all branches of this organization |
 
-**Constraints:** `uq_role_code_branch` — `UNIQUE (code, branch_id)`. **Rule:** `is_system = true` rows are immutable except permission assignment.
+**Constraints:** `uq_role_org_code_branch` — `UNIQUE (organization_id, code, branch_id)`. **Rule:** `is_system = true` rows are immutable except permission assignment.
 
-### 10.3 `permission`
+> **`super_admin` is gone** (ADR-10). `org_owner` is its replacement and is scoped to one organization; vendor staff are not rows in this table at all — they live in the platform plane ([02 §11.0](./02_Software_Architecture.md)). System roles are seeded per organization at signup.
+
+### 10.4 `permission`
 Atomic capabilities, global.
 
 | Column | Type | Constraints | Notes |
@@ -290,7 +348,7 @@ Atomic capabilities, global.
 
 **Constraint:** `uq_permission_module_action` — `UNIQUE (module, action)`.
 
-### 10.4 `role_permission` (bridge)
+### 10.5 `role_permission` (bridge)
 
 | Column | Type | Constraints |
 |--------|------|-------------|
@@ -299,26 +357,33 @@ Atomic capabilities, global.
 
 **Constraint:** `uq_role_permission` — `UNIQUE (role_id, permission_id)`. (No surrogate id needed; composite PK acceptable, but we keep base `id` for ORM uniformity.)
 
-### 10.5 `user`
+### 10.6 `user`
 Authentication identity.
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
-| `email` | `CITEXT` | `NOT NULL`, `UNIQUE` | Login identifier |
+| `organization_id` | `UUID` | `NOT NULL` FK → organization `ON DELETE RESTRICT` | Tenant owner — set at creation, **never mutable** |
+| `email` | `CITEXT` | `NOT NULL` | Login identifier |
 | `password_hash` | `VARCHAR(255)` | `NOT NULL` | Argon2/PBKDF2 |
 | `full_name` | `VARCHAR(150)` | `NOT NULL` | |
 | `phone` | `VARCHAR(20)` | `NULL` | |
 | `role_id` | `UUID` | `NOT NULL` FK → role `ON DELETE RESTRICT` | One primary role (MVP) |
-| `branch_id` | `UUID` | `NULL` FK → branch | `NULL` only for Super Admin (cross-branch) |
+| `branch_id` | `UUID` | `NULL` FK → branch | `NULL` only for Org Owner (cross-branch within their org) |
 | `is_staff` | `BOOLEAN` | `NOT NULL DEFAULT true` | Back-office user |
 | `last_login_at` | `TIMESTAMPTZ` | `NULL` | |
 
+**Constraint:** `uq_user_org_email` — `UNIQUE (organization_id, email)`.
+
+> **Email is unique per organization, not globally.** The same person may legitimately work for two kindergartens. Login therefore resolves an email to *one or more* organization memberships; if there is more than one, the user picks the organization after authenticating. Making email globally unique would silently prevent a real scenario and, worse, leak the existence of another tenant's account at signup time.
+
 **Business rules:**
-- Super Admin may have `branch_id IS NULL`; **all other roles must have a branch** → `ck_user_branch_required` `CHECK (role is super_admin OR branch_id IS NOT NULL)` (enforced via app + trigger since it references role code).
+- Org Owner may have `branch_id IS NULL`; **all other roles must have a branch** → `ck_user_branch_required` `CHECK (role is org_owner OR branch_id IS NOT NULL)` (enforced via app + trigger since it references role code).
+- `ck_user_branch_same_org` — a user's `branch_id` must belong to their `organization_id` (trigger; a plain FK cannot express it). The same rule applies to every table carrying both columns.
+- `organization_id` is **immutable after insert** (trigger). Moving a user between tenants is not an update; it is a new account.
 - Deactivating a user (`is_active=false`) must invalidate their refresh tokens (app-level).
 - **Future-proofing:** to move from single-role to multi-role, add a `user_role` bridge; `role_id` stays as "primary role" during transition.
 
-### 10.6 `refresh_token` (auth session tracking — optional but recommended)
+### 10.7 `refresh_token` (auth session tracking — optional but recommended)
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
@@ -350,7 +415,7 @@ Authentication identity.
 | `photo_path` | `VARCHAR(255)` | `NULL` | Private storage key |
 | `balance` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0` | **Cached** from ledger (§8.2) |
 | `notes` | `TEXT` | `NULL` | |
-| `search_vector` | `TSVECTOR` | generated | Full-text search (§22) |
+| `search_vector` | `TSVECTOR` | generated | Full-text search (§23) |
 
 **Business rules:**
 - `date_of_birth` must be in the past → `ck_child_dob_past CHECK (date_of_birth < CURRENT_DATE)`.
@@ -434,7 +499,7 @@ Authentication identity.
 - `ck_attendance_checkout CHECK (check_out_at IS NULL OR check_in_at IS NULL OR check_out_at >= check_in_at)`.
 - `attendance_date` cannot be in the future → `ck_attendance_not_future CHECK (attendance_date <= CURRENT_DATE)`.
 
-**Scaling note:** prime candidate for **range partitioning by month** as volume grows (§26).
+**Scaling note:** prime candidate for **range partitioning by month** as volume grows (§27).
 
 ---
 
@@ -541,7 +606,7 @@ A money-received event.
 - Consistency check job: `child.balance` (cache) must equal recomputed ledger balance.
 
 ### 13.7 Debtors — **derived, not stored**
-There is **no `debtor` table.** A debtor is any child whose ledger balance is positive (optionally: with an overdue invoice). Served by a SQL view (§24) and the Debtors module reads it. This is the whole point of the ledger design: the debtor list can never drift out of sync with reality.
+There is **no `debtor` table.** A debtor is any child whose ledger balance is positive (optionally: with an overdue invoice). Served by a SQL view (§25) and the Debtors module reads it. This is the whole point of the ledger design: the debtor list can never drift out of sync with reality.
 
 ---
 
@@ -673,10 +738,10 @@ A storage location (a branch may have kitchen store, dry store, etc.).
 **Business rules:**
 - **Stock level of a product** = `Σ in.quantity − Σ out.quantity` (per warehouse). Cached in `product.current_stock`.
 - Never edited/deleted; corrections via `adjustment` movements.
-- **No negative stock** guard: an `out` movement that would drive stock below zero is rejected in the service under a row lock (§25) — a DB `CHECK` can't see the running total, so this is enforced transactionally.
+- **No negative stock** guard: an `out` movement that would drive stock below zero is rejected in the service under a row lock (§26) — a DB `CHECK` can't see the running total, so this is enforced transactionally.
 - `purchase`/`transfer-in` ⇒ `direction='in'`; `consumption`/`waste` ⇒ `direction='out'`.
 
-**Scaling note:** partition by month like attendance if volume grows (§26).
+**Scaling note:** partition by month like attendance if volume grows (§27).
 
 ---
 
@@ -777,11 +842,149 @@ One dispatch record per recipient per message.
 **Business rules:**
 - **Insert-only.** No `UPDATE`/`DELETE` (enforced by DB grants: the app DB role has only `INSERT`/`SELECT` on this table).
 - Written from the service layer for all money/admin mutations (payments, invoices, payroll runs, role/permission changes, user activation, settings, stock adjustments).
-- **Retention & scale:** monthly partitioning candidate (§26).
+- **Retention & scale:** monthly partitioning candidate (§27).
 
 ---
 
-## 20. Referential Integrity — ON DELETE Matrix
+## 20. Schema Domain: Subscriptions & Metering (ADR-11)
+
+Vendor → customer billing. **Structurally separate from `finance`** (kindergarten → parent). The two domains share vocabulary and nothing else ([01 §4.6](./01_Project_Vision.md)); no service in one may write tables in the other.
+
+The design mirrors D3: **charges derive from immutable usage evidence**, never from a mutable counter.
+
+### 20.1 `subscription_plan` (vendor-owned reference data)
+Pricing definitions. **One of only two tables without `organization_id`** — these are the vendor's catalogue, not tenant data (§6.2).
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `code` | `VARCHAR(40)` | `NOT NULL` | e.g. `standard` |
+| `name` | `VARCHAR(100)` | `NOT NULL` | Display name |
+| `currency` | `CHAR(3)` | `NOT NULL DEFAULT 'UZS'` | |
+| `base_price` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (base_price >= 0)` | 500 000 |
+| `included_children` | `SMALLINT` | `NOT NULL`, `CHECK (included_children > 0)` | 50 — also the **minimum billable count** |
+| `overage_step_children` | `SMALLINT` | `NOT NULL`, `CHECK (overage_step_children > 0)` | 10 |
+| `overage_step_price` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (overage_step_price >= 0)` | 80 000 |
+| `valid_from` | `DATE` | `NOT NULL` | Price version start |
+| `valid_to` | `DATE` | `NULL` | `NULL` = current |
+
+**Constraint:** `uq_plan_code_valid_from` — `UNIQUE (code, valid_from)`.
+
+> **Plans are versioned, never edited.** A price change inserts a new row with a new `valid_from` and closes the old one. Existing subscriptions keep pointing at the plan version they purchased, so a customer's price cannot silently change under them — essential under UZS inflation ([01 §10](./01_Project_Vision.md)). Editing a live plan row in place would retroactively rewrite history on every past invoice.
+
+### 20.2 `subscription`
+One organization's commercial agreement. **One active subscription per organization.**
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `organization_id` | `UUID` | `NOT NULL` FK → organization `ON DELETE RESTRICT` | |
+| `plan_id` | `UUID` | `NOT NULL` FK → subscription_plan `ON DELETE RESTRICT` | The purchased **version** |
+| `status` | `VARCHAR(20)` | `NOT NULL`, `CHECK (status IN ('trialing','pending_payment','active','past_due','suspended','cancelled'))` | §20.6 |
+| `payment_term` | `VARCHAR(20)` | `NOT NULL`, `CHECK (payment_term IN ('monthly','semiannual','annual'))` | |
+| `discount_percent` | `NUMERIC(5,2)` | `NOT NULL DEFAULT 0`, `CHECK (discount_percent >= 0 AND discount_percent <= 100)` | 0 / 15 / 25 — **frozen at purchase** |
+| `trial_started_at` | `TIMESTAMPTZ` | `NULL` | |
+| `trial_ends_at` | `TIMESTAMPTZ` | `NULL` | `trial_started_at + 15 days` |
+| `current_period_start` | `DATE` | `NOT NULL` | |
+| `current_period_end` | `DATE` | `NOT NULL`, `CHECK (current_period_end > current_period_start)` | |
+| `committed_children` | `SMALLINT` | `NULL`, `CHECK (committed_children >= 0)` | Child count the prepayment covers (prepaid terms only) |
+| `cancelled_at` | `TIMESTAMPTZ` | `NULL` | |
+
+**Constraints:**
+- `uq_subscription_active_org` — `UNIQUE (organization_id) WHERE status <> 'cancelled'` (partial): at most one live subscription per organization.
+- `ck_subscription_trial_dates` — `CHECK (trial_ends_at IS NULL OR trial_started_at IS NOT NULL)`.
+
+**Business rules:**
+- `discount_percent` is **copied onto the row at purchase**, not read from the term at billing time. If the vendor later changes what "annual" is worth, existing agreements are untouched.
+- The discount applies to the **base package**. Overage steps beyond `committed_children` are billed as they occur, at the same discount rate ([01 §4.3](./01_Project_Vision.md)).
+- A falling child count never triggers a refund — `included_children` is a floor, not an estimate.
+
+### 20.3 `usage_snapshot` (append-only — THE metering evidence)
+The immutable answer to "why is this invoice this amount?" Never updated, never deleted (P11).
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `organization_id` | `UUID` | `NOT NULL` FK → organization `ON DELETE RESTRICT` | |
+| `subscription_id` | `UUID` | `NOT NULL` FK → subscription `ON DELETE RESTRICT` | |
+| `period_year` | `SMALLINT` | `NOT NULL` | |
+| `period_month` | `SMALLINT` | `NOT NULL`, `CHECK (period_month BETWEEN 1 AND 12)` | |
+| `peak_children` | `INTEGER` | `NOT NULL`, `CHECK (peak_children >= 0)` | **Highest** active-enrolled count observed in the period |
+| `peak_observed_at` | `TIMESTAMPTZ` | `NOT NULL` | When the peak occurred |
+| `billable_children` | `INTEGER` | `NOT NULL` | `GREATEST(peak_children, plan.included_children)` |
+| `measurement_method` | `VARCHAR(30)` | `NOT NULL`, `CHECK (measurement_method IN ('daily_peak','manual_adjustment'))` | |
+| `note` | `TEXT` | `NULL` | Required for `manual_adjustment` |
+
+**Constraint:** `uq_usage_snapshot_period` — `UNIQUE (subscription_id, period_year, period_month)`.
+
+> **Why peak, not month-end count?** A month-end reading is trivially gamed: mark children inactive on the 30th, reactivate on the 1st. The peak is measured by a daily job that records the high-water mark, so the number reflects the service actually consumed. Corrections are **new `manual_adjustment` rows with a mandatory note**, never edits — same discipline as `child_ledger_entry` (D3).
+
+### 20.4 `subscription_invoice`
+What the vendor bills the organization. Immutable once issued.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `organization_id` | `UUID` | `NOT NULL` FK → organization `ON DELETE RESTRICT` | |
+| `subscription_id` | `UUID` | `NOT NULL` FK → subscription `ON DELETE RESTRICT` | |
+| `usage_snapshot_id` | `UUID` | `NULL` FK → usage_snapshot `ON DELETE RESTRICT` | `NULL` for pure prepayment lines |
+| `number` | `VARCHAR(30)` | `NOT NULL`, `UNIQUE` | Vendor-global sequence |
+| `issued_at` | `DATE` | `NOT NULL` | |
+| `due_at` | `DATE` | `NOT NULL`, `CHECK (due_at >= issued_at)` | |
+| `period_start` | `DATE` | `NOT NULL` | |
+| `period_end` | `DATE` | `NOT NULL`, `CHECK (period_end >= period_start)` | |
+| `billable_children` | `INTEGER` | `NOT NULL` | Copied from the snapshot — frozen |
+| `base_amount` | `NUMERIC(12,2)` | `NOT NULL` | |
+| `overage_amount` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0` | |
+| `discount_amount` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0` | |
+| `total_amount` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (total_amount >= 0)` | |
+| `currency` | `CHAR(3)` | `NOT NULL DEFAULT 'UZS'` | |
+| `status` | `VARCHAR(20)` | `NOT NULL`, `CHECK (status IN ('issued','paid','overdue','cancelled'))` | |
+
+**Constraint:** `ck_subscription_invoice_total` — `CHECK (total_amount = base_amount + overage_amount - discount_amount)`.
+
+> Amounts are **denormalized onto the invoice on purpose.** An invoice is a legal document: it must render identically in three years even if the plan version, the snapshot interpretation, or the discount policy has changed. Recomputing an old invoice from current data is a bug, not a feature.
+
+### 20.5 `subscription_payment`
+Settlement against a subscription invoice. Append-only.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `organization_id` | `UUID` | `NOT NULL` FK → organization `ON DELETE RESTRICT` | |
+| `subscription_invoice_id` | `UUID` | `NOT NULL` FK → subscription_invoice `ON DELETE RESTRICT` | |
+| `amount` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (amount > 0)` | |
+| `method` | `VARCHAR(20)` | `NOT NULL`, `CHECK (method IN ('bank_transfer','card','cash'))` | `bank_transfer` is the MVP default |
+| `reference` | `VARCHAR(80)` | `NULL` | Bank reference / payment order no. |
+| `received_at` | `TIMESTAMPTZ` | `NOT NULL` | |
+| `recorded_by` | `UUID` | `NULL` FK → user `ON DELETE SET NULL` | Platform actor |
+
+### 20.6 Subscription lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> trialing: signup (15 days, no card)
+    trialing --> pending_payment: customer accepts → invoice issued
+    trialing --> cancelled: declines / trial expires
+    pending_payment --> active: payment received
+    pending_payment --> suspended: grace (7d) elapsed unpaid
+    active --> past_due: invoice overdue
+    past_due --> active: payment received
+    past_due --> suspended: grace elapsed
+    suspended --> active: payment received
+    suspended --> cancelled: churn confirmed
+    cancelled --> [*]: export window → purge
+```
+
+| Status | Access | Notes |
+|--------|--------|-------|
+| `trialing` | Full | 15 days from `trial_started_at`. |
+| `pending_payment` | **Full** | Invoice issued, bank transfer in flight (7-day grace). Access is never cut off mid-transfer — customers are legal entities and transfers take days ([01 §4.4](./01_Project_Vision.md)). |
+| `active` | Full | |
+| `past_due` | Full | Invoice overdue; reminders sent. |
+| `suspended` | **Read-only** — writes return `402` | Data is **never deleted or hidden** for non-payment. They keep their financial history and can return. |
+| `cancelled` | Read-only + export, 30 days | Then purged by an audited job. |
+
+> **The first paid invoice covers the trial period.** On conversion, `period_start` is set to `trial_started_at`, not to the acceptance date ([01 §4.4](./01_Project_Vision.md)). This must be disclosed in the offer at signup — the schema supports the policy, but only honest presentation makes it fair.
+
+---
+
+## 21. Referential Integrity — ON DELETE Matrix
 
 `ON DELETE` behavior is chosen per relationship by **what should happen to children when a parent is removed**. Because most master data is soft-deleted, `RESTRICT`/`SET NULL` dominate; `CASCADE` is reserved for true ownership.
 
@@ -803,12 +1006,18 @@ One dispatch record per recipient per message.
 | `expense → expense_category` | **RESTRICT** | Keep expense classification intact. |
 | `*.created_by / approved_by / *_by → user` | **SET NULL** | Keep the record; forget the actor reference. |
 | `* → branch` | **RESTRICT** | A branch with data cannot be deleted. |
+| **`* → organization`** | **RESTRICT** | **Never `CASCADE`.** A single accidental `DELETE FROM organization` must not be able to erase a customer's entire history. Offboarding is an explicit, audited purge job that deletes in a known order — not a cascade. |
+| `usage_snapshot → subscription` | **RESTRICT** | Metering evidence outlives any plan change. |
+| `subscription_invoice → usage_snapshot` | **RESTRICT** | An invoice must always be able to show what it was based on. |
+| `subscription_payment → subscription_invoice` | **RESTRICT** | Permanent financial record. |
 
 > **Guiding rule:** financial, ledger, and history tables use **RESTRICT** (or are simply never deleted); ownership/join tables use **CASCADE**; actor references use **SET NULL**. This guarantees the money trail is unbreakable.
 
+> **The tenant root is deliberately the most restricted node in the graph.** Every path from `organization` downward is `RESTRICT`, so there is no single statement that can destroy a tenant. This is the counterpart to P10: isolation protects tenants from each other, and `RESTRICT` protects them from us.
+
 ---
 
-## 21. Business-Rule Constraints Catalog
+## 22. Business-Rule Constraints Catalog
 
 The database enforces these invariants directly (named `CHECK`/`UNIQUE`/partial indexes) — not just the app. Consolidated for reviewers:
 
@@ -825,56 +1034,68 @@ The database enforces these invariants directly (named `CHECK`/`UNIQUE`/partial 
 | Discount percent ≤ 100 | `ck_discount_percent` |
 | Date sanity (due ≥ issue, end ≥ start, dob in past, dates not future) | per-table `CHECK`s |
 | Percentages within 0–100; months within 1–12 | `CHECK` ranges |
-| No negative stock; sufficient balance before payout | **transactional** (row lock in service, §25) |
+| No negative stock; sufficient balance before payout | **transactional** (row lock in service, §26) |
 | Audit log is insert-only | **DB privilege grants** (no UPDATE/DELETE) |
-| Branch scoping | `NOT NULL branch_id` + app-level filter (future: RLS) |
+| **Tenant scoping** | `NOT NULL organization_id` on every operational table + base-queryset filter + **Postgres RLS** before first paying customer (§6.3) |
+| Branch scoping | `NOT NULL branch_id` + role-dependent app-level filter |
+| **A row's branch belongs to its organization** | `ck_*_branch_same_org` trigger per table — a plain FK cannot express a two-column consistency rule |
+| **`organization_id` never changes after insert** | immutability trigger — moving data between tenants is a migration, not an `UPDATE` |
+| At most one live subscription per organization | `uq_subscription_active_org` (partial, excludes cancelled) |
+| One usage snapshot per subscription per month | `uq_usage_snapshot_period` |
+| Subscription invoice totals add up | `ck_subscription_invoice_total CHECK (total = base + overage − discount)` |
+| Usage snapshots are insert-only | **DB privilege grants** (no UPDATE/DELETE) — corrections are new `manual_adjustment` rows |
 
 ---
 
-## 22. Indexing Strategy
+## 23. Indexing Strategy
 
 Indexes are chosen from **actual query paths** (list screens, lookups, reports), not sprinkled blindly — every index costs write time and storage.
 
-### 22.1 Automatic
+### 23.1 Automatic
 - Every PK (`id`) → implicit unique B-tree.
 - Every `UNIQUE` constraint → unique index (used for lookups too).
 
-### 22.2 Foreign-key indexes (Postgres does **not** auto-create these)
+### 23.2 Foreign-key indexes (Postgres does **not** auto-create these)
 Index **every FK column** that is filtered or joined — critical for scoped list queries and `ON DELETE RESTRICT` checks:
 `child.branch_id`, `child.tariff_id`, `invoice.child_id`, `payment.invoice_id`, `payment.child_id`, `attendance_record.child_id`, `enrollment.child_id/group_id`, `stock_movement.product_id/warehouse_id`, `payroll_item.employee_id`, `expense.category_id`, `child_guardian.guardian_id`, etc.
 
-### 22.3 Composite indexes for hot paths
+**`organization_id` is the highest-selectivity column in the database** and appears in *every* query (P10). It must be the **leading column** of the scoped composite indexes below, not a standalone index — a lone `ix_x_organization_id` is nearly useless once one tenant grows large, while `(organization_id, …)` serves both the tenant filter and the sort/range in one scan.
+
+### 23.3 Composite indexes for hot paths
 
 | Index | Table (cols) | Serves |
 |-------|--------------|--------|
 | `ix_attendance_child_date` | `attendance_record (child_id, attendance_date DESC)` | Child attendance history |
-| `ix_attendance_branch_date` | `attendance_record (branch_id, attendance_date)` | Daily register per branch |
+| `ix_attendance_org_branch_date` | `attendance_record (organization_id, branch_id, attendance_date)` | Daily register per branch |
 | `ix_invoice_child_status` | `invoice (child_id, status)` | Child's outstanding invoices |
-| `ix_invoice_branch_period` | `invoice (branch_id, period_year, period_month)` | Monthly billing runs |
-| `ix_payment_branch_paidat` | `payment (branch_id, paid_at DESC)` | Cashier daily totals, reports |
+| `ix_invoice_org_branch_period` | `invoice (organization_id, branch_id, period_year, period_month)` | Monthly billing runs |
+| `ix_payment_org_branch_paidat` | `payment (organization_id, branch_id, paid_at DESC)` | Cashier daily totals, reports |
+| `ix_child_org_active` | `child (organization_id, is_active)` | **Usage metering** — the daily peak-child count job (§20.3) |
+| `ix_usage_snapshot_sub_period` | `usage_snapshot (subscription_id, period_year, period_month)` | Invoice reconstruction |
+| `ix_subscription_status` | `subscription (status, current_period_end)` | Platform console: expiring trials, overdue subscriptions |
 | `ix_ledger_child` | `child_ledger_entry (child_id, occurred_at)` | Balance computation, statements |
 | `ix_stock_product_time` | `stock_movement (product_id, occurred_at)` | Stock level recompute |
 | `ix_expense_branch_date` | `expense (branch_id, expense_date)` | Expense reports |
 | `ix_audit_entity` | `audit_log (entity_type, entity_id)` | "History of this record" |
 | `ix_audit_actor_time` | `audit_log (actor_id, created_at)` | "What did user X do" |
 
-### 22.4 Partial indexes (index only the rows that matter)
+### 23.4 Partial indexes (index only the rows that matter)
 - `ix_invoice_overdue ON invoice (branch_id, due_date) WHERE status IN ('issued','partially_paid')` — the Debtors query only cares about unpaid.
 - `ix_product_low_stock ON product (branch_id) WHERE current_stock < min_stock` — low-stock dashboard.
 - `ix_notification_pending ON notification (scheduled_for) WHERE status = 'queued'` — the dispatcher's work list.
 - Plus the uniqueness partials in §7/§11/§13.
 
-### 22.5 GIN indexes
+### 23.5 GIN indexes
 - **Full-text search:** `search_vector` on `child` and `guardian` (generated `TSVECTOR` from names/phone) → `GIN` index for fast `?search=`.
 - **JSONB:** `GIN` on `system_setting.value` and `audit_log.changes` where queried.
 
-### 22.6 Anti-patterns avoided
+### 23.6 Anti-patterns avoided
 - No indexes on low-selectivity boolean columns alone (`is_active`) — folded into partial indexes instead.
 - No duplicate/overlapping indexes (a composite `(a,b)` already serves `(a)`).
 
 ---
 
-## 23. Triggers & Computed Data
+## 24. Triggers & Computed Data
 
 Kept minimal and explicit; used only where the app cannot cheaply guarantee consistency.
 
@@ -886,12 +1107,17 @@ Kept minimal and explicit; used only where the app cannot cheaply guarantee cons
 | `invoice.amount_paid/status` | Managed in **payment service transaction** | Recompute on payment insert (preferred over trigger for clarity/testability). |
 | `search_vector` | GENERATED column or BEFORE INSERT/UPDATE | Maintains full-text vector for child/guardian. |
 | Audit insert | **Service layer** (not trigger) | Keeps business context (before/after, actor, IP) that a trigger lacks. |
+| **`organization_id` immutability** | BEFORE UPDATE on every operational table | Raises if `organization_id` changes. A tenant reassignment must never be an accidental `UPDATE`. |
+| **`branch` belongs to `organization`** | BEFORE INSERT/UPDATE on tables carrying both | Raises if `branch.organization_id <> NEW.organization_id`. Closes the gap a two-column FK cannot. |
+| **Daily peak child count** | Scheduled **Celery job** (not a trigger) | Upserts the running high-water mark into the period's `usage_snapshot` (§20.3). A job, not a trigger, because it must run even on days with no enrollment activity. |
 
 > **Policy:** prefer **explicit service-layer transactions** for business-meaningful derivations (payments, payroll, stock) because they're testable and carry context; reserve **triggers** for mechanical, context-free upkeep (`updated_at`, cache sums). Whichever is used, the derived column is never the source of truth (D3).
 
+> **The two tenancy triggers are the exception to that preference**: they are security invariants, not business derivations. They belong in the database precisely because they must hold even when a bug, a shell session, or a data-fix script bypasses the service layer (D1).
+
 ---
 
-## 24. Views & Materialized Views
+## 25. Views & Materialized Views
 
 Read models that keep the app query-simple and guarantee derived data is consistent by construction.
 
@@ -903,12 +1129,16 @@ Read models that keep the app query-simple and guarantee derived data is consist
 | `v_product_stock` | View | Per product/warehouse: `Σ in − Σ out` from `stock_movement` | Inventory screens, low-stock alerts |
 | `mv_dashboard_kpi` | **Materialized** | Branch KPIs: active children, month revenue, outstanding debt, today's attendance % | Dashboard (refreshed hourly by Celery + cached in Redis) |
 | `mv_monthly_pl` | **Materialized** | Revenue (payments) − expenses − payroll per month/branch | Reports (refreshed nightly) |
+| `v_org_billable_children` | View | Per organization: count of active enrolled children **across all branches** | Metering job (§20.3), customer's Billing screen, platform console |
+| `v_subscription_projection` | View | Current billable count → projected base + overage + discount for the open period | **Customer-facing "projected bill"** ([01 §6.1](./01_Project_Vision.md) module 14) |
+
+> **`v_subscription_projection` is a projection, never a charge.** It shows the customer where they stand mid-period; the amount actually billed always comes from the closed `usage_snapshot` (§20.3). Keeping the two separate is what makes "no surprise invoices" true rather than aspirational.
 
 **Rules:** materialized views are **refreshed by scheduled Celery jobs** ([02_Software_Architecture.md §18](./02_Software_Architecture.md)) using `REFRESH MATERIALIZED VIEW CONCURRENTLY` (requires a unique index on the MV). Plain views are always live/consistent.
 
 ---
 
-## 25. Concurrency, Transactions & Integrity
+## 26. Concurrency, Transactions & Integrity
 
 Money and stock demand correctness under concurrent access.
 
@@ -927,7 +1157,7 @@ Money and stock demand correctness under concurrent access.
 
 ---
 
-## 26. Partitioning & Scaling
+## 27. Partitioning & Scaling
 
 The schema is small-data today but designed so growth is a configuration step, not a redesign.
 
@@ -953,6 +1183,8 @@ The schema is small-data today but designed so growth is a configuration step, n
 2. **Ledger/movement tables are immutable truth; balances and stock are derived** — the finance and inventory correctness guarantee.
 3. **Debtors, dashboards, and P&L are views over the ledger** — never a stored table that can lie.
 4. **Integrity lives in the database** — FKs, `CHECK`s, unique/partial indexes, and insert-only audit make bad states unrepresentable.
-5. **`branch_id` everywhere + UUID keys + append-only partition candidates** — multi-branch, replicas, and partitioning arrive without a rewrite, matching the module roadmap in [02_Software_Architecture.md §22](./02_Software_Architecture.md).
+5. **`organization_id` + `branch_id` everywhere, UUID keys, append-only partition candidates** — multi-tenancy, RLS, replicas, and partitioning arrive without a rewrite, matching the module roadmap in [02_Software_Architecture.md §22](./02_Software_Architecture.md).
+6. **Tenant isolation is structural, not procedural** — the tenant column exists on every operational table from the first migration (§6), so the security boundary is enforced by the base queryset today and by Postgres RLS tomorrow. Retrofitting this after customers exist is the single most expensive migration in SaaS; we avoided it by deciding before writing code.
+7. **Subscription charges derive from immutable usage snapshots** (§20.3) — every invoice can be reconstructed and defended months later, the same discipline that makes the tuition ledger trustworthy.
 
-*End of Database Architecture v1.0. No models, no ORM — this is the contract the models will implement.*
+*End of Database Architecture v1.1 — multi-tenancy (ADR-9) and the subscription domain (ADR-11) added. No models, no ORM — this is the contract the models will implement.*
