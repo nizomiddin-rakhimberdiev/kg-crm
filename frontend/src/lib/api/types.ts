@@ -289,3 +289,64 @@ export interface BillingRunResult {
   skipped_no_tariff: string[]
   total_amount: string
 }
+
+export interface Payment {
+  id: string
+  child: string
+  child_name: string
+  invoice: string | null
+  invoice_number: string | null
+  amount: string
+  method: 'cash' | 'card' | 'bank_transfer' | 'online'
+  reference: string
+  paid_at: string
+  is_reversed: boolean
+  reversed_at: string | null
+  reversal_reason: string
+  created_at: string
+}
+
+export interface DebtorRow {
+  child: { id: string; full_name: string; group: string | null }
+  balance: string
+  oldest_overdue_date: string | null
+  primary_guardian: { full_name: string; phone: string } | null
+}
+
+export interface DebtorList {
+  count: number
+  total_debt: string
+  results: DebtorRow[]
+}
+
+export interface StatementEntry {
+  id: string
+  occurred_at: string
+  entry_type: string
+  direction: 'debit' | 'credit'
+  amount: string
+  description: string
+  running_balance: string
+}
+
+export interface ChildStatement {
+  child: { id: string; full_name: string }
+  balance: string
+  entries: StatementEntry[]
+  open_invoices: Array<{
+    id: string
+    number: string
+    amount_due: string
+    amount_paid: string
+    due_date: string
+    status: string
+  }>
+}
+
+export interface DailyCashSummary {
+  date: string
+  by_method: Record<string, string>
+  total: string
+  reversed_total: string
+  count: number
+}

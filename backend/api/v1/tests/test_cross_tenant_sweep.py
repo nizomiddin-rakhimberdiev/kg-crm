@@ -59,7 +59,7 @@ def _create_row(tenant: Any, basename: str) -> Any:
     from apps.children.models import Child, Group, Guardian
     from apps.children.services import enroll_child
     from apps.finance.models import Discount, TariffPlan
-    from apps.finance.services import issue_invoice
+    from apps.finance.services import issue_invoice, record_payment
 
     with organization_context(tenant.organization.id):
         if basename == "user":
@@ -125,7 +125,7 @@ def _create_row(tenant: Any, basename: str) -> Any:
                 attendance_date=timezone.localdate(),
                 status="present",
             )
-        if basename in {"tariff", "discount", "invoice", "ledger"}:
+        if basename in {"tariff", "discount", "invoice", "ledger", "payment"}:
             tariff = TariffPlan.objects.create(
                 organization=tenant.organization,
                 branch=tenant.branch,
@@ -155,6 +155,10 @@ def _create_row(tenant: Any, basename: str) -> Any:
             invoice = issue_invoice(child=child, period_year=2026, period_month=7)
             if basename == "invoice":
                 return invoice
+            if basename == "payment":
+                return record_payment(
+                    child=child, amount=Decimal("100000"), method="cash", invoice=invoice
+                )
             return child.ledger_entries.first()
     raise AssertionError(
         f"'{basename}' uchun test ma'lumoti yaratilmagan. Yangi endpoint "

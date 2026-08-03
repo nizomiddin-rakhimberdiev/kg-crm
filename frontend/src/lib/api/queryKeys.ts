@@ -32,6 +32,15 @@ export const queryKeys = {
   invoices: (orgId: string, params?: Record<string, unknown>) =>
     ['org', orgId, 'invoices', params ?? {}] as const,
 
+  payments: (orgId: string, params?: Record<string, unknown>) =>
+    ['org', orgId, 'payments', params ?? {}] as const,
+  debtors: (orgId: string, params?: Record<string, unknown>) =>
+    ['org', orgId, 'debtors', params ?? {}] as const,
+  statement: (orgId: string, childId: string) =>
+    ['org', orgId, 'debtors', 'statement', childId] as const,
+  dailyCash: (orgId: string, date: string) =>
+    ['org', orgId, 'payments', 'daily', date] as const,
+
   attendanceDaily: (orgId: string, groupId: string, date: string) =>
     ['org', orgId, 'attendance', 'daily', groupId, date] as const,
   attendanceSummary: (orgId: string, month: string, groupId: string | null) =>

@@ -8,11 +8,12 @@
 
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Ban, FileText, Plus, Trash2, Wallet } from 'lucide-react'
+import { Ban, Banknote, FileText, Plus, Trash2, Wallet } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { invoicesApi, tariffsApi } from '@/features/payments/api'
+import { RecordPaymentModal } from '@/features/payments/components/RecordPaymentModal'
 import { queryKeys } from '@/lib/api/queryKeys'
-import { ApiError, type BillingRunResult } from '@/lib/api/types'
+import { ApiError, type BillingRunResult, type Invoice } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 
@@ -48,6 +49,7 @@ export default function PaymentsPage() {
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [tariffForm, setTariffForm] = useState({ name: '', amount: '' })
   const [runResult, setRunResult] = useState<BillingRunResult | null>(null)
+  const [payingInvoice, setPayingInvoice] = useState<Invoice | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const invoicesQuery = useQuery({
@@ -105,6 +107,13 @@ export default function PaymentsPage() {
 
   return (
     <div className="space-y-6">
+      {payingInvoice && (
+        <RecordPaymentModal
+          invoice={payingInvoice}
+          onClose={() => setPayingInvoice(null)}
+        />
+      )}
+
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">To'lovlar</h1>
         <p className="mt-1 text-sm text-slate-500">
@@ -264,6 +273,18 @@ export default function PaymentsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
+                        {can('payments.create') &&
+                          Number(invoice.amount_outstanding) > 0 &&
+                          invoice.status !== 'cancelled' && (
+                            <button
+                              type="button"
+                              title="To'lov qabul qilish"
+                              onClick={() => setPayingInvoice(invoice)}
+                              className="mr-1 rounded-lg p-2 text-emerald-600 transition hover:bg-emerald-50"
+                            >
+                              <Banknote className="h-4 w-4" />
+                            </button>
+                          )}
                         {can('payments.update') && invoice.status !== 'cancelled' && (
                           <button
                             type="button"

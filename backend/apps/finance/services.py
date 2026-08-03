@@ -31,6 +31,7 @@ from apps.finance.models import (
     Invoice,
     InvoiceLine,
     InvoiceStatus,
+    Payment,
     SourceType,
 )
 
@@ -42,6 +43,9 @@ __all__ = [
     "generate_monthly_invoices",
     "recompute_child_balance",
     "applicable_discount",
+    "record_payment",
+    "reverse_payment",
+    "daily_cash_summary",
 ]
 
 CENT = Decimal("0.01")
@@ -394,3 +398,182 @@ def mark_overdue_invoices(*, organization_id: Any, today: date | None = None) ->
         status__in=[InvoiceStatus.ISSUED, InvoiceStatus.PARTIALLY_PAID],
         due_date__lt=today,
     ).update(status=InvoiceStatus.OVERDUE)
+
+
+# --- To'lovlar ---
+
+
+@transaction.atomic
+def record_payment(
+    *,
+    child: Child,
+    amount: Decimal,
+    method: str,
+    invoice: Invoice | None = None,
+    reference: str = "",
+    paid_at: Any = None,
+    received_by: Any = None,
+) -> Payment:
+    """
+    To'lovni qayd etadi — BITTA tranzaksiyada (docs/03 §13.5, §26).
+
+    Tartib muhim:
+      1. Hisob-faktura qatorini QULFLAYMIZ (`SELECT ... FOR UPDATE`)
+      2. Ortiqcha to'lov emasligini qayta tekshiramiz
+      3. To'lov qatorini yozamiz
+      4. Ledger'ga KREDIT yozamiz
+      5. `invoice.amount_paid` va statusni yangilaymiz
+      6. `child.balance` keshini ledger'dan qayta hisoblaymiz
+
+    Qulf shart: ikkita kassir bir vaqtda bir hisob-fakturaga to'lov
+    kiritsa, qulfsiz ikkalasi ham "qoldiq yetarli" deb ko'radi va
+    hisob-faktura ortiqcha to'langan bo'lib qoladi. `CHECK` buni
+    ushlay olmaydi — u boshqa tranzaksiyani ko'rmaydi.
+    """
+    if amount <= 0:
+        raise BusinessRuleViolation("To'lov summasi musbat bo'lishi kerak.")
+
+    amount = _money(amount)
+
+    if invoice is not None:
+        if invoice.child_id != child.id:
+            raise BusinessRuleViolation("Hisob-faktura boshqa bolaga tegishli.")
+        if invoice.status == InvoiceStatus.CANCELLED:
+            raise BusinessRuleViolation("Bekor qilingan hisob-fakturaga to'lov qabul qilinmaydi.")
+
+        locked = Invoice.objects.select_for_update().get(pk=invoice.pk)
+        outstanding = locked.amount_due - locked.amount_paid
+        if amount > outstanding:
+            raise BusinessRuleViolation(
+                f"Ortiqcha to'lov: qoldiq {outstanding}, kiritilgan {amount}. "
+                f"Ortiqcha summani hisob-fakturasiz avans sifatida kiriting."
+            )
+    else:
+        locked = None
+
+    payment = Payment.objects.create(
+        organization=child.organization,
+        branch=child.branch,
+        invoice=locked,
+        child=child,
+        amount=amount,
+        method=method,
+        reference=reference[:100],
+        paid_at=paid_at or timezone.now(),
+        received_by=received_by,
+    )
+
+    post_ledger_entry(
+        child=child,
+        entry_type=EntryType.PAYMENT,
+        direction=Direction.CREDIT,
+        amount=amount,
+        source_type=SourceType.PAYMENT,
+        source_id=payment.id,
+        description=f"To'lov {method}" + (f" — {locked.number}" if locked else ""),
+        occurred_at=payment.paid_at,
+        created_by=received_by,
+    )
+
+    if locked is not None:
+        _refresh_invoice_payment_state(locked)
+
+    recompute_child_balance(child)
+    return payment
+
+
+def _refresh_invoice_payment_state(invoice: Invoice) -> Invoice:
+    """
+    `amount_paid` va statusni to'lovlardan qayta hisoblaydi.
+
+    Kesh qo'shish/ayirish bilan emas, QAYTA HISOBLASH bilan yangilanadi:
+    inkremental yangilash bitta o'tkazib yuborilgan hodisada jimgina
+    siljiydi va siljish qachon boshlanganini hech kim ayta olmaydi.
+    """
+    paid = Payment.objects.filter(invoice=invoice, reversed_at__isnull=True).aggregate(
+        total=Sum("amount")
+    )["total"] or Decimal("0")
+    paid = _money(paid)
+
+    if paid <= 0:
+        status = InvoiceStatus.ISSUED
+    elif paid >= invoice.amount_due:
+        status = InvoiceStatus.PAID
+    else:
+        status = InvoiceStatus.PARTIALLY_PAID
+
+    # Muddati o'tgan, lekin to'liq to'lanmagan hisob-faktura `overdue`
+    # bo'lib qoladi — u qarzdorlar ro'yxatidan tushib ketmasin.
+    if status != InvoiceStatus.PAID and invoice.due_date < timezone.localdate():
+        status = InvoiceStatus.OVERDUE
+
+    Invoice.objects.filter(pk=invoice.pk).update(amount_paid=paid, status=status)
+    invoice.refresh_from_db()
+    return invoice
+
+
+@transaction.atomic
+def reverse_payment(*, payment: Payment, reason: str = "", created_by: Any = None) -> Payment:
+    """
+    To'lovni qaytaradi — QARSHI yozuv bilan, o'chirish bilan emas (D3).
+
+    Asl to'lov qatori ham, asl ledger krediti ham joyida qoladi. Ustiga
+    teng debet qo'shiladi. Shunda kassa jurnali "1 500 000 qabul qilindi,
+    keyin qaytarildi" deb ko'rsatadi — "hech narsa bo'lmagan" emas.
+    """
+    if payment.is_reversed:
+        raise BusinessRuleViolation("Bu to'lov allaqachon qaytarilgan.")
+
+    payment.reversed_at = timezone.now()
+    payment.reversal_reason = reason[:255]
+    payment.save(update_fields=["reversed_at", "reversal_reason", "updated_at"])
+
+    post_ledger_entry(
+        child=payment.child,
+        entry_type=EntryType.REFUND,
+        direction=Direction.DEBIT,
+        amount=payment.amount,
+        source_type=SourceType.PAYMENT,
+        source_id=payment.id,
+        description=f"To'lov qaytarildi: {reason}"[:255],
+        created_by=created_by,
+    )
+
+    if payment.invoice is not None:
+        _refresh_invoice_payment_state(payment.invoice)
+
+    recompute_child_balance(payment.child)
+    return payment
+
+
+def daily_cash_summary(
+    *, organization_id: Any, on_date: date, branch_id: Any = None
+) -> dict[str, Any]:
+    """Kassirning kunlik hisoboti — usul bo'yicha (docs/04 §9.3)."""
+    queryset = Payment.objects.filter(
+        organization_id=organization_id,
+        paid_at__date=on_date,
+        reversed_at__isnull=True,
+    )
+    if branch_id:
+        queryset = queryset.filter(branch_id=branch_id)
+
+    by_method = {
+        row["method"]: str(row["total"])
+        for row in queryset.values("method").annotate(total=Sum("amount"))
+    }
+    total = queryset.aggregate(total=Sum("amount"))["total"] or Decimal("0")
+
+    reversed_total = Payment.objects.filter(
+        organization_id=organization_id,
+        paid_at__date=on_date,
+        reversed_at__isnull=False,
+    ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+
+    return {
+        "date": on_date.isoformat(),
+        "by_method": by_method,
+        "total": str(_money(total)),
+        "reversed_total": str(_money(reversed_total)),
+        "count": queryset.count(),
+    }

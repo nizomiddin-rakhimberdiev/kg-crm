@@ -201,6 +201,16 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 - Frontend: `payments` feature (record payment, daily summary), `debtors` feature (list, statement, remind).
 - **Deliverable:** payment moves a child off the debtor list in real time; reconciles to the cent.
 
+> **Status: delivered (SMS reminders deferred).** Debtors is a **derived list with no table behind it** (ADR-7) — a test asserts no `debtor` table exists in the app registry, because the moment one does the list can drift from the ledger and nobody can say which is right.
+>
+> The list is computed from ledger entries as a query annotation, **not** from `child.balance`. A test corrupts the cache and asserts the list stays correct: a wrong debtor list surfaces in the worst possible place — asking a parent for money they already paid.
+>
+> **Payments are immutable.** `PATCH`/`DELETE` return `405`; corrections go through `POST /payments/{id}/reverse`, which keeps the original row and posts an equal debit. The cash journal then reads "received, then reversed" rather than "nothing happened".
+>
+> **`invoice.amount_paid` is recomputed, never incremented.** Incremental updates drift silently on a single missed event and nobody can say when the drift began. A test corrupts it and asserts the next payment repairs it.
+>
+> **Deferred:** SMS reminders (`/debtors/{id}/remind`) need the `notifications` app — Sprint 8. Receipt PDFs need the storage abstraction. Both are listed in the API spec and unimplemented.
+
 ### Sprint 6 — HR & Payroll
 **Goal:** staff and monthly payroll.
 - DB: `position`, `employee`, `payroll_run`, `payroll_item` ([03 §14](./03_Database_Design.md)).

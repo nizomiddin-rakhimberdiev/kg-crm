@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from rest_framework import status
+from django.utils import timezone
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -12,19 +13,29 @@ from rest_framework.response import Response
 from apps.audit import services as audit
 from apps.branches.selectors import resolve_branch
 from apps.core.exceptions import BusinessRuleViolation
+from apps.core.permissions import HasModulePermission
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchScopedMixin, TenantReadOnlyViewSet, TenantViewSet
-from apps.finance import services
-from apps.finance.models import ChildLedgerEntry, Discount, Invoice, TariffPlan
+from apps.finance import selectors, services
+from apps.finance.models import ChildLedgerEntry, Discount, Invoice, Payment, TariffPlan
 from apps.finance.serializers import (
     DiscountSerializer,
     GenerateInvoicesSerializer,
     InvoiceSerializer,
     LedgerEntrySerializer,
+    PaymentSerializer,
+    PaymentWriteSerializer,
     TariffPlanSerializer,
 )
 
-__all__ = ["TariffPlanViewSet", "DiscountViewSet", "InvoiceViewSet", "LedgerViewSet"]
+__all__ = [
+    "TariffPlanViewSet",
+    "DiscountViewSet",
+    "InvoiceViewSet",
+    "LedgerViewSet",
+    "PaymentViewSet",
+    "DebtorViewSet",
+]
 
 
 class TariffPlanViewSet(BranchScopedMixin, TenantViewSet):
@@ -183,3 +194,122 @@ class LedgerViewSet(BranchScopedMixin, TenantReadOnlyViewSet):
                 "cached_balance": str(child.balance),
             }
         )
+
+
+class PaymentViewSet(BranchScopedMixin, TenantViewSet):
+    """
+    To'lovlar (docs/04 §9.3).
+
+    `PATCH`/`DELETE` yo'q: to'lov o'zgarmas. Tuzatish `POST /{id}/reverse`
+    orqali qarshi yozuv bilan qilinadi (D3).
+    """
+
+    permission_module = "payments"
+    permission_action_map = {"reverse": "update", "daily_summary": "read"}
+    model = Payment
+    select_related_fields = ("child", "invoice")
+    filterset_fields = ["child", "invoice", "method"]
+    ordering_fields = ["paid_at", "amount"]
+    http_method_names = ["get", "post", "head", "options"]
+
+    def get_serializer_class(self) -> Any:
+        return (
+            PaymentSerializer if self.request.method in ("GET", "HEAD") else PaymentWriteSerializer
+        )
+
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        serializer = PaymentWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        user = request_user(request)
+
+        payment = services.record_payment(
+            child=data["child"],
+            amount=data["amount"],
+            method=data["method"],
+            invoice=data.get("invoice"),
+            reference=data.get("reference", ""),
+            paid_at=data.get("paid_at"),
+            received_by=user,
+        )
+        audit.record(
+            action="create",
+            request=request._request,
+            actor=user,
+            entity_type="payment",
+            entity_id=payment.id,
+            changes={"amount": str(payment.amount), "method": payment.method},
+        )
+        return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def reverse(self, request: Request, pk: str | None = None) -> Response:
+        """To'lovni qaytaradi — qarshi ledger yozuvi bilan."""
+        payment = self.get_object()
+        user = request_user(request)
+        services.reverse_payment(
+            payment=payment, reason=request.data.get("reason", ""), created_by=user
+        )
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="payment",
+            entity_id=payment.id,
+            changes={"reversed": True, "reason": request.data.get("reason", "")},
+        )
+        payment.refresh_from_db()
+        return Response(PaymentSerializer(payment).data)
+
+    @action(detail=False, methods=["get"], url_path="daily-summary")
+    def daily_summary(self, request: Request) -> Response:
+        """`GET /payments/daily-summary?date=` — kassirning kunlik hisoboti."""
+        from datetime import datetime
+
+        raw = request.query_params.get("date")
+        try:
+            on_date = datetime.strptime(raw, "%Y-%m-%d").date() if raw else timezone.localdate()
+        except ValueError as exc:
+            raise BusinessRuleViolation("`date` formati: 2026-07-24") from exc
+
+        user = request_user(request)
+        return Response(
+            services.daily_cash_summary(
+                organization_id=user.organization_id,
+                on_date=on_date,
+                branch_id=user.branch_id,
+            )
+        )
+
+
+class DebtorViewSet(viewsets.ViewSet):
+    """
+    Qarzdorlar — **hisoblangan ro'yxat**, jadval emas (ADR-7).
+
+    `ViewSet` (model emas): ortida hech qanday `debtor` jadvali yo'q va
+    bo'lmasligi kerak. Ro'yxat har safar ledger'dan hisoblanadi, shuning
+    uchun u haqiqatdan hech qachon ajralmaydi.
+    """
+
+    permission_classes = [HasModulePermission]
+    permission_module = "debtors"
+
+    def list(self, request: Request) -> Response:
+        from decimal import Decimal as D
+
+        raw_min = request.query_params.get("min_amount")
+        min_amount = D(raw_min) if raw_min else None
+        overdue_only = request.query_params.get("overdue") == "true"
+
+        rows = selectors.debtor_rows(min_amount=min_amount, overdue_only=overdue_only)
+        total = sum(D(row["balance"]) for row in rows)
+        return Response({"count": len(rows), "total_debt": str(total), "results": rows})
+
+    def retrieve(self, request: Request, pk: str | None = None) -> Response:
+        """Qarzdor tafsiloti — to'liq moliyaviy ko'chirma bilan."""
+        from apps.children.models import Child
+
+        child = Child.objects.filter(pk=pk).first()
+        if child is None:
+            raise BusinessRuleViolation("Bola topilmadi.")
+        return Response(selectors.child_statement(child=child))

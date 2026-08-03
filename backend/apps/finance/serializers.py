@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any
 
 from rest_framework import serializers
 
 from apps.children.models import Child
 from apps.core.fields import TenantPrimaryKeyRelatedField
-from apps.finance.models import Discount, Invoice, InvoiceLine, TariffPlan
+from apps.finance.models import (
+    Discount,
+    Invoice,
+    InvoiceLine,
+    Payment,
+    PaymentMethod,
+    TariffPlan,
+)
 
 __all__ = [
     "TariffPlanSerializer",
@@ -17,6 +25,8 @@ __all__ = [
     "InvoiceLineSerializer",
     "GenerateInvoicesSerializer",
     "LedgerEntrySerializer",
+    "PaymentSerializer",
+    "PaymentWriteSerializer",
 ]
 
 
@@ -107,3 +117,47 @@ class LedgerEntrySerializer(serializers.Serializer):
     source_id = serializers.UUIDField(read_only=True, allow_null=True)
     occurred_at = serializers.DateTimeField(read_only=True)
     description = serializers.CharField(read_only=True)
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    child_name = serializers.CharField(source="child.full_name", read_only=True)
+    invoice_number = serializers.CharField(source="invoice.number", read_only=True, default=None)
+    is_reversed = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = Payment
+        fields = [
+            "id",
+            "child",
+            "child_name",
+            "invoice",
+            "invoice_number",
+            "amount",
+            "method",
+            "reference",
+            "paid_at",
+            "is_reversed",
+            "reversed_at",
+            "reversal_reason",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class PaymentWriteSerializer(serializers.Serializer):
+    """
+    To'lov yozish uchun — `ModelSerializer` EMAS.
+
+    `.save()` modelni to'g'ridan-to'g'ri yozib qo'ymasligi kerak: to'lov
+    ledger, hisob-faktura va kesh bilan birga, bitta tranzaksiyada
+    yoziladi (docs/03 §13.5). Buning yagona yo'li — servis funksiyasi.
+    """
+
+    child_id = TenantPrimaryKeyRelatedField(model=Child, source="child")
+    invoice_id = TenantPrimaryKeyRelatedField(
+        model=Invoice, source="invoice", required=False, allow_null=True
+    )
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
+    method = serializers.ChoiceField(choices=PaymentMethod.choices)
+    reference = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    paid_at = serializers.DateTimeField(required=False)

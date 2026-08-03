@@ -24,6 +24,7 @@ __all__ = [
     "Discount",
     "Invoice",
     "InvoiceLine",
+    "Payment",
     "ChildLedgerEntry",
 ]
 
@@ -214,6 +215,75 @@ class InvoiceLine(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.description} × {self.quantity}"
+
+
+class PaymentMethod(models.TextChoices):
+    CASH = "cash", "Naqd"
+    CARD = "card", "Karta"
+    BANK_TRANSFER = "bank_transfer", "Bank o'tkazmasi"
+    ONLINE = "online", "Onlayn"
+
+
+class Payment(BranchScopedModel):
+    """
+    Pul kelib tushgan hodisa (docs/03 §13.5).
+
+    To'lov **o'zgarmas**: tuzatish `reverse_payment()` orqali qarshi yozuv
+    bilan qilinadi, hech qachon `UPDATE`/`DELETE` bilan emas (D3). Kassir
+    xato summa kiritsa, uni "tahrirlash" tarixni yo'q qilardi — kim,
+    qachon, qanchani qabul qilgani ko'rinmay qolardi.
+    """
+
+    invoice = models.ForeignKey(
+        "finance.Invoice",
+        on_delete=models.RESTRICT,
+        related_name="payments",
+        null=True,
+        blank=True,
+        help_text="NULL = hisob-fakturaga bog'lanmagan avans",
+    )
+    # Denormalizatsiya: bola bo'yicha ko'chirma hisob-fakturaga
+    # bog'lanmagan to'lovlarni ham ko'rsatishi kerak.
+    child = models.ForeignKey("children.Child", on_delete=models.RESTRICT, related_name="payments")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    method = models.CharField(max_length=20, choices=PaymentMethod.choices)
+    reference = models.CharField(max_length=100, blank=True)
+    paid_at = models.DateTimeField()
+    received_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="payments_received",
+        null=True,
+        blank=True,
+    )
+    receipt_path = models.CharField(max_length=255, blank=True)
+
+    # Qaytarilgan to'lov: asl qator qoladi, faqat belgilanadi.
+    reversed_at = models.DateTimeField(null=True, blank=True)
+    reversal_reason = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = "payment"
+        ordering = ["-paid_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0), name="ck_payment_amount_positive"
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["child", "-paid_at"], name="ix_payment_child_paid"),
+            models.Index(
+                fields=["organization", "branch", "-paid_at"], name="ix_payment_org_br_paid"
+            ),
+            models.Index(fields=["invoice"], name="ix_payment_invoice"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.amount} ({self.method})"
+
+    @property
+    def is_reversed(self) -> bool:
+        return self.reversed_at is not None
 
 
 class EntryType(models.TextChoices):
