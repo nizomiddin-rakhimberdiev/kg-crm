@@ -18,6 +18,8 @@ from apps.finance.views import (
     PaymentViewSet,
     TariffPlanViewSet,
 )
+from apps.hr.views import EmployeeViewSet, PositionViewSet
+from apps.payroll.views import PayrollRunViewSet
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -35,5 +37,8 @@ router.register("invoices", InvoiceViewSet, basename="invoice")
 router.register("ledger", LedgerViewSet, basename="ledger")
 router.register("payments", PaymentViewSet, basename="payment")
 router.register("debtors", DebtorViewSet, basename="debtor")
+router.register("employees", EmployeeViewSet, basename="employee")
+router.register("positions", PositionViewSet, basename="position")
+router.register("payroll/runs", PayrollRunViewSet, basename="payroll-run")
 
 __all__ = ["router"]

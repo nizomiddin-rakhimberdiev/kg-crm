@@ -218,6 +218,16 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 - Frontend: employees admin, payroll run workflow, payslip.
 - **Deliverable:** run monthly payroll, finalize (immutable), produce payslips.
 
+> **Status: delivered (payslip PDF deferred).** `payroll_item.base_amount` is a **snapshot** of the employee's salary, not a reference to it. A raise next month must not rewrite last month's run — otherwise "what was I paid in July?" gets a different answer depending on when it is asked. A test raises the salary after the run and asserts the item is unchanged.
+>
+> The state machine is one-directional: `draft → finalized → paid`. A finalized run is immutable; a mistake is corrected in the *next* month with a bonus or deduction — the same reasoning as the ledger's counter-entry (D3).
+>
+> **Net pay cannot go negative** (DB `CHECK` plus a service rule): a deduction exceeding gross would leave the employee owing the kindergarten, a state payroll cannot express.
+>
+> An employee with payroll history is **terminated, never deleted** — `ON DELETE RESTRICT` from `payroll_item` enforces it at the database level too.
+>
+> **Deferred:** payslip PDF needs the storage abstraction (Sprint 9). The endpoint returns the payslip as JSON today.
+
 ### Sprint 7 — Inventory & Expenses
 **Goal:** kitchen/warehouse stock and operational spend.
 - DB: `warehouse`, `product_category`, `product`, `supplier`, `stock_movement`; `expense_category`, `expense` ([03 §15–16](./03_Database_Design.md)).

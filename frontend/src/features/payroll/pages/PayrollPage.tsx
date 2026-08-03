@@ -1,222 +1,311 @@
+/**
+ * Oylik maosh (docs/04 §11).
+ *
+ * Oqim bir tomonlama: qoralama → yakunlangan → to'langan. Yakunlangandan
+ * keyin tahrirlash yo'q — xato keyingi oyda tuzatuvchi bonus/ushlab qolish
+ * bilan hal qilinadi. Bu ledger'dagi qarshi yozuv bilan bir xil mantiq.
+ */
+
 import { useState } from 'react'
-import { Wallet, CheckCircle2, Clock, Download, Send, SlidersHorizontal } from 'lucide-react'
-import { useToast } from '@/app/providers/ToastProvider'
-import {
-  Card,
-  PageHeader,
-  StatCard,
-  Button,
-  Badge,
-  Avatar,
-  Pagination,
-  type BadgeTone,
-} from '@/components/ui/primitives'
-import { formatMoney, formatUZS, cn } from '@/lib/utils'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { CheckCircle2, Lock, Plus, UserPlus, Wallet } from 'lucide-react'
+import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { employeesApi, payrollApi, positionsApi } from '@/features/payroll/api'
+import { queryKeys } from '@/lib/api/queryKeys'
+import { ApiError, type PayrollRun } from '@/lib/api/types'
+import { useCan } from '@/lib/rbac/useCan'
+import { cn } from '@/lib/utils'
 
-type Status = "To'langan" | 'Kutilmoqda' | 'Kechikkan'
+const money = (v: string) => new Intl.NumberFormat('uz-UZ').format(Number(v))
 
-interface Row {
-  name: string
-  id: string
-  position: string
-  base: number
-  bonus: number
-  penalty: number
-  advance: number
-  total: number
-  status: Status
-}
-
-const statusTone: Record<Status, BadgeTone> = {
-  "To'langan": 'success',
-  Kutilmoqda: 'warning',
-  Kechikkan: 'danger',
-}
-
-const seed: Row[] = [
-  { name: 'Ziloa Karimbekova', id: '#0342', position: 'Katta tarbiyachi', base: 6500000, bonus: 500000, penalty: 0, advance: 1000000, total: 6000000, status: "To'langan" },
-  { name: 'Jasur Mirzayev', id: '#0392', position: 'Ingliz tili ustozi', base: 8000000, bonus: 1200000, penalty: 250000, advance: 0, total: 8950000, status: 'Kutilmoqda' },
-  { name: 'Nigora Axmedova', id: '#0356', position: 'Logoped', base: 7200000, bonus: 0, penalty: 150000, advance: 500000, total: 6550000, status: 'Kechikkan' },
-  { name: 'Mastura opa', id: '#0301', position: 'Bosh oshpaz', base: 4500000, bonus: 300000, penalty: 0, advance: 0, total: 4800000, status: "To'langan" },
-  { name: 'Dilnoza Rasulova', id: '#0377', position: 'Tarbiyachi yordamchisi', base: 3800000, bonus: 200000, penalty: 0, advance: 500000, total: 3500000, status: "To'langan" },
-  { name: 'Sardor Aliyev', id: '#0388', position: 'Xavfsizlik xodimi', base: 4000000, bonus: 0, penalty: 100000, advance: 0, total: 3900000, status: 'Kutilmoqda' },
-]
-
-const tabs = ['Barchasi', "To'lanmagan", "To'langan"]
+const STATUS = {
+  draft: ['Qoralama', 'bg-slate-100 text-slate-600'],
+  finalized: ['Yakunlangan', 'bg-sky-50 text-sky-700'],
+  paid: ["To'langan", 'bg-emerald-50 text-emerald-700'],
+} as const
 
 export default function PayrollPage() {
-  const { toast } = useToast()
-  const [tab, setTab] = useState('Barchasi')
-  const [rows, setRows] = useState<Row[]>(seed)
+  const organizationId = useOrganizationId()
+  const queryClient = useQueryClient()
+  const { can } = useCan()
 
-  const filtered = rows.filter((r) =>
-    tab === 'Barchasi'
-      ? true
-      : tab === "To'langan"
-        ? r.status === "To'langan"
-        : r.status !== "To'langan",
-  )
+  const now = new Date()
+  const [tab, setTab] = useState<'runs' | 'employees'>('runs')
+  const [openRun, setOpenRun] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [empForm, setEmpForm] = useState({
+    first_name: '', last_name: '', hire_date: '', base_salary: '', position_id: '',
+  })
 
-  const markPaid = (id: string, name: string) => {
-    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, status: "To'langan" } : r)))
-    toast(`${name}ga maosh to'landi ✓`, 'success')
+  const runsQuery = useQuery({
+    queryKey: queryKeys.payrollRuns(organizationId),
+    queryFn: () => payrollApi.listRuns(),
+  })
+  const employeesQuery = useQuery({
+    queryKey: queryKeys.employees(organizationId),
+    queryFn: () => employeesApi.list(),
+  })
+  const positionsQuery = useQuery({
+    queryKey: queryKeys.positions(organizationId),
+    queryFn: positionsApi.list,
+  })
+  const runQuery = useQuery({
+    queryKey: queryKeys.payrollRun(organizationId, openRun ?? ''),
+    queryFn: () => payrollApi.getRun(openRun!),
+    enabled: Boolean(openRun),
+  })
+
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'payroll'] })
+    void queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'employees'] })
   }
+  const fail = (err: unknown) =>
+    setError(err instanceof ApiError ? err.message : 'Xatolik yuz berdi.')
+
+  const createRun = useMutation({
+    mutationFn: () => payrollApi.createRun(now.getFullYear(), now.getMonth() + 1),
+    onSuccess: (run) => { setError(null); setOpenRun(run.id); invalidate() },
+    onError: fail,
+  })
+  const finalize = useMutation({
+    mutationFn: (id: string) => payrollApi.finalize(id),
+    onSuccess: () => { setError(null); invalidate() },
+    onError: fail,
+  })
+  const markPaid = useMutation({
+    mutationFn: (id: string) => payrollApi.markPaid(id),
+    onSuccess: () => { setError(null); invalidate() },
+    onError: fail,
+  })
+  const updateItem = useMutation({
+    mutationFn: ({ itemId, field, value }: { itemId: string; field: string; value: string }) =>
+      payrollApi.updateItem(openRun!, itemId, { [field]: value || '0' }),
+    onSuccess: () => { setError(null); invalidate() },
+    onError: fail,
+  })
+  const createEmployee = useMutation({
+    mutationFn: () =>
+      employeesApi.create({
+        ...empForm,
+        position_id: empForm.position_id || null,
+      }),
+    onSuccess: () => {
+      setEmpForm({ first_name: '', last_name: '', hire_date: '', base_salary: '', position_id: '' })
+      setError(null)
+      invalidate()
+    },
+    onError: fail,
+  })
+
+  const run: PayrollRun | undefined = runQuery.data
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Oylik Maoshlar"
-        subtitle="2023-yil, Dekabr oyi uchun hisoblangan ish haqi ko'rsatkichlari"
-      >
-        <Button variant="outline" icon={Download} data-toast="Hisobot Excel'ga eksport qilindi">
-          Eksport
-        </Button>
-        <Button icon={Send} data-sound="success" data-toast="Barcha xodimlarga maosh to'landi ✓">
-          Ommaviy to'lash
-        </Button>
-      </PageHeader>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard
-          label="Jami to'lanadigan"
-          value={formatUZS(450200000)}
-          icon={Wallet}
-          iconTone="info"
-          delta="+4%"
-          deltaTone="success"
-          hint="O'tgan oyga nisbatan"
-          detail={{
-            description:
-              'Dekabr oyi uchun 48 nafar xodimga jami 450 200 000 UZS ish haqi hisoblangan (mukofot va jarimalar bilan).',
-            breakdown: [
-              { label: 'Asosiy oyliklar', value: '398 000 000' },
-              { label: 'Mukofotlar', value: '+62 200 000', tone: 'success' },
-              { label: 'Jarima va avanslar', value: '-10 000 000', tone: 'danger' },
-            ],
-          }}
-        />
-        <StatCard
-          label="To'lab berilgan"
-          value={formatUZS(320500000)}
-          icon={CheckCircle2}
-          iconTone="success"
-          delta="71%"
-          deltaTone="success"
-          hint="Umumiy hajmi to'landi"
-          detail={{
-            description:
-              "48 xodimdan 34 tasiga to'liq ish haqi to'lab berildi — umumiy hajmning 71% i.",
-            breakdown: [
-              { label: "To'liq to'langan", value: '34 nafar', tone: 'success' },
-              { label: 'Qisman to\'langan', value: '0 nafar' },
-            ],
-          }}
-        />
-        <StatCard
-          label="Qolgan summa"
-          value={formatUZS(129700000)}
-          icon={Clock}
-          iconTone="warning"
-          hint="14 nafar xodimga to'lanmagan"
-          detail={{
-            description:
-              "14 nafar xodimga hali 129 700 000 UZS to'lanmagan. Ularning bir qismi kechikkan holatda.",
-            breakdown: [
-              { label: 'Kutilmoqda', value: '9 nafar' },
-              { label: 'Kechikkan', value: '5 nafar', tone: 'danger' },
-            ],
-          }}
-        />
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Oylik maosh</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Yakunlangan hisoblash o'zgarmaydi — tuzatish keyingi oyda kiritiladi.
+        </p>
       </div>
 
-      <Card className="overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4">
-          <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1">
-            {tabs.map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={cn(
-                  'rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors',
-                  tab === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700',
-                )}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-          <Button variant="outline" icon={SlidersHorizontal} data-toast="Filtrlar qo'llandi ✓">
-            Filtrlar
-          </Button>
-        </div>
+      <div className="flex gap-1 border-b border-slate-200">
+        {([['runs', 'Hisoblashlar'], ['employees', 'Xodimlar']] as const).map(([key, label]) => (
+          <button key={key} type="button" onClick={() => setTab(key)}
+            className={cn('-mb-px border-b-2 px-4 py-2 text-sm font-medium transition',
+              tab === key ? 'border-brand-600 text-brand-700'
+                : 'border-transparent text-slate-500 hover:text-slate-800')}>
+            {label}
+          </button>
+        ))}
+      </div>
 
-        <div className="overflow-x-auto scrollbar-thin">
-          <table className="w-full min-w-[980px] text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                <th className="px-6 py-3">Xodim</th>
-                <th className="px-6 py-3">Lavozim</th>
-                <th className="px-6 py-3">Asosiy oylik</th>
-                <th className="px-6 py-3">Mukofot</th>
-                <th className="px-6 py-3">Jarima</th>
-                <th className="px-6 py-3">Avans</th>
-                <th className="px-6 py-3">Hisoblangan</th>
-                <th className="px-6 py-3">Holat</th>
-                <th className="px-6 py-3 text-right">Amal</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filtered.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50/60">
-                  <td className="px-6 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <Avatar name={r.name} />
-                      <div>
-                        <p className="font-medium text-slate-800">{r.name}</p>
-                        <p className="text-xs text-slate-400">ID: {r.id}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-3.5 text-slate-600">{r.position}</td>
-                  <td className="px-6 py-3.5 text-slate-700">{formatMoney(r.base)}</td>
-                  <td className="px-6 py-3.5 font-medium text-emerald-600">
-                    {r.bonus ? `+${formatMoney(r.bonus)}` : '—'}
-                  </td>
-                  <td className="px-6 py-3.5 font-medium text-red-500">
-                    {r.penalty ? `-${formatMoney(r.penalty)}` : '—'}
-                  </td>
-                  <td className="px-6 py-3.5 font-medium text-slate-500">
-                    {r.advance ? `-${formatMoney(r.advance)}` : '—'}
-                  </td>
-                  <td className="px-6 py-3.5 font-bold text-slate-900">{formatMoney(r.total)}</td>
-                  <td className="px-6 py-3.5">
-                    <Badge tone={statusTone[r.status]} dot>
-                      {r.status}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-3.5 text-right">
-                    {r.status === "To'langan" ? (
-                      <span className="text-xs text-slate-400">Bajarildi</span>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        className="px-3 py-1.5 text-xs"
-                        data-sound="success"
-                        onClick={() => markPaid(r.id, r.name)}
-                      >
-                        To'lash
-                      </Button>
+      {error && (
+        <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+      )}
+
+      {tab === 'runs' && (
+        <>
+          {can('payroll.create') && (
+            <button type="button" onClick={() => createRun.mutate()} disabled={createRun.isPending}
+              className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60">
+              <Plus className="h-4 w-4" />
+              {`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')} uchun hisoblash`}
+            </button>
+          )}
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {runsQuery.data?.items.map((r) => {
+              const [label, tone] = STATUS[r.status]
+              return (
+                <button key={r.id} type="button" onClick={() => setOpenRun(r.id)}
+                  className={cn('rounded-2xl border bg-white p-4 text-left transition hover:border-brand-300',
+                    openRun === r.id ? 'border-brand-400' : 'border-slate-200')}>
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-slate-900">
+                      {r.period_year}-{String(r.period_month).padStart(2, '0')}
+                    </p>
+                    <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}>{label}</span>
+                  </div>
+                  <p className="mt-2 text-lg font-bold text-slate-900">{money(r.total_net)} so'm</p>
+                  <p className="text-xs text-slate-500">{r.items.length} ta xodim</p>
+                </button>
+              )
+            })}
+          </div>
+
+          {runsQuery.data?.items.length === 0 && (
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-12 text-center">
+              <Wallet className="mx-auto mb-3 h-10 w-10 text-slate-200" />
+              <p className="text-sm text-slate-500">Hozircha hisoblash yo'q.</p>
+            </div>
+          )}
+
+          {run && (
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
+                <div>
+                  <p className="font-semibold text-slate-900">
+                    {run.period_year}-{String(run.period_month).padStart(2, '0')} · {STATUS[run.status][0]}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Yalpi {money(run.total_gross)} · ushlab qolindi {money(run.total_deductions)} ·
+                    sof <strong>{money(run.total_net)}</strong>
+                  </p>
+                </div>
+                {can('payroll.update') && (
+                  <div className="flex gap-2">
+                    {run.status === 'draft' && (
+                      <button type="button" onClick={() => finalize.mutate(run.id)}
+                        className="flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+                        <Lock className="h-4 w-4" /> Yakunlash
+                      </button>
                     )}
-                  </td>
-                </tr>
+                    {run.status === 'finalized' && (
+                      <button type="button" onClick={() => markPaid.mutate(run.id)}
+                        className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+                        <CheckCircle2 className="h-4 w-4" /> To'langan
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Xodim</th>
+                    <th className="px-4 py-3 text-right font-medium">Baza</th>
+                    <th className="px-4 py-3 text-right font-medium">Bonus</th>
+                    <th className="px-4 py-3 text-right font-medium">Ushlab qolish</th>
+                    <th className="px-4 py-3 text-right font-medium">Sof</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {run.items.map((item) => (
+                    <tr key={item.id}>
+                      <td className="px-4 py-2 font-medium text-slate-800">{item.employee_name}</td>
+                      <td className="px-4 py-2 text-right text-slate-600">{money(item.base_amount)}</td>
+                      {(['bonus', 'deduction'] as const).map((field) => (
+                        <td key={field} className="px-4 py-2 text-right">
+                          {run.is_editable && can('payroll.update') ? (
+                            <input type="number" min={0} defaultValue={item[field]}
+                              aria-label={field}
+                              onBlur={(e) => {
+                                if (e.target.value !== item[field]) {
+                                  updateItem.mutate({ itemId: item.id, field, value: e.target.value })
+                                }
+                              }}
+                              className="w-28 rounded border border-slate-200 px-2 py-1 text-right text-sm outline-none focus:border-brand-500" />
+                          ) : (
+                            <span className="text-slate-600">{money(item[field])}</span>
+                          )}
+                        </td>
+                      ))}
+                      <td className="px-4 py-2 text-right font-semibold text-slate-900">{money(item.net)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {!run.is_editable && (
+                <p className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500">
+                  Hisoblash yakunlangan — tahrirlash yopiq. Tuzatishni keyingi oyda
+                  bonus yoki ushlab qolish sifatida kiriting.
+                </p>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === 'employees' && (
+        <>
+          {can('payroll.create') && (
+            <form onSubmit={(e) => { e.preventDefault(); createEmployee.mutate() }}
+              className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-3">
+              {([['last_name', 'Familiya', 'text'], ['first_name', 'Ism', 'text'],
+                 ['hire_date', 'Ishga kirgan sana', 'date'], ['base_salary', 'Oylik maosh', 'number']] as const
+              ).map(([key, label, type]) => (
+                <div key={key}>
+                  <label htmlFor={key} className="mb-1 block text-xs font-medium text-slate-600">{label}</label>
+                  <input id={key} type={type} required value={empForm[key]}
+                    onChange={(e) => setEmpForm((p) => ({ ...p, [key]: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500" />
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="px-6 pb-4">
-          <Pagination label="Jami 48 tadan 1-10 tasi ko'rsatilmoqda" pages={3} current={1} />
-        </div>
-      </Card>
+              <div>
+                <label htmlFor="position" className="mb-1 block text-xs font-medium text-slate-600">Lavozim</label>
+                <select id="position" value={empForm.position_id}
+                  onChange={(e) => setEmpForm((p) => ({ ...p, position_id: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500">
+                  <option value="">—</option>
+                  {positionsQuery.data?.items.map((p) => (
+                    <option key={p.id} value={p.id}>{p.title}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-end">
+                <button type="submit" disabled={createEmployee.isPending}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60">
+                  <UserPlus className="h-4 w-4" /> Qo'shish
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Xodim</th>
+                  <th className="px-4 py-3 font-medium">Lavozim</th>
+                  <th className="px-4 py-3 font-medium">Holat</th>
+                  <th className="px-4 py-3 text-right font-medium">Maosh</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {employeesQuery.data?.items.map((e) => (
+                  <tr key={e.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 font-medium text-slate-800">{e.full_name}</td>
+                    <td className="px-4 py-3 text-slate-600">{e.position_title ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium',
+                        e.employment_status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500')}>
+                        {e.employment_status === 'active' ? 'Ishlayapti'
+                          : e.employment_status === 'on_leave' ? "Ta'tilda" : 'Bo\'shagan'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right text-slate-700">{money(e.base_salary)} so'm</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {employeesQuery.data?.items.length === 0 && (
+              <p className="px-4 py-12 text-center text-sm text-slate-400">Xodimlar yo'q.</p>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }

@@ -41,6 +41,12 @@ export const queryKeys = {
   dailyCash: (orgId: string, date: string) =>
     ['org', orgId, 'payments', 'daily', date] as const,
 
+  employees: (orgId: string, params?: Record<string, unknown>) =>
+    ['org', orgId, 'employees', params ?? {}] as const,
+  positions: (orgId: string) => ['org', orgId, 'positions'] as const,
+  payrollRuns: (orgId: string) => ['org', orgId, 'payroll'] as const,
+  payrollRun: (orgId: string, id: string) => ['org', orgId, 'payroll', id] as const,
+
   attendanceDaily: (orgId: string, groupId: string, date: string) =>
     ['org', orgId, 'attendance', 'daily', groupId, date] as const,
   attendanceSummary: (orgId: string, month: string, groupId: string | null) =>

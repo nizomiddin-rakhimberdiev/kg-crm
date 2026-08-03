@@ -1,0 +1,153 @@
+"""Oylik endpointlari (docs/04 §11.2)."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.request import Request
+from rest_framework.response import Response
+
+from apps.audit import services as audit
+from apps.branches.selectors import resolve_branch
+from apps.core.exceptions import BusinessRuleViolation
+from apps.core.typing import request_user
+from apps.core.viewsets import BranchScopedMixin, TenantViewSet
+from apps.payroll import services
+from apps.payroll.models import PayrollItem, PayrollRun
+from apps.payroll.serializers import (
+    CreateRunSerializer,
+    PayrollItemSerializer,
+    PayrollRunSerializer,
+    UpdateItemSerializer,
+)
+
+__all__ = ["PayrollRunViewSet"]
+
+
+class PayrollRunViewSet(BranchScopedMixin, TenantViewSet):
+    """
+    Oylik hisoblashlar.
+
+    `PATCH`/`DELETE` yo'q: hisoblash holat mashinasi orqali boshqariladi
+    (`create → finalize → mark-paid`). To'g'ridan-to'g'ri tahrirlash
+    yakunlangan hisoblashni ham o'zgartirishga yo'l ochardi.
+    """
+
+    permission_module = "payroll"
+    # `PATCH`/`DELETE` marshrutga umuman chiqmaydi — holat mashinasi
+    # `finalize`/`mark-paid` orqali boshqariladi.
+    http_method_names = ["get", "post", "patch", "head", "options"]
+    permission_action_map = {
+        "create": "create",
+        "update_item": "update",
+        "finalize": "update",
+        "mark_paid": "update",
+        "payslip": "read",
+    }
+    model = PayrollRun
+    serializer_class = PayrollRunSerializer
+    filterset_fields = ["status", "period_year", "period_month"]
+
+    def get_base_queryset(self) -> Any:
+        return super().get_base_queryset().prefetch_related("items__employee")
+
+    def partial_update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """
+        Hisoblashni to'g'ridan-to'g'ri tahrirlash yo'q.
+
+        Holatni `finalize`/`mark-paid` boshqaradi; `PATCH` orqali `status`
+        ni qo'lda o'zgartirish yakunlangan hisoblashni ochib yuborardi.
+        """
+        # Avval tenant tekshiruvi (`get_object()` → begona qator uchun 404),
+        # keyin biznes qoidasi. Teskari tartibda begona tashkilot 422 olardi
+        # va bu "bunday narsa yo'q" javobidan farq qilib qolardi
+        # (docs/02 §11.3 — tashkilot → ruxsat → biznes qoidasi).
+        self.get_object()
+        raise BusinessRuleViolation(
+            "Hisoblash to'g'ridan-to'g'ri tahrirlanmaydi — `finalize` yoki "
+            "`mark-paid` amallaridan foydalaning."
+        )
+
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """`POST /payroll/runs` — davr uchun qoralama hisoblash."""
+        serializer = CreateRunSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        user = request_user(request)
+        branch = resolve_branch(user, data.get("branch_id"))
+        run = services.create_run(
+            organization=user.organization,
+            branch=branch,
+            period_year=data["period_year"],
+            period_month=data["period_month"],
+        )
+        audit.record(
+            action="create",
+            request=request._request,
+            actor=user,
+            entity_type="payroll_run",
+            entity_id=run.id,
+        )
+        return Response(PayrollRunSerializer(run).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["patch"], url_path=r"items/(?P<item_id>[^/.]+)")
+    def update_item(
+        self, request: Request, pk: str | None = None, item_id: str | None = None
+    ) -> Response:
+        """Qoralama satrini tahrirlaydi (bonus / ushlab qolish)."""
+        run = self.get_object()
+        item = PayrollItem.objects.filter(payroll_run=run, pk=item_id).first()
+        if item is None:
+            raise BusinessRuleViolation("Satr topilmadi.")
+
+        payload = UpdateItemSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        services.update_item(item=item, **payload.validated_data)
+        item.refresh_from_db()
+        return Response(PayrollItemSerializer(item).data)
+
+    @action(detail=True, methods=["post"])
+    def finalize(self, request: Request, pk: str | None = None) -> Response:
+        """Hisoblashni yakunlaydi — shundan keyin o'zgarmas."""
+        run = self.get_object()
+        user = request_user(request)
+        services.finalize_run(run=run, finalized_by=user)
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="payroll_run",
+            entity_id=run.id,
+            changes={"status": "finalized", "total_net": str(run.total_net)},
+        )
+        run.refresh_from_db()
+        return Response(PayrollRunSerializer(run).data)
+
+    @action(detail=True, methods=["post"], url_path="mark-paid")
+    def mark_paid(self, request: Request, pk: str | None = None) -> Response:
+        run = self.get_object()
+        services.mark_run_paid(run=run)
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="payroll_run",
+            entity_id=run.id,
+            changes={"status": "paid"},
+        )
+        run.refresh_from_db()
+        return Response(PayrollRunSerializer(run).data)
+
+    @action(detail=True, methods=["get"], url_path=r"payslips/(?P<employee_id>[^/.]+)")
+    def payslip(
+        self, request: Request, pk: str | None = None, employee_id: str | None = None
+    ) -> Response:
+        """Oylik varaqasi — o'sha oyning holatini ko'rsatadi."""
+        run = self.get_object()
+        item = PayrollItem.objects.filter(payroll_run=run, employee_id=employee_id).first()
+        if item is None:
+            raise BusinessRuleViolation("Bu xodim uchun satr topilmadi.")
+        return Response(services.payslip(item=item))

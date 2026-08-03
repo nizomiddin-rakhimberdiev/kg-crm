@@ -60,6 +60,8 @@ def _create_row(tenant: Any, basename: str) -> Any:
     from apps.children.services import enroll_child
     from apps.finance.models import Discount, TariffPlan
     from apps.finance.services import issue_invoice, record_payment
+    from apps.hr.models import Employee, Position
+    from apps.payroll.services import create_run
 
     with organization_context(tenant.organization.id):
         if basename == "user":
@@ -124,6 +126,27 @@ def _create_row(tenant: Any, basename: str) -> Any:
                 group=group,
                 attendance_date=timezone.localdate(),
                 status="present",
+            )
+        if basename == "position":
+            return Position.objects.create(
+                organization=tenant.organization, branch=tenant.branch, title="Tarbiyachi"
+            )
+        if basename in {"employee", "payroll-run"}:
+            employee = Employee.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                first_name="Xodim",
+                last_name="Testov",
+                hire_date=date(2024, 1, 1),
+                base_salary=Decimal("4000000"),
+            )
+            if basename == "employee":
+                return employee
+            return create_run(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                period_year=2026,
+                period_month=7,
             )
         if basename in {"tariff", "discount", "invoice", "ledger", "payment"}:
             tariff = TariffPlan.objects.create(

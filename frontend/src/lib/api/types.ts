@@ -350,3 +350,56 @@ export interface DailyCashSummary {
   reversed_total: string
   count: number
 }
+
+// --- HR va oylik ---
+
+export interface Position {
+  id: string
+  title: string
+  department: string
+  is_active: boolean
+  created_at: string
+}
+
+export interface Employee {
+  id: string
+  first_name: string
+  last_name: string
+  full_name: string
+  phone: string
+  position: string | null
+  position_title: string | null
+  employment_status: 'active' | 'on_leave' | 'terminated'
+  hire_date: string
+  termination_date: string | null
+  base_salary: string
+  is_active: boolean
+  created_at: string
+}
+
+export interface PayrollItem {
+  id: string
+  employee: string
+  employee_name: string
+  base_amount: string
+  bonus: string
+  deduction: string
+  gross: string
+  net: string
+  note: string
+}
+
+export interface PayrollRun {
+  id: string
+  period_year: number
+  period_month: number
+  status: 'draft' | 'finalized' | 'paid'
+  is_editable: boolean
+  total_gross: string
+  total_deductions: string
+  total_net: string
+  finalized_at: string | null
+  paid_at: string | null
+  items: PayrollItem[]
+  created_at: string
+}
