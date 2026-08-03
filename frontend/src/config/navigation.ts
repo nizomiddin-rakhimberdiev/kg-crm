@@ -10,26 +10,37 @@ import {
   Receipt,
   BarChart3,
   Settings,
+  Building2,
   type LucideIcon,
 } from 'lucide-react'
+import type { PermissionCode } from '@/lib/rbac/useCan'
 
 export interface NavItem {
   label: string
   to: string
   icon: LucideIcon
+  /** Shu punktni ko'rsatish uchun zarur ruxsat (docs/02 §11.3). */
+  permission: PermissionCode
 }
 
-/** Sidebar navigation — mirrors the modules in the design. */
+/**
+ * Sidebar navigatsiyasi — har bir punkt ruxsat bilan bog'langan.
+ *
+ * Bu **UX**, xavfsizlik emas: yashirilgan sahifaga to'g'ridan-to'g'ri URL
+ * bilan kirilsa ham backend rad etadi. Yashirish shunchaki ishlamaydigan
+ * tugmani ko'rsatmaslik uchun.
+ */
 export const navItems: NavItem[] = [
-  { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
-  { label: 'Bolalar', to: '/children', icon: Users },
-  { label: "To'lovlar", to: '/payments', icon: CreditCard },
-  { label: 'Qarzdorlar', to: '/debtors', icon: AlertTriangle },
-  { label: 'Davomat', to: '/attendance', icon: CalendarCheck },
-  { label: 'Xodimlar', to: '/staff', icon: UserCog },
-  { label: 'Oylik', to: '/payroll', icon: Wallet },
-  { label: 'Ombor', to: '/inventory', icon: Package },
-  { label: 'Chiqimlar', to: '/expenses', icon: Receipt },
-  { label: 'Hisobotlar', to: '/reports', icon: BarChart3 },
-  { label: 'Sozlamalar', to: '/settings', icon: Settings },
+  { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard, permission: 'dashboard.read' },
+  { label: 'Bolalar', to: '/children', icon: Users, permission: 'children.read' },
+  { label: "To'lovlar", to: '/payments', icon: CreditCard, permission: 'payments.read' },
+  { label: 'Qarzdorlar', to: '/debtors', icon: AlertTriangle, permission: 'debtors.read' },
+  { label: 'Davomat', to: '/attendance', icon: CalendarCheck, permission: 'attendance.read' },
+  { label: 'Xodimlar', to: '/staff', icon: UserCog, permission: 'users.read' },
+  { label: 'Oylik', to: '/payroll', icon: Wallet, permission: 'payroll.read' },
+  { label: 'Ombor', to: '/inventory', icon: Package, permission: 'inventory.read' },
+  { label: 'Chiqimlar', to: '/expenses', icon: Receipt, permission: 'expenses.read' },
+  { label: 'Hisobotlar', to: '/reports', icon: BarChart3, permission: 'reports.read' },
+  { label: 'Filiallar', to: '/branches', icon: Building2, permission: 'branches.read' },
+  { label: 'Sozlamalar', to: '/settings', icon: Settings, permission: 'settings.read' },
 ]

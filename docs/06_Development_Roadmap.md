@@ -144,6 +144,10 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 - Audit: begin logging auth + user/role changes.
 - **Deliverable:** an organization can self-sign-up, its users log in, see only permitted nav, manage branches, and are provably unable to reach another organization's data.
 
+> **Status: delivered.** The cross-tenant sweep caught a real leak during this sprint — `User`'s default manager was unscoped (login must search across organizations), so `/users` exposed other tenants' staff. The default manager is now scoped and the auth path uses an explicit `User.auth_objects` escape hatch. This is exactly the failure the generated sweep exists to catch, and it would not have been found by hand-written per-endpoint tests.
+>
+> **Carried to Sprint 2:** the Roles management UI (assigning permissions to custom roles) and the Topbar branch switcher. The backend endpoints for both exist and are tested; only the screens are outstanding. `SettingsPage` still renders its pre-v1.1 mock content.
+
 ### Sprint 2 — Children (CRM)
 **Goal:** manage children, guardians, groups, enrollment.
 - DB: `child`, `guardian`, `child_guardian`, `group`, `enrollment` ([03 §11](./03_Database_Design.md)).

@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { SubscriptionBanner } from './ReadOnlyBanner'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 
@@ -11,6 +12,7 @@ export function AppLayout() {
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar />
+        <SubscriptionBanner />
         <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin px-4 lg:px-6 py-6">
           <AnimatePresence mode="wait">
             <motion.div

@@ -1,252 +1,291 @@
-import { useMemo, useState } from 'react'
-import { Plus, Users, UserCheck, Plane, Phone, Trash2, UserPlus } from 'lucide-react'
-import {
-  Card,
-  PageHeader,
-  StatCard,
-  Button,
-  Badge,
-  Avatar,
-  Select,
-  Pagination,
-  type BadgeTone,
-} from '@/components/ui/primitives'
-import { Modal } from '@/components/ui/Modal'
-import { Field, TextInput, SearchInput } from '@/components/ui/form'
-import { useToast } from '@/app/providers/ToastProvider'
-import { formatMoney } from '@/lib/utils'
+/**
+ * Xodimlar — haqiqiy `/users` endpointi ustida (docs/04 §6).
+ *
+ * Ro'yxat filial bo'yicha ham cheklanadi: Org Owner barcha filiallarni
+ * ko'radi, Direktor faqat o'zinikini. Bu backend'da hal qilinadi —
+ * bu yerda hech qanday filial filtri yozilmaydi.
+ */
 
-type Status = 'Faol' | "Ta'tilda" | 'Ishdan ketgan'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Plus, Search, UserX } from 'lucide-react'
+import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { branchesApi } from '@/features/branches/api'
+import { staffApi, type StaffInput } from '@/features/staff/api'
+import { queryKeys } from '@/lib/api/queryKeys'
+import { ApiError } from '@/lib/api/types'
+import { useCan } from '@/lib/rbac/useCan'
+import { cn } from '@/lib/utils'
 
-const statusTone: Record<Status, BadgeTone> = {
-  Faol: 'success',
-  "Ta'tilda": 'warning',
-  'Ishdan ketgan': 'neutral',
+const EMPTY_FORM: StaffInput = {
+  full_name: '',
+  email: '',
+  phone: '',
+  password: '',
+  role_id: '',
+  branch_id: '',
 }
-
-interface Staff {
-  name: string
-  id: string
-  position: string
-  department: string
-  phone: string
-  hired: string
-  salary: number
-  status: Status
-}
-
-const departments = ['Tarbiya', "Ta'lim", 'Oshxona', 'Xizmat', 'Tibbiyot']
-
-const seed: Staff[] = [
-  { name: 'Ziloa Karimbekova', id: '#0342', position: 'Katta tarbiyachi', department: 'Tarbiya', phone: '+998 90 111 22 33', hired: '01.09.2021', salary: 6500000, status: 'Faol' },
-  { name: 'Jasur Mirzayev', id: '#0392', position: 'Ingliz tili ustozi', department: "Ta'lim", phone: '+998 91 222 33 44', hired: '15.08.2022', salary: 8000000, status: 'Faol' },
-  { name: 'Nigora Axmedova', id: '#0356', position: 'Logoped', department: "Ta'lim", phone: '+998 93 333 44 55', hired: '10.01.2022', salary: 7200000, status: "Ta'tilda" },
-  { name: 'Mastura opa', id: '#0301', position: 'Bosh oshpaz', department: 'Oshxona', phone: '+998 94 444 55 66', hired: '05.03.2020', salary: 4500000, status: 'Faol' },
-  { name: 'Dilnoza Rasulova', id: '#0377', position: 'Tarbiyachi yordamchisi', department: 'Tarbiya', phone: '+998 97 555 66 77', hired: '20.09.2023', salary: 3800000, status: 'Faol' },
-  { name: 'Sardor Aliyev', id: '#0388', position: 'Xavfsizlik xodimi', department: 'Xizmat', phone: '+998 99 666 77 88', hired: '12.06.2023', salary: 4000000, status: 'Faol' },
-  { name: 'Gulnora Yusupova', id: '#0333', position: 'Hamshira', department: 'Tibbiyot', phone: '+998 90 777 88 99', hired: '03.11.2021', salary: 5000000, status: "Ta'tilda" },
-]
-
-const emptyForm = { name: '', position: '', department: 'Tarbiya', phone: '', salary: '4000000' }
 
 export default function StaffPage() {
-  const { toast } = useToast()
-  const [staff, setStaff] = useState<Staff[]>(seed)
+  const organizationId = useOrganizationId()
+  const queryClient = useQueryClient()
+  const { can } = useCan()
+
   const [search, setSearch] = useState('')
-  const [deptFilter, setDeptFilter] = useState('all')
-  const [open, setOpen] = useState(false)
-  const [form, setForm] = useState(emptyForm)
-  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }))
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState<StaffInput>(EMPTY_FORM)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [error, setError] = useState<string | null>(null)
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    return staff.filter((s) => {
-      const matchSearch =
-        !q || s.name.toLowerCase().includes(q) || s.position.toLowerCase().includes(q)
-      const matchDept = deptFilter === 'all' || s.department === deptFilter
-      return matchSearch && matchDept
-    })
-  }, [staff, search, deptFilter])
+  const staffQuery = useQuery({
+    queryKey: queryKeys.users(organizationId, { search }),
+    queryFn: () => staffApi.list(search ? { search } : undefined),
+  })
 
-  const active = staff.filter((s) => s.status === 'Faol').length
-  const onLeave = staff.filter((s) => s.status === "Ta'tilda").length
+  const rolesQuery = useQuery({
+    queryKey: queryKeys.roles(organizationId),
+    queryFn: staffApi.roles,
+    enabled: showForm,
+  })
 
-  const addStaff = () => {
-    if (!form.name.trim() || !form.position.trim()) {
-      toast('Ism va lavozimni kiriting', 'error')
-      return
-    }
-    const item: Staff = {
-      name: form.name.trim(),
-      id: `#0${400 + staff.length}`,
-      position: form.position.trim(),
-      department: form.department,
-      phone: form.phone.trim() || '—',
-      hired: new Date().toLocaleDateString('ru-RU'),
-      salary: Number(form.salary) || 0,
-      status: 'Faol',
-    }
-    setStaff((s) => [item, ...s])
-    toast(`${item.name} xodimlar ro'yxatiga qo'shildi ✓`, 'success')
-    setForm(emptyForm)
-    setOpen(false)
-  }
+  const branchesQuery = useQuery({
+    queryKey: queryKeys.branches(organizationId),
+    queryFn: branchesApi.list,
+    enabled: showForm,
+  })
 
-  const removeStaff = (id: string, name: string) => {
-    setStaff((s) => s.filter((x) => x.id !== id))
-    toast(`${name} o'chirildi`, 'info')
-  }
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'users'] })
+
+  const createMutation = useMutation({
+    mutationFn: staffApi.create,
+    onSuccess: () => {
+      setForm(EMPTY_FORM)
+      setShowForm(false)
+      setError(null)
+      setFieldErrors({})
+      void invalidate()
+    },
+    onError: (err) => {
+      if (err instanceof ApiError) {
+        setError(err.message)
+        setFieldErrors(err.fieldErrors())
+      } else {
+        setError('Xatolik yuz berdi.')
+      }
+    },
+  })
+
+  const deactivateMutation = useMutation({
+    mutationFn: staffApi.deactivate,
+    onSuccess: invalidate,
+  })
+
+  const selectedRole = rolesQuery.data?.items.find((r) => r.id === form.role_id)
+  const branchRequired = selectedRole ? selectedRole.code !== 'org_owner' : true
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Xodimlar" subtitle="Bog'cha xodimlari va ularning ma'lumotlari">
-        <Button icon={Plus} data-sound="success" onClick={() => setOpen(true)}>
-          Yangi xodim
-        </Button>
-      </PageHeader>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Jami xodimlar" value={`${staff.length} nafar`} icon={Users} iconTone="info" />
-        <StatCard label="Faol" value={`${active} nafar`} icon={UserCheck} iconTone="success" />
-        <StatCard label="Ta'tilda" value={`${onLeave} nafar`} icon={Plane} iconTone="warning" />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Xodimlar</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Xodimlar soni cheklanmagan — narx faqat bolalar soniga bog'liq.
+          </p>
+        </div>
+        {can('users.create') && (
+          <button
+            type="button"
+            onClick={() => setShowForm((v) => !v)}
+            className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
+          >
+            <Plus className="h-4 w-4" />
+            Xodim qo'shish
+          </button>
+        )}
       </div>
 
-      <Card className="p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="flex-1">
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Qidiruv</p>
-            <SearchInput value={search} onChange={setSearch} placeholder="Ism yoki lavozim..." />
-          </div>
-          <Select
-            label="Bo'lim"
-            className="sm:w-56"
-            value={deptFilter}
-            onChange={setDeptFilter}
-            options={[
-              { label: 'Barcha bo\'limlar', value: 'all' },
-              ...departments.map((d) => ({ label: d, value: d })),
-            ]}
-          />
+      {error && (
+        <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
         </div>
-      </Card>
+      )}
 
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto scrollbar-thin">
-          <table className="w-full min-w-[960px] text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                <th className="px-6 py-3">Xodim</th>
-                <th className="px-6 py-3">Lavozim</th>
-                <th className="px-6 py-3">Telefon</th>
-                <th className="px-6 py-3">Ishga kirgan</th>
-                <th className="px-6 py-3">Oylik</th>
-                <th className="px-6 py-3">Holat</th>
-                <th className="px-6 py-3 text-right">Amal</th>
+      {showForm && can('users.create') && (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            createMutation.mutate({ ...form, branch_id: form.branch_id || null })
+          }}
+          className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2"
+        >
+          {(
+            [
+              ['full_name', 'Ism familiya', 'text'],
+              ['email', 'Email', 'email'],
+              ['phone', 'Telefon', 'tel'],
+              ['password', 'Parol', 'password'],
+            ] as const
+          ).map(([key, label, type]) => (
+            <div key={key}>
+              <label htmlFor={key} className="mb-1 block text-xs font-medium text-slate-600">
+                {label}
+              </label>
+              <input
+                id={key}
+                type={type}
+                required={key !== 'phone'}
+                value={form[key] ?? ''}
+                onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
+                className={cn(
+                  'w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2',
+                  fieldErrors[key]
+                    ? 'border-red-300 focus:ring-red-100'
+                    : 'border-slate-200 focus:border-brand-500 focus:ring-brand-100',
+                )}
+              />
+              {fieldErrors[key] && <p className="mt-1 text-xs text-red-600">{fieldErrors[key]}</p>}
+            </div>
+          ))}
+
+          <div>
+            <label htmlFor="role_id" className="mb-1 block text-xs font-medium text-slate-600">
+              Rol
+            </label>
+            <select
+              id="role_id"
+              required
+              value={form.role_id}
+              onChange={(e) => setForm((p) => ({ ...p, role_id: e.target.value }))}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            >
+              <option value="">Tanlang…</option>
+              {rolesQuery.data?.items.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.name}
+                </option>
+              ))}
+            </select>
+            {fieldErrors.role_id && (
+              <p className="mt-1 text-xs text-red-600">{fieldErrors.role_id}</p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="branch_id" className="mb-1 block text-xs font-medium text-slate-600">
+              Filial {branchRequired && <span className="text-red-500">*</span>}
+            </label>
+            <select
+              id="branch_id"
+              required={branchRequired}
+              value={form.branch_id ?? ''}
+              onChange={(e) => setForm((p) => ({ ...p, branch_id: e.target.value }))}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            >
+              <option value="">
+                {branchRequired ? 'Tanlang…' : 'Barcha filiallar (Org Owner)'}
+              </option>
+              {branchesQuery.data?.items.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+            {fieldErrors.branch_id && (
+              <p className="mt-1 text-xs text-red-600">{fieldErrors.branch_id}</p>
+            )}
+          </div>
+
+          <div className="sm:col-span-2">
+            <button
+              type="submit"
+              disabled={createMutation.isPending}
+              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
+            >
+              {createMutation.isPending ? 'Saqlanmoqda…' : 'Saqlash'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Ism yoki email bo'yicha qidirish…"
+          className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+        />
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        {staffQuery.isPending && (
+          <p className="px-4 py-8 text-center text-sm text-slate-400">Yuklanmoqda…</p>
+        )}
+        {staffQuery.isError && (
+          <p className="px-4 py-8 text-center text-sm text-red-600">
+            {staffQuery.error instanceof ApiError
+              ? staffQuery.error.message
+              : "Ma'lumotni yuklab bo'lmadi."}
+          </p>
+        )}
+        {staffQuery.data?.items.length === 0 && (
+          <p className="px-4 py-8 text-center text-sm text-slate-400">Xodim topilmadi.</p>
+        )}
+
+        {staffQuery.data && staffQuery.data.items.length > 0 && (
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-4 py-3 font-medium">Xodim</th>
+                <th className="px-4 py-3 font-medium">Rol</th>
+                <th className="px-4 py-3 font-medium">Filial</th>
+                <th className="px-4 py-3 font-medium">Holat</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filtered.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50/60">
-                  <td className="px-6 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <Avatar name={s.name} />
-                      <div>
-                        <p className="font-medium text-slate-800">{s.name}</p>
-                        <p className="text-xs text-slate-400">ID: {s.id}</p>
-                      </div>
-                    </div>
+            <tbody className="divide-y divide-slate-100">
+              {staffQuery.data.items.map((member) => (
+                <tr key={member.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-slate-800">{member.full_name}</p>
+                    <p className="text-xs text-slate-400">{member.email}</p>
                   </td>
-                  <td className="px-6 py-3.5">
-                    <p className="text-slate-700">{s.position}</p>
-                    <p className="text-xs text-slate-400">{s.department}</p>
+                  <td className="px-4 py-3 text-slate-600">{member.role?.name ?? '—'}</td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {member.branch?.name ?? 'Barcha filiallar'}
                   </td>
-                  <td className="px-6 py-3.5">
-                    <span className="inline-flex items-center gap-1.5 text-slate-600">
-                      <Phone className="w-3.5 h-3.5 text-slate-400" />
-                      {s.phone}
+                  <td className="px-4 py-3">
+                    <span
+                      className={cn(
+                        'rounded-full px-2 py-0.5 text-xs font-medium',
+                        member.is_active
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'bg-slate-100 text-slate-500',
+                      )}
+                    >
+                      {member.is_active ? 'Faol' : 'Faol emas'}
                     </span>
                   </td>
-                  <td className="px-6 py-3.5 text-slate-500">{s.hired}</td>
-                  <td className="px-6 py-3.5 text-slate-700">{formatMoney(s.salary)} UZS</td>
-                  <td className="px-6 py-3.5">
-                    <Badge tone={statusTone[s.status]} dot>
-                      {s.status}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-3.5 text-right">
-                    <button
-                      onClick={() => removeStaff(s.id, s.name)}
-                      title="O'chirish"
-                      className="grid place-items-center w-8 h-8 rounded-lg text-slate-400 transition-all hover:bg-red-50 hover:text-red-500 active:scale-90 ml-auto"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  <td className="px-4 py-3 text-right">
+                    {can('users.delete') && member.is_active && (
+                      <button
+                        type="button"
+                        onClick={() => deactivateMutation.mutate(member.id)}
+                        className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                        title="Faolsizlantirish"
+                      >
+                        <UserX className="h-4 w-4" />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-6 py-14 text-center text-sm text-slate-400">
-                    Xodim topilmadi.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
-        </div>
-        <div className="px-6 pb-4">
-          <Pagination label={`Jami ${filtered.length} ta ko'rsatilmoqda`} pages={1} current={1} />
-        </div>
-      </Card>
-
-      <Modal open={open} onClose={() => setOpen(false)}>
-        <div className="p-6">
-          <div className="flex items-center gap-3 pr-8">
-            <div className="grid place-items-center w-11 h-11 rounded-xl bg-brand-50 text-brand-600">
-              <UserPlus className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">Yangi xodim qo'shish</h2>
-              <p className="text-sm text-slate-500">Xodim ma'lumotlarini kiriting.</p>
-            </div>
-          </div>
-
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <Field label="F.I.O" className="sm:col-span-2">
-              <TextInput value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="Karimbekova Ziloa" />
-            </Field>
-            <Field label="Lavozim">
-              <TextInput value={form.position} onChange={(e) => set('position', e.target.value)} placeholder="Tarbiyachi" />
-            </Field>
-            <Field label="Bo'lim">
-              <Select
-                value={form.department}
-                onChange={(v) => set('department', v)}
-                options={departments.map((d) => ({ label: d, value: d }))}
-              />
-            </Field>
-            <Field label="Telefon">
-              <TextInput value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+998 90 111 22 33" />
-            </Field>
-            <Field label="Oylik (UZS)">
-              <TextInput
-                value={form.salary}
-                onChange={(e) => set('salary', e.target.value.replace(/\D/g, ''))}
-                inputMode="numeric"
-              />
-            </Field>
-          </div>
-
-          <div className="mt-6 flex items-center justify-end gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Bekor qilish
-            </Button>
-            <Button icon={Plus} data-sound="success" onClick={addStaff}>
-              Qo'shish
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        )}
+      </div>
     </div>
   )
 }
