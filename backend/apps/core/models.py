@@ -18,7 +18,7 @@ from django.db import models
 
 from apps.core.managers import TenantManager, UnscopedManager
 
-__all__ = ["BaseModel", "SoftDeleteModel", "TenantScopedModel"]
+__all__ = ["BaseModel", "SoftDeleteModel", "TenantScopedModel", "BranchScopedModel"]
 
 
 class BaseModel(models.Model):
@@ -69,6 +69,29 @@ class TenantScopedModel(SoftDeleteModel):
 
     objects = TenantManager()
     all_objects = UnscopedManager()
+
+    class Meta:
+        abstract = True
+
+
+class BranchScopedModel(TenantScopedModel):
+    """
+    Tashkilot ichidagi filialga bog'langan model (P6).
+
+    Diqqat — ikki chegara turli tabiatga ega:
+    `organization` xavfsizlik chegarasi (hech kim buzib o'tolmaydi),
+    `branch` esa biznes doirasi: Org Owner o'z tashkilotining barcha
+    filiallarini o'qiydi, qolgan rollar o'z filiali bilan cheklangan.
+    Shuning uchun branch filtri baza queryset'da emas, view/selector
+    qatlamida qo'llanadi (docs/02 §11.3).
+    """
+
+    branch = models.ForeignKey(
+        "branches.Branch",
+        on_delete=models.RESTRICT,
+        related_name="%(app_label)s_%(class)s_set",
+        db_index=True,
+    )
 
     class Meta:
         abstract = True

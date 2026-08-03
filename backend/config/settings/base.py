@@ -5,6 +5,7 @@ Muhit-maxsus sozlamalar: development.py · production.py · test.py
 Tuzilma: docs/02_Software_Architecture.md §5
 """
 
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -40,7 +41,9 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     "apps.core",
     "apps.organizations",
+    "apps.branches",
     "apps.accounts",
+    "apps.audit",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -163,10 +166,32 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "apps.core.exceptions.envelope_exception_handler",
     # P5: deny-by-default. Ochiq endpoint har doim aniq belgilanadi.
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    # TenantJWTAuthentication tenant kontekstini o'rnatadi (apps/core/authentication.py).
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
+        "apps.core.authentication.TenantJWTAuthentication",
     ],
     "UNAUTHENTICATED_USER": None,
+    "DEFAULT_THROTTLE_CLASSES": ["rest_framework.throttling.AnonRateThrottle"],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "120/hour",
+        # Login alohida va qattiqroq — brute-force'ga qarshi (docs/02 §20.2).
+        "login": env("LOGIN_THROTTLE_RATE", default="10/min"),
+    },
+}
+
+# --- JWT (ADR-3) ---
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(
+        minutes=env.int("JWT_ACCESS_TOKEN_LIFETIME_MINUTES", default=15)
+    ),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=env.int("JWT_REFRESH_TOKEN_LIFETIME_DAYS", default=7)),
+    "ROTATE_REFRESH_TOKENS": True,
+    "UPDATE_LAST_LOGIN": False,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
 }
 
 # --- CORS ---

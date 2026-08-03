@@ -1,14 +1,19 @@
 """
 API kompozitsiya ildizi — barcha modul router'lari shu yerda yig'iladi.
 
-Har bir yangi app o'z `urls.py` sini shu yerga ulaydi (docs/02 §5).
-Sprint 0 da hali biznes moduli yo'q — ro'yxat ataylab bo'sh.
+Har bir yangi app o'z ViewSet'ini shu yerga ro'yxatdan o'tkazadi (docs/02 §5).
 """
 
 from rest_framework.routers import DefaultRouter
 
+from apps.accounts.views import PermissionViewSet, RoleViewSet, UserViewSet
+from apps.branches.views import BranchViewSet
+
 router = DefaultRouter(trailing_slash=False)
 
-# Sprint 1+ da: router.registry.extend(children_router.registry) va h.k.
+router.register("users", UserViewSet, basename="user")
+router.register("roles", RoleViewSet, basename="role")
+router.register("permissions", PermissionViewSet, basename="permission")
+router.register("branches", BranchViewSet, basename="branch")
 
 __all__ = ["router"]

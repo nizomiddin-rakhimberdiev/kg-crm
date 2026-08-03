@@ -1,4 +1,4 @@
-"""Tenant kontekstini so'rovdan o'rnatuvchi middleware."""
+"""Tenant kontekstini boshqaruvchi middleware."""
 
 from __future__ import annotations
 
@@ -11,15 +11,17 @@ from apps.core.tenancy import clear_current_organization, set_current_organizati
 
 class TenantMiddleware:
     """
-    Joriy tashkilotni **autentifikatsiya qilingan foydalanuvchidan** oladi.
+    Kontekstni sessiya asosidagi so'rovlar uchun o'rnatadi va **har doim**
+    so'rov oxirida tozalaydi.
 
-    Tashkilot mijoz tomonidan HECH QACHON uzatilmaydi — na header, na query
-    parametri, na body orqali (docs/04 §1). Aks holda u oddiy IDOR'ga
-    aylanardi: token bir tashkilotniki, so'rov boshqasiniki.
+    JWT so'rovlarida kontekstni `TenantJWTAuthentication` o'rnatadi (DRF
+    autentifikatsiyasi middleware'dan keyin ishlaydi). Bu middleware esa
+    Django admin kabi sessiya bilan ishlaydigan yo'llarni qoplaydi.
 
-    Har bir so'rov oxirida kontekst tozalanadi, chunki worker jarayonlari
-    qayta ishlatiladi va oqib qolgan kontekst keyingi so'rovga tegishli
-    bo'lmagan ma'lumot ko'rsatishi mumkin.
+    Tozalash muhim: worker jarayonlari qayta ishlatiladi va oqib qolgan
+    kontekst keyingi so'rovga begona tashkilot ma'lumotini ko'rsatishi mumkin.
+    Tashkilot mijozdan HECH QACHON olinmaydi — na header, na query, na body
+    orqali (docs/04 §1).
     """
 
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:

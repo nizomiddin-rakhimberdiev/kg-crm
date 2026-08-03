@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from dataclasses import dataclass
+from typing import Any
 
 import pytest
 from django.db import connection
 
+from apps.accounts.models import Role, User
+from apps.accounts.services import register_organization
+from apps.branches.models import Branch
+from apps.core.tenancy import organization_context
 from apps.organizations.models import Organization
 
 
@@ -42,7 +47,62 @@ def other_organization(db) -> Organization:  # type: ignore[no-untyped-def]
 
 
 @pytest.fixture
-def api_client() -> Iterator[object]:
+def api_client() -> Any:
     from rest_framework.test import APIClient
 
-    yield APIClient()
+    return APIClient()
+
+
+# --- To'liq ro'yxatdan o'tgan tashkilotlar (cross-tenant testlar uchun) ---
+
+
+@dataclass
+class Tenant:
+    """Ro'yxatdan o'tgan tashkilot va uning asosiy obyektlari."""
+
+    organization: Organization
+    branch: Branch
+    owner: User
+    password: str
+
+    def role(self, code: str) -> Role:
+        with organization_context(self.organization.id):
+            return Role.objects.get(code=code)
+
+    def client(self) -> Any:
+        """Egasi sifatida autentifikatsiya qilingan API klient."""
+        from rest_framework.test import APIClient
+
+        from apps.accounts.authentication import issue_token_pair
+
+        with organization_context(self.organization.id):
+            tokens = issue_token_pair(self.owner)
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
+        return client
+
+
+def _register(name: str, email: str) -> Tenant:
+    password = "Juda-Kuchli-Parol-2026"  # noqa: S105 — test ma'lumoti
+    result = register_organization(
+        organization_name=name,
+        contact_email=email,
+        full_name="Egasi",
+        password=password,
+    )
+    return Tenant(
+        organization=result.organization,
+        branch=result.branch,
+        owner=result.owner,
+        password=password,
+    )
+
+
+@pytest.fixture
+def tenant_a(db) -> Tenant:  # type: ignore[no-untyped-def]
+    return _register("Alfa Bog'cha", "owner@alfa.uz")
+
+
+@pytest.fixture
+def tenant_b(db) -> Tenant:  # type: ignore[no-untyped-def]
+    return _register("Beta Bog'cha", "owner@beta.uz")
