@@ -7,9 +7,9 @@ from typing import Any
 from rest_framework import serializers
 
 from apps.branches.models import Branch
-from apps.finance.models import TariffPlan
 from apps.children.models import Child, ChildGuardian, Enrollment, Group, Guardian
 from apps.core.fields import TenantPrimaryKeyRelatedField
+from apps.finance.models import TariffPlan
 
 __all__ = [
     "ChildSerializer",
