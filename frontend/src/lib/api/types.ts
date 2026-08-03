@@ -565,3 +565,74 @@ export interface AuditLog {
   changes: Record<string, unknown>
   ip: string | null
 }
+
+export interface Subscription {
+  id: string
+  status: 'trialing' | 'pending_payment' | 'active' | 'past_due' | 'suspended' | 'cancelled'
+  payment_term: 'monthly' | 'semiannual' | 'annual'
+  discount_percent: string
+  plan_code: string
+  plan_name: string
+  base_price: string
+  included_children: number
+  overage_step_children: number
+  overage_step_price: string
+  trial_started_at: string | null
+  trial_ends_at: string | null
+  current_period_start: string
+  current_period_end: string
+  committed_children: number | null
+  is_read_only: boolean
+  created_at: string
+}
+
+export interface BillingUsage {
+  period: { year: number; month: number }
+  current_children: number
+  peak_children: number
+  included_children: number
+  billable_children: number
+  overage_steps: number
+  prepaid_base: boolean
+  projected: {
+    base_amount: string
+    overage_amount: string
+    discount_amount: string
+    total_amount: string
+    currency: string
+  }
+  /** `true` — raqam hali OLINMAGAN. Haqiqiy hisob yopilgan dalildan chiqadi. */
+  is_projection: boolean
+}
+
+export interface UsageSnapshot {
+  id: string
+  period_year: number
+  period_month: number
+  peak_children: number
+  peak_observed_at: string
+  billable_children: number
+  measurement_method: 'daily_peak' | 'manual_adjustment'
+  note: string
+  closed_at: string | null
+  created_at: string
+}
+
+export interface SubscriptionInvoice {
+  id: string
+  number: string
+  status: 'issued' | 'paid' | 'overdue' | 'cancelled'
+  issued_at: string
+  due_at: string
+  period_start: string
+  period_end: string
+  billable_children: number
+  base_amount: string
+  overage_amount: string
+  discount_amount: string
+  total_amount: string
+  amount_paid: string
+  currency: string
+  usage_snapshot: string | null
+  created_at: string
+}

@@ -43,6 +43,10 @@ UNCOVERED: dict[str, str] = {
     "dashboard": "Agregat, qator emas. Qo'lda test: apps/reports/tests/test_reports.py.",
     "report": "Agregat, qator emas. Qo'lda test: apps/reports/tests/test_reports.py.",
     "audit-log": "Tashkilot filtri QO'LDA yozilgan. Qo'lda test: apps/audit/tests.",
+    "billing": (
+        "Obuna tokendan aniqlanadi — endpointlar ID qabul qilmaydi. "
+        "Qo'lda test: apps/subscriptions/tests/test_billing_api.py."
+    ),
 }
 
 

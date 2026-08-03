@@ -5,8 +5,15 @@
  * — u faqat o'qish rejimiga o'tadi va o'z moliyaviy tarixini ko'ra oladi.
  */
 
-import { AlertTriangle, Clock } from 'lucide-react'
+import { AlertTriangle, Clock, CreditCard } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/app/providers/AuthProvider'
+
+/** Sinov tugashiga necha kun qolgani — soatlarni tepaga yaxlitlaydi. */
+const daysLeft = (iso: string | null | undefined) => {
+  if (!iso) return null
+  return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000))
+}
 
 export function SubscriptionBanner() {
   const { subscription } = useAuth()
@@ -20,15 +27,46 @@ export function SubscriptionBanner() {
           Obuna to'xtatilgan — ma'lumotlarni <strong>ko'rish</strong> mumkin, o'zgartirish
           mumkin emas. Hisobingiz va tariximiz saqlanib turibdi.
         </span>
+        <Link to="/billing" className="ml-auto shrink-0 font-semibold underline">
+          Hisobni ko'rish
+        </Link>
       </div>
     )
   }
 
   if (subscription.status === 'trialing') {
+    const remaining = daysLeft(subscription.trial_ends_at)
     return (
       <div className="flex items-center gap-2 border-b border-brand-200 bg-brand-50 px-6 py-2.5 text-sm text-brand-900">
         <Clock className="h-4 w-4 shrink-0" />
-        <span>Sinov davri faol. Yoqmasa — hech qanday to'lov olinmaydi.</span>
+        <span>
+          Sinov davri faol
+          {remaining !== null && ` — ${remaining} kun qoldi`}. Yoqmasa, hech qanday to'lov
+          olinmaydi.
+        </span>
+        <Link to="/billing" className="ml-auto shrink-0 font-semibold underline">
+          Rejani tanlash
+        </Link>
+      </div>
+    )
+  }
+
+  // `pending_payment` va `past_due` — kirish TO'LIQ, lekin eslatma kerak:
+  // bank o'tkazmasi kunlab ketadi va mijoz nima kutilayotganini bilsin
+  // (docs/01 §4.4).
+  if (subscription.status === 'pending_payment' || subscription.status === 'past_due') {
+    const isPending = subscription.status === 'pending_payment'
+    return (
+      <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-50/70 px-6 py-2.5 text-sm text-amber-900">
+        <CreditCard className="h-4 w-4 shrink-0" />
+        <span>
+          {isPending
+            ? "Hisob yozildi — to'lov kutilmoqda. Kirish to'liq ochiq."
+            : "Hisob muddati o'tdi. Kirish hozircha to'liq ochiq."}
+        </span>
+        <Link to="/billing" className="ml-auto shrink-0 font-semibold underline">
+          Hisobni ko'rish
+        </Link>
       </div>
     )
   }

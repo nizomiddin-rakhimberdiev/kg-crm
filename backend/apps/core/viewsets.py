@@ -19,6 +19,7 @@ from rest_framework import viewsets
 
 from apps.core.permissions import HasModulePermission
 from apps.core.typing import request_user
+from apps.subscriptions.permissions import SubscriptionWriteGate
 
 __all__ = ["TenantViewSet", "TenantReadOnlyViewSet", "BranchScopedMixin"]
 
@@ -89,7 +90,7 @@ class TenantViewSet(_TenantQuerysetMixin, viewsets.ModelViewSet):
     hamma narsani rad etadi (P5).
     """
 
-    permission_classes = [HasModulePermission]
+    permission_classes = [HasModulePermission, SubscriptionWriteGate]
     permission_module: str | None = None
     #: Yozgandan keyin javob uchun ishlatiladigan serializer. Belgilanmasa,
     #: `get_serializer_class()` ishlatiladi.
@@ -144,5 +145,5 @@ class TenantViewSet(_TenantQuerysetMixin, viewsets.ModelViewSet):
 
 
 class TenantReadOnlyViewSet(_TenantQuerysetMixin, viewsets.ReadOnlyModelViewSet):
-    permission_classes = [HasModulePermission]
+    permission_classes = [HasModulePermission, SubscriptionWriteGate]
     permission_module: str | None = None

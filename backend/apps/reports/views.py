@@ -25,6 +25,7 @@ from apps.reports import selectors, services
 from apps.reports.models import REPORT_TYPES, ExportStatus, ReportExport
 from apps.reports.serializers import ExportRequestSerializer, ReportExportSerializer
 from apps.reports.tasks import generate_export
+from apps.subscriptions.permissions import SubscriptionWriteGate
 
 __all__ = ["DashboardViewSet", "ReportViewSet"]
 
@@ -74,7 +75,7 @@ class _ScopeMixin:
 class DashboardViewSet(_ScopeMixin, viewsets.ViewSet):
     """`GET /dashboard` — bitta ekranga sig'adigan KPI to'plami."""
 
-    permission_classes = [HasModulePermission]
+    permission_classes = [HasModulePermission, SubscriptionWriteGate]
     permission_module = "dashboard"
 
     def list(self, request: Request) -> Response:
@@ -92,7 +93,7 @@ class DashboardViewSet(_ScopeMixin, viewsets.ViewSet):
 class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
     """`/reports/*` — agregatsiyalar va eksport."""
 
-    permission_classes = [HasModulePermission]
+    permission_classes = [HasModulePermission, SubscriptionWriteGate]
     permission_module = "reports"
     permission_action_map = {
         "export": "export",

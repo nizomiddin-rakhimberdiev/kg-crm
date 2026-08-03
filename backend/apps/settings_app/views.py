@@ -13,6 +13,7 @@ from apps.core.permissions import HasModulePermission
 from apps.core.typing import request_user
 from apps.settings_app import services
 from apps.settings_app.serializers import SetSettingSerializer
+from apps.subscriptions.permissions import SubscriptionWriteGate
 
 __all__ = ["SettingsViewSet"]
 
@@ -26,7 +27,7 @@ class SettingsViewSet(viewsets.ViewSet):
     bazadagi qiymat ham bir xil ko'rinadi.
     """
 
-    permission_classes = [HasModulePermission]
+    permission_classes = [HasModulePermission, SubscriptionWriteGate]
     permission_module = "settings"
     lookup_value_regex = r"[^/]+"
 

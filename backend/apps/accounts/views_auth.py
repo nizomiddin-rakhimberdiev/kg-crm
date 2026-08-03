@@ -105,9 +105,7 @@ class SignupView(APIView):
             {
                 **tokens,
                 "user": payload,
-                # Obuna Sprint 10 da qo'shiladi (docs/03 §20.2); shu paytgacha
-                # frontend "trial" holatini shu maydondan o'qiy oladi.
-                "subscription": {"status": "trialing", "read_only": False},
+                "subscription": services.subscription_payload(result.organization),
             },
             status=status.HTTP_201_CREATED,
         )
@@ -180,7 +178,7 @@ class LoginView(APIView):
         return {
             **tokens,
             "user": payload,
-            "subscription": {"status": "trialing", "read_only": False},
+            "subscription": services.subscription_payload(user.organization),
         }
 
 
@@ -275,10 +273,11 @@ class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
+        user = request_user(request)
         return Response(
             {
-                "user": services.user_payload(request_user(request)),
-                "subscription": {"status": "trialing", "read_only": False},
+                "user": services.user_payload(user),
+                "subscription": services.subscription_payload(user.organization),
             }
         )
 

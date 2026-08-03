@@ -18,12 +18,13 @@ from apps.audit.models import AuditLog
 from apps.audit.serializers import AuditLogSerializer
 from apps.core.permissions import HasModulePermission
 from apps.core.typing import request_user
+from apps.subscriptions.permissions import SubscriptionWriteGate
 
 __all__ = ["AuditLogViewSet"]
 
 
 class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = [HasModulePermission]
+    permission_classes = [HasModulePermission, SubscriptionWriteGate]
     permission_module = "audit"
     serializer_class = AuditLogSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]

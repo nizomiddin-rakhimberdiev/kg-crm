@@ -28,6 +28,7 @@ from apps.finance.serializers import (
     PaymentWriteSerializer,
     TariffPlanSerializer,
 )
+from apps.subscriptions.permissions import SubscriptionWriteGate
 
 __all__ = [
     "TariffPlanViewSet",
@@ -292,7 +293,7 @@ class DebtorViewSet(viewsets.ViewSet):
     uchun u haqiqatdan hech qachon ajralmaydi.
     """
 
-    permission_classes = [HasModulePermission]
+    permission_classes = [HasModulePermission, SubscriptionWriteGate]
     permission_module = "debtors"
 
     def list(self, request: Request) -> Response:

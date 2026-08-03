@@ -58,6 +58,11 @@ export const queryKeys = {
     ['org', orgId, 'expenses', params ?? {}] as const,
   expenseCategories: (orgId: string) => ['org', orgId, 'expense-categories'] as const,
 
+  subscription: (orgId: string) => ['org', orgId, 'billing', 'subscription'] as const,
+  billingUsage: (orgId: string) => ['org', orgId, 'billing', 'usage'] as const,
+  billingUsageHistory: (orgId: string) => ['org', orgId, 'billing', 'usage-history'] as const,
+  billingInvoices: (orgId: string) => ['org', orgId, 'billing', 'invoices'] as const,
+
   dashboard: (orgId: string) => ['org', orgId, 'dashboard'] as const,
   reportRevenue: (orgId: string, from: string, to: string) =>
     ['org', orgId, 'reports', 'revenue', from, to] as const,

@@ -313,6 +313,28 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 - Money tests: base+overage+discount arithmetic across every tier boundary (49/50/51/60/61 children), the three payment terms, trial→`pending_payment`→`active` transitions, grace-period expiry, peak-vs-month-end gaming scenarios, and **invoice reconstruction from an old snapshot after a plan version change**.
 - **Deliverable:** an organization signs up, trials for 15 days, converts, receives a correct invoice dated from the trial start, and is suspended read-only (never deleted) if it does not pay.
 
+> **Status: delivered.** The full path works end to end: signup → 15-day trial → conversion → invoice → payment → active, and non-payment → `past_due` → `suspended` with the data intact.
+>
+> **The pricing engine is a pure module with 30 tests of its own.** `pricing.py` touches no database, no request, and no clock, because an error here sends a customer the wrong bill — and a wrong bill costs more than one mistake, it costs trust. Every tier boundary is tested individually (49/50/51/59/60/61/69/70/71), along with all four worked examples from [01 §4.2](./01_Project_Vision.md), plus a sweep asserting the price **never falls as children are added** — the property a rounding or discount bug breaks first and the eye catches last.
+>
+> **Two ambiguities in [03 §20](./03_Database_Design.md) surfaced during implementation and are now fixed there:**
+> - `uq_usage_snapshot_period` contradicted the correction rule immediately below it — one row per period makes a second `manual_adjustment` row for that period impossible. The index is now **partial** on `daily_peak`.
+> - "Append-only" and "highest count observed during the period" needed reconciling. `closed_at` marks the boundary: while the period is open the daily job raises `peak_children` (that *is* the measurement); once closed the row is history and every correction is a new row.
+>
+> Also clarified: the discount applies to base **and** overage at the same rate. Applying it to the base alone would make a customer who prepaid a year pay full price for growth.
+>
+> **The `402` write gate found its own bug on the first run.** It was registered in `DEFAULT_PERMISSION_CLASSES` — which DRF discards entirely the moment a view declares `permission_classes`, and every viewset in this project declares them. The setting read like global protection while protecting nothing. It is now attached per viewset, and `test_write_gate_is_everywhere` walks the router asserting no endpoint is missing it — same philosophy as the cross-tenant sweep: never rely on remembering.
+>
+> **What `suspended` does and does not do:** writes return `402` (not `403` — the role is fine, the invoice is not), reads keep working, and **`/billing/*` and export stay open**. A gate that stopped a customer from seeing or paying their invoice would work against itself, and holding someone's own operational data hostage to a billing dispute is not a collections tactic, it is a reason to never come back.
+>
+> `pending_payment` and `past_due` both keep **full** access. Customers are legal entities and a bank transfer takes days; cutting off someone whose money is already in flight is the one failure that turns a paying customer into a former one.
+>
+> `included_children` is enforced as a **floor**, verified at 0, 1, 12 and 49 children: the service does not get cheaper with fewer children, so this is a revenue floor, not a discount.
+>
+> A database `CHECK` caught a bad test during this sprint — backdating `due_at` without `issued_at` violates `ck_sub_invoice_due`, and it was right to: an invoice overdue before it was issued is nonsense. Invoice arithmetic is likewise enforced in the database, so a total that disagrees with its parts cannot be written at all.
+>
+> Still deferred: the invoice PDF (`GET /billing/invoices/{id}/document`) and `POST /billing/export` — both wait on the same storage abstraction now in place from Sprint 9, and neither blocks taking money by bank transfer against the on-screen invoice.
+
 ### Sprint 11 — Platform Console & Launch Readiness
 **Goal:** the vendor can operate the business safely.
 - DB: platform staff identity + platform audit ([02 §11.0](./02_Software_Architecture.md)); support-grant records.

@@ -18,6 +18,7 @@ import ReportsPage from './features/reports/pages/ReportsPage'
 import BranchesPage from './features/branches/pages/BranchesPage'
 import NotificationsPage from './features/notifications/pages/NotificationsPage'
 import AuditPage from './features/audit/pages/AuditPage'
+import BillingPage from './features/billing/pages/BillingPage'
 import SettingsPage from './features/settings/pages/SettingsPage'
 
 /**
@@ -91,6 +92,10 @@ export const router = createBrowserRouter([
           {
             element: <PermissionRoute permission="notifications.read" />,
             children: [{ path: 'notifications', element: <NotificationsPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="billing.read" />,
+            children: [{ path: 'billing', element: <BillingPage /> }],
           },
           {
             element: <PermissionRoute permission="audit.read" />,

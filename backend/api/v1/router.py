@@ -32,6 +32,7 @@ from apps.notifications.views import NotificationTemplateViewSet, NotificationVi
 from apps.payroll.views import PayrollRunViewSet
 from apps.reports.views import DashboardViewSet, ReportViewSet
 from apps.settings_app.views import SettingsViewSet
+from apps.subscriptions.views import BillingViewSet
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -67,5 +68,6 @@ router.register("settings", SettingsViewSet, basename="setting")
 router.register("dashboard", DashboardViewSet, basename="dashboard")
 router.register("reports", ReportViewSet, basename="report")
 router.register("audit-logs", AuditLogViewSet, basename="audit-log")
+router.register("billing", BillingViewSet, basename="billing")
 
 __all__ = ["router"]

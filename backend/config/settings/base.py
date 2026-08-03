@@ -54,6 +54,7 @@ LOCAL_APPS = [
     "apps.notifications",
     "apps.settings_app",
     "apps.reports",
+    "apps.subscriptions",
     "apps.audit",
 ]
 
@@ -193,6 +194,27 @@ CELERY_BEAT_SCHEDULE = {
         "task": "reports.recompute_balances",
         "schedule": crontab(hour=4, minute=30),
     },
+    # --- Obuna (ADR-11) ---
+    #
+    # Kunlik o'lchov o'tkazib yuborilsa hisob KAMAYADI va o'tmishdagi
+    # bolalar sonini qayta tiklab bo'lmaydi. Shuning uchun u eng
+    # ertalabki vazifa va boshqa hech narsaga bog'liq emas.
+    "record-daily-peak": {
+        "task": "subscriptions.record_daily_peak",
+        "schedule": crontab(hour=1, minute=0),
+    },
+    "close-subscription-periods": {
+        "task": "subscriptions.close_periods_and_invoice",
+        "schedule": crontab(hour=5, minute=0),
+    },
+    "expire-trials": {
+        "task": "subscriptions.expire_trials",
+        "schedule": crontab(hour=5, minute=30),
+    },
+    "subscription-dunning": {
+        "task": "subscriptions.dunning",
+        "schedule": crontab(hour=6, minute=0),
+    },
 }
 
 # --- DRF (docs/04 §1–3) ---
@@ -207,6 +229,14 @@ REST_FRAMEWORK = {
     ],
     "EXCEPTION_HANDLER": "apps.core.exceptions.envelope_exception_handler",
     # P5: deny-by-default. Ochiq endpoint har doim aniq belgilanadi.
+    #
+    # `SubscriptionWriteGate` bu yerda EMAS, har bir viewset'da.
+    # Sabab: `DEFAULT_PERMISSION_CLASSES` view'da `permission_classes`
+    # e'lon qilinishi bilan BUTUNLAY qoplanadi, va bu loyihada har bir
+    # viewset uni e'lon qiladi. Ya'ni bu yerga yozish "global himoya
+    # bor" degan yolg'on tuyg'u berardi, aslida esa hech qayerda
+    # ishlamasdi. Unutib qoldirishdan `test_write_gate_is_everywhere`
+    # himoya qiladi.
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     # TenantJWTAuthentication tenant kontekstini o'rnatadi (apps/core/authentication.py).
     "DEFAULT_AUTHENTICATION_CLASSES": [

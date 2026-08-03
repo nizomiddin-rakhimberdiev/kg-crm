@@ -58,6 +58,7 @@ Never violate these without a superseding ADR:
 7. **Frontend is feature-based; TanStack Query owns all server state.** Context holds only small global client state (auth, organization, branch, theme). No Redux.
 8. **Integrity is enforced in the database** (FKs, CHECKs, unique/partial indexes, insert-only audit, `ON DELETE RESTRICT` on every path from `organization`) — not just in the app.
 9. **Subscription billing is its own domain with an append-only usage ledger** (ADR-11). Every charge traces to an immutable `usage_snapshot`; `subscriptions` and tuition `finance` never share tables. Watch the naming: "plan", "invoice", and "payment" exist in **both** domains ([01 §4.6](./docs/01_Project_Vision.md)).
+10. **Non-payment stops writes, never access.** `suspended` returns `402` on writes while reads, `/billing/*`, and export keep working; data is never deleted or hidden ([03 §20.6](./docs/03_Database_Design.md)). Every new viewset carries `SubscriptionWriteGate` — `test_write_gate_is_everywhere` fails the build otherwise.
 
 ---
 
@@ -101,8 +102,8 @@ Each stack has its own `.gitignore`; the root one covers only OS/editor/`.env`.
 
 ## Current Phase
 
-**Sprints 0–9 delivered.** Backend and frontend are live against a real API: tenancy foundation, auth/RBAC, children & groups, finance (ledger, invoices, payments, debtors), attendance, staff & payroll, inventory & expenses, notifications & settings, and reports/dashboard/audit with CSV export. 404 backend tests pass, and Celery has now been verified against a live Redis broker.
+**Sprints 0–10 delivered.** Backend and frontend are live against a real API: tenancy foundation, auth/RBAC, children & groups, finance (ledger, invoices, payments, debtors), attendance, staff & payroll, inventory & expenses, notifications & settings, reports/dashboard/audit with CSV export, and **subscriptions/metering/billing** — the product can now be sold. 483 backend tests pass; Celery is verified against a live Redis broker.
 
-Next: **Sprint 10 — Subscriptions, Metering & Billing**, then Sprint 11 (Platform Console + Postgres RLS) per [06_Development_Roadmap](./docs/06_Development_Roadmap.md).
+Next: **Sprint 11 — Platform Console + Postgres RLS + data-residency gate** per [06_Development_Roadmap](./docs/06_Development_Roadmap.md).
 
-> Known gaps, deliberately deferred: no real SMS gateway (console provider behind the adapter); no PDF receipts/payslips — exports are CSV, but they now go through the `FileField` storage abstraction the PDFs were waiting for; the materialized views of [03 §25](./docs/03_Database_Design.md) are not built (aggregates are live ORM queries — reasoning recorded there); and the backup/restore drill plus browser-level E2E have not been run. GitHub Actions returns `startup_failure` on every run — the workflow file is valid; the cause looks account-level (private-repo Actions billing).
+> Known gaps, deliberately deferred: no real SMS gateway (console provider behind the adapter); no PDF documents — invoice/receipt/payslip PDFs all wait on the same storage abstraction, which is now in place (exports are CSV through `FileField`); the materialized views of [03 §25](./docs/03_Database_Design.md) are not built (aggregates are live ORM queries — reasoning recorded there); and the backup/restore drill plus browser-level E2E have not been run. GitHub Actions returns `startup_failure` on every run — the workflow file is valid; the cause looks account-level (private-repo Actions billing).

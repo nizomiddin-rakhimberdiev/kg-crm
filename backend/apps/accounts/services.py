@@ -33,6 +33,7 @@ __all__ = [
     "sync_permission_catalog",
     "seed_system_roles",
     "register_organization",
+    "subscription_payload",
     "create_user",
     "store_refresh_token",
     "revoke_refresh_token",
@@ -131,7 +132,9 @@ def register_organization(
     Bitta tranzaksiyada: yarim yaratilgan tashkilot — kirib bo'lmaydigan,
     lekin mavjud bo'lgan tenant degani, va uni qo'lda tozalash kerak bo'ladi.
 
-    Obuna (`trialing`) Sprint 10 da shu yerga qo'shiladi (docs/03 §20.2).
+    Sinov obunasi shu tranzaksiyada ochiladi: obunasiz tashkilot —
+    hisob-kitobi yo'q mijoz degani, va uni keyin qo'lda tuzatish kerak
+    bo'lardi.
     """
     slug = _unique_slug(organization_name)
 
@@ -166,6 +169,11 @@ def register_organization(
             role=roles["org_owner"],
             branch=None,  # Org Owner barcha filiallarni ko'radi
         )
+
+        # 15 kunlik sinov — karta so'ralmaydi (docs/01 §4.4).
+        from apps.subscriptions.services import start_trial
+
+        start_trial(organization=organization)
 
     return RegistrationResult(organization=organization, branch=branch, owner=owner)
 
@@ -257,6 +265,37 @@ def revoke_all_refresh_tokens(user: User) -> int:
 
 def touch_last_login(user: User) -> None:
     User.objects.filter(pk=user.pk).update(last_login_at=timezone.now())
+
+
+def subscription_payload(organization: Any) -> dict[str, Any]:
+    """
+    Frontend uchun obuna holati (docs/04 §5).
+
+    `read_only` shu yerdan keladi, chunki UI uni har bir tugmada
+    tekshiradi. Bu **UX**, xavfsizlik emas: haqiqiy to'siq backend'dagi
+    `SubscriptionWriteGate` va u `402` qaytaradi.
+    """
+    from apps.subscriptions.models import Subscription, SubscriptionStatus
+
+    if organization is None:
+        return {"status": None, "read_only": False, "trial_ends_at": None}
+
+    subscription = (
+        Subscription.all_objects.filter(organization=organization)
+        .exclude(status=SubscriptionStatus.CANCELLED)
+        .only("status", "trial_ends_at")
+        .first()
+    )
+    if subscription is None:
+        return {"status": None, "read_only": False, "trial_ends_at": None}
+
+    return {
+        "status": subscription.status,
+        "read_only": subscription.is_read_only,
+        "trial_ends_at": (
+            subscription.trial_ends_at.isoformat() if subscription.trial_ends_at else None
+        ),
+    }
 
 
 def user_payload(user: User) -> dict[str, Any]:

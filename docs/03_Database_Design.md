@@ -894,7 +894,7 @@ One organization's commercial agreement. **One active subscription per organizat
 
 **Business rules:**
 - `discount_percent` is **copied onto the row at purchase**, not read from the term at billing time. If the vendor later changes what "annual" is worth, existing agreements are untouched.
-- The discount applies to the **base package**. Overage steps beyond `committed_children` are billed as they occur, at the same discount rate ([01 §4.3](./01_Project_Vision.md)).
+- The discount applies to the **base package**, and overage steps are billed at the **same rate** ([01 §4.3](./01_Project_Vision.md)) — i.e. `discount_amount = (base_amount + overage_amount) × discount_percent`. Applying it to the base alone would make a customer who prepaid a year pay full price for growth, which is contrary to the spirit of the commitment.
 - A falling child count never triggers a refund — `included_children` is a floor, not an estimate.
 
 ### 20.3 `usage_snapshot` (append-only — THE metering evidence)
@@ -912,7 +912,15 @@ The immutable answer to "why is this invoice this amount?" Never updated, never 
 | `measurement_method` | `VARCHAR(30)` | `NOT NULL`, `CHECK (measurement_method IN ('daily_peak','manual_adjustment'))` | |
 | `note` | `TEXT` | `NULL` | Required for `manual_adjustment` |
 
-**Constraint:** `uq_usage_snapshot_period` — `UNIQUE (subscription_id, period_year, period_month)`.
+| `closed_at` | `TIMESTAMPTZ` | `NULL` | Set at period close; the row is frozen from then on |
+
+**Constraints:**
+- `uq_usage_snapshot_period` — `UNIQUE (subscription_id, period_year, period_month) WHERE measurement_method = 'daily_peak'` (**partial**).
+- `ck_usage_adjustment_note` — a `manual_adjustment` row must carry a note.
+
+> **Why the unique index is partial.** As first written, this constraint contradicted the correction rule directly below it: one row per period makes a second `manual_adjustment` row for that same period impossible to insert. Scoping the index to `daily_peak` resolves it — exactly one *measurement* row per period, with corrections stacked alongside as additional rows. Found while implementing Sprint 10.
+>
+> **Why `closed_at`.** "Append-only" and "the highest count observed during the period" also need reconciling: while the period is open the daily job must be able to raise `peak_children`, which *is* the measurement, not a rewrite of history. `closed_at` marks the moment it becomes history; after that the row never changes and any correction is a new row.
 
 > **Why peak, not month-end count?** A month-end reading is trivially gamed: mark children inactive on the 30th, reactivate on the 1st. The peak is measured by a daily job that records the high-water mark, so the number reflects the service actually consumed. Corrections are **new `manual_adjustment` rows with a mandatory note**, never edits — same discipline as `child_ledger_entry` (D3).
 
