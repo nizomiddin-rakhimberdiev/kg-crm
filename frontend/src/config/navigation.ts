@@ -10,6 +10,7 @@ import {
   Receipt,
   BarChart3,
   Settings,
+  BellRing,
   Building2,
   Users2,
   type LucideIcon,
@@ -43,6 +44,7 @@ export const navItems: NavItem[] = [
   { label: 'Ombor', to: '/inventory', icon: Package, permission: 'inventory.read' },
   { label: 'Chiqimlar', to: '/expenses', icon: Receipt, permission: 'expenses.read' },
   { label: 'Hisobotlar', to: '/reports', icon: BarChart3, permission: 'reports.read' },
+  { label: 'Bildirishnomalar', to: '/notifications', icon: BellRing, permission: 'notifications.read' },
   { label: 'Filiallar', to: '/branches', icon: Building2, permission: 'branches.read' },
   { label: 'Sozlamalar', to: '/settings', icon: Settings, permission: 'settings.read' },
 ]

@@ -69,6 +69,8 @@ def _create_row(tenant: Any, basename: str) -> Any:
         Warehouse,
     )
     from apps.inventory.services import record_movement
+    from apps.notifications.models import NotificationTemplate
+    from apps.notifications.services import queue_notification
     from apps.payroll.services import create_run
 
     with organization_context(tenant.organization.id):
@@ -134,6 +136,29 @@ def _create_row(tenant: Any, basename: str) -> Any:
                 group=group,
                 attendance_date=timezone.localdate(),
                 status="present",
+            )
+        if basename == "notification-template":
+            return NotificationTemplate.objects.create(
+                organization=tenant.organization,
+                code="custom",
+                channel="sms",
+                body="Test",
+            )
+        if basename == "notification":
+            from apps.children.models import Guardian
+
+            guardian = Guardian.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                first_name="Vasiy",
+                last_name="Testov",
+                phone=f"+99890{abs(hash(tenant.organization.slug)) % 10_000_000:07d}",
+            )
+            return queue_notification(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                guardian=guardian,
+                code="debt_reminder",
             )
         if basename == "warehouse":
             return Warehouse.objects.create(

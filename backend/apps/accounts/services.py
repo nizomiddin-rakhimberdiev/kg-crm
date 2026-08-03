@@ -151,6 +151,12 @@ def register_organization(
         sync_permission_catalog()
         roles = seed_system_roles(organization)
 
+        # Boshlang'ich SMS shablonlari — bog'cha ularni tahrirlashi
+        # mumkin; matn mahsulot qarori emas, mijoz qarori.
+        from apps.notifications.services import seed_default_templates
+
+        seed_default_templates(organization)
+
         owner = User.objects.create_user(
             email=contact_email,
             password=password,

@@ -191,6 +191,46 @@ class TestDatabaseConstraints:
             )
 
 
+class TestTimezoneSkew:
+    """
+    Regressiya: DB cheklovi UTC'da, filial esa o'z zonasida yashaydi.
+
+    Toshkent UTC+5. Yarim tundan 05:00 gacha lokal sana UTC sanadan bir
+    kun oldinda bo'ladi. Qat'iy `attendance_date <= Now()` cheklovi shu
+    oynada HAR KUNI to'g'ri yozuvni rad etardi — bu test buni qaytib
+    kelmasligi uchun qotiradi.
+    """
+
+    def test_todays_attendance_works_in_every_hour(self, tenant_a, group_with_children):
+        group, children = group_with_children
+        with organization_context(tenant_a.organization.id):
+            records = mark_bulk(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                group=group,
+                attendance_date=timezone.localdate(),
+                records=[{"child_id": children[0].id, "status": "present"}],
+            )
+        assert len(records) == 1
+
+    def test_database_still_blocks_obviously_future_dates(self, tenant_a, group_with_children):
+        """Zaxira bir kun — "kelasi oy" baribir bazada rad etiladi."""
+        group, children = group_with_children
+        with (
+            organization_context(tenant_a.organization.id),
+            pytest.raises(IntegrityError),
+            transaction.atomic(),
+        ):
+            AttendanceRecord.objects.create(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                child=children[0],
+                group=group,
+                attendance_date=timezone.localdate() + timedelta(days=30),
+                status="present",
+            )
+
+
 class TestDailyRegister:
     def test_includes_unmarked_children(self, tenant_a, group_with_children):
         """

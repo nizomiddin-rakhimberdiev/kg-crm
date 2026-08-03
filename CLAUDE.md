@@ -101,6 +101,8 @@ Each stack has its own `.gitignore`; the root one covers only OS/editor/`.env`.
 
 ## Current Phase
 
-**Pre-development — architecture & design complete (docs 01–06, v1.1 multi-tenant SaaS).** No application code exists yet; `frontend/` holds a UI skeleton on mock data. Next step is Sprint 0 (scaffolding + **the tenancy foundation**) per [06_Development_Roadmap](./docs/06_Development_Roadmap.md).
+**Sprints 0–8 delivered.** Backend and frontend are live against a real API: tenancy foundation, auth/RBAC, children & groups, finance (ledger, invoices, payments, debtors), attendance, staff & payroll, inventory & expenses, notifications & settings. 364 backend tests pass.
 
-> The frontend skeleton still shows the pre-v1.1 `Super Admin` label in its mock settings/sidebar copy. It is display-only mock data and will be replaced by real `Org Owner` role data in Sprint 1.
+Next: **Sprint 9 — Reports, Dashboard & Hardening**, then Sprints 10–11 (subscriptions/metering, Platform Console + RLS) per [06_Development_Roadmap](./docs/06_Development_Roadmap.md).
+
+> Known gaps, deliberately deferred: no real SMS gateway (console provider behind the adapter), no PDF receipts/payslips (need the storage abstraction), and Celery has never been run against a live broker. GitHub Actions returns `startup_failure` on every run — the workflow file is valid; the cause looks account-level (private-repo Actions billing).

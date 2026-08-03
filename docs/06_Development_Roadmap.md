@@ -146,7 +146,7 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 
 > **Status: delivered.** The cross-tenant sweep caught a real leak during this sprint — `User`'s default manager was unscoped (login must search across organizations), so `/users` exposed other tenants' staff. The default manager is now scoped and the auth path uses an explicit `User.auth_objects` escape hatch. This is exactly the failure the generated sweep exists to catch, and it would not have been found by hand-written per-endpoint tests.
 >
-> The Roles management UI and Topbar branch switcher shipped in the same sprint. `SettingsPage` still renders its pre-v1.1 mock content and is rewritten when `settings_app` lands (Sprint 8).
+> The Roles management UI and Topbar branch switcher shipped in the same sprint. `SettingsPage` still rendered its pre-v1.1 mock content at this point; it was rewritten against the real API in Sprint 8.
 
 ### Sprint 2 — Children (CRM)
 **Goal:** manage children, guardians, groups, enrollment.
@@ -255,6 +255,24 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 - Wire events: payment received → SMS receipt; overdue → reminder.
 - Frontend: `notifications` feature (log, templates, send), `settings` feature.
 - **Deliverable:** SMS sent on payment and for debt reminders, with delivery status.
+
+> **Status: delivered.** Payments and debt reminders both send, and every attempt is on the record.
+>
+> **The gateway is behind an adapter, and MVP ships with the console one.** `providers.py` defines the `send()` contract and a registry; `ConsoleProvider` logs the message. This is deliberate: a real SMS gateway needs a contract and prepayment, and can wait for the first paying customer — while everything *around* it (queueing, retries, the delivery log) is already built and tested. Switching providers later adds one class and changes one `.env` value.
+>
+> **Dispatch is a separate step from queueing.** Waiting on a gateway inside the payment request would make taking money as slow and as failure-prone as the SMS network (P8).
+>
+> **A failed send must not roll back a payment.** `record_payment()` calls the notification at the end of the transaction with its exception swallowed and logged — the money has already been handed over; a gateway outage cannot undo that.
+>
+> **Reminders read the derived debtor list** (ADR-7), so a reminder never reaches a parent who has already paid — verified by a test that pays the invoice and asserts the next run queues nothing.
+>
+> **Templates render with `string.Template.safe_substitute`, not `.format()`.** Customers edit this text; a stray `{` or an unknown placeholder must not break the send. Address and body are **snapshotted** onto the notification row, so changing a guardian's phone later never rewrites what was actually sent.
+>
+> **Settings resolve branch → organization → code default**, and the API always returns the full set including untouched defaults — a setting that exists only when someone has changed it is a setting nobody can find.
+>
+> **A timezone bug surfaced here and was fixed at the source:** `ck_attendance_not_future` compared the date against `Now()` (UTC in Postgres) while the service used `timezone.localdate()` (Asia/Tashkent). Between local midnight and 05:00 the constraint rejected a perfectly valid same-day record — every kindergarten, every day. The `CHECK` now carries a one-day tolerance as a coarse sanity guard and the exact rule lives in the service and serializer, where it can see the branch's own timezone.
+>
+> The mock `SettingsPage` is gone, and with it the last pre-v1.1 `Super Admin` copy in the frontend.
 
 ### Sprint 9 — Reports, Dashboard & Hardening
 **Goal:** visibility + release readiness.

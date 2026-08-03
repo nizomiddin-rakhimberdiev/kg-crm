@@ -58,6 +58,11 @@ export const queryKeys = {
     ['org', orgId, 'expenses', params ?? {}] as const,
   expenseCategories: (orgId: string) => ['org', orgId, 'expense-categories'] as const,
 
+  notificationTemplates: (orgId: string) => ['org', orgId, 'notification-templates'] as const,
+  notifications: (orgId: string, params?: Record<string, unknown>) =>
+    ['org', orgId, 'notifications', params ?? {}] as const,
+  settings: (orgId: string) => ['org', orgId, 'settings'] as const,
+
   attendanceDaily: (orgId: string, groupId: string, date: string) =>
     ['org', orgId, 'attendance', 'daily', groupId, date] as const,
   attendanceSummary: (orgId: string, month: string, groupId: string | null) =>

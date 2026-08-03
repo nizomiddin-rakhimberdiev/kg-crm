@@ -1,0 +1,67 @@
+"""Sozlama endpointlari (docs/04 §16)."""
+
+from __future__ import annotations
+
+from rest_framework import status, viewsets
+from rest_framework.request import Request
+from rest_framework.response import Response
+
+from apps.branches.models import Branch
+from apps.core.exceptions import BusinessRuleViolation
+from apps.core.permissions import HasModulePermission
+from apps.core.typing import request_user
+from apps.settings_app import services
+from apps.settings_app.serializers import SetSettingSerializer
+
+__all__ = ["SettingsViewSet"]
+
+
+class SettingsViewSet(viewsets.ViewSet):
+    """
+    Sozlamalar — kalit bo'yicha, jadval qatorlari bo'yicha emas.
+
+    `ViewSet` (model emas): mijoz uchun sozlama bu "kalit → qiymat", va
+    uning ortida yozuv bor-yo'qligi ahamiyatsiz. Koddagi default ham,
+    bazadagi qiymat ham bir xil ko'rinadi.
+    """
+
+    permission_classes = [HasModulePermission]
+    permission_module = "settings"
+    lookup_value_regex = r"[^/]+"
+
+    def list(self, request: Request) -> Response:
+        user = request_user(request)
+        return Response(services.effective_settings(branch=user.branch))
+
+    def retrieve(self, request: Request, pk: str | None = None) -> Response:
+        user = request_user(request)
+        value = services.get_setting(key=pk or "", branch=user.branch)
+        if value is None and pk not in services.DEFAULTS:
+            raise BusinessRuleViolation(f"'{pk}' sozlamasi mavjud emas.")
+        return Response({"key": pk, "value": value})
+
+    def update(self, request: Request, pk: str | None = None) -> Response:
+        """`PUT /settings/{key}` — qiymat o'rnatish."""
+        serializer = SetSettingSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        user = request_user(request)
+        branch = None
+        if data.get("branch_id"):
+            # `Branch.objects` tenant bilan cheklangan.
+            branch = Branch.objects.filter(pk=data["branch_id"]).first()
+            if branch is None:
+                raise BusinessRuleViolation("Filial topilmadi.")
+
+        setting = services.set_setting(
+            organization=user.organization, key=pk or "", value=data["value"], branch=branch
+        )
+        return Response(
+            {
+                "key": setting.key,
+                "value": setting.value,
+                "branch": str(branch.id) if branch else None,
+            },
+            status=status.HTTP_200_OK,
+        )

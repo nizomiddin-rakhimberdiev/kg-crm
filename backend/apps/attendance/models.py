@@ -7,8 +7,10 @@ bilan oy bo'yicha partitsiyalash nomzodi (docs/03 §27).
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 from django.db import models
-from django.db.models.functions import Now
+from django.db.models.functions import Now, TruncDate
 
 from apps.core.models import BranchScopedModel
 
@@ -75,8 +77,19 @@ class AttendanceRecord(BranchScopedModel):
             ),
             # Kelajakdagi kunga davomat belgilash — deyarli har doim
             # sana maydonidagi xato.
+            #
+            # Cheklov bir kunlik ZAXIRA bilan: `Now()` Postgres'da UTC
+            # beradi, filial vaqti esa o'zining zonasida (`branch.timezone`,
+            # masalan UTC+5). Yarim tundan keyin lokal sana UTC sanadan bir
+            # kun oldinda bo'ladi va qat'iy taqqoslash har kuni ertalab
+            # to'g'ri yozuvni rad etardi.
+            #
+            # Bu qo'pol sanitar tekshiruv: u "kelasi oy" kabi xatoni
+            # ushlaydi. ANIQ qoida (`> bugun` rad etiladi) servis va
+            # serializer qatlamida, filial vaqt zonasi ma'lum bo'lgan
+            # joyda qo'llanadi.
             models.CheckConstraint(
-                condition=models.Q(attendance_date__lte=Now()),
+                condition=models.Q(attendance_date__lte=TruncDate(Now()) + timedelta(days=1)),
                 name="ck_attendance_not_future",
             ),
         ]

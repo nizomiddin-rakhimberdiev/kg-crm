@@ -1,87 +1,194 @@
-import { useState, type FC } from 'react'
-import {
-  Building2,
-  ShieldCheck,
-  CreditCard,
-  MessageSquare,
-  Bell,
-  Lock,
-  UserCog,
-  Save,
-  type LucideIcon,
-} from 'lucide-react'
-import { Card, PageHeader, Button } from '@/components/ui/primitives'
-import { cn } from '@/lib/utils'
-import {
-  OrgTab,
-  RolesTab,
-  PaymentsTab,
-  SmsTab,
-  AppearanceTab,
-  SecurityTab,
-  ProfileTab,
-} from '../components/tabs'
+/**
+ * Sozlamalar (docs/04 §16).
+ *
+ * Sozlama — kalit va qiymat; uning ortida baza qatori bormi yoki koddagi
+ * default ishlayaptimi, foydalanuvchi uchun farqi yo'q. Shuning uchun
+ * sahifa HAR DOIM to'liq ro'yxatni ko'rsatadi, faqat o'zgartirilganlarini
+ * emas — "bunday sozlama umuman bormi?" degan savol tug'ilmasin.
+ */
 
-interface Tab {
-  key: string
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { settingsApi } from '@/features/notifications/api'
+import { queryKeys } from '@/lib/api/queryKeys'
+import { ApiError, type SettingValue } from '@/lib/api/types'
+import { useCan } from '@/lib/rbac/useCan'
+import { cn } from '@/lib/utils'
+
+interface SettingMeta {
   label: string
-  icon: LucideIcon
-  component: FC
+  help: string
 }
 
-const tabs: Tab[] = [
-  { key: 'org', label: "Muassasa Ma'lumotlari", icon: Building2, component: OrgTab },
-  { key: 'roles', label: 'Rollar va Huquqlar', icon: ShieldCheck, component: RolesTab },
-  { key: 'payments', label: "To'lov Tizimlari", icon: CreditCard, component: PaymentsTab },
-  { key: 'sms', label: 'SMS Xabarnomalar', icon: MessageSquare, component: SmsTab },
-  { key: 'appearance', label: "Ko'rinish va Bildirishnomalar", icon: Bell, component: AppearanceTab },
-  { key: 'security', label: 'Xavfsizlik', icon: Lock, component: SecurityTab },
-  { key: 'profile', label: 'Profil Sozlamalari', icon: UserCog, component: ProfileTab },
+/**
+ * Kalitlar ro'yxati backend'da (`DEFAULTS`), bu yerda faqat ularning
+ * odamcha nomi. Yangi kalit qo'shilsa u baribir ko'rinadi — shunchaki
+ * tarjimasiz, kalitning o'zi bilan.
+ */
+const META: Record<string, SettingMeta> = {
+  'finance.due_day': {
+    label: "To'lov muddati (oy kuni)",
+    help: "Hisob-faktura shu kungacha to'lanishi kutiladi.",
+  },
+  'finance.reminder_day': {
+    label: 'Eslatma kuni',
+    help: 'Qarzdorlarga eslatma shu kundan boshlab yuboriladi.',
+  },
+  'notifications.sms_enabled': {
+    label: 'SMS xabarnomalar',
+    help: "O'chirilsa hech qanday SMS yuborilmaydi.",
+  },
+  'notifications.payment_receipt': {
+    label: "To'lov haqida SMS",
+    help: "To'lov qabul qilinganda ota-onaga xabar ketadi.",
+  },
+  'attendance.auto_absent': {
+    label: 'Avtomatik "kelmadi"',
+    help: 'Belgilanmagan bolalar kun oxirida kelmagan deb yoziladi.',
+  },
+}
+
+const GROUPS: Array<[string, string]> = [
+  ['finance', 'Moliya'],
+  ['notifications', 'Bildirishnomalar'],
+  ['attendance', 'Davomat'],
 ]
 
 export default function SettingsPage() {
-  const [active, setActive] = useState('org')
-  const current = tabs.find((t) => t.key === active)!
-  const ActiveTab = current.component
+  const organizationId = useOrganizationId()
+  const queryClient = useQueryClient()
+  const { can } = useCan()
+  const editable = can('settings.update')
+
+  const [error, setError] = useState<string | null>(null)
+  const [savedKey, setSavedKey] = useState<string | null>(null)
+
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.settings(organizationId),
+    queryFn: settingsApi.all,
+  })
+
+  const save = useMutation({
+    mutationFn: ({ key, value }: { key: string; value: SettingValue }) =>
+      settingsApi.set(key, value),
+    onSuccess: (result) => {
+      setError(null)
+      setSavedKey(result.key)
+      void queryClient.invalidateQueries({ queryKey: queryKeys.settings(organizationId) })
+    },
+    onError: (err: unknown) => setError(err instanceof ApiError ? err.message : "Saqlab bo'lmadi."),
+  })
+
+  const settings = settingsQuery.data ?? {}
+  const keys = Object.keys(settings).sort()
+
+  const renderControl = (key: string, value: SettingValue) => {
+    if (typeof value === 'boolean') {
+      return (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={value}
+          aria-label={META[key]?.label ?? key}
+          disabled={!editable || save.isPending}
+          onClick={() => save.mutate({ key, value: !value })}
+          className={cn(
+            'relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50',
+            value ? 'bg-brand-600' : 'bg-slate-300',
+          )}
+        >
+          <span
+            className={cn(
+              'absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform',
+              value ? 'translate-x-5' : 'translate-x-0.5',
+            )}
+          />
+        </button>
+      )
+    }
+
+    if (typeof value === 'number') {
+      return (
+        <input
+          type="number"
+          min={1}
+          max={31}
+          defaultValue={value}
+          disabled={!editable}
+          aria-label={META[key]?.label ?? key}
+          onBlur={(e) => {
+            const next = Number(e.target.value)
+            if (Number.isFinite(next) && next !== value) save.mutate({ key, value: next })
+          }}
+          className="w-24 rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500 disabled:bg-slate-50"
+        />
+      )
+    }
+
+    return (
+      <input
+        defaultValue={String(value ?? '')}
+        disabled={!editable}
+        aria-label={META[key]?.label ?? key}
+        onBlur={(e) => {
+          if (e.target.value !== String(value ?? '')) save.mutate({ key, value: e.target.value })
+        }}
+        className="w-56 rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500 disabled:bg-slate-50"
+      />
+    )
+  }
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Tizim Sozlamalari">
-        <Button icon={Save} data-sound="success" data-toast={`${current.label} saqlandi ✓`}>
-          Saqlash
-        </Button>
-      </PageHeader>
-
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        {/* Sub-nav */}
-        <Card className="h-fit p-2">
-          <nav className="space-y-1">
-            {tabs.map((t) => (
-              <button
-                key={t.key}
-                data-sound="nav"
-                onClick={() => setActive(t.key)}
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                  active === t.key
-                    ? 'bg-brand-50 text-brand-700'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900',
-                )}
-              >
-                <t.icon
-                  className={cn('w-[18px] h-[18px]', active === t.key ? 'text-brand-600' : 'text-slate-400')}
-                />
-                {t.label}
-              </button>
-            ))}
-          </nav>
-        </Card>
-
-        {/* Active tab content */}
-        <Card className="p-6">
-          <ActiveTab />
-        </Card>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Sozlamalar</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          O'zgarish darhol saqlanadi va tashkilotning barcha filiallariga tegishli.
+        </p>
       </div>
+
+      {!editable && (
+        <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          Sozlamalarni faqat ko'rishingiz mumkin.
+        </div>
+      )}
+      {error && (
+        <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {GROUPS.map(([prefix, title]) => {
+        const groupKeys = keys.filter((key) => key.startsWith(`${prefix}.`))
+        if (groupKeys.length === 0) return null
+        return (
+          <section
+            key={prefix}
+            className="overflow-hidden rounded-xl border border-slate-200 bg-white"
+          >
+            <h2 className="border-b border-slate-100 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-900">
+              {title}
+            </h2>
+            <div className="divide-y divide-slate-100">
+              {groupKeys.map((key) => (
+                <div key={key} className="flex items-center justify-between gap-4 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-900">{META[key]?.label ?? key}</p>
+                    <p className="text-xs text-slate-500">{META[key]?.help ?? key}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {savedKey === key && !save.isPending && (
+                      <span className="text-xs text-emerald-600">Saqlandi</span>
+                    )}
+                    {renderControl(key, settings[key])}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )
+      })}
     </div>
   )
 }

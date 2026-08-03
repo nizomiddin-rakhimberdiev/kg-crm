@@ -27,7 +27,9 @@ from apps.inventory.views import (
     SupplierViewSet,
     WarehouseViewSet,
 )
+from apps.notifications.views import NotificationTemplateViewSet, NotificationViewSet
 from apps.payroll.views import PayrollRunViewSet
+from apps.settings_app.views import SettingsViewSet
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -55,5 +57,10 @@ router.register("suppliers", SupplierViewSet, basename="supplier")
 router.register("stock-movements", StockMovementViewSet, basename="stock-movement")
 router.register("expense-categories", ExpenseCategoryViewSet, basename="expense-category")
 router.register("expenses", ExpenseViewSet, basename="expense")
+router.register("notifications", NotificationViewSet, basename="notification")
+router.register(
+    "notification-templates", NotificationTemplateViewSet, basename="notification-template"
+)
+router.register("settings", SettingsViewSet, basename="setting")
 
 __all__ = ["router"]

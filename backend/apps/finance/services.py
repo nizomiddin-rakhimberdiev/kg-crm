@@ -479,6 +479,13 @@ def record_payment(
         _refresh_invoice_payment_state(locked)
 
     recompute_child_balance(child)
+
+    # Ota-onaga kvitansiya SMS'i. Bu ATAYLAB tranzaksiyaning oxirida va
+    # xatosi yutiladi: pul allaqachon qabul qilingan va yozilgan, uni
+    # SMS shlyuzi ishlamagani uchun bekor qilish mumkin emas (P8).
+    from apps.notifications.services import notify_payment_received
+
+    notify_payment_received(payment=payment)
     return payment
 
 

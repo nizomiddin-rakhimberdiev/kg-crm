@@ -50,6 +50,8 @@ LOCAL_APPS = [
     "apps.payroll",
     "apps.inventory",
     "apps.expenses",
+    "apps.notifications",
+    "apps.settings_app",
     "apps.audit",
 ]
 
@@ -209,6 +211,11 @@ CORS_ALLOW_CREDENTIALS = True
 TRIAL_DAYS = env.int("TRIAL_DAYS", default=15)
 PAYMENT_GRACE_DAYS = env.int("PAYMENT_GRACE_DAYS", default=7)
 CHURN_EXPORT_RETENTION_DAYS = env.int("CHURN_EXPORT_RETENTION_DAYS", default=30)
+
+# --- Bildirishnomalar (docs/02 §17) ---
+# Provayder adapter orqali almashtiriladi; real SMS shlyuzi birinchi
+# mijozgacha kechiktirilgan (apps/notifications/providers.py).
+NOTIFICATION_PROVIDER = env("NOTIFICATION_PROVIDER", default="console")
 
 # --- Loglash ---
 LOGGING = {

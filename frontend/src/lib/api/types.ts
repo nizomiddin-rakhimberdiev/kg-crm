@@ -467,3 +467,35 @@ export interface ExpenseSummary {
   total: string
   by_category: Array<{ category: string; total: string }>
 }
+
+export interface NotificationTemplate {
+  id: string
+  code: 'payment_received' | 'debt_reminder' | 'absence_notice' | string
+  channel: 'sms' | 'telegram' | 'email'
+  subject: string
+  body: string
+  branch: string | null
+  is_active: boolean
+  created_at: string
+}
+
+export interface Notification {
+  id: string
+  template: string | null
+  guardian: string | null
+  guardian_name: string | null
+  channel: 'sms' | 'telegram' | 'email'
+  recipient_address: string
+  rendered_body: string
+  status: 'queued' | 'sent' | 'failed' | 'cancelled'
+  provider_message_id: string
+  retry_count: number
+  error: string
+  scheduled_for: string | null
+  sent_at: string | null
+  created_at: string
+}
+
+/** Sozlama qiymati skalyar, ro'yxat yoki obyekt bo'lishi mumkin (docs/03 §18.1). */
+export type SettingValue = string | number | boolean | null | SettingValue[] | { [k: string]: SettingValue }
+export type EffectiveSettings = Record<string, SettingValue>
