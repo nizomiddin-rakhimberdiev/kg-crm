@@ -11,6 +11,7 @@ import {
   BarChart3,
   Settings,
   Building2,
+  Users2,
   type LucideIcon,
 } from 'lucide-react'
 import type { PermissionCode } from '@/lib/rbac/useCan'
@@ -33,6 +34,7 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard, permission: 'dashboard.read' },
   { label: 'Bolalar', to: '/children', icon: Users, permission: 'children.read' },
+  { label: 'Guruhlar', to: '/groups', icon: Users2, permission: 'children.read' },
   { label: "To'lovlar", to: '/payments', icon: CreditCard, permission: 'payments.read' },
   { label: 'Qarzdorlar', to: '/debtors', icon: AlertTriangle, permission: 'debtors.read' },
   { label: 'Davomat', to: '/attendance', icon: CalendarCheck, permission: 'attendance.read' },

@@ -17,6 +17,7 @@ from typing import Any
 
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 
 from api.v1.router import router
 from apps.core.tenancy import organization_context
@@ -43,8 +44,10 @@ ROUTES = _detail_routes()
 def _create_row(tenant: Any, basename: str) -> Any:
     """Berilgan tenant ichida shu endpoint uchun bitta qator yaratadi."""
     from apps.accounts.models import User
+    from apps.attendance.models import AttendanceRecord
     from apps.branches.models import Branch
     from apps.children.models import Child, Group, Guardian
+    from apps.children.services import enroll_child
 
     with organization_context(tenant.organization.id):
         if basename == "user":
@@ -85,6 +88,30 @@ def _create_row(tenant: Any, basename: str) -> Any:
                 branch=tenant.branch,
                 name="Quyoshlar",
                 capacity=20,
+            )
+        if basename == "attendance":
+            group = Group.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                name="Davomat guruhi",
+                capacity=20,
+            )
+            child = Child.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                first_name="Davomat",
+                last_name="Bolasi",
+                date_of_birth=date(2021, 3, 14),
+                gender="male",
+            )
+            enroll_child(child=child, group=group)
+            return AttendanceRecord.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                child=child,
+                group=group,
+                attendance_date=timezone.localdate(),
+                status="present",
             )
     raise AssertionError(
         f"'{basename}' uchun test ma'lumoti yaratilmagan. Yangi endpoint "

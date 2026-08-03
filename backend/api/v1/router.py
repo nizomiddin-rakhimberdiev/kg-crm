@@ -7,6 +7,7 @@ Har bir yangi app o'z ViewSet'ini shu yerga ro'yxatdan o'tkazadi (docs/02 §5).
 from rest_framework.routers import DefaultRouter
 
 from apps.accounts.views import PermissionViewSet, RoleViewSet, UserViewSet
+from apps.attendance.views import AttendanceViewSet
 from apps.branches.views import BranchViewSet
 from apps.children.views import ChildViewSet, GroupViewSet, GuardianViewSet
 
@@ -19,5 +20,6 @@ router.register("branches", BranchViewSet, basename="branch")
 router.register("children", ChildViewSet, basename="child")
 router.register("guardians", GuardianViewSet, basename="guardian")
 router.register("groups", GroupViewSet, basename="group")
+router.register("attendance", AttendanceViewSet, basename="attendance")
 
 __all__ = ["router"]

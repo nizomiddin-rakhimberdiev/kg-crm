@@ -213,3 +213,33 @@ export interface ImportReport {
   dry_run: boolean
   errors: ImportRowError[]
 }
+
+// --- Davomat ---
+
+export type AttendanceStatus = 'present' | 'absent' | 'excused' | 'late'
+
+export interface DailyRegisterRow {
+  child_id: string
+  full_name: string
+  status: AttendanceStatus | null
+  reason: string
+  check_in_at: string | null
+  record_id: string | null
+}
+
+export interface DailyRegister {
+  group: { id: string; name: string }
+  date: string
+  rows: DailyRegisterRow[]
+}
+
+export interface AttendanceSummaryRow {
+  child_id: string
+  full_name: string
+  present: number
+  absent: number
+  excused: number
+  late: number
+  total: number
+  attendance_rate: number
+}

@@ -5,6 +5,8 @@ import LoginPage from './features/auth/pages/LoginPage'
 import SignupPage from './features/auth/pages/SignupPage'
 import DashboardPage from './features/dashboard/pages/DashboardPage'
 import ChildrenPage from './features/children/pages/ChildrenPage'
+import GroupsPage from './features/children/pages/GroupsPage'
+import ChildDetailPage from './features/children/pages/ChildDetailPage'
 import PaymentsPage from './features/payments/pages/PaymentsPage'
 import DebtorsPage from './features/debtors/pages/DebtorsPage'
 import AttendancePage from './features/attendance/pages/AttendancePage'
@@ -42,7 +44,11 @@ export const router = createBrowserRouter([
           { path: 'dashboard', element: <DashboardPage /> },
           {
             element: <PermissionRoute permission="children.read" />,
-            children: [{ path: 'children', element: <ChildrenPage /> }],
+            children: [
+              { path: 'children', element: <ChildrenPage /> },
+              { path: 'children/:childId', element: <ChildDetailPage /> },
+              { path: 'groups', element: <GroupsPage /> },
+            ],
           },
           {
             element: <PermissionRoute permission="payments.read" />,

@@ -25,5 +25,11 @@ export const queryKeys = {
 
   children: (orgId: string, params?: Record<string, unknown>) =>
     ['org', orgId, 'children', params ?? {}] as const,
+  child: (orgId: string, id: string) => ['org', orgId, 'children', 'detail', id] as const,
   groups: (orgId: string) => ['org', orgId, 'groups'] as const,
+
+  attendanceDaily: (orgId: string, groupId: string, date: string) =>
+    ['org', orgId, 'attendance', 'daily', groupId, date] as const,
+  attendanceSummary: (orgId: string, month: string, groupId: string | null) =>
+    ['org', orgId, 'attendance', 'summary', month, groupId ?? 'all'] as const,
 } as const

@@ -160,7 +160,7 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 >
 > **Import is CSV-only.** Reading `.xlsx` needs `openpyxl`; the wizard instead tells the user to "Save as CSV" in Excel and ships a template with a UTF-8 BOM so Uzbek and Cyrillic characters survive the round trip. Adding the dependency is a small, deliberate deferral — revisit if real customers push back.
 >
-> **Carried forward:** child detail page (guardian management beyond the primary contact, photo upload) and group CRUD screens. The API endpoints exist and are tested; only the screens are outstanding.
+> The child detail page and group CRUD screens shipped alongside Sprint 3. Photo upload remains unbuilt — it needs the storage abstraction, which lands with `gallery` post-MVP.
 
 > **Bulk import is a Sprint 2 requirement, not a later nicety** ([01 §3.1](./01_Project_Vision.md) goal 13). A kindergarten feels no value until its roster is in the system; if that takes ten days of typing, the 15-day trial ends in churn no matter how good the product is. Import is the trial's success condition.
 
@@ -170,6 +170,12 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 - API: `/attendance`, `/attendance/bulk`, `/attendance/daily`, `/attendance/summary` ([04 §8](./04_Backend_API_Specification.md)).
 - Frontend: `attendance` feature — daily register (mark whole group), monthly summary; optimistic toggles.
 - **Deliverable:** attendance recorded and viewable; Attendance Manager role validated.
+
+> **Status: delivered.** The daily register deliberately returns **unmarked children too** (`status: null`) — a register that only lists marked children leaves "who did I miss?" unanswerable, which is the one question the screen exists to answer.
+>
+> `attendance_record` is the **only** operational table where an in-place `UPDATE` is allowed ([03 §12.1](./03_Database_Design.md)): a day's state is a single fact, not a money movement. A teacher marking "absent" at 08:00 and correcting it at 10:00 is normal workflow, and forcing a counter-entry there would misapply ledger logic.
+>
+> The generated sweep picked up `/attendance` on registration and now covers 8 endpoints.
 
 ### Sprint 4 — Finance I: Tariffs, Invoices, Ledger
 **Goal:** billing foundation on the ledger.

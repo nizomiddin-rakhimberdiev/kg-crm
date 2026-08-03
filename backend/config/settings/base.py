@@ -44,6 +44,7 @@ LOCAL_APPS = [
     "apps.branches",
     "apps.accounts",
     "apps.children",
+    "apps.attendance",
     "apps.audit",
 ]
 

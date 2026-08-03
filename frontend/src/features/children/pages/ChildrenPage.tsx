@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, Search, Trash2, Upload, Users } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
@@ -275,7 +276,14 @@ export default function ChildrenPage() {
                   child.guardians.find((g) => g.is_primary) ?? child.guardians[0] ?? null
                 return (
                   <tr key={child.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium text-slate-800">{child.full_name}</td>
+                    <td className="px-4 py-3">
+                      <Link
+                        to={`/children/${child.id}`}
+                        className="font-medium text-slate-800 hover:text-brand-700 hover:underline"
+                      >
+                        {child.full_name}
+                      </Link>
+                    </td>
                     <td className="px-4 py-3 text-slate-600">{child.age_years}</td>
                     <td className="px-4 py-3">
                       {can('children.update') ? (

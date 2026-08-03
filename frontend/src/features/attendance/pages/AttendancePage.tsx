@@ -1,299 +1,278 @@
-import { useMemo, useState } from 'react'
-import {
-  Users,
-  UserCheck,
-  UserX,
-  FileText,
-  CalendarDays,
-  Send,
-  Printer,
-  ArrowUpDown,
-  Check,
-  X,
-  Plus,
-} from 'lucide-react'
-import { Card, Badge, Avatar, Button, StatCard } from '@/components/ui/primitives'
-import { SearchInput } from '@/components/ui/form'
+/**
+ * Kunlik davomat jurnali (docs/04 §8).
+ *
+ * Ekran butun guruhni bir ekranda ko'rsatadi va bitta so'rovda saqlaydi:
+ * tarbiyachi ertalab 25 ta bolani belgilaydi va har biri uchun alohida
+ * so'rov yuborish ham sekin, ham yarim saqlangan holatga olib keladi.
+ *
+ * Belgilanmagan bolalar ham ro'yxatda turadi — "kim qoldi?" degan savol
+ * javobsiz qolmasin.
+ */
+
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { CalendarCheck, Check, Clock, Save, X } from 'lucide-react'
+import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { attendanceApi } from '@/features/attendance/api'
+import { groupsApi } from '@/features/children/api'
+import { queryKeys } from '@/lib/api/queryKeys'
+import { ApiError, type AttendanceStatus } from '@/lib/api/types'
+import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 
-type Status = 'present' | 'absent' | 'excused' | 'unset'
-
-interface Pupil {
-  name: string
-  id: string
-  age: number
-  status: Status
-}
-
-const groups = ['Kamalak', 'Yulduzcha', 'Bilimdon', "Qaldirg'och"]
-
-const initialPupils: Pupil[] = [
-  { name: 'Abdurashidov Jasurbek', id: '00452', age: 5, status: 'present' },
-  { name: 'Olimova Madina', id: '00481', age: 4, status: 'absent' },
-  { name: 'Xabibullayev Sardor', id: '00429', age: 5, status: 'unset' },
-  { name: 'Karimova Shaxlo', id: '00502', age: 4, status: 'present' },
-  { name: 'Rahimov Doniyor', id: '00511', age: 5, status: 'present' },
-  { name: 'Nazarova Sevara', id: '00523', age: 4, status: 'excused' },
-  { name: 'Toshpulatov Elyor', id: '00530', age: 5, status: 'present' },
-  { name: 'Yoqubova Malika', id: '00544', age: 4, status: 'present' },
-  { name: 'Sobirov Islom', id: '00551', age: 5, status: 'absent' },
-  { name: 'Aliyeva Nafisa', id: '00560', age: 4, status: 'present' },
-  { name: 'Umarov Diyorbek', id: '00572', age: 5, status: 'present' },
-  { name: 'Xolova Zulfiya', id: '00588', age: 4, status: 'present' },
+const STATUS_BUTTONS: Array<{
+  value: AttendanceStatus
+  label: string
+  icon: typeof Check
+  active: string
+}> = [
+  { value: 'present', label: 'Keldi', icon: Check, active: 'bg-emerald-600 text-white' },
+  { value: 'late', label: 'Kechikdi', icon: Clock, active: 'bg-amber-500 text-white' },
+  { value: 'excused', label: 'Sababli', icon: CalendarCheck, active: 'bg-sky-600 text-white' },
+  { value: 'absent', label: 'Kelmagan', icon: X, active: 'bg-red-600 text-white' },
 ]
 
+const today = () => new Date().toISOString().slice(0, 10)
+
 export default function AttendancePage() {
-  const [activeGroup, setActiveGroup] = useState('Kamalak')
-  const [pupils, setPupils] = useState<Pupil[]>(initialPupils)
-  const [search, setSearch] = useState('')
+  const organizationId = useOrganizationId()
+  const queryClient = useQueryClient()
+  const { can } = useCan()
 
-  const setStatus = (id: string, status: Status) =>
-    setPupils((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)))
+  const [groupId, setGroupId] = useState('')
+  const [date, setDate] = useState(today())
+  const [draft, setDraft] = useState<Record<string, AttendanceStatus>>({})
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
 
-  const shown = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    return pupils.filter((p) => !q || p.name.toLowerCase().includes(q) || p.id.includes(q))
-  }, [pupils, search])
+  const groupsQuery = useQuery({
+    queryKey: queryKeys.groups(organizationId),
+    queryFn: groupsApi.list,
+  })
 
-  const stats = useMemo(() => {
-    const total = pupils.length
-    const present = pupils.filter((p) => p.status === 'present').length
-    const absent = pupils.filter((p) => p.status === 'absent').length
-    const excused = pupils.filter((p) => p.status === 'excused').length
-    const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0)
-    return { total, present, absent, excused, pct }
-  }, [pupils])
+  // Birinchi guruhni avtomatik tanlaymiz — tarbiyachi har kuni bir xil
+  // tanlovni takrorlamasin.
+  useEffect(() => {
+    if (!groupId && groupsQuery.data?.items.length) {
+      setGroupId(groupsQuery.data.items[0].id)
+    }
+  }, [groupId, groupsQuery.data])
+
+  const registerQuery = useQuery({
+    queryKey: queryKeys.attendanceDaily(organizationId, groupId, date),
+    queryFn: () => attendanceApi.daily(groupId, date),
+    enabled: Boolean(groupId && date),
+  })
+
+  // Serverdan kelgan holat qoralamaning asosi. Kun yoki guruh almashganda
+  // qoralama qayta tiklanadi — aks holda oldingi kunning belgilari
+  // ko'chib qolardi.
+  useEffect(() => {
+    if (registerQuery.data) {
+      const initial: Record<string, AttendanceStatus> = {}
+      for (const row of registerQuery.data.rows) {
+        if (row.status) initial[row.child_id] = row.status
+      }
+      setDraft(initial)
+      setSaved(false)
+    }
+  }, [registerQuery.data])
+
+  const saveMutation = useMutation({
+    mutationFn: () =>
+      attendanceApi.markBulk(
+        groupId,
+        date,
+        Object.entries(draft).map(([child_id, status]) => ({ child_id, status })),
+      ),
+    onSuccess: () => {
+      setSaved(true)
+      setError(null)
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.attendanceDaily(organizationId, groupId, date),
+      })
+    },
+    onError: (err) => setError(err instanceof ApiError ? err.message : 'Saqlab bo\'lmadi.'),
+  })
+
+  const rows = registerQuery.data?.rows ?? []
+
+  const counts = useMemo(() => {
+    const result = { present: 0, late: 0, excused: 0, absent: 0, unmarked: 0 }
+    for (const row of rows) {
+      const status = draft[row.child_id]
+      if (!status) result.unmarked += 1
+      else result[status] += 1
+    }
+    return result
+  }, [rows, draft])
+
+  const markAll = (status: AttendanceStatus) => {
+    setDraft(Object.fromEntries(rows.map((row) => [row.child_id, status])))
+    setSaved(false)
+  }
+
+  const editable = can('attendance.create')
+  const dirty = rows.some((row) => (draft[row.child_id] ?? null) !== row.status)
 
   return (
     <div className="space-y-6">
-      {/* Header row: group tabs + date, and report banner */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-1.5">
-              {groups.map((g) => (
-                <button
-                  key={g}
-                  onClick={() => setActiveGroup(g)}
-                  className={cn(
-                    'rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors',
-                    activeGroup === g
-                      ? 'bg-brand-600 text-white'
-                      : 'text-slate-500 hover:bg-slate-100',
-                  )}
-                >
-                  {g}
-                </button>
-              ))}
-            </div>
-            <button className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50">
-              <CalendarDays className="w-4 h-4 text-slate-400" />
-              24 May, 2024
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Davomat</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Guruhni tanlang va butun kunni bitta bosishda saqlang.
+        </p>
+      </div>
+
+      {error && (
+        <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="min-w-[200px]">
+          <label htmlFor="group" className="mb-1 block text-xs font-medium text-slate-600">
+            Guruh
+          </label>
+          <select
+            id="group"
+            value={groupId}
+            onChange={(e) => setGroupId(e.target.value)}
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
+          >
+            {groupsQuery.data?.items.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="date" className="mb-1 block text-xs font-medium text-slate-600">
+            Sana
+          </label>
+          <input
+            id="date"
+            type="date"
+            max={today()}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
+          />
+        </div>
+
+        {editable && rows.length > 0 && (
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => markAll('present')}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Hammasi keldi
+            </button>
+            <button
+              type="button"
+              disabled={!dirty || saveMutation.isPending}
+              onClick={() => saveMutation.mutate()}
+              className={cn(
+                'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition',
+                dirty && !saveMutation.isPending
+                  ? 'bg-brand-600 text-white hover:bg-brand-700'
+                  : 'bg-slate-100 text-slate-400',
+              )}
+            >
+              <Save className="h-4 w-4" />
+              {saveMutation.isPending ? 'Saqlanmoqda…' : 'Saqlash'}
             </button>
           </div>
-        </Card>
-
-        <Card className="flex items-center justify-between gap-3 bg-slate-900 p-4 text-white">
-          <div>
-            <p className="text-sm font-semibold">Bugun uchun hisobot</p>
-            <p className="mt-0.5 text-xs text-slate-300">
-              Davomat kiritilgach tasdiqlab, ota-onalarga yuboring.
-            </p>
-          </div>
-          <Button
-            variant="primary"
-            icon={Send}
-            className="shrink-0"
-            data-sound="success"
-            data-toast="Davomat tasdiqlandi va ota-onalarga yuborildi ✓"
-          >
-            Tasdiqlash
-          </Button>
-        </Card>
+        )}
       </div>
 
-      {/* KPI */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Jami bolalar"
-          value={`${stats.total} nafar`}
-          icon={Users}
-          iconTone="info"
-          detail={{
-            description: `${activeGroup} guruhida jami ${stats.total} nafar bola ro'yxatga olingan.`,
-            breakdown: [
-              { label: 'Kelganlar', value: `${stats.present} nafar`, tone: 'success' },
-              { label: 'Kelmaganlar', value: `${stats.absent} nafar`, tone: 'danger' },
-              { label: 'Sababli', value: `${stats.excused} nafar` },
-            ],
-          }}
-        />
-        <StatCard
-          label="Kelganlar"
-          value={`${stats.present}`}
-          icon={UserCheck}
-          iconTone="success"
-          delta={`${stats.pct(stats.present)}%`}
-          deltaTone="success"
-          detail={{
-            description: `Bugun ${activeGroup} guruhidan ${stats.present} nafar bola keldi (${stats.pct(stats.present)}%). Har bir bolani "Keldi / Sababli / Kelmagan" tugmalari orqali belgilashingiz mumkin.`,
-          }}
-        />
-        <StatCard
-          label="Kelmaganlar"
-          value={`${stats.absent}`}
-          icon={UserX}
-          iconTone="danger"
-          delta={`${stats.pct(stats.absent)}%`}
-          deltaTone="danger"
-          detail={{
-            description: `Bugun ${stats.absent} nafar bola sababsiz kelmadi (${stats.pct(stats.absent)}%). Ota-onalarga avtomatik xabar yuborish uchun "Tasdiqlash" tugmasidan foydalaning.`,
-          }}
-        />
-        <StatCard
-          label="Sababli"
-          value={`${stats.excused}`}
-          icon={FileText}
-          iconTone="warning"
-          hint="Hujjatli"
-          detail={{
-            description: `${stats.excused} nafar bola sababli (hujjatli) kelmadi — masalan kasallik yoki oilaviy sabab bilan.`,
-          }}
-        />
-      </div>
-
-      {/* List */}
-      <Card className="overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4">
-          <div>
-            <h2 className="text-base font-bold text-slate-900">{activeGroup} guruhi ro'yxati</h2>
-            <p className="text-sm text-slate-500">Bugungi sana: Juma, 24-May</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <SearchInput value={search} onChange={setSearch} placeholder="Bola ismi..." className="w-48" />
-            <Button variant="outline" icon={ArrowUpDown} data-toast="Ro'yxat saralandi">
-              Saralash
-            </Button>
-            <Button variant="outline" icon={Printer} data-toast="Chop etishga yuborildi">
-              Chop etish
-            </Button>
-          </div>
+      {rows.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          {[
+            ['Keldi', counts.present, 'text-emerald-700'],
+            ['Kechikdi', counts.late, 'text-amber-700'],
+            ['Sababli', counts.excused, 'text-sky-700'],
+            ['Kelmagan', counts.absent, 'text-red-700'],
+            ['Belgilanmagan', counts.unmarked, 'text-slate-500'],
+          ].map(([label, value, tone]) => (
+            <div key={String(label)} className="rounded-xl bg-white p-3 text-center shadow-sm">
+              <p className={cn('text-xl font-bold', tone as string)}>{value}</p>
+              <p className="text-xs text-slate-500">{label}</p>
+            </div>
+          ))}
         </div>
-
-        <div className="overflow-x-auto scrollbar-thin">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                <th className="px-6 py-3">Bolaning ismi va ID</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3 text-right">Amallar</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {shown.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50/60">
-                  <td className="px-6 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <Avatar name={p.name} />
-                      <div>
-                        <p className="font-medium text-slate-800">{p.name}</p>
-                        <p className="text-xs text-slate-400">
-                          ID: {p.id} · {p.age} yosh
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-3.5">
-                    <StatusBadge status={p.status} />
-                  </td>
-                  <td className="px-6 py-3.5">
-                    <div className="flex items-center justify-end gap-2">
-                      <ToggleButton
-                        active={p.status === 'present'}
-                        tone="present"
-                        icon={Check}
-                        label="Keldi"
-                        onClick={() => setStatus(p.id, 'present')}
-                      />
-                      <ToggleButton
-                        active={p.status === 'excused'}
-                        tone="excused"
-                        icon={FileText}
-                        label="Sababli"
-                        onClick={() => setStatus(p.id, 'excused')}
-                      />
-                      <ToggleButton
-                        active={p.status === 'absent'}
-                        tone="absent"
-                        icon={X}
-                        label="Kelmagan"
-                        onClick={() => setStatus(p.id, 'absent')}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex items-center justify-between p-4">
-          <p className="text-sm text-slate-400">
-            Jami {stats.total} boladan {shown.length} tasi ko'rsatilmoqda
-          </p>
-          <button
-            data-toast="Yangi bola qo'shish (demo)"
-            data-toast-tone="info"
-            className="grid place-items-center w-10 h-10 rounded-full bg-brand-600 text-white shadow-lg shadow-brand-600/30 transition-all hover:bg-brand-700 active:scale-90"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
-        </div>
-      </Card>
-    </div>
-  )
-}
-
-/* ------- helpers ------- */
-
-function StatusBadge({ status }: { status: Status }) {
-  if (status === 'present') return <Badge tone="success" dot>Keldi</Badge>
-  if (status === 'absent') return <Badge tone="danger" dot>Kelmagan</Badge>
-  if (status === 'excused') return <Badge tone="warning" dot>Sababli</Badge>
-  return <Badge tone="neutral" dot>Belgilanmagan</Badge>
-}
-
-interface ToggleButtonProps {
-  active: boolean
-  tone: 'present' | 'absent' | 'excused'
-  icon: typeof Check
-  label: string
-  onClick: () => void
-}
-
-function ToggleButton({ active, tone, icon: Icon, label, onClick }: ToggleButtonProps) {
-  const activeCls = {
-    present: 'bg-emerald-600 text-white border-emerald-600',
-    absent: 'bg-red-600 text-white border-red-600',
-    excused: 'bg-amber-500 text-white border-amber-500',
-  }[tone]
-  const idleCls = {
-    present: 'text-emerald-700 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50',
-    absent: 'text-red-600 border-slate-200 hover:border-red-300 hover:bg-red-50',
-    excused: 'text-amber-600 border-slate-200 hover:border-amber-300 hover:bg-amber-50',
-  }[tone]
-  const sound = tone === 'present' ? 'success' : tone === 'absent' ? 'error' : 'toggle'
-  return (
-    <button
-      onClick={onClick}
-      data-sound={sound}
-      className={cn(
-        'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-150 active:scale-95',
-        active ? activeCls : idleCls,
       )}
-    >
-      <Icon className="w-3.5 h-3.5" />
-      {label}
-    </button>
+
+      {saved && !dirty && (
+        <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          Saqlandi.
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        {registerQuery.isPending && groupId && (
+          <p className="px-4 py-8 text-center text-sm text-slate-400">Yuklanmoqda…</p>
+        )}
+        {!groupId && !groupsQuery.isPending && (
+          <p className="px-4 py-8 text-center text-sm text-slate-400">
+            Avval guruh yarating.
+          </p>
+        )}
+        {registerQuery.data?.rows.length === 0 && (
+          <p className="px-4 py-8 text-center text-sm text-slate-400">
+            Bu guruhda faol bola yo'q.
+          </p>
+        )}
+
+        <ul className="divide-y divide-slate-100">
+          {rows.map((row) => {
+            const current = draft[row.child_id] ?? null
+            return (
+              <li
+                key={row.child_id}
+                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+              >
+                <span
+                  className={cn(
+                    'text-sm font-medium',
+                    current ? 'text-slate-800' : 'text-slate-400',
+                  )}
+                >
+                  {row.full_name}
+                </span>
+
+                <div className="flex gap-1">
+                  {STATUS_BUTTONS.map(({ value, label, icon: Icon, active }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      disabled={!editable}
+                      title={label}
+                      onClick={() => {
+                        setDraft((prev) => ({ ...prev, [row.child_id]: value }))
+                        setSaved(false)
+                      }}
+                      className={cn(
+                        'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition',
+                        current === value
+                          ? active
+                          : 'bg-slate-50 text-slate-500 hover:bg-slate-100',
+                        !editable && 'cursor-not-allowed opacity-60',
+                      )}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    </div>
   )
 }

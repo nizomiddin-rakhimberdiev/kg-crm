@@ -1,0 +1,87 @@
+"""Davomat serializerlari (docs/04 §8)."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from rest_framework import serializers
+
+from apps.attendance.models import AttendanceRecord, AttendanceStatus
+from apps.children.models import Child, Group
+from apps.core.fields import TenantPrimaryKeyRelatedField
+
+__all__ = [
+    "AttendanceRecordSerializer",
+    "AttendanceWriteSerializer",
+    "BulkAttendanceSerializer",
+]
+
+
+class AttendanceRecordSerializer(serializers.ModelSerializer):
+    child_name = serializers.CharField(source="child.full_name", read_only=True)
+    group_name = serializers.CharField(source="group.name", read_only=True, default=None)
+
+    class Meta:
+        model = AttendanceRecord
+        fields = [
+            "id",
+            "child",
+            "child_name",
+            "group",
+            "group_name",
+            "attendance_date",
+            "status",
+            "check_in_at",
+            "check_out_at",
+            "reason",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class AttendanceWriteSerializer(serializers.ModelSerializer):
+    child = TenantPrimaryKeyRelatedField(model=Child)
+    group = TenantPrimaryKeyRelatedField(model=Group, required=False, allow_null=True)
+
+    class Meta:
+        model = AttendanceRecord
+        fields = [
+            "id",
+            "child",
+            "group",
+            "attendance_date",
+            "status",
+            "check_in_at",
+            "check_out_at",
+            "reason",
+        ]
+        read_only_fields = ["id"]
+
+    def validate_attendance_date(self, value: Any) -> Any:
+        from django.utils import timezone
+
+        if value > timezone.localdate():
+            raise serializers.ValidationError("Kelajakdagi kunga davomat belgilab bo'lmaydi.")
+        return value
+
+
+class BulkRowSerializer(serializers.Serializer):
+    child_id = serializers.UUIDField()
+    status = serializers.ChoiceField(choices=AttendanceStatus.choices)
+    check_in_at = serializers.DateTimeField(required=False, allow_null=True)
+    check_out_at = serializers.DateTimeField(required=False, allow_null=True)
+    reason = serializers.CharField(required=False, allow_blank=True, max_length=255)
+
+
+class BulkAttendanceSerializer(serializers.Serializer):
+    group_id = TenantPrimaryKeyRelatedField(model=Group, source="group")
+    attendance_date = serializers.DateField()
+    records = BulkRowSerializer(many=True)
+
+    def validate_records(self, value: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        seen = {row["child_id"] for row in value}
+        if len(seen) != len(value):
+            # Bitta so'rovda bir bola ikki marta — qaysi biri to'g'ri
+            # ekanini taxmin qilishdan ko'ra rad etgan ma'qul.
+            raise serializers.ValidationError("Bitta so'rovda bir bola bir marta bo'lishi kerak.")
+        return value

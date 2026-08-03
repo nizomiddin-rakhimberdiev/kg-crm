@@ -14,6 +14,7 @@ export interface ChildInput {
 
 export const childrenApi = {
   list: (params?: Record<string, unknown>) => api.list<Child>('/children', params),
+  get: (id: string) => api.get<Child>(`/children/${id}`),
   create: (payload: ChildInput) => api.post<Child>('/children', payload),
   update: (id: string, payload: Partial<ChildInput>) =>
     api.patch<Child>(`/children/${id}`, payload),
@@ -48,4 +49,7 @@ export const childrenApi = {
 export const groupsApi = {
   list: () => api.list<Group>('/groups'),
   create: (payload: { name: string; capacity?: number }) => api.post<Group>('/groups', payload),
+  update: (id: string, payload: { name?: string; capacity?: number }) =>
+    api.patch<Group>(`/groups/${id}`, payload),
+  remove: (id: string) => api.delete(`/groups/${id}`),
 }
