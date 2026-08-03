@@ -7,6 +7,7 @@ from typing import Any
 from rest_framework import serializers
 
 from apps.branches.models import Branch
+from apps.finance.models import TariffPlan
 from apps.children.models import Child, ChildGuardian, Enrollment, Group, Guardian
 from apps.core.fields import TenantPrimaryKeyRelatedField
 
@@ -69,6 +70,7 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 class ChildSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(read_only=True)
     age_years = serializers.IntegerField(read_only=True)
+    tariff_name = serializers.CharField(source="tariff.name", read_only=True, default=None)
     guardians = ChildGuardianSerializer(source="guardian_links", many=True, read_only=True)
     current_group = serializers.SerializerMethodField()
 
@@ -85,6 +87,8 @@ class ChildSerializer(serializers.ModelSerializer):
             "gender",
             "enrollment_status",
             "enrolled_on",
+            "tariff",
+            "tariff_name",
             "balance",
             "notes",
             "guardians",
@@ -107,6 +111,11 @@ class ChildWriteSerializer(serializers.ModelSerializer):
     # Filial mijozdan keladi, lekin faqat O'Z tashkilotining filiallaridan
     # (TenantPrimaryKeyRelatedField queryset'ni so'rov paytida cheklaydi).
     branch_id = TenantPrimaryKeyRelatedField(model=Branch, source="branch", required=False)
+    # Tarifsiz bolaga hisob-faktura chiqarib bo'lmaydi (docs/03 §13.3),
+    # shuning uchun uni biriktirish yo'li API'da bo'lishi shart.
+    tariff_id = TenantPrimaryKeyRelatedField(
+        model=TariffPlan, source="tariff", required=False, allow_null=True
+    )
 
     class Meta:
         model = Child
@@ -121,6 +130,7 @@ class ChildWriteSerializer(serializers.ModelSerializer):
             "enrolled_on",
             "notes",
             "branch_id",
+            "tariff_id",
         ]
         read_only_fields = ["id"]
 

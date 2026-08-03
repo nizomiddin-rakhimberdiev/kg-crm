@@ -185,6 +185,14 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 - Frontend: tariffs admin, invoices list/detail, generate-invoices action.
 - **Deliverable:** monthly invoices generate correctly and post charges to the ledger.
 
+> **Status: delivered.** Idempotency is guaranteed **in the database** by the partial unique index `uq_invoice_child_period`, not by an application check — under concurrency an app-level "does it exist?" test races and double-charges. `issue_invoice()` catches the resulting `IntegrityError` and returns the existing invoice: that is idempotency working, not an error.
+>
+> **Zero-amount invoices post no ledger entry.** A fully-discounted child owes nothing, and a zero movement is not a movement. Allowing it would have required weakening the `amount > 0` invariant — a rule that catches real bugs. The invoice still exists as the document proving the child owes nothing for that period.
+>
+> **Invoices are read-only over the API** (`PATCH`/`DELETE` → `405`). An invoice is the document that produced a ledger entry; editing it would split the document from the ledger. Corrections go through `POST /invoices/{id}/cancel`, which posts an equal counter-entry and leaves the original debit visible (D3).
+>
+> **Carried to Sprint 5:** payments, receipts and the derived debtors view. `Invoice.amount_paid` stays at zero until then.
+
 ### Sprint 5 — Finance II: Payments, Receipts, Debtors
 **Goal:** take money and track debt.
 - API: `/payments`, `/invoices/{id}/payments`, `/payments/{id}/reverse`, receipts; `/debtors`, `/debtors/{id}/remind` ([04 §9–10](./04_Backend_API_Specification.md)).

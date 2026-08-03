@@ -181,6 +181,8 @@ export interface Child {
   gender: 'male' | 'female'
   enrollment_status: 'prospect' | 'active' | 'paused' | 'graduated' | 'withdrawn'
   enrolled_on: string | null
+  tariff: string | null
+  tariff_name: string | null
   balance: string
   notes: string
   guardians: GuardianLink[]
@@ -242,4 +244,48 @@ export interface AttendanceSummaryRow {
   late: number
   total: number
   attendance_rate: number
+}
+
+// --- Moliya ---
+
+export interface TariffPlan {
+  id: string
+  name: string
+  amount: string
+  billing_period: 'monthly' | 'daily' | 'termly'
+  is_active: boolean
+  created_at: string
+}
+
+export interface InvoiceLine {
+  id: string
+  description: string
+  quantity: string
+  unit_amount: string
+  line_total: string
+}
+
+export interface Invoice {
+  id: string
+  number: string
+  child: string
+  child_name: string
+  period_year: number
+  period_month: number
+  amount_due: string
+  amount_paid: string
+  amount_outstanding: string
+  status: 'draft' | 'issued' | 'partially_paid' | 'paid' | 'overdue' | 'cancelled'
+  issued_date: string
+  due_date: string
+  lines: InvoiceLine[]
+  created_at: string
+}
+
+export interface BillingRunResult {
+  period: string
+  created: number
+  skipped_existing: number
+  skipped_no_tariff: string[]
+  total_amount: string
 }

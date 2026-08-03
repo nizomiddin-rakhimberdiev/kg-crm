@@ -12,6 +12,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Phone, Star, UserPlus } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { childrenApi, groupsApi } from '@/features/children/api'
+import { tariffsApi } from '@/features/payments/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
@@ -54,6 +55,11 @@ export default function ChildDetailPage() {
     queryFn: groupsApi.list,
   })
 
+  const tariffsQuery = useQuery({
+    queryKey: queryKeys.tariffs(organizationId),
+    queryFn: tariffsApi.list,
+  })
+
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.child(organizationId, childId) })
     void queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'children'] })
@@ -67,6 +73,13 @@ export default function ChildDetailPage() {
       setError(null)
       invalidate()
     },
+    onError: (err) => setError(err instanceof ApiError ? err.message : 'Xatolik yuz berdi.'),
+  })
+
+  const setTariff = useMutation({
+    mutationFn: (tariffId: string) =>
+      childrenApi.update(childId, { tariff_id: tariffId || null }),
+    onSuccess: invalidate,
     onError: (err) => setError(err instanceof ApiError ? err.message : 'Xatolik yuz berdi.'),
   })
 
@@ -142,6 +155,33 @@ export default function ChildDetailPage() {
             </select>
           ) : (
             <p className="text-sm text-slate-600">{child.current_group?.name ?? '—'}</p>
+          )}
+        </div>
+
+        {/* Tarif */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <h2 className="mb-3 text-sm font-semibold text-slate-900">Tarif</h2>
+          {can('payments.update') ? (
+            <select
+              aria-label="Tarif"
+              value={child.tariff ?? ''}
+              onChange={(e) => setTariff.mutate(e.target.value)}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            >
+              <option value="">— tarifsiz —</option>
+              {tariffsQuery.data?.items.map((tariff) => (
+                <option key={tariff.id} value={tariff.id}>
+                  {tariff.name} — {Number(tariff.amount).toLocaleString('uz-UZ')} so'm
+                </option>
+              ))}
+            </select>
+          ) : (
+            <p className="text-sm text-slate-600">{child.tariff_name ?? '—'}</p>
+          )}
+          {!child.tariff && (
+            <p className="mt-2 text-xs text-amber-700">
+              Tarifsiz bolaga hisob-faktura chiqarilmaydi.
+            </p>
           )}
         </div>
 

@@ -1,299 +1,375 @@
-import { useMemo, useState } from 'react'
-import {
-  Wallet,
-  ArrowLeftRight,
-  Clock,
-  CreditCard,
-  Banknote,
-  Building2,
-  CheckCircle2,
-  Download,
-  type LucideIcon,
-} from 'lucide-react'
-import {
-  Card,
-  PageHeader,
-  StatCard,
-  Button,
-  Badge,
-  Avatar,
-  Select,
-  type BadgeTone,
-} from '@/components/ui/primitives'
-import { useToast } from '@/app/providers/ToastProvider'
-import { formatMoney, formatUZS, cn } from '@/lib/utils'
+/**
+ * Hisob-fakturalar va tariflar (docs/04 §9).
+ *
+ * Hisob-faktura bu yerda TAHRIRLANMAYDI — u ledger yozuvini yaratgan
+ * hujjat (D3). Xato bo'lsa bekor qilinadi (qarshi yozuv bilan) va
+ * yangisi chiqariladi.
+ */
 
-interface Method {
-  key: string
-  label: string
-  icon: LucideIcon
-  badge: string
-  tone: BadgeTone
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Ban, FileText, Plus, Trash2, Wallet } from 'lucide-react'
+import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { invoicesApi, tariffsApi } from '@/features/payments/api'
+import { queryKeys } from '@/lib/api/queryKeys'
+import { ApiError, type BillingRunResult } from '@/lib/api/types'
+import { useCan } from '@/lib/rbac/useCan'
+import { cn } from '@/lib/utils'
+
+const STATUS_STYLES: Record<string, string> = {
+  issued: 'bg-sky-50 text-sky-700',
+  partially_paid: 'bg-amber-50 text-amber-700',
+  paid: 'bg-emerald-50 text-emerald-700',
+  overdue: 'bg-red-50 text-red-700',
+  cancelled: 'bg-slate-100 text-slate-400 line-through',
+  draft: 'bg-slate-100 text-slate-500',
 }
 
-const methods: Method[] = [
-  { key: 'payme', label: 'Payme / Click', icon: CreditCard, badge: 'PAYME', tone: 'sky' },
-  { key: 'cash', label: 'Naqd pul', icon: Banknote, badge: 'NAQD PUL', tone: 'success' },
-  { key: 'transfer', label: "O'tkazma", icon: Building2, badge: "O'TKAZMA", tone: 'violet' },
-]
-
-interface Kid {
-  name: string
-  group: string
-  id: string
-  debt: number
+const STATUS_LABELS: Record<string, string> = {
+  issued: 'Chiqarilgan',
+  partially_paid: "Qisman to'langan",
+  paid: "To'langan",
+  overdue: "Muddati o'tgan",
+  cancelled: 'Bekor qilingan',
+  draft: 'Qoralama',
 }
-const kids: Kid[] = [
-  { name: 'Abdurahmonov Umar', group: 'Kamalak · 4 yosh', id: '#B-3049', debt: 450000 },
-  { name: 'Karimova Laylo', group: 'Yulduzcha · 5 yosh', id: '#B-3055', debt: 1500000 },
-  { name: 'Yusupov Bekzod', group: 'Bilimdon · 4 yosh', id: '#B-3061', debt: 900000 },
-  { name: 'Salimova Nilufar', group: "Qaldirg'och · 5 yosh", id: '#B-3070', debt: 300000 },
-]
 
-interface Payment {
-  id: number
-  name: string
-  time: string
-  amount: number
-  badge: string
-  tone: BadgeTone
-}
-const recentSeed: Payment[] = [
-  { id: 1, name: 'Karimov Aziz', time: '10-Okt, 14:20', amount: 320000, badge: 'KARTA', tone: 'info' },
-  { id: 2, name: 'Nazarova Laylo', time: '10-Okt, 12:05', amount: 1200000, badge: 'NAQD PUL', tone: 'success' },
-  { id: 3, name: 'Sharipov Davron', time: '09-Okt, 16:40', amount: 550000, badge: "O'TKAZMA", tone: 'violet' },
-  { id: 4, name: 'Ismoilova Sabina', time: '09-Okt, 11:15', amount: 450000, badge: 'PAYME', tone: 'sky' },
-]
-
-const BASE_TOTAL = 4250000
+const money = (value: string) =>
+  new Intl.NumberFormat('uz-UZ').format(Number(value)) + " so'm"
 
 export default function PaymentsPage() {
-  const { toast } = useToast()
-  const [method, setMethod] = useState('payme')
-  const [kidIdx, setKidIdx] = useState(0)
-  const [amount, setAmount] = useState(String(kids[0].debt))
-  const [recent, setRecent] = useState<Payment[]>(recentSeed)
+  const organizationId = useOrganizationId()
+  const queryClient = useQueryClient()
+  const { can } = useCan()
 
-  const kid = kids[kidIdx]
-  const addedTotal = useMemo(
-    () => recent.filter((p) => p.id > 1000).reduce((s, p) => s + p.amount, 0),
-    [recent],
-  )
-  const todayTotal = BASE_TOTAL + addedTotal
-  const txCount = 28 + recent.filter((p) => p.id > 1000).length
+  const now = new Date()
+  const [tab, setTab] = useState<'invoices' | 'tariffs'>('invoices')
+  const [year, setYear] = useState(now.getFullYear())
+  const [month, setMonth] = useState(now.getMonth() + 1)
+  const [tariffForm, setTariffForm] = useState({ name: '', amount: '' })
+  const [runResult, setRunResult] = useState<BillingRunResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const selectKid = (v: string) => {
-    const i = Number(v)
-    setKidIdx(i)
-    setAmount(String(kids[i].debt))
+  const invoicesQuery = useQuery({
+    queryKey: queryKeys.invoices(organizationId, { year, month }),
+    queryFn: () => invoicesApi.list({ period_year: year, period_month: month }),
+  })
+
+  const tariffsQuery = useQuery({
+    queryKey: queryKeys.tariffs(organizationId),
+    queryFn: tariffsApi.list,
+  })
+
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'invoices'] })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.tariffs(organizationId) })
   }
 
-  const confirm = () => {
-    const amt = Number(amount) || 0
-    if (amt <= 0) {
-      toast('To\'lov summasini kiriting', 'error')
-      return
-    }
-    const m = methods.find((x) => x.key === method)!
-    const payment: Payment = {
-      id: Date.now(),
-      name: kid.name,
-      time: 'Hozir',
-      amount: amt,
-      badge: m.badge,
-      tone: m.tone,
-    }
-    setRecent((r) => [payment, ...r])
-    toast(`${kid.name} — ${formatMoney(amt)} UZS qabul qilindi ✓`, 'success')
-  }
+  const generate = useMutation({
+    mutationFn: () => invoicesApi.generate(year, month),
+    onSuccess: (result) => {
+      setRunResult(result)
+      setError(null)
+      invalidate()
+    },
+    onError: (err) => setError(err instanceof ApiError ? err.message : 'Xatolik yuz berdi.'),
+  })
+
+  const cancelInvoice = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      invoicesApi.cancel(id, reason),
+    onSuccess: invalidate,
+    onError: (err) => setError(err instanceof ApiError ? err.message : 'Xatolik yuz berdi.'),
+  })
+
+  const createTariff = useMutation({
+    mutationFn: () => tariffsApi.create(tariffForm),
+    onSuccess: () => {
+      setTariffForm({ name: '', amount: '' })
+      setError(null)
+      invalidate()
+    },
+    onError: (err) => setError(err instanceof ApiError ? err.message : 'Xatolik yuz berdi.'),
+  })
+
+  const removeTariff = useMutation({
+    mutationFn: tariffsApi.remove,
+    onSuccess: invalidate,
+    onError: (err) => setError(err instanceof ApiError ? err.message : 'Xatolik yuz berdi.'),
+  })
+
+  const invoices = invoicesQuery.data?.items ?? []
+  const totalDue = invoices
+    .filter((i) => i.status !== 'cancelled')
+    .reduce((sum, i) => sum + Number(i.amount_due), 0)
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="To'lovlar va Kassa"
-        subtitle="Bugungi kassa holati va yangi to'lov shakllantirish"
-      >
-        <div className="text-right">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Sana</p>
-          <p className="text-sm font-semibold text-slate-700">14-Oktyabr, 2023</p>
-        </div>
-      </PageHeader>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard
-          label="Bugungi tushum"
-          value={formatUZS(todayTotal)}
-          icon={Wallet}
-          iconTone="success"
-          delta="+12%"
-          deltaTone="success"
-          hint="Kechagiga nisbatan"
-          detail={{
-            description: `Bugun kassaga jami ${formatUZS(todayTotal)} tushdi (${txCount} ta tranzaksiya).`,
-          }}
-        />
-        <StatCard
-          label="Tranzaksiyalar"
-          value={`${txCount} ta`}
-          icon={ArrowLeftRight}
-          iconTone="info"
-          hint="Bugun"
-          detail={{ description: `Bugun jami ${txCount} ta to'lov qayd etildi.` }}
-        />
-        <StatCard
-          label="Kutilayotgan to'lovlar"
-          value={formatUZS(1800000)}
-          icon={Clock}
-          iconTone="danger"
-          hint="12 bola qarzdor"
-          detail={{ description: '12 nafar bola bo\'yicha kutilayotgan to\'lovlar 1 800 000 UZS.' }}
-        />
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">To'lovlar</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Hisob-fakturalar ledger'ga yoziladi va tahrirlanmaydi — xato bo'lsa
+          bekor qilinadi.
+        </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Left — payment form */}
-        <div className="space-y-6">
-          <Card className="p-6">
-            <h2 className="text-base font-bold text-slate-900">Bola tanlash</h2>
-            <div className="mt-3">
-              <Select
-                value={String(kidIdx)}
-                onChange={selectKid}
-                options={kids.map((k, i) => ({
-                  label: `${k.name} — qarz: ${formatMoney(k.debt)}`,
-                  value: String(i),
-                }))}
-              />
-            </div>
+      <div className="flex gap-1 border-b border-slate-200">
+        {(
+          [
+            ['invoices', 'Hisob-fakturalar'],
+            ['tariffs', 'Tariflar'],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setTab(key)}
+            className={cn(
+              '-mb-px border-b-2 px-4 py-2 text-sm font-medium transition',
+              tab === key
+                ? 'border-brand-600 text-brand-700'
+                : 'border-transparent text-slate-500 hover:text-slate-800',
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
-            <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/70 p-4">
-              <div className="flex items-center gap-3">
-                <Avatar name={kid.name} size="lg" />
-                <div>
-                  <p className="font-semibold text-slate-900">{kid.name}</p>
-                  <p className="text-xs text-slate-500">Guruh: {kid.group}</p>
-                  <p className="text-xs text-slate-400">ID: {kid.id}</p>
-                </div>
-              </div>
-              <div className="rounded-xl bg-red-50 px-4 py-2 text-right">
-                <p className="text-[11px] font-semibold uppercase text-red-400">Qarzdorlik</p>
-                <p className="text-lg font-bold text-red-600">{formatUZS(kid.debt)}</p>
-              </div>
-            </div>
-          </Card>
+      {error && (
+        <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
-          <Card className="p-6">
-            <h2 className="text-base font-bold text-slate-900">To'lov shakllantirish</h2>
-
-            <label className="mt-4 block text-sm font-medium text-slate-600">To'lov summasi</label>
-            <div className="relative mt-1.5">
+      {tab === 'invoices' && (
+        <>
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <label htmlFor="year" className="mb-1 block text-xs font-medium text-slate-600">
+                Yil
+              </label>
               <input
-                value={amount}
-                onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
-                inputMode="numeric"
-                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-lg font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                id="year"
+                type="number"
+                value={year}
+                onChange={(e) => setYear(Number(e.target.value))}
+                className="w-24 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
-                UZS
-              </span>
             </div>
-
-            <p className="mt-4 text-sm font-medium text-slate-600">To'lov usuli</p>
-            <div className="mt-2 grid grid-cols-3 gap-2">
-              {methods.map((m) => {
-                const active = method === m.key
-                return (
-                  <button
-                    key={m.key}
-                    onClick={() => setMethod(m.key)}
-                    className={cn(
-                      'flex flex-col items-center gap-2 rounded-xl border-2 px-2 py-3 text-xs font-medium transition-all active:scale-95',
-                      active
-                        ? 'border-brand-500 bg-brand-50 text-brand-700'
-                        : 'border-slate-200 text-slate-500 hover:border-slate-300',
-                    )}
-                  >
-                    <m.icon className="w-5 h-5" />
-                    {m.label}
-                    <span
-                      className={cn(
-                        'grid place-items-center w-4 h-4 rounded-full border',
-                        active ? 'border-brand-500' : 'border-slate-300',
-                      )}
-                    >
-                      {active && <span className="w-2 h-2 rounded-full bg-brand-500" />}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-
-            <Button
-              icon={CheckCircle2}
-              data-sound="success"
-              onClick={confirm}
-              className="mt-5 w-full py-3"
-            >
-              To'lovni tasdiqlash
-            </Button>
-            <p className="mt-3 text-center text-xs text-slate-400">
-              Tasdiqlangandan so'ng ota-onaga chek avtomatik SMS orqali yuboriladi.
-            </p>
-          </Card>
-        </div>
-
-        {/* Right — recent + plan */}
-        <div className="space-y-6">
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-slate-900">So'nggi to'lovlar</h2>
-              <button
-                data-toast="Barcha to'lovlar ro'yxati (demo)"
-                data-toast-tone="info"
-                className="text-xs font-semibold text-brand-600 hover:underline active:scale-95"
+            <div>
+              <label htmlFor="month" className="mb-1 block text-xs font-medium text-slate-600">
+                Oy
+              </label>
+              <select
+                id="month"
+                value={month}
+                onChange={(e) => setMonth(Number(e.target.value))}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
               >
-                Hammasini ko'rish
-              </button>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  <option key={m} value={m}>
+                    {String(m).padStart(2, '0')}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="mt-4 divide-y divide-slate-50">
-              {recent.map((p) => (
-                <div key={p.id} className="flex items-center gap-3 py-3">
-                  <Avatar name={p.name} size="sm" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-800">{p.name}</p>
-                    <p className="text-xs text-slate-400">{p.time}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-slate-900">{formatMoney(p.amount)}</p>
-                    <Badge tone={p.tone} className="mt-0.5">
-                      {p.badge}
-                    </Badge>
-                  </div>
-                  <button
-                    data-toast={`${p.name} — cheki yuklab olindi`}
-                    className="grid place-items-center w-8 h-8 rounded-lg text-slate-400 transition-all hover:bg-slate-100 active:scale-90"
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </Card>
 
-          <Card className="bg-slate-900 p-6 text-white">
-            <p className="text-xs font-semibold uppercase tracking-wide text-brand-200">Oylik reja</p>
-            <div className="mt-2 flex items-end justify-between">
-              <p className="text-3xl font-bold">84% Bajarildi</p>
+            {can('payments.create') && (
+              <button
+                type="button"
+                disabled={generate.isPending}
+                onClick={() => generate.mutate()}
+                className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
+              >
+                <FileText className="h-4 w-4" />
+                {generate.isPending ? 'Chiqarilmoqda…' : 'Hisob-faktura chiqarish'}
+              </button>
+            )}
+
+            {invoices.length > 0 && (
+              <div className="ml-auto text-right">
+                <p className="text-xs text-slate-500">Davr bo'yicha jami</p>
+                <p className="text-lg font-bold text-slate-900">{money(String(totalDue))}</p>
+              </div>
+            )}
+          </div>
+
+          {runResult && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm">
+              <p className="font-semibold text-slate-900">
+                {runResult.period}: {runResult.created} ta yangi hisob-faktura
+              </p>
+              {runResult.skipped_existing > 0 && (
+                <p className="mt-1 text-slate-500">
+                  {runResult.skipped_existing} ta allaqachon mavjud edi — qayta
+                  hisoblanmadi.
+                </p>
+              )}
+              {runResult.skipped_no_tariff.length > 0 && (
+                <p className="mt-1 text-amber-700">
+                  Tarifsiz bolalar o'tkazib yuborildi:{' '}
+                  {runResult.skipped_no_tariff.join(', ')}
+                </p>
+              )}
             </div>
-            <div className="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-white/15">
-              <div className="h-full rounded-full bg-brand-400" style={{ width: '84%' }} />
+          )}
+
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            {invoicesQuery.isPending && (
+              <p className="px-4 py-8 text-center text-sm text-slate-400">Yuklanmoqda…</p>
+            )}
+            {invoices.length === 0 && !invoicesQuery.isPending && (
+              <div className="px-4 py-12 text-center">
+                <Wallet className="mx-auto mb-3 h-10 w-10 text-slate-200" />
+                <p className="text-sm text-slate-500">Bu davr uchun hisob-faktura yo'q.</p>
+              </div>
+            )}
+
+            {invoices.length > 0 && (
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Raqam</th>
+                    <th className="px-4 py-3 font-medium">Bola</th>
+                    <th className="px-4 py-3 text-right font-medium">Summa</th>
+                    <th className="px-4 py-3 text-right font-medium">Qoldiq</th>
+                    <th className="px-4 py-3 font-medium">Holat</th>
+                    <th className="px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {invoices.map((invoice) => (
+                    <tr key={invoice.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3 font-mono text-xs text-slate-500">
+                        {invoice.number}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-slate-800">
+                        {invoice.child_name}
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-700">
+                        {money(invoice.amount_due)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-500">
+                        {money(invoice.amount_outstanding)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={cn(
+                            'rounded-full px-2 py-0.5 text-xs font-medium',
+                            STATUS_STYLES[invoice.status],
+                          )}
+                        >
+                          {STATUS_LABELS[invoice.status] ?? invoice.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {can('payments.update') && invoice.status !== 'cancelled' && (
+                          <button
+                            type="button"
+                            title="Bekor qilish"
+                            onClick={() => {
+                              const reason = window.prompt('Bekor qilish sababi:')
+                              if (reason !== null) {
+                                cancelInvoice.mutate({ id: invoice.id, reason })
+                              }
+                            }}
+                            className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                          >
+                            <Ban className="h-4 w-4" />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </>
+      )}
+
+      {tab === 'tariffs' && (
+        <>
+          {can('payments.create') && (
+            <form
+              onSubmit={(event) => {
+                event.preventDefault()
+                createTariff.mutate()
+              }}
+              className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4"
+            >
+              <div className="min-w-[200px] flex-1">
+                <label htmlFor="t-name" className="mb-1 block text-xs font-medium text-slate-600">
+                  Tarif nomi
+                </label>
+                <input
+                  id="t-name"
+                  required
+                  value={tariffForm.name}
+                  onChange={(e) => setTariffForm((p) => ({ ...p, name: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                />
+              </div>
+              <div className="w-44">
+                <label htmlFor="t-amount" className="mb-1 block text-xs font-medium text-slate-600">
+                  Oylik summa
+                </label>
+                <input
+                  id="t-amount"
+                  required
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={tariffForm.amount}
+                  onChange={(e) => setTariffForm((p) => ({ ...p, amount: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={createTariff.isPending}
+                className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
+              >
+                <Plus className="h-4 w-4" />
+                Qo'shish
+              </button>
+            </form>
+          )}
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {tariffsQuery.data?.items.map((tariff) => (
+              <div key={tariff.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-slate-900">{tariff.name}</p>
+                    <p className="mt-0.5 text-sm text-slate-600">{money(tariff.amount)}</p>
+                  </div>
+                  {can('payments.delete') && (
+                    <button
+                      type="button"
+                      onClick={() => removeTariff.mutate(tariff.id)}
+                      className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                      title="O'chirish"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {tariffsQuery.data?.items.length === 0 && (
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-12 text-center">
+              <p className="text-sm text-slate-500">
+                Hozircha tarif yo'q. Hisob-faktura chiqarish uchun avval tarif
+                yarating va bolalarga biriktiring.
+              </p>
             </div>
-            <p className="mt-3 text-sm text-slate-300">
-              Tizim orqali amalga oshirilgan barcha to'lovlar avtomatik hisobga olinadi.
-            </p>
-          </Card>
-        </div>
-      </div>
+          )}
+        </>
+      )}
     </div>
   )
 }

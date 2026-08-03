@@ -41,6 +41,15 @@ class Child(BranchScopedModel):
     )
     enrolled_on = models.DateField(null=True, blank=True)
 
+    # Joriy tarif rejasi (docs/03 §11.1). Sprint 4 da qo'shildi.
+    tariff = models.ForeignKey(
+        "finance.TariffPlan",
+        on_delete=models.RESTRICT,
+        related_name="children",
+        null=True,
+        blank=True,
+    )
+
     photo_path = models.CharField(max_length=255, blank=True)
     notes = models.TextField(blank=True)
 

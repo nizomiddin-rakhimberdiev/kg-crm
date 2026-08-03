@@ -28,6 +28,10 @@ export const queryKeys = {
   child: (orgId: string, id: string) => ['org', orgId, 'children', 'detail', id] as const,
   groups: (orgId: string) => ['org', orgId, 'groups'] as const,
 
+  tariffs: (orgId: string) => ['org', orgId, 'tariffs'] as const,
+  invoices: (orgId: string, params?: Record<string, unknown>) =>
+    ['org', orgId, 'invoices', params ?? {}] as const,
+
   attendanceDaily: (orgId: string, groupId: string, date: string) =>
     ['org', orgId, 'attendance', 'daily', groupId, date] as const,
   attendanceSummary: (orgId: string, month: string, groupId: string | null) =>

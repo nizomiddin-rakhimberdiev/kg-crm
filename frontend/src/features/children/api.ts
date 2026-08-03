@@ -10,6 +10,7 @@ export interface ChildInput {
   enrollment_status?: string
   notes?: string
   branch_id?: string | null
+  tariff_id?: string | null
 }
 
 export const childrenApi = {

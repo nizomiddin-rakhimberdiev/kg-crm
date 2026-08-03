@@ -1,0 +1,396 @@
+"""
+Moliya biznes mantiqi (docs/03 §13, §26).
+
+Ledger shartnomasi:
+- Har bir pul harakati **avval ledger'ga** yoziladi, keyin keshlar yangilanadi.
+- Ledger qatorlari o'zgartirilmaydi — tuzatish qarshi yozuv bilan.
+- Hisob-faktura generatsiyasi **idempotent**: ikki marta ishga tushsa ham
+  ikkinchi marta hisoblanmaydi.
+"""
+
+from __future__ import annotations
+
+import calendar
+from dataclasses import dataclass, field
+from datetime import date
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
+
+from django.db import IntegrityError, transaction
+from django.db.models import Q, Sum
+from django.utils import timezone
+
+from apps.children.models import Child, EnrollmentStatus
+from apps.core.exceptions import BusinessRuleViolation
+from apps.finance.models import (
+    ChildLedgerEntry,
+    Direction,
+    Discount,
+    DiscountType,
+    EntryType,
+    Invoice,
+    InvoiceLine,
+    InvoiceStatus,
+    SourceType,
+)
+
+__all__ = [
+    "child_balance",
+    "post_ledger_entry",
+    "issue_invoice",
+    "cancel_invoice",
+    "generate_monthly_invoices",
+    "recompute_child_balance",
+    "applicable_discount",
+]
+
+CENT = Decimal("0.01")
+
+
+def _money(value: Decimal) -> Decimal:
+    """Pulni ikki xonagacha yaxlitlaydi (bank yaxlitlashi emas, HALF_UP)."""
+    return value.quantize(CENT, rounding=ROUND_HALF_UP)
+
+
+# --- Ledger ---
+
+
+def child_balance(child_id: Any) -> Decimal:
+    """
+    Bolaning HAQIQIY balansi — ledger'dan hisoblanadi.
+
+    `child.balance` ustuni faqat kesh. Pul bilan bog'liq har qanday qaror
+    shu funksiyadan foydalanadi, keshdan emas (D3).
+    """
+    # Bitta so'rovda ikkita shartli yig'indi — Python'da sikl bilan
+    # hisoblash 10 000 qatorli ledger'da sezilarli sekinlashuv berardi.
+    totals = ChildLedgerEntry.objects.filter(child_id=child_id).aggregate(
+        debit=Sum("amount", filter=Q(direction=Direction.DEBIT)),
+        credit=Sum("amount", filter=Q(direction=Direction.CREDIT)),
+    )
+    return _money((totals["debit"] or Decimal("0")) - (totals["credit"] or Decimal("0")))
+
+
+def post_ledger_entry(
+    *,
+    child: Child,
+    entry_type: str,
+    direction: str,
+    amount: Decimal,
+    source_type: str,
+    source_id: Any = None,
+    description: str = "",
+    occurred_at: Any = None,
+    created_by: Any = None,
+) -> ChildLedgerEntry:
+    """
+    Ledger'ga bitta yozuv qo'shadi.
+
+    Bu ledger'ga yozishning YAGONA yo'li: har bir yozuv shu funksiyadan
+    o'tadi, shuning uchun invariantlar bir joyda tekshiriladi.
+    """
+    if amount <= 0:
+        raise BusinessRuleViolation("Ledger summasi musbat bo'lishi kerak.")
+
+    return ChildLedgerEntry.objects.create(
+        organization=child.organization,
+        branch=child.branch,
+        child=child,
+        entry_type=entry_type,
+        direction=direction,
+        amount=_money(amount),
+        source_type=source_type,
+        source_id=source_id,
+        occurred_at=occurred_at or timezone.now(),
+        description=description[:255],
+        created_by=created_by,
+    )
+
+
+def recompute_child_balance(child: Child) -> Decimal:
+    """
+    Kesh ustunini ledger'dan qayta hisoblaydi.
+
+    Kesh har doim tiklanadigan bo'lishi shart (D3) — bu funksiya
+    moslik tekshiruvi vazifasining ham asosi.
+    """
+    balance = child_balance(child.id)
+    Child.objects.filter(pk=child.pk).update(balance=balance)
+    return balance
+
+
+# --- Chegirmalar ---
+
+
+def applicable_discount(child: Child, on_date: date) -> Discount | None:
+    """Berilgan sanada amal qiladigan chegirma (eng so'nggisi)."""
+    return (
+        Discount.objects.filter(child=child, is_active=True, valid_from__lte=on_date)
+        .filter(Q(valid_to__isnull=True) | Q(valid_to__gte=on_date))
+        .order_by("-valid_from")
+        .first()
+    )
+
+
+def apply_discount(base: Decimal, discount: Discount | None) -> tuple[Decimal, Decimal]:
+    """Qaytaradi: (chegirmadan keyingi summa, chegirma summasi)."""
+    if discount is None:
+        return _money(base), Decimal("0.00")
+
+    if discount.discount_type == DiscountType.PERCENT:
+        reduction = base * discount.value / Decimal("100")
+    else:
+        reduction = discount.value
+
+    reduction = min(_money(reduction), _money(base))  # manfiy hisob-faktura bo'lmaydi
+    return _money(base - reduction), reduction
+
+
+# --- Hisob-faktura ---
+
+
+def _next_invoice_number(branch: Any, year: int, month: int) -> str:
+    """
+    Filial ichida ketma-ket raqam: `MAIN-202607-0001`.
+
+    Raqam `uq_invoice_number` bilan qo'riqlanadi; poyga holatida ikkinchi
+    urinish `IntegrityError` beradi va chaqiruvchi qayta uriladi.
+    """
+    prefix = f"{branch.code}-{year}{month:02d}"
+    last = (
+        Invoice.objects.filter(branch=branch, number__startswith=prefix)
+        .order_by("-number")
+        .values_list("number", flat=True)
+        .first()
+    )
+    sequence = int(last.rsplit("-", 1)[1]) + 1 if last else 1
+    return f"{prefix}-{sequence:04d}"
+
+
+@transaction.atomic
+def issue_invoice(
+    *,
+    child: Child,
+    period_year: int,
+    period_month: int,
+    issued_date: date | None = None,
+    due_date: date | None = None,
+    created_by: Any = None,
+) -> Invoice:
+    """
+    Bolaga bir davr uchun hisob-faktura chiqaradi va ledger'ga debet yozadi.
+
+    Idempotentlik `uq_invoice_child_period` qisman indeksi bilan bazada
+    kafolatlanadi — ilova qatlamidagi tekshiruv poyga holatida yetarli
+    emas (docs/03 §26).
+    """
+    if child.tariff_id is None:
+        raise BusinessRuleViolation(
+            f"{child.full_name}: tarif biriktirilmagan — hisob-faktura chiqarib bo'lmaydi."
+        )
+
+    existing = (
+        Invoice.objects.filter(child=child, period_year=period_year, period_month=period_month)
+        .exclude(status=InvoiceStatus.CANCELLED)
+        .first()
+    )
+    if existing:
+        return existing
+
+    issued = issued_date or date(period_year, period_month, 1)
+    if due_date is None:
+        last_day = calendar.monthrange(period_year, period_month)[1]
+        due_date = date(period_year, period_month, min(10, last_day))
+    if due_date < issued:
+        due_date = issued
+
+    tariff = child.tariff
+    assert tariff is not None  # yuqoridagi `tariff_id is None` tekshiruvi kafolati
+    discount = applicable_discount(child, issued)
+    amount_due, discount_amount = apply_discount(tariff.amount, discount)
+
+    try:
+        invoice = Invoice.objects.create(
+            organization=child.organization,
+            branch=child.branch,
+            number=_next_invoice_number(child.branch, period_year, period_month),
+            child=child,
+            tariff=tariff,
+            period_year=period_year,
+            period_month=period_month,
+            amount_due=amount_due,
+            status=InvoiceStatus.ISSUED,
+            issued_date=issued,
+            due_date=due_date,
+        )
+    except IntegrityError as exc:
+        # Parallel generatsiya bir vaqtda bir bolaga urindi — bazadagi
+        # qisman indeks ushladi. Mavjudini qaytaramiz: bu xato emas,
+        # idempotentlikning ishlagani.
+        existing = (
+            Invoice.objects.filter(child=child, period_year=period_year, period_month=period_month)
+            .exclude(status=InvoiceStatus.CANCELLED)
+            .first()
+        )
+        if existing:
+            return existing
+        raise BusinessRuleViolation("Hisob-fakturani yaratib bo'lmadi.") from exc
+
+    InvoiceLine.objects.create(
+        invoice=invoice,
+        description=f"{tariff.name} — {period_month:02d}/{period_year}",
+        quantity=Decimal("1"),
+        unit_amount=tariff.amount,
+        line_total=tariff.amount,
+    )
+    if discount_amount > 0 and discount is not None:
+        InvoiceLine.objects.create(
+            invoice=invoice,
+            description=f"Chegirma: {discount.reason or discount}",
+            quantity=Decimal("1"),
+            unit_amount=-discount_amount,
+            line_total=-discount_amount,
+        )
+
+    if amount_due > 0:
+        # Ledger — hujjatdan KEYIN, lekin bitta tranzaksiyada.
+        # Hisob-faktura bor, ledger yozuvi yo'q holat balansning jimgina
+        # noto'g'ri bo'lishi demak; tranzaksiya buni imkonsiz qiladi.
+        post_ledger_entry(
+            child=child,
+            entry_type=EntryType.CHARGE,
+            direction=Direction.DEBIT,
+            amount=amount_due,
+            source_type=SourceType.INVOICE,
+            source_id=invoice.id,
+            description=f"Hisob-faktura {invoice.number}",
+            occurred_at=timezone.now(),
+            created_by=created_by,
+        )
+    else:
+        # To'liq chegirma: to'lanadigan summa yo'q, demak pul harakati
+        # ham yo'q. Nol summali ledger yozuvi `amount > 0` invariantini
+        # bo'shashtirishni talab qilardi — u esa haqiqiy xatolarni
+        # ushlaydigan kuchli qoida. Hujjat esa qoladi: u "bu bola bu oyda
+        # hech narsa to'lamaydi" faktini isbotlaydi.
+        invoice.status = InvoiceStatus.PAID
+        invoice.save(update_fields=["status", "updated_at"])
+
+    recompute_child_balance(child)
+    return invoice
+
+
+@transaction.atomic
+def cancel_invoice(*, invoice: Invoice, reason: str = "", created_by: Any = None) -> Invoice:
+    """
+    Hisob-fakturani bekor qiladi — QARSHI yozuv bilan.
+
+    Ledger'dagi debet o'chirilmaydi: uning o'rniga teng kredit qo'shiladi.
+    Shunda "nima bo'ldi?" degan savolga jurnal javob beradi (D3).
+    """
+    if invoice.status == InvoiceStatus.CANCELLED:
+        return invoice
+    if invoice.amount_paid > 0:
+        raise BusinessRuleViolation(
+            "To'lov qilingan hisob-fakturani bekor qilib bo'lmaydi — avval to'lovni qaytaring."
+        )
+
+    invoice.status = InvoiceStatus.CANCELLED
+    invoice.save(update_fields=["status", "updated_at"])
+
+    post_ledger_entry(
+        child=invoice.child,
+        entry_type=EntryType.ADJUSTMENT,
+        direction=Direction.CREDIT,
+        amount=invoice.amount_due,
+        source_type=SourceType.INVOICE,
+        source_id=invoice.id,
+        description=f"Bekor qilindi {invoice.number}: {reason}"[:255],
+        created_by=created_by,
+    )
+    recompute_child_balance(invoice.child)
+    return invoice
+
+
+# --- Oylik generatsiya ---
+
+
+@dataclass
+class BillingRunResult:
+    period: str
+    created: int = 0
+    skipped_existing: int = 0
+    skipped_no_tariff: list[str] = field(default_factory=list)
+    total_amount: Decimal = Decimal("0.00")
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "period": self.period,
+            "created": self.created,
+            "skipped_existing": self.skipped_existing,
+            "skipped_no_tariff": self.skipped_no_tariff,
+            "total_amount": str(self.total_amount),
+        }
+
+
+def generate_monthly_invoices(
+    *,
+    organization: Any,
+    branch: Any = None,
+    period_year: int,
+    period_month: int,
+    created_by: Any = None,
+) -> BillingRunResult:
+    """
+    Davr uchun barcha faol bolalarga hisob-faktura chiqaradi.
+
+    **Idempotent**: qayta ishga tushirilsa mavjudlari o'tkazib yuboriladi.
+    Har bir bola ALOHIDA tranzaksiyada — bitta bolaning xatosi (masalan
+    tarif yo'q) butun ishni to'xtatmasligi kerak, aks holda 200 bolali
+    bog'chada bitta nosozlik oyni bloklab qo'yardi.
+    """
+    if not 1 <= period_month <= 12:
+        raise BusinessRuleViolation("Oy 1–12 oralig'ida bo'lishi kerak.")
+
+    result = BillingRunResult(period=f"{period_year}-{period_month:02d}")
+
+    children = Child.objects.filter(
+        is_active=True, enrollment_status=EnrollmentStatus.ACTIVE
+    ).select_related("tariff", "branch", "organization")
+    if branch is not None:
+        children = children.filter(branch=branch)
+
+    for child in children:
+        if child.tariff_id is None:
+            result.skipped_no_tariff.append(child.full_name)
+            continue
+
+        already = (
+            Invoice.objects.filter(child=child, period_year=period_year, period_month=period_month)
+            .exclude(status=InvoiceStatus.CANCELLED)
+            .exists()
+        )
+        if already:
+            result.skipped_existing += 1
+            continue
+
+        invoice = issue_invoice(
+            child=child,
+            period_year=period_year,
+            period_month=period_month,
+            created_by=created_by,
+        )
+        result.created += 1
+        result.total_amount += invoice.amount_due
+
+    return result
+
+
+def mark_overdue_invoices(*, organization_id: Any, today: date | None = None) -> int:
+    """Muddati o'tgan hisob-fakturalarni belgilaydi (rejalashtirilgan vazifa)."""
+    today = today or timezone.localdate()
+    return Invoice.objects.filter(
+        organization_id=organization_id,
+        status__in=[InvoiceStatus.ISSUED, InvoiceStatus.PARTIALLY_PAID],
+        due_date__lt=today,
+    ).update(status=InvoiceStatus.OVERDUE)

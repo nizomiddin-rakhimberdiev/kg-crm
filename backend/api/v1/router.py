@@ -10,6 +10,7 @@ from apps.accounts.views import PermissionViewSet, RoleViewSet, UserViewSet
 from apps.attendance.views import AttendanceViewSet
 from apps.branches.views import BranchViewSet
 from apps.children.views import ChildViewSet, GroupViewSet, GuardianViewSet
+from apps.finance.views import DiscountViewSet, InvoiceViewSet, LedgerViewSet, TariffPlanViewSet
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -21,5 +22,9 @@ router.register("children", ChildViewSet, basename="child")
 router.register("guardians", GuardianViewSet, basename="guardian")
 router.register("groups", GroupViewSet, basename="group")
 router.register("attendance", AttendanceViewSet, basename="attendance")
+router.register("tariffs", TariffPlanViewSet, basename="tariff")
+router.register("discounts", DiscountViewSet, basename="discount")
+router.register("invoices", InvoiceViewSet, basename="invoice")
+router.register("ledger", LedgerViewSet, basename="ledger")
 
 __all__ = ["router"]

@@ -13,6 +13,7 @@ qo'shilgan kuniyoq shu yerda tekshiriladi.
 from __future__ import annotations
 
 from datetime import date
+from decimal import Decimal
 from typing import Any
 
 import pytest
@@ -41,6 +42,15 @@ def _detail_routes() -> list[tuple[str, str]]:
 ROUTES = _detail_routes()
 
 
+def _snapshot(instance: Any) -> dict[str, Any]:
+    """Qatorning barcha oddiy maydonlari — o'zgarganini aniqlash uchun."""
+    return {
+        field.name: getattr(instance, field.attname)
+        for field in instance._meta.fields
+        if field.name != "updated_at"
+    }
+
+
 def _create_row(tenant: Any, basename: str) -> Any:
     """Berilgan tenant ichida shu endpoint uchun bitta qator yaratadi."""
     from apps.accounts.models import User
@@ -48,6 +58,8 @@ def _create_row(tenant: Any, basename: str) -> Any:
     from apps.branches.models import Branch
     from apps.children.models import Child, Group, Guardian
     from apps.children.services import enroll_child
+    from apps.finance.models import Discount, TariffPlan
+    from apps.finance.services import issue_invoice
 
     with organization_context(tenant.organization.id):
         if basename == "user":
@@ -113,6 +125,37 @@ def _create_row(tenant: Any, basename: str) -> Any:
                 attendance_date=timezone.localdate(),
                 status="present",
             )
+        if basename in {"tariff", "discount", "invoice", "ledger"}:
+            tariff = TariffPlan.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                name="Tarif",
+                amount=Decimal("1000000"),
+            )
+            if basename == "tariff":
+                return tariff
+            child = Child.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                first_name="Moliya",
+                last_name="Bolasi",
+                date_of_birth=date(2021, 3, 14),
+                gender="male",
+                tariff=tariff,
+            )
+            if basename == "discount":
+                return Discount.objects.create(
+                    organization=tenant.organization,
+                    branch=tenant.branch,
+                    child=child,
+                    discount_type="percent",
+                    value=Decimal("10"),
+                    valid_from=date(2026, 1, 1),
+                )
+            invoice = issue_invoice(child=child, period_year=2026, period_month=7)
+            if basename == "invoice":
+                return invoice
+            return child.ledger_entries.first()
     raise AssertionError(
         f"'{basename}' uchun test ma'lumoti yaratilmagan. Yangi endpoint "
         f"qo'shgan bo'lsangiz, bu funksiyaga uni ham qo'shing — sweep "
@@ -147,19 +190,42 @@ class TestCrossTenantIsolation:
         assert response.status_code == 404
         assert response.json()["error"]["code"] == "NOT_FOUND"
 
-    def test_update_of_other_tenant_row_is_404(self, tenant_a, tenant_b, basename, prefix):
+    def test_update_of_other_tenant_row_is_blocked(self, tenant_a, tenant_b, basename, prefix):
+        """
+        `404` (topilmadi) yoki `405` (metod yo'q) — ikkalasi ham xavfsiz.
+
+        Faqat o'qish uchun mo'ljallangan resurslarda (hisob-faktura va
+        ledger — D3) `PATCH` umuman mavjud emas. Muhimi status kodi emas,
+        **begona qator o'zgarmagani** — quyida aynan shu tekshiriladi.
+        """
         foreign = _create_row(tenant_b, basename)
+        before = _snapshot(foreign)
+
         response = tenant_a.client().patch(
             reverse(f"v1:{basename}-detail", args=[foreign.id]),
             {"name": "buzildi"},
             format="json",
         )
-        assert response.status_code == 404
+        assert response.status_code in (404, 405)
 
-    def test_delete_of_other_tenant_row_is_404(self, tenant_a, tenant_b, basename, prefix):
+        foreign.refresh_from_db()
+        assert _snapshot(foreign) == before, "Begona tashkilotning qatori o'zgardi"
+
+    def test_delete_of_other_tenant_row_is_blocked(self, tenant_a, tenant_b, basename, prefix):
         foreign = _create_row(tenant_b, basename)
+        model = type(foreign)
+
         response = tenant_a.client().delete(reverse(f"v1:{basename}-detail", args=[foreign.id]))
-        assert response.status_code == 404
+        assert response.status_code in (404, 405)
+
+        # Qator o'chirilmagani VA yumshoq o'chirilmagani — ikkalasi ham.
+        # Filtrsiz manager nomi modelga qarab farq qiladi: `User` da u
+        # `auth_objects` (login tenant tanlanishidan oldin ishlaydi).
+        unscoped = getattr(model, "all_objects", None) or model.auth_objects
+        still_there = unscoped.filter(pk=foreign.pk).first()
+        assert still_there is not None, "Begona tashkilotning qatori o'chirildi"
+        if hasattr(still_there, "is_active"):
+            assert still_there.is_active is True
 
 
 @pytest.mark.parametrize("basename,prefix", ROUTES, ids=[r[1] for r in ROUTES])
