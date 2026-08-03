@@ -123,4 +123,10 @@ export const api = {
   async delete(url: string): Promise<void> {
     await httpClient.delete(url)
   },
+
+  /** PUT kabi kamroq ishlatiladigan metodlar uchun. */
+  async request<T>(method: 'put' | 'post', url: string, body?: unknown): Promise<T> {
+    const response = await httpClient.request<Envelope<T>>({ method, url, data: body })
+    return response.data.data
+  },
 }

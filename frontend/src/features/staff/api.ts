@@ -1,5 +1,5 @@
 import { api } from '@/lib/api/client'
-import type { Role, StaffUser } from '@/lib/api/types'
+import type { Permission, Role, StaffUser } from '@/lib/api/types'
 
 export interface StaffInput {
   full_name: string
@@ -18,4 +18,13 @@ export const staffApi = {
     api.patch<StaffUser>(`/users/${id}`, payload),
   deactivate: (id: string) => api.delete(`/users/${id}`),
   roles: () => api.list<Role>('/roles'),
+}
+
+export const rolesApi = {
+  list: () => api.list<Role>('/roles'),
+  permissions: () => api.get<Permission[]>('/permissions'),
+  setPermissions: (roleId: string, codes: string[]) =>
+    api.request<{ permissions: string[] }>('put', `/roles/${roleId}/permissions`, {
+      permissions: codes,
+    }),
 }

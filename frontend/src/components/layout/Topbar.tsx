@@ -1,5 +1,6 @@
 import { Bell, Search, Volume2, VolumeX } from 'lucide-react'
 import { useSound } from '@/app/providers/SoundProvider'
+import { BranchSwitcher } from './BranchSwitcher'
 
 export function Topbar() {
   const { muted, toggle } = useSound()
@@ -17,6 +18,8 @@ export function Topbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-3">
+        <BranchSwitcher />
+
         {/* Sound toggle */}
         <button
           onClick={toggle}

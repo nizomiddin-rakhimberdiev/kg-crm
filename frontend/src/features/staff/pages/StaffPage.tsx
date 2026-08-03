@@ -10,7 +10,9 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, Search, UserX } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { useBranchScope } from '@/app/providers/BranchProvider'
 import { branchesApi } from '@/features/branches/api'
+import { RolesPanel } from '@/features/staff/components/RolesPanel'
 import { staffApi, type StaffInput } from '@/features/staff/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
@@ -31,15 +33,24 @@ export default function StaffPage() {
   const queryClient = useQueryClient()
   const { can } = useCan()
 
+  const [tab, setTab] = useState<'staff' | 'roles'>('staff')
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState<StaffInput>(EMPTY_FORM)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
 
+  // Topbar'dagi filial tanlovi ro'yxatga qo'llanadi. Bu qulaylik, himoya
+  // emas: backend queryset'i allaqachon tashkilot bilan cheklangan.
+  const { selectedBranchId } = useBranchScope()
+
   const staffQuery = useQuery({
-    queryKey: queryKeys.users(organizationId, { search }),
-    queryFn: () => staffApi.list(search ? { search } : undefined),
+    queryKey: queryKeys.users(organizationId, { search, branch: selectedBranchId }),
+    queryFn: () =>
+      staffApi.list({
+        ...(search ? { search } : {}),
+        ...(selectedBranchId ? { branch: selectedBranchId } : {}),
+      }),
   })
 
   const rolesQuery = useQuery({
@@ -93,7 +104,7 @@ export default function StaffPage() {
             Xodimlar soni cheklanmagan — narx faqat bolalar soniga bog'liq.
           </p>
         </div>
-        {can('users.create') && (
+        {tab === 'staff' && can('users.create') && (
           <button
             type="button"
             onClick={() => setShowForm((v) => !v)}
@@ -105,13 +116,38 @@ export default function StaffPage() {
         )}
       </div>
 
-      {error && (
+      <div className="flex gap-1 border-b border-slate-200">
+        {(
+          [
+            ['staff', 'Xodimlar'],
+            ['roles', 'Rollar va ruxsatlar'],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setTab(key)}
+            className={cn(
+              '-mb-px border-b-2 px-4 py-2 text-sm font-medium transition',
+              tab === key
+                ? 'border-brand-600 text-brand-700'
+                : 'border-transparent text-slate-500 hover:text-slate-800',
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'roles' && <RolesPanel />}
+
+      {tab === 'staff' && error && (
         <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      {showForm && can('users.create') && (
+      {tab === 'staff' && showForm && can('users.create') && (
         <form
           onSubmit={(event) => {
             event.preventDefault()
@@ -208,6 +244,7 @@ export default function StaffPage() {
         </form>
       )}
 
+      {tab === 'staff' && (
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
@@ -218,7 +255,9 @@ export default function StaffPage() {
           className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
         />
       </div>
+      )}
 
+      {tab === 'staff' && (
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         {staffQuery.isPending && (
           <p className="px-4 py-8 text-center text-sm text-slate-400">Yuklanmoqda…</p>
@@ -286,6 +325,7 @@ export default function StaffPage() {
           </table>
         )}
       </div>
+      )}
     </div>
   )
 }

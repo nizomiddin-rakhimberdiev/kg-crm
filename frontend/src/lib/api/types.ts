@@ -123,6 +123,14 @@ export interface Branch {
   created_at: string
 }
 
+export interface Permission {
+  id: string
+  code: string
+  module: string
+  action: string
+  label: string
+}
+
 export interface Role {
   id: string
   name: string

@@ -146,7 +146,7 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 
 > **Status: delivered.** The cross-tenant sweep caught a real leak during this sprint — `User`'s default manager was unscoped (login must search across organizations), so `/users` exposed other tenants' staff. The default manager is now scoped and the auth path uses an explicit `User.auth_objects` escape hatch. This is exactly the failure the generated sweep exists to catch, and it would not have been found by hand-written per-endpoint tests.
 >
-> **Carried to Sprint 2:** the Roles management UI (assigning permissions to custom roles) and the Topbar branch switcher. The backend endpoints for both exist and are tested; only the screens are outstanding. `SettingsPage` still renders its pre-v1.1 mock content.
+> The Roles management UI and Topbar branch switcher shipped in the same sprint. `SettingsPage` still renders its pre-v1.1 mock content and is rewritten when `settings_app` lands (Sprint 8).
 
 ### Sprint 2 — Children (CRM)
 **Goal:** manage children, guardians, groups, enrollment.
