@@ -9,6 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from apps.audit import services as audit
 from apps.branches.selectors import resolve_branch
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchScopedMixin, TenantViewSet
@@ -134,5 +135,21 @@ class StockMovementViewSet(BranchScopedMixin, TenantViewSet):
             occurred_at=data.get("occurred_at"),
             reference=data.get("reference", ""),
             note=data.get("note", ""),
+        )
+        # Stok harakati — mulk harakati. `adjustment` esa qoldiqni
+        # hujjatsiz o'zgartirishning yagona yo'li, ya'ni aynan shu yerda
+        # "kim tuzatdi?" degan savol paydo bo'ladi.
+        audit.record(
+            action="create",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="stock_movement",
+            entity_id=movement.id,
+            changes={
+                "product": str(movement.product_id),
+                "direction": movement.direction,
+                "movement_type": movement.movement_type,
+                "quantity": str(movement.quantity),
+            },
         )
         return Response(StockMovementSerializer(movement).data, status=status.HTTP_201_CREATED)

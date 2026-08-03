@@ -1,245 +1,175 @@
-import {
-  Users,
-  Wallet,
-  AlertTriangle,
-  CalendarCheck,
-  ArrowUpRight,
-  Package,
-} from 'lucide-react'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts'
-import { Card, PageHeader, StatCard, Avatar, Badge } from '@/components/ui/primitives'
+/**
+ * Dashboard (docs/04 §14.1).
+ *
+ * Barcha raqamlar bitta chaqiruvdan keladi (`GET /dashboard`) va backend'da
+ * keshlangan. To'rtta KPI'ni to'rtta so'rov bilan olish sahifani sekin
+ * qilardi va har biri boshqa vaqtdagi holatni ko'rsatishi mumkin edi —
+ * bir ekranda bir-biriga mos kelmaydigan raqamlar.
+ */
+
+import { useQuery } from '@tanstack/react-query'
+import { AlertTriangle, CalendarCheck, Package, Users, Wallet } from 'lucide-react'
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Link } from 'react-router-dom'
+import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { dashboardApi } from '@/features/dashboard/api'
+import { queryKeys } from '@/lib/api/queryKeys'
 import { formatUZS } from '@/lib/utils'
 
-const financeData = [
-  { month: 'Yan', daromad: 42, xarajat: 18 },
-  { month: 'Fev', daromad: 38, xarajat: 16 },
-  { month: 'Mar', daromad: 45, xarajat: 21 },
-  { month: 'Apr', daromad: 40, xarajat: 17 },
-  { month: 'May', daromad: 48, xarajat: 19 },
-  { month: 'Iyn', daromad: 44, xarajat: 20 },
-  { month: 'Iyl', daromad: 52, xarajat: 22 },
-  { month: 'Avg', daromad: 49, xarajat: 18 },
-]
+const MONTHS = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek']
 
-const recentPayments = [
-  { name: 'Karimov Aziz', time: 'Bugun, 09:12', amount: 320000, method: 'Payme' },
-  { name: 'Nazarova Laylo', time: 'Bugun, 08:40', amount: 1200000, method: 'Naqd' },
-  { name: 'Sharipov Davron', time: 'Kecha, 17:05', amount: 550000, method: "O'tkazma" },
-  { name: 'Ismoilova Sabina', time: 'Kecha, 15:22', amount: 450000, method: 'Payme' },
-]
+const shortMonth = (iso: string) => MONTHS[Number(iso.slice(5, 7)) - 1] ?? iso
 
-const lowStock = [
-  { name: 'Tuxum', level: 12 },
-  { name: 'Suyuq sovun 5L', level: 45 },
-  { name: 'A4 qog\'oz', level: 30 },
-]
+const when = (iso: string) =>
+  new Date(iso).toLocaleString('uz-UZ', { dateStyle: 'short', timeStyle: 'short' })
+
+interface TileProps {
+  label: string
+  value: string
+  hint: string
+  icon: typeof Users
+  tone: string
+  to?: string
+}
+
+function Tile({ label, value, hint, icon: Icon, tone, to }: TileProps) {
+  const body = (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md">
+      <div className={`grid h-10 w-10 place-items-center rounded-xl ${tone}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <p className="mt-4 text-2xl font-bold tracking-tight text-slate-900">{value}</p>
+      <p className="text-sm font-medium text-slate-600">{label}</p>
+      <p className="mt-1 text-xs text-slate-400">{hint}</p>
+    </div>
+  )
+  return to ? <Link to={to}>{body}</Link> : body
+}
 
 export default function DashboardPage() {
+  const organizationId = useOrganizationId()
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: queryKeys.dashboard(organizationId),
+    queryFn: dashboardApi.kpis,
+    // Backend 2 daqiqa keshlaydi; frontend ham shuncha kutadi, aks holda
+    // har fokusda so'rov ketib, o'sha keshlangan javob qaytaverardi.
+    staleTime: 120_000,
+  })
+
+  if (isError) {
+    return (
+      <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        Ko'rsatkichlarni yuklab bo'lmadi.
+      </div>
+    )
+  }
+
+  const trend = (data?.revenue_trend ?? []).map((row) => ({
+    month: shortMonth(row.month),
+    daromad: Number(row.total),
+  }))
+
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Dashboard"
-        subtitle="Premium Bog'cha — umumiy ko'rsatkichlar, 27-Iyul 2026"
-      />
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Boshqaruv paneli</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          {data ? new Date(data.date).toLocaleDateString('uz-UZ', { dateStyle: 'long' }) : '—'}
+        </p>
+      </div>
 
-      {/* KPI cards — bosilganda batafsil ma'lumot ochiladi */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
+        <Tile
           label="Faol bolalar"
-          value="124 nafar"
+          value={isLoading ? '…' : `${data?.active_children ?? 0} nafar`}
+          hint="Ro'yxatdagi bolalar"
           icon={Users}
-          iconTone="info"
-          delta="+6"
-          deltaTone="success"
-          hint="O'tgan oyga nisbatan"
-          detail={{
-            description:
-              "Hozirda bog'chada 124 nafar faol bola tarbiyalanmoqda. Shu oyda 6 nafar yangi bola qabul qilindi, 1 nafar boshqa bog'chaga o'tkazildi.",
-            breakdown: [
-              { label: 'Kamalak guruhi', value: '32 nafar' },
-              { label: 'Yulduzcha guruhi', value: '28 nafar' },
-              { label: 'Bilimdon guruhi', value: '34 nafar' },
-              { label: "Qaldirg'och guruhi", value: '30 nafar' },
-            ],
-            linkTo: '/children',
-            linkLabel: 'Bolalar ro\'yxati',
-          }}
+          tone="bg-sky-50 text-sky-600"
+          to="/children"
         />
-        <StatCard
-          label="Oylik tushum"
-          value={formatUZS(185000000)}
+        <Tile
+          label="Shu oy tushum"
+          value={isLoading ? '…' : formatUZS(Number(data?.month_revenue ?? 0))}
+          hint="Qabul qilingan to'lovlar"
           icon={Wallet}
-          iconTone="success"
-          delta="+12%"
-          deltaTone="success"
-          hint="Iyul oyi bo'yicha"
-          detail={{
-            description:
-              "Iyul oyida jami 185 000 000 UZS tushum yig'ildi — o'tgan oyga nisbatan 12% ko'p. Oylik reja 84% bajarildi.",
-            breakdown: [
-              { label: 'Plastik karta (Payme/Click)', value: '111 000 000', tone: 'success' },
-              { label: 'Naqd pul', value: '46 000 000', tone: 'success' },
-              { label: "Bank o'tkazmasi", value: '28 000 000', tone: 'success' },
-            ],
-            linkTo: '/payments',
-            linkLabel: "To'lovlar bo'limi",
-          }}
+          tone="bg-emerald-50 text-emerald-600"
+          to="/payments"
         />
-        <StatCard
-          label="Umumiy qarzdorlik"
-          value={formatUZS(23400000)}
+        <Tile
+          label="Qarzdorlik"
+          value={isLoading ? '…' : formatUZS(Number(data?.outstanding_debt ?? 0))}
+          hint={`${data?.debtor_count ?? 0} nafar bola bo'yicha`}
           icon={AlertTriangle}
-          iconTone="danger"
-          delta="34 nafar"
-          deltaTone="danger"
-          hint="Qarzdor bolalar"
-          detail={{
-            description:
-              '34 nafar bola bo\'yicha jami 23 400 000 UZS qarzdorlik mavjud. Ulardan 8 tasi 30 kundan ortiq kechikkan — ustuvor e\'tibor talab qiladi.',
-            breakdown: [
-              { label: 'Kechikish 1–15 kun', value: '12 000 000', tone: 'neutral' },
-              { label: 'Kechikish 15–30 kun', value: '6 400 000', tone: 'danger' },
-              { label: 'Kechikish 30+ kun', value: '5 000 000', tone: 'danger' },
-            ],
-            linkTo: '/debtors',
-            linkLabel: 'Qarzdorlar bo\'limi',
-          }}
+          tone="bg-red-50 text-red-600"
+          to="/debtors"
         />
-        <StatCard
-          label="Bugungi davomat"
-          value="91.5%"
+        <Tile
+          label="Davomat (shu oy)"
+          value={isLoading ? '…' : `${data?.attendance_month_pct ?? 0}%`}
+          hint="Kelgan / belgilangan"
           icon={CalendarCheck}
-          iconTone="teal"
-          delta="+2.1%"
-          deltaTone="success"
-          hint="113 / 124 bola"
-          detail={{
-            description:
-              'Bugun 124 boladan 113 tasi bog\'chaga keldi (91.5%). 11 tasi kelmadi — shundan 4 tasi sababli (hujjatli).',
-            breakdown: [
-              { label: 'Kelganlar', value: '113 nafar', tone: 'success' },
-              { label: 'Kelmaganlar', value: '7 nafar', tone: 'danger' },
-              { label: 'Sababli (hujjatli)', value: '4 nafar', tone: 'neutral' },
-            ],
-            linkTo: '/attendance',
-            linkLabel: 'Davomat bo\'limi',
-          }}
+          tone="bg-teal-50 text-teal-600"
+          to="/attendance"
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Finance chart */}
-        <Card className="lg:col-span-2 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Moliya dinamikasi</h2>
-              <p className="text-sm text-slate-500">Tushum va xarajatlar (mln UZS)</p>
-            </div>
-            <div className="flex items-center gap-4 text-xs">
-              <span className="flex items-center gap-1.5 text-slate-500">
-                <span className="w-2.5 h-2.5 rounded-sm bg-brand-600" /> Daromad
-              </span>
-              <span className="flex items-center gap-1.5 text-slate-500">
-                <span className="w-2.5 h-2.5 rounded-sm bg-rose-300" /> Xarajat
-              </span>
-            </div>
-          </div>
-          <div className="mt-6 h-72">
+      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+          <h2 className="text-sm font-semibold text-slate-900">Tushum dinamikasi</h2>
+          <p className="mt-0.5 text-xs text-slate-500">Oxirgi 6 oy, qabul qilingan to'lovlar</p>
+          <div className="mt-4 h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={financeData} barGap={6}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f7" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
-                <Tooltip
-                  cursor={{ fill: '#f8fafc' }}
-                  contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }}
+              <BarChart data={trend}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  fontSize={12}
+                  tickFormatter={(v: number) => `${Math.round(v / 1_000_000)}mln`}
                 />
-                <Bar dataKey="daromad" fill="#2563eb" radius={[6, 6, 0, 0]} maxBarSize={22} />
-                <Bar dataKey="xarajat" fill="#fda4af" radius={[6, 6, 0, 0]} maxBarSize={22} />
+                <Tooltip
+                  formatter={(v: number) => formatUZS(v)}
+                  contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 13 }}
+                />
+                <Bar dataKey="daromad" fill="#6366f1" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </Card>
+        </section>
 
-        {/* Recent payments */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-slate-900">So'nggi to'lovlar</h2>
-            <button
-              data-toast="Barcha to'lovlar (demo)"
-              data-toast-tone="info"
-              className="text-xs font-semibold text-brand-600 hover:underline active:scale-95"
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+          <h2 className="text-sm font-semibold text-slate-900">Oxirgi to'lovlar</h2>
+          <ul className="mt-4 space-y-3">
+            {(data?.recent_payments ?? []).map((payment, index) => (
+              <li key={`${payment.paid_at}-${index}`} className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-slate-900">{payment.child}</p>
+                  <p className="text-xs text-slate-400">{when(payment.paid_at)}</p>
+                </div>
+                <span className="shrink-0 text-sm font-semibold text-emerald-600">
+                  {formatUZS(Number(payment.amount))}
+                </span>
+              </li>
+            ))}
+            {!isLoading && (data?.recent_payments ?? []).length === 0 && (
+              <li className="py-6 text-center text-sm text-slate-400">
+                Hozircha to'lov qabul qilinmagan.
+              </li>
+            )}
+          </ul>
+
+          {(data?.low_stock_count ?? 0) > 0 && (
+            <Link
+              to="/inventory"
+              className="mt-5 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 hover:bg-amber-100"
             >
-              Hammasi
-            </button>
-          </div>
-          <div className="mt-4 space-y-1">
-            {recentPayments.map((p) => (
-              <div
-                key={p.name}
-                className="flex items-center gap-3 rounded-xl px-2 py-2.5 hover:bg-slate-50"
-              >
-                <Avatar name={p.name} size="sm" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-800">{p.name}</p>
-                  <p className="text-xs text-slate-400">{p.time}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-slate-900">
-                    {p.amount.toLocaleString('en-US')}
-                  </p>
-                  <Badge tone="info" className="mt-0.5">
-                    {p.method}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      {/* Bottom row */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2 flex flex-col justify-between gap-4 bg-slate-900 p-6 text-white sm:flex-row sm:items-center">
-          <div>
-            <div className="flex items-center gap-2 text-brand-200">
-              <ArrowUpRight className="w-4 h-4" />
-              <span className="text-xs font-semibold uppercase tracking-wide">Oylik reja</span>
-            </div>
-            <p className="mt-2 text-3xl font-bold">84% bajarildi</p>
-            <p className="mt-1 text-sm text-slate-300">
-              Iyul oyi to'lov rejasi 155 mln UZS dan 130 mln UZS yig'ildi.
-            </p>
-          </div>
-          <div className="grid place-items-center w-24 h-24 rounded-full border-8 border-brand-500/30">
-            <span className="text-xl font-bold">84%</span>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center gap-2">
-            <div className="grid place-items-center w-9 h-9 rounded-xl bg-amber-50 text-amber-600">
-              <Package className="w-5 h-5" />
-            </div>
-            <h2 className="text-base font-bold text-slate-900">Kam qolgan mahsulotlar</h2>
-          </div>
-          <div className="mt-4 space-y-3">
-            {lowStock.map((s) => (
-              <div key={s.name} className="flex items-center justify-between text-sm">
-                <span className="text-slate-600">{s.name}</span>
-                <Badge tone={s.level < 20 ? 'danger' : 'warning'}>{s.level}%</Badge>
-              </div>
-            ))}
-          </div>
-        </Card>
+              <Package className="h-4 w-4 shrink-0" />
+              {data?.low_stock_count} ta mahsulot minimumdan kam
+            </Link>
+          )}
+        </section>
       </div>
     </div>
   )

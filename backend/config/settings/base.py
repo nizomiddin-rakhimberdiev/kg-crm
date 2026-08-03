@@ -9,6 +9,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -52,6 +53,7 @@ LOCAL_APPS = [
     "apps.expenses",
     "apps.notifications",
     "apps.settings_app",
+    "apps.reports",
     "apps.audit",
 ]
 
@@ -162,6 +164,37 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
+# Rejalashtirilgan vazifalar (docs/02 §18).
+#
+# `DatabaseScheduler` jadvalni bazadan o'qiydi, ya'ni buni admin orqali
+# ham o'zgartirish mumkin. Bu yerdagi ro'yxat — BOSHLANG'ICH holat:
+# yangi o'rnatishda kimdir "hisob-faktura generatsiyasini yoqishni
+# unutdim" degan holatga tushmasligi uchun.
+CELERY_BEAT_SCHEDULE = {
+    # Har oyning 1-kuni, ertalab: oylik hisob-fakturalar.
+    "generate-monthly-invoices": {
+        "task": "finance.generate_monthly_invoices",
+        "schedule": crontab(hour=2, minute=0, day_of_month="1"),
+    },
+    # Har kuni: muddati o'tganlarni belgilash.
+    "mark-overdue-invoices": {
+        "task": "finance.mark_overdue_invoices",
+        "schedule": crontab(hour=3, minute=0),
+    },
+    # Har kuni tushdan oldin: qarzdorlarga eslatma. Kechqurun emas —
+    # ota-onaga ish vaqtida yetib borsin.
+    "send-debt-reminders": {
+        "task": "reports.send_debt_reminders",
+        "schedule": crontab(hour=10, minute=0),
+    },
+    # Har kecha: kesh va ledger solishtiruvi (docs/03 §26). Farq
+    # topilsa log'ga yoziladi — kutib o'tirmasdan.
+    "recompute-balances": {
+        "task": "reports.recompute_balances",
+        "schedule": crontab(hour=4, minute=30),
+    },
+}
+
 # --- DRF (docs/04 §1–3) ---
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["apps.core.renderers.EnvelopeJSONRenderer"],
@@ -185,6 +218,11 @@ REST_FRAMEWORK = {
         "anon": "120/hour",
         # Login alohida va qattiqroq — brute-force'ga qarshi (docs/02 §20.2).
         "login": env("LOGIN_THROTTLE_RATE", default="10/min"),
+        # Eksport — eng qimmat endpoint: u butun davrni o'qiydi va fayl
+        # yozadi. Cheklovsiz bo'lsa, tugmani qayta-qayta bosish bitta
+        # mijozning ishchilarini band qilib, QOLGAN mijozlarning
+        # vazifalarini navbatda ushlab turardi.
+        "export": env("EXPORT_THROTTLE_RATE", default="20/hour"),
     },
 }
 

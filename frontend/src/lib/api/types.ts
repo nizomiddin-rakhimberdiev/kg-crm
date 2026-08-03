@@ -499,3 +499,69 @@ export interface Notification {
 /** Sozlama qiymati skalyar, ro'yxat yoki obyekt bo'lishi mumkin (docs/03 §18.1). */
 export type SettingValue = string | number | boolean | null | SettingValue[] | { [k: string]: SettingValue }
 export type EffectiveSettings = Record<string, SettingValue>
+
+export interface DashboardKpis {
+  date: string
+  active_children: number
+  month_revenue: string
+  outstanding_debt: string
+  debtor_count: number
+  attendance_month_pct: number
+  low_stock_count: number
+  recent_payments: Array<{ child: string; amount: string; paid_at: string }>
+  revenue_trend: Array<{ month: string; total: string }>
+  cached: boolean
+}
+
+export interface RevenueReport {
+  basis: 'cash'
+  date_from: string
+  date_to: string
+  total: string
+  payment_count: number
+  by_month: Array<{ month: string; total: string; count: number }>
+  by_method: Array<{ method: string; total: string; count: number }>
+}
+
+export interface ProfitLoss {
+  basis: 'cash'
+  date_from: string
+  date_to: string
+  revenue: string
+  expenses: string
+  payroll: string
+  net: string
+  by_month: Array<{
+    month: string
+    revenue: string
+    expenses: string
+    payroll: string
+    net: string
+  }>
+}
+
+export interface ReportExport {
+  id: string
+  report_type: string
+  params: Record<string, unknown>
+  status: 'queued' | 'running' | 'ready' | 'failed'
+  row_count: number
+  error: string
+  is_ready: boolean
+  requested_by_name: string | null
+  completed_at: string | null
+  created_at: string
+}
+
+export interface AuditLog {
+  id: string
+  created_at: string
+  actor: string | null
+  actor_name: string | null
+  actor_email: string
+  action: string
+  entity_type: string
+  entity_id: string | null
+  changes: Record<string, unknown>
+  ip: string | null
+}

@@ -58,6 +58,15 @@ export const queryKeys = {
     ['org', orgId, 'expenses', params ?? {}] as const,
   expenseCategories: (orgId: string) => ['org', orgId, 'expense-categories'] as const,
 
+  dashboard: (orgId: string) => ['org', orgId, 'dashboard'] as const,
+  reportRevenue: (orgId: string, from: string, to: string) =>
+    ['org', orgId, 'reports', 'revenue', from, to] as const,
+  reportProfitLoss: (orgId: string, from: string, to: string) =>
+    ['org', orgId, 'reports', 'profit-loss', from, to] as const,
+  reportExports: (orgId: string) => ['org', orgId, 'reports', 'exports'] as const,
+  auditLogs: (orgId: string, params?: Record<string, unknown>) =>
+    ['org', orgId, 'audit-logs', params ?? {}] as const,
+
   notificationTemplates: (orgId: string) => ['org', orgId, 'notification-templates'] as const,
   notifications: (orgId: string, params?: Record<string, unknown>) =>
     ['org', orgId, 'notifications', params ?? {}] as const,

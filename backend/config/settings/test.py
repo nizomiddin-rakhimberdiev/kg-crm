@@ -1,5 +1,9 @@
 """Test sozlamalari — tez va tashqi xizmatlarsiz."""
 
+import tempfile
+from pathlib import Path
+from typing import cast
+
 from .base import *  # noqa: F403
 from .base import DATABASES  # noqa: F401
 
@@ -18,10 +22,21 @@ CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"
 # Kalitlar `None` qiymat bilan QOLDIRILADI: DRF `THROTTLE_RATES[scope]` ni
 # izlaydi va kalit yo'q bo'lsa `KeyError` bilan yiqiladi. `None` esa
 # "cheklov yo'q" degani.
+#
+# Ro'yxat BAZADAN olinadi, qo'lda yozilmaydi: yangi throttle scope
+# qo'shilganda bu yerni yangilashni unutish testlarni 500 xato bilan
+# yiqitardi — va sabab endpointda emas, shu faylda bo'lardi.
 REST_FRAMEWORK = {  # noqa: F405
     **REST_FRAMEWORK,  # noqa: F405
-    "DEFAULT_THROTTLE_RATES": {"anon": None, "login": None},
+    "DEFAULT_THROTTLE_RATES": dict.fromkeys(
+        cast("dict[str, str]", REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]),  # noqa: F405
+        None,
+    ),
 }
 
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
+
+# Testlar yozgan fayllar loyihaga tushib qolmasin — vaqtinchalik papka
+# har bir ishga tushishda tozalanadi.
+MEDIA_ROOT = Path(tempfile.mkdtemp(prefix="kg-crm-test-media-"))

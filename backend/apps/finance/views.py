@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.http import Http404
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -306,10 +307,20 @@ class DebtorViewSet(viewsets.ViewSet):
         return Response({"count": len(rows), "total_debt": str(total), "results": rows})
 
     def retrieve(self, request: Request, pk: str | None = None) -> Response:
-        """Qarzdor tafsiloti — to'liq moliyaviy ko'chirma bilan."""
+        """
+        Qarzdor tafsiloti — to'liq moliyaviy ko'chirma bilan.
+
+        Topilmagan bola `404` beradi, `422` emas. Farqi muhim: qolgan
+        HAMMA endpoint begona tashkilot qatoriga `404` qaytaradi
+        (docs/04 §2), va bitta endpoint boshqacha javob berishi
+        skanerlaydigan odamga aynan shu endpoint boshqacha ishlashini
+        aytib qo'yadi.
+        """
         from apps.children.models import Child
 
+        # `Child.objects` tenant bilan cheklangan — begona bola bu yerda
+        # umuman mavjud emas.
         child = Child.objects.filter(pk=pk).first()
         if child is None:
-            raise BusinessRuleViolation("Bola topilmadi.")
+            raise Http404
         return Response(selectors.child_statement(child=child))

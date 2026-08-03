@@ -1136,6 +1136,12 @@ Read models that keep the app query-simple and guarantee derived data is consist
 
 **Rules:** materialized views are **refreshed by scheduled Celery jobs** ([02_Software_Architecture.md §18](./02_Software_Architecture.md)) using `REFRESH MATERIALIZED VIEW CONCURRENTLY` (requires a unique index on the MV). Plain views are always live/consistent.
 
+> **Implementation status (Sprint 9): the two materialized views are not built yet, and the aggregates they describe are live ORM queries in `apps/reports/selectors.py`.**
+>
+> The reason is tenancy, not effort. An MV is raw SQL, so `organization_id` would be written by hand — outside the fail-closed manager, invisible to the generated cross-tenant sweep, and one forgotten `WHERE` away from serving another organization's revenue. A live aggregate over a few hundred children is instant *and* always current, where an MV is correct only as of its last refresh.
+>
+> **When to add them:** when the dashboard query passes ~200 ms, or when organization count makes repeated aggregation the dominant cost. Both views must then be filtered by `organization_id` **and** read through the same selector layer, so the boundary stays in one file. The selectors are already the only caller — nothing else in the codebase touches these aggregates.
+
 ---
 
 ## 26. Concurrency, Transactions & Integrity

@@ -26,14 +26,31 @@ from apps.core.tenancy import organization_context
 pytestmark = [pytest.mark.django_db, pytest.mark.tenancy]
 
 
+# Sweep qamray OLMAYDIGAN endpointlar — har biri sabab bilan.
+#
+# Bu ro'yxat ataylab qo'lda: `model` atributi yo'q ViewSet jimgina
+# o'tkazib yuborilsa, kimdir yangi endpoint qo'shib, hech qanday
+# izolyatsiya testisiz qolib ketardi. Endi u qo'shilgan kuniyoq sweep
+# qizaradi va muallif qaror qabul qilishga majbur bo'ladi: yo `model`
+# berish, yo bu yerga sabab yozib, QO'LDA test yozish.
+UNCOVERED: dict[str, str] = {
+    "permission": "Global katalog — tenant chegarasi yo'q (docs/03 §6.2).",
+    "debtor": (
+        "Hisoblangan ro'yxat, jadval emas (ADR-7). Qo'lda test: "
+        "apps/finance/tests/test_debtors_isolation.py."
+    ),
+    "setting": "Kalit-qiymat ViewSet, qator emas. Qo'lda test: apps/settings_app/tests.",
+    "dashboard": "Agregat, qator emas. Qo'lda test: apps/reports/tests/test_reports.py.",
+    "report": "Agregat, qator emas. Qo'lda test: apps/reports/tests/test_reports.py.",
+    "audit-log": "Tashkilot filtri QO'LDA yozilgan. Qo'lda test: apps/audit/tests.",
+}
+
+
 def _detail_routes() -> list[tuple[str, str]]:
-    """Router'dagi har bir ViewSet uchun (basename, model nomi)."""
+    """Router'dagi har bir ViewSet uchun (basename, prefiks)."""
     routes = []
     for prefix, viewset, basename in router.registry:
-        model = getattr(viewset, "model", None)
-        if model is None:
-            # `Permission` kabi tenant-scoped bo'lmagan global kataloglar
-            # (docs/03 §6.2) — ularda tenant chegarasi yo'q.
+        if getattr(viewset, "model", None) is None:
             continue
         routes.append((basename, prefix))
     return routes
@@ -336,6 +353,28 @@ def test_endpoint_requires_authentication(api_client, basename, prefix):
     """P5 — deny-by-default: tokensiz hech bir endpoint ochilmaydi."""
     response = api_client.get(reverse(f"v1:{basename}-list"))
     assert response.status_code == 401
+
+
+def test_every_skipped_endpoint_has_a_stated_reason():
+    """
+    Qamrovdan tashqarida qolgan har bir endpoint ro'yxatda bo'lishi shart.
+
+    Aks holda `model` atributini yozishni unutish "test yo'q" degani
+    bo'lardi — va buni hech kim sezmasdi.
+    """
+    skipped = {
+        basename
+        for _, viewset, basename in router.registry
+        if getattr(viewset, "model", None) is None
+    }
+    unexplained = skipped - set(UNCOVERED)
+    assert not unexplained, (
+        f"Bu endpointlar sweep'dan tashqarida, lekin sababi yozilmagan: "
+        f"{sorted(unexplained)}. Yo ViewSet'ga `model` bering, yo "
+        f"UNCOVERED ga sabab yozib, qo'lda izolyatsiya testi qo'shing."
+    )
+    stale = set(UNCOVERED) - skipped
+    assert not stale, f"UNCOVERED da endi kerak bo'lmagan yozuvlar: {sorted(stale)}"
 
 
 def test_sweep_actually_covers_something():

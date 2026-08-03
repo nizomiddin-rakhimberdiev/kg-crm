@@ -8,6 +8,7 @@ from rest_framework.routers import DefaultRouter
 
 from apps.accounts.views import PermissionViewSet, RoleViewSet, UserViewSet
 from apps.attendance.views import AttendanceViewSet
+from apps.audit.views import AuditLogViewSet
 from apps.branches.views import BranchViewSet
 from apps.children.views import ChildViewSet, GroupViewSet, GuardianViewSet
 from apps.expenses.views import ExpenseCategoryViewSet, ExpenseViewSet
@@ -29,6 +30,7 @@ from apps.inventory.views import (
 )
 from apps.notifications.views import NotificationTemplateViewSet, NotificationViewSet
 from apps.payroll.views import PayrollRunViewSet
+from apps.reports.views import DashboardViewSet, ReportViewSet
 from apps.settings_app.views import SettingsViewSet
 
 router = DefaultRouter(trailing_slash=False)
@@ -62,5 +64,8 @@ router.register(
     "notification-templates", NotificationTemplateViewSet, basename="notification-template"
 )
 router.register("settings", SettingsViewSet, basename="setting")
+router.register("dashboard", DashboardViewSet, basename="dashboard")
+router.register("reports", ReportViewSet, basename="report")
+router.register("audit-logs", AuditLogViewSet, basename="audit-log")
 
 __all__ = ["router"]

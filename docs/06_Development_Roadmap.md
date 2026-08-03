@@ -283,6 +283,26 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 - Hardening: rate limiting, security headers, load/index review, backup/restore test, E2E of the success criteria ([01 §9](./01_Project_Vision.md)).
 - **Deliverable:** MVP release candidate — all [01](./01_Project_Vision.md) success criteria pass.
 
+> **Status: delivered, with two deliberate deviations recorded below.**
+>
+> **The materialized views were not built; aggregates are live ORM queries.** An MV would need `organization_id` written by hand in raw SQL — moving the tenant boundary outside the ORM, where the fail-closed manager cannot help and the sweep cannot see. At this data size (hundreds of children per organization) a live aggregate is instant, and it is always right rather than right-as-of-the-last-refresh. The MV stays on the table as a later optimization behind the same selector layer: when the dashboard query exceeds ~200 ms or the organization count makes it worthwhile, `apps/reports/selectors.py` is the only file that changes. [03 §25](./03_Database_Design.md) is updated to say so.
+>
+> **Exports are CSV, not Excel or PDF.** CSV opens in Excel, Google Sheets, and 1C, and needs no new dependency. It is written through `FileField` — i.e. Django's **storage abstraction** — so the deferred PDF receipt and payslip now have the place they were waiting for; moving to S3 later changes one setting, not this code.
+>
+> **The export file is served by an authenticated endpoint, never a `/media/` URL.** A static media path knows nothing about authentication or tenancy: anyone who guessed the URL would download another kindergarten's full financial history. `GET /reports/exports/{id}/download` goes through the tenant-scoped manager, so a foreign job is simply `404`.
+>
+> **Reports state their `basis` explicitly.** "Revenue" means two different things — invoices issued and money received — and they are not equal. Everything here is **cash basis**, said out loud in the response and on screen, following the precedent set by stock valuation in Sprint 7.
+>
+> **The sweep now fails on endpoints it cannot cover.** A viewset with no `model` was silently skipped, so a plain `ViewSet` got zero isolation coverage. Skipped basenames must now be listed with a reason and a pointer to a hand-written test. Adding that check immediately exposed **`/debtors` — untested since Sprint 4** — and writing its test found a real inconsistency: `/debtors/{id}` returned `422` for another tenant's child while every other endpoint returns `404`. One endpoint behaving differently is exactly what tells someone probing the API where to look. Fixed, and the old test that encoded the wrong behaviour was corrected.
+>
+> **`active_children` counts the roster, not group memberships.** The first implementation required an active enrollment, so a director who imported 60 children from CSV saw `0` on the dashboard — group assignment happens later, but the children are already the kindergarten's. Whether *billing* counts the same way is a separate question, decided in Sprint 10 alongside the pricing rules; the two definitions are commented so they cannot silently diverge.
+>
+> **Celery ran against a real broker for the first time** — the gap open since Sprint 0. All four tasks executed and returned: export generation, overdue marking, debt reminders (16 organizations, each in its own tenant context), and the nightly ledger-vs-cache reconciliation, which checked 20 children and found **zero drift**. `CELERY_BEAT_SCHEDULE` now ships a default schedule so a fresh install is not one forgotten admin click away from never issuing an invoice.
+>
+> The export endpoint has its own throttle scope — it reads a whole period and writes a file, and an unthrottled retry loop would starve *other tenants'* workers. Test settings now derive their throttle keys from the base settings, because the previous hand-maintained list turned "add a new scope" into a `500` whose cause was in a settings file.
+>
+> Still open: the backup/restore drill, and the browser-level E2E pass (only type-checks, builds, and module-transform checks have been run — there is no browser in this environment).
+
 ### Sprint 10 — Subscriptions, Metering & Billing
 **Goal:** the product becomes sellable — trials convert and invoices are defensible.
 - DB: `subscription_plan`, `subscription`, `usage_snapshot`, `subscription_invoice`, `subscription_payment` ([03 §20](./03_Database_Design.md)); views `v_org_billable_children`, `v_subscription_projection`.

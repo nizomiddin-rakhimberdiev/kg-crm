@@ -6,6 +6,7 @@ from rest_framework import status, viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from apps.audit import services as audit
 from apps.branches.models import Branch
 from apps.core.exceptions import BusinessRuleViolation
 from apps.core.permissions import HasModulePermission
@@ -54,8 +55,19 @@ class SettingsViewSet(viewsets.ViewSet):
             if branch is None:
                 raise BusinessRuleViolation("Filial topilmadi.")
 
+        previous = services.get_setting(key=pk or "", branch=branch)
         setting = services.set_setting(
             organization=user.organization, key=pk or "", value=data["value"], branch=branch
+        )
+        # Oldingi qiymat ham yoziladi: "SMS nega yuborilmayapti?" degan
+        # savolga javob ko'pincha "kimdir o'chirib qo'ygan" bo'ladi.
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="system_setting",
+            entity_id=setting.id,
+            changes={"key": setting.key, "from": previous, "to": data["value"]},
         )
         return Response(
             {

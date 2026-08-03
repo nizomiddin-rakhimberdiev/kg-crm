@@ -1,313 +1,302 @@
+/**
+ * Hisobotlar (docs/04 §14.2).
+ *
+ * Sahifada `basis` ochiq yozilgan: "daromad" so'zi ikki xil ma'noga ega —
+ * yozilgan hisob-faktura va qabul qilingan pul. Ekranda qaysi biri
+ * ekanini o'qiyotgan odam taxmin qilmasligi kerak.
+ *
+ * Eksport darhol fayl bermaydi: u ish yaratadi va fon ishchisi tayyorlaydi.
+ * Katta davrni so'rov ichida hisoblash brauzerni kutdirib qo'yardi.
+ */
+
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Download, FileDown, RefreshCw } from 'lucide-react'
 import {
-  Wallet,
-  Receipt,
-  TrendingUp,
-  CalendarCheck,
-  AlertTriangle,
-  CalendarDays,
-  Building2,
-  Users,
-  Plus,
-  FileDown,
-} from 'lucide-react'
-import {
-  BarChart,
   Bar,
-  PieChart,
-  Pie,
+  BarChart,
+  CartesianGrid,
   Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
 } from 'recharts'
-import { Card, PageHeader, StatCard, Button } from '@/components/ui/primitives'
+import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { reportsApi } from '@/features/dashboard/api'
+import { queryKeys } from '@/lib/api/queryKeys'
+import { ApiError } from '@/lib/api/types'
+import { useCan } from '@/lib/rbac/useCan'
+import { cn, formatUZS } from '@/lib/utils'
 
-const finance = [
-  { m: 'Yan', d: 38, x: 15 }, { m: 'Fev', d: 42, x: 17 }, { m: 'Mar', d: 40, x: 16 },
-  { m: 'Apr', d: 45, x: 19 }, { m: 'May', d: 48, x: 18 }, { m: 'Iyn', d: 44, x: 20 },
-  { m: 'Iyl', d: 52, x: 22 }, { m: 'Avg', d: 49, x: 19 }, { m: 'Sen', d: 46, x: 17 },
-  { m: 'Okt', d: 51, x: 21 }, { m: 'Noy', d: 47, x: 18 }, { m: 'Dek', d: 53, x: 23 },
+const MONTHS = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek']
+const shortMonth = (iso: string) => MONTHS[Number(iso.slice(5, 7)) - 1] ?? iso
+
+const METHOD_LABEL: Record<string, string> = {
+  cash: 'Naqd pul',
+  card: 'Plastik karta',
+  transfer: "Bank o'tkazmasi",
+  online: 'Onlayn',
+}
+const PIE_COLORS = ['#6366f1', '#14b8a6', '#f59e0b', '#ef4444']
+
+const EXPORTABLE: Array<[string, string]> = [
+  ['profit-loss', 'Foyda va zarar'],
+  ['revenue', 'Tushum'],
+  ['expenses', 'Chiqimlar'],
+  ['debtors', 'Qarzdorlar'],
+  ['payroll', 'Oylik maosh'],
+  ['attendance', 'Davomat'],
 ]
 
-const payTypes = [
-  { name: 'Plastik karta', value: 291.1, pct: '60%', color: '#2563eb' },
-  { name: 'Naqd pul', value: 121.3, pct: '25%', color: '#14b8a6' },
-  { name: "Bank o'tkazmasi", value: 72.8, pct: '15%', color: '#bfdbfe' },
-]
+const EXPORT_STATUS: Record<string, [string, string]> = {
+  queued: ['Navbatda', 'bg-slate-100 text-slate-600'],
+  running: ['Tayyorlanmoqda', 'bg-sky-50 text-sky-700'],
+  ready: ['Tayyor', 'bg-emerald-50 text-emerald-700'],
+  failed: ['Xato', 'bg-red-50 text-red-700'],
+}
 
-const groups = ['Kamalak', 'Yulduzcha', 'Bilimdon', "Qaldirg'och"]
-const days = ['DUSH', 'SESH', 'CHOR', 'PAY', 'JUM']
-const heat: number[][] = [
-  [90, 85, 70, 95, 88],
-  [60, 75, 80, 65, 92],
-  [40, 55, 60, 78, 70],
-  [88, 92, 85, 90, 95],
-]
-
-const structure = [
-  { name: 'Xodimlar oyligi', value: '124.5M', tone: 'bg-brand-600' },
-  { name: 'Oziq-ovqat', value: '42.8M', tone: 'bg-teal-500' },
-  { name: 'Ijara va Kommunal', value: '18.2M', tone: 'bg-amber-500' },
-  { name: 'Boshqa', value: '6.9M', tone: 'bg-slate-400' },
-]
+const defaultRange = () => {
+  const now = new Date()
+  const from = new Date(now.getFullYear(), now.getMonth() - 5, 1)
+  return {
+    from: from.toISOString().slice(0, 10),
+    to: now.toISOString().slice(0, 10),
+  }
+}
 
 export default function ReportsPage() {
+  const organizationId = useOrganizationId()
+  const queryClient = useQueryClient()
+  const { can } = useCan()
+
+  const [range, setRange] = useState(defaultRange)
+  const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+
+  const plQuery = useQuery({
+    queryKey: queryKeys.reportProfitLoss(organizationId, range.from, range.to),
+    queryFn: () => reportsApi.profitLoss(range.from, range.to),
+  })
+  const revenueQuery = useQuery({
+    queryKey: queryKeys.reportRevenue(organizationId, range.from, range.to),
+    queryFn: () => reportsApi.revenue(range.from, range.to),
+  })
+  const exportsQuery = useQuery({
+    queryKey: queryKeys.reportExports(organizationId),
+    queryFn: reportsApi.listExports,
+    // Ish fonda bajariladi; sahifa ochiq turganda holat o'zi yangilansin.
+    refetchInterval: (query) =>
+      (query.state.data ?? []).some((row) => row.status === 'queued' || row.status === 'running')
+        ? 3000
+        : false,
+  })
+
+  const requestExport = useMutation({
+    mutationFn: (reportType: string) =>
+      reportsApi.requestExport(reportType, { date_from: range.from, date_to: range.to }),
+    onSuccess: () => {
+      setError(null)
+      setNotice('Eksport navbatga qo’yildi — tayyor bo‘lganda yuklab olasiz.')
+      void queryClient.invalidateQueries({ queryKey: queryKeys.reportExports(organizationId) })
+    },
+    onError: (err: unknown) => {
+      setNotice(null)
+      setError(err instanceof ApiError ? err.message : 'Eksportni boshlab bo‘lmadi.')
+    },
+  })
+
+  const pl = plQuery.data
+  const chart = (pl?.by_month ?? []).map((row) => ({
+    month: shortMonth(row.month),
+    Tushum: Number(row.revenue),
+    Chiqim: Number(row.expenses) + Number(row.payroll),
+  }))
+  const methods = (revenueQuery.data?.by_method ?? []).map((row) => ({
+    name: METHOD_LABEL[row.method] ?? row.method,
+    value: Number(row.total),
+  }))
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="mr-2 text-2xl font-bold tracking-tight text-slate-900">Tahlillar</h1>
-          <FilterPill icon={CalendarDays} label="Yanvar 2024 - Dekabr 2024" />
-          <FilterPill icon={Building2} label="Barcha filiallar" />
-          <FilterPill icon={Users} label="Barcha guruhlar" />
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Hisobotlar</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Kassa usuli: daromad — qabul qilingan pul, yozilgan hisob-faktura emas.
+          </p>
         </div>
-        <Button icon={Plus} data-sound="success" data-toast="Yangi hisobot yaratildi ✓">
-          Hisobot yaratish
-        </Button>
+        <div className="flex items-end gap-2">
+          <label className="text-xs font-medium text-slate-600">
+            Dan
+            <input
+              type="date"
+              value={range.from}
+              onChange={(e) => setRange((prev) => ({ ...prev, from: e.target.value }))}
+              className="mt-1 block rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
+            />
+          </label>
+          <label className="text-xs font-medium text-slate-600">
+            Gacha
+            <input
+              type="date"
+              value={range.to}
+              onChange={(e) => setRange((prev) => ({ ...prev, to: e.target.value }))}
+              className="mt-1 block rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
+            />
+          </label>
+        </div>
       </div>
 
-      {/* KPI */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <StatCard
-          label="Jami tushum"
-          value="485.2M"
-          icon={Wallet}
-          iconTone="info"
-          delta="+9%"
-          deltaTone="success"
-          hint="O'tgan yildan"
-          detail={{
-            description: "2024-yil bo'yicha jami tushum 485.2 mln UZS — o'tgan yilга nisbatan 9% ko'p.",
-            breakdown: [
-              { label: 'Plastik karta (60%)', value: '291.1M', tone: 'success' },
-              { label: 'Naqd pul (25%)', value: '121.3M', tone: 'success' },
-              { label: "Bank o'tkazmasi (15%)", value: '72.8M', tone: 'success' },
-            ],
-            linkTo: '/payments',
-            linkLabel: "To'lovlar",
-          }}
-        />
-        <StatCard
-          label="Jami xarajat"
-          value="192.4M"
-          icon={Receipt}
-          iconTone="danger"
-          delta="+4%"
-          deltaTone="danger"
-          hint="O'tgan yildan"
-          detail={{
-            description: "2024-yil bo'yicha jami xarajat 192.4 mln UZS.",
-            breakdown: [
-              { label: 'Xodimlar oyligi', value: '124.5M', tone: 'danger' },
-              { label: 'Oziq-ovqat', value: '42.8M', tone: 'danger' },
-              { label: 'Ijara va boshqa', value: '25.1M', tone: 'danger' },
-            ],
-            linkTo: '/expenses',
-            linkLabel: 'Chiqimlar',
-          }}
-        />
-        <StatCard
-          label="Sof foyda"
-          value="292.8M"
-          icon={TrendingUp}
-          iconTone="success"
-          delta="+8.5%"
-          deltaTone="success"
-          hint="O'sish"
-          detail={{
-            description:
-              'Sof foyda = tushum − xarajat = 485.2M − 192.4M = 292.8 mln UZS. Yillik o\'sish 8.5%.',
-            breakdown: [
-              { label: 'Jami tushum', value: '485.2M', tone: 'success' },
-              { label: 'Jami xarajat', value: '-192.4M', tone: 'danger' },
-            ],
-          }}
-        />
-        <StatCard
-          label="O'rtacha davomat"
-          value="94.2%"
-          icon={CalendarCheck}
-          iconTone="teal"
-          hint="Maqsad: 95%"
-          detail={{
-            description: "Yillik o'rtacha davomat 94.2% — maqsad (95%) ga deyarli erishildi.",
-            breakdown: [
-              { label: 'Eng yuqori (Qaldirg\'och)', value: '96.1%', tone: 'success' },
-              { label: 'Eng past (Bilimdon)', value: '91.8%', tone: 'neutral' },
-            ],
-            linkTo: '/attendance',
-            linkLabel: 'Davomat',
-          }}
-        />
-        <StatCard
-          label="Jami qarzdorlik"
-          value="32.1M"
-          icon={AlertTriangle}
-          iconTone="warning"
-          hint="48 ta o'quvchi"
-          detail={{
-            description: "Yil oxiriga 48 nafar o'quvchi bo'yicha 32.1 mln UZS qarzdorlik qoldi.",
-            breakdown: [
-              { label: 'Joriy oy', value: '18.4M', tone: 'neutral' },
-              { label: 'Eski qarzlar', value: '13.7M', tone: 'danger' },
-            ],
-            linkTo: '/debtors',
-            linkLabel: 'Qarzdorlar',
-          }}
-        />
-      </div>
+      {error && (
+        <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+      {notice && (
+        <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
+      )}
 
-      {/* Charts row 1 */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Moliya dinamikasi</h2>
-              <p className="text-sm text-slate-500">Tushum va xarajatlar (12 oy, mln UZS)</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" icon={FileDown} className="px-3 py-1.5 text-xs" data-toast="PDF hisobot yuklab olindi">PDF</Button>
-              <Button variant="outline" icon={FileDown} className="px-3 py-1.5 text-xs" data-toast="Excel hisobot yuklab olindi">Excel</Button>
-            </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          ['Tushum', pl?.revenue, 'text-emerald-600'],
+          ['Chiqimlar', pl?.expenses, 'text-slate-900'],
+          ['Oylik maosh', pl?.payroll, 'text-slate-900'],
+          ['Sof natija', pl?.net, Number(pl?.net ?? 0) < 0 ? 'text-red-600' : 'text-emerald-600'],
+        ].map(([label, value, tone]) => (
+          <div key={label as string} className="rounded-2xl border border-slate-200 bg-white p-5">
+            <p className="text-sm font-medium text-slate-600">{label as string}</p>
+            <p className={cn('mt-2 text-2xl font-bold tracking-tight', tone as string)}>
+              {value === undefined ? '…' : formatUZS(Number(value))}
+            </p>
           </div>
-          <div className="mt-6 h-72">
+        ))}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-slate-900">Tushum va chiqim</h2>
+          <p className="mt-0.5 text-xs text-slate-500">Chiqimga oylik maosh ham qo'shilgan</p>
+          <div className="mt-4 h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={finance} barGap={4}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f7" />
-                <XAxis dataKey="m" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
-                <Bar dataKey="d" name="Daromad" fill="#1e40af" radius={[4, 4, 0, 0]} maxBarSize={16} />
-                <Bar dataKey="x" name="Xarajat" fill="#fda4af" radius={[4, 4, 0, 0]} maxBarSize={16} />
+              <BarChart data={chart}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  fontSize={12}
+                  tickFormatter={(v: number) => `${Math.round(v / 1_000_000)}mln`}
+                />
+                <Tooltip
+                  formatter={(v: number) => formatUZS(v)}
+                  contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 13 }}
+                />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                <Bar dataKey="Tushum" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="Chiqim" fill="#f59e0b" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </Card>
+        </section>
 
-        {/* Donut */}
-        <Card className="p-6">
-          <h2 className="text-base font-bold text-slate-900">To'lov turlari</h2>
-          <div className="relative mt-2 h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={payTypes}
-                  dataKey="value"
-                  innerRadius={62}
-                  outerRadius={88}
-                  paddingAngle={2}
-                  stroke="none"
-                >
-                  {payTypes.map((p) => (
-                    <Cell key={p.name} fill={p.color} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="pointer-events-none absolute inset-0 grid place-items-center">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-slate-900">485M</p>
-                <p className="text-[11px] uppercase tracking-wide text-slate-400">Umumiy</p>
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 space-y-2">
-            {payTypes.map((p) => (
-              <div key={p.name} className="flex items-center gap-2 text-sm">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.color }} />
-                <span className="flex-1 text-slate-600">
-                  {p.name} <span className="text-slate-400">({p.pct})</span>
-                </span>
-                <span className="font-semibold text-slate-900">{p.value}M</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      {/* Charts row 2 */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Heatmap */}
-        <Card className="lg:col-span-2 p-6">
-          <h2 className="text-base font-bold text-slate-900">Haftalik davomat</h2>
-          <p className="text-sm text-slate-500">Guruhlar bo'yicha (%)</p>
-          <div className="mt-6 overflow-x-auto scrollbar-thin">
-            <div className="min-w-[420px]">
-              <div className="grid grid-cols-[110px_repeat(5,1fr)] gap-2 text-center">
-                <div />
-                {days.map((d) => (
-                  <div key={d} className="text-[11px] font-semibold uppercase text-slate-400">
-                    {d}
-                  </div>
-                ))}
-                {groups.map((g, gi) => (
-                  <FragmentRow key={g} label={g} values={heat[gi]} />
-                ))}
-              </div>
-              <div className="mt-4 flex items-center justify-end gap-2 text-[11px] text-slate-400">
-                <span>Past</span>
-                {[0.2, 0.4, 0.6, 0.8, 1].map((o) => (
-                  <span
-                    key={o}
-                    className="w-5 h-3 rounded-sm"
-                    style={{ background: `rgba(37,99,235,${o})` }}
+        <section className="rounded-2xl border border-slate-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-slate-900">To'lov usullari</h2>
+          <div className="mt-4 h-72">
+            {methods.length === 0 ? (
+              <p className="grid h-full place-items-center text-sm text-slate-400">
+                Bu davrda to'lov yo'q.
+              </p>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={methods} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90}>
+                    {methods.map((entry, index) => (
+                      <Cell key={entry.name} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(v: number) => formatUZS(v)}
+                    contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 13 }}
                   />
-                ))}
-                <span>Yaxshi</span>
-              </div>
-            </div>
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
-        </Card>
+        </section>
+      </div>
 
-        {/* Structure */}
-        <Card className="p-6">
-          <h2 className="text-base font-bold text-slate-900">Xarajatlar strukturasi</h2>
-          <p className="text-sm text-slate-500">Yillik kategoriyalar</p>
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            {structure.map((s) => (
-              <div key={s.name} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-                <span className={`inline-block w-2.5 h-2.5 rounded-full ${s.tone}`} />
-                <p className="mt-2 text-lg font-bold text-slate-900">{s.value}</p>
-                <p className="text-xs text-slate-500">{s.name}</p>
-              </div>
+      {can('reports.export') && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5">
+          <h2 className="text-sm font-semibold text-slate-900">Eksport</h2>
+          <p className="mt-0.5 text-xs text-slate-500">
+            CSV — Excel ham, Google Sheets ham ochadi. Fayl fonda tayyorlanadi.
+          </p>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {EXPORTABLE.map(([type, label]) => (
+              <button
+                key={type}
+                type="button"
+                disabled={requestExport.isPending}
+                onClick={() => requestExport.mutate(type)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                <FileDown className="h-4 w-4" />
+                {label}
+              </button>
             ))}
           </div>
-        </Card>
-      </div>
+
+          {(exportsQuery.data ?? []).length > 0 && (
+            <ul className="mt-4 divide-y divide-slate-100 border-t border-slate-100">
+              {(exportsQuery.data ?? []).slice(0, 8).map((job) => {
+                const [label, tone] = EXPORT_STATUS[job.status] ?? [job.status, 'bg-slate-100']
+                return (
+                  <li key={job.id} className="flex items-center justify-between gap-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-900">{job.report_type}</p>
+                      <p className="text-xs text-slate-400">
+                        {new Date(job.created_at).toLocaleString('uz-UZ', {
+                          dateStyle: 'short',
+                          timeStyle: 'short',
+                        })}
+                        {job.status === 'ready' && ` · ${job.row_count} qator`}
+                        {job.error && ` · ${job.error}`}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}>
+                        {label}
+                      </span>
+                      {job.is_ready ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void reportsApi.downloadExport(job.id, `${job.report_type}.csv`)
+                          }
+                          className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-brand-700"
+                        >
+                          <Download className="h-3 w-3" />
+                          Yuklab olish
+                        </button>
+                      ) : (
+                        job.status !== 'failed' && (
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin text-slate-300" />
+                        )
+                      )}
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+      )}
     </div>
-  )
-}
-
-function FilterPill({ icon: Icon, label }: { icon: typeof CalendarDays; label: string }) {
-  return (
-    <button
-      data-sound="open"
-      data-toast={`${label} — tanlash (demo)`}
-      data-toast-tone="info"
-      className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-all hover:bg-slate-50 active:scale-95"
-    >
-      <Icon className="w-4 h-4 text-slate-400" />
-      {label}
-    </button>
-  )
-}
-
-function FragmentRow({ label, values }: { label: string; values: number[] }) {
-  return (
-    <>
-      <div className="flex items-center text-sm font-medium text-slate-600">{label}</div>
-      {values.map((v, i) => (
-        <div
-          key={i}
-          className="grid h-10 place-items-center rounded-lg text-xs font-semibold text-white/90"
-          style={{ background: `rgba(37,99,235,${0.15 + (v / 100) * 0.85})` }}
-        >
-          {v}
-        </div>
-      ))}
-    </>
   )
 }

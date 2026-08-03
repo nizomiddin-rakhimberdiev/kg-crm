@@ -403,8 +403,12 @@ class TestEndpoints:
                 date_of_birth=date(2021, 1, 1),
                 gender="male",
             )
+        # `404`, `422` emas: begona tashkilotning qatori uchun javob
+        # qolgan HAMMA endpoint bilan bir xil bo'lishi kerak (docs/04 §2).
+        # Avval bu yerda `422` qaytardi va shu farqning o'zi bitta
+        # endpointning boshqacha ishlashini oshkor qilardi.
         response = tenant_a.client().get(reverse("v1:debtor-detail", args=[foreign.id]))
-        assert response.status_code == 422
+        assert response.status_code == 404
 
     def test_daily_summary_endpoint(self, tenant_a, child, invoice):
         with organization_context(tenant_a.organization.id):

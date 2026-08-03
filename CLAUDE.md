@@ -101,8 +101,8 @@ Each stack has its own `.gitignore`; the root one covers only OS/editor/`.env`.
 
 ## Current Phase
 
-**Sprints 0–8 delivered.** Backend and frontend are live against a real API: tenancy foundation, auth/RBAC, children & groups, finance (ledger, invoices, payments, debtors), attendance, staff & payroll, inventory & expenses, notifications & settings. 364 backend tests pass.
+**Sprints 0–9 delivered.** Backend and frontend are live against a real API: tenancy foundation, auth/RBAC, children & groups, finance (ledger, invoices, payments, debtors), attendance, staff & payroll, inventory & expenses, notifications & settings, and reports/dashboard/audit with CSV export. 404 backend tests pass, and Celery has now been verified against a live Redis broker.
 
-Next: **Sprint 9 — Reports, Dashboard & Hardening**, then Sprints 10–11 (subscriptions/metering, Platform Console + RLS) per [06_Development_Roadmap](./docs/06_Development_Roadmap.md).
+Next: **Sprint 10 — Subscriptions, Metering & Billing**, then Sprint 11 (Platform Console + Postgres RLS) per [06_Development_Roadmap](./docs/06_Development_Roadmap.md).
 
-> Known gaps, deliberately deferred: no real SMS gateway (console provider behind the adapter), no PDF receipts/payslips (need the storage abstraction), and Celery has never been run against a live broker. GitHub Actions returns `startup_failure` on every run — the workflow file is valid; the cause looks account-level (private-repo Actions billing).
+> Known gaps, deliberately deferred: no real SMS gateway (console provider behind the adapter); no PDF receipts/payslips — exports are CSV, but they now go through the `FileField` storage abstraction the PDFs were waiting for; the materialized views of [03 §25](./docs/03_Database_Design.md) are not built (aggregates are live ORM queries — reasoning recorded there); and the backup/restore drill plus browser-level E2E have not been run. GitHub Actions returns `startup_failure` on every run — the workflow file is valid; the cause looks account-level (private-repo Actions billing).
