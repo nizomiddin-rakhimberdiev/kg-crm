@@ -32,22 +32,33 @@
 - **Dependency-driven order:** foundational modules (auth, RBAC, branch, children) come first because everything else depends on them.
 - **Docs-first discipline:** every sprint's work must conform to docs [01–05]; a change to a decision updates the owning doc in the same PR (see [`CLAUDE.md`](../CLAUDE.md)).
 
-**Estimated MVP timeline:** ~9 sprints (~18 weeks) with a small team. Adjust to team size; the *order* is the durable part.
+**Timeline:** the sprint list is a **sequence, not a schedule.** Sprint numbers express dependency order; calendar duration depends entirely on available hours. Do not treat "Sprint 5" as "week 10".
 
 ---
 
 ## 2. Team & Roles
 
-| Role | Responsibility |
-|------|----------------|
-| Tech Lead / Architect | Guards the architecture & docs; reviews cross-cutting decisions. |
-| Backend Developer(s) | Django apps: models, services, selectors, serializers, views, tasks, tests. |
-| Frontend Developer(s) | React features per [05](./05_Frontend_Architecture.md). |
-| DevOps (part-time) | Docker, CI/CD, Nginx, server, backups. |
-| QA | Test plans, API contract tests, E2E of key flows. |
-| Product Owner | Prioritizes backlog against [01_Project_Vision](./01_Project_Vision.md). |
+**This is a bootstrapped, founder-built product.** One person is the architect, backend developer, frontend developer, DevOps, QA, product owner, and — once customers exist — the support desk and the Platform Admin. The roles below are **hats worn by the same person**, listed so none is silently dropped.
 
-> With a single full-stack developer, run the same sprint order sequentially (backend slice then frontend slice per module).
+| Hat | Responsibility | Non-negotiable even solo? |
+|-----|----------------|---------------------------|
+| Architect | Guards the architecture & docs; the ADRs in [02 §2](./02_Software_Architecture.md) are the memory that replaces a review conversation. | **Yes** |
+| Backend | Django apps: models, services, selectors, serializers, views, tasks, tests. | Yes |
+| Frontend | React features per [05](./05_Frontend_Architecture.md). | Yes |
+| DevOps | Docker, CI/CD, Nginx, server, **backups + tested restore**. | **Backups: yes.** Elaborate CD: no. |
+| QA | Money tests, tenant-isolation sweep, E2E of key flows. | **Yes** — see below |
+| Product | Prioritizes against [01_Project_Vision](./01_Project_Vision.md); talks to real kindergartens. | Yes |
+| Support / Platform Admin | Onboarding, invoices, suspensions, answering "why is my bill this?" | From the first customer |
+
+### What solo changes — and what it does not
+
+**Automated tests become *more* important, not less.** With no second reviewer, CI is the only thing that catches a regression before a customer does. The two suites that must never be skipped are the money tests and the tenant-isolation sweep ([§8](#8-testing-strategy)) — both cover failures a solo founder cannot afford: a wrong invoice destroys trust, a cross-tenant leak destroys the business.
+
+**Structural decisions still get full rigor.** Tenancy, ledgers, and audit are load-bearing: retrofitting them costs months later and cannot be done safely once real customers hold data. Being solo is an argument for getting these right *once*, not for skipping them.
+
+**Polish and automation can wait for revenue.** Elaborate CD pipelines, dashboards for the vendor console, and automated card debit are all deferrable. Manual is acceptable where the volume is small and the cost of being wrong is low.
+
+> **The first customer does not require the whole roadmap.** With a handful of organizations, subscription invoices can be issued by hand from `/billing/usage` numbers and settled by bank transfer — Sprint 10's automation pays off at ~10 customers, not at one. What *cannot* be deferred is Sprint 0's tenancy foundation, because it is the one thing that becomes unaffordable the moment a second customer's data exists. Sequence risk, not features.
 
 ---
 

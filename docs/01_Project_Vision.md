@@ -271,7 +271,8 @@ The MVP is "done" when a kindergarten can, **entirely in the system**:
 
 | Type | Statement |
 |------|-----------|
-| Constraint | Deployment target is a single **Linux server** with Docker; no managed cloud services assumed for MVP. Infrastructure is **vendor-operated and vendor-funded** (§4). |
+| Constraint | Deployment target is a single **Linux server** with Docker; no managed cloud services assumed for MVP. Infrastructure is **vendor-operated and self-funded** (§4) — this is a bootstrapped, founder-built product, so infrastructure spend must stay proportional to subscription revenue. |
+| Constraint | **Built and operated by one person.** Scope decisions are judged against time-to-first-revenue and personal runway, not against a feature list ([06 §2](./06_Development_Roadmap.md)). |
 | Constraint | ⚠️ **Data residency** — the system stores personal data of minors who are citizens of Uzbekistan. Uzbek personal-data legislation imposes localization requirements on such data. **Hosting jurisdiction must be confirmed with legal counsel before the first paying customer**; it constrains the choice of hosting provider, not just the deployment script. |
 | Constraint | Notifications MVP channel is **SMS** via a third-party gateway (provider abstracted). |
 | Constraint | Currency default **UZS**; timezone default **Asia/Tashkent** (branch-configurable). Subscription prices are **version-dated** — under UZS inflation, existing customers stay on their purchased price while new customers get current pricing. |
