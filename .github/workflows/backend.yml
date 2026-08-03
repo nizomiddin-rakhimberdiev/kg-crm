@@ -1,0 +1,87 @@
+name: Backend CI
+
+# Solo loyihada CI yagona reviewer (docs/06 §2) — shuning uchun u
+# maslahat emas, darvoza: lint, type-check va testlar majburiy.
+
+on:
+  push:
+    branches: [main]
+    paths: ["backend/**", ".github/workflows/backend.yml"]
+  pull_request:
+    paths: ["backend/**", ".github/workflows/backend.yml"]
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: kg_crm
+          POSTGRES_USER: kg_crm
+          POSTGRES_PASSWORD: kg_crm
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      DJANGO_SECRET_KEY: ci-secret-key
+      POSTGRES_DB: kg_crm
+      POSTGRES_USER: kg_crm
+      POSTGRES_PASSWORD: kg_crm
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/requirements/*.txt
+
+      - name: Bog'liqliklarni o'rnatish
+        run: pip install -r requirements/development.txt
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Format tekshiruvi (ruff)
+        run: ruff format --check .
+
+      - name: Type-check (mypy)
+        run: mypy apps api config
+
+      - name: Deploy tekshiruvi (production sozlamalari bilan)
+        # Ataylab production sozlamalari: test sozlamalarida HSTS/SSL o'chiq
+        # bo'lgani uchun bu tekshiruv hech nimani ushlamasdi.
+        # `--fail-level WARNING` — ogohlantirish ham darvozani yopadi.
+        env:
+          DJANGO_SECRET_KEY: ci-secret-key-long-enough-to-pass-the-entropy-check-0123456789
+          DJANGO_ALLOWED_HOSTS: example.com
+        run: |
+          python manage.py check --deploy --fail-level WARNING \
+            --settings=config.settings.production
+
+      - name: Yetishmayotgan migratsiyalar bormi
+        # Model o'zgarib, migratsiya yozilmay qolishi eng ko'p uchraydigan
+        # solo xato — CI uni har safar ushlaydi.
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Testlar
+        run: pytest --cov=apps --cov=api --cov-report=term-missing
+
+      - name: Tenant izolyatsiya testlari alohida
+        # Bu testlar hech qachon jimgina o'tkazib yuborilmasligi kerak
+        # (docs/06 §8). Alohida qadam — natija CI ro'yxatida ko'rinib tursin.
+        run: pytest -m tenancy --tb=short

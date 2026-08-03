@@ -120,7 +120,13 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 - Repo, `docs/` (done), `CLAUDE.md` (done), branch protection.
 - Backend: Django project per [02 §5](./02_Software_Architecture.md) layout; split settings; Docker Compose (web, db, redis, worker, beat); `.env`.
 - **`organizations` app: the `organization` model** ([03 §10.1](./03_Database_Design.md)) — first migration, before any business table exists.
-- **`core` app:** base model carrying **`organization_id`** + `branch_id`, the **tenant-scoping queryset mixin**, envelope, exception handler (incl. `402 SUBSCRIPTION_INACTIVE`), pagination, and the `organization_id` immutability trigger.
+- **`core` app:** base model carrying **`organization_id`**, the **tenant-scoping queryset mixin**, envelope, exception handler (incl. `402 SUBSCRIPTION_INACTIVE`), pagination, and the `organization_id` immutability trigger.
+- **`accounts` app — the `User` model only** (no roles, permissions, or auth endpoints; those are Sprint 1). Pulled forward for two structural reasons: `AUTH_USER_MODEL` cannot be swapped after the first migration without a painful rebuild, and `core`'s `created_by` column already references it. Same logic as `organization_id` — the cheap moment is now.
+
+> **Two deviations from the original plan, recorded here so the docs stay true to the code:**
+>
+> 1. **`branch_id` is not in the Sprint 0 base model.** The `branch` table does not exist until Sprint 1, so the FK cannot be written yet. `core` ships `TenantScopedModel` (organization only); the branch-scoped mixin lands with the `branches` app.
+> 2. **`auth.E003` is silenced.** Django requires `USERNAME_FIELD` to be globally unique, but [03 §10.6](./03_Database_Design.md) deliberately makes email unique *per organization*. Sprint 1 must ship the custom authentication backend that resolves an email to one or more organizations ([04 §5](./04_Backend_API_Specification.md)); until it does, there is no login path at all.
 - Frontend: Vite + TS + Tailwind + Shadcn; `app/`, `lib/api` client, providers, router shell; login page stub.
 - DevOps: CI (lint, type-check, test), Dockerfiles, Nginx config.
 - **Deliverable:** `docker compose up` runs API + SPA; health check green; empty `/api/v1` responds with the envelope; **a test proves that a queryset built on the base model cannot return another organization's rows.**
@@ -129,7 +135,8 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 
 ### Sprint 1 — Identity: Auth, Users, Roles, Branches
 **Goal:** secure login and the RBAC backbone, tenant-scoped end to end.
-- DB: `branch`, `user`, `role`, `permission`, `role_permission`, `refresh_token` ([03 §10](./03_Database_Design.md)) — all carrying `organization_id`.
+- DB: `branch`, `role`, `permission`, `role_permission`, `refresh_token` ([03 §10](./03_Database_Design.md)) — all carrying `organization_id`. (`user` already exists from Sprint 0; Sprint 1 adds its `role`/`branch` columns.)
+- **Custom authentication backend** — required, not optional: email is unique per organization, so the default `ModelBackend` cannot resolve a login on its own (see the Sprint 0 note above).
 - API: `/auth/*` incl. **`/auth/signup`** and **`/auth/select-organization`**, `/users`, `/roles`, `/permissions`, `/branches` ([04 §5–6, §16](./04_Backend_API_Specification.md)).
 - RBAC: permission classes, **organization scoping applied before branch scoping**, branch-scoping mixin, seed the 5 roles + permission matrix per organization ([02 §11](./02_Software_Architecture.md)).
 - **Cross-tenant test suite:** for every endpoint, a test asserting that org A's token cannot read, update, or delete org B's resource, and that the response is `404` (not `403`).

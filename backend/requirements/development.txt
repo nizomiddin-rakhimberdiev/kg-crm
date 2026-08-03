@@ -1,0 +1,17 @@
+-r base.txt
+
+# Testlar
+pytest==8.4.2
+pytest-django==4.11.1
+pytest-cov==7.0.0
+factory-boy==3.3.3
+
+# Lint / type-check (CI da majburiy — docs/06 §2: solo loyihada CI yagona reviewer)
+ruff==0.14.2
+mypy==1.18.2
+django-stubs[compatible-mypy]==5.2.7
+djangorestframework-stubs==3.16.5
+
+# Qulayliklar
+django-extensions==4.1
+ipython==9.6.0

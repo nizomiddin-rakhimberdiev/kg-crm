@@ -1,0 +1,41 @@
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+exclude = [".venv", "migrations"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "UP",       # pyupgrade
+    "B",        # bugbear
+    "DJ",       # flake8-django
+    "S",        # bandit (xavfsizlik)
+    "C4", "SIM", "RET",
+]
+ignore = [
+    "S101",  # assert — testlarda normal
+    "RET504",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*/tests/*" = ["S105", "S106"]  # testlarda qattiq yozilgan parol normal
+"conftest.py" = ["S105", "S106"]
+"config/settings/*.py" = ["F403", "F405"]  # sozlamalarda star-import qasddan
+
+[tool.mypy]
+python_version = "3.13"
+plugins = ["mypy_django_plugin.main"]
+exclude = ['/migrations/', '\.venv']
+warn_unused_ignores = false
+warn_redundant_casts = true
+check_untyped_defs = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["*.tests.*", "conftest"]
+ignore_errors = true
+
+[tool.django-stubs]
+django_settings_module = "config.settings.test"
