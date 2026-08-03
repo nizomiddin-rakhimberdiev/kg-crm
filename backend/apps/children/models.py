@@ -1,0 +1,234 @@
+"""
+Bolalar CRM domeni (docs/03 §11).
+
+Bu tizimning markaziy entitesi: davomat, moliya va kelajakdagi ota-ona
+portali shunga tayanadi. `tariff_id` Sprint 4 da (finance) qo'shiladi;
+`teacher_employee_id` Sprint 6 da (hr).
+"""
+
+from __future__ import annotations
+
+from django.db import models
+from django.utils import timezone
+
+from apps.core.models import BranchScopedModel
+
+__all__ = ["Child", "Guardian", "ChildGuardian", "Group", "Enrollment"]
+
+
+class Gender(models.TextChoices):
+    MALE = "male", "O'g'il bola"
+    FEMALE = "female", "Qiz bola"
+
+
+class EnrollmentStatus(models.TextChoices):
+    PROSPECT = "prospect", "Nomzod"
+    ACTIVE = "active", "Faol"
+    PAUSED = "paused", "To'xtatilgan"
+    GRADUATED = "graduated", "Bitirgan"
+    WITHDRAWN = "withdrawn", "Chiqib ketgan"
+
+
+class Child(BranchScopedModel):
+    first_name = models.CharField(max_length=80)
+    last_name = models.CharField(max_length=80)
+    middle_name = models.CharField(max_length=80, blank=True)
+    date_of_birth = models.DateField()
+    gender = models.CharField(max_length=10, choices=Gender.choices)
+
+    enrollment_status = models.CharField(
+        max_length=20, choices=EnrollmentStatus.choices, default=EnrollmentStatus.ACTIVE
+    )
+    enrolled_on = models.DateField(null=True, blank=True)
+
+    photo_path = models.CharField(max_length=255, blank=True)
+    notes = models.TextField(blank=True)
+
+    # Ledger'dan keshlangan qiymat (docs/03 §8.2). Manba — `child_ledger_entry`;
+    # bu ustun faqat ro'yxatlarni tez render qilish uchun va pul harakati
+    # bilan bog'liq har qanday qaror ledger'dan qayta hisoblanadi (D3).
+    # Sprint 4 (finance) da to'ldiriladi.
+    balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    class Meta:
+        db_table = "child"
+        ordering = ["last_name", "first_name"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(date_of_birth__lt=models.functions.Now()),
+                name="ck_child_dob_past",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["organization", "is_active"], name="ix_child_org_active"),
+            models.Index(
+                fields=["organization", "branch", "enrollment_status"],
+                name="ix_child_org_br_status",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return self.full_name
+
+    @property
+    def full_name(self) -> str:
+        parts = [self.last_name, self.first_name, self.middle_name]
+        return " ".join(p for p in parts if p)
+
+    @property
+    def age_years(self) -> int:
+        today = timezone.localdate()
+        born = self.date_of_birth
+        return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+
+
+class Guardian(BranchScopedModel):
+    """Ota-ona/vasiy — SMS oluvchi (docs/03 §11.2)."""
+
+    first_name = models.CharField(max_length=80)
+    last_name = models.CharField(max_length=80)
+    phone = models.CharField(max_length=20)
+    email = models.EmailField(blank=True)
+
+    class Meta:
+        db_table = "guardian"
+        ordering = ["last_name", "first_name"]
+        constraints = [
+            # Telefon filial ichida takrorlanmaydi — bir oilaning ikkinchi
+            # bolasi qo'shilganda vasiy qayta yaratilmasin.
+            models.UniqueConstraint(
+                fields=["branch", "phone"],
+                condition=models.Q(is_active=True),
+                name="uq_guardian_branch_phone",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.last_name} {self.first_name}"
+
+    @property
+    def full_name(self) -> str:
+        return f"{self.last_name} {self.first_name}"
+
+
+class Relation(models.TextChoices):
+    MOTHER = "mother", "Onasi"
+    FATHER = "father", "Otasi"
+    GRANDPARENT = "grandparent", "Buvi/bobo"
+    SIBLING = "sibling", "Aka/opa"
+    OTHER = "other", "Boshqa"
+
+
+class ChildGuardian(BranchScopedModel):
+    """Bola ↔ vasiy ko'prigi — munosabat semantikasini olib yuradi."""
+
+    child = models.ForeignKey(
+        "children.Child", on_delete=models.CASCADE, related_name="guardian_links"
+    )
+    guardian = models.ForeignKey(
+        "children.Guardian", on_delete=models.RESTRICT, related_name="child_links"
+    )
+    relation = models.CharField(max_length=20, choices=Relation.choices)
+    is_primary = models.BooleanField(default=False)
+    can_pickup = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "child_guardian"
+        constraints = [
+            models.UniqueConstraint(fields=["child", "guardian"], name="uq_child_guardian"),
+            # Bolada ko'pi bilan bitta asosiy vasiy bo'ladi. "Kamida bitta"
+            # shartini indeks ifodalay olmaydi — u servis qatlamida.
+            models.UniqueConstraint(
+                fields=["child"],
+                condition=models.Q(is_primary=True),
+                name="uq_child_primary_guardian",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.child_id} ← {self.guardian_id}"
+
+
+class Group(BranchScopedModel):
+    """Guruh (sinf)."""
+
+    name = models.CharField(max_length=80)
+    age_min = models.SmallIntegerField(null=True, blank=True)
+    age_max = models.SmallIntegerField(null=True, blank=True)
+    capacity = models.SmallIntegerField(default=0)
+
+    # Faol enrollment'lardan keshlangan (docs/03 §8.2).
+    enrolled_count = models.SmallIntegerField(default=0)
+
+    class Meta:
+        db_table = "group"
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["branch", "name"],
+                condition=models.Q(is_active=True),
+                name="uq_group_branch_name",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(capacity__gte=0), name="ck_group_capacity_positive"
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(age_max__isnull=True)
+                    | models.Q(age_min__isnull=True)
+                    | models.Q(age_max__gte=models.F("age_min"))
+                ),
+                name="ck_group_age",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class EnrollmentState(models.TextChoices):
+    ACTIVE = "active", "Faol"
+    ENDED = "ended", "Tugagan"
+    TRANSFERRED = "transferred", "Ko'chirilgan"
+
+
+class Enrollment(BranchScopedModel):
+    """Bolaning guruhdagi a'zoligi — TARIX, joriy holat emas."""
+
+    child = models.ForeignKey(
+        "children.Child", on_delete=models.CASCADE, related_name="enrollments"
+    )
+    group = models.ForeignKey(
+        "children.Group", on_delete=models.RESTRICT, related_name="enrollments"
+    )
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
+    status = models.CharField(
+        max_length=20, choices=EnrollmentState.choices, default=EnrollmentState.ACTIVE
+    )
+
+    class Meta:
+        db_table = "enrollment"
+        ordering = ["-start_date"]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(end_date__isnull=True) | models.Q(end_date__gte=models.F("start_date"))
+                ),
+                name="ck_enrollment_dates",
+            ),
+            # Bolada bir vaqtda ko'pi bilan bitta OCHIQ a'zolik bo'ladi.
+            # Bu indeks bo'lmasa, guruhdan guruhga ko'chirishda ikkita faol
+            # yozuv qolib ketishi va bola ikki joyda hisoblanishi mumkin.
+            models.UniqueConstraint(
+                fields=["child"],
+                condition=models.Q(end_date__isnull=True, status="active"),
+                name="uq_enrollment_current",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["organization", "group", "status"], name="ix_enrollment_org_grp"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.child_id} → {self.group_id}"

@@ -12,6 +12,7 @@ qo'shilgan kuniyoq shu yerda tekshiriladi.
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
 
 import pytest
@@ -43,6 +44,7 @@ def _create_row(tenant: Any, basename: str) -> Any:
     """Berilgan tenant ichida shu endpoint uchun bitta qator yaratadi."""
     from apps.accounts.models import User
     from apps.branches.models import Branch
+    from apps.children.models import Child, Group, Guardian
 
     with organization_context(tenant.organization.id):
         if basename == "user":
@@ -59,6 +61,30 @@ def _create_row(tenant: Any, basename: str) -> Any:
         if basename == "branch":
             return Branch.objects.create(
                 organization=tenant.organization, name="Ikkinchi", code="B2"
+            )
+        if basename == "child":
+            return Child.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                first_name="Ali",
+                last_name="Valiyev",
+                date_of_birth=date(2021, 3, 14),
+                gender="male",
+            )
+        if basename == "guardian":
+            return Guardian.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                first_name="Ona",
+                last_name="Valiyeva",
+                phone=f"+99890{abs(hash(tenant.organization.slug)) % 10_000_000:07d}",
+            )
+        if basename == "group":
+            return Group.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                name="Quyoshlar",
+                capacity=20,
             )
     raise AssertionError(
         f"'{basename}' uchun test ma'lumoti yaratilmagan. Yangi endpoint "
