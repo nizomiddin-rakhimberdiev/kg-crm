@@ -58,9 +58,17 @@ def _create_row(tenant: Any, basename: str) -> Any:
     from apps.branches.models import Branch
     from apps.children.models import Child, Group, Guardian
     from apps.children.services import enroll_child
+    from apps.expenses.models import Expense, ExpenseCategory
     from apps.finance.models import Discount, TariffPlan
     from apps.finance.services import issue_invoice, record_payment
     from apps.hr.models import Employee, Position
+    from apps.inventory.models import (
+        Product,
+        ProductCategory,
+        Supplier,
+        Warehouse,
+    )
+    from apps.inventory.services import record_movement
     from apps.payroll.services import create_run
 
     with organization_context(tenant.organization.id):
@@ -126,6 +134,49 @@ def _create_row(tenant: Any, basename: str) -> Any:
                 group=group,
                 attendance_date=timezone.localdate(),
                 status="present",
+            )
+        if basename == "warehouse":
+            return Warehouse.objects.create(
+                organization=tenant.organization, branch=tenant.branch, name="Ombor"
+            )
+        if basename == "product-category":
+            return ProductCategory.objects.create(
+                organization=tenant.organization, branch=tenant.branch, name="Sabzavot"
+            )
+        if basename == "supplier":
+            return Supplier.objects.create(
+                organization=tenant.organization, branch=tenant.branch, name="Yetkazuvchi"
+            )
+        if basename in {"product", "stock-movement"}:
+            item = Product.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                name="Kartoshka",
+                unit="kg",
+            )
+            if basename == "product":
+                return item
+            store = Warehouse.objects.create(
+                organization=tenant.organization, branch=tenant.branch, name="Harakat ombori"
+            )
+            return record_movement(
+                product=item,
+                warehouse=store,
+                movement_type="purchase",
+                quantity=Decimal("10"),
+            )
+        if basename in {"expense-category", "expense"}:
+            category = ExpenseCategory.objects.create(
+                organization=tenant.organization, branch=tenant.branch, name="Kommunal"
+            )
+            if basename == "expense-category":
+                return category
+            return Expense.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                category=category,
+                amount=Decimal("100000"),
+                expense_date=date(2026, 7, 1),
             )
         if basename == "position":
             return Position.objects.create(

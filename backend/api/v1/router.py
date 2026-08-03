@@ -10,6 +10,7 @@ from apps.accounts.views import PermissionViewSet, RoleViewSet, UserViewSet
 from apps.attendance.views import AttendanceViewSet
 from apps.branches.views import BranchViewSet
 from apps.children.views import ChildViewSet, GroupViewSet, GuardianViewSet
+from apps.expenses.views import ExpenseCategoryViewSet, ExpenseViewSet
 from apps.finance.views import (
     DebtorViewSet,
     DiscountViewSet,
@@ -19,6 +20,13 @@ from apps.finance.views import (
     TariffPlanViewSet,
 )
 from apps.hr.views import EmployeeViewSet, PositionViewSet
+from apps.inventory.views import (
+    ProductCategoryViewSet,
+    ProductViewSet,
+    StockMovementViewSet,
+    SupplierViewSet,
+    WarehouseViewSet,
+)
 from apps.payroll.views import PayrollRunViewSet
 
 router = DefaultRouter(trailing_slash=False)
@@ -40,5 +48,12 @@ router.register("debtors", DebtorViewSet, basename="debtor")
 router.register("employees", EmployeeViewSet, basename="employee")
 router.register("positions", PositionViewSet, basename="position")
 router.register("payroll/runs", PayrollRunViewSet, basename="payroll-run")
+router.register("warehouses", WarehouseViewSet, basename="warehouse")
+router.register("product-categories", ProductCategoryViewSet, basename="product-category")
+router.register("products", ProductViewSet, basename="product")
+router.register("suppliers", SupplierViewSet, basename="supplier")
+router.register("stock-movements", StockMovementViewSet, basename="stock-movement")
+router.register("expense-categories", ExpenseCategoryViewSet, basename="expense-category")
+router.register("expenses", ExpenseViewSet, basename="expense")
 
 __all__ = ["router"]

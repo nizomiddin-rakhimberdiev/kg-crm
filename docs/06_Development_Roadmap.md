@@ -235,6 +235,18 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 - Frontend: `inventory` feature (products, movements, suppliers, low-stock), `expenses` feature (record, approve).
 - **Deliverable:** stock in/out with no-negative-stock guard; expense approval workflow.
 
+> **Status: delivered.** Stock follows the same ledger discipline as money: levels are derived from immutable `stock_movement` rows, `product.current_stock` is a cache, and corrections are `adjustment` movements rather than edits.
+>
+> **No negative stock is enforced transactionally, not by a `CHECK`** — a constraint cannot see the running total across rows. The service locks the product row (`SELECT … FOR UPDATE`), recomputes available stock from movements, and rejects the movement if it would go below zero ([03 §26](./03_Database_Design.md)).
+>
+> **Direction is inferred from `movement_type`**, not accepted from the client: a purchase is always inbound, waste always outbound. Only `adjustment` is two-way and it *requires* an explicit direction — guessing there would silently resolve "I corrected it, but which way?".
+>
+> **A test caught a real RBAC gap:** `approve` was in the action catalogue but in no role's permission set, so the expense approval flow was unreachable for everyone including the Org Owner. `_F` ("full access") now includes `approve`.
+>
+> **Rejected expenses are kept, never deleted** — the record of what was asked and why it was refused is the point of an approval workflow.
+>
+> Stock valuation uses the **last purchase price**, stated explicitly in the response (`basis`). Average or FIFO is an accounting decision that should be made with the customer, not assumed.
+
 ### Sprint 8 — Notifications & Settings
 **Goal:** communication + configuration.
 - DB: `notification_template`, `notification`, `system_setting` ([03 §17–18](./03_Database_Design.md)).

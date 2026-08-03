@@ -91,10 +91,56 @@ class TenantViewSet(_TenantQuerysetMixin, viewsets.ModelViewSet):
 
     permission_classes = [HasModulePermission]
     permission_module: str | None = None
+    #: Yozgandan keyin javob uchun ishlatiladigan serializer. Belgilanmasa,
+    #: `get_serializer_class()` ishlatiladi.
+    read_serializer_class: Any = None
 
     def perform_create(self, serializer: Any) -> None:
         # Tashkilot mijozdan olinmaydi — har doim so'rov egasidan.
         serializer.save(organization=request_user(self.request).organization)
+
+    # --- Javob shakli ---
+    #
+    # Ko'p viewset'da yozish va o'qish serializerlari alohida (yozishda
+    # `*_id` maydonlari, o'qishda kengaytirilgan obyektlar). DRF esa
+    # yozgandan keyin YOZISH serializerini qaytaradi — natijada
+    # `POST /x` javobi `GET /x/{id}` javobidan farq qiladi va mijoz
+    # ikkita shaklni qo'llab-quvvatlashga majbur bo'ladi.
+    #
+    # Quyidagi ikkita override shu nomuvofiqlikni yopadi.
+
+    def _read_representation(self, instance: Any) -> Any:
+        serializer_class = self.read_serializer_class
+        if serializer_class is None:
+            method = self.request.method
+            self.request.method = "GET"  # `get_serializer_class()` metodga qaraydi
+            try:
+                serializer_class = self.get_serializer_class()
+            finally:
+                self.request.method = method
+        return serializer_class(instance, context=self.get_serializer_context()).data
+
+    def create(self, request: Any, *args: Any, **kwargs: Any) -> Any:
+        from rest_framework import status as http_status
+        from rest_framework.response import Response
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(
+            self._read_representation(serializer.instance),
+            status=http_status.HTTP_201_CREATED,
+        )
+
+    def update(self, request: Any, *args: Any, **kwargs: Any) -> Any:
+        from rest_framework.response import Response
+
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(self._read_representation(serializer.instance))
 
 
 class TenantReadOnlyViewSet(_TenantQuerysetMixin, viewsets.ReadOnlyModelViewSet):

@@ -47,6 +47,17 @@ export const queryKeys = {
   payrollRuns: (orgId: string) => ['org', orgId, 'payroll'] as const,
   payrollRun: (orgId: string, id: string) => ['org', orgId, 'payroll', id] as const,
 
+  products: (orgId: string, params?: Record<string, unknown>) =>
+    ['org', orgId, 'products', params ?? {}] as const,
+  warehouses: (orgId: string) => ['org', orgId, 'warehouses'] as const,
+  productCategories: (orgId: string) => ['org', orgId, 'product-categories'] as const,
+  suppliers: (orgId: string) => ['org', orgId, 'suppliers'] as const,
+  movements: (orgId: string, params?: Record<string, unknown>) =>
+    ['org', orgId, 'movements', params ?? {}] as const,
+  expenses: (orgId: string, params?: Record<string, unknown>) =>
+    ['org', orgId, 'expenses', params ?? {}] as const,
+  expenseCategories: (orgId: string) => ['org', orgId, 'expense-categories'] as const,
+
   attendanceDaily: (orgId: string, groupId: string, date: string) =>
     ['org', orgId, 'attendance', 'daily', groupId, date] as const,
   attendanceSummary: (orgId: string, month: string, groupId: string | null) =>

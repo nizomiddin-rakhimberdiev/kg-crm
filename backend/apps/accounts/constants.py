@@ -60,9 +60,13 @@ SYSTEM_ROLES: Final[dict[str, str]] = {
 }
 
 # Qisqartmalar docs/02 §11.2 dagi jadval bilan bir xil:
-#   F = to'liq (CRUD + export)   W = yaratish/yangilash + o'qish
-#   R = faqat o'qish              — = kirish yo'q
-_F: Final[tuple[str, ...]] = ("read", "create", "update", "delete", "export")
+#   F = to'liq (CRUD + export + approve)   W = yaratish/yangilash + o'qish
+#   R = faqat o'qish                        — = kirish yo'q
+#
+# `approve` `_F` ga kiradi: "to'liq kirish" tasdiqlash huquqini ham
+# o'z ichiga olishi kerak, aks holda chiqim tasdiqlash oqimi hech kimda
+# ishlamasdi (bu kamchilikni Sprint 7 testi ushladi).
+_F: Final[tuple[str, ...]] = ("read", "create", "update", "delete", "export", "approve")
 _W: Final[tuple[str, ...]] = ("read", "create", "update")
 _R: Final[tuple[str, ...]] = ("read",)
 _N: Final[tuple[str, ...]] = ()

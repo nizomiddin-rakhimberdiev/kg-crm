@@ -403,3 +403,67 @@ export interface PayrollRun {
   items: PayrollItem[]
   created_at: string
 }
+
+// --- Ombor va chiqimlar ---
+
+export interface Warehouse { id: string; name: string; is_active: boolean; created_at: string }
+export interface ProductCategory { id: string; name: string; is_active: boolean; created_at: string }
+export interface Supplier {
+  id: string; name: string; phone: string; contact_person: string
+  is_active: boolean; created_at: string
+}
+
+export interface Product {
+  id: string
+  name: string
+  sku: string
+  category_id: string | null
+  category_name: string | null
+  unit: 'kg' | 'g' | 'l' | 'ml' | 'pcs' | 'pack'
+  min_stock: string
+  current_stock: string
+  is_low_stock: boolean
+  is_active: boolean
+  created_at: string
+}
+
+export interface StockMovement {
+  id: string
+  product: string
+  product_name: string
+  warehouse: string
+  warehouse_name: string
+  supplier: string | null
+  supplier_name: string | null
+  direction: 'in' | 'out'
+  movement_type: 'purchase' | 'consumption' | 'adjustment' | 'waste' | 'transfer'
+  quantity: string
+  unit_cost: string | null
+  occurred_at: string
+  reference: string
+  note: string
+  created_at: string
+}
+
+export interface ExpenseCategory { id: string; name: string; is_active: boolean; created_at: string }
+
+export interface Expense {
+  id: string
+  category: string
+  category_name: string
+  amount: string
+  expense_date: string
+  description: string
+  status: 'pending' | 'approved' | 'rejected' | 'paid'
+  approved_by_name: string | null
+  decided_at: string | null
+  decision_note: string
+  created_at: string
+}
+
+export interface ExpenseSummary {
+  date_from: string
+  date_to: string
+  total: string
+  by_category: Array<{ category: string; total: string }>
+}
