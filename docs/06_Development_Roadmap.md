@@ -156,6 +156,12 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 - Frontend: `children` feature — list (search/filter), create/edit, detail with guardians & group, enrollment, import wizard.
 - **Deliverable:** full child lifecycle works end-to-end, and 150 children can be loaded from a spreadsheet in one sitting.
 
+> **Status: delivered.** The generated cross-tenant sweep picked up `/children`, `/guardians` and `/groups` the moment they were registered and failed until test data was supplied for them — the intended behaviour. It now covers 7 endpoints.
+>
+> **Import is CSV-only.** Reading `.xlsx` needs `openpyxl`; the wizard instead tells the user to "Save as CSV" in Excel and ships a template with a UTF-8 BOM so Uzbek and Cyrillic characters survive the round trip. Adding the dependency is a small, deliberate deferral — revisit if real customers push back.
+>
+> **Carried forward:** child detail page (guardian management beyond the primary contact, photo upload) and group CRUD screens. The API endpoints exist and are tested; only the screens are outstanding.
+
 > **Bulk import is a Sprint 2 requirement, not a later nicety** ([01 §3.1](./01_Project_Vision.md) goal 13). A kindergarten feels no value until its roster is in the system; if that takes ten days of typing, the 15-day trial ends in churn no matter how good the product is. Import is the trial's success condition.
 
 ### Sprint 3 — Attendance

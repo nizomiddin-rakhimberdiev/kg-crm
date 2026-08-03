@@ -22,4 +22,8 @@ export const queryKeys = {
 
   branches: (orgId: string, params?: Record<string, unknown>) =>
     ['org', orgId, 'branches', params ?? {}] as const,
+
+  children: (orgId: string, params?: Record<string, unknown>) =>
+    ['org', orgId, 'children', params ?? {}] as const,
+  groups: (orgId: string) => ['org', orgId, 'groups'] as const,
 } as const

@@ -152,3 +152,64 @@ export interface StaffUser {
   last_login_at: string | null
   created_at: string
 }
+
+// --- Bolalar CRM ---
+
+export interface GuardianLink {
+  id: string
+  guardian: {
+    id: string
+    first_name: string
+    last_name: string
+    full_name: string
+    phone: string
+    email: string
+  }
+  relation: string
+  is_primary: boolean
+  can_pickup: boolean
+}
+
+export interface Child {
+  id: string
+  first_name: string
+  last_name: string
+  middle_name: string
+  full_name: string
+  date_of_birth: string
+  age_years: number
+  gender: 'male' | 'female'
+  enrollment_status: 'prospect' | 'active' | 'paused' | 'graduated' | 'withdrawn'
+  enrolled_on: string | null
+  balance: string
+  notes: string
+  guardians: GuardianLink[]
+  current_group: { id: string; name: string } | null
+  is_active: boolean
+  created_at: string
+}
+
+export interface Group {
+  id: string
+  name: string
+  age_min: number | null
+  age_max: number | null
+  capacity: number
+  enrolled_count: number
+  is_active: boolean
+  created_at: string
+}
+
+export interface ImportRowError {
+  row: number
+  field: string
+  message: string
+}
+
+export interface ImportReport {
+  total_rows: number
+  created: number
+  skipped_duplicates: number
+  dry_run: boolean
+  errors: ImportRowError[]
+}

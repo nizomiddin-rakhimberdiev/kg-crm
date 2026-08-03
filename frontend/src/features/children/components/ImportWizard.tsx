@@ -1,0 +1,213 @@
+/**
+ * Import sehrgari (docs/06 Sprint 2).
+ *
+ * Oqim ataylab ikki qadam: fayl → **tekshiruv natijasi** → saqlash.
+ * Foydalanuvchi 200 qatorli faylni ko'r-ko'rona yuklamasligi kerak; u
+ * nima yaratilishini va qaysi qatorda xato borligini oldindan ko'radi.
+ */
+
+import { useRef, useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { AlertCircle, CheckCircle2, FileUp, Upload, X } from 'lucide-react'
+import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { useBranchScope } from '@/app/providers/BranchProvider'
+import { childrenApi } from '@/features/children/api'
+import { ApiError, type ImportReport } from '@/lib/api/types'
+import { cn } from '@/lib/utils'
+
+const TEMPLATE = `Familiya;Ism;Tug'ilgan sana;Jinsi;Guruh;Ota-ona;Telefon
+Valiyev;Ali;14.03.2021;o'g'il;Quyoshlar;Valiyeva Nodira;+998901112233
+Karimova;Zilola;2020-05-14;qiz;Quyoshlar;Karimov Aziz;+998901112244
+`
+
+export function ImportWizard({ onClose }: { onClose: () => void }) {
+  const organizationId = useOrganizationId()
+  const { selectedBranchId } = useBranchScope()
+  const queryClient = useQueryClient()
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const [file, setFile] = useState<File | null>(null)
+  const [report, setReport] = useState<ImportReport | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [done, setDone] = useState(false)
+
+  const runImport = useMutation({
+    mutationFn: ({ target, dryRun }: { target: File; dryRun: boolean }) =>
+      childrenApi.importFile(target, dryRun, selectedBranchId),
+    onSuccess: (result) => {
+      setReport(result)
+      setError(null)
+      if (!result.dry_run) {
+        setDone(true)
+        void queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'children'] })
+        void queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'groups'] })
+      }
+    },
+    onError: (err) => {
+      setError(err instanceof ApiError ? err.message : 'Faylni yuklab bo\'lmadi.')
+      setReport(null)
+    },
+  })
+
+  const pickFile = (selected: File | null) => {
+    setFile(selected)
+    setReport(null)
+    setDone(false)
+    setError(null)
+    if (selected) runImport.mutate({ target: selected, dryRun: true })
+  }
+
+  const downloadTemplate = () => {
+    // `﻿` — BOM: Excel CSV'ni UTF-8 deb tanishi uchun, aks holda
+    // kirill va o'zbek harflari buzilib ko'rinadi.
+    const blob = new Blob([`﻿${TEMPLATE}`], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'bolalar-namuna.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const canSave = report !== null && report.errors.length === 0 && !done && file !== null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+      <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+        <div className="mb-4 flex items-start justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Ro'yxatni import qilish</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Excel'da faylni <strong>CSV sifatida saqlang</strong> va shu yerga yuklang.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={downloadTemplate}
+          className="mb-4 text-sm font-medium text-brand-600 hover:underline"
+        >
+          Namuna faylni yuklab olish
+        </button>
+
+        {/* 1-qadam: fayl */}
+        <div
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault()
+            pickFile(e.dataTransfer.files[0] ?? null)
+          }}
+          className="rounded-xl border-2 border-dashed border-slate-200 p-6 text-center"
+        >
+          <FileUp className="mx-auto mb-2 h-8 w-8 text-slate-300" />
+          <p className="text-sm text-slate-500">
+            {file ? file.name : 'Faylni shu yerga tashlang yoki tanlang'}
+          </p>
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+          />
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="mt-3 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Fayl tanlash
+          </button>
+        </div>
+
+        {error && (
+          <div role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {runImport.isPending && (
+          <p className="mt-4 text-center text-sm text-slate-400">Tekshirilmoqda…</p>
+        )}
+
+        {/* 2-qadam: tekshiruv natijasi */}
+        {report && (
+          <div className="mt-4 space-y-3">
+            <div className="grid grid-cols-3 gap-2 text-center">
+              {[
+                ['Jami qator', report.total_rows],
+                [done ? 'Yaratildi' : 'Yaratiladi', report.created],
+                ['Dublikat', report.skipped_duplicates],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="rounded-lg bg-slate-50 px-3 py-2">
+                  <p className="text-lg font-bold text-slate-900">{value}</p>
+                  <p className="text-xs text-slate-500">{label}</p>
+                </div>
+              ))}
+            </div>
+
+            {report.errors.length > 0 ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-900">
+                  <AlertCircle className="h-4 w-4" />
+                  {report.errors.length} ta xato — hech narsa saqlanmaydi
+                </p>
+                <ul className="max-h-48 space-y-1 overflow-y-auto text-sm text-amber-900">
+                  {report.errors.map((rowError, index) => (
+                    <li key={`${rowError.row}-${rowError.field}-${index}`}>
+                      <span className="font-mono text-xs">{rowError.row}-qator</span>{' '}
+                      — {rowError.message}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-xs text-amber-800">
+                  Faylni tuzatib qayta yuklang. Allaqachon kiritilgan bolalar takrorlanmaydi.
+                </p>
+              </div>
+            ) : done ? (
+              <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                <CheckCircle2 className="h-4 w-4" />
+                Import yakunlandi.
+              </div>
+            ) : (
+              <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                Xato topilmadi. Saqlashga tayyor.
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="mt-6 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+          >
+            {done ? 'Yopish' : 'Bekor qilish'}
+          </button>
+          {canSave && (
+            <button
+              type="button"
+              disabled={runImport.isPending}
+              onClick={() => runImport.mutate({ target: file, dryRun: false })}
+              className={cn(
+                'flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white',
+                runImport.isPending ? 'opacity-60' : 'hover:bg-brand-700',
+              )}
+            >
+              <Upload className="h-4 w-4" />
+              {report?.created} ta bolani saqlash
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
