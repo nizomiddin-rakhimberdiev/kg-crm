@@ -39,4 +39,12 @@ export const reportsApi = {
 
 export const auditApi = {
   list: (params?: Record<string, unknown>) => api.list<AuditLog>('/audit-logs', params),
+
+  /**
+   * Vendor SIZNING tashkilotingizga qanday tekkani (ADR-10).
+   *
+   * Bu ro'yxatning mavjudligi mahsulot qarori: ko'rinmaydigan kirish
+   * ishonchni texnik jihatdan emas, ijtimoiy jihatdan buzadi.
+   */
+  platformAccess: () => api.list<AuditLog>('/audit-logs/platform-access'),
 }

@@ -43,6 +43,10 @@ UNCOVERED: dict[str, str] = {
     "dashboard": "Agregat, qator emas. Qo'lda test: apps/reports/tests/test_reports.py.",
     "report": "Agregat, qator emas. Qo'lda test: apps/reports/tests/test_reports.py.",
     "audit-log": "Tashkilot filtri QO'LDA yozilgan. Qo'lda test: apps/audit/tests.",
+    "platform": (
+        "Vendor tekisligi — mijoz tokeni bu yerga umuman kirmaydi (ADR-10). "
+        "Qo'lda test: apps/platform/tests/test_platform_console.py."
+    ),
     "billing": (
         "Obuna tokendan aniqlanadi — endpointlar ID qabul qilmaydi. "
         "Qo'lda test: apps/subscriptions/tests/test_billing_api.py."
@@ -332,8 +336,12 @@ class TestCrossTenantIsolation:
         )
         assert response.status_code in (404, 405)
 
-        foreign.refresh_from_db()
-        assert _snapshot(foreign) == before, "Begona tashkilotning qatori o'zgardi"
+        # Tekshiruv EGASINING kontekstida: RLS ostida begona qatorni
+        # kontekstsiz o'qib bo'lmaydi, va bu to'g'ri — test ham
+        # ishlab chiqarish kodi bilan bir xil qoidada yashashi kerak.
+        with organization_context(tenant_b.organization.id):
+            foreign.refresh_from_db()
+            assert _snapshot(foreign) == before, "Begona tashkilotning qatori o'zgardi"
 
     def test_delete_of_other_tenant_row_is_blocked(self, tenant_a, tenant_b, basename, prefix):
         foreign = _create_row(tenant_b, basename)
@@ -345,11 +353,14 @@ class TestCrossTenantIsolation:
         # Qator o'chirilmagani VA yumshoq o'chirilmagani — ikkalasi ham.
         # Filtrsiz manager nomi modelga qarab farq qiladi: `User` da u
         # `auth_objects` (login tenant tanlanishidan oldin ishlaydi).
-        unscoped = getattr(model, "all_objects", None) or model.auth_objects
-        still_there = unscoped.filter(pk=foreign.pk).first()
-        assert still_there is not None, "Begona tashkilotning qatori o'chirildi"
-        if hasattr(still_there, "is_active"):
-            assert still_there.is_active is True
+        # Lekin filtrsiz manager ham RLS'ni chetlab o'tolmaydi, shuning
+        # uchun tekshiruv egasining kontekstida bajariladi.
+        with organization_context(tenant_b.organization.id):
+            unscoped = getattr(model, "all_objects", None) or model.auth_objects
+            still_there = unscoped.filter(pk=foreign.pk).first()
+            assert still_there is not None, "Begona tashkilotning qatori o'chirildi"
+            if hasattr(still_there, "is_active"):
+                assert still_there.is_active is True
 
 
 @pytest.mark.parametrize("basename,prefix", ROUTES, ids=[r[1] for r in ROUTES])

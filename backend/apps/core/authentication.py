@@ -14,6 +14,7 @@ fail-closed.
 
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
 from django.contrib.auth import get_user_model
@@ -22,6 +23,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework_simplejwt.settings import api_settings
 
+from apps.core.rls import apply_tenant_setting
 from apps.core.tenancy import set_current_organization_id
 
 __all__ = ["TenantJWTAuthentication"]
@@ -33,13 +35,27 @@ class TenantJWTAuthentication(JWTAuthentication):
         if user_id is None:
             raise InvalidToken("Tokenda foydalanuvchi identifikatori yo'q.")
 
-        # `auth_objects` — ataylab tenant filtrisiz. Bu tovuq-tuxum holati:
-        # foydalanuvchini topish AYNAN kontekstni o'rnatadigan so'rov, shuning
-        # uchun u o'zi cheklangan bo'la olmaydi. Bu yagona joy — qolgan hamma
-        # narsa shundan keyin cheklanadi.
+        # Tashkilot TOKENDAN olinadi va kontekst foydalanuvchini
+        # qidirishdan OLDIN o'rnatiladi.
+        #
+        # Avval bu teskari edi: `auth_objects` (filtrsiz) bilan
+        # foydalanuvchi topilib, keyin tashkilot solishtirilardi. U ham
+        # ishlagan, lekin RLS qo'shilganda ma'lum bo'ldiki, bu tartib
+        # `user` jadvaliga cross-tenant o'qish talab qiladi. Tartibni
+        # teskari qilish esa **hech qanday eshikni** talab qilmaydi:
+        # token yolg'on tashkilot ko'rsatsa, foydalanuvchi o'sha
+        # tashkilotda topilmaydi va so'rov 401 oladi. Ya'ni RLS
+        # tekshiruvni kod bilan BIRGA bajaradi, kod o'rniga emas.
+        claimed = validated_token.get("organization_id")
+        if not claimed:
+            raise InvalidToken("Tokenda tashkilot ko'rsatilmagan.")
+
+        set_current_organization_id(uuid.UUID(str(claimed)))
+        apply_tenant_setting(claimed)
+
         user = (
             get_user_model()
-            .auth_objects.filter(**{api_settings.USER_ID_FIELD: user_id})
+            .objects.filter(**{api_settings.USER_ID_FIELD: user_id})
             .select_related("organization", "role", "branch")
             .first()
         )
@@ -48,14 +64,11 @@ class TenantJWTAuthentication(JWTAuthentication):
         if not user.is_active:
             raise AuthenticationFailed("Hisob faol emas.", code="user_inactive")
 
-        claimed = validated_token.get("organization_id")
+        # Ikki qavatli tekshiruv: yuqoridagi filtr allaqachon tashkilotni
+        # cheklaydi, lekin bu shart aniq XABAR beradi va menejer
+        # o'zgarsa ham qoladi.
         actual = str(user.organization_id) if user.organization_id else None
-
-        # Tokendagi tashkilot bazadagisi bilan mos kelishi shart.
-        # `organization_id` o'zgarmas (DB trigger), shuning uchun nomuvofiqlik
-        # faqat eskirgan yoki qalbaki tokenda bo'ladi — ikkalasi ham rad etiladi.
-        if claimed != actual:
+        if str(claimed) != actual:
             raise InvalidToken("Token tashkiloti hisob bilan mos kelmaydi.")
 
-        set_current_organization_id(user.organization_id)
         return user

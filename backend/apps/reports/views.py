@@ -173,7 +173,7 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
             params=serializer.validated_data.get("params", {}),
             requested_by=user,
         )
-        generate_export.delay(str(export.id))
+        generate_export.delay(str(export.id), str(user.organization_id))
         return Response(ReportExportSerializer(export).data, status=status.HTTP_202_ACCEPTED)
 
     @action(detail=False, methods=["get"])

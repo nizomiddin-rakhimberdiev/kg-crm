@@ -25,6 +25,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from apps.core.exceptions import BusinessRuleViolation
+from apps.core.tenancy import organization_context, platform_context
 from apps.subscriptions import pricing
 from apps.subscriptions.models import (
     GRACE_DAYS,
@@ -383,12 +384,20 @@ def _next_invoice_number() -> str:
     """
     year = timezone.localdate().year
     prefix = f"KG-{year}-"
-    last = (
-        SubscriptionInvoice.all_objects.filter(number__startswith=prefix)
-        .order_by("-number")
-        .values_list("number", flat=True)
-        .first()
-    )
+
+    # Ketma-ketlik VENDOR bo'ylab global, ya'ni oxirgi raqamni topish
+    # cross-tenant so'rov. RLS buni ochib berdi: `all_objects` ilova
+    # filtridan qutuladi, lekin bazadagi siyosatdan emas — va tenant
+    # kontekstida turib qidirilsa, boshqa mijozning hisobi ko'rinmay,
+    # o'sha raqam QAYTA beriladi. Bu unique cheklovga urilardi, ya'ni
+    # ikkinchi mijozning konvertatsiyasi yiqilardi.
+    with platform_context():
+        last = (
+            SubscriptionInvoice.all_objects.filter(number__startswith=prefix)
+            .order_by("-number")
+            .values_list("number", flat=True)
+            .first()
+        )
     sequence = int(last.rsplit("-", 1)[1]) + 1 if last else 1
     return f"{prefix}{sequence:05d}"
 
@@ -490,12 +499,20 @@ def record_subscription_payment(
 def expire_trials() -> int:
     """Muddati tugagan, qabul qilinmagan sinovlarni bekor qiladi."""
     now = timezone.now()
-    expired = Subscription.objects.filter(status=SubscriptionStatus.TRIALING, trial_ends_at__lt=now)
+    # Tenantlar bo'ylab — platforma tekisligi. `subscription`
+    # metama'lumot jadvali, shuning uchun bu ochiq (docs/03 §6.3).
+    with platform_context():
+        expired = list(
+            Subscription.all_objects.filter(
+                status=SubscriptionStatus.TRIALING, trial_ends_at__lt=now
+            )
+        )
     count = 0
     for subscription in expired:
-        subscription.status = SubscriptionStatus.CANCELLED
-        subscription.cancelled_at = now
-        subscription.save(update_fields=["status", "cancelled_at", "updated_at"])
+        with organization_context(subscription.organization_id):
+            subscription.status = SubscriptionStatus.CANCELLED
+            subscription.cancelled_at = now
+            subscription.save(update_fields=["status", "cancelled_at", "updated_at"])
         count += 1
     return count
 
@@ -503,19 +520,26 @@ def expire_trials() -> int:
 def mark_past_due() -> int:
     """Muddati o'tgan hisoblarni belgilaydi va obunani `past_due` qiladi."""
     today = timezone.localdate()
-    overdue = SubscriptionInvoice.objects.filter(
-        status=SubscriptionInvoiceStatus.ISSUED, due_at__lt=today
-    ).select_related("subscription")
+    with platform_context():
+        overdue = list(
+            SubscriptionInvoice.all_objects.filter(
+                status=SubscriptionInvoiceStatus.ISSUED, due_at__lt=today
+            ).select_related("subscription")
+        )
 
     count = 0
     for invoice in overdue:
-        invoice.status = SubscriptionInvoiceStatus.OVERDUE
-        invoice.save(update_fields=["status", "updated_at"])
+        with organization_context(invoice.organization_id):
+            invoice.status = SubscriptionInvoiceStatus.OVERDUE
+            invoice.save(update_fields=["status", "updated_at"])
 
-        subscription = invoice.subscription
-        if subscription.status in (SubscriptionStatus.ACTIVE, SubscriptionStatus.PENDING_PAYMENT):
-            subscription.status = SubscriptionStatus.PAST_DUE
-            subscription.save(update_fields=["status", "updated_at"])
+            subscription = invoice.subscription
+            if subscription.status in (
+                SubscriptionStatus.ACTIVE,
+                SubscriptionStatus.PENDING_PAYMENT,
+            ):
+                subscription.status = SubscriptionStatus.PAST_DUE
+                subscription.save(update_fields=["status", "updated_at"])
         count += 1
     return count
 
@@ -529,18 +553,22 @@ def suspend_unpaid(*, grace_days: int = GRACE_DAYS) -> int:
     (docs/03 §20.6).
     """
     cutoff = timezone.localdate() - timedelta(days=grace_days)
-    unpaid = SubscriptionInvoice.objects.filter(
-        status=SubscriptionInvoiceStatus.OVERDUE, due_at__lt=cutoff
-    ).select_related("subscription")
+    with platform_context():
+        unpaid = list(
+            SubscriptionInvoice.all_objects.filter(
+                status=SubscriptionInvoiceStatus.OVERDUE, due_at__lt=cutoff
+            ).select_related("subscription")
+        )
 
     count = 0
     for invoice in unpaid:
-        subscription = invoice.subscription
-        if subscription.status not in (
-            SubscriptionStatus.SUSPENDED,
-            SubscriptionStatus.CANCELLED,
-        ):
-            subscription.status = SubscriptionStatus.SUSPENDED
-            subscription.save(update_fields=["status", "updated_at"])
-            count += 1
+        with organization_context(invoice.organization_id):
+            subscription = invoice.subscription
+            if subscription.status not in (
+                SubscriptionStatus.SUSPENDED,
+                SubscriptionStatus.CANCELLED,
+            ):
+                subscription.status = SubscriptionStatus.SUSPENDED
+                subscription.save(update_fields=["status", "updated_at"])
+                count += 1
     return count

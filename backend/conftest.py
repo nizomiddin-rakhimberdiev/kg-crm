@@ -11,7 +11,7 @@ from django.db import connection
 from apps.accounts.models import Role, User
 from apps.accounts.services import register_organization
 from apps.branches.models import Branch
-from apps.core.tenancy import organization_context
+from apps.core.tenancy import organization_context, platform_context
 from apps.organizations.models import Organization
 
 
@@ -31,19 +31,26 @@ def django_db_setup(django_db_setup, django_db_blocker):  # type: ignore[no-unty
     yield
 
 
+# Tashkilot yaratish — PLATFORMA tekisligidagi amal: o'sha paytda hali
+# hech qanday tenant yo'q, va RLS buni ochiq so'rashga majbur qiladi
+# (docs/03 §6.3). Testlar ham xuddi ishlab chiqarish kodi kabi shu
+# qoidaga bo'ysunadi — aks holda testlar mavjud bo'lmagan erkinlikda
+# ishlab, haqiqiy xatoni yashirardi.
 @pytest.fixture
 def organization(db) -> Organization:  # type: ignore[no-untyped-def]
-    return Organization.objects.create(
-        name="Alfa Bog'cha", slug="alfa", contact_email="owner@alfa.uz"
-    )
+    with platform_context():
+        return Organization.objects.create(
+            name="Alfa Bog'cha", slug="alfa", contact_email="owner@alfa.uz"
+        )
 
 
 @pytest.fixture
 def other_organization(db) -> Organization:  # type: ignore[no-untyped-def]
     """Ikkinchi tenant — izolyatsiya testlari uchun."""
-    return Organization.objects.create(
-        name="Beta Bog'cha", slug="beta", contact_email="owner@beta.uz"
-    )
+    with platform_context():
+        return Organization.objects.create(
+            name="Beta Bog'cha", slug="beta", contact_email="owner@beta.uz"
+        )
 
 
 @pytest.fixture

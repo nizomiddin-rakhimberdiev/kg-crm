@@ -48,7 +48,7 @@ class TestExportJob:
         job_id = response.json()["data"]["id"]
         assert response.json()["data"]["status"] == "queued"
 
-        generate_export(job_id)
+        generate_export(job_id, str(tenant_a.organization.id))
 
         with organization_context(tenant_a.organization.id):
             export = ReportExport.objects.get(pk=job_id)
@@ -67,7 +67,7 @@ class TestExportJob:
             export = ReportExport.objects.create(
                 organization=tenant_a.organization, report_type="revenue"
             )
-            generate_export(str(export.id))
+            generate_export(str(export.id), str(tenant_a.organization.id))
             export.refresh_from_db()
             content = export.file.read()
 
@@ -87,7 +87,7 @@ class TestExportJob:
                 report_type="revenue",
                 params={"date_from": "buguncha"},
             )
-            generate_export(str(export.id))
+            generate_export(str(export.id), str(tenant_a.organization.id))
             export.refresh_from_db()
 
         assert export.status == ExportStatus.FAILED
@@ -98,7 +98,7 @@ class TestExportJob:
         job_id = client.post("/api/v1/reports/revenue/export", {}, format="json").json()["data"][
             "id"
         ]
-        generate_export(job_id)
+        generate_export(job_id, str(tenant_a.organization.id))
 
         response = client.get(f"/api/v1/reports/exports/{job_id}/download")
         assert response.status_code == 200
@@ -131,7 +131,7 @@ class TestExportJob:
             .post("/api/v1/reports/revenue/export", {}, format="json")
             .json()["data"]["id"]
         )
-        generate_export(job_id)
+        generate_export(job_id, str(tenant_a.organization.id))
 
         response = tenant_b.client().get(f"/api/v1/reports/exports/{job_id}/download")
         assert response.status_code == 404
@@ -161,14 +161,14 @@ class TestWorkerContext:
             export_id = str(export.id)
 
         # Kontekstdan TASHQARIDA chaqiramiz — aynan ishchi kabi.
-        assert generate_export(export_id) == ExportStatus.READY
+        assert generate_export(export_id, str(tenant_a.organization.id)) == ExportStatus.READY
 
     def test_generated_at_is_stamped(self, tenant_a):
         with organization_context(tenant_a.organization.id):
             export = ReportExport.objects.create(
                 organization=tenant_a.organization, report_type="debtors"
             )
-            generate_export(str(export.id))
+            generate_export(str(export.id), str(tenant_a.organization.id))
             export.refresh_from_db()
         assert export.completed_at is not None
         assert export.completed_at <= timezone.now()

@@ -25,6 +25,7 @@ from rest_framework_simplejwt.tokens import AccessToken, Token
 from rest_framework_simplejwt.tokens import RefreshToken as JWTRefreshToken
 
 from apps.accounts.models import User
+from apps.core.tenancy import auth_lookup_context, organization_context
 
 __all__ = [
     "authenticate_candidates",
@@ -57,16 +58,37 @@ def authenticate_candidates(email: str, password: str) -> list[User]:
     tekshiruvi bajariladi, shunda "email mavjud emas" va "parol noto'g'ri"
     holatlari bir xil vaqt oladi.
     """
-    candidates = list(
-        User.auth_objects.filter(email__iexact=email, is_active=True).select_related(
-            "organization", "role", "branch"
-        )
-    )
+    # Tor eshik: email bo'yicha qidirish AYNAN tenantni aniqlaydigan
+    # so'rov, ya'ni u o'zi tenant bilan cheklangan bo'la olmaydi
+    # (docs/03 §6.3). Eshik faqat `user` jadvaliga ochiladi.
+    #
+    # `select_related` bu yerda ATAYLAB YO'Q: `organization`, `role` va
+    # `branch` eshikdan tashqarida, ya'ni JOIN ularni `NULL` qilib
+    # qaytarardi — va bu jimgina, xatosiz sodir bo'lardi. Ular
+    # foydalanuvchi aniqlangandan keyin, O'Z tashkiloti kontekstida
+    # yuklanadi.
+    with auth_lookup_context():
+        candidates = list(User.auth_objects.filter(email__iexact=email, is_active=True))
+
     if not candidates:
         User().set_password(password)  # dummy hash — vaqtni tenglashtirish uchun
         return []
 
-    return [u for u in candidates if check_password(password, u.password)]
+    matched = [u for u in candidates if check_password(password, u.password)]
+    return [hydrate_user(u) for u in matched]
+
+
+def hydrate_user(user: User) -> User:
+    """
+    Bog'liq obyektlarni foydalanuvchining O'Z tashkiloti kontekstida yuklaydi.
+
+    Login paytida bu ikkinchi so'rov — lekin u tor eshikni `user`
+    jadvali bilan cheklangan holda saqlaydi. Muqobili — eshikni
+    `organization`, `role`, `branch` ga ham ochish, ya'ni login yo'lini
+    buzgan kishiga butun tashkilot tuzilmasini berish.
+    """
+    with organization_context(user.organization_id):
+        return User.objects.select_related("organization", "role", "branch").get(pk=user.pk)
 
 
 def _apply_claims(token: Token, user: User) -> None:

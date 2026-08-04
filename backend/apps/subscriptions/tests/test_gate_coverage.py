@@ -22,6 +22,7 @@ from apps.subscriptions.permissions import SubscriptionWriteGate
 # Darvozasiz qoladigan endpointlar — har biri sabab bilan.
 GATE_EXEMPT: dict[str, str] = {
     "billing": "Hisobni ko'rish va to'lash yo'li ochiq qolishi shart.",
+    "platform": "Vendor tekisligi — mijoz obunasiga umuman bog'liq emas (ADR-10).",
 }
 
 

@@ -30,6 +30,7 @@ from apps.inventory.views import (
 )
 from apps.notifications.views import NotificationTemplateViewSet, NotificationViewSet
 from apps.payroll.views import PayrollRunViewSet
+from apps.platform.views import PlatformConsoleViewSet
 from apps.reports.views import DashboardViewSet, ReportViewSet
 from apps.settings_app.views import SettingsViewSet
 from apps.subscriptions.views import BillingViewSet
@@ -69,5 +70,6 @@ router.register("dashboard", DashboardViewSet, basename="dashboard")
 router.register("reports", ReportViewSet, basename="report")
 router.register("audit-logs", AuditLogViewSet, basename="audit-log")
 router.register("billing", BillingViewSet, basename="billing")
+router.register("platform", PlatformConsoleViewSet, basename="platform")
 
 __all__ = ["router"]

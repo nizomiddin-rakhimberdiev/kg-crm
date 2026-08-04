@@ -11,7 +11,7 @@ import pytest
 from django.db import IntegrityError, transaction
 
 from apps.accounts.models import User
-from apps.core.tenancy import organization_context
+from apps.core.tenancy import auth_lookup_context, organization_context
 
 pytestmark = pytest.mark.django_db
 
@@ -30,8 +30,12 @@ class TestEmailUniqueness:
                     email="ustoz@example.uz", password="x", full_name="A", organization=org
                 )
 
-        # Tashkilotlar bo'ylab hisoblash — ataylab unscoped.
-        assert User.auth_objects.filter(email="ustoz@example.uz").count() == 2
+        # Tashkilotlar bo'ylab hisoblash IKKI qatlamni ham talab qiladi:
+        # `auth_objects` ilova filtridan qutuladi, `auth_lookup_context`
+        # esa bazadagi RLS siyosatidan (docs/03 §6.3). Ikkinchisisiz
+        # so'rov bo'sh qaytadi — va bu himoya ishlayotganining isboti.
+        with auth_lookup_context():
+            assert User.auth_objects.filter(email="ustoz@example.uz").count() == 2
 
         # Har bir tashkilot esa faqat o'zinikini ko'radi.
         with organization_context(organization.id):
@@ -50,11 +54,20 @@ class TestEmailUniqueness:
                     organization=organization,
                 )
 
-    def test_platform_email_is_globally_unique(self, db):
-        """Tashkilotsiz (platforma) foydalanuvchilarda email global unikal."""
-        User.objects.create_user(email="admin@kg.uz", password="x", full_name="Platform")
-        with pytest.raises(IntegrityError), transaction.atomic():
-            User.objects.create_user(email="admin@kg.uz", password="x", full_name="Platform 2")
+    def test_organizationless_email_is_globally_unique(self, db):
+        """
+        Tashkilotsiz foydalanuvchilarda email global unikal.
+
+        Bunday qator yozish uchun tor autentifikatsiya eshigi kerak:
+        RLS ostida `organization_id IS NULL` bo'lgan `user` qatori hech
+        qanday tenant kontekstiga tegishli emas. Amalda vendor xodimlari
+        `accounts.User` da EMAS, alohida `platform_user` jadvalida
+        yashaydi (ADR-10) — bu cheklov shu ajratishni qo'llab-quvvatlaydi.
+        """
+        with auth_lookup_context():
+            User.objects.create_user(email="admin@kg.uz", password="x", full_name="Platform")
+            with pytest.raises(IntegrityError), transaction.atomic():
+                User.objects.create_user(email="admin@kg.uz", password="x", full_name="Platform 2")
 
 
 class TestOrganizationImmutabilityTrigger:
@@ -114,4 +127,5 @@ class TestDefaultManagerIsScoped:
                 User.objects.create_user(
                     email=f"x@{org.slug}.uz", password="x", full_name="X", organization=org
                 )
-        assert User.auth_objects.count() == 2
+        with auth_lookup_context():
+            assert User.auth_objects.count() == 2

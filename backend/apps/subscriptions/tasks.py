@@ -19,7 +19,7 @@ from typing import Any
 from celery import shared_task
 from django.utils import timezone
 
-from apps.core.tenancy import organization_context
+from apps.core.tenancy import organization_context, platform_context
 from apps.subscriptions import services
 
 logger = logging.getLogger(__name__)
@@ -35,11 +35,15 @@ __all__ = [
 def _live_subscriptions() -> Any:
     from apps.subscriptions.models import Subscription, SubscriptionStatus
 
-    return (
-        Subscription.all_objects.exclude(status=SubscriptionStatus.CANCELLED)
-        .select_related("plan", "organization")
-        .order_by("created_at")
-    )
+    # Barcha tenantlar bo'ylab — platforma tekisligi. `subscription`
+    # metama'lumot jadvali, shuning uchun bu ruxsat etilgan; bolalar
+    # yoki to'lovlar bu rejimda baribir ko'rinmaydi.
+    with platform_context():
+        return list(
+            Subscription.all_objects.exclude(status=SubscriptionStatus.CANCELLED)
+            .select_related("plan", "organization")
+            .order_by("created_at")
+        )
 
 
 @shared_task(name="subscriptions.record_daily_peak")

@@ -18,7 +18,7 @@ from celery import shared_task
 from django.core.files.base import ContentFile
 from django.utils import timezone
 
-from apps.core.tenancy import organization_context
+from apps.core.tenancy import organization_context, platform_context
 from apps.reports import exporters, selectors
 from apps.reports.models import ExportStatus, ReportExport
 
@@ -76,19 +76,32 @@ def _run_report(report_type: str, organization_id: Any, params: dict[str, Any]) 
 
 
 @shared_task(name="reports.generate_export")
-def generate_export(export_id: str) -> str:
+def generate_export(export_id: str, organization_id: str | None = None) -> str:
     """
     Eksportni tayyorlaydi va faylni saqlaydi.
+
+    `organization_id` argument sifatida uzatiladi. Avval u yozuvning
+    o'zidan o'qilardi — lekin RLS ostida bu ishlamaydi: kontekstsiz
+    ulanish yozuvni umuman ko'rmaydi va vazifa "topilmadi" deb
+    qaytarardi. Ya'ni foydalanuvchi eksport so'raydi, xato ham
+    chiqmaydi, fayl ham kelmaydi.
+
+    Endi tenant vazifa argumentida — bu to'g'riroq ham: ishchi qaysi
+    tashkilot uchun ishlayotganini BILISHI kerak, uni bazadan taxmin
+    qilib olmasligi.
 
     Xato bo'lsa yozuv `failed` holatiga o'tadi va sabab saqlanadi —
     "eksport bosdim, hech narsa bo'lmadi" degan holat qolmasligi kerak.
     """
-    export = ReportExport.all_objects.filter(pk=export_id).first()
-    if export is None:
-        logger.warning("Eksport topilmadi: %s", export_id)
+    if organization_id is None:
+        logger.warning("Eksport uchun tashkilot ko'rsatilmagan: %s", export_id)
         return "missing"
 
-    with organization_context(export.organization_id):
+    with organization_context(organization_id):
+        export = ReportExport.objects.filter(pk=export_id).first()
+        if export is None:
+            logger.warning("Eksport topilmadi: %s", export_id)
+            return "missing"
         export.status = ExportStatus.RUNNING
         export.save(update_fields=["status", "updated_at"])
         try:
@@ -128,7 +141,9 @@ def send_debt_reminders() -> dict[str, int]:
 
     sent = 0
     organizations = 0
-    for organization in Organization.objects.filter(is_active=True):
+    with platform_context():
+        all_organizations = list(Organization.objects.filter(is_active=True))
+    for organization in all_organizations:
         with organization_context(organization.id):
             if not get_setting(key="notifications.sms_enabled"):
                 continue
@@ -156,7 +171,9 @@ def recompute_balances() -> dict[str, int]:
 
     checked = 0
     drifted = 0
-    for organization in Organization.objects.filter(is_active=True):
+    with platform_context():
+        all_organizations = list(Organization.objects.filter(is_active=True))
+    for organization in all_organizations:
         with organization_context(organization.id):
             for child in Child.objects.all():
                 before = child.balance

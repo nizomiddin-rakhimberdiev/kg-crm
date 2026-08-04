@@ -15,7 +15,7 @@ from typing import Any
 from celery import shared_task
 from django.utils import timezone
 
-from apps.core.tenancy import organization_context
+from apps.core.tenancy import organization_context, platform_context
 from apps.finance import services
 from apps.organizations.models import Organization
 
@@ -41,9 +41,13 @@ def generate_monthly_invoices_task(
     year = period_year or today.year
     month = period_month or today.month
 
-    organizations = Organization.objects.filter(is_active=True)
+    # Tashkilotlar bo'ylab aylanish — PLATFORMA tekisligidagi amal.
+    # RLS ostida uni ochiq so'rash kerak, va bu to'g'ri: cross-tenant
+    # sikl kodda ko'rinib tursin (docs/03 §6.3).
+    with platform_context():
+        organizations = list(Organization.objects.filter(is_active=True))
     if organization_id:
-        organizations = organizations.filter(pk=organization_id)
+        organizations = [o for o in organizations if str(o.id) == str(organization_id)]
 
     results: list[dict[str, Any]] = []
     for organization in organizations:
@@ -64,7 +68,9 @@ def generate_monthly_invoices_task(
 def mark_overdue_invoices_task() -> int:
     """Muddati o'tgan hisob-fakturalarni belgilaydi (har kuni)."""
     total = 0
-    for organization in Organization.objects.filter(is_active=True):
+    with platform_context():
+        organizations = list(Organization.objects.filter(is_active=True))
+    for organization in organizations:
         with organization_context(organization.id):
             total += services.mark_overdue_invoices(organization_id=organization.id)
     return total

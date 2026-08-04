@@ -20,6 +20,11 @@ pytestmark = pytest.mark.django_db
 
 
 def _log(tenant, action: str = "update", entity: str = "child") -> AuditLog:
+    with organization_context(tenant.organization.id):
+        return _create_log(tenant, action, entity)
+
+
+def _create_log(tenant, action: str, entity: str) -> AuditLog:
     return AuditLog.objects.create(
         organization=tenant.organization,
         actor=tenant.owner,
@@ -84,6 +89,9 @@ class TestIsolation:
         kirish tekisligi. `filter(organization_id=...)` ularni tabiiy
         ravishda chiqarib tashlaydi; bu test shuni qotiradi.
         """
+        # `organization` NULL — platforma tekisligidagi yozuv. U hech
+        # qanday tenant kontekstida ko'rinmaydi, va RLS buni bazada
+        # ta'minlaydi (ilova filtridan tashqari).
         AuditLog.objects.create(action="login_failed", actor_email="vendor@kg-crm.uz")
         rows = tenant_a.client().get(reverse("v1:audit-log-list")).json()["data"]
         assert all(row["actor_email"] != "vendor@kg-crm.uz" for row in rows)

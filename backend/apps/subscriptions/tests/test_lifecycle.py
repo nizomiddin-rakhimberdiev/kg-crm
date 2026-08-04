@@ -208,11 +208,14 @@ class TestMetering:
             correction = services.adjust_usage(
                 snapshot=snapshot, billable_children=70, note="Import xatosi tuzatildi"
             )
-            rows = UsageSnapshot.objects.filter(
+            # `count()` KONTEKST ICHIDA chaqiriladi: queryset dangasa,
+            # va tashqarida baholansa RLS uni bo'sh qaytaradi. Avval bu
+            # tasodifan ishlagan edi.
+            row_count = UsageSnapshot.objects.filter(
                 period_year=snapshot.period_year, period_month=snapshot.period_month
-            )
+            ).count()
 
-        assert rows.count() == 2
+        assert row_count == 2
         assert correction.measurement_method == MeasurementMethod.MANUAL_ADJUSTMENT
         assert correction.note
 

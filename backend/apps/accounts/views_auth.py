@@ -19,6 +19,7 @@ from rest_framework_simplejwt.tokens import RefreshToken as JWTRefreshToken
 from apps.accounts import services
 from apps.accounts.authentication import (
     authenticate_candidates,
+    hydrate_user,
     issue_pending_token,
     issue_token_pair,
     read_pending_token,
@@ -31,7 +32,7 @@ from apps.accounts.serializers import (
     SignupSerializer,
 )
 from apps.audit import services as audit
-from apps.core.tenancy import organization_context
+from apps.core.tenancy import auth_lookup_context, organization_context
 from apps.core.typing import request_user
 
 __all__ = [
@@ -197,15 +198,14 @@ class SelectOrganizationView(APIView):
         except TokenError:
             return _auth_error("Tanlov muddati tugadi. Qaytadan kiring.")
 
-        user = (
-            User.auth_objects.filter(
+        with auth_lookup_context():
+            user = User.auth_objects.filter(
                 email__iexact=payload.get("email", ""),
                 organization_id=serializer.validated_data["organization_id"],
                 is_active=True,
-            )
-            .select_related("organization", "role", "branch")
-            .first()
-        )
+            ).first()
+        if user is not None:
+            user = hydrate_user(user)
         if user is None:
             # Pending token to'g'ri, lekin tashkilot ro'yxatda yo'q edi.
             # Bir xil umumiy xato — mavjudlikni oshkor qilmaymiz.
@@ -224,7 +224,13 @@ class RefreshView(APIView):
         if not raw:
             return _auth_error("Refresh token ko'rsatilmagan.")
 
-        stored = services.RefreshToken.objects.filter(token_hash=services.hash_token(raw)).first()
+        # Refresh token — tenant hali noma'lum bo'lgan paytdagi qidiruv,
+        # xuddi login kabi. Tor eshik shuning uchun `refresh_token` ni
+        # ham qamraydi (docs/03 §6.3).
+        with auth_lookup_context():
+            stored = services.RefreshToken.objects.filter(
+                token_hash=services.hash_token(raw)
+            ).first()
         if stored is None or not stored.is_valid:
             # Bekor qilingan tokenni qayta ishlatish — o'g'irlangan sessiya
             # belgisi bo'lishi mumkin, shuning uchun jimgina rad etamiz.
@@ -235,11 +241,10 @@ class RefreshView(APIView):
         except TokenError:
             return _auth_error("Refresh token yaroqsiz.")
 
-        user = (
-            User.auth_objects.filter(pk=token["user_id"], is_active=True)
-            .select_related("organization", "role", "branch")
-            .first()
-        )
+        with auth_lookup_context():
+            user = User.auth_objects.filter(pk=token["user_id"], is_active=True).first()
+        if user is not None:
+            user = hydrate_user(user)
         if user is None:
             return _auth_error("Refresh token yaroqsiz.")
 

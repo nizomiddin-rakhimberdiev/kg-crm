@@ -345,6 +345,31 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 - Cross-tenant security review: attempt tenant escape via every endpoint, id enumeration, and the login oracle.
 - **Deliverable:** first paying customer can be onboarded; vendor access to any tenant is impossible without an audited, customer-visible grant.
 
+> **Status: delivered, except the legal gate — which is not code.**
+>
+> **RLS turned out to be the most valuable work in the project, because it exposed things no test had.** Turning on `FORCE ROW LEVEL SECURITY` made the entire suite run under the policies, and 63 tests failed. Nearly all were tests quietly reading across tenants without a context — but three were **real production bugs**:
+> - `_next_invoice_number()` searched for the last invoice number inside a tenant context. `all_objects` escapes the app filter but not the database policy, so the second customer to convert would have been handed a number that already existed and hit the unique constraint. The vendor sequence is a platform-plane concern and now says so.
+> - `generate_export()` looked up its own job row with no tenant context. Under RLS it found nothing and returned "missing" — the user clicks Export, gets no error, and no file. The worker now takes `organization_id` as an argument, which is more honest anyway: a worker should know whose work it is doing.
+> - Lazy querysets evaluated *outside* the context they were built in. Previously they worked by accident.
+>
+> **`FORCE` was the decision that made RLS real.** Postgres exempts a table's owner from its own policies unless forced, so the common deployment — app connects as the owner — would have had decorative policies and a false sense of safety. Forcing it also means the policies are exercised by 547 tests rather than the dozen that name them.
+>
+> **Fail-closed, like the rest of the tenancy layer.** `app_current_org()` returns `NULL` when the setting is unset, so a query with no context returns **no rows**, never all of them.
+>
+> **The vendor plane is enforced twice, independently.** The console has no endpoint that returns a child, guardian, payment, or attendance row — and the database refuses those tables in platform mode regardless. A compromised vendor account knows *who* the customers are; it cannot read a single child's record. `test_there_is_no_endpoint_that_lists_children` exists so that adding one later requires deleting a test first — deliberate, not incidental.
+>
+> **Signup is a platform-plane write.** RLS surfaced this immediately: creating an organization happens when no tenant exists yet. Rather than widen a policy, the call now asks for `platform_context()` by name — cross-tenant work should be greppable.
+>
+> **2FA is implemented, not imported.** TOTP (RFC 6238) is thirty lines against the standard library; one fewer dependency on the authentication path is worth writing them. Login failures return one identical message whichever factor was wrong.
+>
+> **The purge job deletes in a hand-written table order** rather than relying on `CASCADE`, and counts every row it removes. Three guards must pass: the organization must be cancelled, the 30-day export window must have elapsed, and the caller must type the slug exactly. The deletion itself leaves an audit row in the platform plane — the customer's own audit rows are deleted with everything else, because those are personal data too.
+>
+> **The security review is scenario-based, not pattern-based**: id enumeration (existing and missing ids return byte-identical responses), the login oracle (unknown email and wrong password are indistinguishable; signup never reveals that an email exists elsewhere), tenant escape (`organization_id` in the body is ignored, a forged token org is rejected, filters/search/ordering cannot cross), and privilege escalation (a cashier cannot promote themselves; a user cannot be moved between organizations — the DB trigger refuses).
+>
+> **Deliberately deferred: the vendor console UI.** The API is complete and verified end to end; at one to ten customers a browser front-end for it is the least valuable thing to build, and [§2](#2-team--roles) already says vendor dashboards are deferrable. The **customer-facing** half shipped, because that one is a trust feature: the audit page shows every vendor access with its reason and expiry.
+>
+> **Still open, and it blocks launch rather than the code:** the data-residency / hosting-jurisdiction decision ([01 §10](./01_Project_Vision.md)), plus the backup/restore drill and a browser-level E2E pass.
+
 ---
 
 ## 6. Milestones

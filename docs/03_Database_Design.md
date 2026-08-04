@@ -181,6 +181,22 @@ App-layer scoping is the primary control, but a single forgotten filter in a new
 
 RLS is a *policy addition*, not a migration, precisely because `organization_id` is present from the first migration. This is the payoff of deciding tenancy before any code exists.
 
+**Implemented in Sprint 11** (`apps/core/migrations/0002_row_level_security.py`). How it works:
+
+| Piece | Detail |
+|-------|--------|
+| Tenant id per connection | `organization_context()` sets both the `ContextVar` *and* the Postgres GUC `app.organization_id`, and clears the GUC on exit so a pooled connection never inherits the previous tenant. |
+| Policy | `USING (organization_id = app_current_org())`, where `app_current_org()` returns `NULL` when the GUC is unset — so **an unset context sees nothing**, matching `TenantScopeMissing`. |
+| `FORCE ROW LEVEL SECURITY` | Enabled on every protected table. Without it the table **owner bypasses RLS entirely**, which would make the policies decorative in exactly the deployment most projects run. It also means the whole test suite executes under RLS. |
+| Platform plane | `organization`, `subscription`, `usage_snapshot`, `subscription_invoice`, `subscription_payment` add `OR app_is_platform()`. **Operational tables do not** — children, payments and attendance stay invisible to the vendor even in platform mode ([04 §19](./04_Backend_API_Specification.md)). |
+| Auth door | `user` and `refresh_token` add `OR app_is_auth_lookup()`. Finding a user by email *is* the query that determines the tenant, so it cannot itself be tenant-scoped. The door is two tables wide and nothing else. |
+| `audit_log` | Read is strict; **write also permits `organization_id IS NULL`**. A failed login has no known organization, and refusing to write that row would discard exactly the evidence that matters most. |
+| Catalogue | `permission` and `subscription_plan` have no RLS — vendor reference data, identical for all tenants (§6.2). |
+
+> **Cross-tenant work is now explicit.** Anything that legitimately spans tenants — signup (there is no tenant yet), the nightly jobs, the platform console — must ask for `platform_context()` by name. That is the point: a cross-tenant loop should be visible in the code and greppable, not an accident of a missing filter.
+
+> **Deployment requirement.** The runtime database role should **not** own the tables. Migrations run as the owner; the application connects as a restricted role. `FORCE` makes RLS apply either way, but keeping ownership separate means a mistake in the policy set still cannot be escalated by the app's own connection.
+
 > **Why not schema-per-tenant or DB-per-tenant?** Both isolate better but make cross-organization vendor operations (usage metering, platform reporting, migrations across hundreds of tenants) painful and slow, and neither is needed at this scale. Shared-schema + RLS is the standard trade-off; the escape hatch is partition-by-organization or extracting a large tenant, and `organization_id` on every row keeps both open.
 
 ---

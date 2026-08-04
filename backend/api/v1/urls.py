@@ -13,6 +13,7 @@ from apps.accounts.views_auth import (
     SelectOrganizationView,
     SignupView,
 )
+from apps.platform.views import PlatformLoginView
 
 app_name = "v1"
 
@@ -30,9 +31,17 @@ auth_patterns = [
     path("auth/password/change", PasswordChangeView.as_view(), name="auth-password-change"),
 ]
 
+# Platforma kirishi ALOHIDA yo'lda (ADR-10): mijoz `/auth/login` ni,
+# vendor `/platform/auth/login` ni ishlatadi. Ikki yo'l, ikki jadval,
+# ikki token turi — ular hech qachon almashinmaydi.
+platform_patterns = [
+    path("platform/auth/login", PlatformLoginView.as_view(), name="platform-login"),
+]
+
 urlpatterns = [
     path("", ApiRootView.as_view(), name="root"),
     path("health", HealthCheckView.as_view(), name="health"),
     *auth_patterns,
+    *platform_patterns,
     *router.urls,
 ]

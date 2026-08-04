@@ -222,9 +222,13 @@ class TestDiscounts:
                 reason="Aka-uka",
             )
             invoice = services.issue_invoice(child=child, period_year=2026, period_month=7)
+            # Satrlarni KONTEKST ICHIDA sanaymiz: `invoice_line` ham RLS
+            # ostida (ota `invoice` orqali), ya'ni tashqarida so'rov
+            # bo'sh qaytadi.
+            line_count = invoice.lines.count()
 
         assert invoice.amount_due == Decimal("1200000.00")
-        assert invoice.lines.count() == 2  # tarif + chegirma satri
+        assert line_count == 2  # tarif + chegirma satri
 
     def test_fixed_discount_reduces_the_invoice(self, tenant_a, child):
         with organization_context(tenant_a.organization.id):

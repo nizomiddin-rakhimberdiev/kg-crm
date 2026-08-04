@@ -72,6 +72,8 @@ export const queryKeys = {
   auditLogs: (orgId: string, params?: Record<string, unknown>) =>
     ['org', orgId, 'audit-logs', params ?? {}] as const,
 
+  platformAccess: (orgId: string) => ['org', orgId, 'audit-logs', 'platform-access'] as const,
+
   notificationTemplates: (orgId: string) => ['org', orgId, 'notification-templates'] as const,
   notifications: (orgId: string, params?: Record<string, unknown>) =>
     ['org', orgId, 'notifications', params ?? {}] as const,

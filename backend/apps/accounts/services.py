@@ -26,7 +26,7 @@ from apps.accounts.constants import (
 from apps.accounts.models import Permission, RefreshToken, Role, RolePermission, User
 from apps.branches.models import Branch
 from apps.core.exceptions import BusinessRuleViolation
-from apps.core.tenancy import organization_context
+from apps.core.tenancy import organization_context, platform_context
 from apps.organizations.models import Organization
 
 __all__ = [
@@ -136,14 +136,19 @@ def register_organization(
     hisob-kitobi yo'q mijoz degani, va uni keyin qo'lda tuzatish kerak
     bo'lardi.
     """
-    slug = _unique_slug(organization_name)
-
-    organization = Organization.objects.create(
-        name=organization_name.strip(),
-        slug=slug,
-        contact_email=contact_email,
-        contact_phone=contact_phone,
-    )
+    # Tashkilot yaratish — PLATFORMA tekisligidagi amal: o'sha paytda
+    # hali hech qanday tenant yo'q, va `slug` global unikallik butun
+    # baza bo'ylab tekshiriladi. RLS buni ochiq so'rashga majbur qiladi
+    # (docs/03 §6.3) — va bu to'g'ri: cross-tenant amal kodda ko'rinib
+    # tursin.
+    with platform_context():
+        slug = _unique_slug(organization_name)
+        organization = Organization.objects.create(
+            name=organization_name.strip(),
+            slug=slug,
+            contact_email=contact_email,
+            contact_phone=contact_phone,
+        )
 
     with organization_context(organization.id):
         branch = Branch.objects.create(

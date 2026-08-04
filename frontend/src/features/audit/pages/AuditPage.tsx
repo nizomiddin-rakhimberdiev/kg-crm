@@ -8,7 +8,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ScrollText } from 'lucide-react'
+import { ScrollText, ShieldCheck } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { auditApi } from '@/features/dashboard/api'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -63,6 +63,15 @@ export default function AuditPage() {
     queryFn: () => auditApi.list(params),
   })
 
+  // Vendor kirishi ALOHIDA ko'rsatiladi, umumiy jurnalga qorishtirilmaydi:
+  // "bizning ma'lumotimizga kim qaraydi?" — bu boshqacha savol va u
+  // ko'zga tashlanib turishi kerak (ADR-10).
+  const platformQuery = useQuery({
+    queryKey: queryKeys.platformAccess(organizationId),
+    queryFn: auditApi.platformAccess,
+  })
+  const platformRows = platformQuery.data?.items ?? []
+
   const rows = data?.items ?? []
 
   return (
@@ -73,6 +82,42 @@ export default function AuditPage() {
           Kim, nima va qachon — o'zgartirib bo'lmaydigan yozuv.
         </p>
       </div>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-brand-600" />
+          <h2 className="text-sm font-semibold text-slate-900">Tizim provayderi kirishi</h2>
+        </div>
+        <p className="mt-1 text-xs text-slate-500">
+          KG-CRM xodimlari sukut bo'yicha sizning ma'lumotingizni ko'rmaydi. Har qanday kirish
+          vaqt bilan cheklanadi, sababi yoziladi va shu yerda ko'rinadi.
+        </p>
+
+        {platformRows.length === 0 ? (
+          <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            Hech qanday kirish qayd etilmagan.
+          </p>
+        ) : (
+          <ul className="mt-3 divide-y divide-slate-100 border-t border-slate-100">
+            {platformRows.map((row) => (
+              <li key={row.id} className="py-2.5 text-sm">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span className="font-medium text-slate-900">{row.actor_email}</span>
+                  <span className="text-xs text-slate-400">{when(row.created_at)}</span>
+                </div>
+                {typeof row.changes?.reason === 'string' && (
+                  <p className="mt-0.5 text-slate-600">Sabab: {row.changes.reason}</p>
+                )}
+                {typeof row.changes?.expires_at === 'string' && (
+                  <p className="text-xs text-slate-400">
+                    Amal qiladi: {when(row.changes.expires_at)} gacha
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <div className="flex flex-wrap items-center gap-2">
         {FILTERS.map(([key, label]) => (

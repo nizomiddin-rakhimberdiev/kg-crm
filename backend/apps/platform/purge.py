@@ -1,0 +1,196 @@
+"""
+Tashkilotni butunlay o'chirish (docs/03 §7, §21).
+
+Bu fayl loyihadagi eng xavfli kod. U **qaytarib bo'lmaydigan** amalni
+bajaradi, shuning uchun uchta himoya bor:
+
+1. **Eksport oynasi.** Bekor qilingan tashkilot 30 kun davomida faqat
+   o'qish rejimida qoladi va o'z ma'lumotini eksport qila oladi
+   (docs/01 §4.4). Bu muddat tugamaguncha o'chirish rad etiladi.
+2. **Ochiq tasdiq.** `confirm_slug` tashkilot slug'i bilan aynan mos
+   kelishi kerak — "hammasini o'chir" tugmasini tasodifan bosib
+   bo'lmaydi.
+3. **Jadval tartibi qat'iy.** FK'lar `RESTRICT`, ya'ni noto'g'ri
+   tartibda o'chirish xato beradi — bu yaxshi. Lekin xatoga tayanish
+   o'rniga tartib shu yerda ochiq yozilgan va u testda tekshiriladi.
+
+**Nega `CASCADE` emas:** kaskad o'chirish jimgina ishlaydi va nimani
+o'chirganini aytmaydi. Bu yerda esa har bir jadval sanaladi va natija
+audit jurnaliga yoziladi — o'chirish ham hodisa, va u ham yozuv
+qoldirishi kerak.
+"""
+
+from __future__ import annotations
+
+import logging
+from datetime import timedelta
+from typing import Any
+
+from django.db import transaction
+from django.utils import timezone
+
+from apps.core.exceptions import BusinessRuleViolation
+from apps.core.tenancy import organization_context, platform_context
+
+logger = logging.getLogger(__name__)
+
+__all__ = ["EXPORT_WINDOW_DAYS", "PURGE_ORDER", "purge_organization"]
+
+# Bekor qilingandan keyin ma'lumot shuncha kun saqlanadi (docs/01 §4.4).
+EXPORT_WINDOW_DAYS = 30
+
+# O'chirish tartibi: BOLALARDAN OTAGA.
+#
+# Har bir qator o'zidan oldingi qatorlarga bog'liq bo'lishi mumkin,
+# shuning uchun tartib teskari — eng chekkadagi bog'liqliklardan
+# boshlanadi. Bu ro'yxat qo'lda yozilgan va bu ataylab: avtomatik
+# aniqlash "shekilli to'g'ri" bo'lardi, bu yerda esa "shekilli"
+# yetarli emas.
+PURGE_ORDER: tuple[str, ...] = (
+    # Moliyaviy tarix — eng chuqur bog'liqliklar
+    "apps.subscriptions.SubscriptionPayment",
+    "apps.subscriptions.SubscriptionInvoice",
+    "apps.subscriptions.UsageSnapshot",
+    "apps.subscriptions.Subscription",
+    "apps.finance.Payment",
+    "apps.finance.ChildLedgerEntry",
+    "apps.finance.Invoice",
+    "apps.finance.Discount",
+    "apps.finance.TariffPlan",
+    # Operatsion yozuvlar
+    "apps.attendance.AttendanceRecord",
+    "apps.payroll.PayrollItem",
+    "apps.payroll.PayrollRun",
+    "apps.hr.Employee",
+    "apps.hr.Position",
+    "apps.inventory.StockMovement",
+    "apps.inventory.Product",
+    "apps.inventory.ProductCategory",
+    "apps.inventory.Supplier",
+    "apps.inventory.Warehouse",
+    "apps.expenses.Expense",
+    "apps.expenses.ExpenseCategory",
+    "apps.notifications.Notification",
+    "apps.notifications.NotificationTemplate",
+    "apps.reports.ReportExport",
+    "apps.settings_app.SystemSetting",
+    # CRM
+    "apps.children.Enrollment",
+    "apps.children.ChildGuardian",
+    "apps.children.Child",
+    "apps.children.Guardian",
+    "apps.children.Group",
+    # Kirish
+    "apps.accounts.User",
+    "apps.accounts.Role",
+    "apps.branches.Branch",
+)
+
+
+# `organization_id` ustuni YO'Q jadvallar — ular ota orqali bog'langan
+# (docs/03 §21). Ularni ota-jadvaldan OLDIN o'chirish kerak, aks holda
+# `RESTRICT` bloklaydi. Filtr yo'li shu yerda ochiq yozilgan, chunki
+# uni taxmin qilib bo'lmaydi.
+DERIVED_PURGE: dict[str, str] = {
+    "apps.finance.InvoiceLine": "invoice__organization_id",
+    "apps.accounts.RefreshToken": "user__organization_id",
+}
+
+
+def _model(path: str) -> Any:
+    from django.apps import apps as django_apps
+
+    module, name = path.rsplit(".", 1)
+    app_label = module.split(".")[-1]
+    return django_apps.get_model(app_label, name)
+
+
+@transaction.atomic
+def purge_organization(
+    *, organization_id: Any, confirm_slug: str, actor: Any = None, force: bool = False
+) -> dict[str, int]:
+    """
+    Tashkilotni va uning butun ma'lumotini o'chiradi.
+
+    `force=True` faqat sud qarori yoki GDPR-tipidagi talab uchun:
+    eksport oynasini chetlab o'tadi. Uni ishlatish audit jurnalida
+    alohida ko'rinadi.
+    """
+    from apps.audit.models import AuditLog
+    from apps.organizations.models import Organization
+    from apps.platform.models import SupportGrant
+
+    with platform_context():
+        organization = Organization.objects.filter(pk=organization_id).first()
+        if organization is None:
+            raise BusinessRuleViolation("Tashkilot topilmadi.")
+
+        if confirm_slug != organization.slug:
+            raise BusinessRuleViolation(
+                "Tasdiq mos kelmadi. O'chirish uchun tashkilot slug'ini aynan kiriting."
+            )
+
+        if organization.is_active and not force:
+            raise BusinessRuleViolation(
+                "Faol tashkilotni o'chirib bo'lmaydi. Avval obunani bekor qiling."
+            )
+
+        cutoff = timezone.now() - timedelta(days=EXPORT_WINDOW_DAYS)
+        if not force and organization.updated_at > cutoff:
+            raise BusinessRuleViolation(
+                f"Eksport oynasi hali tugamagan ({EXPORT_WINDOW_DAYS} kun). "
+                f"Mijoz o'z ma'lumotini yuklab olish huquqiga ega."
+            )
+
+    deleted: dict[str, int] = {}
+    with organization_context(organization.id):
+        for path, lookup in DERIVED_PURGE.items():
+            model = _model(path)
+            manager = getattr(model, "all_objects", None) or model._default_manager
+            count, _ = manager.filter(**{lookup: organization.id}).delete()
+            if count:
+                deleted[model._meta.db_table] = count
+
+        for path in PURGE_ORDER:
+            model = _model(path)
+            manager = getattr(model, "all_objects", None) or model._default_manager
+            count, _ = manager.filter(organization_id=organization.id).delete()
+            if count:
+                deleted[model._meta.db_table] = count
+
+    with platform_context():
+        deleted["support_grant"] = SupportGrant.objects.filter(
+            organization_id=organization.id
+        ).delete()[0]
+
+        # Audit jurnali ENG OXIRIDA va u ham o'chiriladi: mijozning
+        # ma'lumotini o'chirib, uning kim nima qilgani haqidagi
+        # yozuvlarini saqlab qolish ma'nosiz — ular ham shaxsiy
+        # ma'lumot (ism, email, IP).
+        #
+        # Lekin O'CHIRISH FAKTI qoladi: quyidagi yozuv `organization`
+        # siz, ya'ni platforma tekisligida yoziladi va u o'chirilmaydi.
+        deleted["audit_log"] = AuditLog.objects.filter(organization_id=organization.id).delete()[0]
+
+        slug = organization.slug
+        name = organization.name
+        organization.delete()
+        deleted["organization"] = 1
+
+        AuditLog.objects.create(
+            organization=None,
+            actor=None,
+            actor_email=getattr(actor, "email", "") or "system",
+            action="delete",
+            entity_type="organization",
+            entity_id=organization_id,
+            changes={
+                "slug": slug,
+                "name": name,
+                "forced": force,
+                "deleted_rows": deleted,
+            },
+        )
+
+    logger.warning("Tashkilot o'chirildi: %s (%s)", name, slug)
+    return deleted

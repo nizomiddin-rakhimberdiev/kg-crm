@@ -55,6 +55,7 @@ LOCAL_APPS = [
     "apps.settings_app",
     "apps.reports",
     "apps.subscriptions",
+    "apps.platform",
     "apps.audit",
 ]
 

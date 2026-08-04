@@ -6,6 +6,7 @@ import pytest
 from django.urls import reverse
 
 from apps.audit.models import AuditLog
+from apps.core.tenancy import organization_context, platform_context
 
 pytestmark = pytest.mark.django_db
 
@@ -24,9 +25,21 @@ class TestAuthAuditing:
             },
             format="json",
         )
-        entry = AuditLog.objects.filter(action="signup").first()
-        assert entry is not None
-        assert entry.organization is not None
+        # `signup` yozuvi TASHKILOTGA tegishli, shuning uchun uni
+        # o'sha tashkilot kontekstida o'qiymiz. Platforma rejimi bu
+        # yerda yordam bermaydi va bermasligi ham kerak: vendor
+        # mijozning audit qatorlarini ko'rmaydi (ADR-10).
+        from apps.organizations.models import Organization
+
+        with platform_context():
+            organization = Organization.objects.get(contact_email="owner@audit.uz")
+        with organization_context(organization.id):
+            entry = AuditLog.objects.filter(action="signup").first()
+            assert entry is not None
+            # `entry.organization` EMAS, `organization_id`: FK'ga
+            # murojaat kontekstdan tashqarida dangasa so'rov yuborardi
+            # va RLS uni bo'sh qaytarardi.
+            assert entry.organization_id == organization.id
         assert entry.entity_type == "organization"
 
     def test_successful_login_is_logged(self, api_client, tenant_a):
@@ -35,7 +48,8 @@ class TestAuthAuditing:
             {"email": tenant_a.owner.email, "password": PASSWORD},
             format="json",
         )
-        assert AuditLog.objects.filter(action="login", actor=tenant_a.owner).exists()
+        with organization_context(tenant_a.organization.id):
+            assert AuditLog.objects.filter(action="login", actor=tenant_a.owner).exists()
 
     def test_failed_login_is_logged_without_actor(self, api_client):
         """
@@ -50,7 +64,11 @@ class TestAuthAuditing:
             {"email": "yoq@example.uz", "password": "xato"},
             format="json",
         )
-        entry = AuditLog.objects.filter(action="login_failed").first()
+        # `organization` NULL — kim urinayotgani noma'lum. Bunday
+        # qatorni MIJOZ ko'rmaydi (ADR-10), shuning uchun uni o'qish
+        # ham kontekstsiz, filtrsiz manager orqali bo'ladi.
+        with platform_context(), organization_context(None):
+            entry = AuditLog.objects.filter(action="login_failed").first()
         assert entry is not None
         assert entry.actor is None
         assert entry.actor_email == "yoq@example.uz"
