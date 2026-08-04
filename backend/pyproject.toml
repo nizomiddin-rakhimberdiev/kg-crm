@@ -23,6 +23,8 @@ ignore = [
 "*/tests/*" = ["S105", "S106"]  # testlarda qattiq yozilgan parol normal
 "conftest.py" = ["S105", "S106"]
 "config/settings/*.py" = ["F403", "F405"]  # sozlamalarda star-import qasddan
+# Demo seed'da `random` — ko'rsatish ma'lumoti uchun, kriptografiya emas.
+"apps/core/management/commands/seed_demo.py" = ["S311"]
 
 [tool.mypy]
 python_version = "3.13"

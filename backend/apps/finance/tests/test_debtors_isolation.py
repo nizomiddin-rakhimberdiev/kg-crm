@@ -18,6 +18,7 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
+from django.db.models import Sum
 from django.urls import reverse
 
 from apps.children.models import Child
@@ -97,3 +98,55 @@ def test_total_debt_never_includes_another_tenant(tenant_a, tenant_b):
     body = tenant_a.client().get(reverse("v1:debtor-list")).json()["data"]
     assert body["total_debt"] == "1500000.00"
     assert len(body["results"]) == 1
+
+
+def test_balance_is_not_multiplied_by_the_invoice_count(tenant_a):
+    """
+    Bir necha oylik tarixi bor bolaning qarzi TO'G'RI hisoblanishi kerak.
+
+    Bu regressiya testi: `debtor_queryset` bitta `annotate()` ichida
+    ikkita ko'p qiymatli bog'lanish (`ledger_entries` va `invoices`)
+    bo'yicha agregat yozardi, va SQL ularni bir-biriga ko'paytirardi —
+    to'rt oylik tarixi bor bola qarzi TO'RT BAROBAR ko'rinardi.
+
+    Mavjud testlarning hech biri buni ko'rmadi, chunki har birida
+    bolaga bitta faktura bor edi va ko'paytuvchi 1 ga teng bo'lgan.
+    Shuning uchun bu test ataylab UCHTA davr yaratadi.
+    """
+    from apps.finance.models import ChildLedgerEntry
+    from apps.finance.selectors import debtor_queryset
+
+    with organization_context(tenant_a.organization.id):
+        tariff = TariffPlan.objects.create(
+            organization=tenant_a.organization,
+            branch=tenant_a.branch,
+            name="Oylik tarif",
+            amount=Decimal("1000000"),
+        )
+        child = Child.objects.create(
+            organization=tenant_a.organization,
+            branch=tenant_a.branch,
+            first_name="Uch",
+            last_name="Oylik",
+            date_of_birth=date(2021, 3, 14),
+            gender="male",
+            tariff=tariff,
+        )
+
+        for month in (5, 6, 7):
+            finance.issue_invoice(child=child, period_year=2026, period_month=month)
+        # Bittasini to'laymiz — qoldiq 2 000 000 bo'lishi kerak.
+        finance.record_payment(child=child, amount=Decimal("1000000"), method="cash")
+
+        debit = ChildLedgerEntry.objects.filter(child=child, direction="debit").aggregate(
+            total=Sum("amount")
+        )["total"]
+        credit = ChildLedgerEntry.objects.filter(child=child, direction="credit").aggregate(
+            total=Sum("amount")
+        )["total"]
+        row = debtor_queryset().get(pk=child.pk)
+
+        assert debit - credit == Decimal("2000000.00")
+        assert row.ledger_balance == Decimal("2000000.00"), (
+            f"Balans {row.ledger_balance} — hisob-fakturalar soniga ko'paytirilgan"
+        )

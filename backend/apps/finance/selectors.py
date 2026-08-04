@@ -13,7 +13,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 
-from django.db.models import Case, DecimalField, F, Min, Q, Sum, Value, When
+from django.db.models import Case, DecimalField, F, OuterRef, Subquery, Sum, Value, When
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -30,8 +30,35 @@ def debtor_queryset(*, min_amount: Decimal | None = None, overdue_only: bool = F
     Balans annotatsiya sifatida hisoblanadi (`child.balance` keshidan
     EMAS): kesh siljigan bo'lsa, qarzdorlar ro'yxati ham noto'g'ri
     bo'lardi va bu eng yomon joyda — pul talab qilishda — chiqardi.
+
+    ⚠️ **`oldest_overdue_date` ataylab `Subquery`, `Min()` emas.**
+
+    Bitta `annotate()` ichida ikkita KO'P QIYMATLI bog'lanish bo'yicha
+    agregat yozilsa (`ledger_entries` va `invoices`), SQL ularni bir-biriga
+    ko'paytiradi: N ta ledger qatori × M ta faktura = N×M qator, va
+    `Sum` M barobar oshib ketadi. Avval shunday edi — 4 oylik tarixi
+    bor bola qarzi TO'RT BAROBAR ko'rinardi, ya'ni ota-onaga to'rt
+    barobar ko'p summa haqida SMS ketardi.
+
+    Testlar buni ko'rmadi, chunki har birida bolaga bitta faktura bor
+    edi va ko'paytuvchi 1 ga teng bo'lgan. Demo ma'lumoti (4 oy tarix)
+    uni birinchi urinishdayoq ochib berdi.
     """
     money: DecimalField = DecimalField(max_digits=12, decimal_places=2)
+
+    overdue_invoices = (
+        Invoice.objects.filter(
+            child=OuterRef("pk"),
+            status__in=[
+                InvoiceStatus.ISSUED,
+                InvoiceStatus.PARTIALLY_PAID,
+                InvoiceStatus.OVERDUE,
+            ],
+            due_date__lt=timezone.localdate(),
+        )
+        .order_by("due_date")
+        .values("due_date")[:1]
+    )
 
     queryset = (
         Child.objects.filter(is_active=True)
@@ -52,17 +79,7 @@ def debtor_queryset(*, min_amount: Decimal | None = None, overdue_only: bool = F
                 ),
                 Value(Decimal("0"), output_field=money),
             ),
-            oldest_overdue_date=Min(
-                "invoices__due_date",
-                filter=Q(
-                    invoices__status__in=[
-                        InvoiceStatus.ISSUED,
-                        InvoiceStatus.PARTIALLY_PAID,
-                        InvoiceStatus.OVERDUE,
-                    ],
-                    invoices__due_date__lt=timezone.localdate(),
-                ),
-            ),
+            oldest_overdue_date=Subquery(overdue_invoices),
         )
         .filter(ledger_balance__gt=Decimal("0"))
     )
