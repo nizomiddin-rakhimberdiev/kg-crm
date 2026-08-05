@@ -105,15 +105,60 @@ class TestPoliciesAreInstalled:
             f"`apps/core/rls.py` ga qo'shing va migratsiya yozing."
         )
 
-    def test_rls_is_enabled_not_just_defined(self):
+    def test_rls_is_enabled_AND_forced(self):
+        """
+        `FORCE` ham bo'lishi SHART.
+
+        Postgres jadval EGASINI o'z siyosatlaridan ozod qiladi. Ilova
+        egasi roli bilan ulansa — eng keng tarqalgan deployment —
+        siyosatlar bor bo'lib turadi, lekin hech narsa qilmaydi.
+        Tashqaridan hammasi joyida ko'rinadi.
+
+        Bu aynan shu loyihada sodir bo'lgan: migratsiya qo'llanilgandan
+        keyin unga `FORCE` qo'shildi, va allaqachon migratsiya qilingan
+        baza eski holatda qoldi. `check_rls` buyrug'i shu uchun bor.
+        """
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT relname FROM pg_class WHERE relrowsecurity = true AND relkind = 'r'"
+                """
+                SELECT relname, relforcerowsecurity
+                FROM pg_class
+                WHERE relrowsecurity = true AND relkind = 'r'
+                """
             )
-            enabled = {row[0] for row in cursor.fetchall()}
-        assert "child" in enabled
-        assert "payment" in enabled
-        assert "child_ledger_entry" in enabled
+            rows = dict(cursor.fetchall())
+
+        for table in ("child", "payment", "child_ledger_entry", "user", "organization"):
+            assert table in rows, f"{table}: RLS yoqilmagan"
+            assert rows[table], f"{table}: FORCE yo'q — egasi siyosatni chetlab o'tadi"
+
+    def test_the_generated_sql_forces_every_table(self):
+        """`check_rls --fix` va migratsiya bir xil SQL'dan foydalanadi."""
+        from apps.core.rls import build_policy_sql
+
+        sql = build_policy_sql()
+        for table in (*OPERATIONAL_TABLES, *METADATA_TABLES, *DERIVED_TABLES):
+            quoted = f'"{table}"'
+            assert f"ALTER TABLE {quoted} FORCE ROW LEVEL SECURITY;" in sql, (
+                f"{table} uchun FORCE generatsiya qilinmagan"
+            )
+
+    def test_check_command_passes_on_a_correct_database(self):
+        """
+        `check_rls` toza bazada muvaffaqiyat qaytaradi.
+
+        Bu testning qiymati teskarisida: agar kimdir siyosat ro'yxatiga
+        jadval qo'shib, migratsiya yozishni unutsa, buyruq deployda
+        yiqiladi — va shu test buyruqning o'zi ishlayotganini
+        kafolatlaydi.
+        """
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        out = StringIO()
+        call_command("check_rls", stdout=out)
+        assert "RLS kuchda" in out.getvalue()
 
 
 class TestFailClosed:

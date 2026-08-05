@@ -197,6 +197,12 @@ RLS is a *policy addition*, not a migration, precisely because `organization_id`
 
 > **Deployment requirement.** The runtime database role should **not** own the tables. Migrations run as the owner; the application connects as a restricted role. `FORCE` makes RLS apply either way, but keeping ownership separate means a mistake in the policy set still cannot be escalated by the app's own connection.
 
+> **`python manage.py check_rls` must run after every `migrate`, and its exit code must gate the deploy.**
+>
+> Django marks a migration applied and never runs it again. If the migration file is later edited — a table added to the policy set, `FORCE` switched on — an **already-migrated database silently keeps the old state**, and nothing reports it. That is not hypothetical: it happened here. The development database carried the policies but not `FORCE`, so the owner connection bypassed them entirely while every screen and every test looked correct. It surfaced only because a console query returned another organization's rows.
+>
+> Tests cannot catch this class of problem: they build a fresh database every run, where the migration always executes in full. The gap exists only in a **live** database, so only a live database can be asked. `check_rls` asks it — per table: RLS enabled, `FORCE` set, policy present — and `--fix` reapplies the policy SQL, which both it and the migration import from `apps/core/rls.py` so the two can never drift apart.
+
 > **Why not schema-per-tenant or DB-per-tenant?** Both isolate better but make cross-organization vendor operations (usage metering, platform reporting, migrations across hundreds of tenants) painful and slow, and neither is needed at this scale. Shared-schema + RLS is the standard trade-off; the escape hatch is partition-by-organization or extracting a large tenant, and `organization_id` on every row keeps both open.
 
 ---

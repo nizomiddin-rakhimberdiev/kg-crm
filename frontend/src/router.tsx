@@ -1,4 +1,12 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
+import { PlatformAuthProvider } from './features/platform/PlatformAuthProvider'
+import { PlatformLayout } from './features/platform/components/PlatformLayout'
+import PlatformLoginPage from './features/platform/pages/PlatformLoginPage'
+import PlatformDashboardPage from './features/platform/pages/PlatformDashboardPage'
+import PlatformOrganizationsPage from './features/platform/pages/PlatformOrganizationsPage'
+import PlatformOrganizationPage from './features/platform/pages/PlatformOrganizationPage'
+import PlatformInvoicesPage from './features/platform/pages/PlatformInvoicesPage'
+import PlatformGrantsPage from './features/platform/pages/PlatformGrantsPage'
 import { AppLayout } from './components/layout/AppLayout'
 import { PermissionRoute, ProtectedRoute, PublicOnlyRoute } from './app/routes/ProtectedRoute'
 import LoginPage from './features/auth/pages/LoginPage'
@@ -29,6 +37,32 @@ import SettingsPage from './features/settings/pages/SettingsPage'
  * ruxsatsiz so'rov `403`, begona tashkilotniki `404` oladi.
  */
 export const router = createBrowserRouter([
+  // --- Vendor tekisligi (ADR-10) ---
+  //
+  // Mijoz daraxtidan BUTUNLAY alohida: o'z provayderi, o'z tokeni, o'z
+  // qobig'i. Ular kesishmaydi — `AuthProvider` bu yerda umuman
+  // ishlamaydi va `PlatformAuthProvider` mijoz sahifalarida.
+  {
+    path: '/platform',
+    element: (
+      <PlatformAuthProvider>
+        <Outlet />
+      </PlatformAuthProvider>
+    ),
+    children: [
+      { path: 'login', element: <PlatformLoginPage /> },
+      {
+        element: <PlatformLayout />,
+        children: [
+          { index: true, element: <PlatformDashboardPage /> },
+          { path: 'organizations', element: <PlatformOrganizationsPage /> },
+          { path: 'organizations/:organizationId', element: <PlatformOrganizationPage /> },
+          { path: 'invoices', element: <PlatformInvoicesPage /> },
+          { path: 'grants', element: <PlatformGrantsPage /> },
+        ],
+      },
+    ],
+  },
   {
     element: <PublicOnlyRoute />,
     children: [
