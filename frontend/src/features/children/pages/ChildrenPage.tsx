@@ -9,15 +9,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search, Trash2, Upload, Users } from 'lucide-react'
+import { Pencil, Phone, Plus, Search, Trash2, Upload, Users } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { useBranchScope } from '@/app/providers/BranchProvider'
 import { childrenApi, groupsApi, type ChildInput } from '@/features/children/api'
 import { ImportWizard } from '@/features/children/components/ImportWizard'
 import { queryKeys } from '@/lib/api/queryKeys'
-import { ApiError } from '@/lib/api/types'
+import { ApiError, type Child } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
-import { cn } from '@/lib/utils'
+import { avatarTone, cn, initials } from '@/lib/utils'
 
 const STATUS_LABELS: Record<string, string> = {
   prospect: 'Nomzod',
@@ -45,9 +45,42 @@ export default function ChildrenPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [showImport, setShowImport] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  // `null` — yangi bola qo'shilyapti; obyekt — mavjudi tahrirlanyapti.
+  const [editing, setEditing] = useState<Child | null>(null)
   const [form, setForm] = useState<ChildInput>(EMPTY_FORM)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
+
+  const closeForm = () => {
+    setShowForm(false)
+    setEditing(null)
+    setForm(EMPTY_FORM)
+    setFieldErrors({})
+    setError(null)
+  }
+
+  const openCreate = () => {
+    if (showForm && !editing) return closeForm()
+    setEditing(null)
+    setForm(EMPTY_FORM)
+    setFieldErrors({})
+    setError(null)
+    setShowForm(true)
+  }
+
+  const openEdit = (child: Child) => {
+    setEditing(child)
+    setForm({
+      first_name: child.first_name,
+      last_name: child.last_name,
+      middle_name: child.middle_name ?? '',
+      date_of_birth: child.date_of_birth,
+      gender: child.gender,
+    })
+    setFieldErrors({})
+    setError(null)
+    setShowForm(true)
+  }
 
   const params = {
     ...(search ? { search } : {}),
@@ -68,24 +101,43 @@ export default function ChildrenPage() {
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'children'] })
 
+  const handleError = (err: unknown) => {
+    if (err instanceof ApiError) {
+      setError(err.message)
+      setFieldErrors(err.fieldErrors())
+    } else {
+      setError('Xatolik yuz berdi.')
+    }
+  }
+
   const createMutation = useMutation({
     mutationFn: childrenApi.create,
     onSuccess: () => {
-      setForm(EMPTY_FORM)
-      setShowForm(false)
-      setError(null)
-      setFieldErrors({})
+      closeForm()
       void invalidate()
     },
-    onError: (err) => {
-      if (err instanceof ApiError) {
-        setError(err.message)
-        setFieldErrors(err.fieldErrors())
-      } else {
-        setError('Xatolik yuz berdi.')
-      }
-    },
+    onError: handleError,
   })
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<ChildInput> }) =>
+      childrenApi.update(id, payload),
+    onSuccess: () => {
+      closeForm()
+      void invalidate()
+    },
+    onError: handleError,
+  })
+
+  const saving = createMutation.isPending || updateMutation.isPending
+
+  const submitForm = () => {
+    if (editing) {
+      updateMutation.mutate({ id: editing.id, payload: form })
+    } else {
+      createMutation.mutate({ ...form, branch_id: selectedBranchId })
+    }
+  }
 
   const removeMutation = useMutation({ mutationFn: childrenApi.remove, onSuccess: invalidate })
 
@@ -122,7 +174,7 @@ export default function ChildrenPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setShowForm((v) => !v)}
+                onClick={openCreate}
                 className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
               >
                 <Plus className="h-4 w-4" />
@@ -139,14 +191,18 @@ export default function ChildrenPage() {
         </div>
       )}
 
-      {showForm && can('children.create') && (
+      {showForm && can(editing ? 'children.update' : 'children.create') && (
         <form
           onSubmit={(event) => {
             event.preventDefault()
-            createMutation.mutate({ ...form, branch_id: selectedBranchId })
+            submitForm()
           }}
           className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2"
         >
+          <h2 className="text-sm font-semibold text-slate-800 sm:col-span-2">
+            {editing ? `${editing.full_name} — tahrirlash` : 'Yangi bola'}
+          </h2>
+
           {(
             [
               ['last_name', 'Familiya', 'text'],
@@ -196,10 +252,17 @@ export default function ChildrenPage() {
           <div className="sm:col-span-2">
             <button
               type="submit"
-              disabled={createMutation.isPending}
+              disabled={saving}
               className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
             >
-              {createMutation.isPending ? 'Saqlanmoqda…' : 'Saqlash'}
+              {saving ? 'Saqlanmoqda…' : 'Saqlash'}
+            </button>
+            <button
+              type="button"
+              onClick={closeForm}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            >
+              Bekor qilish
             </button>
           </div>
         </form>
@@ -260,7 +323,7 @@ export default function ChildrenPage() {
 
         {childrenQuery.data && childrenQuery.data.items.length > 0 && (
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+            <thead className="border-b border-slate-100 bg-slate-50/70 text-left text-[11px] uppercase tracking-wider text-slate-400">
               <tr>
                 <th className="px-4 py-3 font-medium">Bola</th>
                 <th className="px-4 py-3 font-medium">Yosh</th>
@@ -275,16 +338,35 @@ export default function ChildrenPage() {
                 const primary =
                   child.guardians.find((g) => g.is_primary) ?? child.guardians[0] ?? null
                 return (
-                  <tr key={child.id} className="hover:bg-slate-50">
+                  <tr key={child.id} className="transition-colors hover:bg-slate-50/70">
                     <td className="px-4 py-3">
                       <Link
                         to={`/children/${child.id}`}
-                        className="font-medium text-slate-800 hover:text-brand-700 hover:underline"
+                        className="group/name flex items-center gap-3"
                       >
-                        {child.full_name}
+                        <span
+                          className={cn(
+                            'grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-bold',
+                            avatarTone(child.full_name),
+                          )}
+                        >
+                          {initials(child.full_name)}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium text-slate-800 transition-colors group-hover/name:text-brand-700">
+                            {child.last_name} {child.first_name}
+                          </span>
+                          {child.middle_name && (
+                            <span className="block truncate text-xs text-slate-400">
+                              {child.middle_name}
+                            </span>
+                          )}
+                        </span>
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{child.age_years}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-slate-600 tabular-nums">
+                      {child.age_years} yosh
+                    </td>
                     <td className="px-4 py-3">
                       {can('children.update') ? (
                         <select
@@ -311,36 +393,62 @@ export default function ChildrenPage() {
                     <td className="px-4 py-3 text-slate-600">
                       {primary ? (
                         <>
-                          <p>{primary.guardian.full_name}</p>
-                          <p className="text-xs text-slate-400">{primary.guardian.phone}</p>
+                          <p className="truncate">{primary.guardian.full_name}</p>
+                          <a
+                            href={`tel:${primary.guardian.phone}`}
+                            className="mt-0.5 flex items-center gap-1 text-xs text-slate-400 transition-colors hover:text-brand-600"
+                          >
+                            <Phone className="h-3 w-3" />
+                            {primary.guardian.phone}
+                          </a>
                         </>
                       ) : (
-                        '—'
+                        <span className="text-slate-300">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
                       <span
                         className={cn(
-                          'rounded-full px-2 py-0.5 text-xs font-medium',
+                          'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
                           child.enrollment_status === 'active'
                             ? 'bg-emerald-50 text-emerald-700'
                             : 'bg-slate-100 text-slate-500',
                         )}
                       >
+                        <span
+                          className={cn(
+                            'h-1.5 w-1.5 rounded-full',
+                            child.enrollment_status === 'active'
+                              ? 'bg-emerald-500'
+                              : 'bg-slate-400',
+                          )}
+                        />
                         {STATUS_LABELS[child.enrollment_status] ?? child.enrollment_status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      {can('children.delete') && (
-                        <button
-                          type="button"
-                          onClick={() => removeMutation.mutate(child.id)}
-                          className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                          title="Arxivga o'tkazish"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        {can('children.update') && (
+                          <button
+                            type="button"
+                            onClick={() => openEdit(child)}
+                            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                            title="Tahrirlash"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        )}
+                        {can('children.delete') && (
+                          <button
+                            type="button"
+                            onClick={() => removeMutation.mutate(child.id)}
+                            className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                            title="Arxivga o'tkazish"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )

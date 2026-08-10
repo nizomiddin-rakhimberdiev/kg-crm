@@ -8,8 +8,9 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, ChevronRight, Phone, X } from 'lucide-react'
+import { AlertTriangle, ChevronRight, Phone } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { Modal } from '@/components/ui/Modal'
 import { debtorsApi } from '@/features/payments/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
@@ -26,24 +27,15 @@ function StatementDrawer({ childId, onClose }: { childId: string; onClose: () =>
   })
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-      <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-        <div className="mb-4 flex items-start justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">
-              {query.data?.child.full_name ?? 'Ko\'chirma'}
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Moliyaviy ko'chirma — har bir harakat ledger'dan
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
-          >
-            <X className="h-4 w-4" />
-          </button>
+    <Modal open onClose={onClose} className="max-w-2xl">
+      <div className="p-6">
+        <div className="mb-4 pr-10">
+          <h2 className="text-lg font-bold text-slate-900">
+            {query.data?.child.full_name ?? 'Ko\'chirma'}
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Moliyaviy ko'chirma — har bir harakat ledger'dan
+          </p>
         </div>
 
         {query.isPending && (
@@ -92,7 +84,7 @@ function StatementDrawer({ childId, onClose }: { childId: string; onClose: () =>
           </>
         )}
       </div>
-    </div>
+    </Modal>
   )
 }
 

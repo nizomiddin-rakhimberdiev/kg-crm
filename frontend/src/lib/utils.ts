@@ -28,3 +28,38 @@ export function formatSigned(value: number): string {
   const sign = value > 0 ? '+' : value < 0 ? '-' : ''
   return `${sign}${formatMoney(Math.abs(value))}`
 }
+
+/** Bosh harflar: "Abdullayev Diyor" → "AD". */
+export function initials(name: string): string {
+  return (
+    name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0] ?? '')
+      .join('')
+      .toUpperCase() || '—'
+  )
+}
+
+/**
+ * Nomga qarab BARQAROR rang tanlaydi (avatar va nishonlar uchun).
+ *
+ * Tasodifiy emas, xesh orqali: bitta guruh yoki bola har safar bir xil
+ * rangda ko'rinadi. Ro'yxatga ritm beradi, lekin ma'no bermaydi —
+ * shuning uchun holat rangi (yashil/sariq) hech qachon bu yerdan olinmaydi.
+ */
+const AVATAR_TONES = [
+  'bg-brand-100 text-brand-700',
+  'bg-emerald-100 text-emerald-700',
+  'bg-amber-100 text-amber-700',
+  'bg-violet-100 text-violet-700',
+  'bg-rose-100 text-rose-700',
+  'bg-cyan-100 text-cyan-700',
+] as const
+
+export function avatarTone(seed: string): string {
+  let hash = 0
+  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
+  return AVATAR_TONES[hash % AVATAR_TONES.length]
+}

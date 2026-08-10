@@ -224,7 +224,6 @@ def attendance_report(
         queryset.values("group_id", "group__name")
         .annotate(
             present=Count("id", filter=Q(status=AttendanceStatus.PRESENT)),
-            late=Count("id", filter=Q(status=AttendanceStatus.LATE)),
             absent=Count("id", filter=Q(status=AttendanceStatus.ABSENT)),
             excused=Count("id", filter=Q(status=AttendanceStatus.EXCUSED)),
             total=Count("id"),
@@ -237,22 +236,18 @@ def attendance_report(
             "group_id": str(row["group_id"]) if row["group_id"] else None,
             "group": row["group__name"] or "—",
             "present": row["present"],
-            "late": row["late"],
             "absent": row["absent"],
             "excused": row["excused"],
             "total": row["total"],
-            # Kechikkan bola KELGAN hisoblanadi — u bog'chada.
             "attendance_rate": (
-                round((row["present"] + row["late"]) / row["total"] * 100, 1)
-                if row["total"]
-                else 0.0
+                round(row["present"] / row["total"] * 100, 1) if row["total"] else 0.0
             ),
         }
         for row in rows
     ]
 
     marked = sum(row["total"] for row in groups)
-    attended = sum(row["present"] + row["late"] for row in groups)
+    attended = sum(row["present"] for row in groups)
 
     return {
         "year": year,

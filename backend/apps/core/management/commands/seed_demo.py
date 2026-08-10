@@ -145,7 +145,8 @@ class Command(BaseCommand):
     help = "Tashkilotni demo ma'lumoti bilan to'ldiradi (ko'rsatish uchun)."
 
     def add_arguments(self, parser: Any) -> None:
-        parser.add_argument("--email", required=True, help="Tashkilot kontakt emaili")
+        parser.add_argument("--email", help="Tashkilot kontakt emaili")
+        parser.add_argument("--slug", help="Tashkilot slug'i — aniq nishon")
         parser.add_argument("--children", type=int, default=64, help="Bolalar soni")
         parser.add_argument("--months", type=int, default=4, help="Necha oylik tarix")
         parser.add_argument(
@@ -153,23 +154,52 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args: Any, **options: Any) -> None:
-        from apps.organizations.models import Organization
-
         random.seed(SEED)
 
-        with platform_context():
-            organization = Organization.objects.filter(
-                contact_email__iexact=options["email"]
-            ).first()
-        if organization is None:
-            raise CommandError(f"'{options['email']}' bilan tashkilot topilmadi.")
-
+        organization = self._resolve_organization(options)
         self.stdout.write(f"Tashkilot: {organization.name} ({organization.slug})")
 
         with organization_context(organization.id):
             if options["reset"]:
                 self._reset(organization)
             self._seed(organization, options["children"], options["months"])
+
+    # --- Nishonni aniqlash ---
+
+    def _resolve_organization(self, options: dict[str, Any]) -> Any:
+        """
+        Qaysi tashkilot to'ldirilishini ANIQ aniqlaydi.
+
+        Email tashkilotlar bo'ylab unikal EMAS (u faqat tashkilot ichida
+        unikal) — bitta odam bir nechta bog'cha ochishi mumkin. Shu sababli
+        email bo'yicha "birinchisini olish" jimgina noto'g'ri tashkilotni
+        to'ldirib qo'yishi mumkin edi. Endi bir nechta moslik topilsa,
+        buyruq ishlamaydi va `--slug` so'raydi.
+        """
+        from apps.organizations.models import Organization
+
+        email, slug = options.get("email"), options.get("slug")
+        if not email and not slug:
+            raise CommandError("`--email` yoki `--slug` ko'rsating.")
+
+        with platform_context():
+            if slug:
+                organization = Organization.objects.filter(slug=slug).first()
+                if organization is None:
+                    raise CommandError(f"'{slug}' slug'i bilan tashkilot topilmadi.")
+                return organization
+
+            matches = list(Organization.objects.filter(contact_email__iexact=email))
+
+        if not matches:
+            raise CommandError(f"'{email}' bilan tashkilot topilmadi.")
+        if len(matches) > 1:
+            options_text = "\n".join(f"  --slug {o.slug}   ({o.name})" for o in matches)
+            raise CommandError(
+                f"'{email}' bilan {len(matches)} ta tashkilot bor. Qaysi biri kerakligini "
+                f"aniq ko'rsating:\n{options_text}"
+            )
+        return matches[0]
 
     # --- Tozalash ---
 
@@ -468,14 +498,12 @@ class Command(BaseCommand):
                 records = []
                 for child_id in member_ids:
                     roll = random.random()
-                    if roll < 0.88:
+                    if roll < 0.90:
                         status = "present"
-                    elif roll < 0.94:
+                    elif roll < 0.96:
                         status = "absent"
-                    elif roll < 0.98:
-                        status = "excused"
                     else:
-                        status = "late"
+                        status = "excused"
                     records.append({"child_id": child_id, "status": status})
                 try:
                     mark_bulk(

@@ -229,6 +229,60 @@ class TestDashboard:
         assert kpis["recent_payments"][0]["amount"] == "750000.00"
         assert len(kpis["revenue_trend"]) == 6
 
+    def test_attendance_kpi_with_real_records(self, tenant_a):
+        """
+        Davomat yozuvlari BOR holatni alohida tekshiradi.
+
+        Qolgan dashboard testlari faqat to'lov yaratadi — davomat jadvali
+        bo'sh qoladi va `by_group` bo'sh ro'yxat bo'ladi. Bo'sh ro'yxat
+        ustidan `sum(...)` bironta qatorga umuman kirmaydi, ya'ni qator
+        ichidagi maydon xatosi testdan jimgina o'tib ketadi.
+
+        Aynan shu bo'lgan: "kechikdi" holati olib tashlangach, yig'indida
+        `row["late"]` qolib ketgan va `/dashboard` brauzerda `500` bergan,
+        558 ta test esa yashil turgan.
+        """
+        from apps.attendance.services import mark_bulk
+        from apps.children.models import Group
+        from apps.children.services import enroll_child
+
+        today = timezone.localdate()
+
+        with organization_context(tenant_a.organization.id):
+            group = Group.objects.create(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                name="Quyoshlar",
+                capacity=10,
+            )
+            children = [_child(tenant_a, f"Bola{index}") for index in range(3)]
+            for child in children:
+                enroll_child(child=child, group=group)
+
+            mark_bulk(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                group=group,
+                attendance_date=today,
+                records=[
+                    {"child_id": children[0].id, "status": "present"},
+                    {"child_id": children[1].id, "status": "present"},
+                    {"child_id": children[2].id, "status": "absent"},
+                ],
+            )
+
+            report = selectors.attendance_report(
+                organization_id=tenant_a.organization.id,
+                year=today.year,
+                month=today.month,
+            )
+            kpis = services.dashboard_kpis(organization_id=tenant_a.organization.id)
+
+        assert report["marked_records"] == 3
+        assert report["attendance_rate"] == 66.7  # 2 / 3
+        assert report["by_group"][0]["present"] == 2
+        assert kpis["attendance_month_pct"] == 66.7
+
     def test_second_call_is_served_from_cache(self, tenant_a):
         with organization_context(tenant_a.organization.id):
             assert (

@@ -21,3 +21,6 @@ redis==6.4.0
 django-redis==6.0.0
 celery==5.6.3
 django-celery-beat==2.9.0
+
+# Rasm validatsiyasi (ImageField) — profil rasmi (docs/02 §16.3)
+Pillow==12.3.0

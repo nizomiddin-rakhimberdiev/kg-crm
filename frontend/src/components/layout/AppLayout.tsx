@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SubscriptionBanner } from './ReadOnlyBanner'
@@ -14,6 +15,18 @@ export function AppLayout() {
         <Topbar />
         <SubscriptionBanner />
         <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin px-4 lg:px-6 py-6">
+          {/*
+           * DIQQAT: quyidagi `motion.div` `transform` (x) va `filter` (blur)
+           * qo'llaydi. Ikkalasi ham CSS'da yangi "containing block" yaratadi —
+           * ya'ni ichkaridagi `position: fixed` element EKRANGA emas, SHU
+           * elementga nisbatan joylashadi.
+           *
+           * Shuning uchun har qanday modal `components/ui/Modal` orqali
+           * chiqariladi: u portal bilan to'g'ridan-to'g'ri `<body>` ga
+           * render qilinadi. Sahifa ichida qo'lda yozilgan
+           * `fixed inset-0` oynasi ekran o'rtasida emas, sahifa ichida —
+           * pastda paydo bo'ladi.
+           */}
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -22,7 +35,9 @@ export function AppLayout() {
               exit={{ opacity: 0, x: -20, filter: 'blur(6px)' }}
               transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             >
-              <Outlet />
+              <Suspense fallback={<div className="grid place-items-center py-20 text-sm text-slate-400">Yuklanmoqda…</div>}>
+                <Outlet />
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </main>

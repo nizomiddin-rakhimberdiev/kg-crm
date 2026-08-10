@@ -207,14 +207,17 @@ interface SwitchProps {
   checked: boolean
   onChange: (value: boolean) => void
   disabled?: boolean
+  /** Tugmaning ichida matn yo'q — skrinrider uchun nom shu yerdan beriladi. */
+  label?: string
 }
 
-export function Switch({ checked, onChange, disabled }: SwitchProps) {
+export function Switch({ checked, onChange, disabled, label }: SwitchProps) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={label}
       disabled={disabled}
       data-sound="toggle"
       onClick={() => onChange(!checked)}

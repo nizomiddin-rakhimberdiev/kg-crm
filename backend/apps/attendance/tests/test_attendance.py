@@ -56,11 +56,11 @@ class TestBulkMarking:
                 records=[
                     {"child_id": children[0].id, "status": "present"},
                     {"child_id": children[1].id, "status": "absent", "reason": "kasal"},
-                    {"child_id": children[2].id, "status": "late"},
+                    {"child_id": children[2].id, "status": "excused"},
                 ],
             )
         assert len(records) == 3
-        assert {r.status for r in records} == {"present", "absent", "late"}
+        assert {r.status for r in records} == {"present", "absent", "excused"}
 
     def test_reposting_updates_instead_of_duplicating(self, tenant_a, group_with_children):
         """
@@ -260,7 +260,7 @@ class TestMonthlySummary:
         group, children = group_with_children
         today = timezone.localdate()
         with organization_context(tenant_a.organization.id):
-            for offset, status_value in enumerate(["present", "present", "absent", "late"]):
+            for offset, status_value in enumerate(["present", "present", "absent", "excused"]):
                 mark_bulk(
                     organization=tenant_a.organization,
                     branch=tenant_a.branch,
@@ -278,8 +278,8 @@ class TestMonthlySummary:
         row = next(r for r in rows if r["child_id"] == str(children[0].id))
         # Sana oy chegarasidan o'tsa, ba'zi yozuvlar boshqa oyga tushadi —
         # shuning uchun aniq sonlar emas, mantiqiy bog'liqlik tekshiriladi.
-        assert row["total"] == row["present"] + row["absent"] + row["late"] + row["excused"]
-        expected = round((row["present"] + row["late"]) / row["total"] * 100, 1)
+        assert row["total"] == row["present"] + row["absent"] + row["excused"]
+        expected = round(row["present"] / row["total"] * 100, 1)
         assert row["attendance_rate"] == expected
 
 

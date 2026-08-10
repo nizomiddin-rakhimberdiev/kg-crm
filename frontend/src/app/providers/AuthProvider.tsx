@@ -30,6 +30,8 @@ interface AuthContextValue {
   /** Obuna to'xtatilgan — yozish amallari o'chiriladi (docs/03 §20.6). */
   isReadOnly: boolean
   applySession: (session: AuthSession) => void
+  /** Profil o'zgargach kontekstni serverdagi holatga qayta tenglashtiradi. */
+  refreshUser: () => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -60,6 +62,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     [queryClient],
   )
+
+  const refreshUser = useCallback(async () => {
+    const { user: me, subscription: sub } = await authApi.me()
+    setUser(me)
+    setSubscription(sub)
+  }, [])
 
   const logout = useCallback(async () => {
     try {
@@ -111,9 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: user !== null,
       isReadOnly: subscription?.read_only ?? false,
       applySession,
+      refreshUser,
       logout,
     }),
-    [user, subscription, isLoading, applySession, logout],
+    [user, subscription, isLoading, applySession, refreshUser, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

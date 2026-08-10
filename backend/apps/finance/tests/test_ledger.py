@@ -14,6 +14,7 @@ from decimal import Decimal
 import pytest
 from django.db import IntegrityError, transaction
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.children.models import Child
 from apps.core.exceptions import BusinessRuleViolation
@@ -106,7 +107,9 @@ class TestLedgerContract:
                 direction=Direction.DEBIT,
                 amount=Decimal("-100"),
                 source_type=SourceType.MANUAL,
-                occurred_at=date.today(),
+                # `date.today()` EMAS: u `DateTimeField` ga yarim tundagi naive
+                # vaqt bo'lib tushadi va D7 ("har doim timestamptz") buziladi.
+                occurred_at=timezone.now(),
             )
 
     def test_cached_balance_is_never_the_source_of_truth(self, tenant_a, child):

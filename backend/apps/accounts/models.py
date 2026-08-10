@@ -12,6 +12,8 @@ poydevorni bir marta to'g'ri qo'yish arzon, keyin tuzatish qimmat.
 
 from __future__ import annotations
 
+import uuid
+from pathlib import PurePosixPath
 from typing import Any
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
@@ -22,6 +24,20 @@ from apps.core.managers import TenantManager, UnscopedManager
 from apps.core.models import BaseModel, TenantScopedModel
 
 __all__ = ["User", "Role", "Permission", "RolePermission", "RefreshToken"]
+
+
+def user_photo_path(instance: User, filename: str) -> str:
+    """
+    `media/{organization}/avatars/{uuid}.{ext}`
+
+    Fayl nomi UUID: yuklangan nom saqlansa, u (a) boshqa mijozning fayl
+    nomini taxmin qilish yo'lini ochadi va (b) bir xil nomli fayllar
+    to'qnashuviga olib keladi. Kengaytma esa saqlanadi — brauzer uni
+    `Content-Type` aniqlashda ishlatadi.
+    """
+    suffix = PurePosixPath(filename).suffix.lower() or ".jpg"
+    organization = instance.organization_id or "platform"
+    return f"{organization}/avatars/{uuid.uuid4()}{suffix}"
 
 
 class UserManager(TenantManager, BaseUserManager["User"]):  # type: ignore[misc]
@@ -80,6 +96,16 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     email = models.EmailField()
     full_name = models.CharField(max_length=150)
     phone = models.CharField(max_length=20, blank=True)
+
+    # Profil rasmi. `upload_to` tashkilot bo'yicha ajratilgan (docs/02 §16.2)
+    # va fayl nomi UUID: original nom saqlanmaydi, chunki u fayl tizimida
+    # taxmin qilish va nizolar manbai bo'ladi.
+    #
+    # `null=True` YO'Q (Django konvensiyasi matnli maydonlar uchun): Django
+    # baribir bo'sh qiymatni `''` qilib yozadi, `null=True` esa "bo'sh"ning
+    # ikkinchi ko'rinishini yaratardi — xotirada `None`, bazada `''`. Aynan
+    # shu nomuvofiqlikni cross-tenant sweep testi ushladi.
+    photo = models.ImageField(upload_to=user_photo_path, blank=True)
 
     role = models.ForeignKey(
         "accounts.Role",

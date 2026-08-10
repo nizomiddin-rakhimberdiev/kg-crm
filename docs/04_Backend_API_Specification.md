@@ -155,6 +155,9 @@ Public (no token) except `/me`, `/logout`, `/password/change`.
 | POST | `/auth/refresh` | public (valid refresh) | Rotate access (+refresh) token |
 | POST | `/auth/logout` | authenticated | Blacklist refresh token |
 | GET | `/auth/me` | authenticated | Current user profile + role + permissions + org/subscription state |
+| PATCH | `/auth/me` | authenticated | **Edit own profile** — `full_name`, `phone` only |
+| POST | `/auth/me/photo` | authenticated | Upload own profile photo (multipart, ≤2 MB, jpg/png/webp) |
+| DELETE | `/auth/me/photo` | authenticated | Remove own profile photo |
 | POST | `/auth/password/change` | authenticated | Change own password |
 
 **`POST /auth/signup` — request**
@@ -292,7 +295,7 @@ Module: `children`. Sub-domains: children, guardians, groups, enrollment.
 | GET | `/groups/{id}` | `children.read` | Detail |
 | PATCH | `/groups/{id}` | `children.update` | Update |
 | DELETE | `/groups/{id}` | `children.delete` | Soft delete |
-| GET | `/groups/{id}/children` | `children.read` | Children currently enrolled |
+| GET | `/groups/{id}/children` | `children.read` | Children currently enrolled, with `capacity` and `free_seats` |
 
 ### 7.4 Enrollment
 | Method | Path | Auth | Description |
@@ -584,6 +587,8 @@ Module: `settings_app` + `branches`. Managed by Org Owner (Director read-only).
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
+| GET | `/organization` | `settings.read` | The caller's own organization profile |
+| PATCH | `/organization` | `settings.update` | Edit name, legal name, tax id, contact details |
 | GET | `/settings` | `settings.read` | List effective settings (branch overrides organization) |
 | GET | `/settings/{key}` | `settings.read` | Single setting |
 | PUT | `/settings/{key}` | `settings.update` | Set a value (JSONB) |
@@ -591,6 +596,10 @@ Module: `settings_app` + `branches`. Managed by Org Owner (Director read-only).
 | POST | `/branches` | `branches.create` | Create branch |
 | PATCH | `/branches/{id}` | `branches.update` | Update branch (currency, timezone) |
 | DELETE | `/branches/{id}` | `branches.delete` | Soft-delete (blocked if it holds children/employees) |
+
+> **`/organization` is a singleton — it takes no id.** The organization is read from the caller's token, never from the URL, so there is no id to tamper with and no cross-tenant path to test for. `slug`, `onboarded_at` and `created_at` are read-only: the slug is the organization's global identifier, and the onboarding timestamp is what the trial period is counted from ([01 §4.4](./01_Project_Vision.md)) — editing it would move a billing date.
+
+> **`PATCH /auth/me` exists so that self-service does not require admin rights.** Editing a user through `/users/{id}` needs `users.update`, which a cashier does not have — they could not correct their own phone number. This endpoint accepts **only** `full_name` and `phone`. `role`, `branch`, `email`, `is_active` and `organization` are silently ignored: each is a privilege boundary, and a self-edit path that touches one is a privilege-escalation path. Those stay on `/users/{id}`, where every change is audit-logged against an administrator.
 
 > **`POST /branches` is never rate-limited by plan and never returns a quota error.** Branch count is not billed ([01 §4.5](./01_Project_Vision.md)); adding a location is exactly the growth we want, and it raises the bill only through the children it brings.
 

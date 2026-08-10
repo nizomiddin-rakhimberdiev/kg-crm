@@ -1,0 +1,24 @@
+# Qator oxirlari — mashinaga bog'liq bo'lmasin.
+#
+# Bularsiz natija har kimning `core.autocrlf` sozlamasiga bog'liq bo'ladi:
+# Windows'dagi dasturchi CRLF bilan commit qilsa, Linux'dagi hamkasb butun
+# faylni "o'zgargan" deb ko'radi va diff'da haqiqiy o'zgarish ko'rinmay
+# qoladi. Shuning uchun repozitoriyda HAR DOIM LF saqlanadi.
+* text=auto
+
+# Windows skriptlari CRLF bo'lmasa ishlamaydi.
+*.ps1  text eol=crlf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# Bu fayllarga Git umuman tegmasin — aks holda ular buziladi.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.pdf   binary
+*.xlsx  binary
+*.zip   binary
+*.sqlite3 binary

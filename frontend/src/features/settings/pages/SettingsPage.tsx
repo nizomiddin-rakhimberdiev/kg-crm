@@ -10,11 +10,11 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { Switch } from '@/components/ui/primitives'
 import { settingsApi } from '@/features/notifications/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type SettingValue } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
-import { cn } from '@/lib/utils'
 
 interface SettingMeta {
   label: string
@@ -86,25 +86,12 @@ export default function SettingsPage() {
   const renderControl = (key: string, value: SettingValue) => {
     if (typeof value === 'boolean') {
       return (
-        <button
-          type="button"
-          role="switch"
-          aria-checked={value}
-          aria-label={META[key]?.label ?? key}
+        <Switch
+          checked={value}
+          onChange={(next) => save.mutate({ key, value: next })}
           disabled={!editable || save.isPending}
-          onClick={() => save.mutate({ key, value: !value })}
-          className={cn(
-            'relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50',
-            value ? 'bg-brand-600' : 'bg-slate-300',
-          )}
-        >
-          <span
-            className={cn(
-              'absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform',
-              value ? 'translate-x-5' : 'translate-x-0.5',
-            )}
-          />
-        </button>
+          label={META[key]?.label ?? key}
+        />
       )
     }
 

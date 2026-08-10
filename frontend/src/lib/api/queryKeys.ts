@@ -27,6 +27,8 @@ export const queryKeys = {
     ['org', orgId, 'children', params ?? {}] as const,
   child: (orgId: string, id: string) => ['org', orgId, 'children', 'detail', id] as const,
   groups: (orgId: string) => ['org', orgId, 'groups'] as const,
+  groupChildren: (orgId: string, groupId: string) =>
+    ['org', orgId, 'groups', groupId, 'children'] as const,
 
   tariffs: (orgId: string) => ['org', orgId, 'tariffs'] as const,
   invoices: (orgId: string, params?: Record<string, unknown>) =>
@@ -78,6 +80,7 @@ export const queryKeys = {
   notifications: (orgId: string, params?: Record<string, unknown>) =>
     ['org', orgId, 'notifications', params ?? {}] as const,
   settings: (orgId: string) => ['org', orgId, 'settings'] as const,
+  organization: (orgId: string) => ['org', orgId, 'organization'] as const,
 
   attendanceDaily: (orgId: string, groupId: string, date: string) =>
     ['org', orgId, 'attendance', 'daily', groupId, date] as const,

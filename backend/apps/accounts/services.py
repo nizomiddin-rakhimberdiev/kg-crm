@@ -310,6 +310,8 @@ def user_payload(user: User) -> dict[str, Any]:
         "full_name": user.full_name,
         "email": user.email,
         "phone": user.phone,
+        # Rasm bo'lmasa `None` — frontend bosh harflarga qaytadi.
+        "photo_url": user.photo.url if user.photo else None,
         "role": ({"code": user.role.code, "name": user.role.name} if user.role else None),
         "organization": (
             {

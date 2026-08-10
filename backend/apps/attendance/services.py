@@ -134,7 +134,6 @@ def monthly_summary(
             present=Count("id", filter=Q(status=AttendanceStatus.PRESENT)),
             absent=Count("id", filter=Q(status=AttendanceStatus.ABSENT)),
             excused=Count("id", filter=Q(status=AttendanceStatus.EXCUSED)),
-            late=Count("id", filter=Q(status=AttendanceStatus.LATE)),
             total=Count("id"),
         )
         .order_by("child__last_name", "child__first_name")
@@ -147,12 +146,9 @@ def monthly_summary(
             "present": row["present"],
             "absent": row["absent"],
             "excused": row["excused"],
-            "late": row["late"],
             "total": row["total"],
             "attendance_rate": (
-                round((row["present"] + row["late"]) / row["total"] * 100, 1)
-                if row["total"]
-                else 0.0
+                round(row["present"] / row["total"] * 100, 1) if row["total"] else 0.0
             ),
         }
         for row in rows

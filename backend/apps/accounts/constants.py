@@ -51,13 +51,23 @@ PERMISSION_LABELS: Final[dict[str, str]] = {
 }
 
 # --- Tizim rollari (docs/02 §11.1) ---
+OWNER_ROLE_CODE: Final[str] = "org_owner"
+
 SYSTEM_ROLES: Final[dict[str, str]] = {
-    "org_owner": "Tashkilot egasi",
+    OWNER_ROLE_CODE: "Tashkilot egasi",
     "director": "Direktor",
     "manager": "Menejer",
     "cashier": "Kassir",
     "attendance_manager": "Davomat menejeri",
 }
+
+# Tashkilot egasi rolidan bu ruxsatlarni olib tashlab bo'lmaydi.
+#
+# Rollarni faqat shu ruxsatga ega odam sozlaydi — ya'ni ularsiz tashkilot
+# o'zini o'zi qulflab qo'yadi va rollarni hech kim qayta sozlay olmaydi.
+# Bunday holatdan chiqish faqat vendor support orqali bo'lardi (ADR-10),
+# shuning uchun uni umuman yuzaga kelmaydigan qilamiz.
+OWNER_LOCKED_PERMISSIONS: Final[frozenset[str]] = frozenset({"users.read", "users.update"})
 
 # Qisqartmalar docs/02 §11.2 dagi jadval bilan bir xil:
 #   F = to'liq (CRUD + export + approve)   W = yaratish/yangilash + o'qish

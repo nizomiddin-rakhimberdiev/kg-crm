@@ -8,14 +8,14 @@
 
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search, UserX } from 'lucide-react'
+import { Pencil, Plus, Search, UserCheck, UserX } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { useBranchScope } from '@/app/providers/BranchProvider'
 import { branchesApi } from '@/features/branches/api'
 import { RolesPanel } from '@/features/staff/components/RolesPanel'
 import { staffApi, type StaffInput } from '@/features/staff/api'
 import { queryKeys } from '@/lib/api/queryKeys'
-import { ApiError } from '@/lib/api/types'
+import { ApiError, type StaffUser } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 
@@ -28,6 +28,9 @@ const EMPTY_FORM: StaffInput = {
   branch_id: '',
 }
 
+const dateTime = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleString('uz-UZ', { dateStyle: 'medium', timeStyle: 'short' }) : '—'
+
 export default function StaffPage() {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
@@ -36,9 +39,43 @@ export default function StaffPage() {
   const [tab, setTab] = useState<'staff' | 'roles'>('staff')
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
+  // `null` — yangi xodim qo'shilyapti; obyekt — mavjudi tahrirlanyapti.
+  const [editing, setEditing] = useState<StaffUser | null>(null)
   const [form, setForm] = useState<StaffInput>(EMPTY_FORM)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
+
+  const closeForm = () => {
+    setShowForm(false)
+    setEditing(null)
+    setForm(EMPTY_FORM)
+    setFieldErrors({})
+    setError(null)
+  }
+
+  const openCreate = () => {
+    if (showForm && !editing) return closeForm()
+    setEditing(null)
+    setForm(EMPTY_FORM)
+    setFieldErrors({})
+    setError(null)
+    setShowForm(true)
+  }
+
+  const openEdit = (member: StaffUser) => {
+    setEditing(member)
+    setForm({
+      full_name: member.full_name,
+      email: member.email,
+      phone: member.phone ?? '',
+      password: '', // bo'sh qoldirilsa parol o'zgarmaydi
+      role_id: member.role?.id ?? '',
+      branch_id: member.branch?.id ?? '',
+    })
+    setFieldErrors({})
+    setError(null)
+    setShowForm(true)
+  }
 
   // Topbar'dagi filial tanlovi ro'yxatga qo'llanadi. Bu qulaylik, himoya
   // emas: backend queryset'i allaqachon tashkilot bilan cheklangan.
@@ -68,29 +105,66 @@ export default function StaffPage() {
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'users'] })
 
+  const handleError = (err: unknown) => {
+    if (err instanceof ApiError) {
+      setError(err.message)
+      setFieldErrors(err.fieldErrors())
+    } else {
+      setError('Xatolik yuz berdi.')
+    }
+  }
+
   const createMutation = useMutation({
     mutationFn: staffApi.create,
     onSuccess: () => {
-      setForm(EMPTY_FORM)
-      setShowForm(false)
-      setError(null)
-      setFieldErrors({})
+      closeForm()
       void invalidate()
     },
-    onError: (err) => {
-      if (err instanceof ApiError) {
-        setError(err.message)
-        setFieldErrors(err.fieldErrors())
-      } else {
-        setError('Xatolik yuz berdi.')
-      }
+    onError: handleError,
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<StaffInput> }) =>
+      staffApi.update(id, payload),
+    onSuccess: () => {
+      closeForm()
+      void invalidate()
     },
+    onError: handleError,
   })
 
   const deactivateMutation = useMutation({
     mutationFn: staffApi.deactivate,
     onSuccess: invalidate,
+    onError: handleError,
   })
+
+  const reactivateMutation = useMutation({
+    mutationFn: staffApi.reactivate,
+    onSuccess: invalidate,
+    onError: handleError,
+  })
+
+  const saving = createMutation.isPending || updateMutation.isPending
+
+  const submitForm = () => {
+    const payload: Partial<StaffInput> = {
+      full_name: form.full_name,
+      email: form.email,
+      phone: form.phone,
+      role_id: form.role_id,
+      branch_id: form.branch_id || null,
+    }
+    // Bo'sh parol "o'zgartirmaslik" degani — uni yubormaymiz, aks holda
+    // serializer kuchsiz parol deb rad etadi.
+    if (form.password) payload.password = form.password
+
+    if (editing) {
+      updateMutation.mutate({ id: editing.id, payload })
+    } else {
+      createMutation.mutate(payload as StaffInput)
+    }
+  }
 
   const selectedRole = rolesQuery.data?.items.find((r) => r.id === form.role_id)
   const branchRequired = selectedRole ? selectedRole.code !== 'org_owner' : true
@@ -107,7 +181,7 @@ export default function StaffPage() {
         {tab === 'staff' && can('users.create') && (
           <button
             type="button"
-            onClick={() => setShowForm((v) => !v)}
+            onClick={openCreate}
             className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
           >
             <Plus className="h-4 w-4" />
@@ -147,20 +221,44 @@ export default function StaffPage() {
         </div>
       )}
 
-      {tab === 'staff' && showForm && can('users.create') && (
+      {tab === 'staff' && showForm && can(editing ? 'users.update' : 'users.create') && (
         <form
           onSubmit={(event) => {
             event.preventDefault()
-            createMutation.mutate({ ...form, branch_id: form.branch_id || null })
+            submitForm()
           }}
           className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-2"
         >
+          <div className="sm:col-span-2">
+            <h2 className="text-sm font-semibold text-slate-800">
+              {editing ? `${editing.full_name} — tahrirlash` : 'Yangi xodim'}
+            </h2>
+            {editing && (
+              <dl className="mt-2 grid gap-x-6 gap-y-1 text-xs text-slate-500 sm:grid-cols-2">
+                <div className="flex justify-between gap-2 sm:justify-start">
+                  <dt>Holat:</dt>
+                  <dd className={editing.is_active ? 'text-emerald-700' : 'text-slate-500'}>
+                    {editing.is_active ? 'Faol' : 'Faol emas'}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-2 sm:justify-start">
+                  <dt>Oxirgi kirish:</dt>
+                  <dd>{dateTime(editing.last_login_at)}</dd>
+                </div>
+                <div className="flex justify-between gap-2 sm:justify-start">
+                  <dt>Qo'shilgan:</dt>
+                  <dd>{dateTime(editing.created_at)}</dd>
+                </div>
+              </dl>
+            )}
+          </div>
+
           {(
             [
               ['full_name', 'Ism familiya', 'text'],
               ['email', 'Email', 'email'],
               ['phone', 'Telefon', 'tel'],
-              ['password', 'Parol', 'password'],
+              ['password', editing ? 'Yangi parol (ixtiyoriy)' : 'Parol', 'password'],
             ] as const
           ).map(([key, label, type]) => (
             <div key={key}>
@@ -170,7 +268,11 @@ export default function StaffPage() {
               <input
                 id={key}
                 type={type}
-                required={key !== 'phone'}
+                required={key !== 'phone' && !(key === 'password' && editing)}
+                placeholder={
+                  key === 'password' && editing ? "O'zgartirmaslik uchun bo'sh qoldiring" : undefined
+                }
+                autoComplete={key === 'password' ? 'new-password' : undefined}
                 value={form[key] ?? ''}
                 onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
                 className={cn(
@@ -232,13 +334,20 @@ export default function StaffPage() {
             )}
           </div>
 
-          <div className="sm:col-span-2">
+          <div className="flex gap-2 sm:col-span-2">
             <button
               type="submit"
-              disabled={createMutation.isPending}
+              disabled={saving}
               className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
             >
-              {createMutation.isPending ? 'Saqlanmoqda…' : 'Saqlash'}
+              {saving ? 'Saqlanmoqda…' : 'Saqlash'}
+            </button>
+            <button
+              type="button"
+              onClick={closeForm}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            >
+              Bekor qilish
             </button>
           </div>
         </form>
@@ -288,8 +397,19 @@ export default function StaffPage() {
               {staffQuery.data.items.map((member) => (
                 <tr key={member.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3">
-                    <p className="font-medium text-slate-800">{member.full_name}</p>
+                    {can('users.update') ? (
+                      <button
+                        type="button"
+                        onClick={() => openEdit(member)}
+                        className="text-left font-medium text-slate-800 transition hover:text-brand-700"
+                      >
+                        {member.full_name}
+                      </button>
+                    ) : (
+                      <p className="font-medium text-slate-800">{member.full_name}</p>
+                    )}
                     <p className="text-xs text-slate-400">{member.email}</p>
+                    {member.phone && <p className="text-xs text-slate-400">{member.phone}</p>}
                   </td>
                   <td className="px-4 py-3 text-slate-600">{member.role?.name ?? '—'}</td>
                   <td className="px-4 py-3 text-slate-600">
@@ -307,17 +427,42 @@ export default function StaffPage() {
                       {member.is_active ? 'Faol' : 'Faol emas'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    {can('users.delete') && member.is_active && (
-                      <button
-                        type="button"
-                        onClick={() => deactivateMutation.mutate(member.id)}
-                        className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                        title="Faolsizlantirish"
-                      >
-                        <UserX className="h-4 w-4" />
-                      </button>
-                    )}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1">
+                      {can('users.update') && (
+                        <button
+                          type="button"
+                          onClick={() => openEdit(member)}
+                          className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                          title="Tahrirlash"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      )}
+                      {member.is_active
+                        ? can('users.delete') && (
+                            <button
+                              type="button"
+                              disabled={deactivateMutation.isPending}
+                              onClick={() => deactivateMutation.mutate(member.id)}
+                              className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                              title="Faolsizlantirish"
+                            >
+                              <UserX className="h-4 w-4" />
+                            </button>
+                          )
+                        : can('users.update') && (
+                            <button
+                              type="button"
+                              disabled={reactivateMutation.isPending}
+                              onClick={() => reactivateMutation.mutate(member.id)}
+                              className="rounded-lg p-2 text-slate-400 transition hover:bg-emerald-50 hover:text-emerald-700 disabled:opacity-50"
+                              title="Qayta faollashtirish"
+                            >
+                              <UserCheck className="h-4 w-4" />
+                            </button>
+                          )}
+                    </div>
                   </td>
                 </tr>
               ))}

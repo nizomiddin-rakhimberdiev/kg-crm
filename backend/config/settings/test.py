@@ -8,7 +8,11 @@ from .base import *  # noqa: F403
 from .base import DATABASES  # noqa: F401
 
 DEBUG = False
-SECRET_KEY = "test-secret-key"  # noqa: S105 — faqat testlar uchun, deploy'ga chiqmaydi
+
+# Kalit kamida 32 bayt: JWT HS256 shu uzunlikni talab qiladi (RFC 7518 §3.2)
+# va PyJWT qisqasiga ogohlantirish beradi. Testlarda ham haqiqiy uzunlik —
+# aks holda ogohlantirish oqimi haqiqiy muammolarni ko'mib yuboradi.
+SECRET_KEY = "test-secret-key-not-for-deploy-0123456789abcdef"  # noqa: S105
 
 # Parol hashlash testlarni sekinlashtirmasin.
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]

@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
+from django.urls import reverse
+from django.utils import timezone
 
 from apps.children.models import Child, Enrollment, Group
 from apps.children.services import end_enrollment, enroll_child, recount_group
@@ -146,3 +148,64 @@ class TestEnrolledCountCache:
             assert recount_group(group) == 1
             group.refresh_from_db()
             assert group.enrolled_count == 1
+
+
+class TestEnrollEndpoint:
+    def test_group_id_alone_is_enough(self, tenant_a, child, group):
+        """
+        UI guruhni tanlaganda faqat `group_id` yuboradi — sana so'ralmaydi.
+
+        `EnrollmentSerializer` `start_date` ni majburiy qilib qo'ysa (model
+        maydoni NOT NULL bo'lgani uchun ModelSerializer shunday qiladi), eng
+        oddiy amal — bolani guruhga yozish — 400 bilan tugaydi. Aynan shu
+        regressiya sodir bo'lgan edi.
+        """
+        response = tenant_a.client().post(
+            reverse("v1:child-enroll", args=[child.id]),
+            {"group_id": str(group.id)},
+            format="json",
+        )
+
+        assert response.status_code == 201, response.json()
+        assert response.json()["data"]["start_date"] == str(timezone.localdate())
+
+    def test_explicit_start_date_is_honoured(self, tenant_a, child, group):
+        response = tenant_a.client().post(
+            reverse("v1:child-enroll", args=[child.id]),
+            {"group_id": str(group.id), "start_date": "2026-01-15"},
+            format="json",
+        )
+
+        assert response.status_code == 201
+        assert response.json()["data"]["start_date"] == "2026-01-15"
+
+
+class TestGroupChildrenEndpoint:
+    def test_lists_current_members_and_free_seats(self, tenant_a, child, group):
+        with organization_context(tenant_a.organization.id):
+            enroll_child(child=child, group=group)
+
+        response = tenant_a.client().get(reverse("v1:group-children", args=[group.id]))
+
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["group"]["name"] == group.name
+        assert data["capacity"] == group.capacity
+        assert data["free_seats"] == group.capacity - 1
+        assert [c["id"] for c in data["children"]] == [str(child.id)]
+
+    def test_closed_enrollment_is_excluded(self, tenant_a, child, group):
+        """
+        Guruhdan chiqarilgan bola ro'yxatda qolmasligi kerak.
+
+        Ro'yxat ochiq a'zoliklardan hisoblanadi — o'tgan a'zolik tarixda
+        qoladi, lekin "kim shu guruhda" degan savolga javob bermaydi.
+        """
+        with organization_context(tenant_a.organization.id):
+            enrollment = enroll_child(child=child, group=group)
+            end_enrollment(enrollment=enrollment)
+
+        response = tenant_a.client().get(reverse("v1:group-children", args=[group.id]))
+
+        assert response.json()["data"]["children"] == []
+        assert response.json()["data"]["free_seats"] == group.capacity

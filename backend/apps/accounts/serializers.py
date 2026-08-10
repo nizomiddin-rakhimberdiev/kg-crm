@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from django.contrib.auth.password_validation import validate_password
@@ -18,6 +19,8 @@ __all__ = [
     "LoginSerializer",
     "SelectOrganizationSerializer",
     "PasswordChangeSerializer",
+    "ProfileUpdateSerializer",
+    "ProfilePhotoSerializer",
     "UserSerializer",
     "UserWriteSerializer",
     "RoleSerializer",
@@ -60,6 +63,56 @@ class PasswordChangeSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True, validators=[_validate_password_strength])
 
 
+class ProfilePhotoSerializer(serializers.ModelSerializer):
+    """
+    Profil rasmi — `POST /auth/me/photo` (multipart).
+
+    `ImageField` faylni Pillow bilan **ochib ko'radi**: kengaytmasi `.jpg`
+    bo'lgan ixtiyoriy fayl emas, haqiqiy rasm ekaniga ishonch hosil qilinadi.
+    Bu muhim, chunki yuklangan fayl keyin brauzerga qaytariladi (docs/02 §16.3).
+    """
+
+    MAX_BYTES = 2 * 1024 * 1024
+    ALLOWED_EXTENSIONS = ("jpg", "jpeg", "png", "webp")
+
+    photo = serializers.ImageField(required=True)
+
+    class Meta:
+        model = User
+        fields = ["photo"]
+
+    def validate_photo(self, value: Any) -> Any:
+        if value.size > self.MAX_BYTES:
+            raise serializers.ValidationError(
+                f"Rasm hajmi {self.MAX_BYTES // (1024 * 1024)} MB dan oshmasin."
+            )
+
+        extension = (value.name or "").rsplit(".", 1)[-1].lower()
+        if extension not in self.ALLOWED_EXTENSIONS:
+            allowed = ", ".join(self.ALLOWED_EXTENSIONS)
+            raise serializers.ValidationError(f"Faqat quyidagi formatlar: {allowed}.")
+        return value
+
+
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    """
+    `PATCH /auth/me` — foydalanuvchining O'ZI haqidagi xavfsiz maydonlar.
+
+    Ro'yxat ataylab qisqa. `role`, `branch`, `is_active`, `organization` va
+    `email` bu yerda YO'Q: ularning har biri imtiyoz chegarasi, va o'zini
+    o'zi tahrirlash yo'li orqali o'tishi mumkin bo'lgan maydon — imtiyoz
+    oshirish teshigidir. Ularni tashkilot egasi `/users/{id}` orqali
+    o'zgartiradi va har bir o'zgarish audit jurnaliga tushadi.
+
+    `email` — login identifikatori, uni almashtirish boshqa hisobni egallash
+    yo'li bo'lishi mumkin; shuning uchun u ham administrator ishi.
+    """
+
+    class Meta:
+        model = User
+        fields = ["full_name", "phone"]
+
+
 # --- Reference ---
 
 
@@ -83,11 +136,37 @@ class RoleSerializer(serializers.ModelSerializer):
             Permission.objects.filter(role_permissions__role=obj).values_list("code", flat=True)
         )
 
+    def validate_code(self, value: str) -> str:
+        """
+        Kodni normallashtiradi va takrorlanmasligini tekshiradi.
+
+        Bazadagi unikallik cheklovi buni baribir ushlaydi, lekin u
+        `IntegrityError` — ya'ni `500`. Mijoz esa nima noto'g'riligini bilishi
+        kerak (docs/04 §2), shuning uchun tekshiruv shu yerda.
+        """
+        normalized = re.sub(r"[^a-z0-9_]+", "_", value.strip().lower()).strip("_")
+        if not normalized:
+            raise serializers.ValidationError("Kod lotin harflari va raqamlardan iborat bo'lsin.")
+
+        organization = request_user(self.context["request"]).organization
+        qs = Role.all_objects.filter(organization=organization, code=normalized)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Bu kod tashkilotda allaqachon mavjud.")
+        return normalized
+
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        # Tizim rolining NOMI o'zgarishi mumkin (bog'chalar o'z atamasini
+        # ishlatadi), lekin KODI yo'q: kod — kodning o'zi tayanadigan yagona
+        # narsa (`role.code != "org_owner"` kabi tekshiruvlar), uni almashtirish
+        # ruxsat mantig'ini jimgina buzardi.
         if self.instance and self.instance.is_system:
-            # Tizim rollarini o'zgartirish RBAC matritsasini hujjatdan
-            # ajratib yuborardi (docs/03 §10.3).
-            raise serializers.ValidationError("Tizim rollarini o'zgartirib bo'lmaydi.")
+            new_code = attrs.get("code")
+            if new_code is not None and new_code != self.instance.code:
+                raise serializers.ValidationError(
+                    {"code": "Tizim rolining kodini o'zgartirib bo'lmaydi."}
+                )
         return attrs
 
 

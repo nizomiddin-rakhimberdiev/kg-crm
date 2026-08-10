@@ -13,10 +13,25 @@ export interface ChildInput {
   tariff_id?: string | null
 }
 
+/**
+ * Bo'sh (`null`/`undefined`) kalitlarni olib tashlaydi.
+ *
+ * Backend `branch_id` ni ixtiyoriy deb biladi: u YUBORILMASA, server filialni
+ * o'zi aniqlaydi (`resolve_branch`). Lekin aniq `null` yuborilsa — bu "filial
+ * yo'q" degani bo'ladi va validatsiya rad etadi. Org Owner barcha filiallarni
+ * ko'rgani uchun tanlangan filial `null` bo'lishi odatiy hol, shuning uchun
+ * uni yuborishdan oldin tashlab ketamiz.
+ */
+function withoutEmpty<T extends object>(payload: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => value !== null && value !== undefined),
+  ) as Partial<T>
+}
+
 export const childrenApi = {
   list: (params?: Record<string, unknown>) => api.list<Child>('/children', params),
   get: (id: string) => api.get<Child>(`/children/${id}`),
-  create: (payload: ChildInput) => api.post<Child>('/children', payload),
+  create: (payload: ChildInput) => api.post<Child>('/children', withoutEmpty(payload)),
   update: (id: string, payload: Partial<ChildInput>) =>
     api.patch<Child>(`/children/${id}`, payload),
   remove: (id: string) => api.delete(`/children/${id}`),
@@ -53,4 +68,13 @@ export const groupsApi = {
   update: (id: string, payload: { name?: string; capacity?: number }) =>
     api.patch<Group>(`/groups/${id}`, payload),
   remove: (id: string) => api.delete(`/groups/${id}`),
+
+  /** Guruh tarkibi — hozirgi bolalar va bo'sh joylar (docs/04 §7.3). */
+  children: (id: string) =>
+    api.get<{
+      group: Group
+      capacity: number
+      free_seats: number | null
+      children: Child[]
+    }>(`/groups/${id}/children`),
 }

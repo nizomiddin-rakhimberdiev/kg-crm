@@ -1,9 +1,14 @@
-import { Bell, Search, Volume2, VolumeX } from 'lucide-react'
+import { Bell, LogOut, Search, Volume2, VolumeX } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Avatar } from '@/components/ui/Avatar'
+import { useAuth } from '@/app/providers/AuthProvider'
 import { useSound } from '@/app/providers/SoundProvider'
 import { BranchSwitcher } from './BranchSwitcher'
 
+/** "Abzal Azlarov" → "AA" */
 export function Topbar() {
   const { muted, toggle } = useSound()
+  const { user, logout } = useAuth()
 
   return (
     <header className="sticky top-0 z-20 flex items-center gap-4 h-16 px-4 lg:px-6 border-b border-slate-200 bg-white/90 backdrop-blur">
@@ -24,28 +29,55 @@ export function Topbar() {
         <button
           onClick={toggle}
           data-sound="toggle"
-          title={muted ? "Ovozni yoqish" : "Ovozni o'chirish"}
+          title={muted ? 'Ovozni yoqish' : "Ovozni o'chirish"}
           className="grid place-items-center w-10 h-10 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors active:scale-95"
         >
           {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
         </button>
 
         {/* Notifications */}
-        <button className="relative grid place-items-center w-10 h-10 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors active:scale-95">
+        <Link
+          to="/notifications"
+          title="Bildirishnomalar"
+          className="relative grid place-items-center w-10 h-10 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors active:scale-95"
+        >
           <Bell className="w-5 h-5" />
-          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white" />
-        </button>
+        </Link>
 
-        {/* Profile */}
-        <div className="flex items-center gap-2 pl-2">
-          <div className="grid place-items-center w-9 h-9 rounded-full bg-brand-600 text-white text-xs font-semibold">
-            AD
+        {/* Profil — haqiqiy foydalanuvchi, profil sahifasiga havola */}
+        {user && (
+          <div className="flex items-center gap-1 pl-2">
+            <Link
+              to="/profile"
+              title="Profil"
+              className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-slate-100"
+            >
+              <Avatar
+                name={user.full_name}
+                photoUrl={user.photo_url}
+                className="h-9 w-9"
+                textClassName="text-xs"
+              />
+              <span className="hidden sm:block leading-tight text-left">
+                <span className="block text-sm font-semibold text-slate-900">
+                  {user.full_name}
+                </span>
+                <span className="block text-[11px] text-slate-400">
+                  {user.role?.name ?? '—'}
+                </span>
+              </span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => void logout()}
+              title="Chiqish"
+              className="grid place-items-center w-10 h-10 rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 active:scale-95"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
-          <div className="hidden sm:block leading-tight">
-            <p className="text-sm font-semibold text-slate-900">Admin Profili</p>
-            <p className="text-[11px] text-slate-400">Boshqaruvchi</p>
-          </div>
-        </div>
+        )}
       </div>
     </header>
   )

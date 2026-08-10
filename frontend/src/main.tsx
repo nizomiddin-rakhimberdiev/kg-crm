@@ -19,7 +19,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <BranchProvider>
         <SoundProvider>
           <ToastProvider>
-            <RouterProvider router={router} />
+            {/*
+              `v7_startTransition` aynan shu yerda beriladi — router
+              darajasidagi `future` bayroqlaridan farqli (u `createBrowserRouter`
+              da). Ikkalasi birgalikda konsoldagi v7 ogohlantirishlarini
+              yopadi va o'tishni oldindan tayyorlaydi.
+            */}
+            <RouterProvider router={router} future={{ v7_startTransition: true }} />
           </ToastProvider>
         </SoundProvider>
         </BranchProvider>

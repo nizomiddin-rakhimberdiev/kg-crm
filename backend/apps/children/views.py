@@ -196,3 +196,38 @@ class GroupViewSet(BranchScopedMixin, TenantViewSet):
             )
         instance.is_active = False
         instance.save(update_fields=["is_active"])
+
+    @action(detail=True, methods=["get"], url_path="children")
+    def children(self, request: Request, pk: str | None = None) -> Response:
+        """
+        `GET /groups/{id}/children` — guruhdagi HOZIRGI bolalar (docs/04 §7.3).
+
+        Manba — ochiq `enrollment` yozuvlari, `child.group` maydoni emas:
+        bola guruhga vaqt bo'yicha biriktiriladi, va o'tgan a'zoliklar
+        tarixda qoladi (docs/03 §11.5). Shu sababli "kim shu guruhda"
+        degan savolga faqat ochiq a'zolik javob beradi.
+        """
+        group = self.get_object()
+
+        children = (
+            Child.objects.filter(
+                enrollments__group=group,
+                enrollments__status="active",
+                enrollments__end_date__isnull=True,
+                is_active=True,
+            )
+            .prefetch_related("guardian_links__guardian", "enrollments__group")
+            .order_by("last_name", "first_name")
+        )
+
+        return Response(
+            {
+                "group": GroupSerializer(group).data,
+                "capacity": group.capacity,
+                # `0` = cheklovsiz (docs/04 §7.3), shunda "bo'sh joy" ma'nosiz.
+                "free_seats": (
+                    max(group.capacity - children.count(), 0) if group.capacity else None
+                ),
+                "children": ChildSerializer(children, many=True).data,
+            }
+        )

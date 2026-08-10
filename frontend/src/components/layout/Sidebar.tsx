@@ -1,17 +1,10 @@
 import { NavLink } from 'react-router-dom'
 import { GraduationCap, LogOut } from 'lucide-react'
+import { Avatar } from '@/components/ui/Avatar'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { navItems } from '@/config/navigation'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
-
-const initials = (name: string) =>
-  name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('') || '?'
 
 export function Sidebar() {
   const { user, logout } = useAuth()
@@ -24,7 +17,11 @@ export function Sidebar() {
   return (
     <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white">
       {/* Brand */}
-      <div className="flex items-center gap-3 px-6 h-16 border-b border-slate-100">
+      <NavLink
+        to="/organization"
+        title="Bog'cha profili"
+        className="flex items-center gap-3 px-6 h-16 border-b border-slate-100 transition-colors hover:bg-slate-50"
+      >
         <div className="grid place-items-center w-9 h-9 rounded-xl bg-brand-600 text-white">
           <GraduationCap className="w-5 h-5" />
         </div>
@@ -36,7 +33,7 @@ export function Sidebar() {
             Boshqaruv Tizimi
           </p>
         </div>
-      </div>
+      </NavLink>
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto scrollbar-thin px-3 py-4 space-y-1">
@@ -69,17 +66,27 @@ export function Sidebar() {
       {/* Profile footer */}
       <div className="border-t border-slate-100 p-4">
         <div className="flex items-center gap-3">
-          <div className="grid place-items-center w-9 h-9 shrink-0 rounded-full bg-slate-800 text-white text-xs font-semibold">
-            {initials(user?.full_name ?? '')}
-          </div>
-          <div className="min-w-0 flex-1 leading-tight">
-            <p className="truncate text-sm font-semibold text-slate-900">
-              {user?.full_name ?? '—'}
-            </p>
-            <p className="truncate text-[11px] text-slate-400 uppercase tracking-wide">
-              {user?.role?.name ?? '—'}
-            </p>
-          </div>
+          {/* Profil — ruxsat talab qilmaydi: har kim faqat o'zini ko'radi. */}
+          <NavLink
+            to="/profile"
+            title="Mening profilim"
+            className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1 -m-1 transition-colors hover:bg-slate-50"
+          >
+            <Avatar
+              name={user?.full_name ?? '—'}
+              photoUrl={user?.photo_url}
+              className="h-9 w-9"
+              textClassName="text-xs"
+            />
+            <div className="min-w-0 flex-1 leading-tight">
+              <p className="truncate text-sm font-semibold text-slate-900">
+                {user?.full_name ?? '—'}
+              </p>
+              <p className="truncate text-[11px] text-slate-400 uppercase tracking-wide">
+                {user?.role?.name ?? '—'}
+              </p>
+            </div>
+          </NavLink>
           <button
             type="button"
             onClick={() => void logout()}

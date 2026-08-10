@@ -8,6 +8,7 @@ from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.db import transaction
 from rest_framework import status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -28,6 +29,8 @@ from apps.accounts.models import User
 from apps.accounts.serializers import (
     LoginSerializer,
     PasswordChangeSerializer,
+    ProfilePhotoSerializer,
+    ProfileUpdateSerializer,
     SelectOrganizationSerializer,
     SignupSerializer,
 )
@@ -42,6 +45,7 @@ __all__ = [
     "RefreshView",
     "LogoutView",
     "MeView",
+    "ProfilePhotoView",
     "PasswordChangeView",
 ]
 
@@ -273,12 +277,103 @@ class LogoutView(APIView):
 
 
 class MeView(APIView):
-    """`GET /auth/me` — frontend boot paytida auth holatini to'ldiradi."""
+    """
+    `GET /auth/me` — frontend boot paytida auth holatini to'ldiradi.
+    `PATCH /auth/me` — foydalanuvchi O'ZINING profilini tahrirlaydi.
+
+    PATCH ataylab `/users/{id}` dan alohida: u `users.update` ruxsatini
+    talab qiladi, ya'ni kassir o'z telefon raqamini ham o'zgartira olmasdi.
+    Bu endpoint esa ID qabul qilmaydi — u har doim so'rov egasining o'z
+    qatorini yangilaydi, va faqat xavfsiz maydonlarni: rol ham, filial ham,
+    `is_active` ham bu yerdan o'zgarmaydi (aks holda har bir foydalanuvchi
+    o'zini tashkilot egasi qilib qo'ya olardi).
+    """
 
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
         user = request_user(request)
+        return Response(
+            {
+                "user": services.user_payload(user),
+                "subscription": services.subscription_payload(user.organization),
+            }
+        )
+
+    def patch(self, request: Request) -> Response:
+        user = request_user(request)
+        serializer = ProfileUpdateSerializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="user",
+            entity_id=user.id,
+            changes={"self_profile": sorted(serializer.validated_data)},
+        )
+        return Response(
+            {
+                "user": services.user_payload(user),
+                "subscription": services.subscription_payload(user.organization),
+            }
+        )
+
+
+class ProfilePhotoView(APIView):
+    """
+    `POST /auth/me/photo` — o'z profil rasmini yuklash.
+    `DELETE /auth/me/photo` — rasmni olib tashlash.
+
+    ID qabul qilmaydi: rasm har doim so'rov egasining o'zinikiga yoziladi.
+    Boshqa xodimning rasmini almashtirish uchun `/users/{id}` yo'li bor va
+    u `users.update` ruxsatini talab qiladi.
+    """
+
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request: Request) -> Response:
+        user = request_user(request)
+        serializer = ProfilePhotoSerializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        # Eski faylni saqlab qo'yish keraksiz joy egallaydi va uni hech kim
+        # ko'rmaydi — yangisi yozilgach o'chiriladi.
+        previous = user.photo.name if user.photo else None
+        serializer.save()
+        if previous and previous != user.photo.name:
+            user.photo.storage.delete(previous)
+
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="user",
+            entity_id=user.id,
+            changes={"self_profile": ["photo"]},
+        )
+        return Response(
+            {
+                "user": services.user_payload(user),
+                "subscription": services.subscription_payload(user.organization),
+            }
+        )
+
+    def delete(self, request: Request) -> Response:
+        user = request_user(request)
+        if user.photo:
+            user.photo.delete(save=True)
+            audit.record(
+                action="update",
+                request=request._request,
+                actor=user,
+                entity_type="user",
+                entity_id=user.id,
+                changes={"self_profile": ["photo:removed"]},
+            )
         return Response(
             {
                 "user": services.user_payload(user),

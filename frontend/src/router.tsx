@@ -1,33 +1,45 @@
+import { lazy } from 'react'
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 import { PlatformAuthProvider } from './features/platform/PlatformAuthProvider'
 import { PlatformLayout } from './features/platform/components/PlatformLayout'
-import PlatformLoginPage from './features/platform/pages/PlatformLoginPage'
-import PlatformDashboardPage from './features/platform/pages/PlatformDashboardPage'
-import PlatformOrganizationsPage from './features/platform/pages/PlatformOrganizationsPage'
-import PlatformOrganizationPage from './features/platform/pages/PlatformOrganizationPage'
-import PlatformInvoicesPage from './features/platform/pages/PlatformInvoicesPage'
-import PlatformGrantsPage from './features/platform/pages/PlatformGrantsPage'
 import { AppLayout } from './components/layout/AppLayout'
 import { PermissionRoute, ProtectedRoute, PublicOnlyRoute } from './app/routes/ProtectedRoute'
 import LoginPage from './features/auth/pages/LoginPage'
-import SignupPage from './features/auth/pages/SignupPage'
-import DashboardPage from './features/dashboard/pages/DashboardPage'
-import ChildrenPage from './features/children/pages/ChildrenPage'
-import GroupsPage from './features/children/pages/GroupsPage'
-import ChildDetailPage from './features/children/pages/ChildDetailPage'
-import PaymentsPage from './features/payments/pages/PaymentsPage'
-import DebtorsPage from './features/debtors/pages/DebtorsPage'
-import AttendancePage from './features/attendance/pages/AttendancePage'
-import StaffPage from './features/staff/pages/StaffPage'
-import PayrollPage from './features/payroll/pages/PayrollPage'
-import InventoryPage from './features/inventory/pages/InventoryPage'
-import ExpensesPage from './features/expenses/pages/ExpensesPage'
-import ReportsPage from './features/reports/pages/ReportsPage'
-import BranchesPage from './features/branches/pages/BranchesPage'
-import NotificationsPage from './features/notifications/pages/NotificationsPage'
-import AuditPage from './features/audit/pages/AuditPage'
-import BillingPage from './features/billing/pages/BillingPage'
-import SettingsPage from './features/settings/pages/SettingsPage'
+
+/*
+ * Sahifalar TALAB BO'YICHA yuklanadi (docs/05 §15).
+ *
+ * Hammasi bitta faylga yig'ilganda birinchi ochilish 1 MB dan ortiq JS
+ * kutadi — kassir faqat to'lovlar sahifasini ochsa ham, oylik, ombor va
+ * hisobotlar kodi ham yuklanardi. `Suspense` chegaralari AppLayout va
+ * PlatformLayout ichida.
+ */
+const PlatformLoginPage = lazy(() => import('./features/platform/pages/PlatformLoginPage'))
+const PlatformDashboardPage = lazy(() => import('./features/platform/pages/PlatformDashboardPage'))
+const PlatformOrganizationsPage = lazy(() => import('./features/platform/pages/PlatformOrganizationsPage'))
+const PlatformOrganizationPage = lazy(() => import('./features/platform/pages/PlatformOrganizationPage'))
+const PlatformInvoicesPage = lazy(() => import('./features/platform/pages/PlatformInvoicesPage'))
+const PlatformGrantsPage = lazy(() => import('./features/platform/pages/PlatformGrantsPage'))
+const SignupPage = lazy(() => import('./features/auth/pages/SignupPage'))
+const ProfilePage = lazy(() => import('./features/auth/pages/ProfilePage'))
+const OrganizationPage = lazy(() => import('./features/organization/pages/OrganizationPage'))
+const DashboardPage = lazy(() => import('./features/dashboard/pages/DashboardPage'))
+const ChildrenPage = lazy(() => import('./features/children/pages/ChildrenPage'))
+const GroupsPage = lazy(() => import('./features/children/pages/GroupsPage'))
+const ChildDetailPage = lazy(() => import('./features/children/pages/ChildDetailPage'))
+const PaymentsPage = lazy(() => import('./features/payments/pages/PaymentsPage'))
+const DebtorsPage = lazy(() => import('./features/debtors/pages/DebtorsPage'))
+const AttendancePage = lazy(() => import('./features/attendance/pages/AttendancePage'))
+const StaffPage = lazy(() => import('./features/staff/pages/StaffPage'))
+const PayrollPage = lazy(() => import('./features/payroll/pages/PayrollPage'))
+const InventoryPage = lazy(() => import('./features/inventory/pages/InventoryPage'))
+const ExpensesPage = lazy(() => import('./features/expenses/pages/ExpensesPage'))
+const ReportsPage = lazy(() => import('./features/reports/pages/ReportsPage'))
+const BranchesPage = lazy(() => import('./features/branches/pages/BranchesPage'))
+const NotificationsPage = lazy(() => import('./features/notifications/pages/NotificationsPage'))
+const AuditPage = lazy(() => import('./features/audit/pages/AuditPage'))
+const BillingPage = lazy(() => import('./features/billing/pages/BillingPage'))
+const SettingsPage = lazy(() => import('./features/settings/pages/SettingsPage'))
 
 /**
  * Marshrutlar (docs/05 §9).
@@ -79,6 +91,8 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="/dashboard" replace /> },
           { path: 'dashboard', element: <DashboardPage /> },
+          // Profil — ruxsat talab qilmaydi: har kim faqat o'zini ko'radi.
+          { path: 'profile', element: <ProfilePage /> },
           {
             element: <PermissionRoute permission="children.read" />,
             children: [
@@ -137,11 +151,32 @@ export const router = createBrowserRouter([
           },
           {
             element: <PermissionRoute permission="settings.read" />,
-            children: [{ path: 'settings', element: <SettingsPage /> }],
+            children: [
+              { path: 'settings', element: <SettingsPage /> },
+              { path: 'organization', element: <OrganizationPage /> },
+            ],
           },
           { path: '*', element: <Navigate to="/dashboard" replace /> },
         ],
       },
     ],
   },
-])
+  ],
+  {
+    /*
+     * v7 xatti-harakatini HOZIRDAN yoqamiz.
+     *
+     * React Router bularsiz brauzer konsolida har safar sariq
+     * ogohlantirish chiqaradi. Bayroqlarni yoqish ikki foyda beradi:
+     * konsol tozalanadi va v7 ga o'tish paytida xatti-harakat allaqachon
+     * yangi bo'lgani uchun kutilmagan o'zgarish bo'lmaydi.
+     */
+    future: {
+      v7_relativeSplatPath: true,
+      v7_fetcherPersist: true,
+      v7_normalizeFormMethod: true,
+      v7_partialHydration: true,
+      v7_skipActionErrorRevalidation: true,
+    },
+  },
+)

@@ -9,10 +9,12 @@ from apps.accounts.views_auth import (
     LogoutView,
     MeView,
     PasswordChangeView,
+    ProfilePhotoView,
     RefreshView,
     SelectOrganizationView,
     SignupView,
 )
+from apps.organizations.views import OrganizationView
 from apps.platform.views import PlatformLoginView
 
 app_name = "v1"
@@ -28,6 +30,7 @@ auth_patterns = [
     path("auth/refresh", RefreshView.as_view(), name="auth-refresh"),
     path("auth/logout", LogoutView.as_view(), name="auth-logout"),
     path("auth/me", MeView.as_view(), name="auth-me"),
+    path("auth/me/photo", ProfilePhotoView.as_view(), name="auth-me-photo"),
     path("auth/password/change", PasswordChangeView.as_view(), name="auth-password-change"),
 ]
 
@@ -41,6 +44,8 @@ platform_patterns = [
 urlpatterns = [
     path("", ApiRootView.as_view(), name="root"),
     path("health", HealthCheckView.as_view(), name="health"),
+    # Singleton resurs — ID yo'q, tashkilot tokendan olinadi (docs/04 §16).
+    path("organization", OrganizationView.as_view(), name="organization"),
     *auth_patterns,
     *platform_patterns,
     *router.urls,

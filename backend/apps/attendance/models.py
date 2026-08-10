@@ -18,10 +18,19 @@ __all__ = ["AttendanceRecord", "AttendanceStatus"]
 
 
 class AttendanceStatus(models.TextChoices):
+    """
+    Kunlik davomat holati.
+
+    "Kechikdi" ataylab yo'q: davomat uchun kun yakunida javob beriladigan
+    savol — bola bog'chada bo'ldimi yoki yo'qmi. Kechikish esa hisob-kitobga
+    (to'lov, ovqat, guruh sig'imi) hech qanday ta'sir qilmasdi, lekin har
+    kuni har bir bola uchun qo'shimcha qaror talab qilardi. Kelgan bola —
+    `present`; kelish vaqti kerak bo'lsa, `check_in_at` da turadi.
+    """
+
     PRESENT = "present", "Keldi"
     ABSENT = "absent", "Kelmagan"
     EXCUSED = "excused", "Sababli"
-    LATE = "late", "Kechikdi"
 
 
 class AttendanceRecord(BranchScopedModel):

@@ -9,8 +9,9 @@
 
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Banknote, X } from 'lucide-react'
+import { Banknote } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { Modal } from '@/components/ui/Modal'
 import { paymentsApi } from '@/features/payments/api'
 import { ApiError, type Invoice } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
@@ -61,22 +62,13 @@ export function RecordPaymentModal({
   const tooMuch = Number(amount) > outstanding
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-        <div className="mb-4 flex items-start justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">To'lov qabul qilish</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              {invoice.child_name} · {invoice.number}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
-          >
-            <X className="h-4 w-4" />
-          </button>
+    <Modal open onClose={onClose} className="max-w-md">
+      <div className="p-6">
+        <div className="mb-4 pr-10">
+          <h2 className="text-lg font-bold text-slate-900">To'lov qabul qilish</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {invoice.child_name} · {invoice.number}
+          </p>
         </div>
 
         <div className="mb-4 rounded-lg bg-slate-50 px-3 py-2 text-sm">
@@ -173,6 +165,6 @@ export function RecordPaymentModal({
           </button>
         </form>
       </div>
-    </div>
+    </Modal>
   )
 }

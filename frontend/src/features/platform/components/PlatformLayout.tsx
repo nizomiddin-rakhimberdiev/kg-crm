@@ -7,6 +7,7 @@
  * tug'ilmasligi kerak.
  */
 
+import { Suspense } from 'react'
 import { NavLink, Navigate, Outlet } from 'react-router-dom'
 import { Building2, CreditCard, KeyRound, LayoutDashboard, LogOut, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -76,7 +77,9 @@ export function PlatformLayout() {
       </header>
 
       <main className="mx-auto max-w-7xl px-6 py-6">
-        <Outlet />
+        <Suspense fallback={<div className="grid place-items-center py-20 text-sm text-slate-400">Yuklanmoqda…</div>}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   )

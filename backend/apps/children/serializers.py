@@ -60,6 +60,11 @@ class ChildGuardianSerializer(serializers.ModelSerializer):
 class EnrollmentSerializer(serializers.ModelSerializer):
     group = GroupSerializer(read_only=True)
     group_id = TenantPrimaryKeyRelatedField(model=Group, source="group", write_only=True)
+    # ModelSerializer buni majburiy qilib qo'yadi (modelda NOT NULL, default yo'q),
+    # lekin view uni `.get()` bilan o'qiydi va `services.enroll_child()`
+    # ko'rsatilmasa bugungi sanani qo'yadi. Majburiy qoldirilsa, "bolani guruhga
+    # yoz" degan oddiy amal 400 bilan tugaydi.
+    start_date = serializers.DateField(required=False)
 
     class Meta:
         model = Enrollment

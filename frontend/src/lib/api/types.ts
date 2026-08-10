@@ -66,6 +66,21 @@ export interface OrganizationSummary {
   slug: string
 }
 
+/** Tashkilotning to'liq profili — `/organization` (docs/04 §16). */
+export interface Organization {
+  id: string
+  name: string
+  slug: string
+  legal_name: string
+  tax_id: string
+  contact_email: string
+  contact_phone: string
+  country: string
+  locale: string
+  onboarded_at: string | null
+  created_at: string
+}
+
 export interface RoleSummary {
   code: string
   name: string
@@ -81,6 +96,8 @@ export interface CurrentUser {
   full_name: string
   email: string
   phone: string
+  /** Profil rasmi; `null` bo'lsa bosh harflar ko'rsatiladi. */
+  photo_url: string | null
   role: RoleSummary | null
   organization: OrganizationSummary | null
   branch: BranchSummary | null
@@ -218,7 +235,7 @@ export interface ImportReport {
 
 // --- Davomat ---
 
-export type AttendanceStatus = 'present' | 'absent' | 'excused' | 'late'
+export type AttendanceStatus = 'present' | 'absent' | 'excused'
 
 export interface DailyRegisterRow {
   child_id: string
@@ -241,7 +258,6 @@ export interface AttendanceSummaryRow {
   present: number
   absent: number
   excused: number
-  late: number
   total: number
   attendance_rate: number
 }

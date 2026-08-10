@@ -17,7 +17,13 @@ env = environ.Env()
 environ.Env.read_env(BASE_DIR / ".env")
 
 # --- Asosiy ---
-SECRET_KEY = env("DJANGO_SECRET_KEY", default="insecure-dev-key-change-me")
+# Default ataylab uzun (32+ bayt): qisqa kalit JWT imzosini zaiflashtiradi
+# va PyJWT har bir token uchun ogohlantirish beradi. Prod'da bu default
+# umuman ishlatilmaydi — u yerda kalit majburiy va uzunligi tekshiriladi.
+SECRET_KEY = env(
+    "DJANGO_SECRET_KEY",
+    default="insecure-dev-key-change-me-0123456789abcdef",  # noqa: S106
+)
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 

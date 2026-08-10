@@ -262,3 +262,224 @@ class TestUserCreation:
         )
         assert response.status_code == 400
         assert "email" in response.json()["error"]["details"]
+
+
+class TestRoleCustomisation:
+    """
+    Matritsa — boshlang'ich holat, qulf emas (docs/02 §11.2).
+
+    Bog'chalarning ish taqsimoti har xil: birida kassir davomat ham qo'yadi,
+    boshqasida yo'q. Shuning uchun tashkilot egasi rollarni moslashtira oladi.
+    """
+
+    def test_owner_can_change_a_system_role_permissions(self, tenant_a):
+        role = tenant_a.role("cashier")
+
+        response = tenant_a.client().put(
+            reverse("v1:role-permissions", args=[role.id]),
+            {"permissions": ["children.read", "attendance.read", "attendance.create"]},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        assert response.json()["data"]["permissions"] == [
+            "attendance.create",
+            "attendance.read",
+            "children.read",
+        ]
+
+    def test_owner_role_cannot_lose_the_keys_to_the_house(self, tenant_a):
+        """
+        Rollarni faqat `users.update` ega odam sozlaydi.
+
+        Uni egasidan olib tashlash — tashkilotni o'zini o'zi qulflab qo'yishi:
+        keyin hech kim hech qanday rolni tuzata olmaydi.
+        """
+        role = tenant_a.role("org_owner")
+
+        response = tenant_a.client().put(
+            reverse("v1:role-permissions", args=[role.id]),
+            {"permissions": ["children.read"]},
+            format="json",
+        )
+
+        assert response.status_code == 422
+        assert "users.update" in response.json()["error"]["message"]
+
+    def test_owner_can_create_a_custom_role(self, tenant_a):
+        response = tenant_a.client().post(
+            reverse("v1:role-list"),
+            {"name": "Kassir yordamchisi", "code": "Kassir Yordamchisi"},
+            format="json",
+        )
+
+        assert response.status_code == 201
+        data = response.json()["data"]
+        assert data["code"] == "kassir_yordamchisi"  # normallashtiriladi
+        assert data["is_system"] is False
+
+    def test_duplicate_role_code_is_rejected_with_400(self, tenant_a):
+        """Bazadagi unikallik cheklovi 500 emas, tushunarli 400 berishi kerak."""
+        response = tenant_a.client().post(
+            reverse("v1:role-list"),
+            {"name": "Yangi kassir", "code": "cashier"},
+            format="json",
+        )
+
+        assert response.status_code == 400
+        assert "code" in response.json()["error"]["details"]
+
+    def test_system_role_code_is_immutable(self, tenant_a):
+        role = tenant_a.role("director")
+
+        response = tenant_a.client().patch(
+            reverse("v1:role-detail", args=[role.id]),
+            {"code": "boshqaruvchi"},
+            format="json",
+        )
+
+        assert response.status_code == 400
+        assert "code" in response.json()["error"]["details"]
+
+    def test_system_role_can_be_renamed(self, tenant_a):
+        """Nomi — bog'chaning atamasi, uni o'zgartirish mumkin."""
+        role = tenant_a.role("director")
+
+        response = tenant_a.client().patch(
+            reverse("v1:role-detail", args=[role.id]),
+            {"name": "Bog'cha mudiri"},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        assert response.json()["data"]["name"] == "Bog'cha mudiri"
+
+
+class TestSelfServiceProfile:
+    """
+    `PATCH /auth/me` — foydalanuvchi o'zining profilini tahrirlaydi.
+
+    Bu `/users/{id}` dan alohida yo'l: u `users.update` talab qiladi, ya'ni
+    kassir o'z telefon raqamini ham o'zgartira olmasdi.
+    """
+
+    def test_user_can_edit_own_name_and_phone(self, tenant_a):
+        cashier = _member(tenant_a, "cashier")
+        client = _client_for(tenant_a, cashier)
+
+        response = client.patch(
+            reverse("v1:auth-me"),
+            {"full_name": "Dilnoza Karimova", "phone": "+998901112233"},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        user = response.json()["data"]["user"]
+        assert user["full_name"] == "Dilnoza Karimova"
+        assert user["phone"] == "+998901112233"
+
+    def test_privileged_fields_are_ignored(self, tenant_a):
+        """
+        Eng muhim test: o'z-o'zini tahrirlash yo'li imtiyoz oshirish
+        yo'liga aylanmasligi kerak. Rol, filial, email va faollik
+        holati bu endpointda umuman qabul qilinmaydi.
+        """
+        cashier = _member(tenant_a, "cashier")
+        owner_role_id = str(tenant_a.role("org_owner").id)
+        client = _client_for(tenant_a, cashier)
+
+        response = client.patch(
+            reverse("v1:auth-me"),
+            {
+                "full_name": "Yangi ism",
+                "role_id": owner_role_id,
+                "email": "egasi@example.uz",
+                "is_active": False,
+                "organization": "boshqa",
+            },
+            format="json",
+        )
+
+        assert response.status_code == 200
+        cashier.refresh_from_db()
+        assert cashier.role.code == "cashier"  # rol o'zgarmadi
+        assert cashier.email != "egasi@example.uz"  # email o'zgarmadi
+        assert cashier.is_active is True  # o'zini o'chirmadi
+        assert cashier.full_name == "Yangi ism"  # xavfsiz maydon esa o'zgardi
+
+
+class TestProfilePhoto:
+    """
+    Profil rasmi (docs/04 §5).
+
+    Yuklangan fayl keyin brauzerga qaytariladi, shuning uchun "bu haqiqatan
+    rasmmi?" degan savol xavfsizlik savoli — kengaytmaga ishonish yetarli emas.
+    """
+
+    @staticmethod
+    def _png(size: tuple[int, int] = (32, 32)) -> bytes:
+        import io
+
+        from PIL import Image
+
+        buffer = io.BytesIO()
+        Image.new("RGB", size, (37, 99, 235)).save(buffer, format="PNG")
+        return buffer.getvalue()
+
+    def test_upload_returns_photo_url(self, tenant_a):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        response = tenant_a.client().post(
+            reverse("v1:auth-me-photo"),
+            {"photo": SimpleUploadedFile("avatar.png", self._png(), content_type="image/png")},
+            format="multipart",
+        )
+
+        assert response.status_code == 200
+        photo_url = response.json()["data"]["user"]["photo_url"]
+        assert photo_url and photo_url.endswith(".png")
+        # Fayl tashkilot papkasiga tushadi (docs/02 §16.2).
+        assert str(tenant_a.organization.id) in photo_url
+
+    def test_a_renamed_non_image_is_rejected(self, tenant_a):
+        """Kengaytmasi `.png` bo'lgan ixtiyoriy bayt to'plami rad etiladi."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        response = tenant_a.client().post(
+            reverse("v1:auth-me-photo"),
+            {
+                "photo": SimpleUploadedFile(
+                    "zararli.png", b"MZ\x90\x00 bu rasm emas", content_type="image/png"
+                )
+            },
+            format="multipart",
+        )
+
+        assert response.status_code == 400
+        assert "photo" in response.json()["error"]["details"]
+
+    def test_disallowed_extension_is_rejected(self, tenant_a):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        response = tenant_a.client().post(
+            reverse("v1:auth-me-photo"),
+            {"photo": SimpleUploadedFile("hujjat.pdf", self._png(), content_type="image/png")},
+            format="multipart",
+        )
+
+        assert response.status_code == 400
+
+    def test_photo_can_be_removed(self, tenant_a):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        client = tenant_a.client()
+        client.post(
+            reverse("v1:auth-me-photo"),
+            {"photo": SimpleUploadedFile("avatar.png", self._png(), content_type="image/png")},
+            format="multipart",
+        )
+
+        response = client.delete(reverse("v1:auth-me-photo"))
+
+        assert response.status_code == 200
+        assert response.json()["data"]["user"]["photo_url"] is None

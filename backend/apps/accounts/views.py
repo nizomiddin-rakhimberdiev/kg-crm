@@ -11,6 +11,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.accounts import services
+from apps.accounts.constants import OWNER_LOCKED_PERMISSIONS, OWNER_ROLE_CODE
 from apps.accounts.models import Permission, Role, RolePermission, User
 from apps.accounts.serializers import (
     PermissionSerializer,
@@ -154,15 +155,20 @@ class RoleViewSet(TenantViewSet):
             )
             return Response({"permissions": sorted(codes)})
 
-        if role.is_system:
+        wanted = set(request.data.get("permissions", []))
+
+        # Matritsa (docs/02 §11.2) — boshlang'ich holat, abadiy cheklov emas:
+        # tashkilot egasi har bir rolni o'z ish jarayoniga moslashtira oladi.
+        # Yagona istisno — egasining o'zini qulflab qo'yishi.
+        if role.code == OWNER_ROLE_CODE and not wanted >= OWNER_LOCKED_PERMISSIONS:
             from apps.core.exceptions import BusinessRuleViolation
 
+            missing = sorted(OWNER_LOCKED_PERMISSIONS - wanted)
             raise BusinessRuleViolation(
-                "Tizim rolining ruxsatlari o'zgartirilmaydi — ular docs/02 §11.2 "
-                "matritsasidan seed qilinadi."
+                "Tashkilot egasi rolidan quyidagi ruxsatlarni olib tashlab bo'lmaydi "
+                f"(aks holda rollarni hech kim sozlay olmay qoladi): {', '.join(missing)}."
             )
 
-        wanted = set(request.data.get("permissions", []))
         permissions = list(Permission.objects.filter(code__in=wanted))
         RolePermission.objects.filter(role=role).delete()
         RolePermission.objects.bulk_create(

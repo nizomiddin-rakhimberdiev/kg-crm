@@ -679,6 +679,17 @@ Legend: **F** = Full (CRUD), **W** = Create/Update, **R** = Read-only, **—** =
 
 > **Billing is Org Owner only.** A Director who can see the subscription invoice can infer the vendor's pricing for every branch; more importantly, changing the payment term is a commercial commitment for the legal entity, not a branch operation.
 
+**This matrix is the seeded starting point, not a permanent constraint.** It is written to each organization's `role`/`role_permission` rows at signup (`seed_system_roles`, which runs once per organization and is never re-applied). From there the **Org Owner may re-assign any permission to any role — system roles included — and may create additional roles**, because kindergartens divide work differently: in one, the cashier also marks attendance; in another, they must not.
+
+Two rails keep that freedom safe:
+
+| Rail | Rule | Why |
+|------|------|-----|
+| **Owner lockout** | The `org_owner` role must always keep `users.read` and `users.update` (`OWNER_LOCKED_PERMISSIONS`); removing them returns `422`. | Roles are edited only by someone holding `users.update`. Dropping it would leave the tenant permanently unable to fix any role — recoverable only through a vendor `SupportGrant` (ADR-10). |
+| **System role codes are immutable** | A system role can be renamed and re-permissioned, but its `code` cannot change, and it cannot be deleted. | Code paths key off the code (e.g. `role.code != "org_owner"` decides whether a branch is required). Renaming it would break permission logic silently. |
+
+Custom roles carry `is_system = false`, get a normalized `code` (`"Kassir yordamchisi"` → `kassir_yordamchisi`, unique per organization), and may be deleted.
+
 ### 11.3 How it's enforced
 
 ```mermaid

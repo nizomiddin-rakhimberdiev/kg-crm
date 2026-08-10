@@ -389,6 +389,7 @@ Authentication identity.
 | `password_hash` | `VARCHAR(255)` | `NOT NULL` | Argon2/PBKDF2 |
 | `full_name` | `VARCHAR(150)` | `NOT NULL` | |
 | `phone` | `VARCHAR(20)` | `NULL` | |
+| `photo` | `VARCHAR(255)` | `NULL` | Profil rasmi — storage kaliti; fayl nomi UUID (docs/02 §16.2) |
 | `role_id` | `UUID` | `NOT NULL` FK → role `ON DELETE RESTRICT` | One primary role (MVP) |
 | `branch_id` | `UUID` | `NULL` FK → branch | `NULL` only for Org Owner (cross-branch within their org) |
 | `is_staff` | `BOOLEAN` | `NOT NULL DEFAULT true` | Back-office user |
@@ -510,14 +511,15 @@ Authentication identity.
 | `child_id` | `UUID` | `NOT NULL` FK → child `ON DELETE CASCADE` | |
 | `group_id` | `UUID` | `NULL` FK → group `ON DELETE SET NULL` | Group at time of record |
 | `attendance_date` | `DATE` | `NOT NULL` | The day |
-| `status` | `VARCHAR(15)` | `NOT NULL`, `CHECK (... IN ('present','absent','excused','late'))` | |
+| `status` | `VARCHAR(15)` | `NOT NULL`, `CHECK (... IN ('present','absent','excused'))` | |
 | `check_in_at` | `TIMESTAMPTZ` | `NULL` | |
 | `check_out_at` | `TIMESTAMPTZ` | `NULL` | |
-| `reason` | `VARCHAR(255)` | `NULL` | Absence/late reason |
+| `reason` | `VARCHAR(255)` | `NULL` | Absence reason |
 | `recorded_by` | `UUID` | `NULL` FK → user `ON DELETE SET NULL` | |
 
 **Business rules:**
 - **One record per child per day** → `uq_attendance_child_date UNIQUE (child_id, attendance_date)`. Corrections update the same row (this is the one operational table where an in-place status update is allowed, because a day's state is a single fact, not a money movement).
+- **There is no `late` status.** Attendance answers one question at the end of the day — was the child here or not — and lateness changed no downstream number (fees, meals, group capacity) while costing a decision on every child, every day. A child who arrived is `present`; the arrival time, when it matters, is already in `check_in_at`. Removed in migration `attendance.0004_drop_late_status`, which rewrote existing `late` rows to `present` — reports had always counted them as attending, so no figure moved.
 - `ck_attendance_checkout CHECK (check_out_at IS NULL OR check_in_at IS NULL OR check_out_at >= check_in_at)`.
 - `attendance_date` cannot be in the future → `ck_attendance_not_future CHECK (attendance_date <= CURRENT_DATE)`.
 

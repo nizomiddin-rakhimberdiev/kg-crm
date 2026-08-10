@@ -11,7 +11,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarCheck, Check, Clock, Save, X } from 'lucide-react'
+import { CalendarCheck, Check, Save, X } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { attendanceApi } from '@/features/attendance/api'
 import { groupsApi } from '@/features/children/api'
@@ -27,7 +27,6 @@ const STATUS_BUTTONS: Array<{
   active: string
 }> = [
   { value: 'present', label: 'Keldi', icon: Check, active: 'bg-emerald-600 text-white' },
-  { value: 'late', label: 'Kechikdi', icon: Clock, active: 'bg-amber-500 text-white' },
   { value: 'excused', label: 'Sababli', icon: CalendarCheck, active: 'bg-sky-600 text-white' },
   { value: 'absent', label: 'Kelmagan', icon: X, active: 'bg-red-600 text-white' },
 ]
@@ -98,7 +97,7 @@ export default function AttendancePage() {
   const rows = registerQuery.data?.rows ?? []
 
   const counts = useMemo(() => {
-    const result = { present: 0, late: 0, excused: 0, absent: 0, unmarked: 0 }
+    const result = { present: 0, excused: 0, absent: 0, unmarked: 0 }
     for (const row of rows) {
       const status = draft[row.child_id]
       if (!status) result.unmarked += 1
@@ -190,10 +189,9 @@ export default function AttendancePage() {
       </div>
 
       {rows.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             ['Keldi', counts.present, 'text-emerald-700'],
-            ['Kechikdi', counts.late, 'text-amber-700'],
             ['Sababli', counts.excused, 'text-sky-700'],
             ['Kelmagan', counts.absent, 'text-red-700'],
             ['Belgilanmagan', counts.unmarked, 'text-slate-500'],
