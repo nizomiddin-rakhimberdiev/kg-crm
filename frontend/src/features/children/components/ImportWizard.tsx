@@ -14,12 +14,8 @@ import { Modal } from '@/components/ui/Modal'
 import { useBranchScope } from '@/app/providers/BranchProvider'
 import { childrenApi } from '@/features/children/api'
 import { ApiError, type ImportReport } from '@/lib/api/types'
+import { httpClient } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
-
-const TEMPLATE = `Familiya;Ism;Tug'ilgan sana;Jinsi;Guruh;Ota-ona;Telefon
-Valiyev;Ali;14.03.2021;o'g'il;Quyoshlar;Valiyeva Nodira;+998901112233
-Karimova;Zilola;2020-05-14;qiz;Quyoshlar;Karimov Aziz;+998901112244
-`
 
 export function ImportWizard({ onClose }: { onClose: () => void }) {
   const organizationId = useOrganizationId()
@@ -58,16 +54,34 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
     if (selected) runImport.mutate({ target: selected, dryRun: true })
   }
 
-  const downloadTemplate = () => {
-    // `﻿` — BOM: Excel CSV'ni UTF-8 deb tanishi uchun, aks holda
-    // kirill va o'zbek harflari buzilib ko'rinadi.
-    const blob = new Blob([`﻿${TEMPLATE}`], { type: 'text/csv;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'bolalar-namuna.csv'
-    link.click()
-    URL.revokeObjectURL(url)
+  /**
+   * Shablon SERVERDAN olinadi, bu yerda yaratilmaydi.
+   *
+   * Ustun nomlari importer bilan aynan bir xil bo'lishi kerak. Ikki
+   * joyda yozilgan ro'yxat ertami-kechmi ajralib qoladi — o'shanda
+   * mijoz to'ldirgan fayl "majburiy ustun topilmadi" deb rad etilardi,
+   * va sabab ko'rinmas bo'lardi.
+   */
+  const [templateBusy, setTemplateBusy] = useState(false)
+
+  const downloadTemplate = async () => {
+    setTemplateBusy(true)
+    setError(null)
+    try {
+      const response = await httpClient.get('/children/import-template', {
+        responseType: 'blob',
+      })
+      const url = URL.createObjectURL(response.data as Blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'bolalar-shablon.xlsx'
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      setError("Shablonni yuklab bo'lmadi. Qaytadan urinib ko'ring.")
+    } finally {
+      setTemplateBusy(false)
+    }
   }
 
   const canSave = report !== null && report.errors.length === 0 && !done && file !== null
@@ -78,16 +92,18 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
         <div className="mb-4 pr-10">
           <h2 className="text-lg font-bold text-slate-900">Ro'yxatni import qilish</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Excel'da faylni <strong>CSV sifatida saqlang</strong> va shu yerga yuklang.
+            Shablonni yuklab oling, to'ldiring va shu yerga qaytaring. <strong>Excel
+            fayli</strong> to'g'ridan-to'g'ri qabul qilinadi — CSV ga aylantirish shart emas.
           </p>
         </div>
 
         <button
           type="button"
-          onClick={downloadTemplate}
-          className="mb-4 text-sm font-medium text-brand-600 hover:underline"
+          onClick={() => void downloadTemplate()}
+          disabled={templateBusy}
+          className="mb-4 text-sm font-medium text-brand-600 hover:underline disabled:opacity-50"
         >
-          Namuna faylni yuklab olish
+          {templateBusy ? 'Tayyorlanmoqda…' : 'Excel shablonni yuklab olish'}
         </button>
 
         {/* 1-qadam: fayl */}

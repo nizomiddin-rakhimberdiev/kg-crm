@@ -28,7 +28,14 @@ from django.db import transaction
 from apps.children.models import Child, EnrollmentStatus, Gender, Group
 from apps.children.services import attach_guardian, enroll_child, upsert_guardian
 
-__all__ = ["ImportReport", "RowError", "parse_rows", "import_children", "COLUMNS"]
+__all__ = [
+    "ImportReport",
+    "RowError",
+    "parse_rows",
+    "import_children",
+    "build_template",
+    "COLUMNS",
+]
 
 # Kutilayotgan ustunlar. Kalit — ichki nom, qiymat — sarlavhaning
 # mumkin bo'lgan variantlari (bog'chalar turli xil yozadi).
@@ -108,15 +115,76 @@ def _parse_date(raw: str) -> date | None:
     return None
 
 
+# `.xlsx` — bu ZIP arxiv, ya'ni har doim shu ikki bayt bilan boshlanadi.
+# Kengaytmaga ishonmaymiz: foydalanuvchi faylni `.csv` deb nomlashi
+# mumkin, va aksincha.
+_XLSX_SIGNATURE = b"PK\x03\x04"
+
+
+def _rows_from_xlsx(file_bytes: bytes) -> tuple[list[list[str]], list[RowError]]:
+    """
+    Excel faylining BIRINCHI varag'ini matn qatorlariga aylantiradi.
+
+    Sana yacheykalari Excel'da `datetime` bo'lib keladi — ularni
+    `dd.mm.yyyy` ga aylantiramiz, chunki `_parse_date` shu shaklni
+    biladi va foydalanuvchi ham xuddi shunday yozadi.
+    """
+    from openpyxl import load_workbook
+
+    try:
+        workbook = load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
+    except Exception:  # noqa: BLE001
+        # Bu yerda ATAYLAB keng ushlanadi: fayl foydalanuvchidan keladi
+        # va u har qanday holatda bo'lishi mumkin — yarim yuklangan,
+        # parol bilan himoyalangan, boshqa dastur yozgan. `openpyxl`
+        # bunday hollarda turli xil istisno ko'taradi (`BadZipFile`,
+        # `InvalidFileException`, `KeyError`…), va ularni sanab chiqishga
+        # urinish ertami-kechmi bittasini o'tkazib yuboradi — o'shanda
+        # mijoz tushunarli xabar o'rniga `500` ko'radi.
+        return [], [
+            RowError(
+                0,
+                "file",
+                "Excel faylini o'qib bo'lmadi. Fayl to'liq yuklanganini va "
+                "parol bilan himoyalanmaganini tekshiring.",
+            )
+        ]
+
+    sheet = workbook.worksheets[0]
+    rows: list[list[str]] = []
+    for raw_row in sheet.iter_rows(values_only=True):
+        cells: list[str] = []
+        for value in raw_row:
+            if value is None:
+                cells.append("")
+            elif isinstance(value, (datetime, date)):
+                cells.append(value.strftime("%d.%m.%Y"))
+            elif isinstance(value, float) and value.is_integer():
+                # Excel raqamlarni float qilib beradi: telefon yoki
+                # yil "2021.0" bo'lib ko'rinmasligi kerak.
+                cells.append(str(int(value)))
+            else:
+                cells.append(str(value).strip())
+        # To'liq bo'sh qatorlar tashlab yuboriladi — Excel faylining
+        # oxirida ular yuzlab bo'lishi mumkin.
+        if any(cell for cell in cells):
+            rows.append(cells)
+    workbook.close()
+    return rows, []
+
+
 def parse_rows(file_bytes: bytes) -> tuple[list[dict[str, str]], list[RowError]]:
     """
-    CSV baytlarini lug'atlar ro'yxatiga aylantiradi.
+    Excel (`.xlsx`) yoki CSV baytlarini lug'atlar ro'yxatiga aylantiradi.
 
-    Excel `.xlsx` ni o'qish uchun `openpyxl` kerak; MVP CSV bilan cheklanadi
-    va foydalanuvchiga "Excel'da 'CSV sifatida saqlash'" deb ko'rsatiladi —
-    bitta bog'liqlikni kechiktirish uchun ongli murosa.
+    Format MAZMUNIDAN aniqlanadi, kengaytmadan emas.
     """
-    errors: list[RowError] = []
+    if file_bytes.startswith(_XLSX_SIGNATURE):
+        table, read_errors = _rows_from_xlsx(file_bytes)
+        if read_errors:
+            return [], read_errors
+        return _rows_from_table(table)
+
     try:
         text = file_bytes.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -129,11 +197,22 @@ def parse_rows(file_bytes: bytes) -> tuple[list[dict[str, str]], list[RowError]]
     sample = text[:2048]
     delimiter = ";" if sample.count(";") > sample.count(",") else ","
 
-    reader = csv.reader(io.StringIO(text), delimiter=delimiter)
-    try:
-        header = next(reader)
-    except StopIteration:
+    table = [list(row) for row in csv.reader(io.StringIO(text), delimiter=delimiter)]
+    return _rows_from_table(table)
+
+
+def _rows_from_table(table: list[list[str]]) -> tuple[list[dict[str, str]], list[RowError]]:
+    """
+    Sarlavha + qatorlar jadvalini ichki lug'atlarga aylantiradi.
+
+    CSV ham, Excel ham SHU yerga keladi — ustun tanish va tekshirish
+    mantiqini ikki marta yozmaslik uchun.
+    """
+    errors: list[RowError] = []
+    if not table:
         return [], [RowError(0, "file", "Fayl bo'sh.")]
+
+    header = table[0]
 
     mapping: dict[int, str] = {}
     for index, column in enumerate(header):
@@ -148,7 +227,7 @@ def parse_rows(file_bytes: bytes) -> tuple[list[dict[str, str]], list[RowError]]
         ]
 
     rows: list[dict[str, str]] = []
-    for line_number, raw_row in enumerate(reader, start=2):
+    for line_number, raw_row in enumerate(table[1:], start=2):
         if not any(cell.strip() for cell in raw_row):
             continue  # bo'sh qator — jimgina o'tkazamiz
         row = dict.fromkeys(COLUMNS, "")
@@ -311,3 +390,121 @@ def import_children(
         transaction.set_rollback(True)
 
     return report
+
+
+# --- Shablon ---
+
+# Shablondagi ustunlar va ularning izohi. Tartib muhim: majburiylari
+# oldinda, shunda ekranga sig'may qolgan ustunlar ixtiyoriylari bo'ladi.
+_TEMPLATE_COLUMNS: tuple[tuple[str, str, bool], ...] = (
+    ("Familiya", "Bolaning familiyasi", True),
+    ("Ism", "Bolaning ismi", True),
+    ("Tug'ilgan sana", "kun.oy.yil — masalan 14.03.2021", True),
+    ("Jinsi", "o'g'il yoki qiz", False),
+    ("Otasining ismi", "Ixtiyoriy", False),
+    ("Guruh", "Guruh nomi — mavjud bo'lmasa e'tiborsiz qoldiriladi", False),
+    ("Ota-ona", "Familiya va ism, masalan: Valiyeva Nodira", False),
+    ("Telefon", "+998901234567 — SMS eslatma shu raqamga ketadi", False),
+)
+
+_TEMPLATE_EXAMPLES: tuple[tuple[str, ...], ...] = (
+    (
+        "Valiyev",
+        "Ali",
+        "14.03.2021",
+        "o'g'il",
+        "Rustamovich",
+        "Quyoshcha",
+        "Valiyeva Nodira",
+        "+998901112233",
+    ),
+    ("Karimova", "Zilola", "02.11.2020", "qiz", "", "Kamalak", "Karimov Bahodir", "+998939874455"),
+)
+
+
+def build_template() -> bytes:
+    """
+    To'ldirish uchun Excel shabloni.
+
+    Nega CSV emas: bog'cha kotibi Excel'da ishlaydi, va undan "CSV
+    sifatida saqlash" so'ralganda Windows'dagi Excel ajratgichni tizim
+    tiliga qarab tanlaydi hamda kodlashni buzadi. Bu import oqimidagi
+    eng ko'p muammo keltiradigan qadam edi — endi u umuman yo'q.
+
+    Shablonda ikkita namuna qator bor. Ular ataylab: bo'sh jadval
+    "sanani qanday yozay?" degan savolni ochiq qoldiradi, namuna esa
+    javobni ko'rsatib turadi. Import ularni tanib, o'tkazib yuboradi.
+    """
+    from openpyxl import Workbook
+    from openpyxl.comments import Comment
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
+    from openpyxl.worksheet.datavalidation import DataValidation
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Bolalar"
+
+    header_fill = PatternFill("solid", fgColor="0E6B5B")
+    required_font = Font(bold=True, color="FFFFFF")
+    optional_font = Font(bold=True, color="D9EDE8")
+
+    for index, (title, hint, required) in enumerate(_TEMPLATE_COLUMNS, start=1):
+        cell = sheet.cell(row=1, column=index, value=title)
+        cell.fill = header_fill
+        cell.font = required_font if required else optional_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        # Izoh yacheyka IZOHI sifatida qo'yiladi, alohida qator emas:
+        # qo'shimcha qatorni import ma'lumot deb o'qib qolardi.
+        cell.comment = Comment(hint, "KG-CRM")
+        sheet.column_dimensions[get_column_letter(index)].width = max(len(title) + 4, 18)
+
+    for row_offset, example in enumerate(_TEMPLATE_EXAMPLES, start=2):
+        for index, value in enumerate(example, start=1):
+            sheet.cell(row=row_offset, column=index, value=value)
+
+    # Sarlavhani muzlatamiz — 150 qator kiritayotgan odam ustun
+    # nomlarini yo'qotmasin.
+    sheet.freeze_panes = "A2"
+
+    # Jins uchun ro'yxat: xato yozilgan qiymat importda ogohlantirish
+    # beradi, lekin uni oldindan to'sish arzonroq.
+    gender_column = get_column_letter(4)
+    validation = DataValidation(
+        type="list", formula1="\"o'g'il,qiz\"", allow_blank=True, showDropDown=False
+    )
+    validation.error = 'Faqat "o\'g\'il" yoki "qiz" yozing.'
+    validation.errorTitle = "Noto'g'ri qiymat"
+    sheet.add_data_validation(validation)
+    validation.add(f"{gender_column}2:{gender_column}1000")
+
+    # Ikkinchi varaq — yo'riqnoma. Import faqat BIRINCHI varaqni o'qiydi,
+    # shuning uchun bu yerdagi matn hech narsaga xalaqit bermaydi.
+    guide = workbook.create_sheet("Yo'riqnoma")
+    guide.column_dimensions["A"].width = 26
+    guide.column_dimensions["B"].width = 68
+
+    lines: list[tuple[str, str]] = [
+        ("Qanday to'ldiriladi", ""),
+        ("", ""),
+        ("1-varaq", "Ma'lumotni faqat \"Bolalar\" varag'iga yozing."),
+        ("Namuna qatorlar", "Ikkita namuna qator bor — ularni o'chirib, o'rniga yozing."),
+        ("Majburiy ustunlar", "Familiya, Ism, Tug'ilgan sana. Qolgani ixtiyoriy."),
+        ("Sana", "kun.oy.yil — masalan 14.03.2021"),
+        ("Telefon", "+998901234567. SMS eslatmalar shu raqamga ketadi."),
+        ("Guruh", "Nomi tizimdagi guruh bilan mos kelsa, bola avtomatik yoziladi."),
+        ("", ""),
+        ("Takroriy yuborish", "Xatolarni tuzatib, AYNAN shu faylni qayta yuborsangiz"),
+        ("", "takroriy bola yaratilmaydi — mavjudlari yangilanadi."),
+        ("", ""),
+        ("Saqlash", "Faylni .xlsx holida saqlang. CSV ga aylantirish shart emas."),
+    ]
+    for row_index, (label, text) in enumerate(lines, start=1):
+        label_cell = guide.cell(row=row_index, column=1, value=label)
+        label_cell.font = Font(bold=True)
+        guide.cell(row=row_index, column=2, value=text)
+    guide["A1"].font = Font(bold=True, size=14, color="0E6B5B")
+
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    return buffer.getvalue()

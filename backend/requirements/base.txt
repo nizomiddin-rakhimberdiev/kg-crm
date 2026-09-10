@@ -24,3 +24,12 @@ django-celery-beat==2.9.0
 
 # Rasm validatsiyasi (ImageField) — profil rasmi (docs/02 §16.3)
 Pillow==12.3.0
+
+# Excel import va shablon (docs/06 Sprint 2).
+#
+# Avval faqat CSV qo'llab-quvvatlanardi va mijozdan Excel'da "CSV
+# sifatida saqlash" so'ralardi. Amalda bu eng ko'p muammo keltiradigan
+# qadam: Windows'dagi Excel ajratgichni tizim tiliga qarab tanlaydi va
+# kodlashni buzadi — shuning uchun bu yerda `cp1251` bilan ishlash ham
+# kerak bo'lgan. Bitta bog'liqlik shu ishqalanishni butunlay yo'qotadi.
+openpyxl==3.1.5

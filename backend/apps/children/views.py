@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import io
 from typing import Any
 
+from django.http import FileResponse
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
@@ -12,7 +14,7 @@ from rest_framework.response import Response
 
 from apps.audit import services as audit
 from apps.branches.selectors import resolve_branch
-from apps.children import services
+from apps.children import importer, services
 from apps.children.importer import import_children
 from apps.children.models import Child, Enrollment, Group, Guardian
 from apps.children.serializers import (
@@ -125,6 +127,24 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
             can_pickup=bool(request.data.get("can_pickup", True)),
         )
         return Response(ChildGuardianSerializer(link).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["get"], url_path="import-template")
+    def import_template(self, request: Request) -> FileResponse:
+        """
+        `GET /children/import-template` — to'ldirish uchun Excel shabloni.
+
+        Shablon SERVERDA yaratiladi, frontendda emas: ustun nomlari
+        importer bilan aynan bir xil bo'lishi kerak, va ikki joyda
+        yozilgan ro'yxat ertami-kechmi ajralib qoladi — o'shanda mijoz
+        to'ldirgan fayl "majburiy ustun topilmadi" deb rad etilardi.
+        """
+        content = importer.build_template()
+        return FileResponse(
+            io.BytesIO(content),
+            as_attachment=True,
+            filename="bolalar-shablon.xlsx",
+            content_type=("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+        )
 
     @action(
         detail=False,
