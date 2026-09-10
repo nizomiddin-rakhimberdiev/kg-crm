@@ -25,7 +25,7 @@ from apps.children.serializers import (
 )
 from apps.core.exceptions import BusinessRuleViolation
 from apps.core.typing import request_user
-from apps.core.viewsets import BranchScopedMixin, TenantViewSet
+from apps.core.viewsets import BranchCreateMixin, BranchScopedMixin, TenantViewSet
 
 __all__ = ["ChildViewSet", "GuardianViewSet", "GroupViewSet"]
 
@@ -167,7 +167,7 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
         return Response(report.as_dict())
 
 
-class GuardianViewSet(BranchScopedMixin, TenantViewSet):
+class GuardianViewSet(BranchCreateMixin, BranchScopedMixin, TenantViewSet):
     permission_module = "children"
     model = Guardian
     serializer_class = GuardianSerializer

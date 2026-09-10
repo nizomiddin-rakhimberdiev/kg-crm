@@ -150,3 +150,21 @@ def test_balance_is_not_multiplied_by_the_invoice_count(tenant_a):
         assert row.ledger_balance == Decimal("2000000.00"), (
             f"Balans {row.ledger_balance} — hisob-fakturalar soniga ko'paytirilgan"
         )
+
+
+def test_malformed_id_is_404_not_500(tenant_a):
+    """
+    Buzuq UUID `404` berishi kerak, `500` emas.
+
+    `/debtors` — `ViewSet` (ADR-7: ortida jadval yo'q), ya'ni DRF'ning
+    `get_object()` va uning UUID tekshiruvi bu yerda ishlamaydi.
+    `filter(pk="not-a-uuid")` `ValidationError` ko'taradi va `500`
+    bo'lib chiqadi — qolgan hamma endpoint esa `404` beradi.
+
+    Farq muhim: `500` "bu yerda kutilmagan narsa bo'ldi" deb aytadi va
+    skanerlaydigan odamga qazishni davom ettirish uchun signal beradi.
+    """
+    client = tenant_a.client()
+    for bad in ("not-a-uuid", "None", "1", "../etc/passwd"):
+        response = client.get(f"/api/v1/debtors/{bad}")
+        assert response.status_code == 404, f"'{bad}' uchun {response.status_code} qaytdi"

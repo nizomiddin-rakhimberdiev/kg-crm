@@ -97,6 +97,7 @@ def quote(
     discount_percent: Decimal = Decimal("0"),
     months: int = 1,
     include_base: bool = True,
+    covered_children: int | None = None,
 ) -> Quote:
     """
     Berilgan plan va bolalar soni uchun summalarni hisoblaydi.
@@ -104,6 +105,18 @@ def quote(
     `include_base=False` — oldindan to'langan muddat ichidagi OYLIK
     ortiqcha hisobi uchun: baza allaqachon to'langan, faqat o'sish
     hisoblanadi (docs/01 §4.3).
+
+    `covered_children` — mijoz ALLAQACHON to'lagan bolalar soni.
+    Oldindan to'lovda (yarim yillik / yillik) mijoz `committed_children`
+    uchun pul to'lagan, ya'ni ortiqcha faqat SHU SONDAN oshgani uchun
+    olinadi. Ko'rsatilmasa plandagi `included_children` ishlatiladi —
+    oylik muddat uchun bu ikkisi bir xil.
+
+    Busiz ikkita zarar bor edi:
+      * prognoz har oy mavjud bo'lmagan hisobni ko'rsatardi —
+        "kutilmagan hisob yo'q" va'dasining teskarisi;
+      * o'sgan prepaid mijozdan ortiqcha pul olinardi. 64 tadan 71 ga
+        o'sgan mijozdan bitta qadam emas, uchta qadam undirilardi.
 
     Chegirma bazaga ham, ortiqchaga ham bir xil foizda qo'llanadi:
     hujjatda "ortiqcha qadamlar ... o'sha chegirma stavkasida" deb
@@ -113,10 +126,11 @@ def quote(
         raise ValueError("Oylar soni kamida 1 bo'lishi kerak.")
 
     included = int(plan.included_children)
+    # Bepul chegara: oldindan to'langan son plandagi sondan kam
+    # bo'la olmaydi — baza baribir 50 tagacha qamrab oladi.
+    covered = max(int(covered_children), included) if covered_children is not None else included
     billable = billable_children(peak=peak_children, included=included)
-    steps = overage_steps(
-        billable=billable, included=included, step=int(plan.overage_step_children)
-    )
+    steps = overage_steps(billable=billable, included=covered, step=int(plan.overage_step_children))
 
     base = _money(Decimal(plan.base_price) * months) if include_base else Decimal("0.00")
     overage = _money(Decimal(plan.overage_step_price) * steps * months)

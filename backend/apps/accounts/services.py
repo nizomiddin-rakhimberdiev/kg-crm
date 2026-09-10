@@ -279,18 +279,28 @@ def subscription_payload(organization: Any) -> dict[str, Any]:
     `read_only` shu yerdan keladi, chunki UI uni har bir tugmada
     tekshiradi. Bu **UX**, xavfsizlik emas: haqiqiy to'siq backend'dagi
     `SubscriptionWriteGate` va u `402` qaytaradi.
+
+    Kontekst SHU YERDA o'rnatiladi, chaqiruvchida emas. Sabab: signup va
+    login javoblarida bu funksiya `organization_context` blokidan
+    TASHQARIDA chaqirilardi, va RLS ostida so'rov jimgina bo'sh
+    qaytardi — obuna bazada bor, javobda esa `null`. Xato chiqmasdi,
+    shunchaki sinov banneri hech qachon ko'rinmasdi.
+
+    Chaqiruv joylarini tuzatish yetarli emasdi: keyingi chaqiruv ham
+    xuddi shunday adashardi. Kontekstni funksiyaning o'ziga ko'chirish
+    esa bu xatoni umuman mumkin bo'lmagan holga keltiradi.
     """
     from apps.subscriptions.models import Subscription, SubscriptionStatus
 
     if organization is None:
         return {"status": None, "read_only": False, "trial_ends_at": None}
 
-    subscription = (
-        Subscription.all_objects.filter(organization=organization)
-        .exclude(status=SubscriptionStatus.CANCELLED)
-        .only("status", "trial_ends_at")
-        .first()
-    )
+    with organization_context(organization.id):
+        subscription = (
+            Subscription.objects.exclude(status=SubscriptionStatus.CANCELLED)
+            .only("status", "trial_ends_at")
+            .first()
+        )
     if subscription is None:
         return {"status": None, "read_only": False, "trial_ends_at": None}
 

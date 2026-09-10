@@ -235,3 +235,70 @@ class TestPlanVersioning:
         new = FakePlan(base_price=Decimal("650000.00"))
         assert pricing.quote(plan=old, peak_children=50).total_amount == Decimal("500000.00")
         assert pricing.quote(plan=new, peak_children=50).total_amount == Decimal("650000.00")
+
+
+class TestPrepaidCoverage:
+    """
+    Oldindan to'langan mijozdan ikki marta pul olinmasligi kerak.
+
+    Yarim yillik yoki yillik to'lovda mijoz `committed_children` uchun
+    oldindan to'laydi — baza ham, o'sha sondagi ortiqcha ham. Keyingi
+    oylarda faqat SHU SONDAN oshgani hisoblanadi.
+
+    Avval `quote()` har doim plandagi 50 dan hisoblardi, ya'ni:
+      * prognoz har oy hech qachon kelmaydigan hisobni ko'rsatardi;
+      * o'sgan mijozdan uch barobar ko'p pul undirilardi.
+    """
+
+    def test_no_growth_means_nothing_to_bill(self):
+        """64 bolaga to'lagan mijozda 64 bola qolsa — hisob nol."""
+        quote = pricing.quote(
+            plan=PLAN,
+            peak_children=64,
+            covered_children=64,
+            discount_percent=Decimal("15"),
+            include_base=False,
+        )
+        assert quote.overage_steps == 0
+        assert quote.total_amount == Decimal("0.00")
+
+    def test_only_growth_beyond_the_committed_count_is_billed(self):
+        """
+        64 → 71 bola: BITTA qadam, uchta emas.
+
+        Eski mantiq (50 dan hisoblash) uchta qadam bergan bo'lardi —
+        ya'ni mijoz o'zi allaqachon to'lagan 14 ta bola uchun qayta
+        pul to'lardi.
+        """
+        quote = pricing.quote(
+            plan=PLAN,
+            peak_children=71,
+            covered_children=64,
+            discount_percent=Decimal("15"),
+            include_base=False,
+        )
+        assert quote.overage_steps == 1
+        assert quote.overage_amount == Decimal("80000.00")
+        assert quote.total_amount == Decimal("68000.00")  # 80 000 − 15 %
+
+    def test_shrinking_below_the_committed_count_bills_nothing(self):
+        """Bolalar kamaysa ham qaytarilmaydi, lekin qo'shimcha ham olinmaydi."""
+        quote = pricing.quote(plan=PLAN, peak_children=40, covered_children=64, include_base=False)
+        assert quote.total_amount == Decimal("0.00")
+
+    def test_covered_below_the_plan_floor_is_ignored(self):
+        """
+        Kelishilgan son plandagi 50 dan kam bo'lsa, pol baribir 50.
+
+        Aks holda 20 bolaga "kelishgan" mijoz 21-boladan boshlab
+        ortiqcha to'lardi — holbuki baza 50 tagacha qamrab oladi.
+        """
+        quote = pricing.quote(plan=PLAN, peak_children=55, covered_children=20)
+        assert quote.overage_steps == 1  # 50 dan hisoblanadi, 20 dan emas
+        assert quote.total_amount == Decimal("580000.00")
+
+    def test_monthly_term_is_unchanged(self):
+        """`covered_children` berilmasa, eski xatti-harakat aynan saqlanadi."""
+        with_arg = pricing.quote(plan=PLAN, peak_children=80, covered_children=50)
+        without = pricing.quote(plan=PLAN, peak_children=80)
+        assert with_arg.total_amount == without.total_amount == Decimal("740000.00")

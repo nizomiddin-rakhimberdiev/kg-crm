@@ -303,3 +303,46 @@ class TestRegistrationService:
             password=PASSWORD,
         )
         assert first.organization.slug != second.organization.slug
+
+
+class TestSubscriptionPayload:
+    """
+    Signup va login javobida obuna holati BO'LISHI kerak.
+
+    Bu regressiya testi: `subscription_payload` tenant kontekstidan
+    tashqarida chaqirilardi va RLS ostida so'rov jimgina bo'sh
+    qaytardi — obuna bazada bor, javobda `null`. Xato chiqmasdi,
+    shunchaki sinov banneri hech qachon ko'rinmasdi va mijoz "necha
+    kun qoldi?" degan savolga javob topolmasdi.
+    """
+
+    def test_signup_response_carries_the_trial(self, api_client):
+        response = api_client.post(
+            reverse("v1:auth-signup"),
+            {
+                "organization_name": "Obuna Javobi",
+                "contact_email": "obuna-javobi@test.uz",
+                "full_name": "Egasi",
+                "password": PASSWORD,
+            },
+            format="json",
+        )
+        assert response.status_code == 201
+        subscription = response.json()["data"]["subscription"]
+        assert subscription["status"] == "trialing"
+        assert subscription["trial_ends_at"] is not None
+        assert subscription["read_only"] is False
+
+    def test_login_response_carries_the_trial(self, api_client, tenant_a):
+        response = api_client.post(
+            reverse("v1:auth-login"),
+            {"email": tenant_a.owner.email, "password": PASSWORD},
+            format="json",
+        )
+        assert response.status_code == 200
+        assert response.json()["data"]["subscription"]["status"] == "trialing"
+
+    def test_me_carries_the_trial_too(self, tenant_a):
+        response = tenant_a.client().get(reverse("v1:auth-me"))
+        assert response.status_code == 200
+        assert response.json()["data"]["subscription"]["status"] == "trialing"

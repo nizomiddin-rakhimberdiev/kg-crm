@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
 from django.http import Http404
@@ -319,9 +320,23 @@ class DebtorViewSet(viewsets.ViewSet):
         """
         from apps.children.models import Child
 
+        # Buzuq UUID ham `404` beradi, `500` emas.
+        #
+        # Bu `ViewSet` (ADR-7: ortida jadval yo'q), ya'ni DRF'ning
+        # `get_object()` va uning UUID tekshiruvi bu yerda ishlamaydi —
+        # `filter(pk="not-a-uuid")` esa `ValidationError` ko'taradi va
+        # `500` bo'lib chiqadi. Qolgan HAMMA endpoint bunday holatda
+        # `404` qaytaradi, va bitta endpointning boshqacha javob
+        # berishi skanerlaydigan odamga aynan shu yerda kutilmagan
+        # narsa borligini aytib qo'yadi.
+        try:
+            child_id = uuid.UUID(str(pk))
+        except (TypeError, ValueError) as exc:
+            raise Http404 from exc
+
         # `Child.objects` tenant bilan cheklangan — begona bola bu yerda
         # umuman mavjud emas.
-        child = Child.objects.filter(pk=pk).first()
+        child = Child.objects.filter(pk=child_id).first()
         if child is None:
             raise Http404
         return Response(selectors.child_statement(child=child))

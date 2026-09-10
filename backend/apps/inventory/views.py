@@ -10,9 +10,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.audit import services as audit
-from apps.branches.selectors import resolve_branch
 from apps.core.typing import request_user
-from apps.core.viewsets import BranchScopedMixin, TenantViewSet
+from apps.core.viewsets import BranchCreateMixin, BranchScopedMixin, TenantViewSet
 from apps.inventory import services
 from apps.inventory.models import (
     Product,
@@ -39,37 +38,28 @@ __all__ = [
 ]
 
 
-class _BranchCreateMixin:
-    """Filialni `resolve_branch()` orqali aniqlaydigan umumiy create."""
-
-    def perform_create(self, serializer: Any) -> None:
-        user = request_user(self.request)  # type: ignore[attr-defined]
-        branch = resolve_branch(user, self.request.data.get("branch_id"))  # type: ignore[attr-defined]
-        serializer.save(organization=user.organization, branch=branch)
-
-
-class WarehouseViewSet(_BranchCreateMixin, BranchScopedMixin, TenantViewSet):
+class WarehouseViewSet(BranchCreateMixin, BranchScopedMixin, TenantViewSet):
     permission_module = "inventory"
     model = Warehouse
     serializer_class = WarehouseSerializer
     search_fields = ["name"]
 
 
-class ProductCategoryViewSet(_BranchCreateMixin, BranchScopedMixin, TenantViewSet):
+class ProductCategoryViewSet(BranchCreateMixin, BranchScopedMixin, TenantViewSet):
     permission_module = "inventory"
     model = ProductCategory
     serializer_class = ProductCategorySerializer
     search_fields = ["name"]
 
 
-class SupplierViewSet(_BranchCreateMixin, BranchScopedMixin, TenantViewSet):
+class SupplierViewSet(BranchCreateMixin, BranchScopedMixin, TenantViewSet):
     permission_module = "inventory"
     model = Supplier
     serializer_class = SupplierSerializer
     search_fields = ["name", "phone", "contact_person"]
 
 
-class ProductViewSet(_BranchCreateMixin, BranchScopedMixin, TenantViewSet):
+class ProductViewSet(BranchCreateMixin, BranchScopedMixin, TenantViewSet):
     permission_module = "inventory"
     permission_action_map = {"low_stock": "read", "valuation": "read"}
     model = Product

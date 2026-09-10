@@ -346,11 +346,16 @@ def projected_usage(*, subscription: Subscription) -> dict[str, Any]:
         subscription.current_period_start <= today <= subscription.current_period_end
     )
     committed = subscription.committed_children or 0
+    # Oldindan to'langan muddatda baza ham, KELISHILGAN sondagi ortiqcha
+    # ham allaqachon to'langan. Shuning uchun prognozda faqat o'sha
+    # sondan oshgani ko'rsatiladi — aks holda ekran har oy hech qachon
+    # kelmaydigan hisobni ko'rsatib turardi.
     quote = pricing.quote(
         plan=subscription.plan,
-        peak_children=observed_peak if not prepaid else max(observed_peak, committed),
+        peak_children=observed_peak,
         discount_percent=subscription.discount_percent,
         include_base=not prepaid,
+        covered_children=committed if prepaid else None,
     )
 
     return {
@@ -411,8 +416,15 @@ def issue_invoice(
     period_end: date,
     months: int = 1,
     include_base: bool = True,
+    covered_children: int | None = None,
 ) -> SubscriptionInvoice:
-    """Yopilgan dalildan hisob-faktura yozadi."""
+    """
+    Yopilgan dalildan hisob-faktura yozadi.
+
+    `covered_children` — oldindan to'langan muddat ichidagi o'sish
+    hisobi uchun: mijoz kelishilgan songacha allaqachon to'lagan,
+    ya'ni ortiqcha faqat undan oshgani uchun olinadi (docs/01 §4.3).
+    """
     if snapshot.closed_at is None:
         raise BusinessRuleViolation("Yopilmagan o'lchovdan hisob yozib bo'lmaydi.")
 
@@ -422,6 +434,7 @@ def issue_invoice(
         discount_percent=subscription.discount_percent,
         months=months,
         include_base=include_base,
+        covered_children=covered_children,
     )
 
     today = timezone.localdate()

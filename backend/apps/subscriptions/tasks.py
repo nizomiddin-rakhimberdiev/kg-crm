@@ -114,6 +114,9 @@ def close_periods_and_invoice() -> dict[str, int]:
                     period_end=subscription.current_period_end,
                     months=1,
                     include_base=not prepaid_term,
+                    # Oldindan to'langan muddatda ortiqcha faqat
+                    # KELISHILGAN sondan oshgani uchun olinadi.
+                    covered_children=committed if prepaid_term else None,
                 )
                 invoiced += 1
                 _roll_period(subscription)

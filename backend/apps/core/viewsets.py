@@ -21,7 +21,38 @@ from apps.core.permissions import HasModulePermission
 from apps.core.typing import request_user
 from apps.subscriptions.permissions import SubscriptionWriteGate
 
-__all__ = ["TenantViewSet", "TenantReadOnlyViewSet", "BranchScopedMixin"]
+__all__ = [
+    "TenantViewSet",
+    "TenantReadOnlyViewSet",
+    "BranchScopedMixin",
+    "BranchCreateMixin",
+]
+
+
+class BranchCreateMixin:
+    """
+    Yaratishda filialni aniqlaydi.
+
+    `TenantViewSet.perform_create` faqat `organization` ni qo'yadi —
+    `branch` esa modelda `NOT NULL`. Ya'ni bu mixinsiz (yoki o'z
+    `perform_create` isiz) filialga bog'langan har qanday yaratish
+    bazada `NULL` cheklovga uriladi va mijoz tushunarsiz `409` oladi.
+
+    Aynan shu holat `GuardianViewSet` da bor edi: vasiy qo'shish
+    endpointi umuman ishlamasdi. Seed va testlar vasiylarni servis
+    qatlami orqali yaratgani uchun buni hech narsa ko'rsatmagan.
+    `test_every_branch_scoped_viewset_can_create` shuning uchun bor.
+    """
+
+    def perform_create(self, serializer: Any) -> None:
+        user = request_user(self.request)  # type: ignore[attr-defined]
+        from apps.branches.selectors import resolve_branch
+
+        branch = serializer.validated_data.get("branch") or resolve_branch(
+            user,
+            self.request.data.get("branch_id"),  # type: ignore[attr-defined]
+        )
+        serializer.save(organization=user.organization, branch=branch)
 
 
 class BranchScopedMixin:
