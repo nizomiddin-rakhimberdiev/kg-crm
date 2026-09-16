@@ -120,6 +120,11 @@ def _parse_date(raw: str) -> date | None:
 # mumkin, va aksincha.
 _XLSX_SIGNATURE = b"PK\x03\x04"
 
+# Import chegaralari (P2-003). Ikkalasi ham KENG: ular normal ishlashga
+# xalaqit bermasligi, faqat tizimni yiqitadigan hajmni to'xtatishi kerak.
+MAX_FILE_BYTES = 10 * 1_048_576  # 10 MB
+MAX_ROWS = 2000
+
 
 def _rows_from_xlsx(file_bytes: bytes) -> tuple[list[list[str]], list[RowError]]:
     """
@@ -303,11 +308,50 @@ def import_children(
     "saqlash" bosgandan keyin yangi xato chiqmasligi kerak.
     """
     report = ImportReport(dry_run=dry_run)
+
+    # Fayl hajmi — birinchi to'siq (P2-003).
+    #
+    # Nega bu yerda va nega `MAX_ROWS` dan oldin: qatorlarni sanash uchun
+    # avval butun faylni XOTIRAGA o'qish kerak. 200 MB lik fayl shu
+    # yerdayoq so'rovni ham, ishchini ham yiqitardi — qator soniga
+    # yetib borilmasdan.
+    if len(file_bytes) > MAX_FILE_BYTES:
+        report.errors.append(
+            RowError(
+                row=0,
+                field="file",
+                message=(
+                    f"Fayl juda katta ({len(file_bytes) // 1_048_576} MB). "
+                    f"Chegara — {MAX_FILE_BYTES // 1_048_576} MB. Ro'yxatni bo'lib yuboring."
+                ),
+            )
+        )
+        return report
+
     rows, parse_errors = parse_rows(file_bytes)
     report.errors.extend(parse_errors)
     report.total_rows = len(rows)
 
     if parse_errors:
+        return report
+
+    # Qator soni — ikkinchi to'siq.
+    #
+    # Import SO'ROV ICHIDA bajariladi, ya'ni uzun ro'yxat brauzerni
+    # kutdirib qo'yadi va gunicorn timeout'iga uriladi. Chegara ataylab
+    # keng: eng katta bog'cha ham 300 boladan oshmaydi, 2000 esa bir
+    # necha filialni birga import qilishga ham yetadi.
+    if len(rows) > MAX_ROWS:
+        report.errors.append(
+            RowError(
+                row=0,
+                field="file",
+                message=(
+                    f"Juda ko'p qator ({len(rows)}). "
+                    f"Bir martada {MAX_ROWS} tagacha import qilinadi."
+                ),
+            )
+        )
         return report
 
     prepared: list[dict[str, Any]] = []

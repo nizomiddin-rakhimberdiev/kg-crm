@@ -71,6 +71,9 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 # TenantMiddleware AuthenticationMiddleware dan KEYIN turishi shart:
 # u tashkilotni autentifikatsiya qilingan foydalanuvchidan oladi.
 MIDDLEWARE = [
+    # Eng tashqarida: identifikator BARCHA log yozuvlarini qamrashi
+    # kerak, shu jumladan boshqa middleware'lardagi xatolarni ham.
+    "apps.core.logging.RequestIdMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -169,6 +172,47 @@ CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://localhost:
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
+
+# --- Ishonchlilik ---
+#
+# Avval bu yerda hech narsa yo'q edi va sukut bo'yicha Celery vazifani
+# ISHGA TUSHISHIDAN OLDIN tasdiqlaydi. Ya'ni ishchi vazifa o'rtasida
+# yiqilsa (OOM, deploy, server qayta yuklandi) — vazifa jimgina
+# YO'QOLADI. Oyning 1-kunidagi hisob-faktura generatsiyasi uchun bu
+# "o'sha oy hisoblari chiqmadi va buni hech kim bilmadi" degani.
+#
+# `acks_late` buni teskari qiladi: vazifa TUGAGANDAN keyin tasdiqlanadi,
+# yiqilsa qayta yetkaziladi. Buning sharti — vazifalar idempotent
+# bo'lishi. Ular shunday: hisob-faktura `uq_invoice_child_period` qisman
+# indeksi bilan bazada himoyalangan, qarz eslatmasi esa kunlik
+# takrorlanishni `queue_debt_reminders` ichida to'xtatadi.
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+
+# `acks_late` bilan birga MAJBURIY: sukut bo'yicha ishchi o'ziga bir
+# nechta vazifani oldindan oladi va ular yiqilganda hammasi qayta
+# yetkaziladi. Bittadan olish qayta bajarish doirasini bitta vazifa
+# bilan cheklaydi.
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+
+# Osilgan vazifa ishchini ABADIY band qilmasin. Yumshoq chegara avval
+# ishlaydi va `SoftTimeLimitExceeded` ko'taradi — vazifa o'zini tartibli
+# yig'ib ulgurishi uchun; qattiq chegara esa kafolat.
+CELERY_TASK_SOFT_TIME_LIMIT = env.int("CELERY_SOFT_TIME_LIMIT", default=540)
+CELERY_TASK_TIME_LIMIT = env.int("CELERY_TIME_LIMIT", default=600)
+
+# Redis brokerida "ko'rinmaslik muddati" — ishchi shu vaqt ichida
+# tasdiqlamasa, vazifa boshqasiga beriladi. U `TIME_LIMIT` dan KATTA
+# bo'lishi shart: teng yoki kichik bo'lsa, uzoq (lekin sog'lom) vazifa
+# hali ishlayotgan paytda ikkinchi ishchiga ham berilardi — ya'ni sozlama
+# o'zi takrorlanish yaratardi.
+CELERY_BROKER_TRANSPORT_OPTIONS = {"visibility_timeout": 900}
+
+# Broker deploy paytida bir soniyaga yo'qolsa, ishchi yiqilib qolmasin.
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+# Natijalar abadiy saqlanmasin — ular faqat diagnostika uchun.
+CELERY_RESULT_EXPIRES = timedelta(days=2)
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
@@ -194,6 +238,17 @@ CELERY_BEAT_SCHEDULE = {
     "send-debt-reminders": {
         "task": "reports.send_debt_reminders",
         "schedule": crontab(hour=10, minute=0),
+    },
+    # Navbatdagi xabarlarni uzatish — har 5 daqiqada.
+    #
+    # To'lov kvitansiyasi `record_payment` ichida NAVBATGA qo'yiladi,
+    # lekin u yerda uzatilmaydi: pul qabul qilish SMS shlyuzining
+    # tirikligiga bog'liq bo'lmasligi kerak. Bu vazifa esa navbatni
+    # bo'shatadi. Usiz kvitansiya xabari `queued` holatda abadiy
+    # qolardi — xatosiz va jimgina.
+    "dispatch-queued-notifications": {
+        "task": "notifications.dispatch_queued",
+        "schedule": crontab(minute="*/5"),
     },
     # Har kecha: kesh va ledger solishtiruvi (docs/03 §26). Farq
     # topilsa log'ga yoziladi — kutib o'tirmasdan.
@@ -250,9 +305,21 @@ REST_FRAMEWORK = {
         "apps.core.authentication.TenantJWTAuthentication",
     ],
     "UNAUTHENTICATED_USER": None,
-    "DEFAULT_THROTTLE_CLASSES": ["rest_framework.throttling.AnonRateThrottle"],
+    # Anonim VA kirgan foydalanuvchi — ikkalasi ham cheklanadi.
+    #
+    # Avval faqat `AnonRateThrottle` bor edi, ya'ni kirgan foydalanuvchi
+    # umuman cheklovsiz edi. Bu ko'p ijarali tizimda alohida ma'noga ega:
+    # bitta mijozning skripti (yoki cheksiz aylanadigan sahifasi) butun
+    # serverni band qilib, QOLGAN bog'chalarni sekinlashtirardi. Chegara
+    # keng — normal ishlashga xalaqit bermaydi, lekin nosozlikni bitta
+    # tenant bilan cheklaydi.
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "120/hour",
+        "user": env("USER_THROTTLE_RATE", default="2000/hour"),
         # Login alohida va qattiqroq — brute-force'ga qarshi (docs/02 §20.2).
         "login": env("LOGIN_THROTTLE_RATE", default="10/min"),
         # Eksport — eng qimmat endpoint: u butun davrni o'qiydi va fayl
@@ -260,6 +327,12 @@ REST_FRAMEWORK = {
         # mijozning ishchilarini band qilib, QOLGAN mijozlarning
         # vazifalarini navbatda ushlab turardi.
         "export": env("EXPORT_THROTTLE_RATE", default="20/hour"),
+        # Public lead endpoint: normal foydalanuvchi formani bir marta
+        # yuboradi, bot esa qisqa vaqtda ko'p marta. Chegara privacy va
+        # operator vaqtini himoya qiladi; CAPTCHA keyingi qatlam sifatida
+        # deploy konfiguratsisida qo'shilishi mumkin.
+        "lead": env("LEAD_THROTTLE_RATE", default="5/hour"),
+        "public_pricing": env("PUBLIC_PRICING_THROTTLE_RATE", default="120/min"),
     },
 }
 
@@ -282,6 +355,15 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:5173"])
 CORS_ALLOW_CREDENTIALS = True
 
+# --- Mijoz manzili (apps/core/tenant_address.py) ---
+#
+# `TENANT_URL_STYLE` ni `subdomain` ga o'zgartirish — kelajakdagi
+# ko'chishning BUTUN backend qismi. Buning uchun wildcard DNS va
+# wildcard TLS sertifikati kerak bo'ladi; shu tayyor bo'lmaguncha
+# `path` qoladi.
+PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", default="http://localhost:5173")
+TENANT_URL_STYLE = env("TENANT_URL_STYLE", default="path")
+
 # --- SaaS / obuna (docs/01 §4) ---
 TRIAL_DAYS = env.int("TRIAL_DAYS", default=15)
 PAYMENT_GRACE_DAYS = env.int("PAYMENT_GRACE_DAYS", default=7)
@@ -292,15 +374,37 @@ CHURN_EXPORT_RETENTION_DAYS = env.int("CHURN_EXPORT_RETENTION_DAYS", default=30)
 # mijozgacha kechiktirilgan (apps/notifications/providers.py).
 NOTIFICATION_PROVIDER = env("NOTIFICATION_PROVIDER", default="console")
 
+# Konsol provayderi xabar MATNINI log'ga yozsinmi.
+#
+# Sukut bo'yicha YO'Q: matn ichida bolaning ismi, summa va bog'cha nomi
+# bor. Faqat lokal disk bilan cheklanmagan joyga (monitoring, zaxira,
+# xato kuzatuvi) tushadigan log'da bularning o'rni yo'q.
+NOTIFICATION_LOG_BODY = env.bool("NOTIFICATION_LOG_BODY", default=False)
+
 # --- Loglash ---
+# Loglar STDOUT ga — fayl aylantirish (rotation) ham, disk to'lishi ham
+# konteynerning ishi emas: Docker ularni o'zi yig'adi va cheklaydi.
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "request_id": {"()": "apps.core.logging.RequestIdFilter"},
+    },
     "formatters": {
-        "verbose": {"format": "{levelname} {asctime} {name} {message}", "style": "{"},
+        # `request_id` har bir qatorda. Nosozlikni tekshirishda bu
+        # farqni ko'rsatadi: "shu ID bo'yicha grep" — bitta
+        # foydalanuvchining bitta harakatining butun izi.
+        "verbose": {
+            "format": "{levelname} {asctime} [{request_id}] {name} {message}",
+            "style": "{",
+        },
     },
     "handlers": {
-        "console": {"class": "logging.StreamHandler", "formatter": "verbose"},
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+            "filters": ["request_id"],
+        },
     },
     "root": {"handlers": ["console"], "level": env("LOG_LEVEL", default="INFO")},
 }

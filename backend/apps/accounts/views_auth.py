@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from django.conf import settings
@@ -32,14 +33,12 @@ from apps.accounts.serializers import (
     ProfilePhotoSerializer,
     ProfileUpdateSerializer,
     SelectOrganizationSerializer,
-    SignupSerializer,
 )
 from apps.audit import services as audit
 from apps.core.tenancy import auth_lookup_context, organization_context
 from apps.core.typing import request_user
 
 __all__ = [
-    "SignupView",
     "LoginView",
     "SelectOrganizationView",
     "RefreshView",
@@ -48,6 +47,9 @@ __all__ = [
     "ProfilePhotoView",
     "PasswordChangeView",
 ]
+
+
+logger = logging.getLogger(__name__)
 
 
 class LoginThrottle(AnonRateThrottle):
@@ -66,54 +68,6 @@ def _org_summary(user: User) -> dict[str, str]:
         "name": organization.name,
         "slug": organization.slug,
     }
-
-
-class SignupView(APIView):
-    """`POST /auth/signup` — tashkilot + birinchi filial + Org Owner."""
-
-    permission_classes = [AllowAny]
-    throttle_classes = [LoginThrottle]
-
-    def post(self, request: Request) -> Response:
-        serializer = SignupSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-
-        result = services.register_organization(
-            organization_name=data["organization_name"],
-            contact_email=data["contact_email"],
-            contact_phone=data.get("contact_phone", ""),
-            full_name=data["full_name"],
-            password=data["password"],
-        )
-
-        with organization_context(result.organization.id):
-            audit.record(
-                action="signup",
-                request=request._request,
-                actor=result.owner,
-                organization=result.organization,
-                entity_type="organization",
-                entity_id=result.organization.id,
-            )
-            tokens = issue_token_pair(result.owner)
-            services.store_refresh_token(
-                user=result.owner,
-                raw_token=tokens["refresh"],
-                lifetime=settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"],
-                user_agent=request.META.get("HTTP_USER_AGENT", ""),
-                ip=audit.client_ip(request._request),
-            )
-            payload = services.user_payload(result.owner)
-
-        return Response(
-            {
-                **tokens,
-                "user": payload,
-                "subscription": services.subscription_payload(result.organization),
-            },
-            status=status.HTTP_201_CREATED,
-        )
 
 
 class LoginView(APIView):
@@ -235,9 +189,42 @@ class RefreshView(APIView):
             stored = services.RefreshToken.objects.filter(
                 token_hash=services.hash_token(raw)
             ).first()
-        if stored is None or not stored.is_valid:
-            # Bekor qilingan tokenni qayta ishlatish — o'g'irlangan sessiya
-            # belgisi bo'lishi mumkin, shuning uchun jimgina rad etamiz.
+        if stored is None:
+            return _auth_error("Refresh token yaroqsiz.")
+
+        if not stored.is_valid:
+            # BEKOR QILINGAN tokenni qayta ishlatish — o'g'irlangan
+            # sessiya belgisi (P2-004).
+            #
+            # Rotatsiya har yangilashda eski tokenni o'ldiradi, ya'ni
+            # normal mijoz uni ikkinchi marta ishlatmaydi. Ishlatgan
+            # bo'lsa — ikkita nusxa bor: haqiqiy foydalanuvchi va
+            # o'g'ri. Qaysi biri ekanini bilib bo'lmaydi, shuning
+            # uchun ikkalasi ham yopiladi: foydalanuvchining BARCHA
+            # sessiyalari bekor qilinadi va u qayta kirishga majbur
+            # bo'ladi. Noqulaylik — bu holatda to'g'ri narx.
+            #
+            # Faqat rad etish yetarli emasdi: o'g'ri allaqachon YANGI
+            # token olgan bo'lardi va u ishlayverardi — ya'ni haqiqiy
+            # foydalanuvchi bloklanib, o'g'ri qolardi.
+            if stored.revoked_at is not None:
+                with auth_lookup_context():
+                    compromised = User.auth_objects.filter(pk=stored.user_id).first()
+                if compromised is not None:
+                    with organization_context(compromised.organization_id):
+                        closed = services.revoke_all_refresh_tokens(compromised)
+                        audit.record(
+                            action="logout",
+                            request=request._request,
+                            actor=None,
+                            organization=compromised.organization,
+                            actor_email=compromised.email,
+                            entity_type="refresh_token",
+                            changes={"reason": "reuse_detected", "sessions_closed": closed},
+                        )
+                    logger.warning(
+                        "Bekor qilingan refresh token qayta ishlatildi — barcha sessiyalar yopildi"
+                    )
             return _auth_error("Refresh token yaroqsiz.")
 
         try:

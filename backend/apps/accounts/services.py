@@ -124,6 +124,7 @@ def register_organization(
     password: str,
     contact_phone: str = "",
     branch_name: str | None = None,
+    slug: str | None = None,
 ) -> RegistrationResult:
     """
     Yangi mijozni ro'yxatdan o'tkazadi: tashkilot + birinchi filial +
@@ -142,7 +143,7 @@ def register_organization(
     # (docs/03 §6.3) — va bu to'g'ri: cross-tenant amal kodda ko'rinib
     # tursin.
     with platform_context():
-        slug = _unique_slug(organization_name)
+        slug = _unique_slug(organization_name) if slug is None else _checked_slug(slug)
         organization = Organization.objects.create(
             name=organization_name.strip(),
             slug=slug,
@@ -190,6 +191,66 @@ def _unique_slug(name: str) -> str:
     while Organization.objects.filter(slug=slug).exists():
         slug = f"{base}-{secrets.token_hex(3)}"
     return slug
+
+
+# Band nomlar — bugun emas, ERTAGA kerak bo'ladigan ro'yxat.
+#
+# Bugun mijoz manzili `/t/<slug>` ko'rinishida va prefiks tufayli hech
+# qanday to'qnashuv yo'q. Lekin subdomenga o'tilganda (`<slug>.kg-crm.uz`)
+# bu nomlar to'g'ridan-to'g'ri infratuzilma bilan urishadi: `www` saytni,
+# `api` backendni, `mail` pochtani sindiradi. O'shanda ro'yxatni qo'shish
+# KECH bo'ladi — mijoz allaqachon o'sha slug bilan ishlab turgan bo'ladi
+# va uni ko'chirish havolalarini sindiradi.
+RESERVED_SLUGS: frozenset[str] = frozenset(
+    {
+        "admin",
+        "api",
+        "app",
+        "assets",
+        "auth",
+        "billing",
+        "blog",
+        "cdn",
+        "dashboard",
+        "dev",
+        "docs",
+        "ftp",
+        "help",
+        "login",
+        "mail",
+        "media",
+        "new",
+        "platform",
+        "pricing",
+        "root",
+        "signup",
+        "static",
+        "status",
+        "support",
+        "t",
+        "test",
+        "www",
+    }
+)
+
+
+def _checked_slug(slug: str) -> str:
+    """
+    Vendor tanlagan slug'ni tekshiradi.
+
+    Slug — mijozning MANZILI. U havolalarga, hisob-fakturalarga va SMS
+    matnlariga tushadi, ya'ni keyin o'zgartirish eski havolalarni
+    sindiradi. Shuning uchun tekshiruv yaratish paytida qat'iy: keyin
+    tuzatib bo'lmaydigan narsa oldindan tekshiriladi.
+    """
+    candidate = slugify(slug)[:50]
+    if not candidate:
+        raise BusinessRuleViolation("Manzil (slug) bo'sh bo'lishi mumkin emas.")
+    if candidate in RESERVED_SLUGS:
+        raise BusinessRuleViolation(f"'{candidate}' — band nom, boshqasini tanlang.")
+    if Organization.objects.filter(slug=candidate).exists():
+        raise BusinessRuleViolation(f"'{candidate}' allaqachon band.")
+    return candidate
 
 
 @transaction.atomic

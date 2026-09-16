@@ -29,8 +29,9 @@ from apps.core.rls import (
     DERIVED_TABLES,
     METADATA_TABLES,
     OPERATIONAL_TABLES,
+    enable_platform_mode,
 )
-from apps.core.tenancy import organization_context
+from apps.core.tenancy import organization_context, platform_context
 
 pytestmark = [pytest.mark.django_db, pytest.mark.tenancy]
 
@@ -336,3 +337,104 @@ class TestContextManagerWiring:
             with connection.cursor() as outer:
                 outer.execute("SELECT app_current_org()")
                 assert str(outer.fetchone()[0]) == str(tenant_a.organization.id)
+
+
+class TestRequestBoundary:
+    """
+    So'rov tugagach ulanishda HECH QANDAY kontekst qolmasligi kerak.
+
+    Bu sinf aniq bir xatoni qulflaydi (P0-001). `apply_tenant_setting()`
+    autentifikatsiya paytida chaqirilardi, lekin uni hech kim
+    tozalamasdi: middleware faqat `ContextVar` ni tozalardi, GUC'ga
+    tegmasdi. `CONN_MAX_AGE = 60` bilan ulanish pulga tashkilot
+    o'rnatilgan holda qaytardi.
+
+    Oqibati nozik, lekin og'ir: RLS'ning butun ma'nosi "kontekst yo'q →
+    hech narsa ko'rinmaydi" edi. Tozalanmagan GUC bilan u "kontekst yo'q
+    → OLDINGI tenantni ko'rsat" ga aylanardi. Ya'ni ikkinchi izolyatsiya
+    qatlami fail-closed emas, fail-stale bo'lib qolgandi — va aynan shu
+    qatlam birinchisi unutilganda ushlab qolish uchun bor edi.
+
+    Quyidagi testlar funksiya chaqirilganini emas, ULANISH HOLATINI
+    tekshiradi. Tozalash olib tashlansa, ular qizaradi.
+    """
+
+    def test_the_request_leaves_no_organization_behind(self, tenant_a):
+        """Eng to'g'ridan-to'g'ri tekshiruv: so'rovdan keyin GUC bo'sh."""
+        response = tenant_a.client().get("/api/v1/children")
+        assert response.status_code == 200
+
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT app_current_org()")
+            leaked = cursor.fetchone()[0]
+
+        assert leaked is None, (
+            f"So'rovdan keyin ulanishda {leaked} qolib ketdi. Bu ulanish "
+            "pulga shu holatda qaytadi va keyingi so'rov uni meros qilib oladi."
+        )
+
+    def test_a_reused_connection_shows_the_next_query_nothing(self, tenant_a, tenant_b):
+        """
+        Haqiqiy stsenariy: so'rovdan KEYIN o'sha ulanishda kontekstsiz so'rov.
+
+        Testdagi ulanish so'rovlar orasida qayta ishlatiladi — ya'ni bu
+        production'dagi ulanish pulining aynan o'zi. Xom SQL ORM'ni
+        butunlay chetlab o'tadi, shuning uchun bu yerda javob beradigan
+        yagona narsa — RLS.
+        """
+        _make_child(tenant_a, "Aziza")
+        _make_child(tenant_b, "Bekzod")
+
+        response = tenant_a.client().get("/api/v1/children")
+        assert response.status_code == 200
+        assert b"Aziza" in response.content
+        assert b"Bekzod" not in response.content
+
+        # So'rov tugadi. Endi AYNAN SHU ulanishda, kontekstsiz.
+        visible = _sql("SELECT count(*) FROM child")[0][0]
+        assert visible == 0, (
+            f"Kontekstsiz so'rov {visible} ta bolani ko'rdi. Kutilgan: 0. "
+            "Ulanishda oldingi so'rovning tashkiloti qolib ketgan."
+        )
+
+    def test_the_boundary_also_closes_platform_mode(self, tenant_a):
+        """
+        Tashkilot yetarli emas — platforma rejimi ham tozalanishi shart.
+
+        `app.platform` ning oqib ketishi `app.organization_id` nikidan
+        yomonroq: u bitta tenantni emas, BARCHA tashkilotlarning
+        metama'lumotini ochadi. Shuning uchun so'rov chegarasi uchala
+        GUC'ni ham oladi.
+        """
+        enable_platform_mode()  # biror yo'l uni ochiq qoldirgan holatni taqlid qilamiz
+
+        assert tenant_a.client().get("/api/v1/children").status_code == 200
+
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT app_is_platform()")
+            assert cursor.fetchone()[0] is False, (
+                "Platforma rejimi so'rovdan keyin ham ochiq qoldi."
+            )
+
+    def test_clearing_the_tenant_must_not_close_platform_mode(self, tenant_a):
+        """
+        `clear_tenant_setting()` va `clear_request_settings()` ATAYLAB har xil.
+
+        Birinchisi faqat tashkilotni oladi, chunki `organization_context()`
+        `platform_context()` ICHIDA ishlatiladi (masalan fon vazifalari
+        tashkilotlar bo'ylab aylanganda). Agar u platforma rejimini ham
+        o'chirsa, tashqi kontekst ichkarisi chiqishi bilan buzilardi.
+
+        Bu test shu farqni qulflaydi: kimdir ikki funksiyani "soddalashtirib"
+        bittaga qo'shsa, shu yerda qizaradi.
+        """
+        with platform_context():
+            with organization_context(tenant_a.organization.id):
+                pass
+
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT app_is_platform()")
+                assert cursor.fetchone()[0] is True, (
+                    "Ichki `organization_context` chiqishi tashqi platforma "
+                    "rejimini o'chirib yubordi — nesting buzilgan."
+                )

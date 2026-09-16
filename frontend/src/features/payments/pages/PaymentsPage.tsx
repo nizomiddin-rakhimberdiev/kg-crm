@@ -16,6 +16,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type BillingRunResult, type Invoice } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { EmptyRow } from '@/components/ui/EmptyState'
 
 const STATUS_STYLES: Record<string, string> = {
   issued: 'bg-sky-50 text-sky-700',
@@ -303,6 +304,14 @@ export default function PaymentsPage() {
                       </td>
                     </tr>
                   ))}
+                  {invoices.length === 0 && (
+                    <EmptyRow
+                      colSpan={7}
+                      icon={FileText}
+                      title="Hisob-faktura yo'q"
+                      hint="Bolalarga tarif belgilangach, oylik hisob-fakturalar shu yerda paydo bo'ladi."
+                    />
+                  )}
                 </tbody>
               </table>
             )}

@@ -2,8 +2,8 @@
 # Django 5.2 LTS ataylab tanlangan: uzoq muddatli xavfsizlik yangilanishlari,
 # majburiy versiya migratsiyalarisiz (docs/06 §2 — solo loyiha).
 
-Django==5.2.16
-djangorestframework==3.17.1
+Django==5.2.17
+djangorestframework==3.17.2
 djangorestframework-simplejwt==5.5.1
 psycopg[binary]==3.3.4
 

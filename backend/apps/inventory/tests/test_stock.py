@@ -253,8 +253,10 @@ class TestEndpoints:
             format="json",
         )
         assert response.status_code == 200
-        product.refresh_from_db()
-        assert product.current_stock == Decimal("10.000")
+        # So'rov tugagach kontekst tozalanadi (P0-001) — o'qish uchun qayta ochamiz.
+        with organization_context(tenant_a.organization.id):
+            product.refresh_from_db()
+            assert product.current_stock == Decimal("10.000")
 
     def test_low_stock_endpoint(self, tenant_a, product, warehouse):
         _in(tenant_a, product, warehouse, "5")

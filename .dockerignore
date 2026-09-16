@@ -1,0 +1,27 @@
+# Ildizdagi build konteksti faqat `deploy/Dockerfile.web` uchun ishlatiladi
+# (SPA + nginx). Unga kerak bo'lgani — `frontend/` va `deploy/nginx/`.
+# Qolgani kontekstga tushmasin: `backend/venv` va `node_modules` bilan
+# birga kontekst yuzlab megabaytga chiqadi va har bir build sekinlashadi.
+
+.git
+.github
+docs
+scripts
+backend
+*.md
+!frontend/**
+
+frontend/node_modules
+frontend/dist
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+.DS_Store

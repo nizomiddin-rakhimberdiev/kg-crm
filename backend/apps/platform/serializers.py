@@ -6,15 +6,19 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
-from apps.platform.models import GRANT_MAX_HOURS, SupportGrant
+from apps.accounts.serializers import validate_password_strength
+from apps.platform.models import GRANT_MAX_HOURS, Lead, SupportGrant
 
 __all__ = [
     "PlatformLoginSerializer",
+    "OrganizationCreateSerializer",
     "ReasonSerializer",
     "ExtendTrialSerializer",
     "SupportGrantRequestSerializer",
     "SupportGrantSerializer",
     "RecordPaymentSerializer",
+    "LeadCreateSerializer",
+    "LeadSerializer",
 ]
 
 
@@ -65,3 +69,86 @@ class RecordPaymentSerializer(serializers.Serializer):
         choices=["bank_transfer", "card", "cash"], default="bank_transfer"
     )
     reference = serializers.CharField(required=False, allow_blank=True, max_length=80)
+
+
+class OrganizationCreateSerializer(serializers.Serializer):
+    """
+    Vendor yangi mijoz ochadi (ADR-10).
+
+    Ochiq `/auth/signup` o'rnini bosadi. Farqi tashqi ko'rinishda emas,
+    MA'NODA: mijoz endi o'zini o'zi yaratmaydi — uni siz yaratasiz, ya'ni
+    har bir tenant sotuv suhbatidan keyin paydo bo'ladi, tasodifiy
+    tashrifdan keyin emas.
+    """
+
+    organization_name = serializers.CharField(max_length=200)
+    contact_email = serializers.EmailField()
+    contact_phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    full_name = serializers.CharField(max_length=150)
+    password = serializers.CharField(validators=[validate_password_strength])
+
+    # Bo'sh qoldirilsa nomdan hosil qilinadi. Vendor uni ATAYLAB tanlay
+    # oladi: bu mijozning manzili (`/t/<slug>`) va u bosma materialga,
+    # SMS matniga, hisob-faktura havolasiga tushadi.
+    slug = serializers.CharField(max_length=50, required=False, allow_blank=True)
+
+    branch_name = serializers.CharField(max_length=120, required=False, allow_blank=True)
+
+
+class LeadCreateSerializer(serializers.Serializer):
+    """Internetdan keladigan minimal zayavka; consent frontendda emas, shu yerda majburiy."""
+
+    name = serializers.CharField(max_length=150, trim_whitespace=True)
+    phone = serializers.CharField(max_length=32, trim_whitespace=True)
+    kindergarten_name = serializers.CharField(max_length=200, trim_whitespace=True)
+    children_count = serializers.IntegerField(min_value=1, max_value=10_000)
+    city = serializers.CharField(max_length=120, trim_whitespace=True)
+    message = serializers.CharField(
+        max_length=1_000, required=False, allow_blank=True, trim_whitespace=True
+    )
+    language = serializers.ChoiceField(choices=["uz", "ru"])
+    consent = serializers.BooleanField()
+    privacy_policy_version = serializers.RegexField(r"^[a-zA-Z0-9._-]{1,32}$")
+    submission_id = serializers.UUIDField()
+    # Ko'rinmas honeypot. To'ldirilsa normal validation xatosi qaytadi;
+    # botga endpoint xatti-harakatlari haqida qo'shimcha signal bermaymiz.
+    website = serializers.CharField(required=False, allow_blank=True, write_only=True, max_length=0)
+
+    def validate_phone(self, value: str) -> str:
+        digits = "".join(character for character in value if character.isdigit())
+        if len(digits) == 9:
+            digits = f"998{digits}"
+        if len(digits) != 12 or not digits.startswith("998"):
+            raise serializers.ValidationError(
+                "Telefon raqamini +998 XX XXX XX XX formatida kiriting."
+            )
+        return f"+{digits}"
+
+    def validate_consent(self, value: bool) -> bool:
+        if not value:
+            raise serializers.ValidationError(
+                "Shaxsiy ma'lumotlarga ishlov berishga rozilik talab qilinadi."
+            )
+        return value
+
+
+class LeadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lead
+        fields = [
+            "id",
+            "name",
+            "phone",
+            "kindergarten_name",
+            "children_count",
+            "city",
+            "message",
+            "language",
+            "source",
+            "status",
+            "consented_at",
+            "privacy_policy_version",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields

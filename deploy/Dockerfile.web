@@ -1,0 +1,48 @@
+# syntax=docker/dockerfile:1
+#
+# SPA + reverse proxy — bitta konteyner.
+#
+# Nega birga: nginx baribir `/api/` ni backendga uzatishi kerak, va
+# statik fayllar bilan proxy bitta joyda turgani sozlamani ikkiga
+# bo'lishdan sodda. Build konteksti — repozitoriy ILDIZI, chunki tasvir
+# ikkita katalogdan oziqlanadi: `frontend/` (kod) va `deploy/nginx/`
+# (sozlama).
+
+# --- Build bosqichi: SPA yig'iladi ---
+FROM node:24-alpine AS builder
+
+WORKDIR /app
+
+# Avval faqat manifestlar: kod o'zgarganda `npm ci` qatlami keshda qoladi.
+COPY frontend/package.json frontend/package-lock.json ./
+# `npm ci` — `npm install` emas: u lock faylga QAT'IY amal qiladi va uni
+# yangilamaydi. Ya'ni serverga aynan sinalgan versiyalar chiqadi.
+RUN npm ci
+
+COPY frontend/ ./
+
+# Vite `import.meta.env` ni build paytida kodga YOZIB QO'YADI, shuning
+# uchun bu `ARG` bo'lishi shart — konteyner ishga tushganda uni
+# o'zgartirib bo'lmaydi. Sukut bo'yicha nisbiy yo'l: SPA va API bitta
+# origin'dan berilgani uchun CORS umuman kerak emas.
+ARG VITE_API_BASE_URL=/api/v1
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+
+RUN npm run build
+
+
+# --- Runtime ---
+FROM nginx:1.27-alpine AS runtime
+
+COPY --from=builder /app/dist /usr/share/nginx/html
+# O'z shablonlarimiz alohida katalogda: nginx tasviridagi
+# `/etc/nginx/templates/` ichidagi HAMMA fayl avtomatik `conf.d/` ga
+# ko'chiriladi — bizga esa ikkitasidan BITTASI kerak.
+COPY deploy/nginx/http-only.conf /etc/nginx/kg-templates/http-only.conf
+COPY deploy/nginx/tls.conf       /etc/nginx/kg-templates/tls.conf
+COPY deploy/nginx/_shared.conf   /etc/nginx/kg-shared.conf
+COPY deploy/nginx/entrypoint.sh  /docker-entrypoint.d/40-choose-config.sh
+
+RUN chmod +x /docker-entrypoint.d/40-choose-config.sh
+
+EXPOSE 80 443

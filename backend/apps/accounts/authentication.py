@@ -30,6 +30,8 @@ from apps.core.tenancy import auth_lookup_context, organization_context
 __all__ = [
     "authenticate_candidates",
     "issue_token_pair",
+    "issue_support_token",
+    "SUPPORT_SESSION_LIFETIME",
     "PendingOrganizationToken",
 ]
 
@@ -131,3 +133,50 @@ def decode_access_token(raw: str) -> dict[str, Any]:
         return dict(AccessToken(raw).payload)  # type: ignore[arg-type]
     except TokenError:
         return {}
+
+
+# --- Qo'llab-quvvatlash sessiyasi (ADR-10) ---
+
+# Qisqa: vendor "kirdim, ko'rdim, chiqdim" qilishi kerak, sessiyani ochiq
+# qoldirib ketmasligi. Ruxsat muddati uzunroq bo'lsa ham, bitta sessiya
+# shu bilan cheklanadi va qayta kirish kerak bo'ladi.
+SUPPORT_SESSION_LIFETIME = timedelta(minutes=30)
+
+
+def issue_support_token(
+    *, user: User, platform_user_id: Any, grant_id: Any, expires_at: Any
+) -> str:
+    """
+    Vendor xodimi uchun mijoz tekisligidagi **faqat o'qish** tokeni.
+
+    Nega alohida token turi emas, oddiy mijoz access tokeni: shunda
+    vendor ma'lumotni AYNAN mijoz ishlatadigan endpointlar orqali
+    ko'radi — o'sha viewsetlar, o'sha ruxsatlar, o'sha RLS siyosatlari.
+    Alohida "vendor uchun o'qish yo'li" qurilsa, u vaqt o'tib mijoz
+    yo'lidan ajralib qolardi va aynan o'sha ajralib qolgan joyda
+    tekshirilmagan kirish paydo bo'lardi (docs/04 §19).
+
+    Token qaytarib olinmaydi, lekin u O'ZI ikki tomondan cheklangan:
+    muddati qisqa, va har bir so'rovda ruxsatning hali amal qilishi
+    bazadan tekshiriladi — ruxsat bekor qilinsa kirish DARHOL yopiladi.
+
+    Refresh token ATAYLAB berilmaydi: qo'llab-quvvatlash sessiyasi
+    cho'zilmasligi kerak.
+    """
+    token = AccessToken()
+
+    # Muddat ikki chegaraning KICHIGI: sessiya uzunligi va ruxsatning
+    # qolgan vaqti. Aks holda 10 daqiqa qolgan ruxsat 30 daqiqalik
+    # sessiya berardi.
+    remaining = expires_at - timezone.now()
+    token.set_exp(lifetime=min(SUPPORT_SESSION_LIFETIME, remaining))
+
+    token["user_id"] = str(user.pk)
+    _apply_claims(token, user)
+
+    # Bu uchtasi tokenni qo'llab-quvvatlash sessiyasi qiladi. Ularni
+    # `TenantJWTAuthentication` har bir so'rovda o'qiydi.
+    token["support"] = True
+    token["platform_user_id"] = str(platform_user_id)
+    token["grant_id"] = str(grant_id)
+    return str(token)

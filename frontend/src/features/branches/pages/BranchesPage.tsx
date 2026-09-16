@@ -14,6 +14,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { EmptyRow } from '@/components/ui/EmptyState'
 
 export default function BranchesPage() {
   const organizationId = useOrganizationId()
@@ -166,6 +167,14 @@ export default function BranchesPage() {
                   </td>
                 </tr>
               ))}
+              {branchesQuery.data.items.length === 0 && (
+                <EmptyRow
+                  colSpan={5}
+                  icon={Building2}
+                  title="Filial yo'q"
+                  hint="Bog'chaning birinchi filiali ro'yxatdan o'tishda yaratiladi. Yangi bino ochsangiz shu yerdan qo'shasiz."
+                />
+              )}
             </tbody>
           </table>
         )}

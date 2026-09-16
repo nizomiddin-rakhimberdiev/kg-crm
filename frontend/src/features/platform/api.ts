@@ -80,6 +80,15 @@ export interface SupportGrant {
   created_at: string
 }
 
+export interface SupportSessionResult {
+  access: string
+  organization: string
+  slug: string
+  app_url: string
+  grant_expires_at: string
+  read_only: boolean
+}
+
 export interface PlatformPlan {
   id: string
   code: string
@@ -92,9 +101,32 @@ export interface PlatformPlan {
   valid_to: string | null
 }
 
+export interface NewOrgPayload {
+  organization_name: string
+  contact_email: string
+  contact_phone?: string
+  full_name: string
+  password: string
+  slug?: string
+  branch_name?: string
+}
+
+/** Yaratilgandan keyin vendorga qaytadigan narsa — mijozga topshiriladi. */
+export interface NewOrgResult {
+  id: string
+  name: string
+  slug: string
+  login_url: string
+  owner_email: string
+  branch: string
+}
+
 export const platform = {
   login: (email: string, password: string, code: string) =>
     platformApi.post<PlatformSession>('/platform/auth/login', { email, password, code }),
+
+  createOrganization: (payload: NewOrgPayload) =>
+    platformApi.post<NewOrgResult>('/platform/organizations/create', payload),
 
   organizations: (params?: { search?: string; status?: string }) =>
     platformApi.get<OrgRow[]>('/platform/organizations', params),
@@ -124,6 +156,11 @@ export const platform = {
       hours,
     }),
   supportGrants: () => platformApi.get<SupportGrant[]>('/platform/support-grants'),
+  /** Amaldagi ruxsat bilan mijoz ilovasiga kirish tokenini oladi. */
+  supportSession: (id: string) =>
+    platformApi.post<SupportSessionResult>(
+      `/platform/organizations/${id}/support-session`,
+    ),
 
   plans: () => platformApi.get<PlatformPlan[]>('/platform/plans'),
 }

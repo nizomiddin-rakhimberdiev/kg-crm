@@ -14,6 +14,7 @@ import { ArrowLeft, KeyRound, Pause, Play, Timer } from 'lucide-react'
 import { ApiError } from '@/lib/api/types'
 import { cn, formatUZS } from '@/lib/utils'
 import { platform } from '../api'
+import { supportHandoff } from '@/lib/auth/supportSession'
 import { usePlatformAuth } from '../PlatformAuthProvider'
 import { STATUS_LABEL } from './PlatformOrganizationsPage'
 
@@ -76,6 +77,24 @@ export default function PlatformOrganizationPage() {
     mutationFn: () => platform.supportGrant(organizationId, reason, hours),
     onSuccess: () =>
       done(`Kirish ruxsati berildi (${hours} soat). Mijoz buni audit jurnalida ko'radi.`),
+    onError: fail,
+  })
+
+  /**
+   * Bog'cha tizimiga kirish.
+   *
+   * Token manzilga YOZILMAYDI — u `localStorage` orqali bir martalik
+   * uzatiladi va mijoz ilovasi uni darhol o'chiradi. Yangi tabda
+   * ochiladi: konsol ochiq qolsin, va ikki sessiya aralashmasin.
+   */
+  const enter = useMutation({
+    mutationFn: () => platform.supportSession(organizationId),
+    onSuccess: (session) => {
+      supportHandoff.stash(session.access)
+      window.open(`${session.app_url}/support-entry`, '_blank', 'noopener')
+      setError(null)
+      setNotice(`${session.organization} tizimi yangi tabda ochildi (faqat o'qish).`)
+    },
     onError: fail,
   })
 
@@ -165,6 +184,15 @@ export default function PlatformOrganizationPage() {
           >
             <KeyRound className="h-4 w-4" />
             Kirish ruxsatini so'rash
+          </button>
+
+          <button
+            type="button"
+            onClick={() => enter.mutate()}
+            disabled={enter.isPending}
+            className="rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+          >
+            {enter.isPending ? 'Ochilmoqda…' : "Bog'chaga kirish"}
           </button>
 
           {isAdmin && isTrial && (

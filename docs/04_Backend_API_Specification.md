@@ -149,7 +149,6 @@ Public (no token) except `/me`, `/logout`, `/password/change`.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/auth/signup` | public | Create an organization + Org Owner, start the 15-day trial |
 | POST | `/auth/login` | public | Exchange credentials for tokens |
 | POST | `/auth/select-organization` | pending token | Choose organization when the email belongs to several |
 | POST | `/auth/refresh` | public (valid refresh) | Rotate access (+refresh) token |
@@ -160,19 +159,7 @@ Public (no token) except `/me`, `/logout`, `/password/change`.
 | DELETE | `/auth/me/photo` | authenticated | Remove own profile photo |
 | POST | `/auth/password/change` | authenticated | Change own password |
 
-**`POST /auth/signup` — request**
-```json
-{
-  "organization_name": "Premium Bog'cha",
-  "contact_email": "owner@premium.uz",
-  "contact_phone": "+998901234567",
-  "full_name": "Aziz Karimov",
-  "password": "••••••••"
-}
-```
-Creates `organization` + first `branch` + Org Owner user + `subscription` in `trialing`, and seeds the system roles for that organization. **No card, no payment.** Response `201` returns tokens plus the trial end date.
-
-> The offer text shown above this form must state that the first paid month is dated from the trial start ([01 §4.4](./01_Project_Vision.md)). The API enforces the policy; the UI is responsible for it being disclosed rather than discovered.
+> **There is no public signup.** `POST /auth/signup` was removed. Accounts are opened by vendor staff through the platform console — `POST /platform/organizations/create` (§19) — because every signup creates a real tenant (RLS policies, a subscription, seeded roles) and tenant data is never deleted (ADR-11). A door open to the internet meant strangers leaving permanent rows in the database. It also matched the commercial model badly: customers are legal entities who pay by bank transfer, so the tenant should exist *after* the sales conversation, not before it.
 
 **`POST /auth/login` — request**
 ```json
@@ -663,18 +650,42 @@ Module: `subscriptions`. **Org Owner only** ([02 §11.2](./02_Software_Architect
 
 ---
 
+## 18a. Idempotency
+
+`POST /payments` accepts an **`Idempotency-Key`** header. The key identifies a *user action*, not a request: a retried submission carries the same key, and the server returns the payment already recorded instead of creating a second one. The response is `201` either way — the caller cannot tell, and does not need to.
+
+Locking the invoice already prevented *over*payment; it did nothing about *duplicate* payment, and an advance payment (no invoice) had no guard at all — a double-click doubled a child's credit. The key is enforced by a partial unique index on `(organization, idempotency_key)`, so two simultaneous requests are resolved by the database rather than by a check-then-act race in the application. Uniqueness is **per organization**: a global key space would let one kindergarten's key block another's payment.
+
+Omitting the header keeps the old behaviour. That is deliberate — making it mandatory would break existing integrations in a single deploy — but a caller without a key is not protected.
+
+---
+
 ## 19. Platform Console (vendor-only)
 
 Module: `platform`. **Not part of the customer API surface** — separate auth path, mandatory 2FA, every call audited (ADR-10, [02 §11.0](./02_Software_Architecture.md)).
 
 | Method | Path | Description |
 |--------|------|-------------|
+| POST | `/platform/organizations/create` | **Open a new customer** — organization + first branch + Org Owner + trial. Admin only. Replaces the removed public signup. |
 | GET | `/platform/organizations` | List all organizations — **metadata only** (name, plan, status, child count, MRR) |
 | GET | `/platform/organizations/{id}` | Organization detail + subscription + usage history |
 | POST | `/platform/organizations/{id}/suspend` | Move to `suspended` (read-only for the customer) |
 | POST | `/platform/organizations/{id}/reactivate` | Restore access |
 | POST | `/platform/organizations/{id}/extend-trial` | Extend the trial (reason required) |
 | POST | `/platform/organizations/{id}/support-grant` | Request time-boxed operational access (reason required, customer-visible) |
+| POST | `/platform/organizations/{id}/support-session` | Enter the customer's app under an active grant — **read-only**, short-lived, no refresh token |
+
+> **Support access is two steps, deliberately.** `support-grant` records *why* and *until when*; `support-session` is the act of entering, and it may happen several times inside one grant — each entry writes its own row to the **customer's** audit log, so a kindergarten sees not only that permission was taken but that it was used.
+>
+> The session is an ordinary customer access token issued for the organization's owner account, so the vendor reads through the same viewsets, permissions and RLS policies the customer uses — there is no second data path to drift out of sync. Three limits apply, all enforced in `TenantJWTAuthentication` (one place, impossible to forget on a new endpoint):
+>
+> - **Read-only.** Any unsafe method is `403`. Writing would change a customer's data without their knowledge, and — because the session runs through the owner's account — the audit log would attribute it to the kindergarten's own owner. Permitting writes would make the audit log lie.
+> - **The grant is re-checked on every request**, not just at issuance. Revoking a grant closes the session immediately; otherwise the revoke button would offer false comfort for up to 30 minutes.
+> - **No refresh token, 30-minute ceiling**, capped further by whatever remains of the grant.
+>
+> This closes a gap rather than adding a feature: the grant model existed since Sprint 11 but `active_grant()` was never called from production code, so a grant granted nothing. The only practical way to support a customer was to know their password — which puts every kindergarten's key on one laptop and signs the vendor's actions with the customer's name.
+
+> **`POST /platform/organizations/create` — the address is chosen here.** An optional `slug` sets where the kindergarten lives: `https://<base>/t/<slug>`. It is validated once, at creation, against a reserved list (`www`, `api`, `admin`, …) and global uniqueness — because the slug ends up in links, invoices and SMS text, so changing it later breaks what customers already have. The response returns `login_url`, `owner_email` and the organization; the initial password is set by the vendor and handed to the customer. The 15-day trial starts at creation, so the account should be opened when the customer is ready to begin. The creation is written to the **customer's** audit log — a kindergarten can see who opened its account and when.
 | GET | `/platform/subscriptions/expiring` | Trials ending, invoices overdue — the daily work list |
 | GET | `/platform/invoices` | All subscription invoices across organizations |
 | POST | `/platform/invoices/{id}/payments` | Record a received bank transfer |

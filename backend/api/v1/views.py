@@ -43,12 +43,53 @@ class HealthCheckView(APIView):
         checks: dict[str, Any] = {
             "database": self._check_database(),
             "cache": self._check_cache(),
+            "worker": self._check_worker(),
         }
-        healthy = all(v == "ok" for v in checks.values())
+        # `degraded` — qisman ishlaydi, `error` — ishlamaydi. Faqat
+        # ikkinchisi `503` beradi: ishchisiz tizim hamon o'qiladi va
+        # to'lov qabul qiladi, ya'ni load balancer uni navbatdan
+        # chiqarib tashlamasligi kerak.
+        healthy = not any(v == "error" for v in checks.values())
         return Response(
-            {"status": "ok" if healthy else "degraded", "checks": checks},
+            {
+                "status": "ok" if all(v == "ok" for v in checks.values()) else "degraded",
+                "checks": checks,
+            },
             status=status.HTTP_200_OK if healthy else status.HTTP_503_SERVICE_UNAVAILABLE,
         )
+
+    @staticmethod
+    def _check_worker() -> str:
+        """
+        Celery ishchisi javob beradimi.
+
+        Nega kerak: baza va Redis sog'lom bo'lsa health "ok" derdi —
+        ishchi o'lik bo'lsa ham. Va o'lik ishchi jimgina zarar qiladi:
+        hisob-fakturalar chiqmaydi, eslatmalar ketmaydi, eksport
+        abadiy "tayyorlanmoqda" holatida qoladi. Hech qanday xato
+        ko'rinmaydi, chunki so'rovlar muvaffaqiyatli navbatga tushadi.
+
+        `degraded` qaytaradi, `error` emas: ishchisiz ham tizim
+        O'QILADI va to'lov qabul qilinadi — bu to'liq nosozlik emas.
+        Shuning uchun u umumiy holatni `503` ga tushirmaydi, lekin
+        javobda ko'rinib turadi.
+        """
+        from django.conf import settings
+
+        # Eager rejimda (testlar) vazifalar so'rov ichida bajariladi —
+        # alohida ishchi tushunchasi umuman yo'q. Broker'ga so'rov
+        # yuborish bu yerda faqat testni sekinlashtirardi va uni
+        # mashinada tasodifan ishlab turgan ishchiga bog'lab qo'yardi.
+        if getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False):
+            return "ok"
+
+        try:
+            from config.celery import app as celery_app
+
+            replies = celery_app.control.ping(timeout=1.0)
+            return "ok" if replies else "degraded"
+        except Exception:  # noqa: BLE001 — sabab mijozga chiqmaydi
+            return "degraded"
 
     @staticmethod
     def _check_cache() -> str:

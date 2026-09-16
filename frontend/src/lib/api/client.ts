@@ -9,6 +9,7 @@
 import axios, { AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 import { env } from '@/config/env'
 import { tokenStorage } from '@/lib/auth/tokenStorage'
+import { supportSession } from '@/lib/auth/supportSession'
 import { ApiError, type Envelope, type ErrorEnvelope } from './types'
 
 export const httpClient: AxiosInstance = axios.create({
@@ -23,6 +24,16 @@ let onSessionExpired: SessionExpiredHandler = () => {}
 export const setSessionExpiredHandler = (handler: SessionExpiredHandler) => {
   onSessionExpired = handler
 }
+
+/**
+ * Oxirgi so'rovning `X-Request-ID` si.
+ *
+ * Xato ekranida ko'rsatiladi: mijoz kodni aytadi, siz uni backend
+ * log'idan bir urinishda topasiz (apps/core/logging.py). Buning uchun
+ * alohida holat boshqaruvi ortiqcha — bitta o'zgaruvchi yetarli.
+ */
+let _lastRequestId: string | null = null
+export const lastRequestId = (): string | null => _lastRequestId
 
 httpClient.interceptors.request.use((config) => {
   const token = tokenStorage.getAccess()
@@ -57,7 +68,10 @@ const isRefreshCall = (config?: InternalAxiosRequestConfig) =>
   Boolean(config?.url?.includes('/auth/refresh'))
 
 httpClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    _lastRequestId = (response.headers['x-request-id'] as string) ?? _lastRequestId
+    return response
+  },
   async (error: AxiosError<ErrorEnvelope>) => {
     const config = error.config as (InternalAxiosRequestConfig & { _retried?: boolean }) | undefined
 
@@ -65,10 +79,22 @@ httpClient.interceptors.response.use(
       throw new ApiError('NETWORK_ERROR', 'Serverga ulanib bo\'lmadi. Internetni tekshiring.')
     }
 
+    _lastRequestId = (error.response.headers?.['x-request-id'] as string) ?? _lastRequestId
     const { status, data } = error.response
 
     // 401 → bir marta yangilashga urinamiz.
-    if (status === 401 && config && !config._retried && !isRefreshCall(config)) {
+    // Qo'llab-quvvatlash sessiyasida yangilash YO'Q: u qisqa va
+    // qaytarib bo'lmaydigan bo'lishi kerak. Bundan tashqari brauzerda
+    // o'sha bog'chaning eski refresh tokeni qolgan bo'lishi mumkin, va
+    // avtomatik yangilash faqat-o'qish sessiyasini jimgina to'liq
+    // sessiyaga aylantirib yuborardi.
+    if (
+      status === 401 &&
+      config &&
+      !config._retried &&
+      !isRefreshCall(config) &&
+      !supportSession.isActive()
+    ) {
       config._retried = true
       try {
         refreshPromise ??= refreshAccessToken().finally(() => {
@@ -110,8 +136,9 @@ export const api = {
     }
   },
 
-  async post<T>(url: string, body?: unknown): Promise<T> {
-    const response = await httpClient.post<Envelope<T>>(url, body)
+  /** `headers` — masalan `Idempotency-Key` (takroriy yuborishga qarshi). */
+  async post<T>(url: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
+    const response = await httpClient.post<Envelope<T>>(url, body, { headers })
     return response.data?.data
   },
 

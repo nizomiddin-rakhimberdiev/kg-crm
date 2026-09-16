@@ -9,17 +9,7 @@ import type {
   SubscriptionState,
 } from '@/lib/api/types'
 
-export interface SignupPayload {
-  organization_name: string
-  contact_email: string
-  contact_phone?: string
-  full_name: string
-  password: string
-}
-
 export const authApi = {
-  signup: (payload: SignupPayload) => api.post<AuthSession>('/auth/signup', payload),
-
   login: (email: string, password: string) =>
     api.post<LoginResult>('/auth/login', { email, password }),
 

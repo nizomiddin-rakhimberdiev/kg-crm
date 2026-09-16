@@ -2,6 +2,8 @@ import { Suspense } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SubscriptionBanner } from './ReadOnlyBanner'
+import { SupportSessionBanner } from './SupportSessionBanner'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 
@@ -13,6 +15,7 @@ export function AppLayout() {
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar />
+        <SupportSessionBanner />
         <SubscriptionBanner />
         <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin px-4 lg:px-6 py-6">
           {/*
@@ -36,7 +39,15 @@ export function AppLayout() {
               transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             >
               <Suspense fallback={<div className="grid place-items-center py-20 text-sm text-slate-400">Yuklanmoqda…</div>}>
-                <Outlet />
+                {/* Chegara sahifa DARAJASIDA: bitta ekran yiqilsa,
+                    yon panel va yuqori panel joyida qoladi va
+                    foydalanuvchi boshqa bo'limga o'ta oladi. Chegara
+                    ilova ildizida bo'lsa, oq ekran o'rniga to'liq
+                    ekranli xato bo'lardi — biroz yaxshiroq, lekin
+                    baribir boshi berk. */}
+                <ErrorBoundary area="page">
+                  <Outlet />
+                </ErrorBoundary>
               </Suspense>
             </motion.div>
           </AnimatePresence>

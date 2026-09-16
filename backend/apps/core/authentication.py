@@ -18,18 +18,73 @@ import uuid
 from typing import Any
 
 from django.contrib.auth import get_user_model
-from rest_framework.exceptions import AuthenticationFailed
+from django.utils import timezone
+from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
+from rest_framework.permissions import SAFE_METHODS
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework_simplejwt.settings import api_settings
 
 from apps.core.rls import apply_tenant_setting
-from apps.core.tenancy import set_current_organization_id
+from apps.core.tenancy import platform_context, set_current_organization_id
 
 __all__ = ["TenantJWTAuthentication"]
 
 
 class TenantJWTAuthentication(JWTAuthentication):
+    def authenticate(self, request: Any) -> tuple[Any, Any] | None:
+        """
+        Oddiy mijoz tokenlari uchun hech narsa o'zgarmaydi.
+
+        Qo'llab-quvvatlash tokeni (ADR-10) esa ikkita qo'shimcha shartga
+        bo'ysunadi va ikkalasi ham SHU YERDA tekshiriladi — bitta
+        joyda, har bir so'rov uchun. Viewset'larga tarqatilsa, kimdir
+        yangi endpoint qo'shganda uni unutardi.
+        """
+        result = super().authenticate(request)
+        if result is None:
+            return None
+
+        _, token = result
+        if token.get("support"):
+            self._guard_support_session(request, token)
+        return result
+
+    @staticmethod
+    def _guard_support_session(request: Any, token: Any) -> None:
+        """
+        Ikki shart: ruxsat HALI amal qilsin va sessiya FAQAT O'QISIN.
+
+        **Ruxsat har so'rovda bazadan tekshiriladi.** Tokenning o'z
+        muddati yetarli emas: bekor qilingan ruxsat kirishni DARHOL
+        yopishi kerak, 30 daqiqadan keyin emas. Aks holda "ruxsatni
+        bekor qildim" tugmasi yolg'on tinchlik berardi.
+
+        **Yozish bloklanadi.** Mijoz muammosini ko'rish uchun o'qish
+        yetarli; yozish esa mijozning ma'lumotini mijoz bilmagan holda
+        o'zgartirish imkonini berardi — va audit jurnalida bu amal
+        bog'chaning O'Z egasi nomidan ko'rinardi, chunki sessiya uning
+        hisobi orqali ishlaydi. Ya'ni yozishga ruxsat berish audit
+        jurnalini yolg'onchi qilardi.
+        """
+        from apps.platform.models import SupportGrant
+
+        with platform_context():
+            grant = SupportGrant.objects.filter(pk=token.get("grant_id")).first()
+
+        if grant is None or grant.revoked_at is not None or grant.expires_at <= timezone.now():
+            raise AuthenticationFailed("Qo'llab-quvvatlash ruxsati amal qilmaydi.")
+
+        if str(grant.organization_id) != str(token.get("organization_id")):
+            # Kod xatosi bo'lishi mumkin bo'lgan yagona holat — baribir yopamiz.
+            raise AuthenticationFailed("Ruxsat boshqa tashkilotga tegishli.")
+
+        if request.method not in SAFE_METHODS:
+            raise PermissionDenied(
+                "Qo'llab-quvvatlash sessiyasi faqat o'qish uchun. "
+                "O'zgartirishni bog'chaning o'zi bajarishi kerak."
+            )
+
     def get_user(self, validated_token: Any) -> Any:
         user_id = validated_token.get(api_settings.USER_ID_CLAIM)
         if user_id is None:

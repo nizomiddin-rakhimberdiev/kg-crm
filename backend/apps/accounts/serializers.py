@@ -15,7 +15,7 @@ from apps.core.fields import TenantPrimaryKeyRelatedField
 from apps.core.typing import request_user
 
 __all__ = [
-    "SignupSerializer",
+    "validate_password_strength",
     "LoginSerializer",
     "SelectOrganizationSerializer",
     "PasswordChangeSerializer",
@@ -29,7 +29,7 @@ __all__ = [
 ]
 
 
-def _validate_password_strength(value: str) -> None:
+def validate_password_strength(value: str) -> None:
     """DRF validatori — qiymat qaytarmaydi, faqat xato ko'taradi."""
     try:
         validate_password(value)
@@ -38,14 +38,6 @@ def _validate_password_strength(value: str) -> None:
 
 
 # --- Auth ---
-
-
-class SignupSerializer(serializers.Serializer):
-    organization_name = serializers.CharField(max_length=200)
-    contact_email = serializers.EmailField()
-    contact_phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
-    full_name = serializers.CharField(max_length=150)
-    password = serializers.CharField(write_only=True, validators=[_validate_password_strength])
 
 
 class LoginSerializer(serializers.Serializer):
@@ -60,7 +52,7 @@ class SelectOrganizationSerializer(serializers.Serializer):
 
 class PasswordChangeSerializer(serializers.Serializer):
     current_password = serializers.CharField(write_only=True)
-    new_password = serializers.CharField(write_only=True, validators=[_validate_password_strength])
+    new_password = serializers.CharField(write_only=True, validators=[validate_password_strength])
 
 
 class ProfilePhotoSerializer(serializers.ModelSerializer):
@@ -212,7 +204,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserWriteSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
-        write_only=True, required=False, validators=[_validate_password_strength]
+        write_only=True, required=False, validators=[validate_password_strength]
     )
     # Queryset so'rov paytida hisoblanadi va joriy tashkilot bilan cheklanadi
     # (apps/core/fields.py) — begona rol/filial ID'si "mavjud emas" beradi.

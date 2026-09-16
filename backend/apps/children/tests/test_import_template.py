@@ -198,3 +198,60 @@ class TestTemplateEndpoint:
         rows, errors = parse_rows(content)
         assert errors == []
         assert len(rows) == 2
+
+
+class TestImportLimits:
+    """
+    Import chegaralari (P2-003).
+
+    Import SO'ROV ICHIDA bajariladi. Chegarasiz 100 000 qatorli fayl
+    brauzerni ham, ishchini ham bloklardi — va bu xato emas, shunchaki
+    javob bermaslik bo'lib ko'rinardi.
+    """
+
+    def test_an_oversized_file_is_refused_before_parsing(self, tenant_a):
+        from apps.children.importer import MAX_FILE_BYTES, import_children
+
+        report = import_children(
+            organization=tenant_a.organization,
+            branch=tenant_a.branch,
+            file_bytes=b"x" * (MAX_FILE_BYTES + 1),
+            dry_run=True,
+        )
+        assert not report.is_valid
+        assert any("juda katta" in e.message.lower() for e in report.errors), report.errors
+
+    def test_too_many_rows_are_refused(self, tenant_a):
+        from apps.children.importer import MAX_ROWS, import_children
+
+        header = "familiya,ism,tugilgan sana,jinsi\n"
+        body = "".join(f"Testov,Bola{i},2021-03-14,erkak\n" for i in range(MAX_ROWS + 5))
+        report = import_children(
+            organization=tenant_a.organization,
+            branch=tenant_a.branch,
+            file_bytes=(header + body).encode(),
+            dry_run=True,
+        )
+        assert not report.is_valid
+        assert any("ko'p qator" in e.message.lower() for e in report.errors), report.errors
+
+    def test_a_normal_list_still_imports(self, tenant_a):
+        """Chegara normal ishlashga xalaqit bermasin."""
+        from apps.children.importer import import_children
+        from apps.core.tenancy import organization_context
+
+        header = "familiya,ism,tugilgan sana,jinsi\n"
+        body = "".join(f"Testov,Bola{i},2021-03-14,erkak\n" for i in range(60))
+
+        # Takrorlanish tekshiruvi bazaga murojaat qiladi, ya'ni tenant
+        # konteksti kerak (chegara testlari esa bazaga yetib bormaydi —
+        # ular oldinroq to'xtaydi).
+        with organization_context(tenant_a.organization.id):
+            report = import_children(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                file_bytes=(header + body).encode(),
+                dry_run=True,
+            )
+        assert report.total_rows == 60
+        assert report.is_valid, report.errors

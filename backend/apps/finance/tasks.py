@@ -12,9 +12,9 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from celery import shared_task
 from django.utils import timezone
 
+from apps.core.tasks import reliable_task
 from apps.core.tenancy import organization_context, platform_context
 from apps.finance import services
 from apps.organizations.models import Organization
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 __all__ = ["generate_monthly_invoices_task", "mark_overdue_invoices_task"]
 
 
-@shared_task(name="finance.generate_monthly_invoices")
+@reliable_task(name="finance.generate_monthly_invoices")
 def generate_monthly_invoices_task(
     period_year: int | None = None,
     period_month: int | None = None,
@@ -64,7 +64,7 @@ def generate_monthly_invoices_task(
     return results
 
 
-@shared_task(name="finance.mark_overdue_invoices")
+@reliable_task(name="finance.mark_overdue_invoices")
 def mark_overdue_invoices_task() -> int:
     """Muddati o'tgan hisob-fakturalarni belgilaydi (har kuni)."""
     total = 0

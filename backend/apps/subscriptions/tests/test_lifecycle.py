@@ -108,7 +108,7 @@ class TestConversion:
             invoice = services.accept_trial(subscription=_subscription(tenant_a))
 
         assert invoice.billable_children == 50  # pol
-        assert invoice.total_amount == Decimal("500000.00")
+        assert invoice.total_amount == Decimal("400000.00")
         assert invoice.discount_amount == Decimal("0.00")
 
     def test_annual_conversion_applies_25_percent(self, tenant_a):
@@ -116,9 +116,9 @@ class TestConversion:
             invoice = services.accept_trial(
                 subscription=_subscription(tenant_a), payment_term=PaymentTerm.ANNUAL
             )
-        assert invoice.base_amount == Decimal("6000000.00")
-        assert invoice.discount_amount == Decimal("1500000.00")
-        assert invoice.total_amount == Decimal("4500000.00")
+        assert invoice.base_amount == Decimal("4800000.00")
+        assert invoice.discount_amount == Decimal("1200000.00")
+        assert invoice.total_amount == Decimal("3600000.00")
 
     def test_discount_is_frozen_on_the_subscription(self, tenant_a):
         """

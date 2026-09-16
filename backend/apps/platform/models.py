@@ -25,7 +25,14 @@ from django.contrib.auth.hashers import check_password, make_password
 from django.db import models
 from django.utils import timezone
 
-__all__ = ["PlatformRole", "PlatformUser", "SupportGrant", "GRANT_MAX_HOURS"]
+__all__ = [
+    "PlatformRole",
+    "PlatformUser",
+    "SupportGrant",
+    "LeadStatus",
+    "Lead",
+    "GRANT_MAX_HOURS",
+]
 
 # Ruxsatning eng uzun muddati. "Doimiy kirish" degan tushuncha yo'q:
 # muddatsiz ruxsat vaqt o'tib oddiy imtiyozga aylanadi va uni hech kim
@@ -132,3 +139,60 @@ class SupportGrant(models.Model):
     @classmethod
     def default_expiry(cls, hours: int = 2) -> datetime:
         return timezone.now() + timedelta(hours=min(hours, GRANT_MAX_HOURS))
+
+
+class LeadStatus(models.TextChoices):
+    """Sotuv jamoasi uchun kichik, aniq holatlar to'plami."""
+
+    NEW = "new", "Yangi"
+    CONTACTED = "contacted", "Bog'lanildi"
+    QUALIFIED = "qualified", "Mos keladi"
+    CLOSED = "closed", "Yopildi"
+
+
+class Lead(models.Model):
+    """Public saytdan kelgan zayavka — tenant emas, platforma obyektidir.
+
+    Bu jadvalda `organization_id` ataylab yo'q: ariza yuborgan bog'cha
+    hali mijoz bo'lmasligi mumkin. Uni tenant jadvaliga bog'lash RLS
+    chegarasi va "lead → sotuv suhbati → tenant" oqimini buzgan bo'lardi.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    name = models.CharField(max_length=150)
+    phone = models.CharField(max_length=13, db_index=True)
+    kindergarten_name = models.CharField(max_length=200)
+    children_count = models.PositiveSmallIntegerField()
+    city = models.CharField(max_length=120)
+    message = models.TextField(blank=True, max_length=1_000)
+    language = models.CharField(max_length=2, choices=[("uz", "O'zbekcha"), ("ru", "Русский")])
+    source = models.CharField(max_length=40, default="website")
+    status = models.CharField(max_length=20, choices=LeadStatus.choices, default=LeadStatus.NEW)
+
+    # Rozilik dalili hamda so'rovni takror yuborishga qarshi kalit. Kalit
+    # brauzerda bir forma ochilganda yaratiladi; qayta urinish yangi lead
+    # yasamaydi.
+    consented_at = models.DateTimeField()
+    privacy_policy_version = models.CharField(max_length=32)
+    submission_id = models.UUIDField(unique=True, editable=False)
+
+    class Meta:
+        db_table = "platform_lead"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status", "-created_at"], name="ix_lead_status_created"),
+            models.Index(fields=["phone", "-created_at"], name="ix_lead_phone_created"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(children_count__gte=1) & models.Q(children_count__lte=10_000),
+                name="ck_lead_children_count",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        # Telefonni admin/loglarda tasodifan ko'rsatmaslik uchun qaytarmaymiz.
+        return f"{self.kindergarten_name} — {self.status}"

@@ -14,10 +14,25 @@ pytestmark = pytest.mark.django_db
 PASSWORD = "Juda-Kuchli-Parol-2026"  # noqa: S105
 
 
-class TestSignup:
-    def test_creates_organization_branch_owner_and_roles(self, api_client):
+class TestPublicSignupIsClosed:
+    """
+    Ochiq ro'yxatdan o'tish OLIB TASHLANDI.
+
+    Avvalgi `TestSignup` testlari o'chirilmadi — ular
+    `apps/platform/tests/test_platform_console.py::TestOrganizationCreation`
+    ga ko'chdi, chunki tekshiriladigan xulq-atvor o'sha-o'sha, faqat eshik
+    vendor konsoliga ko'chdi.
+
+    Bu yerda qolgan test boshqa narsani qo'riqlaydi: eshik QAYTA
+    OCHILMASIN. Har bir signup haqiqiy tenant yaratadi — RLS siyosatlari,
+    obuna, rollar — va ADR-11 bo'yicha mijoz ma'lumoti hech qachon
+    o'chirilmaydi. Ya'ni tasodifan qaytarilgan `/auth/signup` bazada
+    abadiy qoladigan begona tenantlar qoldirardi.
+    """
+
+    def test_the_signup_endpoint_no_longer_exists(self, api_client):
         response = api_client.post(
-            reverse("v1:auth-signup"),
+            "/api/v1/auth/signup",
             {
                 "organization_name": "Yangi Bog'cha",
                 "contact_email": "owner@yangi.uz",
@@ -26,63 +41,13 @@ class TestSignup:
             },
             format="json",
         )
-        assert response.status_code == 201
-        data = response.json()["data"]
+        assert response.status_code == 404
 
-        assert data["access"] and data["refresh"]
-        assert data["user"]["role"]["code"] == "org_owner"
-        assert data["user"]["organization"]["name"] == "Yangi Bog'cha"
-        # Org Owner barcha modullarga to'liq kirish oladi (docs/02 §11.2).
-        assert "users.create" in data["user"]["permissions"]
-        assert "billing.read" in data["user"]["permissions"]
-
-    def test_weak_password_rejected(self, api_client):
-        response = api_client.post(
-            reverse("v1:auth-signup"),
-            {
-                "organization_name": "X",
-                "contact_email": "a@b.uz",
-                "full_name": "A",
-                "password": "123",
-            },
-            format="json",
-        )
-        assert response.status_code == 400
-        assert response.json()["error"]["code"] == "VALIDATION_ERROR"
-
-    def test_signup_is_atomic(self, api_client, monkeypatch):
-        """
-        Yarim yaratilgan tashkilot qolmasligi shart.
-
-        Aks holda kirib bo'lmaydigan, lekin mavjud tenant paydo bo'ladi va
-        uni qo'lda tozalash kerak bo'ladi.
-        """
-        from apps.accounts import services
-
-        def boom(*args, **kwargs):  # type: ignore[no-untyped-def]
-            raise RuntimeError("seed muvaffaqiyatsiz")
-
-        monkeypatch.setattr(services, "seed_system_roles", boom)
-
-        response = api_client.post(
-            reverse("v1:auth-signup"),
-            {
-                "organization_name": "Yiqiladigan",
-                "contact_email": "x@yiqil.uz",
-                "full_name": "X",
-                "password": PASSWORD,
-            },
-            format="json",
-        )
-        # Istisno konvertga o'ralib 500 bo'ladi va ichki tafsilot chiqmaydi.
-        assert response.status_code == 500
-        assert response.json()["error"]["code"] == "INTERNAL_ERROR"
-        assert "seed muvaffaqiyatsiz" not in response.content.decode()
-
-        # Muhimi: yarim yaratilgan tashkilot QOLMASLIGI kerak.
+        from apps.core.tenancy import platform_context
         from apps.organizations.models import Organization
 
-        assert not Organization.objects.filter(name="Yiqiladigan").exists()
+        with platform_context():
+            assert not Organization.objects.filter(name="Yangi Bog'cha").exists()
 
 
 class TestLogin:
@@ -229,7 +194,93 @@ class TestRefreshAndLogout:
 
         response = client.post(reverse("v1:auth-logout"), {"refresh": login_refresh}, format="json")
         assert response.status_code == 204
-        assert RefreshToken.objects.filter(revoked_at__isnull=False).exists()
+
+        # So'rov tugagach kontekst tozalanadi (P0-001) — o'qish uchun qayta ochamiz.
+        with organization_context(tenant_a.organization.id):
+            assert RefreshToken.objects.filter(revoked_at__isnull=False).exists()
+
+
+class TestRefreshTokenReuse:
+    """
+    O'g'irlangan sessiyani aniqlash (P2-004).
+
+    Rotatsiya har yangilashda eski tokenni o'ldiradi, ya'ni normal mijoz
+    uni ikkinchi marta ishlatmaydi. Ishlatgan bo'lsa — ikkita nusxa
+    bor, va qaysi biri haqiqiy egasi ekanini bilib bo'lmaydi.
+    """
+
+    def _login(self, api_client, tenant):
+        response = api_client.post(
+            reverse("v1:auth-login"),
+            {"email": tenant.owner.email, "password": PASSWORD},
+            format="json",
+        )
+        assert response.status_code == 200
+        return response.json()["data"]["refresh"]
+
+    def test_reusing_a_rotated_token_closes_every_session(self, api_client, tenant_a):
+        """
+        Eski tokenni qayta ishlatish BARCHA sessiyalarni yopadi.
+
+        Faqat rad etish yetarli emasdi: o'g'ri allaqachon yangi token
+        olgan bo'lardi va u ishlayverardi — ya'ni haqiqiy foydalanuvchi
+        bloklanib, o'g'ri qolardi.
+        """
+        first = self._login(api_client, tenant_a)
+
+        # Normal yangilash — `first` bekor qilinadi, `second` beriladi.
+        rotated = api_client.post(reverse("v1:auth-refresh"), {"refresh": first}, format="json")
+        assert rotated.status_code == 200
+        second = rotated.json()["data"]["refresh"]
+
+        # Yangi token hozircha ishlaydi.
+        assert (
+            api_client.post(
+                reverse("v1:auth-refresh"), {"refresh": second}, format="json"
+            ).status_code
+            == 200
+        )
+
+        # ESKI tokenni qayta ishlatish — o'g'irlik belgisi.
+        replay = api_client.post(reverse("v1:auth-refresh"), {"refresh": first}, format="json")
+        assert replay.status_code == 401
+
+        # Endi barcha sessiyalar yopilgan bo'lishi kerak.
+        with organization_context(tenant_a.organization.id):
+            assert not RefreshToken.objects.filter(
+                user=tenant_a.owner, revoked_at__isnull=True
+            ).exists(), "ochiq sessiya qoldi — o'g'ri hamon kira oladi"
+
+    def test_the_thiefs_fresh_token_stops_working_too(self, api_client, tenant_a):
+        """Eng muhimi: o'g'ri olgan YANGI token ham o'ladi."""
+        first = self._login(api_client, tenant_a)
+        stolen_new = api_client.post(
+            reverse("v1:auth-refresh"), {"refresh": first}, format="json"
+        ).json()["data"]["refresh"]
+
+        # Haqiqiy foydalanuvchi eski tokenini ishlatadi → oila yopiladi.
+        api_client.post(reverse("v1:auth-refresh"), {"refresh": first}, format="json")
+
+        after = api_client.post(reverse("v1:auth-refresh"), {"refresh": stolen_new}, format="json")
+        assert after.status_code == 401
+
+    def test_an_unknown_token_does_not_close_anything(self, api_client, tenant_a):
+        """
+        Tanilmagan token — shunchaki yaroqsiz.
+
+        Aks holda har kim istalgan satrni yuborib, boshqalarni
+        tizimdan chiqarib yuborardi.
+        """
+        self._login(api_client, tenant_a)
+        response = api_client.post(
+            reverse("v1:auth-refresh"), {"refresh": "umuman-boshqa-narsa"}, format="json"
+        )
+        assert response.status_code == 401
+
+        with organization_context(tenant_a.organization.id):
+            assert RefreshToken.objects.filter(
+                user=tenant_a.owner, revoked_at__isnull=True
+            ).exists(), "begona token sessiyalarni yopib yubordi"
 
 
 class TestMe:
@@ -254,8 +305,10 @@ class TestPasswordChange:
         )
         assert response.status_code == 204
 
-        tenant_a.owner.refresh_from_db()
-        assert tenant_a.owner.check_password("Boshqa-Kuchli-Parol-2026")
+        # So'rov tugagach kontekst tozalanadi (P0-001) — o'qish uchun qayta ochamiz.
+        with organization_context(tenant_a.organization.id):
+            tenant_a.owner.refresh_from_db()
+            assert tenant_a.owner.check_password("Boshqa-Kuchli-Parol-2026")
 
     def test_wrong_current_password_rejected(self, tenant_a):
         response = tenant_a.client().post(
@@ -315,23 +368,6 @@ class TestSubscriptionPayload:
     shunchaki sinov banneri hech qachon ko'rinmasdi va mijoz "necha
     kun qoldi?" degan savolga javob topolmasdi.
     """
-
-    def test_signup_response_carries_the_trial(self, api_client):
-        response = api_client.post(
-            reverse("v1:auth-signup"),
-            {
-                "organization_name": "Obuna Javobi",
-                "contact_email": "obuna-javobi@test.uz",
-                "full_name": "Egasi",
-                "password": PASSWORD,
-            },
-            format="json",
-        )
-        assert response.status_code == 201
-        subscription = response.json()["data"]["subscription"]
-        assert subscription["status"] == "trialing"
-        assert subscription["trial_ends_at"] is not None
-        assert subscription["read_only"] is False
 
     def test_login_response_carries_the_trial(self, api_client, tenant_a):
         response = api_client.post(

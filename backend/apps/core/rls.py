@@ -34,7 +34,7 @@ yozuvini o'qiydi" emas (docs/04 §19).
 
 from __future__ import annotations
 
-from django.db import connection
+from django.db import DatabaseError, connection
 
 __all__ = [
     "build_policy_sql",
@@ -45,6 +45,7 @@ __all__ = [
     "DERIVED_TABLES",
     "apply_tenant_setting",
     "clear_tenant_setting",
+    "clear_request_settings",
     "enable_platform_mode",
     "disable_platform_mode",
     "enable_auth_lookup",
@@ -142,11 +143,65 @@ def apply_tenant_setting(organization_id: object) -> None:
 
 
 def clear_tenant_setting() -> None:
-    """Ulanishdagi tenant qiymatini tozalaydi."""
+    """
+    Ulanishdagi tenant qiymatini tozalaydi.
+
+    Bu funksiya **kafolat** beradi: chaqiruvdan keyin ulanishda eskirgan
+    tashkilot qolmaydi. Uch holat bor va uchalasi ham yopilgan.
+
+    1. Ulanish umuman ochilmagan — tozalaydigan narsa yo'q. Faqat
+       tozalash uchun ulanish ochish har bir `404` ga keraksiz baza
+       murojaatini qo'shardi.
+    2. Ulanish sog'lom — qiymat bo'shatiladi.
+    3. Ulanish yaroqsiz holatda (masalan bekor qilingan tranzaksiya, u
+       yerda har qanday SQL xato beradi) — u holda ulanishning O'ZI
+       yopiladi. Qiymatni o'chira olmaganimizda ulanishni tashlash
+       yagona ishonchli yo'l: keyingi so'rov yangi ulanish oladi va u
+       toza bo'ladi.
+    """
     if connection.vendor != "postgresql":
         return
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT set_config('app.organization_id', '', false)")
+    if connection.connection is None:
+        return
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT set_config('app.organization_id', '', false)")
+    except DatabaseError:
+        connection.close()
+
+
+def clear_request_settings() -> None:
+    """
+    So'rov CHEGARASI uchun: uchala kontekst GUC'ini ham bo'shatadi.
+
+    `clear_tenant_setting()` dan farqi ataylab. U faqat tashkilotni
+    tozalaydi va shunday bo'lishi SHART: `organization_context()` ni
+    `platform_context()` ichida ishlatish mumkin, va ichkarisi
+    chiqayotganda tashqi platforma rejimini o'chirib yuborsa, nesting
+    buzilardi.
+
+    Bu funksiya esa boshqa savolga javob beradi: "so'rov tugadi, ulanish
+    pulga qaytmoqda — unda hech qanday kontekst qolmasin". Shu sababli u
+    hammasini oladi. `app.platform` ning oqib ketishi `app.organization_id`
+    nikidan ham yomonroq bo'lardi: u metama'lumot jadvallarini butun
+    boshli ochadi.
+
+    Uchalasi BITTA murojaatda tozalanadi — so'rovga qo'shiladigan narx
+    bitta round-trip, uchta emas.
+    """
+    if connection.vendor != "postgresql":
+        return
+    if connection.connection is None:
+        return
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT set_config('app.organization_id', '', false),"
+                "       set_config('app.platform', '', false),"
+                "       set_config('app.auth_lookup', '', false)"
+            )
+    except DatabaseError:
+        connection.close()
 
 
 def enable_auth_lookup() -> None:

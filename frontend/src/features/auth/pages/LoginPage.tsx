@@ -175,11 +175,11 @@ export default function LoginPage() {
           )}
         </div>
 
+        {/* Akkauntni faqat vendor ochadi (ADR-10) — "sinovni boshlang"
+            havolasi endi hech qayerga olib bormasdi. O'rniga aloqa yo'li:
+            bu sahifaga adashib tushgan odam nima qilishini bilsin. */}
         <p className="mt-6 text-center text-xs text-slate-400">
-          Hisobingiz yo'qmi?{' '}
-          <a href="/signup" className="font-medium text-brand-600 hover:underline">
-            15 kunlik sinovni boshlang
-          </a>
+          Hisobingiz yo'qmi? Bog'changiz uchun akkaunt ochish uchun biz bilan bog'laning.
         </p>
       </div>
     </div>

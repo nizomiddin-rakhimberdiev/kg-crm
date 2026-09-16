@@ -68,6 +68,11 @@ export function RolesPanel() {
       setSaved(false)
       setError(null)
     }
+    // Bog'liqlik ATAYLAB `selectedRole` OBYEKTI emas, uning id'si va
+    // ruxsatlar MAZMUNI. Obyekt har bir `refetch` da yangi havola
+    // bo'ladi, ya'ni to'liq bog'liqlik foydalanuvchi belgilab turgan
+    // qoralamani fon yangilanishida tozalab yuborardi.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRole?.id, selectedRole?.permissions.join(',')])
 
   const grouped = useMemo(() => {

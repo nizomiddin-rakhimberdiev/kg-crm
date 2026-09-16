@@ -16,9 +16,9 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from celery import shared_task
 from django.utils import timezone
 
+from apps.core.tasks import reliable_task
 from apps.core.tenancy import organization_context, platform_context
 from apps.subscriptions import services
 
@@ -46,7 +46,7 @@ def _live_subscriptions() -> Any:
         )
 
 
-@shared_task(name="subscriptions.record_daily_peak")
+@reliable_task(name="subscriptions.record_daily_peak")
 def record_daily_peak() -> dict[str, int]:
     """
     Har kuni: har bir obuna uchun eng yuqori bolalar sonini yozadi.
@@ -68,7 +68,7 @@ def record_daily_peak() -> dict[str, int]:
     return {"measured": measured}
 
 
-@shared_task(name="subscriptions.close_periods_and_invoice")
+@reliable_task(name="subscriptions.close_periods_and_invoice")
 def close_periods_and_invoice() -> dict[str, int]:
     """
     Davri tugagan obunalarni yopadi va keyingi hisobni yozadi.
@@ -137,13 +137,13 @@ def _roll_period(subscription: Any) -> None:
     subscription.save(update_fields=["current_period_start", "current_period_end", "updated_at"])
 
 
-@shared_task(name="subscriptions.expire_trials")
+@reliable_task(name="subscriptions.expire_trials")
 def expire_trials_task() -> int:
     """Qabul qilinmagan sinovlarni yopadi."""
     return services.expire_trials()
 
 
-@shared_task(name="subscriptions.dunning")
+@reliable_task(name="subscriptions.dunning")
 def dunning_task() -> dict[str, int]:
     """
     Muddati o'tganlarni belgilaydi, keyin kutish muddati tugaganlarni

@@ -262,12 +262,36 @@ class Payment(BranchScopedModel):
     reversed_at = models.DateTimeField(null=True, blank=True)
     reversal_reason = models.CharField(max_length=255, blank=True)
 
+    # Takroriy yuborishdan himoya (P1-003).
+    #
+    # Hisob-fakturani qulflash ORTIQCHA to'lovni to'xtatadi, lekin
+    # TAKRORIY to'lovni emas: kassir tugmani ikki marta bossa yoki
+    # tarmoq so'rovni qayta yuborsa, ikkita mustaqil to'lov yozilardi.
+    # Avans to'lovda (hisob-fakturasiz) esa umuman hech qanday to'siq
+    # yo'q edi — ikki marta bosish bolaning balansini ikki barobar
+    # oshirardi.
+    #
+    # Kalit mijozdan keladi (`Idempotency-Key` sarlavhasi) va u bitta
+    # FOYDALANUVCHI HARAKATINI bildiradi, bitta so'rovni emas: qayta
+    # yuborilgan so'rov o'sha kalit bilan keladi va mavjud to'lovni
+    # qaytaradi.
+    idempotency_key = models.CharField(max_length=64, blank=True, editable=False)
+
     class Meta:
         db_table = "payment"
         ordering = ["-paid_at"]
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(amount__gt=0), name="ck_payment_amount_positive"
+            ),
+            # Qisman indeks: kalitsiz to'lovlar (import, seed, eski
+            # yozuvlar) cheklovga tushmaydi. Poyga holatida ikkinchi
+            # `INSERT` shu yerda to'xtaydi — tekshiruv ilovada emas,
+            # BAZADA, ya'ni ikkita so'rov bir vaqtda kelsa ham ishlaydi.
+            models.UniqueConstraint(
+                fields=["organization", "idempotency_key"],
+                condition=~models.Q(idempotency_key=""),
+                name="uq_payment_idempotency",
             ),
         ]
         indexes = [

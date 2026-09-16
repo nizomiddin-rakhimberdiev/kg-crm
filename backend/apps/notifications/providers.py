@@ -43,18 +43,47 @@ class NotificationProvider(Protocol):
     def send(self, *, address: str, body: str, subject: str = "") -> SendResult: ...
 
 
+def mask_phone(address: str) -> str:
+    """
+    `+998901234567` → `+9989****4567`.
+
+    Log'da raqamni butunlay yashirish ham mumkin edi, lekin "qaysi
+    raqamga ketdi?" degan savolga javob berish uchun oxirgi to'rt raqam
+    kerak. Bu muvozanat: yozuv diagnostika uchun yetarli, lekin log
+    fayli o'g'irlansa undan mijozlar bazasi chiqmaydi.
+    """
+    clean = address.strip()
+    if len(clean) <= 8:
+        return "*" * len(clean)
+    return f"{clean[:5]}{'*' * (len(clean) - 9)}{clean[-4:]}"
+
+
 class ConsoleProvider:
     """
     Log'ga yozadigan provayder — ishlab chiqish va testlar uchun.
 
     Haqiqiy provayder ulanmaganda ham butun oqim (navbat → yuborish →
     jurnal) ishlaydi va sinaladi.
+
+    **Log'ga shaxsiy ma'lumot TUSHMAYDI.** Avval bu yerda to'liq telefon
+    raqami va xabar matni yozilardi — matn esa ichida bolaning ismini,
+    summani va bog'cha nomini olib yuradi. Bu provayder hozircha
+    PRODUCTION defaulti (`NOTIFICATION_PROVIDER=console`), ya'ni har bir
+    qarz eslatmasi log'ga bola ismi bilan tushardi. Loglar esa
+    zaxiradan ham, monitoringdan ham, xato kuzatuvidan ham oson
+    chiqadigan joy.
+
+    Matnni to'liq ko'rish kerak bo'lsa — `NOTIFICATION_LOG_BODY=True`.
+    U ATAYLAB sozlama: buni yoqish ongli qaror bo'lsin, sukut emas.
     """
 
     channel = "sms"
 
     def send(self, *, address: str, body: str, subject: str = "") -> SendResult:
-        logger.info("[SMS→%s] %s", address, body)
+        if getattr(settings, "NOTIFICATION_LOG_BODY", False):
+            logger.info("[SMS→%s] %s", address, body)
+        else:
+            logger.info("[SMS→%s] %s belgi", mask_phone(address), len(body))
         return SendResult(success=True, provider_message_id=f"console-{abs(hash(body)) % 10**10}")
 
 

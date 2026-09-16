@@ -158,6 +158,18 @@ features/payments/
 
 React Router with nested layouts and three route categories.
 
+### 4.0 Every kindergarten has its own address
+
+Customer routes live under `/t/<slug>` — `https://kg-crm.uz/t/quyosh/dashboard`. The prefix is applied as the router's `basename`, computed once at page load in `src/lib/tenantAddress.ts`; route definitions stay unprefixed (`/dashboard`, `/children`), so nothing in the feature code knows about it.
+
+Three things follow, and they are the reason for this shape:
+
+- **The address is not the tenant mechanism.** The organization comes from the JWT and is enforced by Postgres RLS ([04 §1](./04_Backend_API_Specification.md)). Opening `/t/beta/dashboard` with an alpha token shows nothing of beta's — the app simply redirects the user to their own address. The slug is branding and an entry point, never permission.
+- **`/platform` sits outside the prefix.** The vendor console is reached at the bare root, so it can never fall under a kindergarten's `basename`; the two planes are separated at the URL level too (ADR-10).
+- **The refresh token key is namespaced by slug** (`kg_crm_refresh:<slug>`). All kindergartens share one origin, therefore one `localStorage`. With a single key, a bookkeeper serving two kindergartens would be logged out of the first the moment they signed into the second.
+
+**Why a path and not a subdomain.** A subdomain needs wildcard DNS *and* a wildcard TLS certificate; Let's Encrypt issues those only through the DNS-01 challenge, which means a standing dependency on the DNS provider's API — and a renewal that fails silently 90 days later. A path needs one nginx block, one certificate and one CORS origin. The move to `<slug>.kg-crm.uz` remains open and is deliberately cheap: `TENANT_URL_STYLE` in the backend (`apps/core/tenant_address.py`) and `basenameFor()` here, plus a 301 from the old paths. Because the address carries no authority, that migration cannot affect isolation.
+
 ```mermaid
 graph TD
     ROOT[AppProviders<br/>Query + Auth + Theme]

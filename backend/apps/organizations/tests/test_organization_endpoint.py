@@ -41,8 +41,12 @@ class TestOrganizationProfile:
         assert data["name"] == "Quyosh bog'chasi"
         assert data["tax_id"] == "305123456"
 
-        tenant_a.organization.refresh_from_db()
-        assert tenant_a.organization.name == "Quyosh bog'chasi"
+        # So'rov tugagach kontekst tozalanadi (P0-001) — o'qish uchun qayta ochamiz.
+        from apps.core.tenancy import organization_context
+
+        with organization_context(tenant_a.organization.id):
+            tenant_a.organization.refresh_from_db()
+            assert tenant_a.organization.name == "Quyosh bog'chasi"
 
     def test_slug_is_immutable(self, tenant_a):
         """`slug` — global identifikator; nomni o'zgartirish uni ko'chirmaydi."""

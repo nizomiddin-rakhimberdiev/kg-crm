@@ -25,3 +25,21 @@
     background: transparent;
   }
 }
+
+@layer components {
+  .marketing {
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  .marketing :focus-visible {
+    @apply outline-none ring-2 ring-brand-600 ring-offset-2;
+  }
+
+  .eyebrow {
+    @apply text-xs font-bold uppercase tracking-[0.16em] text-brand-700;
+  }
+
+  .section-title {
+    @apply text-3xl font-bold tracking-[-0.035em] text-slate-950 sm:text-4xl;
+  }
+}

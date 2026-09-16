@@ -12,15 +12,14 @@ from apps.accounts.views_auth import (
     ProfilePhotoView,
     RefreshView,
     SelectOrganizationView,
-    SignupView,
 )
 from apps.organizations.views import OrganizationView
 from apps.platform.views import PlatformLoginView
+from apps.platform.views_leads import PublicLeadCreateView, PublicPricingView
 
 app_name = "v1"
 
 auth_patterns = [
-    path("auth/signup", SignupView.as_view(), name="auth-signup"),
     path("auth/login", LoginView.as_view(), name="auth-login"),
     path(
         "auth/select-organization",
@@ -46,6 +45,8 @@ urlpatterns = [
     path("health", HealthCheckView.as_view(), name="health"),
     # Singleton resurs — ID yo'q, tashkilot tokendan olinadi (docs/04 §16).
     path("organization", OrganizationView.as_view(), name="organization"),
+    path("public/leads", PublicLeadCreateView.as_view(), name="public-lead-create"),
+    path("public/pricing", PublicPricingView.as_view(), name="public-pricing"),
     *auth_patterns,
     *platform_patterns,
     *router.urls,

@@ -8,7 +8,7 @@ This file is loaded automatically every session. It tells Claude (and any develo
 
 **Kindergarten Management System (KG-CRM)** — a **hosted multi-tenant SaaS** platform combining **CRM + ERP + LMS** for kindergartens. MVP is a staff-facing back-office; the architecture is designed to grow into parent/teacher portals and online payments without rewrites.
 
-**Commercial model** ([01 §4](./docs/01_Project_Vision.md)): each customer is an **organization** with unlimited branches under **one subscription**, priced per enrolled child — base 500 000 UZS/month including 50 children, +80 000 per additional 10. Payment terms: monthly (0 %), semi-annual (−15 %), annual (−25 %). 15-day risk-free trial; on conversion the first paid month is dated from the trial start, disclosed at signup.
+**Commercial model** ([01 §4](./docs/01_Project_Vision.md)): each customer is an **organization** with unlimited branches under **one subscription**, priced per enrolled child — base **400 000 UZS/month including 50 children, +50 000 per additional 10** (revised 2026-09-16, ADR-12 — supersedes the original 500 000 / +80 000 launch figures, which stay correct only for invoices billed before 2026-09-14). Payment terms: monthly (0 %), semi-annual (−15 %), annual (−25 %). 15-day risk-free trial; on conversion the first paid month is dated from the trial start, disclosed at signup.
 
 ---
 

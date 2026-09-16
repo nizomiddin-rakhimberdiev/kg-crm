@@ -15,6 +15,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { EmptyRow } from '@/components/ui/EmptyState'
 
 const money = (v: string) => new Intl.NumberFormat('uz-UZ').format(Number(v)) + " so'm"
 
@@ -217,6 +218,14 @@ export default function ExpensesPage() {
                   </tr>
                 )
               })}
+              {expensesQuery.data?.items.length === 0 && (
+                <EmptyRow
+                  colSpan={7}
+                  icon={Receipt}
+                  title="Chiqim yozilmagan"
+                  hint="Bog'cha xarajatlari shu yerda qayd etiladi — oziq-ovqat, kommunal, ta'mir."
+                />
+              )}
             </tbody>
           </table>
         )}

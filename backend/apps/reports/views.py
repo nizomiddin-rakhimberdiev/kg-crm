@@ -10,6 +10,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Any
 
+from django.db import transaction
 from django.http import FileResponse, Http404
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -173,7 +174,20 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
             params=serializer.validated_data.get("params", {}),
             requested_by=user,
         )
-        generate_export.delay(str(export.id), str(user.organization_id))
+        # `on_commit` — `delay()` EMAS, to'g'ridan-to'g'ri emas.
+        #
+        # `ATOMIC_REQUESTS` yoqilmagan bo'lsa ham, bu view yuqoridagi
+        # qatlamlarda tranzaksiya ichiga tushishi mumkin (masalan test,
+        # yoki kelajakdagi `atomic` blok). U holda vazifa qatordan
+        # OLDIN navbatga tushadi va ishchi hali mavjud bo'lmagan
+        # `export.id` ni qidiradi — natija "eksport topilmadi" degan
+        # jimgina nosozlik bo'lardi.
+        #
+        # `on_commit` vazifani commit'dan KEYIN yuboradi; tranzaksiya
+        # bo'lmasa esa darhol chaqiradi, ya'ni oddiy holatda xatti-harakat
+        # o'zgarmaydi.
+        export_id, organization_id = str(export.id), str(user.organization_id)
+        transaction.on_commit(lambda: generate_export.delay(export_id, organization_id))
         return Response(ReportExportSerializer(export).data, status=status.HTTP_202_ACCEPTED)
 
     @action(detail=False, methods=["get"])

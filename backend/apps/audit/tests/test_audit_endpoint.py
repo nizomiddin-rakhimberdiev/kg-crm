@@ -152,9 +152,11 @@ class TestWiring:
         )
         assert response.status_code == 201
 
-        entry = AuditLog.objects.filter(entity_type="stock_movement").first()
-        assert entry is not None
-        assert entry.changes["quantity"] == "20.000"
+        # So'rov tugagach kontekst tozalanadi (P0-001) — o'qish uchun qayta ochamiz.
+        with organization_context(tenant_a.organization.id):
+            entry = AuditLog.objects.filter(entity_type="stock_movement").first()
+            assert entry is not None
+            assert entry.changes["quantity"] == "20.000"
 
     def test_setting_change_records_the_previous_value(self, tenant_a):
         """
@@ -171,7 +173,9 @@ class TestWiring:
         )
         assert response.status_code == 200
 
-        entry = AuditLog.objects.filter(entity_type="system_setting").first()
-        assert entry is not None
-        assert entry.changes["from"] is True
-        assert entry.changes["to"] is False
+        # So'rov tugagach kontekst tozalanadi (P0-001) — o'qish uchun qayta ochamiz.
+        with organization_context(tenant_a.organization.id):
+            entry = AuditLog.objects.filter(entity_type="system_setting").first()
+            assert entry is not None
+            assert entry.changes["from"] is True
+            assert entry.changes["to"] is False

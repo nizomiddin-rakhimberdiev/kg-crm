@@ -226,6 +226,13 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
         data = serializer.validated_data
         user = request_user(request)
 
+        # `Idempotency-Key` — sanoat konvensiyasi (Stripe va boshqalar
+        # shu nomni ishlatadi). Mijoz uni FORMA yuborilishiga bog'laydi,
+        # so'rovga emas: qayta yuborilgan so'rov o'sha kalit bilan
+        # keladi va ikkinchi to'lov yozilmaydi.
+        #
+        # Sarlavha bo'lmasa xatti-harakat avvalgidek — eski mijozlar va
+        # skriptlar ishlayveradi, lekin ular takrorlanishdan himoyalanmagan.
         payment = services.record_payment(
             child=data["child"],
             amount=data["amount"],
@@ -234,6 +241,7 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
             reference=data.get("reference", ""),
             paid_at=data.get("paid_at"),
             received_by=user,
+            idempotency_key=request.headers.get("Idempotency-Key", "").strip(),
         )
         audit.record(
             action="create",

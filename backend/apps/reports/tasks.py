@@ -14,10 +14,10 @@ import logging
 from datetime import date
 from typing import Any
 
-from celery import shared_task
 from django.core.files.base import ContentFile
 from django.utils import timezone
 
+from apps.core.tasks import reliable_task
 from apps.core.tenancy import organization_context, platform_context
 from apps.reports import exporters, selectors
 from apps.reports.models import ExportStatus, ReportExport
@@ -75,7 +75,7 @@ def _run_report(report_type: str, organization_id: Any, params: dict[str, Any]) 
     raise ValueError(f"Noma'lum hisobot turi: {report_type}")
 
 
-@shared_task(name="reports.generate_export")
+@reliable_task(name="reports.generate_export")
 def generate_export(export_id: str, organization_id: str | None = None) -> str:
     """
     Eksportni tayyorlaydi va faylni saqlaydi.
@@ -127,7 +127,7 @@ def generate_export(export_id: str, organization_id: str | None = None) -> str:
     return export.status
 
 
-@shared_task(name="reports.send_debt_reminders")
+@reliable_task(name="reports.send_debt_reminders")
 def send_debt_reminders() -> dict[str, int]:
     """
     Beat vazifasi: har bir tashkilotning qarzdorlariga eslatma.
@@ -155,7 +155,7 @@ def send_debt_reminders() -> dict[str, int]:
     return {"organizations": organizations, "queued": sent}
 
 
-@shared_task(name="reports.recompute_balances")
+@reliable_task(name="reports.recompute_balances")
 def recompute_balances() -> dict[str, int]:
     """
     Tunlik solishtirish: `child.balance` keshini ledger'dan qayta hisoblaydi

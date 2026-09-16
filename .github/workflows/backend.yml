@@ -4,12 +4,23 @@ name: Backend CI
 # maslahat emas, darvoza: lint, type-check va testlar majburiy.
 
 on:
+  # `branches: [main]` OLIB TASHLANDI. U bilan hamkor ishlaydigan
+  # branch (`abzal2`) hech qachon tekshirilmasdi: kod `main` ga
+  # qo'shilgandan keyingina darvozaga duch kelardi — ya'ni eng qimmat
+  # paytda. Endi har bir branch'dagi har bir commit tekshiriladi.
   push:
-    branches: [main]
     paths: ["backend/**", ".github/workflows/backend.yml"]
   pull_request:
     paths: ["backend/**", ".github/workflows/backend.yml"]
   workflow_dispatch:
+
+# Minimal ruxsat: bu workflow hech narsa yozmaydi.
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
 
 defaults:
   run:
@@ -54,6 +65,12 @@ jobs:
       - name: Bog'liqliklarni o'rnatish
         run: pip install -r requirements/development.txt
 
+      - name: Bog'liqliklar zaifligi (pip-audit)
+        # Ma'lum zaiflik topilsa CI QIZARADI. Bu darvoza bo'lishi
+        # kerak: qo'lda tekshirish "keyin qarayman" bo'lib qoladi, va
+        # xavfsizlik yangilanishi oylab kutib turadi.
+        run: pip-audit -r requirements/production.txt --progress-spinner off
+
       - name: Lint (ruff)
         run: ruff check .
 
@@ -79,7 +96,24 @@ jobs:
         # solo xato — CI uni har safar ushlaydi.
         run: python manage.py makemigrations --check --dry-run
 
+      - name: Migratsiyalar va RLS holati
+        # CLAUDE.md 8-invarianti: `check_rls` HAR BIR `migrate` dan keyin
+        # ishlashi shart. Sabab amalda ko'rilgan — qo'llanilgan migratsiya
+        # tahrirlangach Django uni qayta ishga tushirmaydi, va jonli baza
+        # eski siyosatlar bilan qolib ketadi. Toza CI bazasida bu tekshiruv
+        # boshqa savolga javob beradi: migratsiyalar HAQIQATAN 38 ta
+        # jadvalga FORCE RLS qo'yadimi, yoki siyosat generatori
+        # migratsiyadan ajralib qolganmi.
+        run: |
+          python manage.py migrate --noinput
+          python manage.py check_rls
+
       - name: Testlar
+        # Redis ATAYLAB yo'q: test sozlamalari `LocMemCache` va
+        # `CELERY_TASK_ALWAYS_EAGER` ishlatadi, ya'ni to'plam tashqi
+        # broker'siz ishlaydi. Buni tekshirdik — Redis o'lik portga
+        # yo'naltirilganda ham 602 test o'tadi. Kerak bo'lmagan servis
+        # CI'ni sekinlashtiradi va yiqiladigan yana bitta nuqta qo'shadi.
         run: pytest --cov=apps --cov=api --cov-report=term-missing
 
       - name: Tenant izolyatsiya testlari alohida

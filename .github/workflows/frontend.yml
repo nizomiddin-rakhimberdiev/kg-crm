@@ -1,0 +1,82 @@
+name: Frontend CI
+
+# To'rtta darvoza: lint, tip tekshiruvi, testlar, build. Hammasi
+# MAJBURIY.
+#
+# Undan oldin 11 500 qator TypeScript hech qanday avtomatik tekshiruvdan
+# o'tmasdi — backend'da 600 dan ortiq test bor edi, frontendda bittasi
+# ham yo'q edi.
+
+on:
+  # `branches` filtri ATAYLAB yo'q: har bir branch'dagi har bir commit
+  # tekshirilsin. Avval backend workflow'i faqat `main` ni qoplardi va
+  # hamkor ishlaydigan branch umuman darvozasiz qolgandi.
+  push:
+    paths: ["frontend/**", ".github/workflows/frontend.yml"]
+  pull_request:
+    paths: ["frontend/**", ".github/workflows/frontend.yml"]
+  workflow_dispatch:
+
+# Minimal ruxsat: bu workflow faqat kodni o'qiydi.
+permissions:
+  contents: read
+
+# Ketma-ket push'larda eskisini bekor qilamiz — navbat band bo'lmasin.
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: frontend
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Lokal muhitdagi versiya bilan bir xil: CI va noutbuk har xil
+          # Node'da ishlasa, faqat bittasida chiqadigan xato paydo bo'ladi.
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Bog'liqliklarni o'rnatish
+        # `npm ci`, `npm install` emas: u lock faylga QAT'IY amal qiladi
+        # va uni yangilamaydi. Ya'ni CI aynan lock faylda yozilgan
+        # versiyalarni sinaydi, "bugun nima chiqqan bo'lsa" ni emas.
+        run: npm ci
+
+      - name: Bog'liqliklar zaifligi (npm audit)
+        # `--omit=dev` — darvoza BRAUZERGA CHIQADIGAN kodni tekshiradi.
+        #
+        # Ishlab chiqish vositalarida (vite, vitest) hozir uchta
+        # high/critical bor va ular major yangilashni talab qiladi:
+        # `@vitejs/plugin-react` vite 8 ni qo'llab-quvvatlamaydi, vitest 5
+        # esa vite >= 6.4 talab qiladi — peer bog'liqliklar bir-birini
+        # bloklaydi. Ularning ta'siri ham boshqa: biri `npm run dev`
+        # serveridagi path traversal, ikkinchisi Vitest UI serveridagi
+        # RCE. Ikkalasi ham productionda ishlamaydi.
+        #
+        # Ular yopilmagan qarz sifatida `docs/deployment.md` da yozilgan.
+        # Darvozani ular bilan qizartirish esa uni birinchi kundanoq
+        # e'tiborsiz qoldiriladigan qilardi.
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Lint (eslint)
+        run: npm run lint
+
+      - name: Type-check (tsc)
+        run: npm run typecheck
+
+      - name: Testlar (vitest)
+        run: npm test
+
+      - name: Production build
+        # Build alohida qadam: `tsc` o'tib, `vite build` yiqiladigan
+        # holatlar bor (masalan import yo'li faqat bundler uchun noto'g'ri).
+        run: npm run build

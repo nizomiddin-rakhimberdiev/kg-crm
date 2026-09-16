@@ -127,13 +127,12 @@ class TestLoginOracle:
         assert known.status_code == unknown.status_code == 401
         assert known.json() == unknown.json()
 
-    def test_signup_does_not_reveal_an_existing_email(self, tenant_a):
+    def test_the_signup_oracle_is_gone_entirely(self, tenant_a):
         """
-        Ro'yxatdan o'tish "bu email band" demasligi kerak.
-
-        Email tashkilot ichida unikal, global emas — shuning uchun
-        boshqa tenantda bor emailni "band" deb ko'rsatish o'sha
-        tenantning mavjudligini oshkor qilardi (docs/03 §10.6).
+        Avval bu test "signup mavjud emailni oshkor qilmasin" ni
+        tekshirardi. Endi tekshirish kerak bo'lgan narsa kuchliroq:
+        ochiq ro'yxatdan o'tish umuman yo'q, ya'ni bu orakuldan
+        so'raydigan savolning o'zi qolmadi.
         """
         response = APIClient().post(
             "/api/v1/auth/signup",
@@ -145,7 +144,7 @@ class TestLoginOracle:
             },
             format="json",
         )
-        assert response.status_code == 201
+        assert response.status_code == 404
 
 
 class TestTenantEscape:

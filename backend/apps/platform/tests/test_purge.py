@@ -91,6 +91,46 @@ class TestPurge:
         with platform_context():
             assert not Organization.objects.filter(pk=organization_id).exists()
 
+    def test_an_organization_with_audit_rows_can_be_purged(self, tenant_a):
+        """
+        Audit qatorlari bor tashkilot ham o'chirilishi kerak.
+
+        Bu holat AMALDA har doim yuz beradi: har bir kirish, har bir
+        yozuv audit jurnaliga tushadi, ya'ni haqiqiy mijozda o'nlab
+        yoki minglab qator bo'ladi. Test esa audit qatorsiz tashkilot
+        bilan ishlagan — shuning uchun u yashil turaverdi.
+
+        Xato: `audit_log` PLATFORMA rejimida o'chirilardi, u yerda esa
+        siyosat faqat `organization_id IS NULL` qatorlarni ochadi
+        (ADR-10 — vendor mijozning audit yozuvlarini ko'rmaydi). Ya'ni
+        `DELETE` hech narsa topmasdi, xato bermasdi, va oxirida
+        `organization.delete()` FK cheklovi bilan yiqilardi.
+        """
+        from apps.audit.models import AuditLog
+
+        _prepare(tenant_a)
+        organization_id = tenant_a.organization.id
+
+        with organization_context(organization_id):
+            for index in range(3):
+                AuditLog.objects.create(
+                    organization=tenant_a.organization,
+                    actor=tenant_a.owner,
+                    actor_email=tenant_a.owner.email,
+                    action="update",
+                    entity_type="child",
+                    changes={"n": index},
+                )
+            assert AuditLog.objects.count() >= 3
+
+        deleted = purge_organization(
+            organization_id=organization_id, confirm_slug=tenant_a.organization.slug
+        )
+
+        assert deleted["audit_log"] >= 3, "mijozning audit qatorlari o'chirilmadi"
+        with platform_context():
+            assert not Organization.objects.filter(pk=organization_id).exists()
+
     def test_the_other_tenant_is_untouched(self, tenant_a, tenant_b):
         """
         O'chirish FAQAT bitta tashkilotga tegadi.

@@ -29,10 +29,12 @@ from apps.platform.authentication import (
     authenticate_platform_user,
     issue_platform_token,
 )
-from apps.platform.models import PlatformUser, SupportGrant
+from apps.platform.models import Lead, PlatformUser, SupportGrant
 from apps.platform.permissions import IsPlatformAdmin, IsPlatformStaff
 from apps.platform.serializers import (
     ExtendTrialSerializer,
+    LeadSerializer,
+    OrganizationCreateSerializer,
     PlatformLoginSerializer,
     ReasonSerializer,
     RecordPaymentSerializer,
@@ -126,6 +128,45 @@ class PlatformConsoleViewSet(viewsets.ViewSet):
         """Kunlik ish ro'yxati: tugayotgan sinovlar, muddati o'tgan hisoblar."""
         return Response(services.expiring_work_list())
 
+    @action(detail=False, methods=["get"])
+    def leads(self, request: Request) -> Response:
+        """Public zayavkalar — faqat platform admin uchun, tenant emas."""
+        self._admin_only(request)
+        status_filter = request.query_params.get("status", "")
+        queryset = Lead.objects.all()
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        return Response(LeadSerializer(queryset[:200], many=True).data)
+
+    # --- Mijoz ochish (faqat administrator) ---
+
+    @action(detail=False, methods=["post"], url_path="organizations/create")
+    def create_organization(self, request: Request) -> Response:
+        """
+        `POST /platform/organizations/create` — yangi bog'cha ochadi.
+
+        Ochiq `/auth/signup` ning o'rnini bosadi. Faqat administrator:
+        har bir yangi tenant — bu yangi obuna, yangi hisob-kitob va
+        o'chirilmaydigan ma'lumot; qo'llab-quvvatlash xodimi buni
+        yaratmasligi kerak.
+        """
+        self._admin_only(request)
+        serializer = OrganizationCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        created = services.create_organization(
+            actor=self._actor(request),
+            organization_name=data["organization_name"],
+            contact_email=data["contact_email"],
+            full_name=data["full_name"],
+            password=data["password"],
+            contact_phone=data.get("contact_phone", ""),
+            branch_name=data.get("branch_name", ""),
+            slug=data.get("slug", ""),
+            request=request._request,
+        )
+        return Response(created, status=status.HTTP_201_CREATED)
+
     # --- Tijorat amallari (faqat administrator) ---
 
     @action(
@@ -200,6 +241,27 @@ class PlatformConsoleViewSet(viewsets.ViewSet):
             request=request._request,
         )
         return Response(SupportGrantSerializer(grant).data, status=status.HTTP_201_CREATED)
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path=r"organizations/(?P<organization_id>[0-9a-f-]{36})/support-session",
+    )
+    def support_session(self, request: Request, organization_id: str = "") -> Response:
+        """
+        Amaldagi ruxsat bilan mijoz ilovasiga kirish tokenini oladi.
+
+        Ruxsat berish (`support-grant`) va kirish (`support-session`)
+        ATAYLAB ikkita amal: sabab bir marta yoziladi, kirish esa
+        ruxsat muddati ichida bir necha marta bo'lishi mumkin — va har
+        bir kirish alohida qayd etiladi.
+        """
+        session = services.start_support_session(
+            actor=self._actor(request),
+            organization_id=organization_id,
+            request=request._request,
+        )
+        return Response(session)
 
     @action(detail=False, methods=["get"], url_path="support-grants")
     def support_grants(self, request: Request) -> Response:

@@ -230,11 +230,37 @@ def queue_debt_reminders(
     queued: list[Notification] = []
     children = debtor_queryset(min_amount=min_amount).prefetch_related("guardian_links__guardian")
 
+    # Bugun allaqachon eslatma olgan vasiylar — ular ikkinchi marta
+    # olmasligi kerak.
+    #
+    # Bu tekshiruv Celery `task_acks_late` bilan birga MAJBURIY bo'lib
+    # qoldi: `acks_late` ishchi vazifa o'rtasida yiqilsa uni QAYTA
+    # yetkazadi, va bu to'g'ri xatti-harakat — yo'qolgan hisob-fakturadan
+    # ko'ra takrorlangani yaxshi. Lekin SMS uchun teskari: takrorlangan
+    # "qarzingiz bor" xabari ota-onaga ikki marta boradi va bog'chaning
+    # obro'siga tegadi. Shuning uchun takrorlanishni vazifa emas, SHU
+    # YER to'xtatadi.
+    #
+    # Sana bo'yicha: eslatma kuniga bir marta yuboriladi (beat jadvali
+    # `crontab(hour=10)`), ya'ni "bugun yuborilganmi?" to'g'ri savol.
+    today = timezone.localdate()
+    already_reminded = set(
+        Notification.objects.filter(
+            template__code=TemplateCode.DEBT_REMINDER,
+            created_at__date=today,
+        ).values_list("guardian_id", flat=True)
+    )
+
     for child in children:
         links = list(child.guardian_links.all())
         primary = next((link for link in links if link.is_primary), next(iter(links), None))
         if primary is None:
             continue
+        if primary.guardian_id in already_reminded:
+            continue
+        # Bir vasiyning bir nechta bolasi bo'lishi mumkin — u ham bitta
+        # eslatma olsin, har bir bola uchun alohida emas.
+        already_reminded.add(primary.guardian_id)
 
         notification = queue_notification(
             organization=organization,

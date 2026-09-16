@@ -28,6 +28,7 @@ from django.utils import timezone
 from apps.audit.models import AuditLog
 from apps.core.exceptions import BusinessRuleViolation
 from apps.core.tenancy import organization_context, platform_context
+from apps.core.tenant_address import tenant_login_url
 from apps.organizations.models import Organization
 from apps.platform.models import GRANT_MAX_HOURS, PlatformUser, SupportGrant
 from apps.subscriptions.models import (
@@ -44,7 +45,9 @@ __all__ = [
     "organization_detail",
     "expiring_work_list",
     "record_platform_action",
+    "create_organization",
     "create_support_grant",
+    "start_support_session",
     "revoke_support_grant",
     "active_grant",
     "extend_trial",
@@ -285,6 +288,71 @@ def expiring_work_list() -> dict[str, Any]:
     }
 
 
+# --- Mijoz ochish ---
+
+
+@transaction.atomic
+def create_organization(
+    *,
+    actor: PlatformUser,
+    organization_name: str,
+    contact_email: str,
+    full_name: str,
+    password: str,
+    contact_phone: str = "",
+    branch_name: str = "",
+    slug: str = "",
+    request: Any = None,
+) -> dict[str, Any]:
+    """
+    Yangi mijozni VENDOR ochadi — ochiq ro'yxatdan o'tish o'rniga.
+
+    Nega ochiq `/auth/signup` olib tashlandi: har bir signup haqiqiy
+    tenant yaratadi — RLS siyosatlari, obuna yozuvi, rollar, SMS
+    shablonlari. Va ADR-11 bo'yicha mijoz ma'lumoti hech qachon
+    o'chirilmaydi. Ya'ni internetdan kelgan tasodifiy tashrif bazada
+    abadiy qoladigan tenant qoldirardi. Bu biznes modeliga ham mos
+    kelmasdi: mijozlar yuridik shaxs va schyot-faktura orqali to'laydi,
+    ya'ni tenant sotuv suhbatidan KEYIN paydo bo'lishi kerak.
+
+    Sinov muddati SHU PAYTDAN boshlanadi (`start_trial`), shuning uchun
+    akkauntni mijoz haqiqatan boshlashga tayyor bo'lganda oching.
+    """
+    from apps.accounts.services import register_organization
+
+    result = register_organization(
+        organization_name=organization_name,
+        contact_email=contact_email,
+        full_name=full_name,
+        password=password,
+        contact_phone=contact_phone,
+        branch_name=branch_name or None,
+        slug=slug or None,
+    )
+
+    # Yozuv MIJOZNING tashkilotiga biriktiriladi: bog'cha o'z audit
+    # jurnalida "akkauntni vendor ochdi" faktini ko'rishi kerak.
+    with organization_context(result.organization.id):
+        record_platform_action(
+            actor=actor,
+            action="create",
+            organization=result.organization,
+            entity_type="organization",
+            entity_id=result.organization.id,
+            changes={"name": result.organization.name, "slug": result.organization.slug},
+            request=request,
+        )
+
+    return {
+        "id": str(result.organization.id),
+        "name": result.organization.name,
+        "slug": result.organization.slug,
+        "login_url": tenant_login_url(result.organization.slug),
+        "owner_email": result.owner.email,
+        "branch": result.branch.name,
+    }
+
+
 # --- Ruxsatlar ---
 
 
@@ -332,6 +400,79 @@ def create_support_grant(
             request=request,
         )
     return grant
+
+
+def start_support_session(
+    *, actor: PlatformUser, organization_id: Any, request: Any = None
+) -> dict[str, Any]:
+    """
+    Amaldagi ruxsat asosida mijoz ilovasiga KIRISH tokenini beradi.
+
+    Bu — `SupportGrant` ning yetishmayotgan yarmi edi. Ruxsat yozilardi,
+    mijoz uni ko'rardi, lekin u hech qanday kirish bermasdi: `active_grant()`
+    ishlab chiqarish kodida umuman chaqirilmasdi. Natijada qo'llab-quvvatlash
+    uchun yagona amaliy yo'l mijozning parolini bilish bo'lib qolgandi —
+    ya'ni audit jurnali vendor amalini bog'chaning O'Z egasi deb
+    yozadigan, va bitta noutbuk barcha bog'chalarning kalitini
+    saqlaydigan holat.
+
+    Sessiya egasining hisobi orqali ochiladi, chunki u tashkilotdagi
+    hamma narsani ko'radi — muammoni ko'rish uchun aynan shu kerak.
+    Yozish esa `TenantJWTAuthentication` da bloklanadi.
+
+    Har bir kirish MIJOZNING audit jurnaliga yoziladi: ruxsat berilgani
+    emas, aynan KIRILGANI ko'rinishi kerak.
+    """
+    from apps.accounts.authentication import issue_support_token
+    from apps.accounts.models import User
+    from apps.core.tenant_address import tenant_base_url
+
+    grant = active_grant(platform_user=actor, organization_id=organization_id)
+    if grant is None:
+        raise BusinessRuleViolation(
+            "Amaldagi ruxsat yo'q. Avval sabab ko'rsatib kirish ruxsatini oling."
+        )
+
+    with platform_context():
+        organization = Organization.objects.filter(pk=organization_id).first()
+    if organization is None:
+        raise BusinessRuleViolation("Tashkilot topilmadi.")
+
+    with organization_context(organization.id):
+        owner = (
+            User.objects.filter(role__code="org_owner", is_active=True)
+            .select_related("organization", "role", "branch")
+            .order_by("created_at")
+            .first()
+        )
+        if owner is None:
+            raise BusinessRuleViolation("Bog'chada faol egasi hisobi topilmadi.")
+
+        token = issue_support_token(
+            user=owner,
+            platform_user_id=actor.id,
+            grant_id=grant.id,
+            expires_at=grant.expires_at,
+        )
+
+        record_platform_action(
+            actor=actor,
+            action="login",
+            organization=organization,
+            entity_type="support_session",
+            entity_id=grant.id,
+            changes={"reason": grant.reason},
+            request=request,
+        )
+
+    return {
+        "access": token,
+        "organization": organization.name,
+        "slug": organization.slug,
+        "app_url": tenant_base_url(organization.slug),
+        "grant_expires_at": grant.expires_at.isoformat(),
+        "read_only": True,
+    }
 
 
 def revoke_support_grant(

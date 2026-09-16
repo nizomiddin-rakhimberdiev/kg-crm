@@ -23,6 +23,20 @@ desktop.ini
 .env
 .env.*
 !.env.example
+# `!.env.example` faqat AYNAN shu nomni qaytaradi. `.env.production.example`
+# esa `.env.*` ga tushib ketardi — ya'ni namuna fayl repozitoriyga umuman
+# yetib bormasdi va yangi klonda deploy birinchi qadamdayoq to'xtardi.
+!.env.*.example
+
+# Zaxira nusxalar — ichida bolalar va vasiylarning shaxsiy ma'lumoti bor.
+# `backend/.gitignore` da shunga o'xshash qoida bor, lekin u faqat
+# `backend/` ichida ishlaydi; zaxiralar esa repozitoriy ILDIZIDA
+# yaratiladi (scripts/backup.sh). Bitta unutilgan `git add .` butun
+# mijozlar bazasini tarixga yozib qo'yardi.
+backups/
+*.dump
+*.dump.enc
+*.manifest
 
 # Local tooling / scratch
 *.log

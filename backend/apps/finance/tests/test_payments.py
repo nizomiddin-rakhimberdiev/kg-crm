@@ -440,3 +440,90 @@ class TestEndpoints:
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
         assert client.get(reverse("v1:payment-list")).status_code == 403
+
+
+class TestIdempotencyOverTheApi:
+    """
+    `Idempotency-Key` sarlavhasi (P1-003).
+
+    Servis darajasidagi poyga testi `test_concurrency.py` da; bu yerda
+    esa API SIMI tekshiriladi — sarlavha o'qiladimi va u servisga
+    yetib boradimi.
+    """
+
+    def _payload(self, child):
+        return {"child_id": str(child.id), "amount": "100000", "method": "cash"}
+
+    def test_the_same_key_records_one_payment(self, tenant_a, child):
+        client = tenant_a.client()
+        key = "форма-1"
+
+        first = client.post(
+            reverse("v1:payment-list"),
+            self._payload(child),
+            format="json",
+            HTTP_IDEMPOTENCY_KEY=key,
+        )
+        second = client.post(
+            reverse("v1:payment-list"),
+            self._payload(child),
+            format="json",
+            HTTP_IDEMPOTENCY_KEY=key,
+        )
+
+        assert first.status_code == 201
+        assert second.status_code == 201
+        # Ikkala javob ham AYNAN bir xil to'lovni ko'rsatadi.
+        assert first.json()["data"]["id"] == second.json()["data"]["id"]
+
+        with organization_context(tenant_a.organization.id):
+            assert Payment.objects.filter(child=child).count() == 1
+
+    def test_without_a_key_nothing_changes(self, tenant_a, child):
+        """
+        Kalitsiz so'rov avvalgidek ishlaydi.
+
+        Eski mijozlar va skriptlar buzilmasin — lekin ular
+        takrorlanishdan himoyalanmagan va bu ataylab shunday: majburiy
+        kalit mavjud integratsiyalarni bir kechada sindirardi.
+        """
+        client = tenant_a.client()
+        for _ in range(2):
+            assert (
+                client.post(
+                    reverse("v1:payment-list"), self._payload(child), format="json"
+                ).status_code
+                == 201
+            )
+
+        with organization_context(tenant_a.organization.id):
+            assert Payment.objects.filter(child=child).count() == 2
+
+    def test_one_tenants_key_does_not_collide_with_another(self, tenant_a, tenant_b):
+        """
+        Kalit tashkilot ICHIDA unikal.
+
+        Global unikal bo'lsa, bir bog'chaning kaliti boshqasining
+        to'lovini bloklardi — va bu chalkash, takrorlanmaydigan
+        nosozlik bo'lardi.
+        """
+        from apps.children.models import Child
+
+        key = "bir-xil-kalit"
+        for tenant in (tenant_a, tenant_b):
+            with organization_context(tenant.organization.id):
+                kid = Child.objects.create(
+                    organization=tenant.organization,
+                    branch=tenant.branch,
+                    first_name="Bola",
+                    last_name="Testov",
+                    date_of_birth=date(2021, 3, 14),
+                    gender="male",
+                )
+            response = tenant.client().post(
+                reverse("v1:payment-list"),
+                {"child_id": str(kid.id), "amount": "50000", "method": "cash"},
+                format="json",
+                HTTP_IDEMPOTENCY_KEY=key,
+            )
+            assert response.status_code == 201, response.content

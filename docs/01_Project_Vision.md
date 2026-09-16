@@ -103,16 +103,18 @@ Billing is **per enrolled child**, with a base package that acts as a revenue fl
 
 | Element | Value |
 |---------|-------|
-| Base package | **500 000 UZS / month**, includes up to **50 children** |
+| Base package | **400 000 UZS / month**, includes up to **50 children** |
 | Minimum billable children | **50** — an organization with fewer children still pays the base |
-| Overage | **+80 000 UZS per each additional 10 children** (step, not per-child) |
+| Overage | **+50 000 UZS per each additional 10 children** (step, not per-child) |
 | Currency | UZS |
 
-Worked examples: 50 children → 500 000 · 80 children → 740 000 · 150 children → 1 300 000 · 300 children → 2 500 000.
+Worked examples: 50 children → 400 000 · 80 children → 550 000 · 150 children → 900 000 · 300 children → 1 650 000.
 
 **Why a 10-child step instead of per-child:** customers are legal entities paying by bank transfer against an invoice (schyot-faktura). A bill that changes by a few thousand UZS every month creates accounting friction and disputes. The step keeps the invoice stable until the count crosses a boundary, while preserving the revenue floor.
 
-**Built-in volume discount:** effective per-child price falls from 10 000 (at 50) to ~8 300 (at 300) with no separate enterprise tier.
+**Built-in volume discount:** effective per-child price falls from 8 000 (at 50) to ~5 500 (at 300) with no separate enterprise tier.
+
+> **Revised 2026-09-16 (ADR-12, [02 §2](./02_Software_Architecture.md)).** The original figures were 500 000 / +80 000; they are preserved in the `SubscriptionPlan` row that closed on 2026-09-13 and remain the correct historical reference for anything billed before the change. Do not restate the old numbers as current.
 
 ### 4.3 Payment terms
 
@@ -130,7 +132,9 @@ Worked examples: 50 children → 500 000 · 80 children → 740 000 · 150 child
 
 **15-day risk-free trial** — no card, no upfront payment.
 
-- If the customer converts, the **first monthly payment is dated from the trial start**, i.e. the paid month absorbs the trial period. This is disclosed **in the offer at signup**, never at the end of the trial.
+- **Accounts are opened by us, not by the customer.** There is no public signup: vendor staff create the organization from the platform console ([04 §19](./04_Backend_API_Specification.md)). This follows the model rather than restricting it — customers are legal entities who buy after a conversation and pay by bank transfer, and every account created is a permanent tenant whose data is never deleted (ADR-11).
+- **The trial clock starts when the account is created**, so an account should be opened when the customer is ready to begin — not weeks earlier.
+- If the customer converts, the **first monthly payment is dated from the trial start**, i.e. the paid month absorbs the trial period. This is disclosed **in the offer**, never at the end of the trial.
 - If the customer declines, they pay **nothing**.
 - Marketing must never describe the trial as "100 % free". The accurate claim is *"15-day trial — pay nothing if it isn't for you."*
 - Because customers are legal entities, a bank transfer takes days to clear. A converting organization enters a **`pending_payment` grace state with full access** (7 days) once the invoice is issued — access is never cut off mid-transfer.

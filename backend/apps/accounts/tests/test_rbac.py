@@ -401,11 +401,13 @@ class TestSelfServiceProfile:
         )
 
         assert response.status_code == 200
-        cashier.refresh_from_db()
-        assert cashier.role.code == "cashier"  # rol o'zgarmadi
-        assert cashier.email != "egasi@example.uz"  # email o'zgarmadi
-        assert cashier.is_active is True  # o'zini o'chirmadi
-        assert cashier.full_name == "Yangi ism"  # xavfsiz maydon esa o'zgardi
+        # So'rov tugagach kontekst tozalanadi (P0-001) — o'qish uchun qayta ochamiz.
+        with organization_context(tenant_a.organization.id):
+            cashier.refresh_from_db()
+            assert cashier.role.code == "cashier"  # rol o'zgarmadi
+            assert cashier.email != "egasi@example.uz"  # email o'zgarmadi
+            assert cashier.is_active is True  # o'zini o'chirmadi
+            assert cashier.full_name == "Yangi ism"  # xavfsiz maydon esa o'zgardi
 
 
 class TestProfilePhoto:

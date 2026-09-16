@@ -378,12 +378,29 @@ def generate_monthly_invoices(
             result.skipped_existing += 1
             continue
 
-        invoice = issue_invoice(
-            child=child,
-            period_year=period_year,
-            period_month=period_month,
-            created_by=created_by,
-        )
+        # Yuqoridagi tekshiruv "tekshir-keyin-yoz" oynasini qoldiradi:
+        # ikkinchi ishga tushish (yoki `acks_late` bilan qayta
+        # yetkazilgan vazifa) bir vaqtda kelsa, ikkalasi ham "yo'q" deb
+        # ko'radi. Oxirgi so'z `uq_invoice_child_period` da — va u
+        # ikkinchisini `IntegrityError` bilan to'xtatadi.
+        #
+        # Avval bu istisno TUTILMASDI va butun ishni yiqitardi: 200
+        # bolali bog'chada 3-bolada yuz bergan to'qnashuv qolgan 197
+        # tasini hisob-fakturasiz qoldirardi. Holbuki to'qnashuvning
+        # ma'nosi "bu bola uchun allaqachon bor" — ya'ni aynan
+        # o'tkazib yuborish kerak bo'lgan holat.
+        try:
+            with transaction.atomic():
+                invoice = issue_invoice(
+                    child=child,
+                    period_year=period_year,
+                    period_month=period_month,
+                    created_by=created_by,
+                )
+        except IntegrityError:
+            result.skipped_existing += 1
+            continue
+
         result.created += 1
         result.total_amount += invoice.amount_due
 
@@ -413,6 +430,7 @@ def record_payment(
     reference: str = "",
     paid_at: Any = None,
     received_by: Any = None,
+    idempotency_key: str = "",
 ) -> Payment:
     """
     To'lovni qayd etadi — BITTA tranzaksiyada (docs/03 §13.5, §26).
@@ -435,6 +453,15 @@ def record_payment(
 
     amount = _money(amount)
 
+    # Takroriy yuborish (P1-003): shu kalit bilan to'lov allaqachon
+    # yozilgan bo'lsa, YANGISINI yaratmaymiz — mavjudini qaytaramiz.
+    # Chaqiruvchi uchun natija bir xil ko'rinadi, ya'ni "ikki marta
+    # bosdim" holati jimgina va zararsiz hal bo'ladi.
+    if idempotency_key:
+        existing = Payment.objects.filter(idempotency_key=idempotency_key).first()
+        if existing is not None:
+            return existing
+
     if invoice is not None:
         if invoice.child_id != child.id:
             raise BusinessRuleViolation("Hisob-faktura boshqa bolaga tegishli.")
@@ -451,17 +478,32 @@ def record_payment(
     else:
         locked = None
 
-    payment = Payment.objects.create(
-        organization=child.organization,
-        branch=child.branch,
-        invoice=locked,
-        child=child,
-        amount=amount,
-        method=method,
-        reference=reference[:100],
-        paid_at=paid_at or timezone.now(),
-        received_by=received_by,
-    )
+    # Yuqoridagi tekshiruv "tekshir-keyin-yoz" oynasini qoldiradi: ikkita
+    # so'rov bir vaqtda kelsa, ikkalasi ham "mavjud emas" deb ko'radi.
+    # Shuning uchun oxirgi so'z BAZADA — `uq_payment_idempotency` qisman
+    # unikal indeksi. Ikkinchi `INSERT` shu yerda to'xtaydi va biz
+    # birinchisining natijasini qaytaramiz.
+    try:
+        with transaction.atomic():
+            payment = Payment.objects.create(
+                organization=child.organization,
+                branch=child.branch,
+                invoice=locked,
+                child=child,
+                amount=amount,
+                method=method,
+                reference=reference[:100],
+                paid_at=paid_at or timezone.now(),
+                received_by=received_by,
+                idempotency_key=idempotency_key[:64],
+            )
+    except IntegrityError:
+        if not idempotency_key:
+            raise
+        winner = Payment.objects.filter(idempotency_key=idempotency_key).first()
+        if winner is None:  # pragma: no cover — boshqa cheklov buzilgan
+            raise
+        return winner
 
     post_ledger_entry(
         child=child,

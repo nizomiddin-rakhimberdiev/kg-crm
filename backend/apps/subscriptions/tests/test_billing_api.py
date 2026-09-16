@@ -51,7 +51,7 @@ class TestSubscriptionEndpoint:
         assert data["status"] == "trialing"
         assert data["plan_code"] == "standard"
         assert data["included_children"] == 50
-        assert data["base_price"] == "500000.00"
+        assert data["base_price"] == "400000.00"
 
     def test_usage_is_marked_as_a_projection(self, tenant_a):
         """
@@ -66,7 +66,7 @@ class TestSubscriptionEndpoint:
         data = response.json()["data"]
         assert data["is_projection"] is True
         assert data["billable_children"] == 50
-        assert data["projected"]["total_amount"] == "500000.00"
+        assert data["projected"]["total_amount"] == "400000.00"
 
     def test_usage_reflects_actual_children(self, tenant_a):
         with organization_context(tenant_a.organization.id):
@@ -83,7 +83,7 @@ class TestSubscriptionEndpoint:
         data = tenant_a.client().get(reverse("v1:billing-usage")).json()["data"]
         assert data["billable_children"] == 73
         assert data["overage_steps"] == 3
-        assert data["projected"]["total_amount"] == "740000.00"
+        assert data["projected"]["total_amount"] == "550000.00"
 
 
 class TestConversionEndpoint:
@@ -93,7 +93,7 @@ class TestConversionEndpoint:
         )
         assert response.status_code == 201
         data = response.json()["data"]
-        assert data["total_amount"] == "4500000.00"
+        assert data["total_amount"] == "3600000.00"
         assert data["status"] == "issued"
 
     def test_invoice_list_and_detail(self, tenant_a):
@@ -295,8 +295,8 @@ class TestInvoiceImmutability:
 
             invoice.refresh_from_db()
 
-        assert invoice.base_amount == Decimal("500000.00")
-        assert invoice.total_amount == Decimal("500000.00")
+        assert invoice.base_amount == Decimal("400000.00")
+        assert invoice.total_amount == Decimal("400000.00")
 
     def test_invoice_arithmetic_is_enforced_by_the_database(self, tenant_a):
         """Yig'indisi mos kelmaydigan hisob umuman yozilmasin."""

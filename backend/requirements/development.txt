@@ -15,3 +15,10 @@ djangorestframework-stubs==3.16.5
 # Qulayliklar
 django-extensions==4.1
 ipython==9.6.0
+
+# Bog'liqliklardagi ma'lum zaifliklar (P2-007).
+#
+# CI'da darvoza sifatida ishlaydi. Birinchi ishga tushirishda uchta
+# zaiflik topdi (Django va DRF) — ikkalasi ham patch darajasida
+# tuzatilgan. Qo'lda tekshirish esa "keyin qarayman" bo'lib qolardi.
+pip-audit==2.9.0

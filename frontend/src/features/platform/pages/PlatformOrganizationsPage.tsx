@@ -13,6 +13,8 @@ import { Link } from 'react-router-dom'
 import { Building2, Search } from 'lucide-react'
 import { cn, formatUZS } from '@/lib/utils'
 import { platform } from '../api'
+import { usePlatformAuth } from '../PlatformAuthProvider'
+import { NewOrganizationDialog } from '../components/NewOrganizationDialog'
 
 export const STATUS_LABEL: Record<string, [string, string]> = {
   trialing: ['Sinov davri', 'bg-sky-500/10 text-sky-400'],
@@ -46,6 +48,9 @@ const monthlyEstimate = (children: number): number => {
 export default function PlatformOrganizationsPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
+  // Yangi tenant — yangi obuna va o'chirilmaydigan ma'lumot; buni faqat
+  // administrator ochadi (backend ham shuni talab qiladi).
+  const { isAdmin } = usePlatformAuth()
 
   const { data, isLoading } = useQuery({
     queryKey: ['platform', 'organizations', search, status],
@@ -66,14 +71,17 @@ export default function PlatformOrganizationsPage() {
             {rows.length} ta tashkilot · faol obunalardan taxminiy oylik: {formatUZS(mrr)}
           </p>
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Nomi bo'yicha qidirish"
-            className="w-64 rounded-lg border border-slate-800 bg-slate-900 py-2 pl-9 pr-3 text-sm outline-none placeholder:text-slate-600 focus:border-brand-500"
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Nomi bo'yicha qidirish"
+              className="w-64 rounded-lg border border-slate-800 bg-slate-900 py-2 pl-9 pr-3 text-sm outline-none placeholder:text-slate-600 focus:border-brand-500"
+            />
+          </div>
+          {isAdmin && <NewOrganizationDialog />}
         </div>
       </div>
 

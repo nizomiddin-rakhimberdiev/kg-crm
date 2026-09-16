@@ -1,10 +1,25 @@
-import { lazy } from 'react'
+import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 import { PlatformAuthProvider } from './features/platform/PlatformAuthProvider'
 import { PlatformLayout } from './features/platform/components/PlatformLayout'
 import { AppLayout } from './components/layout/AppLayout'
 import { PermissionRoute, ProtectedRoute, PublicOnlyRoute } from './app/routes/ProtectedRoute'
 import LoginPage from './features/auth/pages/LoginPage'
+import { basenameFor, currentSlug } from './lib/tenantAddress'
+// Nomlangan eksportlar uchun `lazy()` modulni default eksportga
+// map qilishni talab qiladi. Bu uchtasi ham public saytga tegishli
+// va CRM foydalanuvchisiga hech qachon kerak bo'lmaydi — ular
+// eagerly import qilinganda `content.ts` (20 KB tarjima matni bilan)
+// va butun marketing sahifasi HAR BIR CRM ekraniga ham yuklanardi.
+const MarketingEntry = lazy(() =>
+  import('./features/marketing/pages/MarketingPage').then((m) => ({ default: m.MarketingEntry })),
+)
+const MarketingPage = lazy(() =>
+  import('./features/marketing/pages/MarketingPage').then((m) => ({ default: m.MarketingPage })),
+)
+const LegalPage = lazy(() =>
+  import('./features/marketing/pages/MarketingPage').then((m) => ({ default: m.LegalPage })),
+)
 
 /*
  * Sahifalar TALAB BO'YICHA yuklanadi (docs/05 §15).
@@ -20,7 +35,7 @@ const PlatformOrganizationsPage = lazy(() => import('./features/platform/pages/P
 const PlatformOrganizationPage = lazy(() => import('./features/platform/pages/PlatformOrganizationPage'))
 const PlatformInvoicesPage = lazy(() => import('./features/platform/pages/PlatformInvoicesPage'))
 const PlatformGrantsPage = lazy(() => import('./features/platform/pages/PlatformGrantsPage'))
-const SignupPage = lazy(() => import('./features/auth/pages/SignupPage'))
+const SupportEntryPage = lazy(() => import('./features/auth/pages/SupportEntryPage'))
 const ProfilePage = lazy(() => import('./features/auth/pages/ProfilePage'))
 const OrganizationPage = lazy(() => import('./features/organization/pages/OrganizationPage'))
 const DashboardPage = lazy(() => import('./features/dashboard/pages/DashboardPage'))
@@ -49,6 +64,30 @@ const SettingsPage = lazy(() => import('./features/settings/pages/SettingsPage')
  * ruxsatsiz so'rov `403`, begona tashkilotniki `404` oladi.
  */
 export const router = createBrowserRouter([
+  // Public surface. It intentionally sits outside the authenticated CRM
+  // tree: `radix-crm.uz` is a product website, `app.radix-crm.uz` is
+  // the working back-office.
+  {
+    // `lazy()` bilan ishlatilgan komponent ustida Suspense chegarasi
+    // MAJBURIY — usiz komponent promise hal bo'lguncha React
+    // xato ko'taradi. AppLayout va PlatformLayout o'z ichida shu
+    // chegarani beradi; bu daraxt esa ikkalasidan ham TASHQARIDA
+    // yashaydi, shuning uchun o'ziniki kerak.
+    element: (
+      <Suspense fallback={<div className="grid min-h-screen place-items-center text-sm text-slate-400">Yuklanmoqda…</div>}>
+        <Outlet />
+      </Suspense>
+    ),
+    children: [
+      { path: '/', element: <MarketingEntry /> },
+      { path: '/uz', element: <MarketingPage locale="uz" /> },
+      { path: '/ru', element: <MarketingPage locale="ru" /> },
+      { path: '/uz/privacy', element: <LegalPage locale="uz" page="privacy" /> },
+      { path: '/ru/privacy', element: <LegalPage locale="ru" page="privacy" /> },
+      { path: '/uz/terms', element: <LegalPage locale="uz" page="terms" /> },
+      { path: '/ru/terms', element: <LegalPage locale="ru" page="terms" /> },
+    ],
+  },
   // --- Vendor tekisligi (ADR-10) ---
   //
   // Mijoz daraxtidan BUTUNLAY alohida: o'z provayderi, o'z tokeni, o'z
@@ -75,11 +114,13 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  // Vendor xodimining kirish nuqtasi — `PublicOnlyRoute` dan TASHQARIDA:
+  // u sessiyani o'zi ochadi va ochilgach `/dashboard` ga o'tadi (ADR-10).
+  { path: '/support-entry', element: <SupportEntryPage /> },
   {
     element: <PublicOnlyRoute />,
     children: [
       { path: '/login', element: <LoginPage /> },
-      { path: '/signup', element: <SignupPage /> },
     ],
   },
   {
@@ -163,6 +204,20 @@ export const router = createBrowserRouter([
   },
   ],
   {
+    /*
+     * Har bir bog'cha o'z manzilida yashaydi: `/t/<slug>/dashboard`.
+     *
+     * `basename` sahifa yuklanganda BIR MARTA o'rnatiladi va marshrutlar
+     * uni bilmaydi — ular avvalgidek `/dashboard` deb yoziladi. Shu
+     * sababli subdomenga o'tish shu qator va `lib/tenantAddress.ts` bilan
+     * cheklanadi.
+     *
+     * Vendor konsoli (`/platform`) prefikssiz manzilda ochiladi, ya'ni u
+     * hech qachon bog'cha `basename` i ostiga tushmaydi — ikki tekislik
+     * URL darajasida ham ajralgan (ADR-10).
+     */
+    basename: basenameFor(currentSlug),
+
     /*
      * v7 xatti-harakatini HOZIRDAN yoqamiz.
      *

@@ -8,13 +8,14 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, ChevronRight, Phone } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ChevronRight, Phone } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { Modal } from '@/components/ui/Modal'
 import { debtorsApi } from '@/features/payments/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
+import { EmptyRow } from '@/components/ui/EmptyState'
 
 const money = (value: string) =>
   new Intl.NumberFormat('uz-UZ').format(Number(value)) + " so'm"
@@ -79,6 +80,14 @@ function StatementDrawer({ childId, onClose }: { childId: string; onClose: () =>
                     </td>
                   </tr>
                 ))}
+                {query.data.entries.length === 0 && (
+                  <EmptyRow
+                    colSpan={12}
+                    icon={CheckCircle2}
+                    title="Qarzdor yo'q"
+                    hint="Hamma to'lagan. Muddati o'tgan hisob-faktura paydo bo'lsa, bola shu ro'yxatga tushadi."
+                  />
+                )}
               </tbody>
             </table>
           </>

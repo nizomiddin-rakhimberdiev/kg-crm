@@ -9,6 +9,7 @@
 
 import { Suspense } from 'react'
 import { NavLink, Navigate, Outlet } from 'react-router-dom'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Building2, CreditCard, KeyRound, LayoutDashboard, LogOut, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { usePlatformAuth } from '../PlatformAuthProvider'
@@ -78,7 +79,9 @@ export function PlatformLayout() {
 
       <main className="mx-auto max-w-7xl px-6 py-6">
         <Suspense fallback={<div className="grid place-items-center py-20 text-sm text-slate-400">Yuklanmoqda…</div>}>
-          <Outlet />
+          <ErrorBoundary area="platform">
+            <Outlet />
+          </ErrorBoundary>
         </Suspense>
       </main>
     </div>

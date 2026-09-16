@@ -15,6 +15,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type PayrollRun } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { EmptyRow } from '@/components/ui/EmptyState'
 
 const money = (v: string) => new Intl.NumberFormat('uz-UZ').format(Number(v))
 
@@ -224,6 +225,14 @@ export default function PayrollPage() {
                       <td className="px-4 py-2 text-right font-semibold text-slate-900">{money(item.net)}</td>
                     </tr>
                   ))}
+                  {run.items.length === 0 && (
+                    <EmptyRow
+                      colSpan={11}
+                      icon={Wallet}
+                      title="Oylik hisoblanmagan"
+                      hint="Xodimlar va lavozimlar kiritilgach, oylik hisoblash davrini shu yerdan boshlaysiz."
+                    />
+                  )}
                 </tbody>
               </table>
 

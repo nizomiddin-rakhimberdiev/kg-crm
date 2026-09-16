@@ -1,0 +1,200 @@
+# KG-CRM — ishlab chiqarish steki.
+#
+# `backend/docker-compose.yml` dan farqi tashqi ko'rinishda emas, XAVFSIZLIK
+# va ISHONCHLILIKDA:
+#
+#   * baza va Redis portlari hostga OCHILMAYDI — ular faqat ichki tarmoqda;
+#   * kod volume bilan ulanmaydi, tasvir ichida qotib qoladi;
+#   * `runserver` emas, gunicorn; `DEBUG=False`;
+#   * ilova bazaga CHEKLANGAN rol bilan ulanadi (`kg_crm_app`), ega bilan emas;
+#   * migratsiya va `collectstatic` boot paytida ISHLAMAYDI — ular deploy
+#     skriptining alohida qadamlari (bir nechta konteyner bir vaqtda
+#     ko'tarilsa, boot paytidagi migratsiya poyga holatiga olib keladi).
+#
+# Ishga tushirish: scripts/deploy.sh (docs/deployment.md)
+
+# Loyiha nomi `.env` dan keladi. Bu STAGING ni mumkin qiladi: bir xil
+# fayl, boshqa `COMPOSE_PROJECT_NAME` va boshqa portlar — natijada
+# bir xil serverda ikkita mustaqil stek (alohida tarmoq, alohida
+# volume'lar, alohida baza). Ular hech narsani bo'lishmaydi, ya'ni
+# staging'dagi xato productionga tegmaydi (docs/deployment.md §10).
+name: ${COMPOSE_PROJECT_NAME:-kg-crm-prod}
+
+x-django-env: &django-env
+  DJANGO_SETTINGS_MODULE: config.settings.production
+  POSTGRES_HOST: db
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: ${POSTGRES_DB:-kg_crm}
+  # Ilova CHEKLANGAN rol bilan ulanadi. Migratsiyalar esa ega bilan —
+  # ularni deploy skripti boshqa foydalanuvchi bilan ishga tushiradi.
+  POSTGRES_USER: kg_crm_app
+  POSTGRES_PASSWORD: ${APP_DB_PASSWORD:?APP_DB_PASSWORD kerak}
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/1
+  CELERY_RESULT_BACKEND: redis://redis:6379/2
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kg_crm}
+      POSTGRES_USER: ${POSTGRES_OWNER:-kg_crm}
+      POSTGRES_PASSWORD: ${OWNER_DB_PASSWORD:?OWNER_DB_PASSWORD kerak}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?APP_DB_PASSWORD kerak}
+      BACKUP_DB_PASSWORD: ${BACKUP_DB_PASSWORD:?BACKUP_DB_PASSWORD kerak}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Faqat birinchi ishga tushishda bajariladi (bo'sh volume ustida).
+      - ./deploy/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_OWNER:-kg_crm} -d ${POSTGRES_DB:-kg_crm}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    # Port ATAYLAB ochilmagan: bazaga faqat ichki tarmoqdan kiriladi.
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # `--save` — Redis bu yerda kesh VA Celery brokeri. Diskka yozmasa,
+    # qayta ishga tushganda navbatdagi vazifalar yo'qolardi.
+    command: redis-server --save 60 1 --appendonly yes --loglevel warning
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build:
+      context: ./backend
+      args:
+        REQUIREMENTS: requirements/production.txt
+    restart: unless-stopped
+    environment:
+      <<: *django-env
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY kerak}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?DJANGO_ALLOWED_HOSTS kerak}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?PUBLIC_BASE_URL kerak}
+      TENANT_URL_STYLE: ${TENANT_URL_STYLE:-path}
+      DJANGO_SECURE_SSL_REDIRECT: ${DJANGO_SECURE_SSL_REDIRECT:-True}
+      NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-console}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - static_files:/app/staticfiles
+      - media_files:/app/mediafiles
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    healthcheck:
+      # Tana tekshiriladi, faqat kod emas: `301` (HTTPS'ga haydash) ham
+      # `curl -f` uchun muvaffaqiyat, ya'ni yolg'on yashil bo'lardi.
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/api/v1/health | grep -q '\"status\":\"ok\"'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  worker:
+    build:
+      context: ./backend
+      args:
+        REQUIREMENTS: requirements/production.txt
+    restart: unless-stopped
+    command: celery -A config worker --loglevel=info --concurrency=2
+    environment:
+      <<: *django-env
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY kerak}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?DJANGO_ALLOWED_HOSTS kerak}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?PUBLIC_BASE_URL kerak}
+      NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-console}
+    volumes:
+      - media_files:/app/mediafiles
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config inspect ping -d celery@$$HOSTNAME || exit 1"]
+      interval: 60s
+      timeout: 20s
+      retries: 3
+      start_period: 60s
+
+  beat:
+    build:
+      context: ./backend
+      args:
+        REQUIREMENTS: requirements/production.txt
+    restart: unless-stopped
+    # BITTA nusxa bo'lishi shart: ikkita beat har bir vazifani ikki marta
+    # navbatga qo'yadi — ya'ni ikki marta hisob-faktura, ikki marta SMS.
+    command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    environment:
+      <<: *django-env
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY kerak}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?DJANGO_ALLOWED_HOSTS kerak}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?PUBLIC_BASE_URL kerak}
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  nginx:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.web
+      args:
+        # Nisbiy yo'l: SPA va API bitta origin'dan beriladi, ya'ni CORS
+        # umuman ishtirok etmaydi.
+        VITE_API_BASE_URL: /api/v1
+        # Vite bularni BUILD vaqtida to'plamga yozib qo'yadi (runtime
+        # o'zgaruvchi emas) — shuning uchun `web`/`worker` kabi
+        # environment sifatida emas, shu yerda ARG sifatida uzatiladi.
+        # `VITE_APP_URL` ATAYLAB yo'q: uning sukut qiymati
+        # `window.location.origin` — brauzerda ishga tushganda
+        # to'g'ri domenni o'zi topadi, ya'ni subdomen (`app.<domen>`)
+        # hali yo'q bo'lsa ham "CRM'ga kirish" havolasi bir xil domenda
+        # to'g'ri ishlaydi.
+        VITE_PUBLIC_HOST: ${DOMAIN:-radix-crm.uz}
+        VITE_LEGAL_ENTITY_NAME: ${LEGAL_ENTITY_NAME:-}
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:-_}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      # Django statikasi va media — web yozadi, nginx o'qiydi.
+      - static_files:/app/staticfiles:ro
+      - media_files:/app/mediafiles:ro
+      - certs:/etc/nginx/certs:ro
+      - certbot_webroot:/var/www/certbot:ro
+    depends_on:
+      - web
+
+  # Sertifikat olish va yangilash. `--profile tls` bilan ishga tushadi,
+  # ya'ni sertifikat kerak bo'lmagan muhitda (masalan lokal tekshiruv)
+  # umuman ko'tarilmaydi.
+  certbot:
+    image: certbot/certbot:latest
+    profiles: ["tls"]
+    volumes:
+      - certs_letsencrypt:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
+    # Har 12 soatda yangilashga urinadi; muddati yaqinlashmagan bo'lsa
+    # certbot hech narsa qilmaydi.
+    entrypoint: >
+      sh -c "trap exit TERM;
+      while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"
+
+volumes:
+  postgres_data:
+  redis_data:
+  static_files:
+  media_files:
+  certs:
+  certs_letsencrypt:
+  certbot_webroot:

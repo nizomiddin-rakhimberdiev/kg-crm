@@ -42,13 +42,33 @@ export const discountsApi = {
 export const paymentsApi = {
   list: (params?: Record<string, unknown>) => api.list<Payment>('/payments', params),
 
-  record: (payload: {
-    child_id: string
-    invoice_id?: string | null
-    amount: string
-    method: string
-    reference?: string
-  }) => api.post<Payment>('/payments', payload),
+  /**
+   * To'lovni qayd etadi.
+   *
+   * `idempotencyKey` — bitta FOYDALANUVCHI HARAKATINI bildiradi, bitta
+   * so'rovni emas. Kassir tugmani ikki marta bossa yoki tarmoq so'rovni
+   * qayta yuborsa, server o'sha kalitni ko'rib mavjud to'lovni
+   * qaytaradi — ikkinchi to'lov yozilmaydi (P1-003).
+   *
+   * Chaqiruvchi kalitni FORMA ochilganda yaratadi va qayta urinishda
+   * O'ZGARTIRMAYDI. Har safar yangisi yaratilsa, himoyaning ma'nosi
+   * qolmaydi.
+   */
+  record: (
+    payload: {
+      child_id: string
+      invoice_id?: string | null
+      amount: string
+      method: string
+      reference?: string
+    },
+    idempotencyKey?: string,
+  ) =>
+    api.post<Payment>(
+      '/payments',
+      payload,
+      idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+    ),
 
   reverse: (id: string, reason: string) =>
     api.post<Payment>(`/payments/${id}/reverse`, { reason }),

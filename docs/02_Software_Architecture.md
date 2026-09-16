@@ -98,6 +98,7 @@ Every decision in this document traces back to these principles.
 | **ADR-9** | **`organization` is the tenancy root; `branch` sits inside it** | Branch as tenancy root (original design); schema-per-tenant; DB-per-tenant | The product is sold per **organization**, and one subscription covers unlimited branches ([01 §4](./01_Project_Vision.md)). Branch cannot be the tenancy root because a customer legitimately reads across their own branches. Shared-schema row scoping keeps cross-branch reporting trivial and can graduate to RLS/partitioning without a data migration. **Supersedes the branch-as-tenancy-root model in [03 §6](./03_Database_Design.md).** |
 | **ADR-10** | **Platform staff live outside the customer RBAC matrix** | Add a "Platform Admin" row to the existing role matrix | The original **Super Admin** was defined as bypassing all scoping. In a multi-tenant system that role, granted to a customer, would expose every other customer's children. Vendor access is a *different kind of subject* with a different auth path, mandatory audit, and no implicit data access — not a stronger customer role. |
 | **ADR-11** | **Subscription billing is its own bounded module with an append-only usage ledger** | Reuse the `finance` app; compute charges on demand at invoice time | Vendor→customer billing and kindergarten→parent billing share vocabulary but nothing else ([01 §4.6](./01_Project_Vision.md)); merging them would corrupt both. Charges derive from immutable `usage_snapshot` rows (P11) so any invoice can be reconstructed and defended months later — the same discipline as ADR-7's ledger. |
+| **ADR-12** | **Pricing revised at launch: 400 000 UZS base / +50 000 per 10 (Radix CRM rebrand)** | Keep the original 500 000 / +80 000 figures | Confirmed by the founder on 2026-09-16, alongside the public rebrand to Radix CRM. Applied as a **new dated `SubscriptionPlan` version** (`0003_radix_pricing`, effective 2026-09-14), not an edit to the existing row — the original plan is closed with `valid_to`, so subscriptions already billed under it keep their historical figures untouched ([03 §20.1](./03_Database_Design.md)). This is the mechanism ADR-11's immutable-ledger discipline exists to support: a price change is a new fact, not a rewrite of history. |
 
 ---
 
@@ -1080,6 +1081,26 @@ graph TD
 ---
 
 ## 18. Background Jobs (Celery)
+
+### 18.0 Reliability
+
+By default Celery acknowledges a task **before** running it, so a worker that dies mid-task — OOM, a deploy, a rebooted server — loses the task silently. For the invoice run on the 1st of the month that reads: *that month's invoices were never issued, and nobody found out.*
+
+The settings therefore enable `task_acks_late` with `task_reject_on_worker_lost`: a task is acknowledged only once it finishes, and is redelivered otherwise. That trade is only sound if tasks are idempotent, which is why idempotency came first:
+
+| Task | What stops a second run from doing damage |
+|------|-------------------------------------------|
+| `finance.generate_monthly_invoices` | `uq_invoice_child_period` — a partial unique index; the **database** refuses the duplicate |
+| `reports.send_debt_reminders` | `queue_debt_reminders()` skips guardians already reminded today |
+| `notifications.dispatch_queued` | only `queued` rows are picked up; a sent message leaves the set |
+| `reports.recompute_balances`, `finance.mark_overdue_invoices` | naturally idempotent (recompute / conditional update) |
+
+Three settings support that choice and are easy to get wrong in isolation: `worker_prefetch_multiplier = 1` keeps redelivery scoped to one task rather than a whole prefetched batch; `task_time_limit` stops a hung task from occupying a worker forever; and the broker's `visibility_timeout` (900 s) is deliberately **larger** than the time limit — set equal or smaller, it would hand a still-running task to a second worker and manufacture the duplication the rest of this section prevents.
+
+Transient failures retry with exponential backoff and jitter (`apps/core/tasks.py`). Business-rule violations do **not** retry: "this child has no tariff" is not fixed by trying again five times, it is only buried in the log.
+
+> **Queued is not sent.** `queue_notification()` writes a row; something has to deliver it. Payment receipts were queued inside `record_payment` and never dispatched by anything — parents never received them, with no error anywhere. `notifications.dispatch_queued` runs every five minutes and drains the queue. Delivery stays outside the request on purpose: taking a payment must not depend on an SMS gateway being alive (P8).
+
 
 Anything slow, external, scheduled, or heavy runs **off the request path**. Celery + Redis broker; **Celery Beat** for schedules.
 

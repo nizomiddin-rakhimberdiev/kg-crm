@@ -19,6 +19,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { authApi } from '@/features/auth/api'
 import { setSessionExpiredHandler } from '@/lib/api/client'
 import { tokenStorage } from '@/lib/auth/tokenStorage'
+import { supportSession } from '@/lib/auth/supportSession'
+import { currentSlug, tenantPath } from '@/lib/tenantAddress'
 import type { AuthSession, CurrentUser, SubscriptionState } from '@/lib/api/types'
 
 interface AuthContextValue {
@@ -30,6 +32,10 @@ interface AuthContextValue {
   /** Obuna to'xtatilgan — yozish amallari o'chiriladi (docs/03 §20.6). */
   isReadOnly: boolean
   applySession: (session: AuthSession) => void
+  /** Vendor xodimining faqat-o'qish sessiyasi (ADR-10) — refresh tokensiz. */
+  applySupportSession: (access: string) => Promise<void>
+  /** Joriy sessiya vendor tomonidan ochilganmi. */
+  isSupportSession: boolean
   /** Profil o'zgargach kontekstni serverdagi holatga qayta tenglashtiradi. */
   refreshUser: () => Promise<void>
   logout: () => Promise<void>
@@ -54,11 +60,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const applySession = useCallback(
     (session: AuthSession) => {
+      const slug = session.user.organization?.slug ?? null
+
       tokenStorage.setAccess(session.access)
-      tokenStorage.setRefresh(session.refresh)
+      // Token DARHOL o'z bog'chasining kaliti ostiga yoziladi — hatto
+      // foydalanuvchi hozir boshqa manzilda turgan bo'lsa ham.
+      tokenStorage.setRefresh(session.refresh, slug)
+
+      // Kirish `/login` dan (manzilsiz) yoki boshqa bog'cha manzilidan
+      // bo'lishi mumkin. Ikkala holatda ham foydalanuvchi O'Z manziliga
+      // qo'ndiriladi. Bu xavfsizlik chorasi EMAS — token baribir faqat
+      // o'z tashkilotini ochadi — bu manzilni to'g'rilash: havolalar,
+      // xatcho'plar va keyingi kirishlar bir xil joyga olib borsin.
+      if (slug && slug !== currentSlug) {
+        // To'liq sahifa yangilanishi shart: `basename` router yaratilganda
+        // o'rnatilgan va uni joyida o'zgartirib bo'lmaydi.
+        window.location.replace(tenantPath(slug))
+        return
+      }
+
       queryClient.clear()
       setUser(session.user)
       setSubscription(session.subscription)
+    },
+    [queryClient],
+  )
+
+  const applySupportSession = useCallback(
+    async (access: string) => {
+      // Refresh token ATAYLAB saqlanmaydi: sessiya sahifa yangilanishi
+      // bilan tugaydi va vendor konsoldan qayta kirishi kerak.
+      supportSession.mark()
+      tokenStorage.setAccess(access)
+      queryClient.clear()
+
+      const { user: me, subscription: sub } = await authApi.me()
+      setUser(me)
+      setSubscription(sub)
+      setIsLoading(false)
     },
     [queryClient],
   )
@@ -119,10 +158,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: user !== null,
       isReadOnly: subscription?.read_only ?? false,
       applySession,
+      applySupportSession,
+      isSupportSession: supportSession.isActive(),
       refreshUser,
       logout,
     }),
-    [user, subscription, isLoading, applySession, refreshUser, logout],
+    [user, subscription, isLoading, applySession, applySupportSession, refreshUser, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

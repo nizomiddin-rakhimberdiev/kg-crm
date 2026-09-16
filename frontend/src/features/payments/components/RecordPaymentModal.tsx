@@ -40,15 +40,27 @@ export function RecordPaymentModal({
   const [reference, setReference] = useState('')
   const [error, setError] = useState<string | null>(null)
 
+  // Kalit MODAL OCHILGANDA bir marta yaratiladi va qayta urinishda
+  // o'zgarmaydi — aynan shu narsa uni ishlatadigan qiladi. Har bosishda
+  // yangi kalit yaratilsa, server ikkita mustaqil to'lov ko'rardi va
+  // himoyaning ma'nosi qolmasdi (P1-003).
+  //
+  // `useState` ning boshlang'ich funksiyasi: `crypto.randomUUID()` har
+  // render'da emas, BIR marta chaqiriladi.
+  const [idempotencyKey] = useState(() => crypto.randomUUID())
+
   const record = useMutation({
     mutationFn: () =>
-      paymentsApi.record({
-        child_id: invoice.child,
-        invoice_id: invoice.id,
-        amount,
-        method,
-        reference,
-      }),
+      paymentsApi.record(
+        {
+          child_id: invoice.child,
+          invoice_id: invoice.id,
+          amount,
+          method,
+          reference,
+        },
+        idempotencyKey,
+      ),
     onSuccess: () => {
       // Hisob-faktura, to'lov, qarzdorlar va balans — hammasi o'zgardi.
       for (const key of ['invoices', 'payments', 'debtors', 'children']) {

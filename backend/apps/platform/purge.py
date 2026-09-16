@@ -158,19 +158,27 @@ def purge_organization(
             if count:
                 deleted[model._meta.db_table] = count
 
+        # Audit jurnali — MIJOZ kontekstida, boshqa tenant jadvallari
+        # bilan birga. U ham o'chiriladi: mijozning ma'lumotini o'chirib,
+        # uning kim nima qilgani haqidagi yozuvlarini saqlab qolish
+        # ma'nosiz — ular ham shaxsiy ma'lumot (ism, email, IP).
+        #
+        # **Nega platforma rejimida EMAS.** Avval shunday edi va u
+        # ishlamasdi: `audit_log` siyosati platforma rejimida faqat
+        # `organization_id IS NULL` qatorlarni ochadi (ADR-10 — vendor
+        # mijozning audit yozuvlarini ko'rmaydi). Ya'ni `DELETE` hech
+        # narsa topmasdi, XATO BERMASDI, va o'chirish oxirida
+        # `organization.delete()` FK cheklovi bilan yiqilardi. Nosozlik
+        # testlarda ko'rinmadi, chunki ular audit qatorsiz tashkilot
+        # bilan ishlardi — amalda esa har bir kirish qator yozadi.
+        deleted["audit_log"] = AuditLog.objects.filter(organization_id=organization.id).delete()[0]
+
     with platform_context():
+        # `support_grant` — vendor tekisligining jadvali, shuning uchun
+        # u platforma rejimida o'chiriladi.
         deleted["support_grant"] = SupportGrant.objects.filter(
             organization_id=organization.id
         ).delete()[0]
-
-        # Audit jurnali ENG OXIRIDA va u ham o'chiriladi: mijozning
-        # ma'lumotini o'chirib, uning kim nima qilgani haqidagi
-        # yozuvlarini saqlab qolish ma'nosiz — ular ham shaxsiy
-        # ma'lumot (ism, email, IP).
-        #
-        # Lekin O'CHIRISH FAKTI qoladi: quyidagi yozuv `organization`
-        # siz, ya'ni platforma tekisligida yoziladi va u o'chirilmaydi.
-        deleted["audit_log"] = AuditLog.objects.filter(organization_id=organization.id).delete()[0]
 
         slug = organization.slug
         name = organization.name

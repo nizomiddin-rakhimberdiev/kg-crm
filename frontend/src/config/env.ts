@@ -20,5 +20,10 @@ export const env = {
     import.meta.env.VITE_API_BASE_URL,
     'http://127.0.0.1:8000/api/v1',
   ),
+  // Public saytdan CRM'ga o'tish bitta joyda sozlanadi. Build paytida
+  // yoziladi; productionda `https://app.radix-crm.uz` bo'ladi.
+  appUrl: required('VITE_APP_URL', import.meta.env.VITE_APP_URL, window.location.origin),
+  publicHost: import.meta.env.VITE_PUBLIC_HOST ?? 'radix-crm.uz',
+  legalEntityName: import.meta.env.VITE_LEGAL_ENTITY_NAME ?? '',
   isDev: import.meta.env.DEV,
 } as const

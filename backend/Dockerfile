@@ -40,6 +40,21 @@ RUN pip install --no-index --find-links=/wheels -r ${REQUIREMENTS} \
 
 COPY --chown=app:app . .
 
+# Statik va media kataloglari TASVIR ICHIDA, `app` nomiga yaratiladi.
+#
+# Ular `.dockerignore` da chiqarib tashlangan, ya'ni `COPY` ularni
+# keltirmaydi. Ularsiz Docker named volume'ni ulaganda ilova
+# jarayoni root emas (uid 1000), volume esa ROOT nomiga yaratiladi —
+# va `collectstatic` "Permission denied" bilan yiqiladi.
+#
+# Docker bo'sh named volume'ni tasvirdagi mavjud katalog ustiga
+# ulaganda uning MAZMUNINI VA EGASINI ko'chiradi. Shuning uchun
+# kataloglarni shu yerda yaratish muammoni butunlay yo'q qiladi —
+# konteynerni root qilib qo'yish yoki volume egasini qo'lda
+# tuzatish kerak emas.
+RUN mkdir -p /app/staticfiles /app/mediafiles \
+    && chown app:app /app/staticfiles /app/mediafiles
+
 USER app
 
 EXPOSE 8000
