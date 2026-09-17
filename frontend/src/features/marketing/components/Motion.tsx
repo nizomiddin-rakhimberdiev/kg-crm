@@ -1,67 +1,90 @@
 /**
  * Marketing sahifasining harakat primitivlari.
  *
- * Ikkita qoida butun fayl bo'ylab amal qiladi:
+ * Bitta qoida hammasidan ustun: **kontent harakatsiz ham ko'rinadi.**
  *
- * 1. **Harakat — bezak, kontent emas.** Har bir blok animatsiyasiz ham
- *    to'liq o'qiladigan holatda render bo'ladi. `opacity: 0` da observer
- *    ishga tushishini kutib turgan matn — bu bo'sh sahifa xavfi: observer
- *    ishlamasa (eski brauzer, thumbnail tortish, matn indekslash) sahifa
- *    butunlay bo'sh qoladi. Shuning uchun `whileInView` ishlatiladi va
- *    `once: true` bilan bir marta ochiladi.
+ * Avvalgi variant framer-motion `whileInView` bilan `opacity: 0` dan
+ * boshlanardi. Haqiqiy brauzerda bu ishlaydi, lekin auditda ko'rindiki
+ * `requestAnimationFrame` yurmaydigan har qanday muhitda — headless
+ * skrinshot, havola preview'i, ehtimol qidiruv boti — hero'dan pastdagi
+ * HAMMA bo'lim bo'sh qolardi. Ustiga uzun sahifaning oxirgi bo'limlari
+ * observer kechiksa vaqt-vaqti bilan yashirin qolardi.
  *
- * 2. **`prefers-reduced-motion` — majburiy.** Vestibulyar buzilishi bor
- *    odam uchun scroll bo'ylab sakrab turadigan sahifa jismonan noqulay.
- *    Bu holatda hamma narsa darhol, harakatsiz ko'rinadi.
+ * Endi mexanizm teskari va uch qavat himoyalangan:
+ *   1. Element ko'rinadigan holatda render bo'ladi. JS umuman ishlamasa —
+ *      kontent bor.
+ *   2. Yashirish klassi FAQAT JS'da, `useLayoutEffect` ichida qo'shiladi
+ *      (birinchi paint'dan oldin — flash bo'lmaydi). Observer ko'rganda
+ *      klass olinadi va CSS transition ochadi. Transition kompozitorda
+ *      ishlaydi, JS rAF'iga muhtoj emas.
+ *   3. Observer 1.2 s ichida ishlamasa — taymer baribir ochadi. Eng
+ *      yomon holat "biroz kechroq ko'rindi", "hech qachon" emas.
+ *
+ * `prefers-reduced-motion` — CSS'da (`index.css`): harakat yo'q, kontent
+ * darhol.
  */
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { motion, useInView, useReducedMotion } from 'framer-motion'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useInView, useReducedMotion } from 'framer-motion'
 
-const EASE = [0.16, 1, 0.3, 1] as const
+const REVEAL_FALLBACK_MS = 1200
 
 /**
  * Scroll bo'ylab ochiladigan blok.
  *
- * `delay` — qo'shni elementlarni ketma-ket ochish uchun (stagger). Uni
- * 60-80 ms dan oshirmaslik kerak: ko'zga tashlanadigan kechikish
- * "sayt sekin" degan taassurot beradi.
+ * `delay` — qo'shni elementlarni ketma-ket ochish uchun (stagger). 80 ms
+ * dan oshirmaslik kerak: ko'zga tashlanadigan kechikish "sayt sekin"
+ * degan taassurot beradi.
  */
 export function Reveal({
   children,
   delay = 0,
-  y = 20,
   className,
 }: {
   children: ReactNode
   delay?: number
-  y?: number
   className?: string
 }) {
+  const ref = useRef<HTMLDivElement>(null)
   const reduced = useReducedMotion()
+  const inView = useInView(ref, { once: true, margin: '-60px' })
+  const [armed, setArmed] = useState(false)
+  const [shown, setShown] = useState(false)
 
-  if (reduced) {
-    return <div className={className}>{children}</div>
-  }
+  // Paint'dan OLDIN yashiriladi — aks holda bir kadr ko'rinib, keyin
+  // yo'qolib, keyin qayta paydo bo'lardi.
+  useLayoutEffect(() => {
+    if (!reduced) setArmed(true)
+  }, [reduced])
+
+  useEffect(() => {
+    if (inView) setShown(true)
+  }, [inView])
+
+  useEffect(() => {
+    if (!armed || shown) return
+    const timer = window.setTimeout(() => setShown(true), REVEAL_FALLBACK_MS)
+    return () => window.clearTimeout(timer)
+  }, [armed, shown])
+
+  const hidden = armed && !shown
 
   return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-80px' }}
-      transition={{ duration: 0.55, delay, ease: EASE }}
+    <div
+      ref={ref}
+      className={[className, 'reveal', hidden ? 'reveal-pending' : ''].filter(Boolean).join(' ')}
+      style={delay ? { transitionDelay: `${delay}s` } : undefined}
     >
       {children}
-    </motion.div>
+    </div>
   )
 }
 
 /**
  * Ko'ringanda 0 dan sanaydigan raqam.
  *
- * `requestAnimationFrame` bilan — `setInterval` kadrlarga tushmaydi va
- * sanoq sakrab ko'rinadi.
+ * Boshlang'ich qiymat — YAKUNIY raqam, 0 emas: sanoq ishlamasa ham
+ * to'g'ri raqam turadi. Observer ko'rganda 0 ga tushib, yuqoriga sanaydi.
  */
 export function CountUp({
   to,
@@ -77,7 +100,7 @@ export function CountUp({
   const reduced = useReducedMotion()
   const ref = useRef<HTMLSpanElement>(null)
   const inView = useInView(ref, { once: true, margin: '-60px' })
-  const [value, setValue] = useState(reduced ? to : 0)
+  const [value, setValue] = useState(to)
 
   useEffect(() => {
     if (reduced || !inView) return
@@ -92,6 +115,7 @@ export function CountUp({
       if (progress < 1) frame = requestAnimationFrame(tick)
     }
 
+    setValue(0)
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
   }, [inView, reduced, to, duration])

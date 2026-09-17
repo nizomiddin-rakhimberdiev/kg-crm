@@ -16,7 +16,7 @@ import { env } from '@/config/env'
 import { Brand } from '../components/Brand'
 import { copy, type Locale } from '../content'
 import { PublicSeo } from '../seo'
-import { Capabilities, Faq, Problems, Proof, Steps } from '../sections/Content'
+import { Capabilities, Faq, Problems, Proof, Roles, Security, Steps } from '../sections/Content'
 import { DeliveryModels } from '../sections/DeliveryModels'
 import { Footer } from '../sections/Footer'
 import { Header } from '../sections/Header'
@@ -36,9 +36,11 @@ export function MarketingPage({ locale }: { locale: Locale }) {
         <Problems locale={locale} />
         <Capabilities locale={locale} />
         <ProductPreview locale={locale} />
+        <Roles locale={locale} />
         <DeliveryModels locale={locale} />
         <Steps locale={locale} />
         <Pricing locale={locale} />
+        <Security locale={locale} />
         <Faq locale={locale} />
         <LeadForm locale={locale} />
       </main>

@@ -82,13 +82,14 @@ export function LeadForm({ locale }: { locale: Locale }) {
       <div className="mx-auto grid max-w-7xl gap-12 px-5 lg:grid-cols-[0.78fr_1.22fr] lg:px-8">
         <Reveal>
           <p className="eyebrow">{t.eyebrow}</p>
-          <h2 className="section-title mt-4 text-balance">{t.title}</h2>
+          {/* Yopuvchi savol — FAQ'dan keyin, formadan oldin (brif §23):
+              o'quvchi javob topib bo'ldi, endi qaror vaqti. */}
+          <p className="mt-4 text-lg font-semibold text-slate-700">{t.closing}</p>
+          <h2 className="section-title mt-3 text-balance">{t.title}</h2>
           <p className="mt-5 max-w-md leading-7 text-slate-600">{t.text}</p>
           <div className="mt-8 flex items-start gap-3 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-            {locale === 'uz'
-              ? 'Ma’lumotlaringiz faqat demo zayavkasini ko‘rib chiqish uchun ishlatiladi.'
-              : 'Ваши данные используются только для обработки заявки на демо.'}
+            {t.privacyNote}
           </div>
         </Reveal>
 

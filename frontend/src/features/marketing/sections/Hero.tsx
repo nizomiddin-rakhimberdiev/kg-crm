@@ -4,20 +4,40 @@
  * `100vh` ATAYLAB ishlatilmagan: balandligi ekranga tenglashtirilgan
  * hero sahifaning o'zini birinchi kadrdan tashqariga itarib yuboradi —
  * mijoz pastga aylantirmaguncha mahsulot haqida hech narsa ko'rmaydi.
- * Bu yerda esa keyingi bo'limning boshi ataylab ko'rinib turadi.
+ *
+ * Narx trust-point'i (`priceNote`) API'dan keladi, kodga yozilmagan:
+ * hero'dagi raqam bilan kalkulyatordagi raqam bitta manbadan bo'lishi
+ * shart — aks holda ular bir kun ajralib qoladi va mijoz buni birinchi
+ * bo'lib sezadi.
  */
 
+import { useQuery } from '@tanstack/react-query'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowRight, CalendarCheck, CircleDollarSign, LayoutDashboard, UsersRound } from 'lucide-react'
+import { marketingApi } from '../api'
 import { CountUp } from '../components/Motion'
 import { RootMotif } from '../components/RootMotif'
 import { copy, type Locale } from '../content'
+import { formatAmount } from '../format'
 
 const EASE = [0.16, 1, 0.3, 1] as const
 
 export function Hero({ locale }: { locale: Locale }) {
   const t = copy[locale]
   const reduced = useReducedMotion()
+
+  // Kalkulyator bilan bir xil kalit — TanStack Query bitta so'rovni
+  // ikkalasiga ham beradi.
+  const baseQuote = useQuery({
+    queryKey: ['public-pricing', 50],
+    queryFn: () => marketingApi.pricing(50),
+    staleTime: 60_000,
+  })
+  const priceNote = baseQuote.data
+    ? t.hero.priceNote
+        .replace('{children}', String(baseQuote.data.plan.included_children))
+        .replace('{amount}', formatAmount(baseQuote.data.monthly.total_amount, locale))
+    : null
 
   const rise = (delay: number) =>
     reduced
@@ -30,15 +50,11 @@ export function Hero({ locale }: { locale: Locale }) {
 
   return (
     <section className="relative overflow-hidden">
-      {/* Fon: nozik gradient + ildiz motivi. Motiv o'ng tomonda, matn
-          ostida qolmaydi — o'qishga xalaqit bermasligi kerak. */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_72%_18%,rgba(37,99,235,0.10),transparent_60%),linear-gradient(180deg,#f7faff_0%,#ffffff_70%)]"
       />
-      <RootMotif
-        className="pointer-events-none absolute -right-24 top-4 hidden h-[560px] w-[560px] opacity-[0.55] lg:block"
-      />
+      <RootMotif className="pointer-events-none absolute -right-24 top-4 hidden h-[560px] w-[560px] opacity-[0.55] lg:block" />
 
       <div className="relative mx-auto grid max-w-7xl gap-14 px-5 pb-20 pt-14 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-10 lg:px-8 lg:pb-28 lg:pt-20">
         <div>
@@ -53,10 +69,7 @@ export function Hero({ locale }: { locale: Locale }) {
             {t.hero.title}
           </motion.h1>
 
-          <motion.p
-            className="mt-6 max-w-xl text-lg leading-8 text-slate-600"
-            {...rise(0.16)}
-          >
+          <motion.p className="mt-6 max-w-xl text-lg leading-8 text-slate-600" {...rise(0.16)}>
             {t.hero.text}
           </motion.p>
 
@@ -76,9 +89,21 @@ export function Hero({ locale }: { locale: Locale }) {
             </a>
           </motion.div>
 
-          <motion.p className="mt-6 text-sm text-slate-500" {...rise(0.32)}>
-            {t.hero.note}
-          </motion.p>
+          <motion.div
+            className="mt-7 flex flex-col gap-2 text-sm text-slate-500 sm:flex-row sm:items-center sm:gap-4"
+            {...rise(0.32)}
+          >
+            {/* Narx — hero'da, lekin sarlavha emas (brif §3). Yuklanmaguncha
+                joy band turadi, sahifa sakramaydi. */}
+            <span className="inline-flex min-h-[1.5rem] shrink-0 items-center gap-2 whitespace-nowrap font-semibold text-slate-800">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand-600" aria-hidden="true" />
+              {priceNote ?? ' '}
+            </span>
+            <span className="hidden text-slate-300 sm:inline" aria-hidden="true">
+              ·
+            </span>
+            <span>{t.hero.note}</span>
+          </motion.div>
         </div>
 
         <motion.div
@@ -94,12 +119,10 @@ export function Hero({ locale }: { locale: Locale }) {
           <div className="absolute -inset-8 -z-10 rounded-[40px] bg-brand-200/35 blur-3xl" />
           <div className="rounded-[28px] border border-slate-200/80 bg-white/95 p-5 shadow-2xl shadow-brand-900/10 backdrop-blur">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <span className="text-sm font-bold tracking-tight text-slate-900">
-                {locale === 'uz' ? 'Boshqaruv markazi' : 'Центр управления'}
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                {locale === 'uz' ? 'Jonli' : 'Онлайн'}
+              <span className="text-sm font-bold tracking-tight text-slate-900">{t.preview.live}</span>
+              {/* "Namuna" — bu jonli ma'lumot emas va shunday deyilmaydi. */}
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                {t.preview.sample}
               </span>
             </div>
 
@@ -109,32 +132,19 @@ export function Hero({ locale }: { locale: Locale }) {
                 label={t.preview.revenue}
                 value={<CountUp to={18.5} format={(v) => `${v.toFixed(1)}M`} />}
               />
-              <HeroMetric
-                icon={UsersRound}
-                label={t.preview.children}
-                value={<CountUp to={142} />}
-              />
+              <HeroMetric icon={UsersRound} label={t.preview.children} value={<CountUp to={142} />} />
               <HeroMetric
                 icon={CalendarCheck}
                 label={t.preview.attendance}
                 value={<CountUp to={91} format={(v) => `${Math.round(v)}%`} />}
               />
-              <HeroMetric
-                icon={LayoutDashboard}
-                label={t.preview.live}
-                value={<CountUp to={6} />}
-              />
+              <HeroMetric icon={LayoutDashboard} label={t.preview.debt} value={<CountUp to={2.4} format={(v) => `${v.toFixed(1)}M`} />} />
             </div>
 
             <div className="mt-4 rounded-2xl bg-slate-950 p-5 text-white">
-              <p className="text-xs text-slate-400">
-                {locale === 'uz' ? 'Bugungi ustuvor vazifalar' : 'Задачи на сегодня'}
-              </p>
+              <p className="text-xs text-slate-400">{t.preview.tasksTitle}</p>
               <div className="mt-4 space-y-3">
-                {(locale === 'uz'
-                  ? ['Davomatni yakunlash', 'Qarzdorlikni ko‘rib chiqish', 'Ombor qoldig‘ini tekshirish']
-                  : ['Завершить посещаемость', 'Проверить задолженность', 'Проверить остатки склада']
-                ).map((label, index) => (
+                {t.preview.tasks.map((label, index) => (
                   <motion.div
                     key={label}
                     className="flex items-center gap-3 text-sm"

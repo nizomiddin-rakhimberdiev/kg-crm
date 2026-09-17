@@ -114,15 +114,34 @@ class TestLeadAccess:
 
 
 class TestPublicPricing:
+    """
+    Landing kalkulyatori ko'rsatadigan raqamlar — JONLI plan orqali.
+
+    `test_pricing.py` formulani stub plan bilan sinaydi; bu yerda esa
+    migratsiya qilingan haqiqiy plan (ADR-12: 400 000 / 50 / +50 000) va
+    public endpoint. Har bir 10 talik chegaraning ikkala tomoni bor:
+    51 va 60 bir xil, 61 esa keyingi qadam. Kiritilgan sondan kam bola
+    (1, 10, 49) baribir bazani to'laydi — bu chegirma emas, daromad poli.
+    """
+
     @pytest.mark.parametrize(
         ("children", "monthly", "annual", "saving"),
         [
+            (1, "400000.00", "3600000.00", "1200000.00"),
+            (10, "400000.00", "3600000.00", "1200000.00"),
+            (49, "400000.00", "3600000.00", "1200000.00"),
             (50, "400000.00", "3600000.00", "1200000.00"),
-            (60, "450000.00", "4050000.00", "1350000.00"),
-            (70, "500000.00", "4500000.00", "1500000.00"),
-            (80, "550000.00", "4950000.00", "1650000.00"),
             (51, "450000.00", "4050000.00", "1350000.00"),
+            (59, "450000.00", "4050000.00", "1350000.00"),
+            (60, "450000.00", "4050000.00", "1350000.00"),
+            (61, "500000.00", "4500000.00", "1500000.00"),
             (69, "500000.00", "4500000.00", "1500000.00"),
+            (70, "500000.00", "4500000.00", "1500000.00"),
+            (71, "550000.00", "4950000.00", "1650000.00"),
+            (80, "550000.00", "4950000.00", "1650000.00"),
+            (99, "650000.00", "5850000.00", "1950000.00"),
+            (100, "650000.00", "5850000.00", "1950000.00"),
+            (101, "700000.00", "6300000.00", "2100000.00"),
         ],
     )
     def test_uses_the_current_versioned_subscription_formula(

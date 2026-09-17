@@ -35,14 +35,7 @@ export function Header({ locale }: { locale: Locale }) {
 
   // Ko'rinadigan matn qisqa ("RU"), ammo KIRISH NOMI to'liq: skrin-rider
   // "RU" ni o'qiganda foydalanuvchi bu til almashtirgich ekanini bilmaydi.
-  const switchLabel = locale === 'uz' ? 'Русский' : "O‘zbekcha"
-  const menuLabel = open
-    ? locale === 'uz'
-      ? 'Menyuni yopish'
-      : 'Закрыть меню'
-    : locale === 'uz'
-      ? 'Menyuni ochish'
-      : 'Открыть меню'
+  const menuLabel = open ? t.nav.menuClose : t.nav.menuOpen
 
   return (
     <header
@@ -74,9 +67,9 @@ export function Header({ locale }: { locale: Locale }) {
           <Link
             className="rounded-lg px-2.5 py-2 text-sm font-semibold text-slate-500 transition hover:text-slate-950"
             to={`/${switchTo}`}
-            aria-label={switchLabel}
+            aria-label={t.nav.switchLabel}
           >
-            {locale === 'uz' ? 'RU' : 'UZ'}
+            {t.nav.switchShort}
           </Link>
           <a
             className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
@@ -120,10 +113,19 @@ export function Header({ locale }: { locale: Locale }) {
               className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               to={`/${switchTo}`}
             >
-              {switchLabel}
+              {t.nav.switchLabel}
             </Link>
+            {/* Primary CTA mobil menyuda ham birinchi o'rinda — brif §36:
+                foydalanuvchi qaysi tugma asosiy ekanini bilishi kerak. */}
             <a
+              onClick={() => setOpen(false)}
               className="mt-2 rounded-xl bg-slate-950 px-4 py-3 text-center text-sm font-semibold text-white"
+              href="#demo"
+            >
+              {t.nav.demo}
+            </a>
+            <a
+              className="rounded-xl border border-slate-200 px-4 py-3 text-center text-sm font-semibold text-slate-700"
               href={env.appUrl}
             >
               {t.nav.login}

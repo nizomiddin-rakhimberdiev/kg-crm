@@ -42,4 +42,32 @@
   .section-title {
     @apply text-3xl font-bold tracking-[-0.035em] text-slate-950 sm:text-4xl;
   }
+
+  /*
+   * Scroll-reveal (features/marketing/components/Motion.tsx).
+   *
+   * Sukut holati — KO'RINADI. `reveal-pending` faqat JS qo'shadi va
+   * observer ko'rganda olib tashlaydi; transition kompozitorda yuradi.
+   * JS ishlamasa kontent shunchaki turadi.
+   */
+  .reveal {
+    transition:
+      opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .reveal-pending {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      transition: none;
+    }
+    .reveal-pending {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
