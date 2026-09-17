@@ -1,6 +1,6 @@
 # 07 — Radix Intelligence (Radix AI) — V1 Design Specification
 
-**Status:** Design — approved for implementation after review · **ADR:** [ADR-14](./02_Software_Architecture.md) · **Date:** 2026-09-17
+**Status:** Draft v2 — revised after architecture review 1 (2026-09-17); awaiting sign-off before the vertical slice · **ADR:** [ADR-14](./02_Software_Architecture.md)
 
 > **Data → Insight → Evidence → Recommendation → Action.**
 > Radix AI is not built to show that "there is AI". It is built so the director sees, every morning, the two or three things in the kindergarten that need attention — with the numbers that prove it and a button that takes them there.
@@ -25,7 +25,7 @@ Why deterministic first: there are zero paying customers and therefore zero grou
 
 | # | Insight | Kind | One-line meaning |
 |---|---|---|---|
-| I-1 | `payment_delay` | **hard rule** | Invoices past due by more than N days, grouped by family |
+| I-1 | `payment_delay` | **hard rule** | Invoices past due by more than N days, counted per child |
 | I-2 | `attendance_drop` | **pattern** | A group's recent attendance rate fell materially below its own baseline |
 | — | **Daily briefing** | shell | The dashboard card that renders open insights + two live checks |
 
@@ -39,14 +39,14 @@ Everything else (expenses, inventory, payroll, revenue trend) is **V2** (§14). 
 |---|---|---|
 | `invoice` | I-1 | `child_id`, `branch_id`, `due_date`, `status`, `amount_due`, `amount_paid`, `period_year/month` |
 | `payment` | I-1 (evidence) | `child_id`, `paid_at`, `amount` |
-| `child`, `child_guardian`, `guardian` | I-1 (evidence: family) | names, primary guardian phone (**never** stored in evidence — see §7) |
+| `child` | I-1 (subject) | `id`, `branch_id`, `group` via active `enrollment` — **no names or phones stored in evidence** (§6) |
 | `attendance_record` | I-2 | `group_id`, `branch_id`, `date`, `status` (`present` / `absent` / `excused`) |
 | `enrollment` | I-2 | active children per group (denominator) |
 | `group` | I-2 | name, `branch_id` |
 
 No new source tables. No materialized views — [03 §25](./03_Database_Design.md) deliberately defers them; the nightly job runs plain selectors and stores its result.
 
-**Source of truth vs. snapshot.** The ledger, invoices and attendance rows are the truth. An insight's `evidence` is a **frozen snapshot** taken at generation time, in the same spirit as `usage_snapshot` (ADR-11). The "Why?" view shows the snapshot; the deep link shows live data. They **may differ** ("7 families were late; 4 have since paid") — this is expected and must be explained in the UI, not hidden.
+**Source of truth vs. snapshot.** The ledger, invoices and attendance rows are the truth. An insight's `evidence` is a **frozen snapshot** taken at generation time, in the same spirit as `usage_snapshot` (ADR-11). The "Why?" view shows the snapshot; the deep link shows live data. They **may differ** ("24 children were late; 4 have since paid") — this is expected and must be explained in the UI, not hidden.
 
 ---
 
@@ -60,9 +60,10 @@ Rules are pure functions in `apps/intelligence/rules.py`. They take plain values
 for each branch:
   overdue = invoices where status in (issued, partially_paid, overdue)
             and due_date < today - OVERDUE_DAYS
-  group by child
-  if count(children) == 0: no insight
-  severity = critical if any(days_overdue >= CRITICAL_DAYS) or families >= CRITICAL_FAMILIES
+  group by child                          ← subject is the CHILD, see "Why child, not family"
+  if count(children) == 0: condition absent
+  severity = critical if any(days_overdue >= CRITICAL_DAYS)
+             or count(children) >= max(CRITICAL_MIN_SUBJECTS, CRITICAL_SHARE × active_children)
              else warning
 ```
 
@@ -70,9 +71,12 @@ for each branch:
 |---|---|---|
 | `OVERDUE_DAYS` | **15** | Invoices are due on the 10th ([03 §13](./03_Database_Design.md)); 15 days past due is beyond the informal grace most kindergartens tolerate |
 | `CRITICAL_DAYS` | 45 | More than one full billing cycle late |
-| `CRITICAL_FAMILIES` | 10 % of active children (min 3) | Relative, because a 20-child and a 300-child kindergarten differ |
+| `CRITICAL_SHARE` | 10 % of **active children** in the branch | Relative, because a 20-child and a 300-child kindergarten differ. Numerator and denominator are the **same entity** (children) |
+| `CRITICAL_MIN_SUBJECTS` | 3 | Floor so a 12-child kindergarten does not go critical on one child |
 
-Note that `finance.mark_overdue_invoices` already runs nightly at 03:00 and sets `status = overdue`; I-1 does **not** depend on it (it recomputes from `due_date`) but runs after it so the two never disagree.
+The rule reads **`due_date`, never `status = overdue`**. `finance.mark_overdue_invoices` runs nightly at 03:00 and normally keeps `status` in sync, but the acceptance dataset (§13.1) shows 7 August invoices still `issued` on a stack where beat is not running — an insight must not depend on another job having run.
+
+**Why child, not family.** There is no `family` entity. `child_guardian` is many-to-many with one `is_primary` per child, and `guardian` is unique by `(branch, phone)` — so siblings *can* share a guardian, but nothing guarantees an operator links them to the same record. Counting "families" would therefore be a guess. V1 counts **children** and says so in every sentence ("24 ta bola bo‘yicha…"). Grouping by primary guardian for display is a V2 refinement, and only as a presentation layer over child-level facts.
 
 ### I-2 · `attendance_drop` (pattern)
 
@@ -97,7 +101,7 @@ Attendance rate = `present / (present + absent + excused)` on days that have rec
 | `DROP_WARNING` | 10 percentage points |
 | `DROP_CRITICAL` | 20 percentage points |
 
-Working days: Monday–Friday, matching `seed_demo` and the attendance UI.
+**Working days** are a single configuration value `WORKING_DAYS = (Mon…Fri)` in `thresholds.py`, used by I-2 *and* by the briefing check (§11). Monday–Friday is the **current default matching `seed_demo` and the attendance UI**, not a product rule: kindergartens with Saturday sessions exist. The constant is the seam where an organization-level setting (`settings_app`) plugs in later without touching the rules.
 
 ---
 
@@ -127,34 +131,39 @@ An insight without evidence must not be created. `evidence` is a JSON object wit
 {
   "as_of": "2026-09-17",
   "overdue_days_threshold": 15,
-  "families_count": 24,
+  "children_count": 24,
+  "active_children": 105,
   "total_overdue": "21758500.00",
   "average_days_overdue": 61,
   "max_days_overdue": 160,
-  "families": [
-    { "child_id": "…", "child_name": "Sobirov Zarina", "group_name": "Kamalak",
-      "overdue_amount": "600000.00", "days_overdue": 160, "invoices": 1 },
-    { "child_id": "…", "child_name": "Yusupov Shohruh", "group_name": "Yulduzcha",
-      "overdue_amount": "1500000.00", "days_overdue": 38, "invoices": 1 }
+  "children": [
+    { "child_id": "…", "group_id": "…", "overdue_amount": "600000.00",  "days_overdue": 160, "invoices": 1 },
+    { "child_id": "…", "group_id": "…", "overdue_amount": "1500000.00", "days_overdue": 38,  "invoices": 1 }
   ]
 }
 ```
 
-`families` is capped at 50 rows (ordered by `days_overdue` desc); `families_count` is the true total. **No phone numbers, no guardian names** in evidence — the deep link leads to the child card where that data lives under its normal permissions.
+`children` is capped at 50 rows (ordered by `days_overdue` desc); `children_count` is the true total.
+
+**What the snapshot contains — and what it deliberately does not.** Evidence stores **computed facts** (amounts, days, counts, rates) and **identifiers** (`child_id`, `group_id`). It stores **no names and no phone numbers**. Reasoning:
+
+- The snapshot principle exists to freeze *what triggered the insight* — those are the numbers. A child's name is not a trigger; it is a label, and a label should be current (a corrected spelling must not show the old one for 180 days).
+- Data minimization: personal data of children lives in exactly one table under its normal permissions. Copying it into a second, long-lived JSON column would widen the surface for no analytical gain — and this table is also part of every backup and export.
+- The "Why?" panel therefore renders **numbers from the snapshot** and **labels from a batched live lookup by id** (one query, same organization, same RLS). A child that no longer exists renders as *"o‘chirilgan bola"* with the snapshot numbers intact. This is the one intentional exception to "evidence-only rendering", and it is documented here so it is not later mistaken for drift.
 
 ### `attendance_drop` · evidence v1
 
 ```json
 {
   "as_of": "2026-09-17",
-  "group_id": "…", "group_name": "Kamalak", "active_children": 18,
+  "group_id": "…", "active_children": 18,
   "recent": { "days": 7, "rate": 72.4, "present": 91, "absent": 29, "excused": 6 },
   "baseline": { "days": 30, "rate": 86.1 },
   "drop_points": 13.7
 }
 ```
 
-The "Why?" panel renders **only** from `evidence` — never from a live query — so what the director sees is exactly what triggered the insight.
+Numbers in the "Why?" panel come **only** from `evidence`; labels (group name, child name) are looked up live by id (see above). What the director sees as *the reason* is exactly what triggered the insight.
 
 ---
 
@@ -164,14 +173,14 @@ The "Why?" panel renders **only** from `evidence` — never from a live query �
 
 | | ❌ | ✅ |
 |---|---|---|
-| UZ | Yusupovlar oilasi to‘lamasligi ehtimoli yuqori | 9 ta oilada to‘lov 15 kundan ortiq kechikmoqda |
-| RU | Семья Юсуповых, вероятно, не заплатит | В 9 семьях оплата задерживается более 15 дней |
+| UZ | Yusupovlar oilasi to‘lamasligi ehtimoli yuqori | 24 ta bola bo‘yicha to‘lov 15 kundan ortiq kechikmoqda |
+| RU | Семья Юсуповых, вероятно, не заплатит | По 24 детям оплата задерживается более 15 дней |
 
 Each insight type has exactly **one** recommendation, phrased as a verb the director can act on now:
 
 | Type | UZ | RU |
 |---|---|---|
-| `payment_delay` | Qarzdor oilalarga eslatma yuborishni ko‘rib chiqing. | Рассмотрите отправку напоминания должникам. |
+| `payment_delay` | Qarzdorlar ro‘yxatini ko‘rib, eslatma yuborishni ko‘rib chiqing. | Просмотрите список должников и рассмотрите отправку напоминания. |
 | `attendance_drop` | Guruh tarbiyachisi bilan pasayish sababini aniqlang. | Уточните причину снижения у воспитателя группы. |
 
 The recommendation is a **content key**, not free text stored per row (§12).
@@ -191,26 +200,63 @@ The link is stored on the row (`deep_link`) so the mobile card, the briefing and
 
 ## 9. Insight lifecycle
 
+### 9.1 Identity: one open row per condition
+
+An insight is identified by its **condition**, not by the day it was computed:
+
 ```
-new ──▶ seen ──▶ resolved
-  │                 
-  └────▶ dismissed
+condition identity = (organization_id, branch_id, type, subject_type, subject_id)
 ```
 
-| Status | Meaning | Set by |
+- `payment_delay`: subject is the **branch** (`subject_type = branch`, `subject_id = NULL`) — one row says "in this branch, N children are more than 15 days late".
+- `attendance_drop`: subject is the **group** (`subject_type = group`, `subject_id = group_id`).
+
+There is **no `period_key`**. The first draft used the date (I-1) and the ISO week (I-2) as part of the key, which would have produced one row per day for a persisting condition — the exact "same fact five times" this design forbids. Review 1 caught it.
+
+Uniqueness is enforced **only while the insight is open**, with a partial unique index (§10). Closed rows keep their identity but do not block a new one.
+
+### 9.2 State machine
+
+```
+            ┌──────────────── user ────────────────┐
+            ▼                                       │
+  engine ─▶ new ─▶ seen ─▶ resolved                 │
+                    │                                │
+                    └────▶ dismissed                 │
+            ▲                                       │
+            │  engine (condition absent) ──▶ auto_resolved
+            └───────────── open ────────────────────┘
+```
+
+| Status | Open? | Meaning | Set by |
+|---|---|---|---|
+| `new` | yes | Generated, nobody has opened it | engine |
+| `seen` | yes | "Why?" opened at least once | UI, on first expand |
+| `resolved` | no | The person says the problem is handled | user, explicit |
+| `dismissed` | no | The person saw it and chose not to act | user, explicit |
+| `auto_resolved` | no | The condition disappeared from the data before anyone acted | engine |
+
+`resolved`, `dismissed` and `auto_resolved` are three **different facts** and are never merged:
+
+- `dismissed / (resolved + dismissed)` — is the rule useful? (> 40 % → review the rule, §13)
+- `auto_resolved / all closed` — how often does the situation fix itself before the director reacts?
+
+The dashboard queries `status IN ('new', 'seen')` — and nothing else. A row whose condition vanished is `auto_resolved` and therefore gone from the card, which the first draft got wrong by leaving `status` untouched.
+
+### 9.3 Nightly reconciliation (per condition identity)
+
+| Condition tonight | Open row exists? | Action |
 |---|---|---|
-| `new` | Generated tonight, nobody has opened it | engine |
-| `seen` | Opened the "Why?" panel or the card | UI, automatically on first expand |
-| `resolved` | "The problem is handled" | user, explicit button |
-| `dismissed` | "I saw it, I am not acting on it" | user, explicit button |
+| present | no | **create** `new` |
+| present | yes | **refresh** `evidence`, `severity`, `refreshed_at`; `status` unchanged (a `seen` row stays `seen`) |
+| absent | yes | **close**: `status = auto_resolved`, `auto_resolved_at = now()` |
+| absent | no | nothing |
 
-`resolved` and `dismissed` are **different facts** and are never merged. Their ratio is the first quality metric of Radix AI: a rule whose insights are mostly dismissed is a bad rule.
+A condition that disappears and later returns produces a **new row** — so history is preserved ("this branch has had three separate late-payment episodes since May") and the director is notified again, which is correct: it *is* news again.
 
-**Re-generation.** The nightly job never duplicates: an insight is identified by `(organization_id, branch_id, type, subject_type, subject_id, period_key)`. If an open row exists for that key, its `evidence` and `severity` are **refreshed in place** and `refreshed_at` is set; `status` is untouched. If the condition no longer holds, the open row is set to `auto_resolved_at = now()` (status stays as the user left it — we do not silently close what a person opened). `period_key` is the date for I-1 and `group_id + ISO week` for I-2, so a persisting condition is one row that ages, not thirty rows.
+User actions on an open row (`resolve`, `dismiss`) close it; the engine never reopens a closed row. If the condition still holds the next night, a **new** row is created — the director asked to be told again by not fixing it. This is deliberate: `dismissed` means "not now", not "never".
 
-Rows are **append-only in intent**: never deleted by the engine; `updated_at` records refreshes. Retention: 180 days, purged by the existing `purge_organization` path only.
-
----
+Rows are never deleted by the engine. Retention 180 days via the existing `purge_organization` path only.
 
 ## 10. Database schema
 
@@ -222,31 +268,29 @@ Table `insight` — `BranchScopedModel` (so `organization_id` and `branch_id` ar
 | `organization_id`, `branch_id` | FK | inherited |
 | `type` | `varchar(40)` | `payment_delay` \| `attendance_drop` |
 | `severity` | `varchar(10)` | `warning` \| `critical` |
-| `status` | `varchar(12)` | `new` \| `seen` \| `resolved` \| `dismissed` |
-| `subject_type` | `varchar(20)` | `branch` (I-1) \| `group` (I-2) |
-| `subject_id` | UUID null | `group_id` for I-2; null for branch-level |
-| `period_key` | `varchar(20)` | dedupe key part (§9) |
-| `evidence` | `jsonb` | schema per type, §6 |
+| `status` | `varchar(14)` | `new` \| `seen` \| `resolved` \| `dismissed` \| `auto_resolved` |
+| `subject_type` | `varchar(20)` | `branch` \| `group` |
+| `subject_id` | UUID null | `group_id` for I-2; `NULL` for branch-level |
+| `evidence` | `jsonb` | schema per type, §6 — ids and numbers only |
 | `evidence_version` | `smallint` | `1` |
 | `recommendation_key` | `varchar(60)` | content key, §12 |
 | `deep_link` | `varchar(200)` | path, §8 |
 | `generated_at` | timestamptz | first creation |
 | `refreshed_at` | timestamptz null | last in-place refresh |
-| `seen_at`, `resolved_at`, `dismissed_at`, `auto_resolved_at` | timestamptz null | |
-| `acted_by_id` | FK `accounts.User` null | who resolved/dismissed |
+| `seen_at`, `resolved_at`, `dismissed_at`, `auto_resolved_at` | timestamptz null | exactly one of the last three is set on a closed row |
+| `acted_by_id` | FK `accounts.User` null | who resolved/dismissed; `NULL` for `auto_resolved` |
 
 Constraints and indexes:
 
-- `UNIQUE (branch_id, type, subject_type, subject_id, period_key)` — dedupe.
-- `CHECK (status IN (...))`, `CHECK (severity IN (...))`.
-- Partial index `(organization_id, status) WHERE status IN ('new','seen')` — the dashboard query.
-- Index `(branch_id, generated_at DESC)`.
+- **Partial unique** `(branch_id, type, subject_type, COALESCE(subject_id, '00000000-…'))` **`WHERE status IN ('new','seen')`** — one open row per condition (§9.1). `COALESCE` because `NULL` never equals `NULL` in a unique index.
+- `CHECK (status IN (...))`, `CHECK (severity IN (...))`, `CHECK ((subject_type = 'branch') = (subject_id IS NULL))`.
+- `CHECK` that a closed row has exactly one closing timestamp; an open row has none.
+- Partial index `(organization_id, branch_id, severity) WHERE status IN ('new','seen')` — the dashboard query.
+- Index `(branch_id, type, generated_at DESC)` — history per condition.
 
-**RLS.** `insight` is added to `OPERATIONAL_TABLES` in `apps/core/rls.py`, and the app's first migration applies the policy with `RunPython` exactly as `apps/platform/migrations/0002_lead.py` does. `python manage.py check_rls` must list 39 tables afterwards (38 today). This is invariant 8 — non-negotiable.
+**RLS.** `insight` is added to `OPERATIONAL_TABLES` in `apps/core/rls.py`, and the app's first migration applies the policy with `RunPython` exactly as `apps/platform/migrations/0002_lead.py` does. `python manage.py check_rls` must list 39 tables afterwards (38 today). Invariant 8 — non-negotiable.
 
-**Audit.** `resolve`/`dismiss` write to `audit_log` through the existing audit service (`insight.resolve`, `insight.dismiss`). Generation does not (it is a system job; the row itself is the record).
-
----
+**Audit.** `resolve`/`dismiss` write to `audit_log` through the existing audit service (`insight.resolve`, `insight.dismiss`). Generation and `auto_resolved` do not (system job; the row is the record).
 
 ## 11. Architecture and placement
 
@@ -279,12 +323,12 @@ New Django app `apps/intelligence/` following [02 §5](./02_Software_Architectur
 
 The **daily briefing** is not stored. It is the dashboard card, rendered from `GET /insights?status=open` plus two **live checks** computed in the same request (cheap, one query each):
 
-| Check | UZ | Condition |
+| Check | Computation | Renders as |
 |---|---|---|
-| Attendance entered today | ✓ Bugungi davomat kiritilgan / ⚠ Bugungi davomat hali kiritilmagan | any `attendance_record` with `date = today` for the branch (working days only) |
-| Open insights count | Bugun e’tibor talab qiladigan **3** ta holat bor | `count(status in new, seen)` |
+| Attendance completeness today | On a working day (`WORKING_DAYS`): `groups_with_records_today / groups_with_active_enrollment` for the branch. A group counts as "recorded" if it has **at least one** `attendance_record` dated today. | 7/7 → *✓ Bugungi davomat to‘liq kiritilgan* · 4/7 → *⚠ Bugungi davomat 4/7 guruh uchun kiritilgan* · 0/7 → *⚠ Bugungi davomat hali kiritilmagan* · non-working day → check hidden |
+| Open insights | `count(status IN new, seen)` | *Bugun e’tibor talab qiladigan **3** ta holat bor* / *Bugun e’tibor talab qiladigan holat yo‘q* |
 
----
+The first draft used "any record today → ✓", which would show a green check when one group of seven had been filled — a false all-clear. The per-group ratio costs one `GROUP BY` and cannot lie.
 
 ## 12. Content layer (UZ / RU)
 
@@ -293,11 +337,11 @@ All human-readable text lives in content files, never in Python f-strings:
 - Backend: `apps/intelligence/content/{uz,ru}.py` — dicts keyed by `type` and `recommendation_key`, with `{placeholders}` filled from `evidence`. Used only for the notification path (V2) and the management command's console output.
 - Frontend: `features/intelligence/content.ts` — same keys, same placeholders, same style as `features/marketing/content.ts`. The dashboard renders from evidence + content; the API returns **keys and evidence, not sentences**, so a wording change never requires regeneration.
 
-Placeholders are typed per insight type (`families_count`, `total_overdue`, `group_name`, `drop_points`…). Money is formatted by the existing CRM formatter (`formatUZS`), never by the content layer.
+Placeholders are typed per insight type (`children_count`, `total_overdue`, `drop_points`…); labels such as `group_name` are resolved live by id (§6). Money is formatted by the existing CRM formatter (`formatUZS`), never by the content layer.
 
 Example, `payment_delay` title:
-UZ `{families_count} ta oilada to‘lov {overdue_days_threshold} kundan ortiq kechikmoqda` ·
-RU `В {families_count} семьях оплата задерживается более {overdue_days_threshold} дней`.
+UZ `{children_count} ta bola bo‘yicha to‘lov {overdue_days_threshold} kundan ortiq kechikmoqda` ·
+RU `По {children_count} детям оплата задерживается более {overdue_days_threshold} дней`.
 
 ---
 
@@ -316,12 +360,14 @@ RU `В {families_count} семьях оплата задерживается б�
 
 | Measured fact | Expected engine behaviour |
 |---|---|
-| Invoices with `due_date < today − 15` and an open status: **27 invoices across 24 families**; oldest due 2026-04-10 → **160 days**; total outstanding **21 758 500** | I-1 fires **one** insight per branch: `families_count = 24`, `max_days_overdue = 160`, severity **critical** (160 ≥ 45 *and* 24 ≥ 11 = 10 % of 105) |
+| Invoices with `due_date < today − 15` and an open status: **27 invoices across 24 children**; oldest due 2026-04-10 → **160 days**; total outstanding **21 758 500** | I-1 fires **one** insight for the branch: `children_count = 24`, `max_days_overdue = 160`, severity **critical** (160 ≥ 45 *and* 24 ≥ max(3, 10 % × 105 = 11)) |
 | Of those, 13 are April–July invoices **partially paid and never topped up** (the seed's "sometimes pays part" behaviour) | They count. A 60 %-paid invoice from April is real debt; the rule must not look only at the last month |
 | **7 August invoices still carry `status = issued`** although due 2026-08-10 — the demo stack runs no Celery beat, so `mark_overdue_invoices` never ran | The rule must compute from `due_date`, **never** from `status = overdue`. This dataset proves why (§4). |
 | 32 September invoices open, due 2026-09-10 → 7 days | **Excluded** (7 < 15) — asserts the threshold |
 | Attendance uniformly ~90 % present in every group, every day | I-2 fires **zero** insights — the negative test |
-| Re-running the job the same day | Row count unchanged; `refreshed_at` set — asserts dedupe |
+| Bahor's seed created one guardian per child | `children_count` equals what a "families" count would have shown — the dataset cannot distinguish the two, which is another reason the terminology is *children* (§4) |
+| Re-running the job the same day, and again the next day | Row count unchanged; `refreshed_at` advances — asserts condition-level identity (§9.1) |
+| Paying all 27 invoices, then re-running | The row becomes `auto_resolved`; the dashboard card no longer shows it — asserts §9.3 |
 
 Unit tests construct the positive I-2 case synthetically (one group's last 7 working days at 60 %, baseline 88 %) and the I-1 boundary (14 / 15 / 16 days).
 
@@ -340,9 +386,9 @@ Marketing may call all three "Radix AI". The landing page claim for V1 is exactl
 ## Appendix A — Implementation checklist (for the vertical slice)
 
 1. `apps/intelligence/` app, `insight` model + migration (RLS `RunPython`), `OPERATIONAL_TABLES` entry, `check_rls` → 39.
-2. `thresholds.py`, `rules.py` (pure) + unit tests incl. boundary values (14/15/16 days; 9.9/10/10.1 points).
-3. `selectors.py` (I-1 first), `services.py` upsert, `tasks.py` + beat entry, `generate_insights` command.
+2. `thresholds.py` (incl. `WORKING_DAYS`), `rules.py` (pure) + unit tests incl. boundary values (14/15/16 days; 9.9/10/10.1 points; `CRITICAL_MIN_SUBJECTS` floor).
+3. `selectors.py` (I-1 first), `services.py` reconcile (create / refresh / auto-resolve per §9.3), `tasks.py` + beat entry, `generate_insights` command.
 4. `InsightViewSet` + serializer + `test_write_gate_is_everywhere` green + cross-tenant `404` test.
-5. Frontend: `features/intelligence/` (api, content, `InsightCard`, `WhyPanel`), dashboard placement, `DebtorsPage?overdue_days`.
-6. Run against Bahor: assert §13.1. Screenshot the card at 440 px and 1440 px.
+5. Frontend: `features/intelligence/` (api, content, `InsightCard`, `WhyPanel` with batched label lookup by id), briefing checks incl. attendance completeness ratio, dashboard placement, `DebtorsPage?overdue_days`.
+6. Run against Bahor: assert §13.1 including the two-day re-run and the pay-everything → `auto_resolved` case. Screenshot the card at 440 px and 1440 px.
 7. Docs: [03](./03_Database_Design.md) table list, [04](./04_Backend_API_Specification.md) endpoints, [06](./06_Development_Roadmap.md) sprint entry — in the same change.
