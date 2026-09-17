@@ -75,7 +75,28 @@ describe('MarketingPage', () => {
   it('opens the mobile navigation control', async () => {
     const user = userEvent.setup()
     renderPage()
-    await user.click(screen.getByRole('button', { name: 'Open menu' }))
+    await user.click(screen.getByRole('button', { name: 'Menyuni ochish' }))
     expect(screen.getAllByRole('link', { name: 'Narxlar' }).length).toBeGreaterThan(1)
+  })
+
+  // Ikki sotuv modeli (ADR-13) — sahifadagi eng yangi va eng muhim blok.
+  // U yo'qolib qolsa, saytda bir martalik litsenziya umuman taklif
+  // qilinmagan bo'lardi va o'sha suhbat boshlanmasdan yopilardi.
+  it('offers both delivery models, with the one-off licence priced on request', () => {
+    renderPage('uz')
+    const delivery = document.getElementById('delivery') as HTMLElement
+
+    expect(within(delivery).getByText('Bulutli obuna')).toBeInTheDocument()
+    expect(within(delivery).getByText('Alohida o‘rnatma')).toBeInTheDocument()
+    expect(within(delivery).getByText('Kelishuv asosida')).toBeInTheDocument()
+  })
+
+  it('keeps both delivery models in Russian too', () => {
+    renderPage('ru')
+    const delivery = document.getElementById('delivery') as HTMLElement
+
+    expect(within(delivery).getByText('Облачная подписка')).toBeInTheDocument()
+    expect(within(delivery).getByText('Отдельная установка')).toBeInTheDocument()
+    expect(within(delivery).getByText('По договорённости')).toBeInTheDocument()
   })
 })
