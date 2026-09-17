@@ -33,6 +33,7 @@ On large projects, the two things that kill quality are (1) **lost context** and
 | 04 | [docs/04_Backend_API_Specification.md](./docs/04_Backend_API_Specification.md) | building or consuming any endpoint |
 | 05 | [docs/05_Frontend_Architecture.md](./docs/05_Frontend_Architecture.md) | building any React feature |
 | 06 | [docs/06_Development_Roadmap.md](./docs/06_Development_Roadmap.md) | planning a sprint or picking up work |
+| 07 | [docs/07_Radix_Intelligence.md](./docs/07_Radix_Intelligence.md) | touching insights, the nightly engine, or any "Radix AI" claim (ADR-14: deterministic rules + evidence, no LLM in V1) |
 
 ---
 

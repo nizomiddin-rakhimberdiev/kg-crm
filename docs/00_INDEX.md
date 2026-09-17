@@ -19,6 +19,7 @@ This folder is the **single source of truth** for the project. Read the document
 | 04 | **[04_Backend_API_Specification](./04_Backend_API_Specification.md)** | *What* are the endpoints and contracts? | Before building/consuming any API. |
 | 05 | **[05_Frontend_Architecture](./05_Frontend_Architecture.md)** | *How* is the React app structured and routed? | Before building any frontend feature. |
 | 06 | **[06_Development_Roadmap](./06_Development_Roadmap.md)** | *In what order* do we build it? | Before planning a sprint or picking up work. |
+| 07 | **[07_Radix_Intelligence](./07_Radix_Intelligence.md)** | *What* does Radix AI compute, from which rows, with what evidence — and what it deliberately is not? | Before touching insights, the nightly engine, or any "AI" claim in marketing. |
 
 ---
 
@@ -71,6 +72,7 @@ These are the load-bearing decisions the whole system depends on. They are resta
 | Version | Date | Change |
 |---------|------|--------|
 | 1.0 | 2026-07-24 | Initial documentation set established (01–06 + index). |
+| 1.1 | 2026-09-17 | Added 07_Radix_Intelligence (V1 design, ADR-14). |
 | 1.1 | 2026-07-29 | **Multi-tenant SaaS business model adopted.** New [01 §4](./01_Project_Vision.md) (pricing, payment terms, trial); **ADR-9** (`organization` is the tenancy root, superseding branch-as-tenancy-root), **ADR-10** (platform staff on a separate access plane; `Super Admin` removed in favour of `Org Owner`), **ADR-11** (subscriptions as a bounded module with an append-only usage ledger). [03 §6](./03_Database_Design.md) rewritten; [03 §20](./03_Database_Design.md) added; [04 §18–19](./04_Backend_API_Specification.md) added; [06](./06_Development_Roadmap.md) Sprint 0 gains tenancy, Sprints 10–11 added. |
 
 ### What changed and why (v1.1)
