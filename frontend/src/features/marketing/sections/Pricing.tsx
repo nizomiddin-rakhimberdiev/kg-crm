@@ -13,6 +13,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { marketingApi } from '../api'
 import { Reveal } from '../components/Motion'
@@ -50,13 +51,13 @@ export function Pricing({ locale }: { locale: Locale }) {
   const headlineUnit = term === 'monthly' ? t.perMonth : t.perYear
 
   return (
-    <section id="pricing" className="scroll-mt-24 bg-slate-950 py-20 text-white lg:py-28">
-      <div className="mx-auto grid max-w-7xl gap-12 px-5 lg:grid-cols-[0.85fr_1.15fr] lg:items-start lg:px-8">
+    <section id="pricing" className="scroll-mt-24 bg-slate-950 py-14 text-white sm:py-16 lg:py-28">
+      <div className="mx-auto grid max-w-7xl gap-8 px-5 sm:gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:items-start lg:px-8">
         <Reveal>
           <p className="eyebrow !text-brand-300">{t.eyebrow}</p>
           <h2 className="mt-4 text-balance text-3xl font-bold tracking-[-0.035em] sm:text-4xl">{t.title}</h2>
-          <p className="mt-5 max-w-xl leading-7 text-slate-300">{t.text}</p>
-          <div className="mt-8 border-l-2 border-brand-400 pl-4 text-sm leading-6 text-slate-300">{t.policy}</div>
+          <p className="mt-4 max-w-xl text-[15px] leading-[1.6] text-slate-300 sm:mt-5 sm:text-base sm:leading-7">{t.text}</p>
+          <div className="mt-6 border-l-2 border-brand-400 pl-4 text-sm leading-6 text-slate-300 sm:mt-8">{t.policy}</div>
         </Reveal>
 
         <Reveal delay={0.1}>
@@ -190,7 +191,17 @@ export function Pricing({ locale }: { locale: Locale }) {
               </p>
             )}
 
-            <p className="mt-5 text-xs leading-5 text-slate-400">{t.disclaimer}</p>
+            {/* Narxni ko'rgan odamning keyingi qadami shu yerda bo'lsin —
+                sahifa oxiridagi formaga qadar aylantirmasin (brif §13). */}
+            <a
+              href="#demo"
+              className="group mt-5 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3.5 text-[15px] font-semibold text-white transition hover:bg-slate-800 sm:text-sm"
+            >
+              {t.cta}
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </a>
+
+            <p className="mt-5 text-[13px] leading-5 text-slate-400">{t.disclaimer}</p>
           </div>
         </Reveal>
       </div>
@@ -213,7 +224,7 @@ function TermButton({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        'inline-flex items-center rounded-lg px-3.5 py-2 transition',
+        'inline-flex min-h-[44px] items-center rounded-lg px-3.5 py-2 transition sm:min-h-0',
         active ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:text-slate-950',
       )}
     >

@@ -108,6 +108,15 @@ describe('MarketingPage', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('So‘rovingiz qabul qilindi')
   })
 
+  // Ildiz endi sotuv sayti — "CRM'ga kirish" origin'ga emas, /login ga
+  // olib borishi shart, aks holda odam aylanib yana landing'ga tushadi.
+  it('links "CRM‘ga kirish" to the login screen, not the site root', () => {
+    renderPage('uz')
+    for (const link of screen.getAllByRole('link', { name: 'CRM‘ga kirish' })) {
+      expect(link).toHaveAttribute('href', expect.stringMatching(/\/login$/))
+    }
+  })
+
   it('opens the mobile navigation with the demo CTA first', async () => {
     const user = userEvent.setup()
     renderPage()

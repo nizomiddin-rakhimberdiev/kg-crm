@@ -31,25 +31,25 @@ export function ProductPreview({ locale }: { locale: Locale }) {
   ]
 
   return (
-    <section id="product" className="scroll-mt-24 bg-slate-50 py-20 lg:py-28">
+    <section id="product" className="scroll-mt-24 bg-slate-50 py-14 sm:py-16 lg:py-28">
       <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <Reveal className="max-w-3xl">
           <p className="eyebrow">{t.eyebrow}</p>
           <h2 className="section-title mt-4 text-balance">{t.title}</h2>
-          <p className="mt-5 leading-7 text-slate-600">{t.text}</p>
+          <p className="mt-4 text-[15px] leading-[1.6] text-slate-600 sm:mt-5 sm:text-base sm:leading-7">{t.text}</p>
         </Reveal>
 
-        <Reveal delay={0.1} className="mt-12">
+        <Reveal delay={0.1} className="mt-8 sm:mt-12">
           <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-950 p-2 shadow-2xl shadow-slate-900/20">
             <div className="overflow-hidden rounded-[21px] bg-slate-50">
               <div className="flex h-11 items-center gap-2 border-b border-slate-200 bg-white px-4">
                 <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
                 <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
                 <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-                <div className="ml-3 truncate rounded-md bg-slate-100 px-3 py-1 text-[11px] font-medium text-slate-400">
+                <div className="ml-3 truncate rounded-md bg-slate-100 px-3 py-1 text-xs font-medium text-slate-400">
                   radix-crm.uz/dashboard
                 </div>
-                <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
                   {t.sample}
                 </span>
               </div>
@@ -94,7 +94,7 @@ export function ProductPreview({ locale }: { locale: Locale }) {
                         <span className={cn('inline-grid h-8 w-8 place-items-center rounded-lg text-xs', color)}>
                           ●
                         </span>
-                        <p className="mt-3 text-[11px] font-medium text-slate-400">{label}</p>
+                        <p className="mt-3 text-xs font-medium text-slate-400">{label}</p>
                         <p className="mt-1 text-base font-bold tabular-nums text-slate-900 sm:text-lg">
                           {value}
                         </p>

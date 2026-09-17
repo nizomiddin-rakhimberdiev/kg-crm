@@ -26,6 +26,16 @@ export function Header({ locale }: { locale: Locale }) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Escape — ochiq menyuni yopadi (klaviatura va skrin-rider uchun).
+  useEffect(() => {
+    if (!open) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+
   const nav = [
     ['#product', t.nav.product],
     ['#capabilities', t.nav.capabilities],
@@ -73,7 +83,7 @@ export function Header({ locale }: { locale: Locale }) {
           </Link>
           <a
             className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-            href={env.appUrl}
+            href={env.loginUrl}
           >
             {t.nav.login}
           </a>
@@ -86,7 +96,7 @@ export function Header({ locale }: { locale: Locale }) {
         </div>
 
         <button
-          className="rounded-lg p-2 text-slate-700 lg:hidden"
+          className="grid h-11 w-11 place-items-center rounded-lg text-slate-700 lg:hidden"
           aria-label={menuLabel}
           aria-expanded={open}
           onClick={() => setOpen(!open)}
@@ -119,14 +129,14 @@ export function Header({ locale }: { locale: Locale }) {
                 foydalanuvchi qaysi tugma asosiy ekanini bilishi kerak. */}
             <a
               onClick={() => setOpen(false)}
-              className="mt-2 rounded-xl bg-slate-950 px-4 py-3 text-center text-sm font-semibold text-white"
+              className="mt-2 inline-flex min-h-[48px] items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-center text-[15px] font-semibold text-white"
               href="#demo"
             >
               {t.nav.demo}
             </a>
             <a
-              className="rounded-xl border border-slate-200 px-4 py-3 text-center text-sm font-semibold text-slate-700"
-              href={env.appUrl}
+              className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-slate-200 px-4 py-3 text-center text-[15px] font-semibold text-slate-700"
+              href={env.loginUrl}
             >
               {t.nav.login}
             </a>

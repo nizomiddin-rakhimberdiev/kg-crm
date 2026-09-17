@@ -97,6 +97,7 @@ export type Copy = {
     disclaimer: string
     loading: string
     error: string
+    cta: string
   }
   delivery: { eyebrow: string; title: string; text: string; plans: DeliveryPlan[]; note: string }
   security: { eyebrow: string; title: string; points: Feature[] }
@@ -279,6 +280,7 @@ export const copy: Record<Locale, Copy> = {
       disclaimer: 'Kalkulyator joriy tarif asosidagi yo‘naltiruvchi hisob. Yakuniy summa rasmiy shartnoma va hisob-fakturaga muvofiq belgilanadi.',
       loading: 'Hisoblanmoqda…',
       error: 'Hisobni yuklab bo‘lmadi. Qayta urinib ko‘ring.',
+      cta: 'Demo olish',
     },
     delivery: {
       eyebrow: 'Ikki xil ishlash modeli',
@@ -594,6 +596,7 @@ export const copy: Record<Locale, Copy> = {
       disclaimer: 'Калькулятор — ориентировочный расчёт по текущему тарифу. Итоговая сумма определяется официальным договором и счётом-фактурой.',
       loading: 'Расчёт…',
       error: 'Не удалось загрузить расчёт. Попробуйте ещё раз.',
+      cta: 'Получить демо',
     },
     delivery: {
       eyebrow: 'Две модели работы',

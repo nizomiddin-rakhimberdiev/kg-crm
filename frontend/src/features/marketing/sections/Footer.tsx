@@ -23,31 +23,31 @@ export function Footer({ locale }: { locale: Locale }) {
 
   return (
     <footer className="border-t border-slate-200 bg-white">
-      <div className="mx-auto grid max-w-7xl gap-10 px-5 py-12 md:grid-cols-[1.4fr_1fr_1fr] lg:px-8">
+      <div className="mx-auto grid max-w-7xl gap-8 px-5 py-10 sm:gap-10 sm:py-12 md:grid-cols-[1.4fr_1fr_1fr] lg:px-8">
         <div>
           <Brand />
           <p className="mt-4 max-w-sm text-sm leading-6 text-slate-500">{t.footer.product}</p>
         </div>
 
-        <nav aria-label={t.nav.product} className="grid content-start gap-2.5 text-sm font-medium text-slate-600">
+        <nav aria-label={t.nav.product} className="grid content-start gap-0.5 text-sm font-medium text-slate-600 sm:gap-2.5">
           {nav.map(([href, label]) => (
-            <a key={href} className="transition hover:text-slate-950" href={href}>
+            <a key={href} className="inline-flex min-h-[44px] items-center transition hover:text-slate-950 sm:min-h-0" href={href}>
               {label}
             </a>
           ))}
         </nav>
 
-        <div className="grid content-start gap-2.5 text-sm font-medium text-slate-600">
-          <a className="transition hover:text-slate-950" href={env.appUrl}>
+        <div className="grid content-start gap-0.5 text-sm font-medium text-slate-600 sm:gap-2.5">
+          <a className="inline-flex min-h-[44px] items-center transition hover:text-slate-950 sm:min-h-0" href={env.loginUrl}>
             {t.footer.login}
           </a>
-          <Link className="transition hover:text-slate-950" to={`/${switchTo}`}>
+          <Link className="inline-flex min-h-[44px] items-center transition hover:text-slate-950 sm:min-h-0" to={`/${switchTo}`}>
             {t.nav.switchLabel}
           </Link>
-          <Link className="transition hover:text-slate-950" to={`/${locale}/privacy`}>
+          <Link className="inline-flex min-h-[44px] items-center transition hover:text-slate-950 sm:min-h-0" to={`/${locale}/privacy`}>
             {t.footer.privacy}
           </Link>
-          <Link className="transition hover:text-slate-950" to={`/${locale}/terms`}>
+          <Link className="inline-flex min-h-[44px] items-center transition hover:text-slate-950 sm:min-h-0" to={`/${locale}/terms`}>
             {t.footer.terms}
           </Link>
         </div>

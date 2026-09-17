@@ -56,9 +56,9 @@ export function Hero({ locale }: { locale: Locale }) {
       />
       <RootMotif className="pointer-events-none absolute -right-24 top-4 hidden h-[560px] w-[560px] opacity-[0.55] lg:block" />
 
-      <div className="relative mx-auto grid max-w-7xl gap-14 px-5 pb-20 pt-14 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-10 lg:px-8 lg:pb-28 lg:pt-20">
+      <div className="relative mx-auto grid max-w-7xl gap-10 px-5 pb-14 pt-10 sm:pt-14 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-10 lg:px-8 lg:pb-28 lg:pt-20">
         <div>
-          <motion.p className="eyebrow" {...rise(0)}>
+          <motion.p className="eyebrow tracking-[0.1em] sm:tracking-[0.16em]" {...rise(0)}>
             {t.hero.eyebrow}
           </motion.p>
 
@@ -69,40 +69,45 @@ export function Hero({ locale }: { locale: Locale }) {
             {t.hero.title}
           </motion.h1>
 
-          <motion.p className="mt-6 max-w-xl text-lg leading-8 text-slate-600" {...rise(0.16)}>
+          <motion.p className="mt-5 max-w-xl text-[17px] leading-[1.6] text-slate-600 sm:mt-6 sm:text-lg sm:leading-8" {...rise(0.16)}>
             {t.hero.text}
           </motion.p>
 
-          <motion.div className="mt-9 flex flex-col gap-3 sm:flex-row" {...rise(0.24)}>
+
+          {/* Narx — CTA'dan OLDIN (brif §4 iyerarxiyasi): sarlavha → matn →
+              narx → harakat. Odam avval "qancha?" ga javob oladi, keyin
+              bosadi. Yuklanmaguncha joy band turadi, sahifa sakramaydi. */}
+          <motion.div
+            className="mt-6 flex flex-col gap-1.5 text-sm text-slate-500 sm:flex-row sm:items-center sm:gap-4"
+            {...rise(0.24)}
+          >
+            <span className="inline-flex min-h-[1.5rem] shrink-0 items-center gap-2 whitespace-nowrap text-[15px] font-semibold text-slate-800 sm:text-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand-600" aria-hidden="true" />
+              {priceNote ?? '\u00a0'}
+            </span>
+            <span className="hidden text-slate-300 sm:inline" aria-hidden="true">
+              ·
+            </span>
+            <span>{t.hero.note}</span>
+          </motion.div>
+
+          {/* Mobil'da BITTA dominant tugma: secondary — oddiy havola ko'rinishida
+              (brif §5). Desktopda ikkalasi tugma — avvalgidek. */}
+          <motion.div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row" {...rise(0.32)}>
             <a
-              className="group inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-xl"
+              className="group inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 py-4 text-[15px] font-semibold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-xl sm:text-sm"
               href="#demo"
             >
               {t.hero.primary}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>
             <a
-              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-4 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-[15px] font-semibold text-slate-700 transition hover:text-slate-950 sm:min-h-[52px] sm:border sm:border-slate-200 sm:bg-white sm:px-6 sm:py-4 sm:text-sm sm:hover:-translate-y-0.5 sm:hover:border-slate-300 sm:hover:shadow-md"
               href="#capabilities"
             >
               {t.hero.secondary}
+              <ArrowRight className="h-4 w-4 sm:hidden" aria-hidden="true" />
             </a>
-          </motion.div>
-
-          <motion.div
-            className="mt-7 flex flex-col gap-2 text-sm text-slate-500 sm:flex-row sm:items-center sm:gap-4"
-            {...rise(0.32)}
-          >
-            {/* Narx — hero'da, lekin sarlavha emas (brif §3). Yuklanmaguncha
-                joy band turadi, sahifa sakramaydi. */}
-            <span className="inline-flex min-h-[1.5rem] shrink-0 items-center gap-2 whitespace-nowrap font-semibold text-slate-800">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand-600" aria-hidden="true" />
-              {priceNote ?? ' '}
-            </span>
-            <span className="hidden text-slate-300 sm:inline" aria-hidden="true">
-              ·
-            </span>
-            <span>{t.hero.note}</span>
           </motion.div>
         </div>
 
@@ -117,7 +122,7 @@ export function Hero({ locale }: { locale: Locale }) {
               })}
         >
           <div className="absolute -inset-8 -z-10 rounded-[40px] bg-brand-200/35 blur-3xl" />
-          <div className="rounded-[28px] border border-slate-200/80 bg-white/95 p-5 shadow-2xl shadow-brand-900/10 backdrop-blur">
+          <div className="rounded-[24px] border border-slate-200/80 bg-white/95 p-4 shadow-2xl shadow-brand-900/10 backdrop-blur sm:rounded-[28px] sm:p-5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <span className="text-sm font-bold tracking-tight text-slate-900">{t.preview.live}</span>
               {/* "Namuna" — bu jonli ma'lumot emas va shunday deyilmaydi. */}
@@ -126,7 +131,7 @@ export function Hero({ locale }: { locale: Locale }) {
               </span>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="mt-4 grid grid-cols-2 gap-2.5 sm:mt-5 sm:gap-3">
               <HeroMetric
                 icon={CircleDollarSign}
                 label={t.preview.revenue}
@@ -141,7 +146,7 @@ export function Hero({ locale }: { locale: Locale }) {
               <HeroMetric icon={LayoutDashboard} label={t.preview.debt} value={<CountUp to={2.4} format={(v) => `${v.toFixed(1)}M`} />} />
             </div>
 
-            <div className="mt-4 rounded-2xl bg-slate-950 p-5 text-white">
+            <div className="mt-3 rounded-2xl bg-slate-950 p-4 text-white sm:mt-4 sm:p-5">
               <p className="text-xs text-slate-400">{t.preview.tasksTitle}</p>
               <div className="mt-4 space-y-3">
                 {t.preview.tasks.map((label, index) => (
@@ -179,9 +184,9 @@ function HeroMetric({
   value: React.ReactNode
 }) {
   return (
-    <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3.5 transition hover:border-brand-200 hover:bg-white">
+    <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3 transition hover:border-brand-200 hover:bg-white sm:p-3.5">
       <Icon className="h-4 w-4 text-brand-600" />
-      <p className="mt-3 text-[10px] font-medium uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="mt-2.5 text-xs font-medium uppercase tracking-wide text-slate-400 sm:mt-3">{label}</p>
       <p className="mt-1 text-xl font-bold tracking-tight tabular-nums text-slate-900">{value}</p>
     </div>
   )

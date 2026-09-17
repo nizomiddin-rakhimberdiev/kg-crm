@@ -20,15 +20,15 @@ export function DeliveryModels({ locale }: { locale: Locale }) {
   const t = copy[locale].delivery
 
   return (
-    <section id="delivery" className="scroll-mt-24 bg-white py-20 lg:py-28">
+    <section id="delivery" className="scroll-mt-24 bg-white py-14 sm:py-16 lg:py-28">
       <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <Reveal className="max-w-3xl">
           <p className="eyebrow">{t.eyebrow}</p>
           <h2 className="section-title mt-4 text-balance">{t.title}</h2>
-          <p className="mt-5 leading-7 text-slate-600">{t.text}</p>
+          <p className="mt-4 text-[15px] leading-[1.6] text-slate-600 sm:mt-5 sm:text-base sm:leading-7">{t.text}</p>
         </Reveal>
 
-        <div className="mt-12 grid gap-6 lg:grid-cols-2">
+        <div className="mt-8 grid gap-4 sm:mt-12 sm:gap-6 lg:grid-cols-2">
           {t.plans.map((plan, index) => (
             <Reveal key={plan.id} delay={index * 0.1}>
               <PlanCard plan={plan} />
@@ -53,7 +53,7 @@ function PlanCard({ plan }: { plan: DeliveryPlan }) {
   return (
     <article
       className={cn(
-        'flex h-full flex-col rounded-3xl border p-7 transition duration-300 hover:-translate-y-1 sm:p-9',
+        'flex h-full flex-col rounded-3xl border p-6 transition duration-300 hover:-translate-y-1 sm:p-9',
         dark
           ? 'border-slate-800 bg-slate-950 text-white shadow-xl shadow-slate-900/20 hover:shadow-2xl'
           : 'border-slate-200 bg-white shadow-card hover:border-brand-200 hover:shadow-xl',
@@ -100,7 +100,7 @@ function PlanCard({ plan }: { plan: DeliveryPlan }) {
         {plan.text}
       </p>
 
-      <ul className="mt-7 space-y-3.5">
+      <ul className="mt-6 space-y-3 sm:mt-7 sm:space-y-3.5">
         {plan.points.map((point) => (
           <li key={point} className="flex gap-3">
             <span
@@ -111,7 +111,7 @@ function PlanCard({ plan }: { plan: DeliveryPlan }) {
             >
               <Check className="h-3 w-3" strokeWidth={3} />
             </span>
-            <span className={cn('text-sm leading-6', dark ? 'text-slate-300' : 'text-slate-600')}>
+            <span className={cn('text-[15px] leading-[1.55] sm:text-sm sm:leading-6', dark ? 'text-slate-300' : 'text-slate-600')}>
               {point}
             </span>
           </li>
@@ -124,7 +124,7 @@ function PlanCard({ plan }: { plan: DeliveryPlan }) {
         <a
           href={plan.href}
           className={cn(
-            'group inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-semibold transition',
+            'group inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-[15px] font-semibold transition sm:min-h-0 sm:text-sm',
             dark
               ? 'bg-white text-slate-950 hover:bg-slate-100'
               : 'bg-slate-950 text-white hover:bg-slate-800',

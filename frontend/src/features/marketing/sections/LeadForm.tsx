@@ -23,7 +23,7 @@ const newSubmissionId = () =>
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`
 
 const FIELD_CLASS =
-  'mt-1.5 w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-300 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10'
+  'mt-1.5 min-h-[48px] w-full rounded-xl border border-slate-200 px-3.5 py-3 text-base outline-none transition placeholder:text-slate-300 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 sm:min-h-0 sm:text-sm'
 
 export function LeadForm({ locale }: { locale: Locale }) {
   const t = copy[locale].form
@@ -78,15 +78,15 @@ export function LeadForm({ locale }: { locale: Locale }) {
   ] as const
 
   return (
-    <section id="demo" className="scroll-mt-24 bg-white py-20 lg:py-28">
-      <div className="mx-auto grid max-w-7xl gap-12 px-5 lg:grid-cols-[0.78fr_1.22fr] lg:px-8">
+    <section id="demo" className="scroll-mt-24 bg-white py-14 sm:py-16 lg:py-28">
+      <div className="mx-auto grid max-w-7xl gap-8 px-5 sm:gap-12 lg:grid-cols-[0.78fr_1.22fr] lg:px-8">
         <Reveal>
           <p className="eyebrow">{t.eyebrow}</p>
           {/* Yopuvchi savol — FAQ'dan keyin, formadan oldin (brif §23):
               o'quvchi javob topib bo'ldi, endi qaror vaqti. */}
           <p className="mt-4 text-lg font-semibold text-slate-700">{t.closing}</p>
           <h2 className="section-title mt-3 text-balance">{t.title}</h2>
-          <p className="mt-5 max-w-md leading-7 text-slate-600">{t.text}</p>
+          <p className="mt-4 max-w-md text-[15px] leading-[1.6] text-slate-600 sm:mt-5 sm:text-base sm:leading-7">{t.text}</p>
           <div className="mt-8 flex items-start gap-3 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
             {t.privacyNote}
@@ -145,7 +145,7 @@ export function LeadForm({ locale }: { locale: Locale }) {
                 <label className="mt-5 flex cursor-pointer items-start gap-3 text-sm leading-5 text-slate-600">
                   <input
                     required
-                    className="mt-0.5 h-4 w-4 rounded border-slate-300 accent-brand-600"
+                    className="mt-0.5 h-5 w-5 shrink-0 rounded border-slate-300 accent-brand-600"
                     type="checkbox"
                     name="consent"
                   />
@@ -168,7 +168,7 @@ export function LeadForm({ locale }: { locale: Locale }) {
 
                 <button
                   disabled={state === 'sending'}
-                  className="group mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+                  className="group mt-6 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-4 text-[15px] font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60 sm:text-sm"
                 >
                   {state === 'sending' ? t.sending : t.submit}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

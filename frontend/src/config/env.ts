@@ -38,6 +38,18 @@ export const env = {
   // Public saytdan CRM'ga o'tish bitta joyda sozlanadi. Build paytida
   // yoziladi; productionda `https://app.radix-crm.uz` bo'ladi.
   appUrl: required('VITE_APP_URL', import.meta.env.VITE_APP_URL, window.location.origin),
+  /**
+   * CRM'ga kirish havolasi — har doim `/login` bilan.
+   *
+   * `appUrl` ning o'zi (origin) yetarli emas: bitta domenli o'rnatmada ildiz
+   * sotuv sayti, va "CRM'ga kirish" tugmasi odamni yana landing'ga
+   * qaytarardi. Ildiz tasodifan login'ga ketib turgan paytda bu yashirin
+   * edi. `/login` ikkala holatda ham to'g'ri: `radix-crm.uz/login` va
+   * ertaga `app.radix-crm.uz/login`.
+   */
+  get loginUrl() {
+    return `${this.appUrl.replace(/\/$/, '')}/login`
+  },
   publicHost: import.meta.env.VITE_PUBLIC_HOST ?? 'radix-crm.uz',
   legalEntityName: import.meta.env.VITE_LEGAL_ENTITY_NAME ?? '',
   isDev: import.meta.env.DEV,
