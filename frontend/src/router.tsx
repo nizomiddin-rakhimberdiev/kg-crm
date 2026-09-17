@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
+import { createBrowserRouter, Navigate, Outlet, type RouteObject } from 'react-router-dom'
 import { PlatformAuthProvider } from './features/platform/PlatformAuthProvider'
 import { PlatformLayout } from './features/platform/components/PlatformLayout'
 import { AppLayout } from './components/layout/AppLayout'
@@ -95,7 +95,17 @@ const saasOnlyRoutes = env.isStandalone
           </Suspense>
         ),
         children: [
-          { path: '/', element: <MarketingEntry /> },
+          // `index: true`, `path: '/'` EMAS — va bu farq hal qiluvchi.
+          //
+          // React Router marshrutni ro'yxatdagi tartib bo'yicha emas, BALL
+          // bo'yicha tanlaydi, va `index` marshrutga +2 ball qo'shiladi.
+          // Ildiz `path: '/'` deb yozilganda, himoyalangan daraxtdagi
+          // `{ index: true, <Navigate to="/dashboard"> }` undan yuqori ball
+          // olib g'olib chiqardi — natijada `radix-crm.uz` ochilganda sotuv
+          // sayti emas, login ekrani ko'rinardi. Endi ikkalasi ham `index`,
+          // ballari teng, va tenglikda tartib hal qiladi — bu daraxt
+          // ro'yxatda birinchi turadi.
+          { id: 'marketing-root', index: true, element: <MarketingEntry /> },
           { path: '/uz', element: <MarketingPage locale="uz" /> },
           { path: '/ru', element: <MarketingPage locale="ru" /> },
           { path: '/uz/privacy', element: <LegalPage locale="uz" page="privacy" /> },
@@ -135,7 +145,15 @@ const saasOnlyRoutes = env.isStandalone
       { path: '/support-entry', element: <SupportEntryPage /> },
     ]
 
-export const router = createBrowserRouter([
+/**
+ * Marshrutlar MA'LUMOT sifatida — router nusxasidan alohida.
+ *
+ * Shu tufayli ularni render qilmasdan tekshirib bo'ladi (`matchRoutes`),
+ * ya'ni "qaysi marshrut `/` ni yutadi" degan savolga test javob bera
+ * oladi. Aynan shu savolda jimgina xato bor edi va uni faqat brauzerda
+ * ochib ko'rgandagina sezish mumkin edi.
+ */
+export const routes: RouteObject[] = [
   ...saasOnlyRoutes,
   {
     element: <PublicOnlyRoute />,
@@ -227,36 +245,36 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  ],
-  {
-    /*
-     * Har bir bog'cha o'z manzilida yashaydi: `/t/<slug>/dashboard`.
-     *
-     * `basename` sahifa yuklanganda BIR MARTA o'rnatiladi va marshrutlar
-     * uni bilmaydi — ular avvalgidek `/dashboard` deb yoziladi. Shu
-     * sababli subdomenga o'tish shu qator va `lib/tenantAddress.ts` bilan
-     * cheklanadi.
-     *
-     * Vendor konsoli (`/platform`) prefikssiz manzilda ochiladi, ya'ni u
-     * hech qachon bog'cha `basename` i ostiga tushmaydi — ikki tekislik
-     * URL darajasida ham ajralgan (ADR-10).
-     */
-    basename: basenameFor(currentSlug),
+]
 
-    /*
-     * v7 xatti-harakatini HOZIRDAN yoqamiz.
-     *
-     * React Router bularsiz brauzer konsolida har safar sariq
-     * ogohlantirish chiqaradi. Bayroqlarni yoqish ikki foyda beradi:
-     * konsol tozalanadi va v7 ga o'tish paytida xatti-harakat allaqachon
-     * yangi bo'lgani uchun kutilmagan o'zgarish bo'lmaydi.
-     */
-    future: {
-      v7_relativeSplatPath: true,
-      v7_fetcherPersist: true,
-      v7_normalizeFormMethod: true,
-      v7_partialHydration: true,
-      v7_skipActionErrorRevalidation: true,
-    },
+export const router = createBrowserRouter(routes, {
+  /*
+   * Har bir bog'cha o'z manzilida yashaydi: `/t/<slug>/dashboard`.
+   *
+   * `basename` sahifa yuklanganda BIR MARTA o'rnatiladi va marshrutlar
+   * uni bilmaydi — ular avvalgidek `/dashboard` deb yoziladi. Shu
+   * sababli subdomenga o'tish shu qator va `lib/tenantAddress.ts` bilan
+   * cheklanadi.
+   *
+   * Vendor konsoli (`/platform`) prefikssiz manzilda ochiladi, ya'ni u
+   * hech qachon bog'cha `basename` i ostiga tushmaydi — ikki tekislik
+   * URL darajasida ham ajralgan (ADR-10).
+   */
+  basename: basenameFor(currentSlug),
+
+  /*
+   * v7 xatti-harakatini HOZIRDAN yoqamiz.
+   *
+   * React Router bularsiz brauzer konsolida har safar sariq
+   * ogohlantirish chiqaradi. Bayroqlarni yoqish ikki foyda beradi:
+   * konsol tozalanadi va v7 ga o'tish paytida xatti-harakat allaqachon
+   * yangi bo'lgani uchun kutilmagan o'zgarish bo'lmaydi.
+   */
+  future: {
+    v7_relativeSplatPath: true,
+    v7_fetcherPersist: true,
+    v7_normalizeFormMethod: true,
+    v7_partialHydration: true,
+    v7_skipActionErrorRevalidation: true,
   },
-)
+})
