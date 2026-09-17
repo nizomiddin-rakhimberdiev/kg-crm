@@ -1,6 +1,6 @@
 # 07 — Radix Intelligence (Radix AI) — V1 Design Specification
 
-**Status:** Draft v2 — revised after architecture review 1 (2026-09-17); awaiting sign-off before the vertical slice · **ADR:** [ADR-14](./02_Software_Architecture.md)
+**Status:** v3 — reviews 1 and 2 applied (2026-09-17). **Ready for vertical-slice implementation** on founder sign-off · **ADR:** [ADR-14](./02_Software_Architecture.md)
 
 > **Data → Insight → Evidence → Recommendation → Action.**
 > Radix AI is not built to show that "there is AI". It is built so the director sees, every morning, the two or three things in the kindergarten that need attention — with the numbers that prove it and a button that takes them there.
@@ -208,7 +208,7 @@ An insight is identified by its **condition**, not by the day it was computed:
 condition identity = (organization_id, branch_id, type, subject_type, subject_id)
 ```
 
-- `payment_delay`: subject is the **branch** (`subject_type = branch`, `subject_id = NULL`) — one row says "in this branch, N children are more than 15 days late".
+- `payment_delay`: subject is the **branch** (`subject_type = branch`, `subject_id = branch_id` — never `NULL`, see §10) — one row says "in this branch, N children are more than 15 days late".
 - `attendance_drop`: subject is the **group** (`subject_type = group`, `subject_id = group_id`).
 
 There is **no `period_key`**. The first draft used the date (I-1) and the ISO week (I-2) as part of the key, which would have produced one row per day for a persisting condition — the exact "same fact five times" this design forbids. Review 1 caught it.
@@ -222,7 +222,7 @@ Uniqueness is enforced **only while the insight is open**, with a partial unique
             ▼                                       │
   engine ─▶ new ─▶ seen ─▶ resolved                 │
                     │                                │
-                    └────▶ dismissed                 │
+                    └────▶ dismissed  (suppresses the condition for 7 days)
             ▲                                       │
             │  engine (condition absent) ──▶ auto_resolved
             └───────────── open ────────────────────┘
@@ -233,7 +233,7 @@ Uniqueness is enforced **only while the insight is open**, with a partial unique
 | `new` | yes | Generated, nobody has opened it | engine |
 | `seen` | yes | "Why?" opened at least once | UI, on first expand |
 | `resolved` | no | The person says the problem is handled | user, explicit |
-| `dismissed` | no | The person saw it and chose not to act | user, explicit |
+| `dismissed` | no | The person saw it and chose not to act **for now** — sets `dismissed_until = now() + 7 days` | user, explicit |
 | `auto_resolved` | no | The condition disappeared from the data before anyone acted | engine |
 
 `resolved`, `dismissed` and `auto_resolved` are three **different facts** and are never merged:
@@ -241,20 +241,27 @@ Uniqueness is enforced **only while the insight is open**, with a partial unique
 - `dismissed / (resolved + dismissed)` — is the rule useful? (> 40 % → review the rule, §13)
 - `auto_resolved / all closed` — how often does the situation fix itself before the director reacts?
 
-The dashboard queries `status IN ('new', 'seen')` — and nothing else. A row whose condition vanished is `auto_resolved` and therefore gone from the card, which the first draft got wrong by leaving `status` untouched.
+The dashboard queries `status IN ('new', 'seen')` — and nothing else.
 
 ### 9.3 Nightly reconciliation (per condition identity)
 
-| Condition tonight | Open row exists? | Action |
-|---|---|---|
-| present | no | **create** `new` |
-| present | yes | **refresh** `evidence`, `severity`, `refreshed_at`; `status` unchanged (a `seen` row stays `seen`) |
-| absent | yes | **close**: `status = auto_resolved`, `auto_resolved_at = now()` |
-| absent | no | nothing |
+| Condition tonight | Open row? | Suppressed?¹ | Action |
+|---|---|---|---|
+| present | no | no | **create** `new` |
+| present | no | **yes** | **nothing** — the director said "not now"; not before the window ends |
+| present | yes | — | **refresh** `evidence`, `severity`, `refreshed_at`; `status` unchanged |
+| absent | yes | — | **close**: `status = auto_resolved`, `auto_resolved_at = now()` |
+| absent | no | **yes** | **end the episode**: set `dismissed_until = now()` on the suppressing row — the condition went away; if it comes back it is news again |
+| absent | no | no | nothing |
 
-A condition that disappears and later returns produces a **new row** — so history is preserved ("this branch has had three separate late-payment episodes since May") and the director is notified again, which is correct: it *is* news again.
+¹ *Suppressed* = a `dismissed` row exists for this condition identity with `dismissed_until > now()`.
 
-User actions on an open row (`resolve`, `dismiss`) close it; the engine never reopens a closed row. If the condition still holds the next night, a **new** row is created — the director asked to be told again by not fixing it. This is deliberate: `dismissed` means "not now", not "never".
+Consequences, spelled out (review 2 asked for exactly these):
+
+- **Day 1** condition → insight → dismissed. **Days 2–7** condition persists → **no new row**. **Day 8+** condition still persists → a **new** row (the director asked for a week, got a week).
+- Dismissed on day 1, condition **disappears** on day 3 → the suppression ends that night. Condition **returns** on day 5 → **new row immediately**: a new episode is new information, whatever the calendar says.
+- The engine **never reopens** a closed row of any status. History is rows, not state flips.
+- `resolved` has **no suppression**. If someone marks a condition resolved and it is still present the next night, a new row is created — the data disagrees with the claim, and the director should know. This is the deliberate asymmetry between "handled" and "not now".
 
 Rows are never deleted by the engine. Retention 180 days via the existing `purge_organization` path only.
 
@@ -270,7 +277,7 @@ Table `insight` — `BranchScopedModel` (so `organization_id` and `branch_id` ar
 | `severity` | `varchar(10)` | `warning` \| `critical` |
 | `status` | `varchar(14)` | `new` \| `seen` \| `resolved` \| `dismissed` \| `auto_resolved` |
 | `subject_type` | `varchar(20)` | `branch` \| `group` |
-| `subject_id` | UUID null | `group_id` for I-2; `NULL` for branch-level |
+| `subject_id` | UUID **NOT NULL** | `group_id` for I-2; **`= branch_id`** for branch-level insights (see "Why not NULL") |
 | `evidence` | `jsonb` | schema per type, §6 — ids and numbers only |
 | `evidence_version` | `smallint` | `1` |
 | `recommendation_key` | `varchar(60)` | content key, §12 |
@@ -278,15 +285,27 @@ Table `insight` — `BranchScopedModel` (so `organization_id` and `branch_id` ar
 | `generated_at` | timestamptz | first creation |
 | `refreshed_at` | timestamptz null | last in-place refresh |
 | `seen_at`, `resolved_at`, `dismissed_at`, `auto_resolved_at` | timestamptz null | exactly one of the last three is set on a closed row |
+| `dismissed_until` | timestamptz null | suppression window end (§9.3); set with `dismissed_at`; moved to `now()` when the episode ends |
 | `acted_by_id` | FK `accounts.User` null | who resolved/dismissed; `NULL` for `auto_resolved` |
 
-Constraints and indexes:
+**Constraints — verified, not assumed.** The SQL below was generated with Django 5.2.17's schema editor against this project's settings and inspected by hand (2026-09-17):
 
-- **Partial unique** `(branch_id, type, subject_type, COALESCE(subject_id, '00000000-…'))` **`WHERE status IN ('new','seen')`** — one open row per condition (§9.1). `COALESCE` because `NULL` never equals `NULL` in a unique index.
-- `CHECK (status IN (...))`, `CHECK (severity IN (...))`, `CHECK ((subject_type = 'branch') = (subject_id IS NULL))`.
-- `CHECK` that a closed row has exactly one closing timestamp; an open row has none.
-- Partial index `(organization_id, branch_id, severity) WHERE status IN ('new','seen')` — the dashboard query.
-- Index `(branch_id, type, generated_at DESC)` — history per condition.
+```sql
+CREATE UNIQUE INDEX "uq_insight_open_condition"
+  ON "insight" ("branch_id", "type", "subject_type", "subject_id")
+  WHERE "status" IN ('new', 'seen');
+
+ALTER TABLE "insight" ADD CONSTRAINT "ck_insight_branch_subject_is_branch"
+  CHECK ((("subject_id" = ("branch_id") AND "subject_type" = 'branch') OR "subject_type" = 'group'));
+```
+
+plus `CHECK (status IN (...))`, `CHECK (severity IN (...))`, `CHECK` that a closed row has exactly one closing timestamp and an open row has none, `CHECK (dismissed_until IS NULL OR status = 'dismissed')`.
+
+**Why `subject_id` is not NULL.** The first draft used `NULL` for branch-level subjects and proposed `COALESCE` or `NULLS NOT DISTINCT`. Verification found that **`NULLS NOT DISTINCT` requires PostgreSQL 15** — production runs 17, but the developer machines and `scripts/ci-local.sh` run **14**, where Django reports `supports_nulls_distinct_unique_constraints = False` and **silently emits no constraint at all**. Tests would pass locally with no database guarantee. Setting `subject_id = branch_id` for branch-level insights removes NULL from the key entirely; the plain partial unique index works on every Postgres this project runs, and the `CHECK` keeps the convention honest.
+
+Indexes: partial `(organization_id, branch_id, severity) WHERE status IN ('new','seen')` — the dashboard query; `(branch_id, type, generated_at DESC)` — history per condition; `(branch_id, type, subject_type, subject_id, dismissed_until) WHERE status = 'dismissed'` — the suppression lookup.
+
+**Concurrency.** Two generators for the same condition at once (a manual `generate_insights` during the nightly run) race on the unique index; the loser gets `IntegrityError` inside its savepoint and falls back to *refresh* — the same pattern `apps/platform/services_leads.py::create_lead` uses. The constraint is the guarantee; the application only decides what to do when it fires.
 
 **RLS.** `insight` is added to `OPERATIONAL_TABLES` in `apps/core/rls.py`, and the app's first migration applies the policy with `RunPython` exactly as `apps/platform/migrations/0002_lead.py` does. `python manage.py check_rls` must list 39 tables afterwards (38 today). Invariant 8 — non-negotiable.
 
@@ -325,10 +344,10 @@ The **daily briefing** is not stored. It is the dashboard card, rendered from `G
 
 | Check | Computation | Renders as |
 |---|---|---|
-| Attendance completeness today | On a working day (`WORKING_DAYS`): `groups_with_records_today / groups_with_active_enrollment` for the branch. A group counts as "recorded" if it has **at least one** `attendance_record` dated today. | 7/7 → *✓ Bugungi davomat to‘liq kiritilgan* · 4/7 → *⚠ Bugungi davomat 4/7 guruh uchun kiritilgan* · 0/7 → *⚠ Bugungi davomat hali kiritilmagan* · non-working day → check hidden |
+| Attendance completeness today | On a working day (`WORKING_DAYS`): `recorded / expected` where `expected` = children with an active `enrollment` in the branch and `recorded` = those with an `attendance_record` dated today. **Child level is exact** because `attendance_record` carries `UNIQUE (child, attendance_date)` (`uq_attendance_child_date`) and `mark_bulk` writes one row per child via `update_or_create` — one child, one day, one row, guaranteed by the database. | 105/105 → *✓ Bugungi davomat to‘liq kiritilgan* · 98/105 → *⚠ Bugungi davomat 93 % kiritilgan (98/105)* · 0/105 → *⚠ Bugungi davomat hali kiritilmagan* · non-working day or no active enrollment → check hidden |
 | Open insights | `count(status IN new, seen)` | *Bugun e’tibor talab qiladigan **3** ta holat bor* / *Bugun e’tibor talab qiladigan holat yo‘q* |
 
-The first draft used "any record today → ✓", which would show a green check when one group of seven had been filled — a false all-clear. The per-group ratio costs one `GROUP BY` and cannot lie.
+Two earlier drafts of this check were wrong in instructive ways: "any record today → ✓" (green with one group filled) and "groups with a record / groups" (green with one child per group filled). The child-level ratio is the only one the data model actually guarantees.
 
 ## 12. Content layer (UZ / RU)
 
@@ -385,10 +404,46 @@ Marketing may call all three "Radix AI". The landing page claim for V1 is exactl
 
 ## Appendix A — Implementation checklist (for the vertical slice)
 
-1. `apps/intelligence/` app, `insight` model + migration (RLS `RunPython`), `OPERATIONAL_TABLES` entry, `check_rls` → 39.
-2. `thresholds.py` (incl. `WORKING_DAYS`), `rules.py` (pure) + unit tests incl. boundary values (14/15/16 days; 9.9/10/10.1 points; `CRITICAL_MIN_SUBJECTS` floor).
-3. `selectors.py` (I-1 first), `services.py` reconcile (create / refresh / auto-resolve per §9.3), `tasks.py` + beat entry, `generate_insights` command.
+1. `apps/intelligence/` app, `insight` model + migration (constraints exactly as §10, RLS `RunPython`), `OPERATIONAL_TABLES` entry, `check_rls` → 39.
+2. `thresholds.py` (incl. `WORKING_DAYS`, `DISMISS_SUPPRESSION_DAYS = 7`), `rules.py` (pure) + unit tests incl. boundary values (14/15/16 days; 9.9/10/10.1 points; `CRITICAL_MIN_SUBJECTS` floor).
+3. `selectors.py` (I-1 first), `services.py` reconcile (create / refresh / auto-resolve / suppress / end-episode per §9.3), `tasks.py` + beat entry, `generate_insights` command.
 4. `InsightViewSet` + serializer + `test_write_gate_is_everywhere` green + cross-tenant `404` test.
-5. Frontend: `features/intelligence/` (api, content, `InsightCard`, `WhyPanel` with batched label lookup by id), briefing checks incl. attendance completeness ratio, dashboard placement, `DebtorsPage?overdue_days`.
-6. Run against Bahor: assert §13.1 including the two-day re-run and the pay-everything → `auto_resolved` case. Screenshot the card at 440 px and 1440 px.
+5. Frontend: `features/intelligence/` (api, content, `InsightCard`, `WhyPanel` with batched label lookup by id), briefing checks incl. child-level attendance completeness, dashboard placement, `DebtorsPage?overdue_days`.
+6. Run against Bahor: assert §13.1. Screenshot the card at 440 px and 1440 px.
 7. Docs: [03](./03_Database_Design.md) table list, [04](./04_Backend_API_Specification.md) endpoints, [06](./06_Development_Roadmap.md) sprint entry — in the same change.
+
+## Appendix B — Required tests (names are the contract)
+
+**Rules (pure, no DB)** — `tests/test_rules.py`
+- `test_payment_delay_boundary_14_15_16_days`
+- `test_payment_delay_severity_critical_by_days` / `_by_share` / `_min_subjects_floor`
+- `test_attendance_drop_boundary_9_9_10_0_10_1_points`
+- `test_attendance_drop_skips_group_below_min_baseline_days` / `_below_min_group_size`
+- `test_attendance_days_without_records_are_not_absent`
+
+**Reconciliation and lifecycle** — `tests/test_services.py`
+- `test_same_branch_same_type_cannot_have_two_open_rows` — **asserts `IntegrityError` from the database**, not application logic
+- `test_different_branches_each_get_one_open_row`
+- `test_rerun_same_day_refreshes_not_duplicates` (row count unchanged, `refreshed_at` advances)
+- `test_condition_absent_closes_open_row_as_auto_resolved`
+- `test_condition_returns_after_auto_resolved_creates_new_row`
+- `test_dismissed_condition_is_suppressed_for_7_days` (days 2–7: no row)
+- `test_dismissed_condition_reappears_after_window` (day 8: new row)
+- `test_dismissed_then_condition_absent_ends_episode` (`dismissed_until` moved to now)
+- `test_dismissed_then_absent_then_present_creates_new_row_inside_window`
+- `test_resolved_has_no_suppression`
+- `test_engine_never_reopens_closed_rows`
+- `test_concurrent_generation_yields_one_row` (two threads, savepoint fallback → refresh)
+
+**Briefing checks** — `tests/test_briefing.py`
+- `test_completeness_fully_entered` / `_partially_entered` / `_zero_entered`
+- `test_completeness_hidden_on_non_working_day` / `_hidden_without_active_enrollment`
+
+**API** — `tests/test_api.py`
+- `test_list_requires_dashboard_read`; `test_status_change_requires_dashboard_update`
+- `test_cross_tenant_insight_is_404_not_403`
+- `test_seen_is_set_once`; `test_resolve_and_dismiss_write_audit_log`
+- `test_write_gate_is_everywhere` stays green (registry includes `insights`)
+
+**Acceptance (Bahor, live data)** — `tests/test_acceptance_bahor.py` (marked `slow`, run via the management command against the demo database)
+- every row of §13.1
