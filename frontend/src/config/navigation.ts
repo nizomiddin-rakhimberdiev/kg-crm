@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { PermissionCode } from '@/lib/rbac/useCan'
+import { env } from '@/config/env'
 
 export interface NavItem {
   label: string
@@ -34,7 +35,7 @@ export interface NavItem {
  * bilan kirilsa ham backend rad etadi. Yashirish shunchaki ishlamaydigan
  * tugmani ko'rsatmaslik uchun.
  */
-export const navItems: NavItem[] = [
+const allNavItems: NavItem[] = [
   { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard, permission: 'dashboard.read' },
   { label: 'Bolalar', to: '/children', icon: Users, permission: 'children.read' },
   { label: 'Guruhlar', to: '/groups', icon: Users2, permission: 'children.read' },
@@ -52,3 +53,16 @@ export const navItems: NavItem[] = [
   { label: 'Audit jurnali', to: '/audit', icon: ScrollText, permission: 'audit.read' },
   { label: 'Sozlamalar', to: '/settings', icon: Settings, permission: 'settings.read' },
 ]
+
+/**
+ * Standalone nusxada ko'rinmaydigan punktlar (docs/02 ADR-13).
+ *
+ * Bu — tozalik, himoya emas: backend bu yo'llarni standalone'da
+ * umuman marshrutlamaydi (`api/v1/router.py`), ya'ni menyu qolib
+ * ketganda ham sahifa bo'sh javob olardi.
+ */
+const SAAS_ONLY_ROUTES = new Set(['/billing'])
+
+export const navItems: NavItem[] = env.isStandalone
+  ? allNavItems.filter((item) => !SAAS_ONLY_ROUTES.has(item.to))
+  : allNavItems

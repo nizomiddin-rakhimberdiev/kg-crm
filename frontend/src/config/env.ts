@@ -14,12 +14,27 @@ const required = (key: string, value: string | undefined, fallback?: string): st
   return resolved
 }
 
+/**
+ * Deploy rejimi — backenddagi `apps/core/deployment.py` bilan JUFT
+ * (docs/02 ADR-13). Ikkalasi bir xil `.env` dan oziqlanishi shart:
+ * frontend "obuna yo'q" deb ko'rsatib, backend uni talab qilsa,
+ * foydalanuvchi sababi ko'rinmaydigan `402` ga urilardi.
+ *
+ * Build VAQTIDA yoziladi (Vite `import.meta.env`), runtime'da emas —
+ * shuning uchun rejim o'zgarsa SPA qayta yig'ilishi kerak.
+ */
+const deploymentMode =
+  import.meta.env.VITE_DEPLOYMENT_MODE === 'standalone' ? 'standalone' : 'saas'
+
 export const env = {
   apiBaseUrl: required(
     'VITE_API_BASE_URL',
     import.meta.env.VITE_API_BASE_URL,
     'http://127.0.0.1:8000/api/v1',
   ),
+  deploymentMode,
+  /** Bitta bog'cha uchun alohida o'rnatilgan nusxa (ADR-13). */
+  isStandalone: deploymentMode === 'standalone',
   // Public saytdan CRM'ga o'tish bitta joyda sozlanadi. Build paytida
   // yoziladi; productionda `https://app.radix-crm.uz` bo'ladi.
   appUrl: required('VITE_APP_URL', import.meta.env.VITE_APP_URL, window.location.origin),

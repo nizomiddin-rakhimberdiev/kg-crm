@@ -96,14 +96,27 @@ ok "konteynerlar ishga tushdi"
 # --- 8. Health ---
 step "Tiriklik tekshiruvi"
 PORT="${HTTP_PORT:-80}"
+# nginx `server_name` sifatida $DOMAIN ni kutadi, va Django
+# ALLOWED_HOSTS ham xuddi shu qiymatga cheklangan (to'g'ri production
+# konfiguratsiyasi — "localhost" ochiq qoldirilmagan). Loopback orqali
+# so'ralganda curl Host sarlavhasini URL'dagi "localhost"dan oladi, va
+# bu ALLOWED_HOSTS bilan mos kelmaydi — Django `400 DisallowedHost`
+# qaytaradi, ilova esa aslida sog'lom bo'lsa ham. Sarlavha aniq
+# ko'rsatilishi shart.
+HEALTH_HOST="${DOMAIN:-localhost}"
+# `X-Forwarded-Proto: https`: TLS yoqilgan bo'lsa (`DJANGO_SECURE_SSL_REDIRECT=True`,
+# to'g'ri production holati), bu sarlavhasiz so'rov Django'dan `301`
+# oladi — nginx haqiqiy so'rovlarda qo'yadigan sarlavha shu, health
+# tekshiruvi ham xuddi shunday so'rashi kerak (compose.prod.yaml dagi
+# web healthcheck'dagi bilan bir xil sabab).
 for attempt in $(seq 1 30); do
     # `-f` bilan cheklanib bo'lmaydi: u `301` ni XATO deb hisoblamaydi,
     # ya'ni "HTTPS'ga haydaldi" javobi ham muvaffaqiyat bo'lib ko'rinardi.
     # Shuning uchun ham kod, ham TANA tekshiriladi.
-    BODY=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:${PORT}/api/v1/health" || true)
-    if [ "$BODY" = "200" ] && curl -s "http://localhost:${PORT}/api/v1/health" | grep -q '"status":"ok"'; then
+    BODY=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: ${HEALTH_HOST}" -H "X-Forwarded-Proto: https" "http://localhost:${PORT}/api/v1/health" || true)
+    if [ "$BODY" = "200" ] && curl -s -H "Host: ${HEALTH_HOST}" -H "X-Forwarded-Proto: https" "http://localhost:${PORT}/api/v1/health" | grep -q '"status":"ok"'; then
         ok "health javob berdi ($((attempt * 2))s)"
-        curl -s "http://localhost:${PORT}/api/v1/health"; echo
+        curl -s -H "Host: ${HEALTH_HOST}" -H "X-Forwarded-Proto: https" "http://localhost:${PORT}/api/v1/health"; echo
         printf '\n%sDEPLOY TUGADI%s\n' "$GREEN$BOLD" "$OFF"
         printf '%s  TLS uchun: ./scripts/tls-setup.sh%s\n' "$DIM" "$OFF"
         exit 0

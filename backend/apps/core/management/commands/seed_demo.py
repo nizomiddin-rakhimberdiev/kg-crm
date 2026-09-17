@@ -94,10 +94,13 @@ ONA_ISMLAR = ["Nodira", "Dilfuza", "Zulfiya", "Gulnora", "Mavluda", "Shahnoza", 
 OTA_ISMLAR = ["Rustam", "Bahodir", "Farrux", "Ulug'bek", "Sanjar", "Alisher", "Nodir"]
 
 GURUHLAR = [
-    ("Quyoshcha", 3, 4, 22),
-    ("Kamalak", 4, 5, 24),
-    ("Yulduzcha", 5, 6, 22),
-    ("Bilimdon", 6, 7, 20),
+    ("Chaqaloq", 2, 3, 16),
+    ("Quyoshcha", 3, 4, 18),
+    ("Kamalak", 3, 4, 18),
+    ("Yulduzcha", 4, 5, 18),
+    ("Gulchehra", 4, 5, 16),
+    ("Bilimdon", 5, 6, 18),
+    ("Maktabgacha", 6, 7, 16),
 ]
 
 TARIFLAR = [
@@ -278,7 +281,7 @@ class Command(BaseCommand):
         tariffs = self._tariffs(organization, branch)
         children = self._children(organization, branch, groups, tariffs, child_count)
         self._finance(children, months, owner)
-        self._attendance(organization, branch, groups, owner)
+        self._attendance(organization, branch, groups, owner, months)
         employees = self._staff(organization, branch)
         self._payroll(organization, branch, owner, months, employees)
         self._inventory(organization, branch)
@@ -341,11 +344,22 @@ class Command(BaseCommand):
         today = timezone.localdate()
         children = []
 
+        # Guruh bandligi XOTIRADA hisoblanadi.
+        #
+        # `group.enrolled_count` — bazadagi kesh ustuni, va `enroll_child`
+        # uni bazada yangilaydi. Lekin qo'limizdagi Python obyekti
+        # yangilanmaydi: u seed boshida bir marta o'qilgan. Shu sababli
+        # sikl to'lib bo'lgan guruhni ham "bo'sh" deb ko'rib, unga yana
+        # yozishga urinardi va `enroll_child` "guruh to'lgan" deb
+        # yiqilardi. Kam bolada bu yuzaga chiqmasdi — sig'im hech qachon
+        # to'lmasdi — va aynan shuning uchun uzoq vaqt sezilmay qoldi.
+        capacity_left = {group.id: group.capacity - group.enrolled_count for group in groups}
+
         for _ in range(count):
             is_boy = random.random() < 0.52
             last_name = random.choice(FAMILIYALAR)
             first_name = random.choice(O_ISMLAR if is_boy else Q_ISMLAR)
-            age_years = random.randint(3, 6)
+            age_years = random.randint(2, 6)
             birth = today - timedelta(days=age_years * 365 + random.randint(0, 300))
 
             child = Child.objects.create(
@@ -376,9 +390,17 @@ class Command(BaseCommand):
 
             # Guruhga yoshiga qarab — sig'im to'lgan bo'lsa keyingisiga.
             for group in sorted(groups, key=lambda g: abs((g.age_min or 4) - age_years)):
-                if group.enrolled_count < group.capacity:
+                if capacity_left[group.id] > 0:
                     enroll_child(child=child, group=group)
+                    capacity_left[group.id] -= 1
                     break
+            else:
+                # Guruhsiz bola davomatga ham, guruh hisobotiga ham
+                # tushmaydi — ya'ni demo jimgina chala bo'lardi.
+                raise CommandError(
+                    f"Guruhlar sig'imi yetmadi: {count} bola so'ralgan, jami sig'im "
+                    f"{sum(g.capacity for g in groups)}. `GURUHLAR` ro'yxatini kengaytiring."
+                )
 
             children.append(child)
 
@@ -395,6 +417,15 @@ class Command(BaseCommand):
         vaqtida to'laydi, bir nechtasi surunkali qarzdor. Tasodifiy
         sochilgan qarz "hamma biroz qarzdor" degan ishonarsiz manzara
         berardi.
+
+        Qarz **CHEGARALANGAN**: qarzdor oila faqat eng so'nggi yopiq oyda
+        to'lamasligi mumkin, undan oldingilari yopilgan. Avval har oy
+        mustaqil ehtimol bilan hisoblanardi va 6 oylik oynada bu ba'zi
+        bolalarga 4-5 oy ketma-ket to'lovsiz qolish imkonini berardi —
+        natijada demoda 8 mln so'mlik, ya'ni deyarli yarim yillik qarz
+        paydo bo'ldi. Haqiqiy bog'chada bunday oila allaqachon
+        ogohlantirilgan yoki chiqib ketgan bo'lardi, ya'ni raqam
+        ishonchsiz ko'rinardi.
         """
         from apps.finance.services import issue_invoice, record_payment
 
@@ -425,10 +456,13 @@ class Command(BaseCommand):
                     continue
                 invoices += 1
 
-                if index in chronic:
-                    if random.random() >= 0.25:  # goho qisman to'laydi
+                # `back == 1` — eng so'nggi YOPIQ oy. Qarzdor oilaning
+                # qarzi faqat shu yerdan boshlanadi, ya'ni eng katta
+                # qarz = bitta yopiq oy + hali yig'ilayotgan joriy oy.
+                if index in chronic and not is_current and back == 1:
+                    if random.random() >= 0.3:
                         continue
-                    share = Decimal(str(round(random.uniform(0.2, 0.5), 2)))
+                    share = Decimal(str(round(random.uniform(0.2, 0.6), 2)))
                 else:
                     roll = random.random()
                     # Eski oylar deyarli yopilgan; joriy oy hali yig'ilmoqda.
@@ -472,18 +506,27 @@ class Command(BaseCommand):
 
         self.stdout.write(f"  hisob-fakturalar: {invoices}, to'lovlar: {payments}")
 
-    def _attendance(self, organization: Any, branch: Any, groups: list[Any], owner: Any) -> None:
-        """Oxirgi 20 ish kuni davomati."""
+    def _attendance(
+        self, organization: Any, branch: Any, groups: list[Any], owner: Any, months: int
+    ) -> None:
+        """
+        Moliya bilan BIR XIL oynadagi ish kunlari davomati.
+
+        Avval qat'iy 20 kun edi va bu hisobotlarda yarim manzara
+        berardi: "oylik davomat" grafigi 6 oylik hisob-faktura yonida
+        bitta ustundan iborat bo'lib chiqardi. Oyna endi `--months`
+        bilan bir xil.
+        """
         from apps.attendance.services import mark_bulk
         from apps.children.models import Enrollment, EnrollmentState
 
         today = timezone.localdate()
         days: list[date] = []
-        cursor = today
-        while len(days) < 20:
+        cursor = _month_start(today, months - 1)
+        while cursor <= today:
             if cursor.weekday() < 5:  # dam olish kunlarisiz
                 days.append(cursor)
-            cursor -= timedelta(days=1)
+            cursor += timedelta(days=1)
 
         marked = 0
         for group in groups:

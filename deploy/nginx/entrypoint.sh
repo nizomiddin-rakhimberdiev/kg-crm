@@ -21,11 +21,24 @@ rm -f /etc/nginx/conf.d/default.conf
 
 export DOMAIN="${DOMAIN:-_}"
 
+# `www.<domen>` ham xizmat ko'rsatilsin — shu bilan birga bo'lishi
+# SHART: `DJANGO_ALLOWED_HOSTS` allaqachon ikkalasini ham kutadi
+# (.env.production.example), va nginx faqat bittasini bilsa, www
+# orqali kelgan so'rov "no server_name match" bilan qaytardi.
+#
+# `DOMAIN=_` (haqiqiy domensiz lokal sinov) da www qo'shilmaydi —
+# "www._" ma'nosiz nom bo'lardi.
+if [ "$DOMAIN" != "_" ]; then
+    export WWW_DOMAIN="www.${DOMAIN}"
+else
+    export WWW_DOMAIN="_"
+fi
+
 # shellcheck disable=SC2016  # envsubst AYNAN literal ${DOMAIN} ni kutadi
 if [ -s "$CERT" ] && [ -s "$KEY" ]; then
-    echo "[kg-crm] sertifikat topildi → HTTPS rejim ($DOMAIN)"
-    envsubst '${DOMAIN}' < /etc/nginx/kg-templates/tls.conf > "$OUT"
+    echo "[kg-crm] sertifikat topildi → HTTPS rejim ($DOMAIN, $WWW_DOMAIN)"
+    envsubst '${DOMAIN} ${WWW_DOMAIN}' < /etc/nginx/kg-templates/tls.conf > "$OUT"
 else
     echo "[kg-crm] sertifikat yo'q → HTTP rejim. TLS uchun: scripts/tls-setup.sh"
-    envsubst '${DOMAIN}' < /etc/nginx/kg-templates/http-only.conf > "$OUT"
+    envsubst '${DOMAIN} ${WWW_DOMAIN}' < /etc/nginx/kg-templates/http-only.conf > "$OUT"
 fi

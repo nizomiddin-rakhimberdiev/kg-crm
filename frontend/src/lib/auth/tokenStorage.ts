@@ -19,10 +19,21 @@
  */
 
 import { currentSlug } from '@/lib/tenantAddress'
+import { env } from '@/config/env'
 
 const BASE_KEY = 'kg_crm_refresh'
 
-const keyFor = (slug: string | null): string => (slug ? `${BASE_KEY}:${slug}` : BASE_KEY)
+/**
+ * Standalone o'rnatmada kalit HAR DOIM bitta (ADR-13).
+ *
+ * U yerda bog'cha bitta va manzilda slug yo'q, ya'ni `currentSlug`
+ * har doim `null`. Kirish paytida esa token tashkilot slug'i bilan
+ * yozilardi (`kg_crm_refresh:bahor-bogchasi`), o'qishda esa slug'siz
+ * kalit so'ralardi (`kg_crm_refresh`) — ikki xil kalit, va sessiya
+ * sahifa yangilanishidan omon chiqmasdi.
+ */
+const keyFor = (slug: string | null): string =>
+  slug && !env.isStandalone ? `${BASE_KEY}:${slug}` : BASE_KEY
 
 let accessToken: string | null = null
 

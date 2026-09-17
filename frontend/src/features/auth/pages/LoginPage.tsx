@@ -81,7 +81,10 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 text-white">
             <Building2 className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">KG-CRM</h1>
+          {/* Mijozga ko'rinadigan yuza — ommaviy brend nomi. Ichki
+              nomlar (repo, Docker, DB rollari) ataylab `kg-crm` bo'lib
+              qoladi; bu yerda esa mijoz ko'radigan nom turishi kerak. */}
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Radix CRM</h1>
           <p className="mt-1 text-sm text-slate-500">Bog'cha boshqaruv tizimi</p>
         </div>
 

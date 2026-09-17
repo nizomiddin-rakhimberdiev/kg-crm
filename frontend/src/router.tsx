@@ -6,6 +6,7 @@ import { AppLayout } from './components/layout/AppLayout'
 import { PermissionRoute, ProtectedRoute, PublicOnlyRoute } from './app/routes/ProtectedRoute'
 import LoginPage from './features/auth/pages/LoginPage'
 import { basenameFor, currentSlug } from './lib/tenantAddress'
+import { env } from './config/env'
 // Nomlangan eksportlar uchun `lazy()` modulni default eksportga
 // map qilishni talab qiladi. Bu uchtasi ham public saytga tegishli
 // va CRM foydalanuvchisiga hech qachon kerak bo'lmaydi — ular
@@ -63,60 +64,79 @@ const SettingsPage = lazy(() => import('./features/settings/pages/SettingsPage')
  * foydalanuvchini kerakli sahifaga qaytaradi. Haqiqiy himoya backend'da:
  * ruxsatsiz so'rov `403`, begona tashkilotniki `404` oladi.
  */
-export const router = createBrowserRouter([
-  // Public surface. It intentionally sits outside the authenticated CRM
-  // tree: `radix-crm.uz` is a product website, `app.radix-crm.uz` is
-  // the working back-office.
-  {
-    // `lazy()` bilan ishlatilgan komponent ustida Suspense chegarasi
-    // MAJBURIY — usiz komponent promise hal bo'lguncha React
-    // xato ko'taradi. AppLayout va PlatformLayout o'z ichida shu
-    // chegarani beradi; bu daraxt esa ikkalasidan ham TASHQARIDA
-    // yashaydi, shuning uchun o'ziniki kerak.
-    element: (
-      <Suspense fallback={<div className="grid min-h-screen place-items-center text-sm text-slate-400">Yuklanmoqda…</div>}>
-        <Outlet />
-      </Suspense>
-    ),
-    children: [
-      { path: '/', element: <MarketingEntry /> },
-      { path: '/uz', element: <MarketingPage locale="uz" /> },
-      { path: '/ru', element: <MarketingPage locale="ru" /> },
-      { path: '/uz/privacy', element: <LegalPage locale="uz" page="privacy" /> },
-      { path: '/ru/privacy', element: <LegalPage locale="ru" page="privacy" /> },
-      { path: '/uz/terms', element: <LegalPage locale="uz" page="terms" /> },
-      { path: '/ru/terms', element: <LegalPage locale="ru" page="terms" /> },
-    ],
-  },
-  // --- Vendor tekisligi (ADR-10) ---
-  //
-  // Mijoz daraxtidan BUTUNLAY alohida: o'z provayderi, o'z tokeni, o'z
-  // qobig'i. Ular kesishmaydi — `AuthProvider` bu yerda umuman
-  // ishlamaydi va `PlatformAuthProvider` mijoz sahifalarida.
-  {
-    path: '/platform',
-    element: (
-      <PlatformAuthProvider>
-        <Outlet />
-      </PlatformAuthProvider>
-    ),
-    children: [
-      { path: 'login', element: <PlatformLoginPage /> },
+/*
+ * Faqat SaaS nusxasiga tegishli marshrutlar (docs/02 ADR-13).
+ *
+ * Standalone — bitta bog'cha uchun, uning o'z serverida sotilgan nusxa:
+ * u yerda sotuv sayti ham, vendor konsoli ham, obuna sahifasi ham
+ * ma'noga ega emas. Ular shunchaki menyudan yashirilmaydi, balki
+ * MARSHRUTGA ham qo'shilmaydi — backend bu yo'llarni o'sha rejimda
+ * umuman bermaydi (`api/v1/router.py`), ya'ni qolib ketgan sahifa
+ * bo'sh ekran va tushunarsiz xato ko'rsatardi.
+ *
+ * Standalone'da ildiz (`/`) to'g'ridan-to'g'ri ilovaga kiradi:
+ * mijozning domeni CRM'ning o'zi, uning reklama sahifasi emas.
+ */
+const saasOnlyRoutes = env.isStandalone
+  ? []
+  : [
+      // Public surface. It intentionally sits outside the authenticated CRM
+      // tree: `radix-crm.uz` is a product website, `app.radix-crm.uz` is
+      // the working back-office.
       {
-        element: <PlatformLayout />,
+        // `lazy()` bilan ishlatilgan komponent ustida Suspense chegarasi
+        // MAJBURIY — usiz komponent promise hal bo'lguncha React
+        // xato ko'taradi. AppLayout va PlatformLayout o'z ichida shu
+        // chegarani beradi; bu daraxt esa ikkalasidan ham TASHQARIDA
+        // yashaydi, shuning uchun o'ziniki kerak.
+        element: (
+          <Suspense fallback={<div className="grid min-h-screen place-items-center text-sm text-slate-400">Yuklanmoqda…</div>}>
+            <Outlet />
+          </Suspense>
+        ),
         children: [
-          { index: true, element: <PlatformDashboardPage /> },
-          { path: 'organizations', element: <PlatformOrganizationsPage /> },
-          { path: 'organizations/:organizationId', element: <PlatformOrganizationPage /> },
-          { path: 'invoices', element: <PlatformInvoicesPage /> },
-          { path: 'grants', element: <PlatformGrantsPage /> },
+          { path: '/', element: <MarketingEntry /> },
+          { path: '/uz', element: <MarketingPage locale="uz" /> },
+          { path: '/ru', element: <MarketingPage locale="ru" /> },
+          { path: '/uz/privacy', element: <LegalPage locale="uz" page="privacy" /> },
+          { path: '/ru/privacy', element: <LegalPage locale="ru" page="privacy" /> },
+          { path: '/uz/terms', element: <LegalPage locale="uz" page="terms" /> },
+          { path: '/ru/terms', element: <LegalPage locale="ru" page="terms" /> },
         ],
       },
-    ],
-  },
-  // Vendor xodimining kirish nuqtasi — `PublicOnlyRoute` dan TASHQARIDA:
-  // u sessiyani o'zi ochadi va ochilgach `/dashboard` ga o'tadi (ADR-10).
-  { path: '/support-entry', element: <SupportEntryPage /> },
+      // --- Vendor tekisligi (ADR-10) ---
+      //
+      // Mijoz daraxtidan BUTUNLAY alohida: o'z provayderi, o'z tokeni, o'z
+      // qobig'i. Ular kesishmaydi — `AuthProvider` bu yerda umuman
+      // ishlamaydi va `PlatformAuthProvider` mijoz sahifalarida.
+      {
+        path: '/platform',
+        element: (
+          <PlatformAuthProvider>
+            <Outlet />
+          </PlatformAuthProvider>
+        ),
+        children: [
+          { path: 'login', element: <PlatformLoginPage /> },
+          {
+            element: <PlatformLayout />,
+            children: [
+              { index: true, element: <PlatformDashboardPage /> },
+              { path: 'organizations', element: <PlatformOrganizationsPage /> },
+              { path: 'organizations/:organizationId', element: <PlatformOrganizationPage /> },
+              { path: 'invoices', element: <PlatformInvoicesPage /> },
+              { path: 'grants', element: <PlatformGrantsPage /> },
+            ],
+          },
+        ],
+      },
+      // Vendor xodimining kirish nuqtasi — `PublicOnlyRoute` dan TASHQARIDA:
+      // u sessiyani o'zi ochadi va ochilgach `/dashboard` ga o'tadi (ADR-10).
+      { path: '/support-entry', element: <SupportEntryPage /> },
+    ]
+
+export const router = createBrowserRouter([
+  ...saasOnlyRoutes,
   {
     element: <PublicOnlyRoute />,
     children: [
@@ -182,10 +202,15 @@ export const router = createBrowserRouter([
             element: <PermissionRoute permission="notifications.read" />,
             children: [{ path: 'notifications', element: <NotificationsPage /> }],
           },
-          {
-            element: <PermissionRoute permission="billing.read" />,
-            children: [{ path: 'billing', element: <BillingPage /> }],
-          },
+          // Obuna sahifasi — standalone'da umuman yo'q (ADR-13).
+          ...(env.isStandalone
+            ? []
+            : [
+                {
+                  element: <PermissionRoute permission="billing.read" />,
+                  children: [{ path: 'billing', element: <BillingPage /> }],
+                },
+              ]),
           {
             element: <PermissionRoute permission="audit.read" />,
             children: [{ path: 'audit', element: <AuditPage /> }],

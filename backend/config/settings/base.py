@@ -10,6 +10,7 @@ from pathlib import Path
 
 import environ
 from celery.schedules import crontab
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -363,6 +364,21 @@ CORS_ALLOW_CREDENTIALS = True
 # `path` qoladi.
 PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", default="http://localhost:5173")
 TENANT_URL_STYLE = env("TENANT_URL_STYLE", default="path")
+
+# --- Deploy rejimi (docs/02 ADR-13) ---
+#
+# `saas`       — radix-crm.uz dagi ko'p ijarachili xizmat (obuna bilan).
+# `standalone` — bitta bog'cha uchun, uning O'Z serverida, bir martalik
+#                to'lov evaziga: obuna, tarif va sinov muddati yo'q.
+#
+# Noto'g'ri yozilgan qiymat JIMGINA `saas` ga tushmasligi kerak: mijoz
+# serverida obuna darvozasi kutilmaganda yonib, butun bog'chani yozishdan
+# to'xtatardi — va sabab `.env` dagi bitta harf xatosi bo'lardi.
+DEPLOYMENT_MODE = env("DEPLOYMENT_MODE", default="saas")
+if DEPLOYMENT_MODE not in ("saas", "standalone"):
+    raise ImproperlyConfigured(
+        f"DEPLOYMENT_MODE noto'g'ri: {DEPLOYMENT_MODE!r}. 'saas' yoki 'standalone' bo'lishi kerak."
+    )
 
 # --- SaaS / obuna (docs/01 §4) ---
 TRIAL_DAYS = env.int("TRIAL_DAYS", default=15)

@@ -25,6 +25,7 @@ from apps.accounts.constants import (
 )
 from apps.accounts.models import Permission, RefreshToken, Role, RolePermission, User
 from apps.branches.models import Branch
+from apps.core.deployment import is_saas
 from apps.core.exceptions import BusinessRuleViolation
 from apps.core.tenancy import organization_context, platform_context
 from apps.organizations.models import Organization
@@ -177,9 +178,14 @@ def register_organization(
         )
 
         # 15 kunlik sinov — karta so'ralmaydi (docs/01 §4.4).
-        from apps.subscriptions.services import start_trial
+        #
+        # Standalone nusxada obuna ochilmaydi (ADR-13): tizim bir marta
+        # sotilgan, sinov muddati ham, hisob-faktura ham yo'q. Obunasiz
+        # tashkilotni `SubscriptionWriteGate` allaqachon ochiq qoldiradi.
+        if is_saas():
+            from apps.subscriptions.services import start_trial
 
-        start_trial(organization=organization)
+            start_trial(organization=organization)
 
     return RegistrationResult(organization=organization, branch=branch, owner=owner)
 

@@ -51,7 +51,7 @@ export default function PlatformLoginPage() {
           <div className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-brand-600">
             <ShieldCheck className="h-6 w-6 text-white" />
           </div>
-          <h1 className="mt-4 text-xl font-bold text-white">KG-CRM — Platforma konsoli</h1>
+          <h1 className="mt-4 text-xl font-bold text-white">Radix CRM — Platforma konsoli</h1>
           <p className="mt-1 text-sm text-slate-400">
             Faqat vendor xodimlari uchun. Bog'cha hisobingiz bu yerda ishlamaydi.
           </p>

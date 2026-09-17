@@ -11,6 +11,7 @@ from apps.attendance.views import AttendanceViewSet
 from apps.audit.views import AuditLogViewSet
 from apps.branches.views import BranchViewSet
 from apps.children.views import ChildViewSet, GroupViewSet, GuardianViewSet
+from apps.core.deployment import is_saas
 from apps.expenses.views import ExpenseCategoryViewSet, ExpenseViewSet
 from apps.finance.views import (
     DebtorViewSet,
@@ -69,7 +70,12 @@ router.register("settings", SettingsViewSet, basename="setting")
 router.register("dashboard", DashboardViewSet, basename="dashboard")
 router.register("reports", ReportViewSet, basename="report")
 router.register("audit-logs", AuditLogViewSet, basename="audit-log")
-router.register("billing", BillingViewSet, basename="billing")
-router.register("platform", PlatformConsoleViewSet, basename="platform")
+
+# Obuna va vendor konsoli — FAQAT SaaS nusxasida (ADR-13). Standalone'da
+# obuna ob'ekti umuman yaratilmaydi, ya'ni bu yo'llar bo'sh yoki chalkash
+# javob berardi.
+if is_saas():
+    router.register("billing", BillingViewSet, basename="billing")
+    router.register("platform", PlatformConsoleViewSet, basename="platform")
 
 __all__ = ["router"]

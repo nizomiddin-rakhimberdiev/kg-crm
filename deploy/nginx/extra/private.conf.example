@@ -1,0 +1,20 @@
+# `/private` — standalone demo nusxasiga proxy (ADR-13).
+#
+# radix-crm.uz serverida shu fayl `private.conf` nomi bilan yotadi.
+# U `compose.private-demo.yaml` steki ko'tarilgan bo'lishini talab
+# qiladi; stek yo'q bo'lsa `/private` `502` qaytaradi va saytning
+# qolgan qismi bundan ta'sirlanmaydi.
+
+set $kg_private private-nginx:80;
+
+location /private {
+    proxy_pass http://$kg_private;
+    proxy_http_version 1.1;
+    proxy_set_header Host              $host;
+    proxy_set_header X-Real-IP         $remote_addr;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+    # Demo nginx bundan HTTPS ekanini biladi va Django'ga uzatadi —
+    # aks holda cheksiz HTTPS redirect aylanasi hosil bo'lardi.
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 60s;
+}

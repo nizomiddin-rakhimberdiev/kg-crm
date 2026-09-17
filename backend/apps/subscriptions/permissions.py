@@ -18,6 +18,7 @@ from typing import Any
 
 from rest_framework import permissions
 
+from apps.core.deployment import is_standalone
 from apps.core.typing import request_user
 
 __all__ = ["SubscriptionWriteGate", "SAFE_WRITE_PATHS"]
@@ -47,6 +48,14 @@ class SubscriptionWriteGate(permissions.BasePermission):
     message = "Obuna to'xtatilgan. Ma'lumotlaringiz saqlanib turibdi — hisobni to'lang."
 
     def has_permission(self, request: Any, view: Any) -> bool:
+        # Standalone nusxada obuna tushunchasi umuman yo'q: mijoz
+        # tizimni bir marta sotib olgan (ADR-13). Darvoza viewset'larda
+        # QOLADI — `test_write_gate_is_everywhere` uni talab qiladi va
+        # bir xil kod ikkala rejimda ishlaydi — lekin bu yerda darhol
+        # ochiladi.
+        if is_standalone():
+            return True
+
         if request.method in permissions.SAFE_METHODS:
             return True
 

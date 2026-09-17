@@ -10,6 +10,8 @@ This file is loaded automatically every session. It tells Claude (and any develo
 
 **Commercial model** ([01 §4](./docs/01_Project_Vision.md)): each customer is an **organization** with unlimited branches under **one subscription**, priced per enrolled child — base **400 000 UZS/month including 50 children, +50 000 per additional 10** (revised 2026-09-16, ADR-12 — supersedes the original 500 000 / +80 000 launch figures, which stay correct only for invoices billed before 2026-09-14). Payment terms: monthly (0 %), semi-annual (−15 %), annual (−25 %). 15-day risk-free trial; on conversion the first paid month is dated from the trial start, disclosed at signup.
 
+**Two delivery models, one codebase** ([01 §4.7](./docs/01_Project_Vision.md), ADR-13): the hosted subscription above, **or** a one-off **standalone licence** deployed on the customer's own server. `DEPLOYMENT_MODE=standalone` switches off the commercial machinery — no subscription, no trial, no write gate, no billing screens, no vendor console, and the app sits at the install root instead of `/t/<slug>`. **Never fork the repo to build a single-tenant variant**; the flag exists so one fix reaches both. The flag is a commercial boundary only — tenant isolation (invariants 2 and 8) is identical in both modes.
+
 ---
 
 ## THE GOLDEN RULE

@@ -34,6 +34,8 @@ from urllib.parse import urlsplit, urlunsplit
 
 from django.conf import settings
 
+from apps.core.deployment import is_standalone
+
 __all__ = ["tenant_base_url", "tenant_login_url", "TENANT_PATH_PREFIX"]
 
 TENANT_PATH_PREFIX = "t"
@@ -48,6 +50,12 @@ def tenant_base_url(slug: str) -> str:
     """
     base = str(settings.PUBLIC_BASE_URL).rstrip("/")
     style = str(settings.TENANT_URL_STYLE)
+
+    # Standalone nusxada bog'cha bitta va ilova ildizda yashaydi
+    # (ADR-13): `/t/<slug>` prefiksi hech narsani ajratmaydi, faqat
+    # mijozning o'z domenidagi havolasini uzaytirardi.
+    if is_standalone():
+        return base
 
     if style == "subdomain":
         parts = urlsplit(base)

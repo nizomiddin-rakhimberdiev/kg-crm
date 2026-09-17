@@ -153,6 +153,24 @@ Worked examples: 50 children → 400 000 · 80 children → 550 000 · 150 child
 
 These share vocabulary ("plan", "invoice", "payment") but are **separate domains with separate tables and separate ledgers**. Naming must always be explicit; `subscriptions` never writes to `finance` tables and vice versa.
 
+### 4.7 Two delivery models (added 2026-09-17 — ADR-13)
+
+The same product is sold two ways. The buyer chooses how it is hosted, not which features they get.
+
+| | **Hosted subscription** | **Standalone licence** |
+|---|---|---|
+| Where it runs | Vendor infrastructure, `radix-crm.uz` | The **customer's own server** |
+| Payment | Monthly, per enrolled child (§4.2) | **One-off, larger** — no recurring fee |
+| Trial | 15 days (§4.4) | None — the install is already paid for |
+| Subscription / billing screens | Yes | **Absent** (no plan, no invoice, no write gate) |
+| Vendor console & support grants | Yes (ADR-10) | Absent — there is no vendor plane on the customer's server |
+| Address | `radix-crm.uz/t/<slug>` | The customer's own domain, at its root |
+| Upgrades & fixes | Continuous, vendor-managed | Delivered by redeploying the same repo on their server |
+
+**One codebase serves both** (`DEPLOYMENT_MODE`, ADR-13). This is deliberate: a separate single-tenant fork would double the maintenance surface for a solo-founder team and drift apart within weeks. The standalone build is not a reduced product — it is the same system with the commercial machinery (subscription, trial, metering, vendor console) switched off, because the customer has already bought it outright.
+
+> **Isolation does not change between modes.** `organization_id` scoping and RLS are identical in both ([02 §6](./02_Software_Architecture.md), CLAUDE.md invariants 2 and 8). The flag decides what is *sold*, never what is *protected*.
+
 ---
 
 ## 5. Target Users (Personas & Roles)

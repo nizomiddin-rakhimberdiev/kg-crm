@@ -13,6 +13,7 @@ import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { auditApi } from '@/features/dashboard/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { cn } from '@/lib/utils'
+import { env } from '@/config/env'
 
 const ACTION: Record<string, [string, string]> = {
   login: ['Kirish', 'bg-slate-100 text-slate-600'],
@@ -83,13 +84,19 @@ export default function AuditPage() {
         </p>
       </div>
 
+      {/* Standalone o'rnatmada vendor tekisligi UMUMAN yo'q (ADR-13):
+          tizim mijozning o'z serverida ishlaydi va unga kiradigan
+          "provayder" degan tomon mavjud emas. Bo'limni qoldirish
+          mijozda "demak kimdir kira oladi" degan noto'g'ri taassurot
+          qoldirardi — aynan u sotib olmagan narsa haqida. */}
+      {!env.isStandalone && (
       <section className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 text-brand-600" />
           <h2 className="text-sm font-semibold text-slate-900">Tizim provayderi kirishi</h2>
         </div>
         <p className="mt-1 text-xs text-slate-500">
-          KG-CRM xodimlari sukut bo'yicha sizning ma'lumotingizni ko'rmaydi. Har qanday kirish
+          Radix CRM xodimlari sukut bo'yicha sizning ma'lumotingizni ko'rmaydi. Har qanday kirish
           vaqt bilan cheklanadi, sababi yoziladi va shu yerda ko'rinadi.
         </p>
 
@@ -118,6 +125,7 @@ export default function AuditPage() {
           </ul>
         )}
       </section>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         {FILTERS.map(([key, label]) => (

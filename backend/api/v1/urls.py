@@ -13,6 +13,7 @@ from apps.accounts.views_auth import (
     RefreshView,
     SelectOrganizationView,
 )
+from apps.core.deployment import is_saas
 from apps.organizations.views import OrganizationView
 from apps.platform.views import PlatformLoginView
 from apps.platform.views_leads import PublicLeadCreateView, PublicPricingView
@@ -45,9 +46,19 @@ urlpatterns = [
     path("health", HealthCheckView.as_view(), name="health"),
     # Singleton resurs — ID yo'q, tashkilot tokendan olinadi (docs/04 §16).
     path("organization", OrganizationView.as_view(), name="organization"),
-    path("public/leads", PublicLeadCreateView.as_view(), name="public-lead-create"),
-    path("public/pricing", PublicPricingView.as_view(), name="public-pricing"),
     *auth_patterns,
-    *platform_patterns,
     *router.urls,
 ]
+
+# Vendor tekisligi va sotuv yo'llari FAQAT SaaS nusxasida (ADR-13).
+#
+# Mijozning o'z serverida vendor konsoli ham, lead formasi ham, narx
+# kalkulyatori ham ma'noga ega emas — u tizimni bir marta sotib olgan.
+# Ular shunchaki yashirilmaydi, balki MARSHRUTLANMAYDI: ko'rinmaydigan,
+# lekin javob beradigan yo'l — bu o'sha yo'lning ochiq qolgani.
+if is_saas():
+    urlpatterns += [
+        path("public/leads", PublicLeadCreateView.as_view(), name="public-lead-create"),
+        path("public/pricing", PublicPricingView.as_view(), name="public-pricing"),
+        *platform_patterns,
+    ]

@@ -93,7 +93,23 @@ services:
     healthcheck:
       # Tana tekshiriladi, faqat kod emas: `301` (HTTPS'ga haydash) ham
       # `curl -f` uchun muvaffaqiyat, ya'ni yolg'on yashil bo'lardi.
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/api/v1/health | grep -q '\"status\":\"ok\"'"]
+      #
+      # `Host` sarlavhasi aniq beriladi: ALLOWED_HOSTS bu yerda haqiqiy
+      # domenga cheklangan (production'da to'g'ri xatti-harakat), Django
+      # esa Host'ni URL'dagi "localhost"dan olsa `400 DisallowedHost`
+      # bilan yiqiladi — ilova sog'lom bo'lsa ham Docker uni "unhealthy"
+      # deb belgilardi. Birinchi qiymat (vergulgacha) yetarli: nginx ham
+      # faqat bitta `server_name` biladi.
+      #
+      # `X-Forwarded-Proto: https` ham shart: TLS chiqqandan keyin
+      # `DJANGO_SECURE_SSL_REDIRECT=True` bo'ladi (to'g'ri holat), va
+      # `SecurityMiddleware` bu sarlavhasiz so'rovni "xavfsiz emas" deb
+      # `301`ga yo'naltiradi — tana esa `"status":"ok"` emas, bo'sh
+      # bo'ladi. nginx haqiqiy so'rovlarda aynan shu sarlavhani qo'yadi
+      # (`deploy/nginx/_shared.conf`), shuning uchun healthcheck ham
+      # xuddi shunday so'raydi — aks holda ilova sog'lom bo'lsa ham
+      # Docker uni abadiy "unhealthy" deb ko'rsatardi.
+      test: ["CMD-SHELL", "curl -fsS -H \"Host: $${DJANGO_ALLOWED_HOSTS%%,*}\" -H 'X-Forwarded-Proto: https' http://localhost:8000/api/v1/health | grep -q '\"status\":\"ok\"'"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -172,6 +188,10 @@ services:
       - media_files:/app/mediafiles:ro
       - certs:/etc/nginx/certs:ro
       - certbot_webroot:/var/www/certbot:ro
+      # Shu serverga xos qo'shimcha `location` bloklari (`tls.conf` ni
+      # ko'ring). Odatda bo'sh — Docker katalogni o'zi yaratadi va
+      # nginx uni sezmaydi.
+      - ./deploy/nginx/extra:/etc/nginx/kg-extra:ro
     depends_on:
       - web
 

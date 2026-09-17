@@ -20,7 +20,7 @@ import { authApi } from '@/features/auth/api'
 import { setSessionExpiredHandler } from '@/lib/api/client'
 import { tokenStorage } from '@/lib/auth/tokenStorage'
 import { supportSession } from '@/lib/auth/supportSession'
-import { currentSlug, tenantPath } from '@/lib/tenantAddress'
+import { shouldLandOnTenantAddress, tenantPath } from '@/lib/tenantAddress'
 import type { AuthSession, CurrentUser, SubscriptionState } from '@/lib/api/types'
 
 interface AuthContextValue {
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // qo'ndiriladi. Bu xavfsizlik chorasi EMAS — token baribir faqat
       // o'z tashkilotini ochadi — bu manzilni to'g'rilash: havolalar,
       // xatcho'plar va keyingi kirishlar bir xil joyga olib borsin.
-      if (slug && slug !== currentSlug) {
+      if (slug && shouldLandOnTenantAddress(slug)) {
         // To'liq sahifa yangilanishi shart: `basename` router yaratilganda
         // o'rnatilgan va uni joyida o'zgartirib bo'lmaydi.
         window.location.replace(tenantPath(slug))

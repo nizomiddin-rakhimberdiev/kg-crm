@@ -167,19 +167,21 @@ export function NewOrganizationDialog() {
 
               <label className="block">
                 <span className="mb-1 block text-xs text-slate-400">
-                  Manzil (ixtiyoriy — bo'sh qoldirilsa nomdan olinadi)
+                  Kirish havolasi (URL) — ixtiyoriy, bo'sh qoldirilsa nomdan olinadi
                 </span>
-                <input
-                  value={form.slug}
-                  onChange={set('slug')}
-                  className={FIELD}
-                  placeholder="quyosh"
-                />
-                {slugPreview && (
-                  <span className="mt-1 block font-mono text-xs text-slate-500">
-                    /t/{slugPreview}
-                  </span>
-                )}
+                <div className="flex items-center overflow-hidden rounded-lg border border-slate-700 bg-slate-800 focus-within:border-brand-500">
+                  <span className="pl-3 font-mono text-sm text-slate-500">/t/</span>
+                  <input
+                    value={form.slug}
+                    onChange={set('slug')}
+                    className="w-full bg-transparent px-1 py-2 text-sm outline-none"
+                    placeholder="quyosh"
+                  />
+                </div>
+                <span className="mt-1 block text-xs text-slate-500">
+                  Bu — bog'cha jamoasi kiradigan sahifaning veb-havolasi, bog'chaning jismoniy
+                  manzili emas. Masalan: <span className="font-mono">/t/{slugPreview || 'quyosh'}</span>
+                </span>
               </label>
 
               <div className="grid grid-cols-2 gap-3">

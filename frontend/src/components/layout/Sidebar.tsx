@@ -27,7 +27,7 @@ export function Sidebar() {
         </div>
         <div className="leading-tight min-w-0">
           <p className="truncate text-sm font-bold text-slate-900">
-            {user?.organization?.name ?? 'KG-CRM'}
+            {user?.organization?.name ?? 'Radix CRM'}
           </p>
           <p className="text-[11px] text-slate-400 font-medium tracking-wide">
             Boshqaruv Tizimi

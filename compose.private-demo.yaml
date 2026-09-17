@@ -1,0 +1,145 @@
+# Standalone DEMO steki — `radix-crm.uz/private` (ADR-13).
+#
+# MAQSAD: mijozga "bu tizim faqat SIZNIKI bo'ladi" deb ko'rsatish uchun
+# haqiqiy standalone nusxa. Obuna yo'q, tarif yo'q, sinov muddati yo'q,
+# vendor konsoli yo'q.
+#
+# Bu fayl MIJOZ SERVERI uchun emas. U yerda odatdagi `compose.prod.yaml`
+# ishlatiladi — `.env` ga `DEPLOYMENT_MODE=standalone` yozilgan holda, o'z
+# domeni va o'z sertifikati bilan. Bu yerdagi qo'shimcha murakkablik
+# (`/private` prefiksi, umumiy tarmoq, portlarsiz nginx) faqat demoni
+# MAVJUD SaaS sayti bilan bitta serverda, bitta domenda ushlab turish
+# uchun.
+#
+# Ishga tushirish (docs/deployment.md):
+#   docker compose -f compose.private-demo.yaml --env-file .env.private up -d
+
+name: radix-private
+
+# Asosiy stek tarmog'iga ULANADI, o'ziniki yaratmaydi: asosiy nginx
+# (TLS va 443-port unda) shu tarmoq orqali `private-nginx` ga yeta olishi
+# kerak. Shu sababli BARCHA servislar `private-` prefiksi bilan atalgan —
+# bitta tarmoqda ikkita `web` yoki ikkita `db` nomi to'qnashardi va
+# Django tasodifan BOSHQA stekning bazasiga ulanishi mumkin edi.
+networks:
+  default:
+    name: radix-crm-prod_default
+    external: true
+
+x-django-env: &django-env
+  DJANGO_SETTINGS_MODULE: config.settings.production
+  # Butun farq shu bitta qatorda (ADR-13).
+  DEPLOYMENT_MODE: standalone
+  POSTGRES_HOST: private-db
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: ${POSTGRES_DB:-kg_crm}
+  POSTGRES_USER: kg_crm_app
+  POSTGRES_PASSWORD: ${APP_DB_PASSWORD:?APP_DB_PASSWORD kerak}
+  REDIS_URL: redis://private-redis:6379/0
+  CELERY_BROKER_URL: redis://private-redis:6379/1
+  CELERY_RESULT_BACKEND: redis://private-redis:6379/2
+
+services:
+  private-db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kg_crm}
+      POSTGRES_USER: ${POSTGRES_OWNER:-kg_crm}
+      POSTGRES_PASSWORD: ${OWNER_DB_PASSWORD:?OWNER_DB_PASSWORD kerak}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?APP_DB_PASSWORD kerak}
+      BACKUP_DB_PASSWORD: ${BACKUP_DB_PASSWORD:?BACKUP_DB_PASSWORD kerak}
+    volumes:
+      - private_postgres_data:/var/lib/postgresql/data
+      - ./deploy/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_OWNER:-kg_crm} -d ${POSTGRES_DB:-kg_crm}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  private-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --save 60 1 --appendonly yes --loglevel warning
+    volumes:
+      - private_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  private-web:
+    build:
+      context: ./backend
+      args:
+        REQUIREMENTS: requirements/production.txt
+    restart: unless-stopped
+    environment:
+      <<: *django-env
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY kerak}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?DJANGO_ALLOWED_HOSTS kerak}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?PUBLIC_BASE_URL kerak}
+      DJANGO_SECURE_SSL_REDIRECT: ${DJANGO_SECURE_SSL_REDIRECT:-True}
+      NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-console}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - private_static_files:/app/staticfiles
+      - private_media_files:/app/mediafiles
+    depends_on:
+      private-db: {condition: service_healthy}
+      private-redis: {condition: service_healthy}
+    healthcheck:
+      # Sabab `compose.prod.yaml` dagi bilan bir xil: `Host` ALLOWED_HOSTS
+      # ga mos kelishi, `X-Forwarded-Proto` esa HTTPS redirectni
+      # chetlab o'tishi kerak.
+      test: ["CMD-SHELL", "curl -fsS -H \"Host: $${DJANGO_ALLOWED_HOSTS%%,*}\" -H 'X-Forwarded-Proto: https' http://localhost:8000/api/v1/health | grep -q '\"status\":\"ok\"'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Celery beat ATAYLAB yo'q: demo nusxada rejalashtirilgan vazifalar
+  # (hisob-faktura chiqarish, eslatma yuborish) ko'rsatiladigan
+  # ma'lumotni o'zgartirib yuborardi. Worker esa qoladi — `health`
+  # tekshiruvi uni so'raydi va qo'lda ishga tushirilgan vazifalar
+  # ishlashi kerak.
+  private-worker:
+    build:
+      context: ./backend
+      args:
+        REQUIREMENTS: requirements/production.txt
+    restart: unless-stopped
+    command: celery -A config worker --loglevel=info --concurrency=1
+    environment:
+      <<: *django-env
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY kerak}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?DJANGO_ALLOWED_HOSTS kerak}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?PUBLIC_BASE_URL kerak}
+      NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-console}
+    volumes:
+      - private_media_files:/app/mediafiles
+    depends_on:
+      private-db: {condition: service_healthy}
+      private-redis: {condition: service_healthy}
+
+  private-nginx:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.private-demo
+    restart: unless-stopped
+    # Port ATAYLAB ochilmagan: 80/443 asosiy stekniki. Bu nginx'ga
+    # faqat asosiy nginx, faqat ichki tarmoq orqali murojaat qiladi.
+    volumes:
+      - private_static_files:/app/staticfiles:ro
+      - private_media_files:/app/mediafiles:ro
+    depends_on:
+      - private-web
+
+volumes:
+  private_postgres_data:
+  private_redis_data:
+  private_static_files:
+  private_media_files:

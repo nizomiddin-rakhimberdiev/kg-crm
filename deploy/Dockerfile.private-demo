@@ -1,0 +1,41 @@
+# syntax=docker/dockerfile:1
+#
+# Standalone DEMO nusxasi uchun SPA + nginx (ADR-13).
+#
+# Nega alohida Dockerfile: bu SPA boshqacha yig'iladi — `base` yo'li
+# `/private/`, rejim `standalone`, API manzili `/private/api/v1`. Bular
+# Vite'ga BUILD paytida kerak, ya'ni bitta tasvirni ikkala rejim uchun
+# ishlatib bo'lmaydi.
+#
+# DIQQAT: mijozning o'z serveriga chiqadigan standalone o'rnatma bu
+# faylni ISHLATMAYDI — u odatdagi `deploy/Dockerfile.web` bilan, o'z
+# domenining ildizida ishlaydi. Bu fayl faqat demoni SaaS sayti bilan
+# bir domenda ko'rsatish uchun.
+
+FROM node:24-alpine AS builder
+
+WORKDIR /app
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+COPY frontend/ ./
+
+# `VITE_BASE_PATH` ni `vite.config.ts` Node kontekstida (`process.env`)
+# o'qiydi, qolganlarini esa ilova kodi `import.meta.env` orqali —
+# shuning uchun ikkalasi ham ENV sifatida beriladi.
+ENV VITE_BASE_PATH=/private/
+ENV VITE_DEPLOYMENT_MODE=standalone
+ENV VITE_API_BASE_URL=/private/api/v1
+
+RUN npm run build
+
+
+FROM nginx:1.27-alpine AS runtime
+
+# `private/` ostiga: URL prefiksi diskdagi katalog bilan bir xil bo'lsa,
+# nginx'ga `alias` va uning klassik "oxiridagi slash" tuzog'i kerak emas.
+COPY --from=builder /app/dist /usr/share/nginx/html/private
+COPY deploy/nginx/private-demo.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80

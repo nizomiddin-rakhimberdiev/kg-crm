@@ -14,6 +14,8 @@
  * brending va kirish nuqtasi, ruxsat emas.
  */
 
+import { env } from '@/config/env'
+
 export const TENANT_PREFIX = 't'
 
 /** `/t/quyosh/dashboard` → `quyosh`. Prefiks bo'lmasa `null`. */
@@ -22,8 +24,28 @@ export function slugFromPath(pathname: string = window.location.pathname): strin
   return prefix === TENANT_PREFIX && slug ? slug : null
 }
 
+/**
+ * Ilova qaysi yo'ldan boshlanishi (Vite `base`).
+ *
+ * Odatda `/`. Demo nusxasi esa mavjud domenning bir qismida yashaydi
+ * (`radix-crm.uz/private`) — o'shanda Vite `base` `/private/` bo'ladi
+ * va React Router ham xuddi shu prefiksni bilishi kerak, aks holda
+ * har bir ichki havola `/dashboard` ga (ya'ni SaaS saytiga) olib
+ * ketardi.
+ */
+function appBasePath(): string {
+  const base = import.meta.env.BASE_URL || '/'
+  const trimmed = base.replace(/\/+$/, '')
+  return trimmed || '/'
+}
+
 /** React Router uchun `basename`. */
 export function basenameFor(slug: string | null): string {
+  // Standalone'da bog'cha bitta va `/t/<slug>` prefiksi yo'q (ADR-13) —
+  // ilova o'zi o'rnatilgan yo'lning ildizida yashaydi.
+  if (env.isStandalone) {
+    return appBasePath()
+  }
   return slug ? `/${TENANT_PREFIX}/${slug}` : '/'
 }
 
@@ -33,6 +55,16 @@ export function tenantPath(slug: string, path = '/dashboard'): string {
 }
 
 /**
+ * Kirishdan keyin foydalanuvchini o'z bog'chasi manziliga ko'chirish
+ * kerakmi.
+ *
+ * Alohida funksiya, chunki bu qaror bir marta JIMGINA buzilgan: standalone
+ * o'rnatmada ham ishlab, foydalanuvchini kirishi bilan `/t/<slug>` ga —
+ * ya'ni butunlay boshqa o'rnatmaga — uloqtirgan. U yerda uning hisobi
+ * yo'q, shuning uchun login sahifasi qaytadan ochilgan va tashqaridan bu
+ * "parol noto'g'ri" bo'lib ko'ringan.
+ */
+/**
  * Sahifa yuklanganidagi slug — bir marta hisoblanadi.
  *
  * `basename` router yaratilganda o'rnatiladi va keyin o'zgarmaydi,
@@ -41,3 +73,12 @@ export function tenantPath(slug: string, path = '/dashboard'): string {
  * ikki alohida sessiya, va ular orasida hech narsa qolmagani ma'qul.
  */
 export const currentSlug = slugFromPath()
+
+export function shouldLandOnTenantAddress(
+  slug: string | null,
+  atSlug: string | null = currentSlug,
+): boolean {
+  // Standalone: bog'cha bitta, manzil bitta — ko'chiradigan joy yo'q.
+  if (env.isStandalone) return false
+  return Boolean(slug) && slug !== atSlug
+}

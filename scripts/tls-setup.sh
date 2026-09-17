@@ -16,10 +16,13 @@ set -a; . ./.env; set +a
 : "${DOMAIN:?DOMAIN .env da belgilanmagan}"
 EMAIL="${CERTBOT_EMAIL:-admin@${DOMAIN}}"
 
-echo "▸ Sertifikat so'ralmoqda: $DOMAIN"
+# `www.<domen>` ham SAN sifatida so'raladi — nginx ikkalasini ham
+# xizmat qiladi (deploy/nginx/entrypoint.sh), bitta sertifikat ikkalasini
+# ham qamrab olishi kerak.
+echo "▸ Sertifikat so'ralmoqda: $DOMAIN, www.$DOMAIN"
 $COMPOSE --profile tls run --rm --entrypoint certbot certbot \
     certonly --webroot -w /var/www/certbot \
-    -d "$DOMAIN" --email "$EMAIL" \
+    -d "$DOMAIN" -d "www.$DOMAIN" --email "$EMAIL" \
     --agree-tos --no-eff-email --non-interactive
 
 echo "▸ Sertifikat nginx ko'radigan volume'ga ko'chirilmoqda"
@@ -27,8 +30,14 @@ echo "▸ Sertifikat nginx ko'radigan volume'ga ko'chirilmoqda"
 # ga yozadi. Ko'chirish ATAYLAB nusxalash bilan: nginx konteyneriga butun
 # `letsencrypt` katalogini (barcha domenlar, barcha kalitlar) berish
 # o'rniga faqat kerakli ikki fayl beriladi.
+#
+# Volume nomi loyiha nomi bilan BOSHLANADI (Compose'ning o'zi shunday
+# prefikslaydi) — qattiq yozilgan "kg-crm-prod_certs" boshqa
+# `COMPOSE_PROJECT_NAME` bilan (masalan shu loyihada "radix-crm-prod")
+# volume topilmadi xatosi berardi.
+CERTS_VOLUME="${COMPOSE_PROJECT_NAME:-kg-crm-prod}_certs"
 $COMPOSE --profile tls run --rm --entrypoint sh \
-    -v kg-crm-prod_certs:/out certbot -c \
+    -v "${CERTS_VOLUME}:/out" certbot -c \
     "cp /etc/letsencrypt/live/${DOMAIN}/fullchain.pem /out/fullchain.pem && \
      cp /etc/letsencrypt/live/${DOMAIN}/privkey.pem  /out/privkey.pem"
 
