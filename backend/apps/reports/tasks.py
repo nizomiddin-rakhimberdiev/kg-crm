@@ -35,6 +35,10 @@ def _run_report(report_type: str, organization_id: Any, params: dict[str, Any]) 
     )
     date_to = date.fromisoformat(params["date_to"]) if params.get("date_to") else today
     branch_id = params.get("branch_id")
+    # Ekrandagi kesim eksportda ham saqlanadi: foydalanuvchi haftalik
+    # grafikni ko'rib "yuklab olish"ni bossa, oylik jadval kutilmagan
+    # bo'lardi. Noto'g'ri qiymat selektorda ochiq xato beradi.
+    group_by = str(params.get("group_by") or selectors.DEFAULT_GROUP_BY)
 
     if report_type == "revenue":
         return selectors.revenue_report(
@@ -42,6 +46,7 @@ def _run_report(report_type: str, organization_id: Any, params: dict[str, Any]) 
             date_from=date_from,
             date_to=date_to,
             branch_id=branch_id,
+            group_by=group_by,
         )
     if report_type == "expenses":
         return selectors.expense_report(
@@ -49,6 +54,7 @@ def _run_report(report_type: str, organization_id: Any, params: dict[str, Any]) 
             date_from=date_from,
             date_to=date_to,
             branch_id=branch_id,
+            group_by=group_by,
         )
     if report_type == "payroll":
         return selectors.payroll_report(
@@ -71,6 +77,7 @@ def _run_report(report_type: str, organization_id: Any, params: dict[str, Any]) 
             date_from=date_from,
             date_to=date_to,
             branch_id=branch_id,
+            group_by=group_by,
         )
     raise ValueError(f"Noma'lum hisobot turi: {report_type}")
 

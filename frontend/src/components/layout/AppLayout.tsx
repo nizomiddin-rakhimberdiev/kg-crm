@@ -1,23 +1,32 @@
-import { Suspense } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SubscriptionBanner } from './ReadOnlyBanner'
 import { SupportSessionBanner } from './SupportSessionBanner'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { Sidebar } from './Sidebar'
+import { MobileSidebar, Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 
 export function AppLayout() {
   const location = useLocation()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const closeMenu = useCallback(() => setMenuOpen(false), [])
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    /*
+     * `h-dvh`, `h-screen` emas: iOS Safari'da `100vh` manzil paneli
+     * ostidagi joyni ham hisoblaydi va sahifaning pastki qismi (jadval
+     * oxiri, "Saqlash" tugmasi) ekrandan tashqarida qolardi. `dvh` —
+     * haqiqiy ko'rinadigan balandlik.
+     */
+    <div className="flex h-dvh overflow-hidden bg-slate-50">
       <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar />
+      <MobileSidebar open={menuOpen} onClose={closeMenu} />
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <Topbar onMenuClick={() => setMenuOpen(true)} />
         <SupportSessionBanner />
         <SubscriptionBanner />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin px-4 lg:px-6 py-6">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 scrollbar-thin sm:px-4 sm:py-6 lg:px-6">
           {/*
            * DIQQAT: quyidagi `motion.div` `transform` (x) va `filter` (blur)
            * qo'llaydi. Ikkalasi ham CSS'da yangi "containing block" yaratadi —

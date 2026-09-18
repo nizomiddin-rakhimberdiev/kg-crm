@@ -215,7 +215,9 @@ graph TD
 | **PublicLayout** | login, forgot-password | Centered card, branding, no nav. |
 | **AppLayout** | all authenticated pages | Persistent **Sidebar** (nav filtered by permissions), **Topbar** (user menu, **branch selector** — Org Owner sees all their branches, notifications bell, theme toggle), a **trial/read-only banner** when the subscription requires one, and `<Outlet/>` content area. |
 
-Navigation items come from `config/navigation.ts`, each tagged with the permission required to show it — the sidebar renders only what the user can access (driven by `useCan`).
+Navigation items come from `config/navigation.ts`, each tagged with the permission required to show it — the sidebar renders only what the user can access (driven by `useCan`). An item may list several permissions; any one of them shows it (e.g. *Xodimlar* needs `payroll.read` **or** `users.read`).
+
+**Responsive rule.** The shell is phone-first below `lg` (1024px): the sidebar becomes a **drawer** opened from a hamburger in the Topbar (`MobileSidebar` — same `SidebarContent` as the desktop aside, so a new nav item can never be missing on mobile), the branch selector moves into the drawer, and the layout height is `dvh` so iOS Safari's address bar never hides the bottom of a page. Pages follow three rules: the body never scrolls horizontally; every `<table>` lives in an `overflow-x-auto` container with a `min-w`; and the two lists people work in all day (children, employees) render **cards below `md`** and a table above it — a horizontally scrolled six-column table is not usable with a thumb.
 
 ---
 
@@ -241,16 +243,15 @@ Path constants live in `config/routes.ts`. Each route maps to a feature page and
 | `/attendance` | AttendancePage | `attendance.read` |
 | `/payroll` | PayrollRunsPage | `payroll.read` |
 | `/payroll/:id` | PayrollRunDetailPage | `payroll.read` |
-| `/employees` | EmployeesPage | `payroll.read` |
+| `/staff` | StaffPage — tabs: *Xodimlar* (HR employees, `payroll.read`), *Tizim hisoblari* (login accounts, `users.read`), *Rollar* (`users.read`); tab in `?tab=` | any of `payroll.read`, `users.read` |
 | `/inventory/products` | ProductsPage | `inventory.read` |
 | `/inventory/movements` | StockMovementsPage | `inventory.read` |
 | `/inventory/suppliers` | SuppliersPage | `inventory.read` |
 | `/expenses` | ExpensesPage | `expenses.read` |
-| `/reports` | ReportsPage | `reports.read` |
+| `/reports` | ReportsPage — period picker (day / week / month / quarter / year / custom, with ◀ ▶), grouping derived one step finer than the preset (`features/reports/period.ts`) | `reports.read` |
 | `/notifications` | NotificationsPage | `notifications.read` |
 | `/settings` | SettingsPage | `settings.read` |
-| `/users` | UsersPage | `users.read` |
-| `/users/roles` | RolesPage | `users.read` |
+| `/users`, `/users/roles` | folded into `/staff` tabs (above) | — |
 | `/audit` | AuditLogPage | `audit.read` |
 | `/not-authorized` | NotAuthorizedPage | Protected |
 | `*` | NotFoundPage | — |
@@ -404,7 +405,8 @@ Matches [02 §21](./02_Software_Architecture.md):
 | **Route-based code splitting** | `React.lazy` + Suspense per feature → small initial bundle. |
 | **Query caching / background refetch** | TanStack Query removes redundant calls. |
 | **List virtualization** | Large tables (children, attendance) render only visible rows. |
-| **Debounced search** | Search inputs debounce before hitting the API. |
+| **Debounced search** | Search inputs debounce before hitting the API (`hooks/useDebouncedValue`). |
+| **Server pagination** | Lists request `page`/`page_size` and render `components/ui` `Pagination` from `meta.pagination`; the page number is *derived* from the filter key (`hooks/usePageState`) so a filter change resets to page 1 in the same render — no stale "page 3 of a 5-row search" request. `placeholderData: keepPreviousData` keeps the old rows on screen while the next page loads. |
 | **Memoization** | `useMemo`/`React.memo` on heavy renders. |
 | **Lazy images / charts** | Photos and report charts load on demand. |
 | **Production build** | Vite tree-shaking + minification; Nginx gzip/brotli + static caching. |
@@ -434,4 +436,4 @@ Matches [02 §21](./02_Software_Architecture.md):
 - Endpoints, permissions, and payloads consumed here: [04_Backend_API_Specification](./04_Backend_API_Specification.md).
 - Build order: [06_Development_Roadmap](./06_Development_Roadmap.md).
 
-*End of Frontend Architecture v1.1 — organization-scoped query cache, read-only mode, `billing`/`branches`/`onboarding` features added.*
+*End of Frontend Architecture v1.2 — organization-scoped query cache, read-only mode, `billing`/`branches`/`onboarding` features; responsive shell (mobile drawer), server pagination, `/staff` tabs, report period picker.*

@@ -144,57 +144,59 @@ export default function AuditPage() {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Vaqt</th>
-              <th className="px-4 py-3">Kim</th>
-              <th className="px-4 py-3">Amal</th>
-              <th className="px-4 py-3">Obyekt</th>
-              <th className="px-4 py-3">Tafsilot</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {rows.map((row) => {
-              const [label, tone] = ACTION[row.action] ?? [row.action, 'bg-slate-100 text-slate-600']
-              const changes = Object.entries(row.changes ?? {})
-              return (
-                <tr key={row.id} className="align-top">
-                  <td className="whitespace-nowrap px-4 py-3 text-slate-500">
-                    {when(row.created_at)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-slate-900">{row.actor_name ?? '—'}</p>
-                    <p className="text-xs text-slate-400">{row.actor_email || '—'}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}>
-                      {label}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {ENTITY[row.entity_type] ?? row.entity_type ?? '—'}
-                  </td>
-                  <td className="max-w-sm px-4 py-3 text-xs text-slate-500">
-                    {changes.length === 0
-                      ? '—'
-                      : changes
-                          .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
-                          .join(', ')}
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Vaqt</th>
+                <th className="px-4 py-3">Kim</th>
+                <th className="px-4 py-3">Amal</th>
+                <th className="px-4 py-3">Obyekt</th>
+                <th className="px-4 py-3">Tafsilot</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {rows.map((row) => {
+                const [label, tone] = ACTION[row.action] ?? [row.action, 'bg-slate-100 text-slate-600']
+                const changes = Object.entries(row.changes ?? {})
+                return (
+                  <tr key={row.id} className="align-top">
+                    <td className="whitespace-nowrap px-4 py-3 text-slate-500">
+                      {when(row.created_at)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-slate-900">{row.actor_name ?? '—'}</p>
+                      <p className="text-xs text-slate-400">{row.actor_email || '—'}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}>
+                        {label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {ENTITY[row.entity_type] ?? row.entity_type ?? '—'}
+                    </td>
+                    <td className="max-w-sm px-4 py-3 text-xs text-slate-500">
+                      {changes.length === 0
+                        ? '—'
+                        : changes
+                            .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
+                            .join(', ')}
+                    </td>
+                  </tr>
+                )
+              })}
+              {!isLoading && rows.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-10 text-center text-slate-400">
+                    <ScrollText className="mx-auto mb-2 h-6 w-6" />
+                    Yozuv topilmadi.
                   </td>
                 </tr>
-              )
-            })}
-            {!isLoading && rows.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-slate-400">
-                  <ScrollText className="mx-auto mb-2 h-6 w-6" />
-                  Yozuv topilmadi.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

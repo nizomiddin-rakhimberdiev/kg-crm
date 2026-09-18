@@ -132,51 +132,53 @@ export default function BranchesPage() {
         )}
 
         {branchesQuery.data && branchesQuery.data.items.length > 0 && (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">Nomi</th>
-                <th className="px-4 py-3 font-medium">Kod</th>
-                <th className="px-4 py-3 font-medium">Valyuta</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {branchesQuery.data.items.map((branch) => (
-                <tr key={branch.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-slate-400" />
-                      <span className="font-medium text-slate-800">{branch.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-slate-500">{branch.code}</td>
-                  <td className="px-4 py-3 text-slate-500">{branch.currency}</td>
-                  <td className="px-4 py-3 text-right">
-                    {can('branches.delete') && (
-                      <button
-                        type="button"
-                        onClick={() => deleteMutation.mutate(branch.id)}
-                        disabled={deleteMutation.isPending}
-                        className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                        title="O'chirish"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Nomi</th>
+                  <th className="px-4 py-3 font-medium">Kod</th>
+                  <th className="px-4 py-3 font-medium">Valyuta</th>
+                  <th className="px-4 py-3" />
                 </tr>
-              ))}
-              {branchesQuery.data.items.length === 0 && (
-                <EmptyRow
-                  colSpan={5}
-                  icon={Building2}
-                  title="Filial yo'q"
-                  hint="Bog'chaning birinchi filiali ro'yxatdan o'tishda yaratiladi. Yangi bino ochsangiz shu yerdan qo'shasiz."
-                />
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {branchesQuery.data.items.map((branch) => (
+                  <tr key={branch.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-slate-400" />
+                        <span className="font-medium text-slate-800">{branch.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-500">{branch.code}</td>
+                    <td className="px-4 py-3 text-slate-500">{branch.currency}</td>
+                    <td className="px-4 py-3 text-right">
+                      {can('branches.delete') && (
+                        <button
+                          type="button"
+                          onClick={() => deleteMutation.mutate(branch.id)}
+                          disabled={deleteMutation.isPending}
+                          className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                          title="O'chirish"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {branchesQuery.data.items.length === 0 && (
+                  <EmptyRow
+                    colSpan={5}
+                    icon={Building2}
+                    title="Filial yo'q"
+                    hint="Bog'chaning birinchi filiali ro'yxatdan o'tishda yaratiladi. Yangi bino ochsangiz shu yerdan qo'shasiz."
+                  />
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

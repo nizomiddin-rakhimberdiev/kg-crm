@@ -203,64 +203,66 @@ export default function NotificationsPage() {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Qabul qiluvchi</th>
-              <th className="px-4 py-3">Matn</th>
-              <th className="px-4 py-3">Holat</th>
-              <th className="px-4 py-3">Yuborilgan</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {rows.map((row) => {
-              const [label, tone] = STATUS[row.status] ?? [row.status, 'bg-slate-100 text-slate-600']
-              return (
-                <tr key={row.id} className="align-top">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-slate-900">{row.guardian_name ?? '—'}</p>
-                    <p className="text-xs text-slate-500">{row.recipient_address}</p>
-                  </td>
-                  <td className="max-w-md px-4 py-3 text-slate-600">
-                    {row.rendered_body}
-                    {row.error && <p className="mt-1 text-xs text-red-600">{row.error}</p>}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}>
-                      {label}
-                    </span>
-                    {row.retry_count > 0 && (
-                      <p className="mt-1 text-xs text-slate-400">{row.retry_count} urinish</p>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-slate-500">{when(row.sent_at)}</td>
-                  <td className="px-4 py-3 text-right">
-                    {row.status === 'failed' && can('notifications.create') && (
-                      <button
-                        type="button"
-                        onClick={() => retry.mutate(row.id)}
-                        disabled={retry.isPending}
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                      >
-                        <RefreshCw className="h-3 w-3" />
-                        Qayta
-                      </button>
-                    )}
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Qabul qiluvchi</th>
+                <th className="px-4 py-3">Matn</th>
+                <th className="px-4 py-3">Holat</th>
+                <th className="px-4 py-3">Yuborilgan</th>
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {rows.map((row) => {
+                const [label, tone] = STATUS[row.status] ?? [row.status, 'bg-slate-100 text-slate-600']
+                return (
+                  <tr key={row.id} className="align-top">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-slate-900">{row.guardian_name ?? '—'}</p>
+                      <p className="text-xs text-slate-500">{row.recipient_address}</p>
+                    </td>
+                    <td className="max-w-md px-4 py-3 text-slate-600">
+                      {row.rendered_body}
+                      {row.error && <p className="mt-1 text-xs text-red-600">{row.error}</p>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}>
+                        {label}
+                      </span>
+                      {row.retry_count > 0 && (
+                        <p className="mt-1 text-xs text-slate-400">{row.retry_count} urinish</p>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-slate-500">{when(row.sent_at)}</td>
+                    <td className="px-4 py-3 text-right">
+                      {row.status === 'failed' && can('notifications.create') && (
+                        <button
+                          type="button"
+                          onClick={() => retry.mutate(row.id)}
+                          disabled={retry.isPending}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                          Qayta
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-10 text-center text-slate-400">
+                    <Send className="mx-auto mb-2 h-6 w-6" />
+                    Hozircha xabar yuborilmagan.
                   </td>
                 </tr>
-              )
-            })}
-            {rows.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-slate-400">
-                  <Send className="mx-auto mb-2 h-6 w-6" />
-                  Hozircha xabar yuborilmagan.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

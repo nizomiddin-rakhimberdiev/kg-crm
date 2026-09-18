@@ -17,7 +17,7 @@ import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { billingApi } from '@/features/billing/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
-import { cn, formatUZS } from '@/lib/utils'
+import { cn, formatDate, formatUZS } from '@/lib/utils'
 
 const STATUS: Record<string, [string, string]> = {
   trialing: ['Sinov davri', 'bg-brand-50 text-brand-700'],
@@ -42,7 +42,7 @@ const TERMS: Array<{ code: string; label: string; hint: string }> = [
 ]
 
 const day = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString('uz-UZ', { dateStyle: 'medium' }) : '—'
+  formatDate(iso)
 
 const daysLeft = (iso: string | null) => {
   if (!iso) return null
@@ -264,54 +264,56 @@ export default function BillingPage() {
         <h2 className="border-b border-slate-100 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-900">
           Hisob-fakturalar
         </h2>
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="px-4 py-2">Raqam</th>
-              <th className="px-4 py-2">Davr</th>
-              <th className="px-4 py-2">Bolalar</th>
-              <th className="px-4 py-2 text-right">Summa</th>
-              <th className="px-4 py-2">Muddat</th>
-              <th className="px-4 py-2">Holat</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {(invoicesQuery.data ?? []).map((invoice) => {
-              const [label, tone] = INVOICE_STATUS[invoice.status] ?? [invoice.status, 'bg-slate-100']
-              return (
-                <tr key={invoice.id}>
-                  <td className="px-4 py-3 font-medium text-slate-900">{invoice.number}</td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {day(invoice.period_start)} — {day(invoice.period_end)}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{invoice.billable_children}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-slate-900">
-                    {formatUZS(Number(invoice.total_amount))}
-                    {Number(invoice.discount_amount) > 0 && (
-                      <span className="block text-xs font-normal text-emerald-600">
-                        −{formatUZS(Number(invoice.discount_amount))} chegirma
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead className="text-left text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-4 py-2">Raqam</th>
+                <th className="px-4 py-2">Davr</th>
+                <th className="px-4 py-2">Bolalar</th>
+                <th className="px-4 py-2 text-right">Summa</th>
+                <th className="px-4 py-2">Muddat</th>
+                <th className="px-4 py-2">Holat</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {(invoicesQuery.data ?? []).map((invoice) => {
+                const [label, tone] = INVOICE_STATUS[invoice.status] ?? [invoice.status, 'bg-slate-100']
+                return (
+                  <tr key={invoice.id}>
+                    <td className="px-4 py-3 font-medium text-slate-900">{invoice.number}</td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {day(invoice.period_start)} — {day(invoice.period_end)}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{invoice.billable_children}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-slate-900">
+                      {formatUZS(Number(invoice.total_amount))}
+                      {Number(invoice.discount_amount) > 0 && (
+                        <span className="block text-xs font-normal text-emerald-600">
+                          −{formatUZS(Number(invoice.discount_amount))} chegirma
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{day(invoice.due_at)}</td>
+                    <td className="px-4 py-3">
+                      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}>
+                        {label}
                       </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{day(invoice.due_at)}</td>
-                  <td className="px-4 py-3">
-                    <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}>
-                      {label}
-                    </span>
+                    </td>
+                  </tr>
+                )
+              })}
+              {(invoicesQuery.data ?? []).length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                    <FileText className="mx-auto mb-2 h-6 w-6" />
+                    Hozircha hisob yozilmagan.
                   </td>
                 </tr>
-              )
-            })}
-            {(invoicesQuery.data ?? []).length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
-                  <FileText className="mx-auto mb-2 h-6 w-6" />
-                  Hozircha hisob yozilmagan.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       {(historyQuery.data ?? []).length > 0 && (

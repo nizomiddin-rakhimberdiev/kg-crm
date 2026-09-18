@@ -166,68 +166,70 @@ export default function ExpensesPage() {
         )}
 
         {(expensesQuery.data?.items.length ?? 0) > 0 && (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">Sana</th>
-                <th className="px-4 py-3 font-medium">Kategoriya</th>
-                <th className="px-4 py-3 font-medium">Izoh</th>
-                <th className="px-4 py-3 text-right font-medium">Summa</th>
-                <th className="px-4 py-3 font-medium">Holat</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {expensesQuery.data?.items.map((e) => {
-                const [label, tone] = STATUS[e.status] ?? [e.status, '']
-                return (
-                  <tr key={e.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 text-slate-500">{e.expense_date}</td>
-                    <td className="px-4 py-3 text-slate-700">{e.category_name}</td>
-                    <td className="px-4 py-3 text-slate-600">{e.description || '—'}</td>
-                    <td className="px-4 py-3 text-right font-medium text-slate-900">{money(e.amount)}</td>
-                    <td className="px-4 py-3">
-                      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}>{label}</span>
-                      {e.approved_by_name && (
-                        <p className="mt-0.5 text-xs text-slate-400">{e.approved_by_name}</p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {can('expenses.approve') && e.status === 'pending' && (
-                        <>
-                          <button type="button" title="Tasdiqlash"
-                            onClick={() => decide.mutate({ id: e.id, action: 'approve' })}
-                            className="mr-1 rounded-lg p-2 text-emerald-600 hover:bg-emerald-50">
-                            <Check className="h-4 w-4" />
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Sana</th>
+                  <th className="px-4 py-3 font-medium">Kategoriya</th>
+                  <th className="px-4 py-3 font-medium">Izoh</th>
+                  <th className="px-4 py-3 text-right font-medium">Summa</th>
+                  <th className="px-4 py-3 font-medium">Holat</th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {expensesQuery.data?.items.map((e) => {
+                  const [label, tone] = STATUS[e.status] ?? [e.status, '']
+                  return (
+                    <tr key={e.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3 text-slate-500">{e.expense_date}</td>
+                      <td className="px-4 py-3 text-slate-700">{e.category_name}</td>
+                      <td className="px-4 py-3 text-slate-600">{e.description || '—'}</td>
+                      <td className="px-4 py-3 text-right font-medium text-slate-900">{money(e.amount)}</td>
+                      <td className="px-4 py-3">
+                        <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}>{label}</span>
+                        {e.approved_by_name && (
+                          <p className="mt-0.5 text-xs text-slate-400">{e.approved_by_name}</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {can('expenses.approve') && e.status === 'pending' && (
+                          <>
+                            <button type="button" title="Tasdiqlash"
+                              onClick={() => decide.mutate({ id: e.id, action: 'approve' })}
+                              className="mr-1 rounded-lg p-2 text-emerald-600 hover:bg-emerald-50">
+                              <Check className="h-4 w-4" />
+                            </button>
+                            <button type="button" title="Rad etish"
+                              onClick={() => decide.mutate({ id: e.id, action: 'reject' })}
+                              className="rounded-lg p-2 text-red-600 hover:bg-red-50">
+                              <X className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
+                        {can('expenses.update') && e.status === 'approved' && (
+                          <button type="button"
+                            onClick={() => decide.mutate({ id: e.id, action: 'markPaid' })}
+                            className="rounded-lg px-2 py-1 text-xs font-medium text-brand-600 hover:bg-brand-50">
+                            To'landi
                           </button>
-                          <button type="button" title="Rad etish"
-                            onClick={() => decide.mutate({ id: e.id, action: 'reject' })}
-                            className="rounded-lg p-2 text-red-600 hover:bg-red-50">
-                            <X className="h-4 w-4" />
-                          </button>
-                        </>
-                      )}
-                      {can('expenses.update') && e.status === 'approved' && (
-                        <button type="button"
-                          onClick={() => decide.mutate({ id: e.id, action: 'markPaid' })}
-                          className="rounded-lg px-2 py-1 text-xs font-medium text-brand-600 hover:bg-brand-50">
-                          To'landi
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-              {expensesQuery.data?.items.length === 0 && (
-                <EmptyRow
-                  colSpan={7}
-                  icon={Receipt}
-                  title="Chiqim yozilmagan"
-                  hint="Bog'cha xarajatlari shu yerda qayd etiladi — oziq-ovqat, kommunal, ta'mir."
-                />
-              )}
-            </tbody>
-          </table>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+                {expensesQuery.data?.items.length === 0 && (
+                  <EmptyRow
+                    colSpan={7}
+                    icon={Receipt}
+                    title="Chiqim yozilmagan"
+                    hint="Bog'cha xarajatlari shu yerda qayd etiladi — oziq-ovqat, kommunal, ta'mir."
+                  />
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

@@ -10,7 +10,7 @@ chiqish emas, lekin ekranda ko'rgan odam uchun farqi yo'q.
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
 from typing import Any
 
@@ -121,15 +121,10 @@ def _revenue_trend(
         date_from=start,
         date_to=today,
         branch_id=branch_id,
+        group_by="month",
     )
 
-    # Bo'sh oylar ham qatorda turishi kerak: grafikda "hech kim to'lamagan
-    # oy" yo'q bo'lib ketsa, tushish o'sish bo'lib ko'rinardi.
-    totals = {row["month"]: row["total"] for row in report["by_month"]}
-    result: list[dict[str, Any]] = []
-    cursor = start
-    while cursor <= today:
-        key = cursor.isoformat()[:7]
-        result.append({"month": key, "total": totals.get(key, "0.00")})
-        cursor = (cursor.replace(day=28) + timedelta(days=4)).replace(day=1)
-    return result
+    # Bo'sh oylar ham qatorda turadi — selektor davrlarni uzluksiz
+    # qaytaradi (`period_buckets`): grafikda "hech kim to'lamagan oy"
+    # yo'q bo'lib ketsa, tushish o'sish bo'lib ko'rinardi.
+    return [{"month": row["period"][:7], "total": row["total"]} for row in report["by_period"]]

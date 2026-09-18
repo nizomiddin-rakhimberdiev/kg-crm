@@ -33,49 +33,51 @@ export default function PlatformGrantsPage() {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-800">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Bog'cha</th>
-              <th className="px-4 py-3">Kim</th>
-              <th className="px-4 py-3">Sabab</th>
-              <th className="px-4 py-3">Berilgan</th>
-              <th className="px-4 py-3">Tugaydi</th>
-              <th className="px-4 py-3">Holat</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800 bg-slate-900/40">
-            {rows.map((row) => (
-              <tr key={row.id}>
-                <td className="px-4 py-3 font-medium">{row.organization_name}</td>
-                <td className="px-4 py-3 text-slate-400">{row.platform_email}</td>
-                <td className="max-w-sm px-4 py-3 text-slate-300">{row.reason}</td>
-                <td className="px-4 py-3 text-slate-400">{when(row.created_at)}</td>
-                <td className="px-4 py-3 text-slate-400">{when(row.expires_at)}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={cn(
-                      'rounded-full px-2 py-0.5 text-xs font-medium',
-                      row.is_active
-                        ? 'bg-amber-500/10 text-amber-400'
-                        : 'bg-slate-700/40 text-slate-400',
-                    )}
-                  >
-                    {row.is_active ? 'Faol' : row.revoked_at ? 'Bekor qilingan' : 'Tugagan'}
-                  </span>
-                </td>
-              </tr>
-            ))}
-            {!isLoading && rows.length === 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
-                  <KeyRound className="mx-auto mb-2 h-6 w-6" />
-                  Hech qanday ruxsat berilmagan.
-                </td>
+                <th className="px-4 py-3">Bog'cha</th>
+                <th className="px-4 py-3">Kim</th>
+                <th className="px-4 py-3">Sabab</th>
+                <th className="px-4 py-3">Berilgan</th>
+                <th className="px-4 py-3">Tugaydi</th>
+                <th className="px-4 py-3">Holat</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-800 bg-slate-900/40">
+              {rows.map((row) => (
+                <tr key={row.id}>
+                  <td className="px-4 py-3 font-medium">{row.organization_name}</td>
+                  <td className="px-4 py-3 text-slate-400">{row.platform_email}</td>
+                  <td className="max-w-sm px-4 py-3 text-slate-300">{row.reason}</td>
+                  <td className="px-4 py-3 text-slate-400">{when(row.created_at)}</td>
+                  <td className="px-4 py-3 text-slate-400">{when(row.expires_at)}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={cn(
+                        'rounded-full px-2 py-0.5 text-xs font-medium',
+                        row.is_active
+                          ? 'bg-amber-500/10 text-amber-400'
+                          : 'bg-slate-700/40 text-slate-400',
+                      )}
+                    >
+                      {row.is_active ? 'Faol' : row.revoked_at ? 'Bekor qilingan' : 'Tugagan'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {!isLoading && rows.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
+                    <KeyRound className="mx-auto mb-2 h-6 w-6" />
+                    Hech qanday ruxsat berilmagan.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

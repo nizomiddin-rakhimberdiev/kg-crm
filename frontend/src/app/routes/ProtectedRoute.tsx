@@ -26,12 +26,20 @@ export function ProtectedRoute() {
   return <Outlet />
 }
 
-export function PermissionRoute({ permission }: { permission: PermissionCode }) {
+export function PermissionRoute({
+  permission,
+}: {
+  /** Bitta ruxsat yoki ro'yxat — ro'yxatda istalgan bittasi yetarli. */
+  permission: PermissionCode | PermissionCode[]
+}) {
   const { can } = useCan()
   // `.read` ni tekshiramiz: sahifani ochish uchun o'qish yetarli, yozish
   // huquqi alohida, tugmalar darajasida hal qilinadi.
-  const readPermission = permission.replace(/\.\w+$/, '.read') as PermissionCode
-  if (!can(readPermission)) return <Navigate to="/dashboard" replace />
+  const required = Array.isArray(permission) ? permission : [permission]
+  const allowed = required.some((code) =>
+    can(code.replace(/\.\w+$/, '.read') as PermissionCode),
+  )
+  if (!allowed) return <Navigate to="/dashboard" replace />
   return <Outlet />
 }
 

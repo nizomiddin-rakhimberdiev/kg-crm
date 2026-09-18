@@ -12,14 +12,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, KeyRound, Pause, Play, Timer } from 'lucide-react'
 import { ApiError } from '@/lib/api/types'
-import { cn, formatUZS } from '@/lib/utils'
+import { cn, formatDate, formatUZS } from '@/lib/utils'
 import { platform } from '../api'
 import { supportHandoff } from '@/lib/auth/supportSession'
 import { usePlatformAuth } from '../PlatformAuthProvider'
 import { STATUS_LABEL } from './PlatformOrganizationsPage'
 
 const day = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString('uz-UZ', { dateStyle: 'medium' }) : '—'
+  formatDate(iso)
 
 const INVOICE_TONE: Record<string, string> = {
   paid: 'bg-emerald-500/10 text-emerald-400',

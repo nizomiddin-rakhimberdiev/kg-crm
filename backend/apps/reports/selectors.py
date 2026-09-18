@@ -15,21 +15,31 @@ Ma'lumot o'sganda MV qo'shiladi, lekin u ham shu qatlam ortida qoladi.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
 from django.db.models import Count, DecimalField, Q, Sum, Value
-from django.db.models.functions import Coalesce, TruncMonth
+from django.db.models.functions import (
+    Coalesce,
+    TruncDay,
+    TruncMonth,
+    TruncQuarter,
+    TruncWeek,
+    TruncYear,
+)
 
 from apps.attendance.models import AttendanceRecord, AttendanceStatus
 from apps.children.models import Child
+from apps.core.exceptions import BusinessRuleViolation
 from apps.expenses.models import Expense, ExpenseStatus
 from apps.finance.models import Payment
 from apps.finance.selectors import debtor_queryset
 from apps.payroll.models import PayrollRun, PayrollStatus
 
 __all__ = [
+    "GROUP_BY_CHOICES",
+    "period_buckets",
     "revenue_report",
     "expense_report",
     "payroll_report",
@@ -52,14 +62,118 @@ def _money(value: Any) -> str:
     return f"{Decimal(value or 0):.2f}"
 
 
+# --- Davr kesimi ---
+#
+# Hisobot `group_by` bilan kun / hafta / oy / chorak / yil kesimida
+# qaytadi (docs/04 §14.2). Bir xil davr uchun jami ko'rsatkichlar
+# kesimga bog'liq EMAS — kesim faqat qatorlarni qanday bo'lishni
+# belgilaydi. Shu sababli ikkalasi ham bitta queryset'dan hisoblanadi.
+GROUP_BY_CHOICES: tuple[str, ...] = ("day", "week", "month", "quarter", "year")
+DEFAULT_GROUP_BY = "month"
+
+# Kunlik kesimda o'n yillik davr so'ralsa 3 650 qator qaytardi — bu
+# grafik uchun ham, brauzer uchun ham ma'nosiz. Chegara ochiq xato
+# beradi va yirikroq kesimni taklif qiladi.
+MAX_BUCKETS = 400
+
+_TRUNC = {
+    "day": TruncDay,
+    "week": TruncWeek,
+    "month": TruncMonth,
+    "quarter": TruncQuarter,
+    "year": TruncYear,
+}
+
+
+def _validate_group_by(group_by: str) -> str:
+    if group_by not in GROUP_BY_CHOICES:
+        raise BusinessRuleViolation(
+            f"`group_by` noto'g'ri: {group_by!r}. Mumkin: {', '.join(GROUP_BY_CHOICES)}."
+        )
+    return group_by
+
+
+def _add_months(value: date, months: int) -> date:
+    total = value.year * 12 + (value.month - 1) + months
+    return date(total // 12, total % 12 + 1, 1)
+
+
+def _bucket_start(value: date, group_by: str) -> date:
+    """Sana tushadigan davrning BOSHI — Postgres `date_trunc` bilan bir xil."""
+    if group_by == "day":
+        return value
+    if group_by == "week":
+        return value - timedelta(days=value.weekday())  # ISO: dushanba
+    if group_by == "month":
+        return value.replace(day=1)
+    if group_by == "quarter":
+        return date(value.year, 3 * ((value.month - 1) // 3) + 1, 1)
+    return date(value.year, 1, 1)
+
+
+def _next_bucket(start: date, group_by: str) -> date:
+    if group_by == "day":
+        return start + timedelta(days=1)
+    if group_by == "week":
+        return start + timedelta(days=7)
+    if group_by == "month":
+        return _add_months(start, 1)
+    if group_by == "quarter":
+        return _add_months(start, 3)
+    return date(start.year + 1, 1, 1)
+
+
+def period_buckets(date_from: date, date_to: date, group_by: str) -> list[date]:
+    """
+    `[date_from, date_to]` ni qamrab oladigan davr boshlari — UZLUKSIZ.
+
+    Bo'sh davr ham qatorda turadi: to'lovsiz hafta grafikdan tushib
+    qolsa, tushish o'sish bo'lib ko'rinardi — va bu eng noto'g'ri
+    xulosaga olib keladigan turdagi xato.
+    """
+    group_by = _validate_group_by(group_by)
+    if date_from > date_to:
+        raise BusinessRuleViolation("Davr boshi oxiridan keyin bo'lishi mumkin emas.")
+
+    buckets: list[date] = []
+    cursor = _bucket_start(date_from, group_by)
+    while cursor <= date_to:
+        buckets.append(cursor)
+        if len(buckets) > MAX_BUCKETS:
+            raise BusinessRuleViolation(
+                f"Bu davr {group_by!r} kesimida {MAX_BUCKETS} dan ortiq qator beradi — "
+                f"yirikroq kesim tanlang."
+            )
+        cursor = _next_bucket(cursor, group_by)
+    return buckets
+
+
+def _as_date(value: Any) -> date:
+    """`Trunc*` DateTimeField'da datetime, DateField'da date qaytaradi."""
+    return value.date() if isinstance(value, datetime) else value
+
+
+def _grouped_totals(queryset: Any, field: str, group_by: str, **aggregates: Any) -> dict[date, Any]:
+    """Queryset'ni davr bo'yicha yig'adi: `{davr_boshi: {agregatlar}}`."""
+    rows = (
+        queryset.annotate(period=_TRUNC[group_by](field))
+        .values("period")
+        .annotate(**aggregates)
+        .order_by("period")
+    )
+    return {_as_date(row["period"]): row for row in rows}
+
+
 def revenue_report(
     *,
     organization_id: Any,
     date_from: date,
     date_to: date,
     branch_id: Any = None,
+    group_by: str = DEFAULT_GROUP_BY,
 ) -> dict[str, Any]:
-    """Oylik kesimda qabul qilingan to'lovlar."""
+    """Davr kesimida (`group_by`) qabul qilingan to'lovlar."""
+    buckets = period_buckets(date_from, date_to, group_by)
     queryset = Payment.objects.filter(
         organization_id=organization_id,
         paid_at__date__gte=date_from,
@@ -68,11 +182,8 @@ def revenue_report(
     if branch_id:
         queryset = queryset.filter(branch_id=branch_id)
 
-    by_month = (
-        queryset.annotate(month=TruncMonth("paid_at"))
-        .values("month")
-        .annotate(total=Coalesce(Sum("amount"), ZERO), count=Count("id"))
-        .order_by("month")
+    by_period = _grouped_totals(
+        queryset, "paid_at", group_by, total=Coalesce(Sum("amount"), ZERO), count=Count("id")
     )
     by_method = (
         queryset.values("method")
@@ -84,15 +195,16 @@ def revenue_report(
         "basis": BASIS,
         "date_from": date_from.isoformat(),
         "date_to": date_to.isoformat(),
+        "group_by": group_by,
         "total": _money(queryset.aggregate(t=Coalesce(Sum("amount"), ZERO))["t"]),
         "payment_count": queryset.count(),
-        "by_month": [
+        "by_period": [
             {
-                "month": row["month"].date().isoformat()[:7],
-                "total": _money(row["total"]),
-                "count": row["count"],
+                "period": bucket.isoformat(),
+                "total": _money(by_period.get(bucket, {}).get("total")),
+                "count": by_period.get(bucket, {}).get("count", 0),
             }
-            for row in by_month
+            for bucket in buckets
         ],
         "by_method": [
             {"method": row["method"], "total": _money(row["total"]), "count": row["count"]}
@@ -107,6 +219,7 @@ def expense_report(
     date_from: date,
     date_to: date,
     branch_id: Any = None,
+    group_by: str = DEFAULT_GROUP_BY,
 ) -> dict[str, Any]:
     """
     Chiqimlar — faqat tasdiqlangan va to'langan.
@@ -114,6 +227,7 @@ def expense_report(
     Kutilayotgan so'rov hali xarajat emas: uni qo'shish sarfni oshirib
     ko'rsatardi va byudjet qarorini buzardi (Sprint 7 bilan bir xil qoida).
     """
+    buckets = period_buckets(date_from, date_to, group_by)
     queryset = Expense.objects.filter(
         organization_id=organization_id,
         expense_date__gte=date_from,
@@ -123,11 +237,8 @@ def expense_report(
     if branch_id:
         queryset = queryset.filter(branch_id=branch_id)
 
-    by_month = (
-        queryset.annotate(month=TruncMonth("expense_date"))
-        .values("month")
-        .annotate(total=Coalesce(Sum("amount"), ZERO))
-        .order_by("month")
+    by_period = _grouped_totals(
+        queryset, "expense_date", group_by, total=Coalesce(Sum("amount"), ZERO)
     )
     by_category = (
         queryset.values("category__name")
@@ -138,10 +249,14 @@ def expense_report(
     return {
         "date_from": date_from.isoformat(),
         "date_to": date_to.isoformat(),
+        "group_by": group_by,
         "total": _money(queryset.aggregate(t=Coalesce(Sum("amount"), ZERO))["t"]),
-        "by_month": [
-            {"month": row["month"].isoformat()[:7], "total": _money(row["total"])}
-            for row in by_month
+        "by_period": [
+            {
+                "period": bucket.isoformat(),
+                "total": _money(by_period.get(bucket, {}).get("total")),
+            }
+            for bucket in buckets
         ],
         "by_category": [
             {"category": row["category__name"] or "—", "total": _money(row["total"])}
@@ -293,6 +408,7 @@ def profit_loss(
     date_from: date,
     date_to: date,
     branch_id: Any = None,
+    group_by: str = DEFAULT_GROUP_BY,
 ) -> dict[str, Any]:
     """
     Foyda va zarar: daromad − chiqim − oylik.
@@ -301,18 +417,29 @@ def profit_loss(
     to'langan/tasdiqlangan xarajat. Hisoblash usuli (accrual) boshqa
     raqam berardi va u buxgalteriya qarori — mijoz bilan kelishilishi
     kerak, taxmin qilinmasligi.
+
+    **Oylik maosh — oylik ko'rsatkich.** U davr oyi bo'yicha hisoblanadi
+    (`period_year`/`period_month`) va oy, chorak, yil kesimida o'z
+    davriga tushadi. Kun va hafta kesimida esa qatorlarga TAQSIMLANMAYDI
+    (`payroll_in_periods: false`): bir oylik maoshni 30 kunga bo'lib
+    yoki oyning birinchi kuniga yozib qo'yish ikkalasi ham o'ylab
+    topilgan raqam bo'lardi. Davr bo'yicha jami (`payroll`, `net`) esa
+    kesimdan qat'i nazar bir xil qoladi.
     """
+    buckets = period_buckets(date_from, date_to, group_by)
     revenue = revenue_report(
         organization_id=organization_id,
         date_from=date_from,
         date_to=date_to,
         branch_id=branch_id,
+        group_by=group_by,
     )
     expenses = expense_report(
         organization_id=organization_id,
         date_from=date_from,
         date_to=date_to,
         branch_id=branch_id,
+        group_by=group_by,
     )
 
     payroll_queryset = PayrollRun.objects.filter(
@@ -324,42 +451,53 @@ def profit_loss(
     if branch_id:
         payroll_queryset = payroll_queryset.filter(branch_id=branch_id)
 
-    payroll_by_month: dict[str, Decimal] = {}
+    payroll_in_periods = group_by in ("month", "quarter", "year")
+    payroll_total = Decimal("0")
+    payroll_by_period: dict[date, Decimal] = {}
     for run in payroll_queryset.values("period_year", "period_month", "total_gross"):
         period = date(run["period_year"], run["period_month"], 1)
-        if date_from.replace(day=1) <= period <= date_to:
-            key = period.isoformat()[:7]
-            payroll_by_month[key] = payroll_by_month.get(key, Decimal("0")) + run["total_gross"]
+        if not date_from.replace(day=1) <= period <= date_to:
+            continue
+        payroll_total += run["total_gross"]
+        if payroll_in_periods:
+            key = _bucket_start(period, group_by)
+            payroll_by_period[key] = payroll_by_period.get(key, Decimal("0")) + run["total_gross"]
 
-    revenue_by_month = {row["month"]: Decimal(row["total"]) for row in revenue["by_month"]}
-    expense_by_month = {row["month"]: Decimal(row["total"]) for row in expenses["by_month"]}
-    months = sorted(set(revenue_by_month) | set(expense_by_month) | set(payroll_by_month))
+    revenue_by_period = {
+        date.fromisoformat(row["period"]): Decimal(row["total"]) for row in revenue["by_period"]
+    }
+    expense_by_period = {
+        date.fromisoformat(row["period"]): Decimal(row["total"]) for row in expenses["by_period"]
+    }
 
-    payroll_total = sum(payroll_by_month.values(), Decimal("0"))
     net = Decimal(revenue["total"]) - Decimal(expenses["total"]) - payroll_total
+
+    rows = []
+    for bucket in buckets:
+        row_revenue = revenue_by_period.get(bucket, Decimal("0"))
+        row_expenses = expense_by_period.get(bucket, Decimal("0"))
+        row_payroll = payroll_by_period.get(bucket, Decimal("0"))
+        rows.append(
+            {
+                "period": bucket.isoformat(),
+                "revenue": _money(row_revenue),
+                "expenses": _money(row_expenses),
+                "payroll": _money(row_payroll),
+                "net": _money(row_revenue - row_expenses - row_payroll),
+            }
+        )
 
     return {
         "basis": BASIS,
         "date_from": date_from.isoformat(),
         "date_to": date_to.isoformat(),
+        "group_by": group_by,
+        "payroll_in_periods": payroll_in_periods,
         "revenue": revenue["total"],
         "expenses": expenses["total"],
         "payroll": _money(payroll_total),
         "net": _money(net),
-        "by_month": [
-            {
-                "month": month,
-                "revenue": _money(revenue_by_month.get(month, Decimal("0"))),
-                "expenses": _money(expense_by_month.get(month, Decimal("0"))),
-                "payroll": _money(payroll_by_month.get(month, Decimal("0"))),
-                "net": _money(
-                    revenue_by_month.get(month, Decimal("0"))
-                    - expense_by_month.get(month, Decimal("0"))
-                    - payroll_by_month.get(month, Decimal("0"))
-                ),
-            }
-            for month in months
-        ],
+        "by_period": rows,
     }
 
 

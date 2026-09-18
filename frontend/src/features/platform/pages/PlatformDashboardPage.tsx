@@ -10,11 +10,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, Building2, Clock, Wallet } from 'lucide-react'
-import { formatUZS } from '@/lib/utils'
+import { formatDate, formatUZS } from '@/lib/utils'
 import { platform } from '../api'
 
 const day = (iso: string) =>
-  new Date(iso).toLocaleDateString('uz-UZ', { dateStyle: 'medium' })
+  formatDate(iso)
 
 const daysLeft = (iso: string) =>
   Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000))

@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, Check, ArrowUpRight, type LucideIcon } from 'lucide-react'
+import { ArrowUpRight, Check, ChevronDown, ChevronLeft, ChevronRight, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Modal } from './Modal'
 
@@ -381,47 +381,149 @@ export function StatCard({
 
 /* ------------------------------------------------------------ Pagination */
 
-interface PaginationProps {
-  label?: string
-  pages?: number
-  current?: number
+export interface PaginationProps {
+  /** Joriy sahifa (1 dan). */
+  page: number
+  totalPages: number
+  /** Jami yozuvlar soni — "1–25 / 105" uchun. */
+  count: number
+  pageSize: number
+  onPageChange: (page: number) => void
+  /** Berilsa, sahifa hajmi tanlovi ko'rsatiladi. */
+  onPageSizeChange?: (size: number) => void
+  pageSizeOptions?: number[]
+  className?: string
 }
 
-export function Pagination({ label, pages = 3, current = 1 }: PaginationProps) {
-  const [page, setPage] = React.useState(current)
-  const go = (p: number) => setPage(Math.min(pages, Math.max(1, p)))
+/**
+ * Sahifa raqamlari oynasi: 1 … 4 [5] 6 … 12.
+ *
+ * Har doim birinchi va oxirgi, joriy va uning ikki qo'shnisi
+ * ko'rinadi; oraliq `null` (ko'p nuqta) bilan qisqaradi.
+ */
+function pageWindow(page: number, total: number): Array<number | null> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  const pages = new Set<number>([1, total, page - 1, page, page + 1])
+  const sorted = [...pages].filter((n) => n >= 1 && n <= total).sort((a, b) => a - b)
+  const result: Array<number | null> = []
+  sorted.forEach((n, index) => {
+    const previous = sorted[index - 1]
+    if (previous !== undefined && n - previous > 1) result.push(null)
+    result.push(n)
+  })
+  return result
+}
+
+/**
+ * Server sahifalashi uchun boshqaruv (docs/04 §3: `page`, `page_size`).
+ *
+ * Holat TASHQARIDA yashaydi — komponent faqat chizadi va xabar beradi.
+ * Shunda filtr o'zgarganda sahifani 1 ga qaytarish, URL bilan
+ * sinxronlash kabi qarorlar chaqiruvchida qoladi.
+ */
+export function Pagination({
+  page,
+  totalPages,
+  count,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  pageSizeOptions = [25, 50, 100],
+  className,
+}: PaginationProps) {
+  if (count === 0) return null
+
+  const from = (page - 1) * pageSize + 1
+  const to = Math.min(page * pageSize, count)
+  const go = (next: number) => {
+    const clamped = Math.min(Math.max(1, next), Math.max(1, totalPages))
+    if (clamped !== page) onPageChange(clamped)
+  }
+  const navButton =
+    'grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-500 transition-all hover:bg-slate-50 active:scale-90 disabled:opacity-40 disabled:active:scale-100'
+
   return (
-    <div className="flex items-center justify-between px-1 pt-4 text-sm">
-      {label && <p className="text-slate-400">{label}</p>}
-      <div className="ml-auto flex items-center gap-1">
-        <button
-          onClick={() => go(page - 1)}
-          disabled={page === 1}
-          className="grid place-items-center w-8 h-8 rounded-lg border border-slate-200 text-slate-400 transition-all hover:bg-slate-50 active:scale-90 disabled:opacity-40"
-        >
-          ‹
-        </button>
-        {Array.from({ length: pages }).map((_, i) => (
-          <button
-            key={i}
-            onClick={() => go(i + 1)}
-            className={cn(
-              'grid place-items-center w-8 h-8 rounded-lg text-sm font-medium transition-all active:scale-90',
-              i + 1 === page
-                ? 'bg-brand-600 text-white'
-                : 'border border-slate-200 text-slate-500 hover:bg-slate-50',
-            )}
+    <div
+      className={cn(
+        'flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 text-sm',
+        className,
+      )}
+    >
+      <p className="text-slate-500 tabular-nums">
+        <span className="font-medium text-slate-700">
+          {from}–{to}
+        </span>{' '}
+        / {count}
+      </p>
+
+      <div className="ml-auto flex items-center gap-2">
+        {onPageSizeChange && (
+          <select
+            aria-label="Sahifadagi qatorlar"
+            value={pageSize}
+            onChange={(event) => onPageSizeChange(Number(event.target.value))}
+            className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-600 outline-none focus:border-brand-500"
           >
-            {i + 1}
-          </button>
-        ))}
-        <button
-          onClick={() => go(page + 1)}
-          disabled={page === pages}
-          className="grid place-items-center w-8 h-8 rounded-lg border border-slate-200 text-slate-400 transition-all hover:bg-slate-50 active:scale-90 disabled:opacity-40"
-        >
-          ›
-        </button>
+            {pageSizeOptions.map((size) => (
+              <option key={size} value={size}>
+                {size} tadan
+              </option>
+            ))}
+          </select>
+        )}
+
+        {totalPages > 1 && (
+          <nav aria-label="Sahifalar" className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => go(page - 1)}
+              disabled={page <= 1}
+              aria-label="Oldingi sahifa"
+              className={navButton}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+
+            {/* Raqamlar — `sm` dan boshlab; telefonda "3 / 12" yetarli. */}
+            <div className="hidden items-center gap-1 sm:flex">
+              {pageWindow(page, totalPages).map((n, index) =>
+                n === null ? (
+                  <span key={`gap-${index}`} className="w-6 text-center text-slate-300">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => go(n)}
+                    aria-current={n === page ? 'page' : undefined}
+                    className={cn(
+                      'grid h-9 min-w-9 place-items-center rounded-lg px-2 text-sm font-medium transition-all active:scale-90 tabular-nums',
+                      n === page
+                        ? 'bg-brand-600 text-white'
+                        : 'border border-slate-200 text-slate-500 hover:bg-slate-50',
+                    )}
+                  >
+                    {n}
+                  </button>
+                ),
+              )}
+            </div>
+            <span className="px-1 text-slate-500 tabular-nums sm:hidden">
+              {page} / {totalPages}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => go(page + 1)}
+              disabled={page >= totalPages}
+              aria-label="Keyingi sahifa"
+              className={navButton}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </nav>
+        )}
       </div>
     </div>
   )

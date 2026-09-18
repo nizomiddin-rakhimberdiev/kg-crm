@@ -4,16 +4,24 @@
  * Filtr va qidiruv backend'da bajariladi: 300 bolali bog'chada butun
  * ro'yxatni brauzerga yuklab, u yerda filtrlash sahifani sekinlashtiradi
  * va sahifalash bilan ziddiyatga kiradi.
+ *
+ * Sahifalash ham serverda (docs/04 §3): `page`/`page_size` so'rovga
+ * ketadi, `meta.pagination` javobdan o'qiladi. Filtr o'zgarganda sahifa
+ * 1 ga qaytadi — aks holda "3-sahifa" yangi filtrda bo'sh chiqib,
+ * "bola yo'q" degan noto'g'ri xulosa berardi.
  */
 
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Phone, Plus, Search, Trash2, Upload, Users } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { useBranchScope } from '@/app/providers/BranchProvider'
+import { Pagination } from '@/components/ui/primitives'
 import { childrenApi, groupsApi, type ChildInput } from '@/features/children/api'
 import { ImportWizard } from '@/features/children/components/ImportWizard'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { usePageState } from '@/hooks/usePageState'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Child } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
@@ -42,7 +50,9 @@ export default function ChildrenPage() {
   const { can } = useCan()
 
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search.trim())
   const [statusFilter, setStatusFilter] = useState('')
+  const [pageSize, setPageSize] = useState(25)
   const [showImport, setShowImport] = useState(false)
   const [showForm, setShowForm] = useState(false)
   // `null` — yangi bola qo'shilyapti; obyekt — mavjudi tahrirlanyapti.
@@ -82,8 +92,15 @@ export default function ChildrenPage() {
     setShowForm(true)
   }
 
+  // Filtr yoki sahifa hajmi o'zgarsa — birinchi sahifadan (hosila, effekt emas).
+  const [page, setPage] = usePageState(
+    JSON.stringify([debouncedSearch, statusFilter, selectedBranchId, pageSize]),
+  )
+
   const params = {
-    ...(search ? { search } : {}),
+    page,
+    page_size: pageSize,
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
     ...(statusFilter ? { enrollment_status: statusFilter } : {}),
     ...(selectedBranchId ? { branch: selectedBranchId } : {}),
   }
@@ -91,6 +108,9 @@ export default function ChildrenPage() {
   const childrenQuery = useQuery({
     queryKey: queryKeys.children(organizationId, params),
     queryFn: () => childrenApi.list(params),
+    // Sahifa almashganda eski qatorlar yangisi kelguncha turadi —
+    // jadval har bosishda bo'shab-to'lib "lipillamaydi".
+    placeholderData: keepPreviousData,
   })
 
   const groupsQuery = useQuery({
@@ -148,7 +168,99 @@ export default function ChildrenPage() {
     onError: (err) => setError(err instanceof ApiError ? err.message : 'Xatolik.'),
   })
 
-  const total = childrenQuery.data?.pagination?.count ?? 0
+  const pagination = childrenQuery.data?.pagination
+  const total = pagination?.count ?? 0
+  const children = childrenQuery.data?.items ?? []
+
+  const primaryGuardian = (child: Child) =>
+    child.guardians.find((g) => g.is_primary) ?? child.guardians[0] ?? null
+
+  // Jadval va kartochka bir xil hujayralarni ishlatadi — ikki qobiq,
+  // bitta mazmun: tugma yoki holat o'zgarsa, ikkalasi birga o'zgaradi.
+  // Bular KOMPONENT emas, render-funksiya: sahifa ichida yangi komponent
+  // tipi yaratilsa React uni har renderda qayta o'rnatadi va `<select>`
+  // fokusi yo'qoladi.
+  const renderName = (child: Child) => (
+    <Link to={`/children/${child.id}`} className="group/name flex min-w-0 items-center gap-3">
+      <span
+        className={cn(
+          'grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-bold',
+          avatarTone(child.full_name),
+        )}
+      >
+        {initials(child.full_name)}
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate font-medium text-slate-800 transition-colors group-hover/name:text-brand-700">
+          {child.last_name} {child.first_name}
+        </span>
+        {child.middle_name && (
+          <span className="block truncate text-xs text-slate-400">{child.middle_name}</span>
+        )}
+      </span>
+    </Link>
+  )
+
+  const renderStatus = (status: Child['enrollment_status']) => (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
+        status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500',
+      )}
+    >
+      <span
+        className={cn('h-1.5 w-1.5 rounded-full', status === 'active' ? 'bg-emerald-500' : 'bg-slate-400')}
+      />
+      {STATUS_LABELS[status] ?? status}
+    </span>
+  )
+
+  const renderGroup = (child: Child) =>
+    can('children.update') ? (
+      <select
+        aria-label="Guruh"
+        value={child.current_group?.id ?? ''}
+        onChange={(e) =>
+          e.target.value && enrollMutation.mutate({ childId: child.id, groupId: e.target.value })
+        }
+        className="max-w-[180px] rounded-lg border border-slate-200 px-2 py-1 text-xs outline-none focus:border-brand-500"
+      >
+        <option value="">— guruhsiz —</option>
+        {groupsQuery.data?.items.map((group) => (
+          <option key={group.id} value={group.id}>
+            {group.name}
+            {group.capacity ? ` (${group.enrolled_count}/${group.capacity})` : ''}
+          </option>
+        ))}
+      </select>
+    ) : (
+      <span className="text-sm text-slate-600">{child.current_group?.name ?? '—'}</span>
+    )
+
+  const renderActions = (child: Child) => (
+    <div className="flex items-center justify-end gap-1">
+      {can('children.update') && (
+        <button
+          type="button"
+          onClick={() => openEdit(child)}
+          className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+          title="Tahrirlash"
+        >
+          <Pencil className="h-4 w-4" />
+        </button>
+      )}
+      {can('children.delete') && (
+        <button
+          type="button"
+          onClick={() => removeMutation.mutate(child.id)}
+          className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+          title="Arxivga o'tkazish"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )
 
   return (
     <div className="space-y-6">
@@ -161,13 +273,13 @@ export default function ChildrenPage() {
             {total > 0 ? `Jami ${total} ta bola` : "Ro'yxat bo'sh"}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex w-full gap-2 sm:w-auto">
           {can('children.create') && (
             <>
               <button
                 type="button"
                 onClick={() => setShowImport(true)}
-                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:flex-none"
               >
                 <Upload className="h-4 w-4" />
                 Import
@@ -175,7 +287,7 @@ export default function ChildrenPage() {
               <button
                 type="button"
                 onClick={openCreate}
-                className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 sm:flex-none"
               >
                 <Plus className="h-4 w-4" />
                 Bola qo'shish
@@ -249,7 +361,7 @@ export default function ChildrenPage() {
             </select>
           </div>
 
-          <div className="sm:col-span-2">
+          <div className="flex gap-2 sm:col-span-2">
             <button
               type="submit"
               disabled={saving}
@@ -268,8 +380,8 @@ export default function ChildrenPage() {
         </form>
       )}
 
-      <div className="flex flex-wrap gap-3">
-        <div className="relative min-w-[220px] flex-1 sm:max-w-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <div className="relative flex-1 sm:min-w-[220px] sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="search"
@@ -305,11 +417,13 @@ export default function ChildrenPage() {
               : "Ma'lumotni yuklab bo'lmadi."}
           </p>
         )}
-        {childrenQuery.data?.items.length === 0 && (
+        {childrenQuery.data && children.length === 0 && (
           <div className="px-4 py-12 text-center">
             <Users className="mx-auto mb-3 h-10 w-10 text-slate-200" />
-            <p className="text-sm text-slate-500">Hozircha bola yo'q.</p>
-            {can('children.create') && (
+            <p className="text-sm text-slate-500">
+              {debouncedSearch || statusFilter ? 'Shartga mos bola topilmadi.' : "Hozircha bola yo'q."}
+            </p>
+            {can('children.create') && !debouncedSearch && !statusFilter && (
               <button
                 type="button"
                 onClick={() => setShowImport(true)}
@@ -321,140 +435,119 @@ export default function ChildrenPage() {
           </div>
         )}
 
-        {childrenQuery.data && childrenQuery.data.items.length > 0 && (
-          <table className="w-full text-sm">
-            <thead className="border-b border-slate-100 bg-slate-50/70 text-left text-[11px] uppercase tracking-wider text-slate-400">
-              <tr>
-                <th className="px-4 py-3 font-medium">Bola</th>
-                <th className="px-4 py-3 font-medium">Yosh</th>
-                <th className="px-4 py-3 font-medium">Guruh</th>
-                <th className="px-4 py-3 font-medium">Vasiy</th>
-                <th className="px-4 py-3 font-medium">Holat</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {childrenQuery.data.items.map((child) => {
-                const primary =
-                  child.guardians.find((g) => g.is_primary) ?? child.guardians[0] ?? null
-                return (
-                  <tr key={child.id} className="transition-colors hover:bg-slate-50/70">
-                    <td className="px-4 py-3">
-                      <Link
-                        to={`/children/${child.id}`}
-                        className="group/name flex items-center gap-3"
-                      >
-                        <span
-                          className={cn(
-                            'grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-bold',
-                            avatarTone(child.full_name),
-                          )}
-                        >
-                          {initials(child.full_name)}
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block truncate font-medium text-slate-800 transition-colors group-hover/name:text-brand-700">
-                            {child.last_name} {child.first_name}
-                          </span>
-                          {child.middle_name && (
-                            <span className="block truncate text-xs text-slate-400">
-                              {child.middle_name}
-                            </span>
-                          )}
-                        </span>
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-slate-600 tabular-nums">
-                      {child.age_years} yosh
-                    </td>
-                    <td className="px-4 py-3">
-                      {can('children.update') ? (
-                        <select
-                          aria-label="Guruh"
-                          value={child.current_group?.id ?? ''}
-                          onChange={(e) =>
-                            e.target.value &&
-                            enrollMutation.mutate({ childId: child.id, groupId: e.target.value })
-                          }
-                          className="rounded-lg border border-slate-200 px-2 py-1 text-xs outline-none focus:border-brand-500"
-                        >
-                          <option value="">— guruhsiz —</option>
-                          {groupsQuery.data?.items.map((group) => (
-                            <option key={group.id} value={group.id}>
-                              {group.name}
-                              {group.capacity ? ` (${group.enrolled_count}/${group.capacity})` : ''}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="text-slate-600">{child.current_group?.name ?? '—'}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {primary ? (
-                        <>
-                          <p className="truncate">{primary.guardian.full_name}</p>
-                          <a
-                            href={`tel:${primary.guardian.phone}`}
-                            className="mt-0.5 flex items-center gap-1 text-xs text-slate-400 transition-colors hover:text-brand-600"
-                          >
-                            <Phone className="h-3 w-3" />
-                            {primary.guardian.phone}
-                          </a>
-                        </>
-                      ) : (
-                        <span className="text-slate-300">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={cn(
-                          'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
-                          child.enrollment_status === 'active'
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : 'bg-slate-100 text-slate-500',
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            'h-1.5 w-1.5 rounded-full',
-                            child.enrollment_status === 'active'
-                              ? 'bg-emerald-500'
-                              : 'bg-slate-400',
-                          )}
-                        />
-                        {STATUS_LABELS[child.enrollment_status] ?? child.enrollment_status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        {can('children.update') && (
-                          <button
-                            type="button"
-                            onClick={() => openEdit(child)}
-                            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                            title="Tahrirlash"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                        )}
-                        {can('children.delete') && (
-                          <button
-                            type="button"
-                            onClick={() => removeMutation.mutate(child.id)}
-                            className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                            title="Arxivga o'tkazish"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
+        {children.length > 0 && (
+          <div
+            className={cn(
+              'transition-opacity',
+              childrenQuery.isPlaceholderData && 'opacity-60',
+            )}
+          >
+            {/* Jadval — planshet va undan keng ekranlar. */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[720px] text-sm">
+                <thead className="border-b border-slate-100 bg-slate-50/70 text-left text-[11px] uppercase tracking-wider text-slate-400">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Bola</th>
+                    <th className="px-4 py-3 font-medium">Yosh</th>
+                    <th className="px-4 py-3 font-medium">Guruh</th>
+                    <th className="px-4 py-3 font-medium">Vasiy</th>
+                    <th className="px-4 py-3 font-medium">Holat</th>
+                    <th className="px-4 py-3" />
                   </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {children.map((child) => {
+                    const primary = primaryGuardian(child)
+                    return (
+                      <tr key={child.id} className="transition-colors hover:bg-slate-50/70">
+                        <td className="px-4 py-3">
+                          {renderName(child)}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-slate-600 tabular-nums">
+                          {child.age_years} yosh
+                        </td>
+                        <td className="px-4 py-3">
+                          {renderGroup(child)}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {primary ? (
+                            <>
+                              <p className="truncate">{primary.guardian.full_name}</p>
+                              <a
+                                href={`tel:${primary.guardian.phone}`}
+                                className="mt-0.5 flex items-center gap-1 text-xs text-slate-400 transition-colors hover:text-brand-600"
+                              >
+                                <Phone className="h-3 w-3" />
+                                {primary.guardian.phone}
+                              </a>
+                            </>
+                          ) : (
+                            <span className="text-slate-300">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {renderStatus(child.enrollment_status)}
+                        </td>
+                        <td className="px-4 py-3">
+                          {renderActions(child)}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Kartochkalar — telefon. Gorizontal skroll jadvali barmoq
+                bilan ishlatib bo'lmaydigan darajada tor bo'lardi. */}
+            <ul className="divide-y divide-slate-100 md:hidden">
+              {children.map((child) => {
+                const primary = primaryGuardian(child)
+                return (
+                  <li key={child.id} className="space-y-3 px-4 py-3">
+                    <div className="flex items-start justify-between gap-3">
+                      {renderName(child)}
+                      {renderStatus(child.enrollment_status)}
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-500">
+                      <p>
+                        <span className="text-slate-400">Yosh:</span>{' '}
+                        <span className="text-slate-700 tabular-nums">{child.age_years}</span>
+                      </p>
+                      <p className="truncate">
+                        <span className="text-slate-400">Vasiy:</span>{' '}
+                        <span className="text-slate-700">{primary?.guardian.full_name ?? '—'}</span>
+                      </p>
+                      {primary && (
+                        <a
+                          href={`tel:${primary.guardian.phone}`}
+                          className="col-span-2 flex items-center gap-1 text-slate-500 hover:text-brand-600"
+                        >
+                          <Phone className="h-3 w-3" />
+                          {primary.guardian.phone}
+                        </a>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      {renderGroup(child)}
+                      {renderActions(child)}
+                    </div>
+                  </li>
                 )
               })}
-            </tbody>
-          </table>
+            </ul>
+          </div>
+        )}
+
+        {pagination && (
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.total_pages}
+            count={pagination.count}
+            pageSize={pagination.page_size}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         )}
       </div>
     </div>

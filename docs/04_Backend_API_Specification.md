@@ -530,12 +530,20 @@ Modules: `reports` + Dashboard (aggregation). **Read-only.** Exports are async.
 ### 14.2 Reports
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/reports/revenue` | `reports.read` | Revenue by period (`?from=&to=&group_by=month`) |
+| GET | `/reports/revenue` | `reports.read` | Revenue by period (`?from=&to=&group_by=`) |
 | GET | `/reports/debtors` | `reports.read` | Outstanding debt snapshot |
 | GET | `/reports/attendance` | `reports.read` | Attendance stats (`?group=&month=`) |
-| GET | `/reports/payroll` | `reports.read` | Payroll totals by period |
-| GET | `/reports/expenses` | `reports.read` | Expenses by category/period |
-| GET | `/reports/profit-loss` | `reports.read` | P&L: revenue − expenses − payroll |
+| GET | `/reports/payroll` | `reports.read` | Payroll totals by month for a year (`?year=`) |
+| GET | `/reports/expenses` | `reports.read` | Expenses by category/period (`?from=&to=&group_by=`) |
+| GET | `/reports/profit-loss` | `reports.read` | P&L: revenue − expenses − payroll (`?from=&to=&group_by=`) |
+
+**Period grouping (`group_by`)** — `day` · `week` · `month` (default) · `quarter` · `year`. Applies to `revenue`, `expenses` and `profit-loss`:
+
+- The response echoes `group_by` and returns `by_period: [{ period, … }]`, where `period` is the ISO date of the bucket **start** (`2026-09-01`, week buckets start on Monday, matching Postgres `date_trunc`). The series is **gap-free**: an empty week is returned as zeros, never dropped — a missing bucket would make a dip look like growth.
+- Range totals (`total`, `revenue`, `expenses`, `payroll`, `net`) do **not** depend on `group_by`; only the row split does.
+- A range that would produce more than 400 buckets (e.g. six years by day) is rejected with `422` — pick a coarser grouping.
+- **Payroll is a monthly figure.** In `month`/`quarter`/`year` grouping it lands in the bucket of its period month (`payroll_in_periods: true`). In `day`/`week` grouping it is **not** spread into rows (`payroll_in_periods: false`, row `payroll` = `0.00`, row `net` = revenue − expenses) — dividing one month's salaries across 30 days would be an invented number. The range totals still include it, and the UI says so on screen.
+- Exports (`POST /reports/{type}/export`) accept the same `group_by` in `params`, so the CSV matches what was on screen (header column `period`).
 | POST | `/reports/{type}/export` | `reports.export` | Queue an Excel/PDF export → returns `job_id` |
 | GET | `/reports/exports/{jobId}` | `reports.read` | Poll export status / download link |
 

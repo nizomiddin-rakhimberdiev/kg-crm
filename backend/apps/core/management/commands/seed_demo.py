@@ -355,7 +355,7 @@ class Command(BaseCommand):
         # to'lmasdi — va aynan shuning uchun uzoq vaqt sezilmay qoldi.
         capacity_left = {group.id: group.capacity - group.enrolled_count for group in groups}
 
-        for _ in range(count):
+        for index in range(count):
             is_boy = random.random() < 0.52
             last_name = random.choice(FAMILIYALAR)
             first_name = random.choice(O_ISMLAR if is_boy else Q_ISMLAR)
@@ -379,7 +379,10 @@ class Command(BaseCommand):
                 branch=branch,
                 first_name=random.choice(ONA_ISMLAR if random.random() < 0.75 else OTA_ISMLAR),
                 last_name=last_name + ("a" if random.random() < 0.75 else ""),
-                phone=f"+9989{random.randint(0, 9)}{random.randint(1000000, 9999999)}",
+                # Telefon indeksdan: `uq_guardian_branch_phone` — bir filialda
+                # ikki vasiy bir raqamda bo'lolmaydi, tasodifiy raqam esa
+                # 100+ bolada to'qnashib seed'ni yiqitardi.
+                phone=f"+9989{index % 10}{1000000 + (index * 7919) % 8999999:07d}",
             )
             attach_guardian(
                 child=child,

@@ -1,15 +1,22 @@
 import { api } from '@/lib/api/client'
-import type { AuditLog, DashboardKpis, ProfitLoss, ReportExport, RevenueReport } from '@/lib/api/types'
+import type {
+  AuditLog,
+  DashboardKpis,
+  ProfitLoss,
+  ReportExport,
+  ReportGroupBy,
+  RevenueReport,
+} from '@/lib/api/types'
 
 export const dashboardApi = {
   kpis: () => api.get<DashboardKpis>('/dashboard'),
 }
 
 export const reportsApi = {
-  revenue: (from: string, to: string) =>
-    api.get<RevenueReport>('/reports/revenue', { from, to }),
-  profitLoss: (from: string, to: string) =>
-    api.get<ProfitLoss>('/reports/profit-loss', { from, to }),
+  revenue: (from: string, to: string, groupBy: ReportGroupBy = 'month') =>
+    api.get<RevenueReport>('/reports/revenue', { from, to, group_by: groupBy }),
+  profitLoss: (from: string, to: string, groupBy: ReportGroupBy = 'month') =>
+    api.get<ProfitLoss>('/reports/profit-loss', { from, to, group_by: groupBy }),
 
   /** Eksportni navbatga qo'yadi — javob darhol qaytadi, fayl fonda tayyorlanadi. */
   requestExport: (reportType: string, params: Record<string, unknown> = {}) =>

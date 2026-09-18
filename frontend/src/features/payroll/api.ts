@@ -1,29 +1,8 @@
 import { api } from '@/lib/api/client'
-import type { Employee, PayrollItem, PayrollRun, Position } from '@/lib/api/types'
+import type { PayrollItem, PayrollRun } from '@/lib/api/types'
 
-export interface EmployeeInput {
-  first_name: string
-  last_name: string
-  phone?: string
-  position_id?: string | null
-  hire_date: string
-  base_salary: string
-  employment_status?: string
-}
-
-export const employeesApi = {
-  list: (params?: Record<string, unknown>) => api.list<Employee>('/employees', params),
-  create: (payload: EmployeeInput) => api.post<Employee>('/employees', payload),
-  update: (id: string, payload: Partial<EmployeeInput>) =>
-    api.patch<Employee>(`/employees/${id}`, payload),
-  terminate: (id: string) => api.delete(`/employees/${id}`),
-}
-
-export const positionsApi = {
-  list: () => api.list<Position>('/positions'),
-  create: (payload: { title: string; department?: string }) =>
-    api.post<Position>('/positions', payload),
-}
+// Xodimlar va lavozimlar API'si `features/staff/api.ts` da — ular
+// "Xodimlar" sahifasiga tegishli; oylik faqat hisoblashlar bilan ishlaydi.
 
 export const payrollApi = {
   listRuns: (params?: Record<string, unknown>) => api.list<PayrollRun>('/payroll/runs', params),

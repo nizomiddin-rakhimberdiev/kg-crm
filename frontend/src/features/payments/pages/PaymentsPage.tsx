@@ -237,83 +237,85 @@ export default function PaymentsPage() {
             )}
 
             {invoices.length > 0 && (
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Raqam</th>
-                    <th className="px-4 py-3 font-medium">Bola</th>
-                    <th className="px-4 py-3 text-right font-medium">Summa</th>
-                    <th className="px-4 py-3 text-right font-medium">Qoldiq</th>
-                    <th className="px-4 py-3 font-medium">Holat</th>
-                    <th className="px-4 py-3" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {invoices.map((invoice) => (
-                    <tr key={invoice.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 font-mono text-xs text-slate-500">
-                        {invoice.number}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-slate-800">
-                        {invoice.child_name}
-                      </td>
-                      <td className="px-4 py-3 text-right text-slate-700">
-                        {money(invoice.amount_due)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-slate-500">
-                        {money(invoice.amount_outstanding)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={cn(
-                            'rounded-full px-2 py-0.5 text-xs font-medium',
-                            STATUS_STYLES[invoice.status],
-                          )}
-                        >
-                          {STATUS_LABELS[invoice.status] ?? invoice.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        {can('payments.create') &&
-                          Number(invoice.amount_outstanding) > 0 &&
-                          invoice.status !== 'cancelled' && (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[560px] text-sm">
+                  <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Raqam</th>
+                      <th className="px-4 py-3 font-medium">Bola</th>
+                      <th className="px-4 py-3 text-right font-medium">Summa</th>
+                      <th className="px-4 py-3 text-right font-medium">Qoldiq</th>
+                      <th className="px-4 py-3 font-medium">Holat</th>
+                      <th className="px-4 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {invoices.map((invoice) => (
+                      <tr key={invoice.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-mono text-xs text-slate-500">
+                          {invoice.number}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-slate-800">
+                          {invoice.child_name}
+                        </td>
+                        <td className="px-4 py-3 text-right text-slate-700">
+                          {money(invoice.amount_due)}
+                        </td>
+                        <td className="px-4 py-3 text-right text-slate-500">
+                          {money(invoice.amount_outstanding)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={cn(
+                              'rounded-full px-2 py-0.5 text-xs font-medium',
+                              STATUS_STYLES[invoice.status],
+                            )}
+                          >
+                            {STATUS_LABELS[invoice.status] ?? invoice.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {can('payments.create') &&
+                            Number(invoice.amount_outstanding) > 0 &&
+                            invoice.status !== 'cancelled' && (
+                              <button
+                                type="button"
+                                title="To'lov qabul qilish"
+                                onClick={() => setPayingInvoice(invoice)}
+                                className="mr-1 rounded-lg p-2 text-emerald-600 transition hover:bg-emerald-50"
+                              >
+                                <Banknote className="h-4 w-4" />
+                              </button>
+                            )}
+                          {can('payments.update') && invoice.status !== 'cancelled' && (
                             <button
                               type="button"
-                              title="To'lov qabul qilish"
-                              onClick={() => setPayingInvoice(invoice)}
-                              className="mr-1 rounded-lg p-2 text-emerald-600 transition hover:bg-emerald-50"
+                              title="Bekor qilish"
+                              onClick={() => {
+                                const reason = window.prompt('Bekor qilish sababi:')
+                                if (reason !== null) {
+                                  cancelInvoice.mutate({ id: invoice.id, reason })
+                                }
+                              }}
+                              className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                             >
-                              <Banknote className="h-4 w-4" />
+                              <Ban className="h-4 w-4" />
                             </button>
                           )}
-                        {can('payments.update') && invoice.status !== 'cancelled' && (
-                          <button
-                            type="button"
-                            title="Bekor qilish"
-                            onClick={() => {
-                              const reason = window.prompt('Bekor qilish sababi:')
-                              if (reason !== null) {
-                                cancelInvoice.mutate({ id: invoice.id, reason })
-                              }
-                            }}
-                            className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                          >
-                            <Ban className="h-4 w-4" />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  {invoices.length === 0 && (
-                    <EmptyRow
-                      colSpan={7}
-                      icon={FileText}
-                      title="Hisob-faktura yo'q"
-                      hint="Bolalarga tarif belgilangach, oylik hisob-fakturalar shu yerda paydo bo'ladi."
-                    />
-                  )}
-                </tbody>
-              </table>
+                        </td>
+                      </tr>
+                    ))}
+                    {invoices.length === 0 && (
+                      <EmptyRow
+                        colSpan={7}
+                        icon={FileText}
+                        title="Hisob-faktura yo'q"
+                        hint="Bolalarga tarif belgilangach, oylik hisob-fakturalar shu yerda paydo bo'ladi."
+                      />
+                    )}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </>

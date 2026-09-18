@@ -529,13 +529,18 @@ export interface DashboardKpis {
   cached: boolean
 }
 
+/** Hisobot kesimi (docs/04 §14.2 `group_by`). */
+export type ReportGroupBy = 'day' | 'week' | 'month' | 'quarter' | 'year'
+
 export interface RevenueReport {
   basis: 'cash'
   date_from: string
   date_to: string
+  group_by: ReportGroupBy
   total: string
   payment_count: number
-  by_month: Array<{ month: string; total: string; count: number }>
+  /** Uzluksiz davrlar: `period` — davr boshi (ISO sana), bo'sh davr ham bor. */
+  by_period: Array<{ period: string; total: string; count: number }>
   by_method: Array<{ method: string; total: string; count: number }>
 }
 
@@ -543,12 +548,19 @@ export interface ProfitLoss {
   basis: 'cash'
   date_from: string
   date_to: string
+  group_by: ReportGroupBy
+  /**
+   * Oylik maosh davrlarga taqsimlanganmi. Kun/hafta kesimida `false`:
+   * oylik — oylik ko'rsatkich, uni kunlarga bo'lish o'ylab topilgan raqam
+   * bo'lardi. Jami (`payroll`, `net`) kesimdan qat'i nazar bir xil.
+   */
+  payroll_in_periods: boolean
   revenue: string
   expenses: string
   payroll: string
   net: string
-  by_month: Array<{
-    month: string
+  by_period: Array<{
+    period: string
     revenue: string
     expenses: string
     payroll: string

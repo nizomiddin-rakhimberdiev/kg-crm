@@ -72,6 +72,17 @@ class _ScopeMixin:
             "branch_id": request.query_params.get("branch") or None,
         }
 
+    def period_scope(self, request: Request) -> dict[str, Any]:
+        """
+        `scope()` + `group_by` — davr kesimli hisobotlar uchun
+        (docs/04 §14.2). Qiymat selektorda tekshiriladi: noto'g'ri
+        kesim `422` beradi, jimgina oylikka tushib ketmaydi.
+        """
+        return {
+            **self.scope(request),
+            "group_by": request.query_params.get("group_by") or selectors.DEFAULT_GROUP_BY,
+        }
+
 
 class DashboardViewSet(_ScopeMixin, viewsets.ViewSet):
     """`GET /dashboard` — bitta ekranga sig'adigan KPI to'plami."""
@@ -110,15 +121,15 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
 
     @action(detail=False)
     def revenue(self, request: Request) -> Response:
-        return Response(selectors.revenue_report(**self.scope(request)))
+        return Response(selectors.revenue_report(**self.period_scope(request)))
 
     @action(detail=False)
     def expenses(self, request: Request) -> Response:
-        return Response(selectors.expense_report(**self.scope(request)))
+        return Response(selectors.expense_report(**self.period_scope(request)))
 
     @action(detail=False, url_path="profit-loss")
     def profit_loss(self, request: Request) -> Response:
-        return Response(selectors.profit_loss(**self.scope(request)))
+        return Response(selectors.profit_loss(**self.period_scope(request)))
 
     @action(detail=False)
     def debtors(self, request: Request) -> Response:

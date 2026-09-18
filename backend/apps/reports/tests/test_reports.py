@@ -77,7 +77,8 @@ class TestRevenue:
 
         assert report["total"] == "800000.00"
         assert report["payment_count"] == 2
-        assert report["by_month"][0]["month"] == today.isoformat()[:7]
+        assert report["group_by"] == "month"
+        assert report["by_period"][0]["period"] == today.replace(day=1).isoformat()
 
     def test_basis_is_stated_explicitly(self, tenant_a):
         """
@@ -200,6 +201,170 @@ class TestProfitLoss:
         assert report["revenue"] == "5000000.00"
         assert report["expenses"] == "1200000.00"
         assert report["net"] == "3800000.00"
+
+
+class TestPeriodGrouping:
+    """
+    `group_by` — kun / hafta / oy / chorak / yil (docs/04 §14.2).
+
+    Ikki narsa tekshiriladi: (1) jami ko'rsatkich kesimga bog'liq emas,
+    (2) davrlar uzluksiz — bo'sh hafta ham qatorda turadi.
+    """
+
+    def test_totals_do_not_depend_on_group_by(self, tenant_a):
+        child = _child(tenant_a)
+        _pay(tenant_a, child, "100000", date(2026, 3, 2))
+        _pay(tenant_a, child, "250000", date(2026, 3, 27))
+
+        with organization_context(tenant_a.organization.id):
+            totals = {
+                group_by: selectors.revenue_report(
+                    organization_id=tenant_a.organization.id,
+                    date_from=date(2026, 3, 1),
+                    date_to=date(2026, 3, 31),
+                    group_by=group_by,
+                )["total"]
+                for group_by in selectors.GROUP_BY_CHOICES
+            }
+        assert set(totals.values()) == {"350000.00"}
+
+    def test_daily_rows_are_gap_free_and_dated(self, tenant_a):
+        child = _child(tenant_a)
+        _pay(tenant_a, child, "100000", date(2026, 3, 2))
+
+        with organization_context(tenant_a.organization.id):
+            report = selectors.revenue_report(
+                organization_id=tenant_a.organization.id,
+                date_from=date(2026, 3, 1),
+                date_to=date(2026, 3, 7),
+                group_by="day",
+            )
+        rows = report["by_period"]
+        assert [row["period"] for row in rows] == [f"2026-03-0{d}" for d in range(1, 8)]
+        assert rows[1]["total"] == "100000.00"
+        assert all(row["total"] == "0.00" for row in rows if row["period"] != "2026-03-02")
+
+    def test_week_buckets_start_on_monday(self, tenant_a):
+        child = _child(tenant_a)
+        _pay(tenant_a, child, "100000", date(2026, 3, 4))  # chorshanba
+
+        with organization_context(tenant_a.organization.id):
+            report = selectors.revenue_report(
+                organization_id=tenant_a.organization.id,
+                date_from=date(2026, 3, 4),
+                date_to=date(2026, 3, 17),
+                group_by="week",
+            )
+        # 2026-03-02 — dushanba; davr o'rtasidan boshlansa ham hafta
+        # boshi dushanba bo'lib qoladi (Postgres `date_trunc` bilan mos).
+        assert [row["period"] for row in report["by_period"]] == [
+            "2026-03-02",
+            "2026-03-09",
+            "2026-03-16",
+        ]
+        assert report["by_period"][0]["total"] == "100000.00"
+
+    def test_quarter_and_year_buckets(self, tenant_a):
+        child = _child(tenant_a)
+        _pay(tenant_a, child, "100000", date(2026, 2, 10))
+        _pay(tenant_a, child, "200000", date(2026, 8, 10))
+
+        with organization_context(tenant_a.organization.id):
+            quarters = selectors.revenue_report(
+                organization_id=tenant_a.organization.id,
+                date_from=date(2026, 1, 1),
+                date_to=date(2026, 12, 31),
+                group_by="quarter",
+            )["by_period"]
+            years = selectors.revenue_report(
+                organization_id=tenant_a.organization.id,
+                date_from=date(2025, 6, 1),
+                date_to=date(2026, 12, 31),
+                group_by="year",
+            )["by_period"]
+
+        assert [(r["period"], r["total"]) for r in quarters] == [
+            ("2026-01-01", "100000.00"),
+            ("2026-04-01", "0.00"),
+            ("2026-07-01", "200000.00"),
+            ("2026-10-01", "0.00"),
+        ]
+        assert [(r["period"], r["total"]) for r in years] == [
+            ("2025-01-01", "0.00"),
+            ("2026-01-01", "300000.00"),
+        ]
+
+    def test_payroll_is_not_spread_into_days(self, tenant_a):
+        """
+        Oylik maosh kun/hafta kesimida qatorlarga taqsimlanmaydi, lekin
+        davr jamisida qoladi — va bu javobda ochiq aytiladi.
+        """
+        from apps.hr.models import Employee
+        from apps.payroll import services as payroll
+
+        with organization_context(tenant_a.organization.id):
+            Employee.objects.create(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                first_name="Xodim",
+                last_name="Xodimov",
+                hire_date=date(2025, 1, 10),
+                base_salary=Decimal("3000000"),
+            )
+            run = payroll.create_run(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                period_year=2026,
+                period_month=3,
+            )
+            payroll.finalize_run(run=run, finalized_by=tenant_a.owner)
+
+            daily = selectors.profit_loss(
+                organization_id=tenant_a.organization.id,
+                date_from=date(2026, 3, 1),
+                date_to=date(2026, 3, 31),
+                group_by="day",
+            )
+            monthly = selectors.profit_loss(
+                organization_id=tenant_a.organization.id,
+                date_from=date(2026, 3, 1),
+                date_to=date(2026, 3, 31),
+                group_by="month",
+            )
+
+        assert daily["payroll"] == monthly["payroll"] == "3000000.00"
+        assert daily["net"] == monthly["net"] == "-3000000.00"
+        assert daily["payroll_in_periods"] is False
+        assert all(row["payroll"] == "0.00" for row in daily["by_period"])
+        assert monthly["payroll_in_periods"] is True
+        assert monthly["by_period"][0]["payroll"] == "3000000.00"
+
+    def test_unknown_group_by_is_a_clear_error(self, tenant_a):
+        response = tenant_a.client().get(reverse("v1:report-revenue"), {"group_by": "decade"})
+        assert response.status_code == 422
+        assert "group_by" in response.json()["error"]["message"]
+
+    def test_too_many_buckets_is_rejected(self, tenant_a):
+        response = tenant_a.client().get(
+            reverse("v1:report-profit-loss"),
+            {"from": "2020-01-01", "to": "2026-12-31", "group_by": "day"},
+        )
+        assert response.status_code == 422
+
+    def test_endpoint_accepts_group_by(self, tenant_a):
+        child = _child(tenant_a)
+        today = timezone.localdate()
+        _pay(tenant_a, child, "120000", today)
+
+        response = tenant_a.client().get(
+            reverse("v1:report-profit-loss"),
+            {"from": today.isoformat(), "to": today.isoformat(), "group_by": "day"},
+        )
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["group_by"] == "day"
+        assert len(data["by_period"]) == 1
+        assert data["by_period"][0]["revenue"] == "120000.00"
 
 
 class TestActiveChildren:

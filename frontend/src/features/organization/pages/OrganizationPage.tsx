@@ -14,7 +14,7 @@ import { organizationApi, type OrganizationInput } from '@/features/organization
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
-import { cn } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 
 const FIELDS: Array<[keyof OrganizationInput, string, string]> = [
   ['name', "Bog'cha nomi", 'text'],
@@ -111,7 +111,7 @@ export default function OrganizationPage() {
             <p className="font-semibold text-slate-900">{query.data?.name}</p>
             <p className="text-xs text-slate-400">
               Identifikator: {query.data?.slug} · Ro'yxatdan o'tgan:{' '}
-              {query.data ? new Date(query.data.created_at).toLocaleDateString('uz-UZ') : '—'}
+              {query.data ? formatDate(query.data.created_at) : '—'}
             </p>
           </div>
         </div>

@@ -12,7 +12,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { CreditCard } from 'lucide-react'
 import { ApiError } from '@/lib/api/types'
-import { cn, formatUZS } from '@/lib/utils'
+import { cn, formatDate, formatUZS } from '@/lib/utils'
 import { platform } from '../api'
 import { usePlatformAuth } from '../PlatformAuthProvider'
 
@@ -30,7 +30,7 @@ const FILTERS: Array<[string, string]> = [
   ['paid', "To'langan"],
 ]
 
-const day = (iso: string) => new Date(iso).toLocaleDateString('uz-UZ', { dateStyle: 'medium' })
+const day = (iso: string) => formatDate(iso)
 
 export default function PlatformInvoicesPage() {
   const queryClient = useQueryClient()
@@ -107,71 +107,73 @@ export default function PlatformInvoicesPage() {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-800">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Raqam</th>
-              <th className="px-4 py-3">Bog'cha</th>
-              <th className="px-4 py-3">Yozilgan</th>
-              <th className="px-4 py-3">Muddat</th>
-              <th className="px-4 py-3 text-right">Summa</th>
-              <th className="px-4 py-3">Holat</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800 bg-slate-900/40">
-            {rows.map((invoice) => (
-              <tr key={invoice.id}>
-                <td className="px-4 py-3 font-medium">{invoice.number}</td>
-                <td className="px-4 py-3">
-                  <Link
-                    to={`/platform/organizations/${invoice.organization_id}`}
-                    className="hover:text-brand-400"
-                  >
-                    {invoice.organization}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-slate-400">{day(invoice.issued_at)}</td>
-                <td className="px-4 py-3 text-slate-400">{day(invoice.due_at)}</td>
-                <td className="px-4 py-3 text-right font-semibold">
-                  {formatUZS(Number(invoice.total_amount))}
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={cn(
-                      'rounded-full px-2 py-0.5 text-xs font-medium',
-                      TONE[invoice.status] ?? 'bg-slate-700/40 text-slate-400',
-                    )}
-                  >
-                    {invoice.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {isAdmin && invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPaying(paying === invoice.id ? null : invoice.id)
-                        setAmount(invoice.total_amount)
-                      }}
-                      className="rounded-lg border border-slate-700 px-2.5 py-1 text-xs font-medium hover:bg-slate-800"
-                    >
-                      To'lov yozish
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {!isLoading && rows.length === 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
-                  <CreditCard className="mx-auto mb-2 h-6 w-6" />
-                  Hisob topilmadi.
-                </td>
+                <th className="px-4 py-3">Raqam</th>
+                <th className="px-4 py-3">Bog'cha</th>
+                <th className="px-4 py-3">Yozilgan</th>
+                <th className="px-4 py-3">Muddat</th>
+                <th className="px-4 py-3 text-right">Summa</th>
+                <th className="px-4 py-3">Holat</th>
+                <th className="px-4 py-3" />
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-800 bg-slate-900/40">
+              {rows.map((invoice) => (
+                <tr key={invoice.id}>
+                  <td className="px-4 py-3 font-medium">{invoice.number}</td>
+                  <td className="px-4 py-3">
+                    <Link
+                      to={`/platform/organizations/${invoice.organization_id}`}
+                      className="hover:text-brand-400"
+                    >
+                      {invoice.organization}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 text-slate-400">{day(invoice.issued_at)}</td>
+                  <td className="px-4 py-3 text-slate-400">{day(invoice.due_at)}</td>
+                  <td className="px-4 py-3 text-right font-semibold">
+                    {formatUZS(Number(invoice.total_amount))}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={cn(
+                        'rounded-full px-2 py-0.5 text-xs font-medium',
+                        TONE[invoice.status] ?? 'bg-slate-700/40 text-slate-400',
+                      )}
+                    >
+                      {invoice.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {isAdmin && invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaying(paying === invoice.id ? null : invoice.id)
+                          setAmount(invoice.total_amount)
+                        }}
+                        className="rounded-lg border border-slate-700 px-2.5 py-1 text-xs font-medium hover:bg-slate-800"
+                      >
+                        To'lov yozish
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {!isLoading && rows.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
+                    <CreditCard className="mx-auto mb-2 h-6 w-6" />
+                    Hisob topilmadi.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {paying && (

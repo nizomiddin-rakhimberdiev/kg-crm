@@ -72,7 +72,7 @@ class TestExportJob:
             content = export.file.read()
 
         assert content.startswith(b"\xef\xbb\xbf")
-        assert b"month,total,count" in content
+        assert b"period,total,count" in content
 
     def test_failure_is_recorded_not_silent(self, tenant_a):
         """
@@ -103,7 +103,7 @@ class TestExportJob:
         response = client.get(f"/api/v1/reports/exports/{job_id}/download")
         assert response.status_code == 200
         assert response["Content-Type"] == "text/csv"
-        assert b"month,total,count" in b"".join(response.streaming_content)
+        assert b"period,total,count" in b"".join(response.streaming_content)
 
     def test_download_before_ready_is_a_clear_error(self, tenant_a):
         client = tenant_a.client()

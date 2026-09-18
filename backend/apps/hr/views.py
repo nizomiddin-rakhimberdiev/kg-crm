@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.utils import timezone
+
 from apps.branches.selectors import resolve_branch
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchScopedMixin, TenantViewSet
@@ -55,11 +57,17 @@ class EmployeeViewSet(BranchScopedMixin, TenantViewSet):
 
         Oylik tarixida uning satrlari qoladi va ular `RESTRICT` bilan
         himoyalangan: o'tgan oylarning hisoblashi buzilmasligi kerak.
+
+        Holat HAR DOIM `terminated` bo'ladi, tarixi bor-yo'qligidan qat'i
+        nazar. Avval tarixsiz xodimda faqat `is_active=False` qo'yilardi
+        va u ro'yxatda "Ishlayapti" yorlig'i bilan qolib ketardi — ekran
+        bazaga zid gapirardi.
         """
-        if instance.payroll_items.exists():
-            instance.employment_status = EmploymentStatus.TERMINATED
-            instance.is_active = False
-            instance.save(update_fields=["employment_status", "is_active"])
-            return
+        instance.employment_status = EmploymentStatus.TERMINATED
         instance.is_active = False
-        instance.save(update_fields=["is_active"])
+        if instance.termination_date is None:
+            # `ck_employee_termination`: bo'shash sanasi ishga kirishdan
+            # oldin bo'lolmaydi — kelajakdagi sana bilan yozilgan xodim
+            # bo'shatilsa, sana ishga kirish kuniga tenglashadi.
+            instance.termination_date = max(timezone.localdate(), instance.hire_date)
+        instance.save(update_fields=["employment_status", "is_active", "termination_date"])

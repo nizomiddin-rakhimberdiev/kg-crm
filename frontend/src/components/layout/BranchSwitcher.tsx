@@ -12,8 +12,18 @@ import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { useBranchScope } from '@/app/providers/BranchProvider'
 import { branchesApi } from '@/features/branches/api'
 import { queryKeys } from '@/lib/api/queryKeys'
+import { cn } from '@/lib/utils'
 
-export function BranchSwitcher() {
+interface BranchSwitcherProps {
+  /**
+   * `topbar` — `sm` dan tor ekranda yashirin (joy yo'q);
+   * `drawer` — mobil menyu ichida, to'liq kenglikda.
+   */
+  variant?: 'topbar' | 'drawer'
+}
+
+export function BranchSwitcher({ variant = 'topbar' }: BranchSwitcherProps) {
+  const inDrawer = variant === 'drawer'
   const { user } = useAuth()
   const organizationId = useOrganizationId()
   const { selectedBranchId, setSelectedBranchId } = useBranchScope()
@@ -30,7 +40,12 @@ export function BranchSwitcher() {
   if (!isOrgOwner) {
     if (!user?.branch) return null
     return (
-      <div className="hidden items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600 sm:flex">
+      <div
+        className={cn(
+          'items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600',
+          inDrawer ? 'mx-3 my-3 flex sm:hidden' : 'hidden sm:flex',
+        )}
+      >
         <Building2 className="h-4 w-4 text-slate-400" />
         {user.branch.name}
       </div>
@@ -38,14 +53,32 @@ export function BranchSwitcher() {
   }
 
   return (
-    <div className="relative hidden sm:block">
-      <Building2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+    <div
+      className={cn(
+        'relative',
+        inDrawer ? 'block border-b border-slate-100 px-3 py-3 sm:hidden' : 'hidden sm:block',
+      )}
+    >
+      <Building2
+        className={cn(
+          'pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400',
+          inDrawer ? 'left-6' : 'left-3',
+        )}
+      />
+      <ChevronDown
+        className={cn(
+          'pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400',
+          inDrawer ? 'right-5' : 'right-2.5',
+        )}
+      />
       <select
         aria-label="Filial"
         value={selectedBranchId ?? ''}
         onChange={(event) => setSelectedBranchId(event.target.value || null)}
-        className="appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-8 text-sm text-slate-700 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+        className={cn(
+          'appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-8 text-sm text-slate-700 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100',
+          inDrawer && 'w-full',
+        )}
       >
         <option value="">Barcha filiallar</option>
         {branchesQuery.data?.items.map((branch) => (

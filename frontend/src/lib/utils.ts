@@ -63,3 +63,46 @@ export function avatarTone(seed: string): string {
   for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
   return AVATAR_TONES[hash % AVATAR_TONES.length]
 }
+
+/* ------------------------------------------------------------ Sana */
+
+/**
+ * Sana formatlash — `toLocaleDateString('uz-UZ', { dateStyle })` EMAS.
+ *
+ * Brauzerlarning `uz` lokali to'liq emas: Chromium `dateStyle: 'medium'`
+ * ni "2023 M09 14" deb chiqaradi (oy nomi o'rniga "M09"). Foydalanuvchi
+ * ko'radigan sana brauzerga emas, bizga bog'liq bo'lishi kerak.
+ */
+export const UZ_MONTHS = [
+  'yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun',
+  'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr',
+] as const
+
+const two = (n: number) => String(n).padStart(2, '0')
+
+const toDate = (value: string | Date | null | undefined): Date | null => {
+  if (!value) return null
+  const date = value instanceof Date ? value : new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+/** "14.09.2023" */
+export function formatDate(value: string | Date | null | undefined): string {
+  const date = toDate(value)
+  if (!date) return '—'
+  return `${two(date.getDate())}.${two(date.getMonth() + 1)}.${date.getFullYear()}`
+}
+
+/** "14.09.2023, 10:35" */
+export function formatDateTime(value: string | Date | null | undefined): string {
+  const date = toDate(value)
+  if (!date) return '—'
+  return `${formatDate(date)}, ${two(date.getHours())}:${two(date.getMinutes())}`
+}
+
+/** "14-sentabr, 2023" — sarlavhalar uchun. */
+export function formatDateLong(value: string | Date | null | undefined): string {
+  const date = toDate(value)
+  if (!date) return '—'
+  return `${date.getDate()}-${UZ_MONTHS[date.getMonth()]}, ${date.getFullYear()}`
+}

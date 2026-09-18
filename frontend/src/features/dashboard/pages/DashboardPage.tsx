@@ -15,7 +15,7 @@ import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { dashboardApi } from '@/features/dashboard/api'
 import { BriefingSection } from '@/features/intelligence/components/BriefingSection'
 import { queryKeys } from '@/lib/api/queryKeys'
-import { formatUZS } from '@/lib/utils'
+import { formatDateLong, formatUZS } from '@/lib/utils'
 
 const MONTHS = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek']
 
@@ -76,7 +76,7 @@ export default function DashboardPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Boshqaruv paneli</h1>
         <p className="mt-1 text-sm text-slate-500">
-          {data ? new Date(data.date).toLocaleDateString('uz-UZ', { dateStyle: 'long' }) : '—'}
+          {data ? formatDateLong(data.date) : '—'}
         </p>
       </div>
 

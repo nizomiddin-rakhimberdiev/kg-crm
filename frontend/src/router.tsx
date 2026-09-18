@@ -200,7 +200,10 @@ export const routes: RouteObject[] = [
             children: [{ path: 'attendance', element: <AttendancePage /> }],
           },
           {
-            element: <PermissionRoute permission="users.read" />,
+            // Xodimlar: HR ro'yxati (`payroll.read`) + tizim hisoblari
+            // (`users.read`) — istalgan bittasi sahifani ochadi, sahifa
+            // ichida esa har bir tab o'z ruxsatiga qaraydi.
+            element: <PermissionRoute permission={['payroll.read', 'users.read']} />,
             children: [{ path: 'staff', element: <StaffPage /> }],
           },
           {

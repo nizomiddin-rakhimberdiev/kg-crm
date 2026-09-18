@@ -24,8 +24,13 @@ export interface NavItem {
   label: string
   to: string
   icon: LucideIcon
-  /** Shu punktni ko'rsatish uchun zarur ruxsat (docs/02 §11.3). */
-  permission: PermissionCode
+  /**
+   * Shu punktni ko'rsatish uchun zarur ruxsat (docs/02 §11.3).
+   * Ro'yxat berilsa — istalgan bittasi yetarli (masalan, "Xodimlar"
+   * sahifasi HR ro'yxatini `payroll.read`, tizim hisoblarini
+   * `users.read` bilan ko'rsatadi).
+   */
+  permission: PermissionCode | PermissionCode[]
 }
 
 /**
@@ -42,7 +47,7 @@ const allNavItems: NavItem[] = [
   { label: "To'lovlar", to: '/payments', icon: CreditCard, permission: 'payments.read' },
   { label: 'Qarzdorlar', to: '/debtors', icon: AlertTriangle, permission: 'debtors.read' },
   { label: 'Davomat', to: '/attendance', icon: CalendarCheck, permission: 'attendance.read' },
-  { label: 'Xodimlar', to: '/staff', icon: UserCog, permission: 'users.read' },
+  { label: 'Xodimlar', to: '/staff', icon: UserCog, permission: ['payroll.read', 'users.read'] },
   { label: 'Oylik', to: '/payroll', icon: Wallet, permission: 'payroll.read' },
   { label: 'Ombor', to: '/inventory', icon: Package, permission: 'inventory.read' },
   { label: 'Chiqimlar', to: '/expenses', icon: Receipt, permission: 'expenses.read' },

@@ -27,8 +27,8 @@ def rows_for(report_type: str, payload: dict[str, Any]) -> tuple[list[str], list
     """Hisobot javobidan jadval qatorlarini ajratadi."""
     if report_type == "revenue":
         return (
-            ["month", "total", "count"],
-            [dict(row) for row in payload["by_month"]],
+            ["period", "total", "count"],
+            [dict(row) for row in payload["by_period"]],
         )
     if report_type == "expenses":
         return (
@@ -52,8 +52,8 @@ def rows_for(report_type: str, payload: dict[str, Any]) -> tuple[list[str], list
         )
     if report_type == "profit-loss":
         return (
-            ["month", "revenue", "expenses", "payroll", "net"],
-            [dict(row) for row in payload["by_month"]],
+            ["period", "revenue", "expenses", "payroll", "net"],
+            [dict(row) for row in payload["by_period"]],
         )
     raise ValueError(f"Noma'lum hisobot turi: {report_type}")
 

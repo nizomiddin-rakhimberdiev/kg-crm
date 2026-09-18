@@ -104,68 +104,70 @@ export default function PlatformOrganizationsPage() {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-800">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="px-4 py-3">Bog'cha</th>
-              <th className="px-4 py-3">Holat</th>
-              <th className="px-4 py-3 text-right">Bolalar</th>
-              <th className="px-4 py-3 text-right">Taxminiy oylik</th>
-              <th className="px-4 py-3">Muddat</th>
-              <th className="px-4 py-3">Davr tugashi</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800 bg-slate-900/40">
-            {rows.map((row) => {
-              const subscription = row.subscription
-              const [label, tone] = STATUS_LABEL[subscription?.status ?? ''] ?? [
-                'Obunasiz',
-                'bg-slate-700/40 text-slate-400',
-              ]
-              return (
-                <tr key={row.id} className="hover:bg-slate-900">
-                  <td className="px-4 py-3">
-                    <Link
-                      to={`/platform/organizations/${row.id}`}
-                      className="font-medium hover:text-brand-400"
-                    >
-                      {row.name}
-                    </Link>
-                    <p className="text-xs text-slate-500">{row.contact_email}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}>
-                      {label}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">{row.billable_children}</td>
-                  <td className="px-4 py-3 text-right">
-                    {subscription ? formatUZS(monthlyEstimate(row.billable_children)) : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-slate-400">
-                    {subscription?.payment_term ?? '—'}
-                    {subscription && Number(subscription.discount_percent) > 0 && (
-                      <span className="ml-1 text-emerald-400">
-                        −{Number(subscription.discount_percent)}%
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Bog'cha</th>
+                <th className="px-4 py-3">Holat</th>
+                <th className="px-4 py-3 text-right">Bolalar</th>
+                <th className="px-4 py-3 text-right">Taxminiy oylik</th>
+                <th className="px-4 py-3">Muddat</th>
+                <th className="px-4 py-3">Davr tugashi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800 bg-slate-900/40">
+              {rows.map((row) => {
+                const subscription = row.subscription
+                const [label, tone] = STATUS_LABEL[subscription?.status ?? ''] ?? [
+                  'Obunasiz',
+                  'bg-slate-700/40 text-slate-400',
+                ]
+                return (
+                  <tr key={row.id} className="hover:bg-slate-900">
+                    <td className="px-4 py-3">
+                      <Link
+                        to={`/platform/organizations/${row.id}`}
+                        className="font-medium hover:text-brand-400"
+                      >
+                        {row.name}
+                      </Link>
+                      <p className="text-xs text-slate-500">{row.contact_email}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}>
+                        {label}
                       </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-slate-400">
-                    {subscription?.current_period_end ?? '—'}
+                    </td>
+                    <td className="px-4 py-3 text-right">{row.billable_children}</td>
+                    <td className="px-4 py-3 text-right">
+                      {subscription ? formatUZS(monthlyEstimate(row.billable_children)) : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-slate-400">
+                      {subscription?.payment_term ?? '—'}
+                      {subscription && Number(subscription.discount_percent) > 0 && (
+                        <span className="ml-1 text-emerald-400">
+                          −{Number(subscription.discount_percent)}%
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-slate-400">
+                      {subscription?.current_period_end ?? '—'}
+                    </td>
+                  </tr>
+                )
+              })}
+              {!isLoading && rows.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
+                    <Building2 className="mx-auto mb-2 h-6 w-6" />
+                    Tashkilot topilmadi.
                   </td>
                 </tr>
-              )
-            })}
-            {!isLoading && rows.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
-                  <Building2 className="mx-auto mb-2 h-6 w-6" />
-                  Tashkilot topilmadi.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

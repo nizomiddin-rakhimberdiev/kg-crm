@@ -53,46 +53,48 @@ function StatementDrawer({ childId, onClose }: { childId: string; onClose: () =>
               <span className="font-bold text-red-900">{money(query.data.balance)}</span>
             </div>
 
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-slate-400">
-                <tr>
-                  <th className="py-2 font-medium">Sana</th>
-                  <th className="py-2 font-medium">Izoh</th>
-                  <th className="py-2 text-right font-medium">Summa</th>
-                  <th className="py-2 text-right font-medium">Qoldiq</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {query.data.entries.map((entry) => (
-                  <tr key={entry.id}>
-                    <td className="py-2 text-xs text-slate-500">
-                      {entry.occurred_at.slice(0, 10)}
-                    </td>
-                    <td className="py-2 text-slate-700">{entry.description || entry.entry_type}</td>
-                    <td
-                      className={cn(
-                        'py-2 text-right font-medium',
-                        entry.direction === 'debit' ? 'text-red-700' : 'text-emerald-700',
-                      )}
-                    >
-                      {entry.direction === 'debit' ? '+' : '−'}
-                      {money(entry.amount)}
-                    </td>
-                    <td className="py-2 text-right text-slate-500">
-                      {money(entry.running_balance)}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px] text-sm">
+                <thead className="text-left text-xs uppercase tracking-wide text-slate-400">
+                  <tr>
+                    <th className="py-2 font-medium">Sana</th>
+                    <th className="py-2 font-medium">Izoh</th>
+                    <th className="py-2 text-right font-medium">Summa</th>
+                    <th className="py-2 text-right font-medium">Qoldiq</th>
                   </tr>
-                ))}
-                {query.data.entries.length === 0 && (
-                  <EmptyRow
-                    colSpan={12}
-                    icon={CheckCircle2}
-                    title="Qarzdor yo'q"
-                    hint="Hamma to'lagan. Muddati o'tgan hisob-faktura paydo bo'lsa, bola shu ro'yxatga tushadi."
-                  />
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {query.data.entries.map((entry) => (
+                    <tr key={entry.id}>
+                      <td className="py-2 text-xs text-slate-500">
+                        {entry.occurred_at.slice(0, 10)}
+                      </td>
+                      <td className="py-2 text-slate-700">{entry.description || entry.entry_type}</td>
+                      <td
+                        className={cn(
+                          'py-2 text-right font-medium',
+                          entry.direction === 'debit' ? 'text-red-700' : 'text-emerald-700',
+                        )}
+                      >
+                        {entry.direction === 'debit' ? '+' : '−'}
+                        {money(entry.amount)}
+                      </td>
+                      <td className="py-2 text-right text-slate-500">
+                        {money(entry.running_balance)}
+                      </td>
+                    </tr>
+                  ))}
+                  {query.data.entries.length === 0 && (
+                    <EmptyRow
+                      colSpan={12}
+                      icon={CheckCircle2}
+                      title="Qarzdor yo'q"
+                      hint="Hamma to'lagan. Muddati o'tgan hisob-faktura paydo bo'lsa, bola shu ro'yxatga tushadi."
+                    />
+                  )}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
       </div>
@@ -192,60 +194,62 @@ export default function DebtorsPage() {
         )}
 
         {debtorsQuery.data && rows.length > 0 && (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">Bola</th>
-                <th className="px-4 py-3 font-medium">Guruh</th>
-                <th className="px-4 py-3 font-medium">Vasiy</th>
-                <th className="px-4 py-3 font-medium">Eng eski muddat</th>
-                <th className="px-4 py-3 text-right font-medium">Qarz</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {rows.map((row) => (
-                <tr
-                  key={row.child.id}
-                  className="cursor-pointer hover:bg-slate-50"
-                  onClick={() => setOpenChild(row.child.id)}
-                >
-                  <td className="px-4 py-3 font-medium text-slate-800">
-                    {row.child.full_name}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{row.child.group ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {row.primary_guardian ? (
-                      <>
-                        <p>{row.primary_guardian.full_name}</p>
-                        <p className="flex items-center gap-1 text-xs text-slate-400">
-                          <Phone className="h-3 w-3" />
-                          {row.primary_guardian.phone}
-                        </p>
-                      </>
-                    ) : (
-                      <span className="text-amber-700">vasiy yo'q</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {row.oldest_overdue_date ? (
-                      <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
-                        {row.oldest_overdue_date}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-slate-400">muddati kelmagan</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-red-700">
-                    {money(row.balance)}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <ChevronRight className="ml-auto h-4 w-4 text-slate-300" />
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Bola</th>
+                  <th className="px-4 py-3 font-medium">Guruh</th>
+                  <th className="px-4 py-3 font-medium">Vasiy</th>
+                  <th className="px-4 py-3 font-medium">Eng eski muddat</th>
+                  <th className="px-4 py-3 text-right font-medium">Qarz</th>
+                  <th className="px-4 py-3" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {rows.map((row) => (
+                  <tr
+                    key={row.child.id}
+                    className="cursor-pointer hover:bg-slate-50"
+                    onClick={() => setOpenChild(row.child.id)}
+                  >
+                    <td className="px-4 py-3 font-medium text-slate-800">
+                      {row.child.full_name}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{row.child.group ?? '—'}</td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {row.primary_guardian ? (
+                        <>
+                          <p>{row.primary_guardian.full_name}</p>
+                          <p className="flex items-center gap-1 text-xs text-slate-400">
+                            <Phone className="h-3 w-3" />
+                            {row.primary_guardian.phone}
+                          </p>
+                        </>
+                      ) : (
+                        <span className="text-amber-700">vasiy yo'q</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {row.oldest_overdue_date ? (
+                        <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
+                          {row.oldest_overdue_date}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400">muddati kelmagan</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right font-semibold text-red-700">
+                      {money(row.balance)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <ChevronRight className="ml-auto h-4 w-4 text-slate-300" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
