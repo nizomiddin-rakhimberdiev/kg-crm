@@ -83,6 +83,16 @@ Same script. It rebuilds, migrates, re-checks RLS, re-collects static files, and
 
 `python manage.py check_rls` runs on every deploy and **gates it**. An edited migration is not re-applied by Django, so a live database can silently keep old policies while everything looks healthy — this check is what catches that.
 
+**There is no automatic deploy.** GitHub Actions only runs tests and a build (and currently fails at startup for an account-level reason); nothing watches `main`. A commit reaches the site only when someone runs the script above on the server. `main` should always equal what is deployed — push it forward after each deploy.
+
+**The `/private` demo is a second stack and does not update itself.** `deploy.sh` touches only the SaaS stack. After deploying, run:
+
+```bash
+./scripts/deploy-private.sh
+```
+
+It repeats the same steps (build → migrate as owner → `check_rls` → collectstatic → up → health) against `compose.private-demo.yaml` with `.env.private`. Forgetting it is the classic "I deployed but the demo still looks old".
+
 ---
 
 ## 5. Routine operations
