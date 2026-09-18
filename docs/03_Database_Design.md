@@ -35,6 +35,7 @@
 18. [Schema Domain: Settings](#18-schema-domain-settings)
 19. [Schema Domain: Audit](#19-schema-domain-audit)
 20. [Schema Domain: Subscriptions & Metering](#20-schema-domain-subscriptions--metering-adr-11)
+20a. [Schema Domain: Radix Intelligence](#20a-schema-domain-radix-intelligence-adr-14)
 21. [Referential Integrity — ON DELETE Matrix](#21-referential-integrity--on-delete-matrix)
 22. [Business-Rule Constraints Catalog](#22-business-rule-constraints-catalog)
 23. [Indexing Strategy](#23-indexing-strategy)
@@ -1014,6 +1015,43 @@ stateDiagram-v2
 | `cancelled` | Read-only + export, 30 days | Then purged by an audited job. |
 
 > **The first paid invoice covers the trial period.** On conversion, `period_start` is set to `trial_started_at`, not to the acceptance date ([01 §4.4](./01_Project_Vision.md)). This must be disclosed in the offer at signup — the schema supports the policy, but only honest presentation makes it fair.
+
+---
+
+## 20a. Schema Domain: Radix Intelligence (ADR-14)
+
+One table. The full design — rules, evidence schema, lifecycle, false-positive policy — is in [07](./07_Radix_Intelligence.md); this section records only what the database enforces.
+
+### 20a.1 `insight`
+A **derived, tenant-scoped snapshot**: the ledger, invoices and attendance rows stay the truth; an insight freezes *what triggered it* (numbers and ids — never names or phones, [07 §6](./07_Radix_Intelligence.md)).
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `organization_id`, `branch_id` | `UUID` | `NOT NULL`, FK `RESTRICT` | Standard operational columns (§4); RLS policy as every tenant table (§6.3) |
+| `type` | `VARCHAR(40)` | `NOT NULL` | `payment_delay` \| `attendance_drop` |
+| `severity` | `VARCHAR(10)` | `NOT NULL`, `ck_insight_severity` | `warning` \| `critical` |
+| `status` | `VARCHAR(15)` | `NOT NULL`, `ck_insight_status` | `new` → `seen` → `resolved` \| `dismissed` \| `auto_resolved` |
+| `subject_type` | `VARCHAR(10)` | `NOT NULL` | `branch` \| `group` |
+| `subject_id` | `UUID` | `NOT NULL`, `ck_insight_branch_subject_is_branch` | `= branch_id` when `subject_type = 'branch'` — **deliberately not `NULL`**: a nullable column would need `NULLS NOT DISTINCT` on the unique index, which PostgreSQL 14 (local) silently lacks |
+| `evidence` | `JSONB` | `NOT NULL` | Fixed schema per `type`, versioned by `evidence_version` |
+| `evidence_version` | `SMALLINT` | `NOT NULL DEFAULT 1` | |
+| `recommendation_key`, `deep_link` | `VARCHAR` | `NOT NULL` | Keys — the sentences live in the content layer |
+| `generated_at`, `refreshed_at`, `seen_at`, `resolved_at`, `dismissed_at`, `auto_resolved_at` | `TIMESTAMPTZ` | | Lifecycle timestamps; `ck_insight_exactly_one_closing_timestamp` |
+| `dismissed_until` | `TIMESTAMPTZ` | `ck_insight_dismissed_until_only_when_dismissed` | 7-day suppression window; set to *now* when the condition disappears (episode ended) |
+| `acted_by` | `UUID` | FK → `user(id)` `ON DELETE SET NULL` | Who resolved/dismissed; audit row carries the rest |
+
+**Constraints that carry the design**
+
+| Name | Definition | Why it is in the database |
+|---|---|---|
+| `uq_insight_open_condition` | `UNIQUE (branch_id, type, subject_type, subject_id) WHERE status IN ('new','seen')` | **One open row per condition.** Two generators racing (nightly task + manual command) hit this index; the loser refreshes instead of duplicating. `test_same_branch_same_type_cannot_have_two_open_rows` asserts the `IntegrityError` comes from Postgres, not from application code. |
+| `ck_insight_branch_subject_is_branch` | `(subject_type = 'branch' AND subject_id = branch_id) OR subject_type = 'group'` | Makes the unique index above meaningful without nullable columns |
+| `ck_insight_exactly_one_closing_timestamp` | open ⇒ all closing timestamps `NULL`; each closed status ⇒ exactly its own timestamp set | The state machine of [07 §9.2](./07_Radix_Intelligence.md), enforced |
+| `ck_insight_dismissed_until_only_when_dismissed` | `dismissed_until IS NULL OR status = 'dismissed'` | Suppression cannot leak onto other statuses |
+
+Indexes: `ix_insight_open (branch_id, status) WHERE status IN ('new','seen')` — the dashboard query; `ix_insight_history (branch_id, type, generated_at DESC)`; `ix_insight_suppression (branch_id, dismissed_until) WHERE status = 'dismissed'`.
+
+The RLS policy is applied by the app's own migration (`intelligence.0001`) through the same `apps/core/rls.py` helpers as `core.0002`; `check_rls` now expects **39** tables. The purge job ([02 §11.0](./02_Software_Architecture.md)) deletes `insight` before `attendance_record` — it references `user` through `acted_by`.
 
 ---
 

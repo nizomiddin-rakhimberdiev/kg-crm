@@ -22,6 +22,7 @@ from apps.finance.views import (
     TariffPlanViewSet,
 )
 from apps.hr.views import EmployeeViewSet, PositionViewSet
+from apps.intelligence.views import InsightViewSet
 from apps.inventory.views import (
     ProductCategoryViewSet,
     ProductViewSet,
@@ -70,6 +71,7 @@ router.register("settings", SettingsViewSet, basename="setting")
 router.register("dashboard", DashboardViewSet, basename="dashboard")
 router.register("reports", ReportViewSet, basename="report")
 router.register("audit-logs", AuditLogViewSet, basename="audit-log")
+router.register("insights", InsightViewSet, basename="insight")
 
 # Obuna va vendor konsoli — FAQAT SaaS nusxasida (ADR-13). Standalone'da
 # obuna ob'ekti umuman yaratilmaydi, ya'ni bu yo'llar bo'sh yoki chalkash

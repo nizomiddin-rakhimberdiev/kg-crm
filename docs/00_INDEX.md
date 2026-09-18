@@ -73,6 +73,7 @@ These are the load-bearing decisions the whole system depends on. They are resta
 |---------|------|--------|
 | 1.0 | 2026-07-24 | Initial documentation set established (01–06 + index). |
 | 1.1 | 2026-09-17 | Added 07_Radix_Intelligence (V1 design, ADR-14). |
+| 1.2 | 2026-09-18 | **Radix Intelligence V1 vertical slice shipped** (`payment_delay` end-to-end). [03 §20a](./03_Database_Design.md) `insight` table; [04 §14.3](./04_Backend_API_Specification.md) `/insights*`; [06 Sprint 12](./06_Development_Roadmap.md); [07 §4](./07_Radix_Intelligence.md) rule corrected to ledger-based debt with FIFO settlement (found by the integration test), §13.1 acceptance recorded. |
 | 1.1 | 2026-07-29 | **Multi-tenant SaaS business model adopted.** New [01 §4](./01_Project_Vision.md) (pricing, payment terms, trial); **ADR-9** (`organization` is the tenancy root, superseding branch-as-tenancy-root), **ADR-10** (platform staff on a separate access plane; `Super Admin` removed in favour of `Org Owner`), **ADR-11** (subscriptions as a bounded module with an append-only usage ledger). [03 §6](./03_Database_Design.md) rewritten; [03 §20](./03_Database_Design.md) added; [04 §18–19](./04_Backend_API_Specification.md) added; [06](./06_Development_Roadmap.md) Sprint 0 gains tenancy, Sprints 10–11 added. |
 
 ### What changed and why (v1.1)

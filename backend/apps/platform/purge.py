@@ -58,6 +58,7 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.finance.Discount",
     "apps.finance.TariffPlan",
     # Operatsion yozuvlar
+    "apps.intelligence.Insight",  # acted_by → User; hosila, avval ketadi
     "apps.attendance.AttendanceRecord",
     "apps.payroll.PayrollItem",
     "apps.payroll.PayrollRun",

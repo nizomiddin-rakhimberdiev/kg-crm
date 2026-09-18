@@ -63,6 +63,7 @@ LOCAL_APPS = [
     "apps.reports",
     "apps.subscriptions",
     "apps.platform",
+    "apps.intelligence",
     "apps.audit",
 ]
 
@@ -256,6 +257,13 @@ CELERY_BEAT_SCHEDULE = {
     "recompute-balances": {
         "task": "reports.recompute_balances",
         "schedule": crontab(hour=4, minute=30),
+    },
+    # Radix Intelligence (docs/07 §11): `mark-overdue-invoices` (03:00) dan
+    # KEYIN — qoida `status` ga tayanmasa ham, ikkisi bir kechada bir xil
+    # manzarani ko'rsin.
+    "generate-insights": {
+        "task": "intelligence.generate_insights",
+        "schedule": crontab(hour=3, minute=30),
     },
     # --- Obuna (ADR-11) ---
     #

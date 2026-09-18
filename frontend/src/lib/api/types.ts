@@ -652,3 +652,74 @@ export interface SubscriptionInvoice {
   usage_snapshot: string | null
   created_at: string
 }
+
+/* ------------------------------------------------ Radix Intelligence (docs/07) */
+
+export type InsightType = 'payment_delay' | 'attendance_drop'
+export type InsightSeverity = 'warning' | 'critical'
+export type InsightStatus = 'new' | 'seen' | 'resolved' | 'dismissed' | 'auto_resolved'
+
+/** `evidence` v1, `payment_delay` — faqat raqamlar va id'lar, ism yo'q (docs/07 §6). */
+export interface PaymentDelayEvidence {
+  as_of: string
+  overdue_days_threshold: number
+  children_count: number
+  active_children: number
+  critical_days_threshold: number
+  critical_children_threshold: number
+  total_overdue: string
+  average_days_overdue: number
+  max_days_overdue: number
+  children: {
+    child_id: string
+    group_id: string | null
+    overdue_amount: string
+    days_overdue: number
+    invoices: number
+  }[]
+}
+
+export interface Insight {
+  id: string
+  branch: string
+  type: InsightType
+  severity: InsightSeverity
+  status: InsightStatus
+  is_open: boolean
+  subject_type: 'branch' | 'group'
+  subject_id: string
+  /** Tipga qarab o'qiladi — `payment_delay` uchun `PaymentDelayEvidence`. */
+  evidence: Record<string, unknown>
+  evidence_version: number
+  recommendation_key: string
+  /** Tenant basename'iga nisbatan yo'l — router o'zi qo'shadi. */
+  deep_link: string
+  generated_at: string
+  refreshed_at: string | null
+  seen_at: string | null
+  resolved_at: string | null
+  dismissed_at: string | null
+  dismissed_until: string | null
+  auto_resolved_at: string | null
+}
+
+/** Bugungi davomat to'liqligi — BOLA darajasida (docs/07 §11). */
+export interface AttendanceCheck {
+  expected: number
+  recorded: number
+  percent: number
+  complete: boolean
+}
+
+export interface Briefing {
+  date: string
+  open_count: number
+  insights: Insight[]
+  checks: {
+    working_day: boolean
+    /** Filial foydalanuvchisi yoki `?branch=` — bitta filial. */
+    attendance?: AttendanceCheck | null
+    /** Egasi, filial tanlanmagan — har bir filial alohida. */
+    attendance_by_branch?: Record<string, AttendanceCheck | null>
+  }
+}

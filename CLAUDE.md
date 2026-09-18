@@ -108,7 +108,7 @@ Each stack has its own `.gitignore`; the root one covers only OS/editor/`.env`.
 
 ## Current Phase
 
-**Sprints 0–11 delivered — the MVP is feature-complete.** Backend and frontend are live against a real API: tenancy foundation, auth/RBAC, children & groups, finance (ledger, invoices, payments, debtors), attendance, staff & payroll, inventory & expenses, notifications & settings, reports/dashboard/audit with CSV export, **subscriptions/metering/billing**, and the **platform console + Postgres RLS**. 547 backend tests pass; Celery is verified against a live Redis broker.
+**Sprints 0–12 delivered — the MVP is feature-complete, plus Radix Intelligence V1 (`payment_delay` end-to-end, [06 Sprint 12](./docs/06_Development_Roadmap.md)).** Backend and frontend are live against a real API: tenancy foundation, auth/RBAC, children & groups, finance (ledger, invoices, payments, debtors), attendance, staff & payroll, inventory & expenses, notifications & settings, reports/dashboard/audit with CSV export, **subscriptions/metering/billing**, and the **platform console + Postgres RLS**. 738 backend tests pass; Celery beat is verified live (the nightly `generate_insights` run refreshed a real row).
 
 Next: the **launch gate** — data-residency/hosting jurisdiction must be confirmed before the first paying customer ([01 §10](./docs/01_Project_Vision.md)). That blocks launch, not the code.
 

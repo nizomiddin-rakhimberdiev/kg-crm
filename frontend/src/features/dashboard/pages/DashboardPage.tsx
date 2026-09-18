@@ -13,6 +13,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { Link } from 'react-router-dom'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { dashboardApi } from '@/features/dashboard/api'
+import { BriefingSection } from '@/features/intelligence/components/BriefingSection'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { formatUZS } from '@/lib/utils'
 
@@ -78,6 +79,10 @@ export default function DashboardPage() {
           {data ? new Date(data.date).toLocaleDateString('uz-UZ', { dateStyle: 'long' }) : '—'}
         </p>
       </div>
+
+      {/* Radix AI — kunlik brifing (docs/07 §11): KPI'lardan OLDIN, chunki
+          "nimaga e'tibor berish kerak" umumiy raqamlardan muhimroq. */}
+      <BriefingSection />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Tile

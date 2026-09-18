@@ -66,6 +66,11 @@ export const queryKeys = {
   billingInvoices: (orgId: string) => ['org', orgId, 'billing', 'invoices'] as const,
 
   dashboard: (orgId: string) => ['org', orgId, 'dashboard'] as const,
+  briefing: (orgId: string) => ['org', orgId, 'insights', 'briefing'] as const,
+  insights: (orgId: string, params?: Record<string, unknown>) =>
+    ['org', orgId, 'insights', 'list', params ?? {}] as const,
+  childLabels: (orgId: string, ids: string[]) =>
+    ['org', orgId, 'children', 'labels', ids.join(',')] as const,
   reportRevenue: (orgId: string, from: string, to: string) =>
     ['org', orgId, 'reports', 'revenue', from, to] as const,
   reportProfitLoss: (orgId: string, from: string, to: string) =>

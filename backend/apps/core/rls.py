@@ -39,6 +39,8 @@ from django.db import DatabaseError, connection
 __all__ = [
     "build_policy_sql",
     "build_policy_teardown_sql",
+    "policy_sql_for",
+    "teardown_sql_for",
     "AUTH_TABLES",
     "OPERATIONAL_TABLES",
     "METADATA_TABLES",
@@ -81,6 +83,7 @@ OPERATIONAL_TABLES: tuple[str, ...] = (
     "expense_category",
     "group",
     "guardian",
+    "insight",
     "invoice",
     "notification",
     "notification_template",
@@ -299,23 +302,50 @@ def _policy(table: str, expression: str, write_expression: str | None = None) ->
     """
     quoted = _quote(table)
     write = write_expression or expression
+    # `to_regclass` himoyasi: jadval hali YO'Q bo'lsa — hech narsa
+    # qilinmaydi. Sabab: `core/0002` barcha jadvallarga siyosatni bir
+    # yo'la qo'yadi, lekin keyinroq qo'shilgan app (masalan `intelligence`)
+    # yangi o'rnatishda undan KEYIN migratsiya qilinadi — o'sha paytda
+    # `ALTER TABLE insight` yiqilardi. Bunday jadval siyosatni o'z
+    # migratsiyasida `policy_sql_for()` bilan qo'yadi; `check_rls` esa
+    # baribir hammasini talab qiladi (docs/07 §10).
     return f"""
-ALTER TABLE {quoted} ENABLE ROW LEVEL SECURITY;
-ALTER TABLE {quoted} FORCE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS tenant_isolation ON {quoted};
-CREATE POLICY tenant_isolation ON {quoted}
-    USING ({expression})
-    WITH CHECK ({write});
+DO $$ BEGIN
+IF to_regclass('public.{quoted}') IS NOT NULL THEN
+    ALTER TABLE {quoted} ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE {quoted} FORCE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS tenant_isolation ON {quoted};
+    CREATE POLICY tenant_isolation ON {quoted}
+        USING ({expression})
+        WITH CHECK ({write});
+END IF;
+END $$;
 """
 
 
 def _drop(table: str) -> str:
     quoted = _quote(table)
     return f"""
-DROP POLICY IF EXISTS tenant_isolation ON {quoted};
-ALTER TABLE {quoted} NO FORCE ROW LEVEL SECURITY;
-ALTER TABLE {quoted} DISABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+IF to_regclass('public.{quoted}') IS NOT NULL THEN
+    DROP POLICY IF EXISTS tenant_isolation ON {quoted};
+    ALTER TABLE {quoted} NO FORCE ROW LEVEL SECURITY;
+    ALTER TABLE {quoted} DISABLE ROW LEVEL SECURITY;
+END IF;
+END $$;
 """
+
+
+OPERATIONAL_EXPRESSION = "organization_id = app_current_org()"
+
+
+def policy_sql_for(table: str) -> str:
+    """Bitta operatsion jadval uchun siyosat — kech qo'shilgan app migratsiyasi uchun."""
+    return _policy(table, OPERATIONAL_EXPRESSION)
+
+
+def teardown_sql_for(table: str) -> str:
+    return _drop(table)
 
 
 def build_policy_sql() -> str:

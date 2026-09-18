@@ -228,6 +228,22 @@ def _create_row(tenant: Any, basename: str) -> Any:
                 amount=Decimal("100000"),
                 expense_date=date(2026, 7, 1),
             )
+        if basename == "insight":
+            from apps.intelligence.models import Insight
+
+            return Insight.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                type="payment_delay",
+                severity="warning",
+                status="new",
+                subject_type="branch",
+                subject_id=tenant.branch.id,
+                evidence={"children_count": 1},
+                recommendation_key="payment_delay.review_debtors",
+                deep_link="/debtors?overdue_days=15",
+                generated_at=timezone.now(),
+            )
         if basename == "position":
             return Position.objects.create(
                 organization=tenant.organization, branch=tenant.branch, title="Tarbiyachi"

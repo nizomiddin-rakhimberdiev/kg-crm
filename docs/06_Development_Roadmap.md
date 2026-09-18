@@ -374,6 +374,29 @@ Each sprint delivers a vertical slice meeting the [Definition of Done](#7-defini
 
 ---
 
+### Sprint 12 — Radix Intelligence V1: vertical slice (ADR-14)
+**Goal:** the owner opens the dashboard and sees *what needs attention today*, with the evidence — computed from data the CRM already has, with no external model.
+- DB: `insight` table ([03 §20a](./03_Database_Design.md)) with the one-open-row-per-condition partial unique index, RLS policy in the app's own migration, `check_rls` → 39.
+- Engine: pure rules (`payment_delay` live; `attendance_drop` written and unit-tested, not yet wired), ledger-based debt with FIFO settlement of unlinked payments, nightly `intelligence.generate_insights` at 03:30, reconcile with refresh / auto-resolve / 7-day dismiss suppression / episode end.
+- API: `/insights`, `/insights/briefing`, `seen` / `resolve` / `dismiss` ([04 §14.3](./04_Backend_API_Specification.md)); `?ids=` on `/children` for live labels.
+- Frontend: `features/intelligence/` — card, "Why?" panel, live attendance-completeness check on the dashboard; `DebtorsPage?overdue_days` deep link.
+- Acceptance against the Bahor dataset ([07 §13.1](./07_Radix_Intelligence.md)); 440 px and 1440 px screenshots.
+- **Deliverable:** one honest signal end-to-end, from nightly job to a "Why?" a director can verify against the Debtors page.
+
+> **Status: delivered 2026-09-18.** 738 backend tests, 75 frontend tests.
+>
+> **The rule the design doc specified was wrong, and the integration test found it before the first customer did.** [07 §4](./07_Radix_Intelligence.md) originally read overdue debt from `invoice.status` / `amount_paid`. The very first end-to-end test — real invoices through `finance.issue_invoice`, a payment through `finance.record_payment` — flagged the child who had *paid*: `record_payment` accepts payments without an invoice link (advance, "for everything"), the ledger goes to zero and the invoice stays `issued`. Invariant 4 already said it: Debtors is a derived view over the ledger. The selector now asks the ledger *whether* a child owes (the same `debtor_queryset` the Debtors page uses, so the insight's list is a subset of that page by construction) and the invoices *how late*, settling unlinked credit FIFO against the oldest invoice. The doc was corrected in the same change. A pure-function rule test could never have caught this; the seed data allocates every payment to its invoice, so a demo could not either.
+>
+> **The database guarantee is tested as a database guarantee.** `test_same_branch_same_type_cannot_have_two_open_rows` writes the second row with the ORM directly, bypassing the service, and expects `IntegrityError` from Postgres. A second test races two threads through the real service on a transactional connection and asserts one open row. The concurrency test also had to re-seed the subscription plan — `TransactionTestCase` flushes the tables, and the finance concurrency test that runs before it takes the migration-seeded plan with it; the pattern was already documented in `finance/tests/test_concurrency.py`.
+>
+> **Four small things the real browser found that unit tests did not**: `?status=all` was rejected by django-filter (the field is now handled by the viewset alone); a closed row returned `404` on `resolve` instead of `422` because the default open filter applied to detail routes too; `-severity` ordering put `warning` first because it is alphabetical (now a `CASE` rank); and the Debtors deep-link cutoff was computed with `toISOString()`, which in Tashkent shifts the date by one day.
+>
+> **The nightly path was proven live, not assumed.** On the SaaS stack the row created by hand at 17:29 UTC was refreshed by Celery beat at 22:30 UTC (03:30 Tashkent) — `created: 0, refreshed: 1`. On `/private` the Bahor row went `new → seen → resolved` (audit: `demo@bahor.uz`, 22:28 local) and the next manual run created a fresh row, because `resolved` deliberately carries no suppression ([07 §9](./07_Radix_Intelligence.md)). History is rows.
+>
+> **Not in this slice, on purpose:** `attendance_drop` wiring (needs the rolling-window selector and the `AttendancePage?group=&range=` deep link), notifications, per-organization thresholds, RU in the app shell (the content layer is key-for-key ready).
+
+---
+
 ## 6. Milestones
 
 | Milestone | After | Meaning |

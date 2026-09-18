@@ -6,10 +6,13 @@
  * yomon joyda chiqardi: ota-onadan pul talab qilishda.
  */
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, CheckCircle2, ChevronRight, Phone } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ChevronRight, Phone, Sparkles } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { overdueDaysFromSearch, filterByOverdueDays } from '@/features/debtors/overdueDays'
+import { fill, getCopy } from '@/features/intelligence/content'
 import { Modal } from '@/components/ui/Modal'
 import { debtorsApi } from '@/features/payments/api'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -99,7 +102,12 @@ function StatementDrawer({ childId, onClose }: { childId: string; onClose: () =>
 
 export default function DebtorsPage() {
   const organizationId = useOrganizationId()
-  const [overdueOnly, setOverdueOnly] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  // Radix AI deep link (docs/07 §8): `?overdue_days=15` — "faqat muddati
+  // o'tganlar" yoqiladi va ro'yxat N kundan eskilarga toraytiriladi.
+  const overdueDays = overdueDaysFromSearch(searchParams)
+  const [overdueOnlyChoice, setOverdueOnly] = useState(false)
+  const overdueOnly = overdueOnlyChoice || overdueDays !== null
   const [openChild, setOpenChild] = useState<string | null>(null)
 
   const params = overdueOnly ? { overdue: 'true' } : undefined
@@ -108,9 +116,35 @@ export default function DebtorsPage() {
     queryFn: () => debtorsApi.list(params),
   })
 
+  const rows = useMemo(
+    () =>
+      debtorsQuery.data
+        ? filterByOverdueDays(debtorsQuery.data.results, overdueDays, new Date())
+        : [],
+    [debtorsQuery.data, overdueDays],
+  )
+  const aiCopy = getCopy().debtors
+
   return (
     <div className="space-y-6">
       {openChild && <StatementDrawer childId={openChild} onClose={() => setOpenChild(null)} />}
+
+      {overdueDays !== null && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-brand-100 bg-brand-50 px-3 py-2 text-sm text-brand-800"
+        >
+          <Sparkles className="h-4 w-4 shrink-0" />
+          <span>{fill(aiCopy.banner, { days: overdueDays })}</span>
+          <button
+            type="button"
+            className="ml-auto min-h-11 font-medium underline-offset-2 hover:underline"
+            onClick={() => setSearchParams({})}
+          >
+            {aiCopy.showAll}
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -133,6 +167,7 @@ export default function DebtorsPage() {
         <input
           type="checkbox"
           checked={overdueOnly}
+          disabled={overdueDays !== null}
           onChange={(e) => setOverdueOnly(e.target.checked)}
         />
         Faqat muddati o'tganlar
@@ -149,14 +184,14 @@ export default function DebtorsPage() {
               : "Ma'lumotni yuklab bo'lmadi."}
           </p>
         )}
-        {debtorsQuery.data?.results.length === 0 && (
+        {debtorsQuery.data && rows.length === 0 && (
           <div className="px-4 py-12 text-center">
             <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-slate-200" />
             <p className="text-sm text-slate-500">Qarzdorlar yo'q.</p>
           </div>
         )}
 
-        {debtorsQuery.data && debtorsQuery.data.results.length > 0 && (
+        {debtorsQuery.data && rows.length > 0 && (
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
               <tr>
@@ -169,7 +204,7 @@ export default function DebtorsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {debtorsQuery.data.results.map((row) => (
+              {rows.map((row) => (
                 <tr
                   key={row.child.id}
                   className="cursor-pointer hover:bg-slate-50"

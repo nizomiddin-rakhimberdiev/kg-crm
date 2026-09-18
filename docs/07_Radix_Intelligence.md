@@ -37,7 +37,8 @@ Everything else (expenses, inventory, payroll, revenue trend) is **V2** (§14). 
 
 | Table | Used by | Fields read |
 |---|---|---|
-| `invoice` | I-1 | `child_id`, `branch_id`, `due_date`, `status`, `amount_due`, `amount_paid`, `period_year/month` |
+| `child_ledger_entry` | I-1 | per-child balance (`Σ debit − Σ credit`), through `finance.selectors.debtor_queryset` — the Debtors page's own query |
+| `invoice` | I-1 | `child_id`, `branch_id`, `due_date`, `status`, `amount_due`, `amount_paid` — for *how late*, after the ledger has said *whether* |
 | `payment` | I-1 (evidence) | `child_id`, `paid_at`, `amount` |
 | `child` | I-1 (subject) | `id`, `branch_id`, `group` via active `enrollment` — **no names or phones stored in evidence** (§6) |
 | `attendance_record` | I-2 | `group_id`, `branch_id`, `date`, `status` (`present` / `absent` / `excused`) |
@@ -58,14 +59,20 @@ Rules are pure functions in `apps/intelligence/rules.py`. They take plain values
 
 ```
 for each branch:
-  overdue = invoices where status in (issued, partially_paid, overdue)
-            and due_date < today - OVERDUE_DAYS
-  group by child                          ← subject is the CHILD, see "Why child, not family"
-  if count(children) == 0: condition absent
+  debtors  = children whose LEDGER balance > 0            ← same query as the Debtors page
+  for each debtor:
+    open     = invoices where status in (issued, partially_paid, overdue), oldest first
+    credit   = Σ(open outstanding) − ledger balance      ← money paid WITHOUT an invoice link
+    settle `credit` against `open` FIFO (oldest first)
+    overdue  = unsettled parts of invoices with due_date < today − OVERDUE_DAYS
+    if overdue is empty: child is not late
+  if count(late children) == 0: condition absent
   severity = critical if any(days_overdue >= CRITICAL_DAYS)
              or count(children) >= max(CRITICAL_MIN_SUBJECTS, CRITICAL_SHARE × active_children)
              else warning
 ```
+
+**Two sources, two roles.** *Whether* a child owes money is answered by the **ledger** (invariant 4: Debtors is a derived view over the ledger) — never by `invoice.status` or `amount_paid`. `record_payment` accepts payments **without** an invoice (advance, "for everything"): the ledger goes to zero while the invoice stays `issued`. An invoice-only rule would flag a child who paid last week — the most embarrassing false positive an insight can produce. *How late* is answered by the **invoices**: unlinked credit is settled FIFO against the oldest open invoice, so a child who owed August + September and paid one month is 10 days late on September, not 40 days late on August. Because the deep link opens the Debtors page, the insight's child list is by construction a subset of what that page shows. Verified by `test_paying_off_closes_the_insight` and `test_real_overdue_invoices_produce_payment_delay` (a child with an old but paid invoice is not counted).
 
 | Threshold | V1 value | Rationale |
 |---|---|---|
@@ -133,6 +140,8 @@ An insight without evidence must not be created. `evidence` is a JSON object wit
   "overdue_days_threshold": 15,
   "children_count": 24,
   "active_children": 105,
+  "critical_days_threshold": 45,
+  "critical_children_threshold": 10,
   "total_overdue": "21758500.00",
   "average_days_overdue": 61,
   "max_days_overdue": 160,
@@ -375,11 +384,13 @@ RU `По {children_count} детям оплата задерживается б�
 
 ### 13.1 Acceptance dataset — Bahor bog‘chasi (`/private`)
 
+> **Result (2026-09-17, live `/private` database):** `python manage.py generate_insights --slug bahor-bogchasi` produced exactly one `payment_delay` row — `children_count = 24`, `max_days_overdue = 160`, `total_overdue = 21 758 500`, severity `critical`, 24 evidence rows, `critical_children_threshold = 10`. The second run returned `created: 0, refreshed: 1`. The ledger-based selector (§4) and the invoice-only estimate agree on this dataset because the seed allocates every payment to its invoice; they diverge precisely where the invoice-only rule was wrong (unlinked payments).
+
 105 children, 7 groups, 6 months of ledger and attendance seeded through the real service layer. The numbers below were **measured on the live demo database on 2026-09-17**, not derived from the seed script — the first estimate from reading the script was wrong by a factor of three, which is exactly why the acceptance test must run against data.
 
 | Measured fact | Expected engine behaviour |
 |---|---|
-| Invoices with `due_date < today − 15` and an open status: **27 invoices across 24 children**; oldest due 2026-04-10 → **160 days**; total outstanding **21 758 500** | I-1 fires **one** insight for the branch: `children_count = 24`, `max_days_overdue = 160`, severity **critical** (160 ≥ 45 *and* 24 ≥ max(3, 10 % × 105 = 11)) |
+| Invoices with `due_date < today − 15` and an open status: **27 invoices across 24 children**; oldest due 2026-04-10 → **160 days**; total outstanding **21 758 500** | I-1 fires **one** insight for the branch: `children_count = 24`, `max_days_overdue = 160`, severity **critical** (160 ≥ 45 *and* 24 ≥ max(3, int(10 % × 105) = 10)) |
 | Of those, 13 are April–July invoices **partially paid and never topped up** (the seed's "sometimes pays part" behaviour) | They count. A 60 %-paid invoice from April is real debt; the rule must not look only at the last month |
 | **7 August invoices still carry `status = issued`** although due 2026-08-10 — the demo stack runs no Celery beat, so `mark_overdue_invoices` never ran | The rule must compute from `due_date`, **never** from `status = overdue`. This dataset proves why (§4). |
 | 32 September invoices open, due 2026-09-10 → 7 days | **Excluded** (7 < 15) — asserts the threshold |
@@ -403,6 +414,8 @@ Marketing may call all three "Radix AI". The landing page claim for V1 is exactl
 ---
 
 ## Appendix A — Implementation checklist (for the vertical slice)
+
+> Status 2026-09-18: items 1–7 delivered for `payment_delay`; `attendance_drop` has its rule and unit tests (item 2) but is not wired into `generate_for_branch` (items 3, 5) — see [06 Sprint 12](./06_Development_Roadmap.md).
 
 1. `apps/intelligence/` app, `insight` model + migration (constraints exactly as §10, RLS `RunPython`), `OPERATIONAL_TABLES` entry, `check_rls` → 39.
 2. `thresholds.py` (incl. `WORKING_DAYS`, `DISMISS_SUPPRESSION_DAYS = 7`), `rules.py` (pure) + unit tests incl. boundary values (14/15/16 days; 9.9/10/10.1 points; `CRITICAL_MIN_SUBJECTS` floor).

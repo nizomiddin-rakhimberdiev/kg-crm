@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 from typing import Any
+from uuid import UUID
 
 from django.http import FileResponse
 from rest_framework import status
@@ -32,6 +33,17 @@ from apps.core.viewsets import BranchCreateMixin, BranchScopedMixin, TenantViewS
 __all__ = ["ChildViewSet", "GuardianViewSet", "GroupViewSet"]
 
 
+def _valid_uuids(values: list[str]) -> list[UUID]:
+    """Noto'g'ri formatdagi qiymat 500 emas, shunchaki mos kelmaydi."""
+    result: list[UUID] = []
+    for value in values:
+        try:
+            result.append(UUID(value))
+        except ValueError:
+            continue
+    return result
+
+
 class ChildViewSet(BranchScopedMixin, TenantViewSet):
     permission_module = "children"
     permission_action_map = {
@@ -44,15 +56,29 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
     ordering_fields = ["last_name", "date_of_birth", "created_at"]
     filterset_fields = ["enrollment_status", "gender"]
 
+    # Bir so'rovda nechta `id` — Radix Intelligence evidence'idagi bolalar
+    # ro'yxati 50 ga cheklangan (docs/07 §6); sahifa maksimumi 100.
+    IDS_CAP = 100
+
     def get_base_queryset(self) -> Any:
         # `prefetch_related` — ro'yxatda har bir bola uchun vasiy va guruh
         # so'rovi yuborilmasin (docs/02 §21.1: N+1 selector qatlamida
         # o'ldiriladi).
-        return (
+        queryset = (
             super()
             .get_base_queryset()
             .prefetch_related("guardian_links__guardian", "enrollments__group")
         )
+        # `?ids=a,b,c` — yorliqlarni id bo'yicha bitta so'rovda olish
+        # (docs/07 §6: "Nega?" paneli nomlarni snapshot'dan emas, jonli
+        # oladi). Tenant filtri va RLS yuqorida allaqachon qo'llangan —
+        # begona id shunchaki topilmaydi. Nofaol (o'chirilgan) bola ham
+        # qaytadi: uning raqamlari snapshot'da bor, yorlig'i kerak.
+        ids = self.request.query_params.get("ids")
+        if ids:
+            wanted = [value for value in ids.split(",") if value][: self.IDS_CAP]
+            queryset = queryset.filter(id__in=_valid_uuids(wanted))
+        return queryset
 
     def get_serializer_class(self) -> Any:
         return ChildSerializer if self.request.method in ("GET", "HEAD") else ChildWriteSerializer

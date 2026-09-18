@@ -237,7 +237,7 @@ Module: `children`. Sub-domains: children, guardians, groups, enrollment.
 ### 7.1 Children
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/children` | `children.read` | List (filters: `group`, `enrollment_status`, `tariff`; `search` by name) |
+| GET | `/children` | `children.read` | List (filters: `group`, `enrollment_status`, `tariff`; `search` by name); `?ids=a,b,c` (≤ 100) returns exactly those rows — used by the insight "Why?" panel to resolve labels live by id ([07 §6](./07_Radix_Intelligence.md)) |
 | POST | `/children` | `children.create` | Create child |
 | GET | `/children/{id}` | `children.read` | Detail (includes guardians, current group, balance) |
 | PATCH | `/children/{id}` | `children.update` | Update |
@@ -397,6 +397,8 @@ Module: `debtors` — **derived view over the finance ledger** ([03 §13.7](./03
 | POST | `/debtors/{childId}/remind` | `debtors.update` + `notifications.create` | Send an SMS debt reminder to the primary guardian |
 | POST | `/debtors/remind-all` | `debtors.update` + `notifications.create` | Queue reminders to all current debtors (async) |
 
+> `?overdue_days=N` is a **frontend** deep-link parameter ([07 §8](./07_Radix_Intelligence.md)): the page turns on `overdue=true` and narrows the list to `oldest_overdue_date < today − N` client-side. The API itself does not know it.
+
 **`GET /debtors` — response item**
 ```json
 {
@@ -538,6 +540,55 @@ Modules: `reports` + Dashboard (aggregation). **Read-only.** Exports are async.
 | GET | `/reports/exports/{jobId}` | `reports.read` | Poll export status / download link |
 
 > Report reads may route to a replica; heavy aggregations are served from materialized views ([03 §25](./03_Database_Design.md)).
+
+### 14.3 Radix Intelligence — insights & daily briefing (ADR-14)
+
+Module: `intelligence`. Permission module is **`dashboard`** — no new permission codes: reading uses `dashboard.read`, changing a row's status uses `dashboard.update`. Full design in [07](./07_Radix_Intelligence.md).
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/insights` | `dashboard.read` | Open insights by default (`status` = `open`, the default · `all` · a single status); filters `type`, `severity`; ordering `severity_rank` (critical first), `generated_at` |
+| GET | `/insights/{id}` | `dashboard.read` | One row, open **or closed** |
+| GET | `/insights/briefing` | `dashboard.read` | Open insights (max 20) + **live checks** for today: `working_day`, child-level attendance completeness — per branch for an owner without `?branch=` |
+| POST | `/insights/{id}/seen` | `dashboard.update` | First open; idempotent |
+| POST | `/insights/{id}/resolve` | `dashboard.update` | Closes the row; audit `insight.resolve`; **no suppression** — if the data disagrees tomorrow, a new row appears |
+| POST | `/insights/{id}/dismiss` | `dashboard.update` | Closes the row and suppresses the same condition for **7 days**; audit `insight.dismiss` |
+
+Closing an already-closed row → `422 BUSINESS_RULE_VIOLATION`. Another organization's id → `404` on every route.
+
+**The API returns keys and evidence, never sentences.** `type` + `evidence` + `recommendation_key` are rendered by the frontend content layer (`features/intelligence/content.ts`), so a wording change never touches the database. `deep_link` is a path relative to the tenant basename.
+
+**`GET /insights/briefing` — response**
+```json
+{
+  "success": true,
+  "data": {
+    "date": "2026-09-17",
+    "open_count": 1,
+    "insights": [
+      {
+        "id": "…", "type": "payment_delay", "severity": "critical", "status": "new", "is_open": true,
+        "subject_type": "branch", "subject_id": "…",
+        "evidence": { "as_of": "2026-09-17", "overdue_days_threshold": 15, "children_count": 24, "active_children": 105,
+                      "critical_days_threshold": 45, "critical_children_threshold": 10,
+                      "total_overdue": "21758500.00", "average_days_overdue": 76, "max_days_overdue": 160,
+                      "children": [ { "child_id": "…", "group_id": "…", "overdue_amount": "418000.00", "days_overdue": 160, "invoices": 1 } ] },
+        "evidence_version": 1,
+        "recommendation_key": "payment_delay.review_debtors",
+        "deep_link": "/debtors?overdue_days=15",
+        "generated_at": "2026-09-17T03:30:00Z", "refreshed_at": null,
+        "seen_at": null, "resolved_at": null, "dismissed_at": null, "dismissed_until": null, "auto_resolved_at": null
+      }
+    ],
+    "checks": {
+      "working_day": true,
+      "attendance_by_branch": { "<branch_id>": { "expected": 105, "recorded": 88, "percent": 84, "complete": false } }
+    }
+  }
+}
+```
+
+`checks.attendance` (a branch user, or `?branch=`) or `checks.attendance_by_branch` (owner) is `null` on a non-working day or when the branch has no enrolled children — the check is hidden, not shown as 0/0.
 
 ---
 
