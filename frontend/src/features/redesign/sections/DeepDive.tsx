@@ -15,7 +15,8 @@ import { CountUp, easeInOut, Reveal, useCompact, useScene, useStatic } from '../
 import { Bars, Frame, Kpi, Pill, Row } from '../ui/Mock'
 
 const TREND = [61, 68, 72, 70, 79, 86]
-const ZOOM = 1.7
+const ZOOM_DESKTOP = 1.7
+const ZOOM_COMPACT = 1.3
 
 type Point = { x: number; y: number }
 
@@ -97,7 +98,8 @@ export function DeepDive({ locale }: { locale: Locale }) {
   const pose = (i: number) => {
     if (i === 0 || i >= STOPS.length) return { s: 1, x: 0, y: 0 }
     const c = points.current[i]
-    return { s: ZOOM, x: -c.x * ZOOM - frameShift.current.x, y: -c.y * ZOOM - frameShift.current.y }
+    const zoom = compact ? ZOOM_COMPACT : ZOOM_DESKTOP
+    return { s: zoom, x: -c.x * zoom - frameShift.current.x, y: -c.y * zoom - frameShift.current.y }
   }
   const mix = (p: number, key: 's' | 'x' | 'y') => {
     const { from, to, t: k } = blendAt(p)
@@ -114,7 +116,7 @@ export function DeepDive({ locale }: { locale: Locale }) {
   })
   useMotionValueEvent(stepMv, 'change', (v) => setStep(v >= STOPS.length ? 0 : v))
 
-  const pinned = !compact && !isStatic
+  const pinned = !isStatic
   const uz = locale === 'uz'
 
   const panel = (
@@ -125,13 +127,24 @@ export function DeepDive({ locale }: { locale: Locale }) {
         className="origin-center will-change-transform"
       >
         <Frame demo={t.demo} compact={compact}>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
             {t.demo.kpis.map((kpi, i) => (
-              <div key={kpi.label} ref={i === 1 ? (el) => (targets.current[1] = el) : undefined}>
+              <div
+                key={kpi.label}
+                ref={
+                  i === 1
+                    ? (el) => (targets.current[1] = el)
+                    : i === 2 && compact
+                      ? (el) => (targets.current[2] = el)
+                      : undefined
+                }
+              >
                 <Kpi
                   kpi={kpi}
                   index={i}
-                  emphasis={pinned && step === 1 && i === 1}
+                  emphasis={
+                    pinned && ((step === 1 && i === 1) || (compact && step === 2 && i === 2))
+                  }
                   valueNode={
                     <CountUp
                       to={kpi.value}
@@ -157,8 +170,8 @@ export function DeepDive({ locale }: { locale: Locale }) {
               <Bars values={TREND} labels={t.demo.months} className="mt-2" />
             </div>
             <div
-              ref={(el) => (targets.current[2] = el)}
-              className={`rounded-xl border p-3 transition-colors ${pinned && step === 2 ? 'border-brand-300 ring-4 ring-brand-500/10' : 'border-slate-200/80'}`}
+              ref={compact ? undefined : (el) => (targets.current[2] = el)}
+              className={`hidden rounded-xl border p-3 transition-colors sm:block ${pinned && !compact && step === 2 ? 'border-brand-300 ring-4 ring-brand-500/10' : 'border-slate-200/80'}`}
             >
               <div className="flex items-center justify-between">
                 <p className="text-[11px] font-semibold text-slate-800">{t.demo.sidebar[4]}</p>
@@ -228,17 +241,21 @@ export function DeepDive({ locale }: { locale: Locale }) {
   }
 
   return (
-    <section ref={ref} className="relative bg-white" style={{ height: '320vh' }}>
+    <section
+      ref={ref}
+      className="relative bg-white"
+      style={{ height: compact ? '280vh' : '320vh' }}
+    >
       <div
         ref={stickyRef}
         className="sticky top-0 flex h-screen flex-col overflow-hidden pt-[76px]"
       >
-        <div className="mx-auto w-full max-w-[1280px] px-8 pt-4">{heading}</div>
-        <div className="mt-4 flex justify-center gap-2">
+        <div className="mx-auto w-full max-w-[1280px] px-5 pt-3 lg:px-8 lg:pt-4">{heading}</div>
+        <div className="mt-3 flex justify-center gap-1.5 px-5 lg:mt-4 lg:gap-2">
           {t.deepDive.steps.map((label, i) => (
             <span
               key={label}
-              className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-colors duration-300 ${
+              className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors duration-300 lg:px-3 lg:text-[12px] ${
                 step === i ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-500'
               }`}
             >
@@ -246,7 +263,9 @@ export function DeepDive({ locale }: { locale: Locale }) {
             </span>
           ))}
         </div>
-        <div className="relative mx-auto mt-4 w-full max-w-5xl flex-1 px-8">{panel}</div>
+        <div className="relative mx-auto mt-3 w-full max-w-5xl flex-1 px-5 lg:mt-4 lg:px-8">
+          {panel}
+        </div>
         <p className="pb-3 text-center text-[12px] text-slate-400">{t.demo.note}</p>
       </div>
     </section>

@@ -95,7 +95,7 @@ export function Workflow({ locale }: { locale: Locale }) {
     </div>
   )
 
-  if (compact || isStatic) {
+  if (isStatic) {
     return (
       <section ref={ref} className="bg-white py-16 lg:py-24">
         <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
@@ -120,12 +120,69 @@ export function Workflow({ locale }: { locale: Locale }) {
   }
 
   const views = [
-    <AttendanceUi key="a" local={one} locale={locale} />,
+    <AttendanceUi key="a" local={one} locale={locale} compact={compact} />,
     <GroupsUi key="g" locale={locale} />,
-    <PaymentsUi key="p" local={one} locale={locale} />,
-    <StaffUi key="s" local={one} locale={locale} />,
-    <ReportsUi key="r" local={one} locale={locale} />,
+    <PaymentsUi key="p" local={one} locale={locale} compact={compact} />,
+    <StaffUi key="s" local={one} locale={locale} compact={compact} />,
+    <ReportsUi key="r" local={one} locale={locale} compact={compact} />,
   ]
+
+  if (compact) {
+    const current = t.workflow.steps[step]
+    return (
+      <section ref={ref} className="relative bg-white" style={{ height: '300vh' }}>
+        <div className="sticky top-0 flex h-screen flex-col overflow-hidden pt-[76px]">
+          <div className="px-5 pt-3">
+            <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
+              {t.workflow.eyebrow}
+            </p>
+            <h2 className="mt-1.5 text-balance text-[1.6rem] font-extrabold !leading-[1.08] tracking-[-0.03em] text-slate-950">
+              {t.workflow.title}
+            </h2>
+            <div className="mt-3 flex items-baseline gap-2">
+              <motion.span className="text-4xl font-extrabold tabular-nums tracking-tight text-slate-950">
+                {label}
+              </motion.span>
+              <span className="text-[12px] text-slate-400">{t.demo.today}</span>
+            </div>
+            {/* Gorizontal vaqt chizig'i — marker scroll bilan yuradi. */}
+            <div className="relative mt-3 h-1 rounded-full bg-slate-200">
+              <motion.span
+                aria-hidden="true"
+                style={{ left: markerTop }}
+                className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-600 ring-4 ring-white"
+              />
+            </div>
+            <ol className="mt-2 flex justify-between">
+              {t.workflow.steps.map((s, i) => (
+                <li
+                  key={s.time}
+                  className={`text-[11px] font-semibold tabular-nums transition-colors ${i === step ? 'text-brand-700' : 'text-slate-400'}`}
+                >
+                  {s.time}
+                </li>
+              ))}
+            </ol>
+          </div>
+          <div className="mt-3 px-5">
+            <Frame
+              demo={t.demo}
+              compact
+              active={[5, 2, 3, 6, 0][step]}
+              className="rx-fade"
+              key={step}
+            >
+              {views[step]}
+            </Frame>
+          </div>
+          <div className="px-5 pt-3">
+            <h3 className="text-lg font-bold tracking-tight text-slate-950">{current.title}</h3>
+            <p className="mt-1 line-clamp-2 text-[14px] leading-6 text-slate-600">{current.text}</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section ref={ref} className="relative bg-white" style={{ height: '320vh' }}>

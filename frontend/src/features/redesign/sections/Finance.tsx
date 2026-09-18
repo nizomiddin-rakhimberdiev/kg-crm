@@ -1,148 +1,281 @@
 /**
- * Moliyaviy nazorat — aniqlik, diagramma to'plami emas.
+ * Moliyaviy nazorat — pul oqimi scroll bilan yuradi.
  *
- * Kirim → chiqim → balans: bitta oqim, sanaladigan raqamlar, bitta
- * tenglama. Raqamlar bir-biriga MOS (73 950 000 − 18 300 000 − 31 500 000
- * = 24 150 000) — namunaviy, lekin hisob to'g'ri.
+ * Pinned sahna. Raqamlar sanoqni scroll'dan oladi (vaqtdan emas): kirim
+ * o'sadi → strelka chiziladi → chiqim ayiriladi → balans chiqadi →
+ * taqsimot chizig'i bo'lak-bo'lak to'ladi. Orqaga scroll — orqaga
+ * hisob. Raqamlar bir-biriga mos (73 950 000 − 18 300 000 − 31 500 000 =
+ * 24 150 000).
  */
 
+import { useRef } from 'react'
+import { motion, useTransform, type MotionValue } from 'framer-motion'
 import { ArrowDown, ArrowRight } from 'lucide-react'
 import { copy, groupThousands, money, type Locale } from '../content'
-import { CountUp, Reveal } from '../motion'
+import { CountUp, Reveal, useCompact, useScene, useStatic } from '../motion'
 
-const TONE = {
-  in: 'text-emerald-700',
-  out: 'text-rose-700',
-  warn: 'text-amber-700',
-  neutral: 'text-slate-900',
+type Tone = 'in' | 'out' | 'warn' | 'neutral'
+const TEXT: Record<Tone, string> = {
+  in: 'text-emerald-300',
+  out: 'text-rose-300',
+  warn: 'text-amber-300',
+  neutral: 'text-white',
 }
-const BAR = {
+const BAR: Record<Tone, string> = {
   in: 'bg-emerald-500',
   out: 'bg-rose-400',
   warn: 'bg-amber-400',
   neutral: 'bg-slate-400',
 }
 
+/** Scroll oralig'i [a, b] ichida 0 → value gacha sanaydigan raqam. */
+function Scrub({
+  progress,
+  range,
+  value,
+  className,
+}: {
+  progress: MotionValue<number>
+  range: [number, number]
+  value: number
+  className?: string
+}) {
+  const text = useTransform(progress, range, [0, value], { clamp: true })
+  const label = useTransform(text, (v) => groupThousands(v))
+  return <motion.span className={className}>{label}</motion.span>
+}
+
+function Appear({
+  progress,
+  at,
+  children,
+  className = '',
+}: {
+  progress: MotionValue<number>
+  at: number
+  children: React.ReactNode
+  className?: string
+}) {
+  const opacity = useTransform(progress, [at, at + 0.06], [0, 1], { clamp: true })
+  const y = useTransform(progress, [at, at + 0.08], [18, 0], { clamp: true })
+  return (
+    <motion.div style={{ opacity, y }} className={className}>
+      {children}
+    </motion.div>
+  )
+}
+
+function Arrow({
+  progress,
+  at,
+  compact,
+}: {
+  progress: MotionValue<number>
+  at: number
+  compact: boolean
+}) {
+  const opacity = useTransform(progress, [at, at + 0.05], [0.2, 1], { clamp: true })
+  const shift = useTransform(progress, [at, at + 0.08], compact ? [-6, 0] : [-10, 0], {
+    clamp: true,
+  })
+  const Icon = compact ? ArrowDown : ArrowRight
+  return (
+    <motion.div
+      style={compact ? { opacity, y: shift } : { opacity, x: shift }}
+      className={compact ? 'flex justify-center py-1' : 'flex items-center'}
+    >
+      <Icon className={`${compact ? 'h-5 w-5' : 'h-6 w-6'} text-brand-400`} />
+    </motion.div>
+  )
+}
+
 export function Finance({ locale }: { locale: Locale }) {
   const t = copy[locale].finance
+  const ref = useRef<HTMLElement>(null)
+  const progress = useScene(ref)
+  const compact = useCompact()
+  const isStatic = useStatic()
   const byId = Object.fromEntries(t.metrics.map((m) => [m.id, m]))
   const payments = byId.payments.value
   const parts = [byId.expenses, byId.salaries, byId.balance]
+  const uz = locale === 'uz'
+
+  // Taqsimot chizig'i bo'laklari: har biri o'z oralig'ida to'ladi.
+  const seg = [
+    useTransform(progress, [0.7, 0.78], [0, 1], { clamp: true }),
+    useTransform(progress, [0.78, 0.86], [0, 1], { clamp: true }),
+    useTransform(progress, [0.86, 0.94], [0, 1], { clamp: true }),
+  ]
+  const equationOpacity = useTransform(progress, [0.62, 0.7], [0, 1], { clamp: true })
+
+  const heading = (
+    <div className="max-w-3xl">
+      <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-400">
+        {t.eyebrow}
+      </p>
+      <h2 className="mt-2 text-balance text-[1.75rem] font-extrabold !leading-[1.08] tracking-[-0.03em] text-white sm:text-4xl lg:mt-3 lg:text-[2.75rem]">
+        {t.title}
+      </h2>
+      <p className="mt-3 hidden text-base leading-7 text-slate-300 sm:block lg:text-lg">{t.text}</p>
+    </div>
+  )
+
+  if (isStatic) {
+    return (
+      <section ref={ref} className="bg-[#0B1730] py-20 text-white lg:py-32">
+        <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
+          <Reveal>{heading}</Reveal>
+          <div className="mt-10 grid gap-4 lg:grid-cols-3">
+            {[
+              [byId.revenue, byId.payments, byId.debt],
+              [byId.expenses, byId.salaries],
+              [byId.balance],
+            ].map((group, gi) => (
+              <div key={gi} className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+                {group.map((m) => (
+                  <div key={m.id} className="mt-4 first:mt-0">
+                    <p className="text-[13px] text-slate-400">{m.label}</p>
+                    <p className={`text-2xl font-bold tabular-nums ${TEXT[m.tone]}`}>
+                      <CountUp to={m.value} format={groupThousands} />
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  const card = 'rounded-2xl border border-white/10 bg-white/[0.04] p-4 lg:p-6'
+  const label = 'text-[12px] text-slate-400 lg:text-[13px]'
+  const num = 'text-xl font-bold tabular-nums tracking-tight lg:text-2xl'
 
   return (
-    <section className="bg-[#0B1730] py-20 text-white lg:py-32">
-      <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
-        <Reveal>
-          <div className="max-w-3xl">
-            <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-400">
-              {t.eyebrow}
-            </p>
-            <h2 className="mt-3 text-balance text-3xl font-extrabold !leading-[1.08] tracking-[-0.03em] text-white sm:text-4xl lg:text-[3.4rem]">
-              {t.title}
-            </h2>
-            <p className="mt-4 text-base leading-7 text-slate-300 lg:text-lg">{t.text}</p>
-          </div>
-        </Reveal>
+    <section
+      ref={ref}
+      className="relative bg-[#0B1730] text-white"
+      style={{ height: compact ? '300vh' : '280vh' }}
+    >
+      <div className="sticky top-0 flex h-screen flex-col overflow-hidden pt-[76px]">
+        <div className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col justify-center px-5 py-4 lg:px-8">
+          {heading}
 
-        <div className="mt-12 grid gap-4 lg:mt-16 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:items-stretch">
-          {/* Kirim */}
-          <Reveal>
-            <div className="h-full rounded-2xl border border-white/10 bg-white/[0.04] p-6">
-              <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400">
-                {locale === 'uz' ? 'Kirim' : 'Приход'}
+          <div className="mt-5 grid gap-2 lg:mt-12 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:gap-4">
+            {/* Kirim */}
+            <Appear progress={progress} at={0.02} className={card}>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                {uz ? 'Kirim' : 'Приход'}
               </p>
-              {[byId.revenue, byId.payments, byId.debt].map((m) => (
-                <div key={m.id} className="mt-5 first:mt-4">
-                  <p className="text-[13px] text-slate-400">{m.label}</p>
-                  <p
-                    className={`mt-0.5 text-2xl font-bold tabular-nums tracking-tight ${m.tone === 'neutral' ? 'text-white' : m.tone === 'warn' ? 'text-amber-300' : 'text-emerald-300'}`}
-                  >
-                    <CountUp to={m.value} format={groupThousands} />
-                  </p>
-                </div>
-              ))}
-            </div>
-          </Reveal>
-          <div className="hidden items-center lg:flex">
-            <ArrowRight className="h-6 w-6 text-slate-600" />
-          </div>
-          <div className="flex justify-center lg:hidden">
-            <ArrowDown className="h-5 w-5 text-slate-600" />
-          </div>
+              <div className={compact ? 'mt-2 grid grid-cols-3 gap-2' : ''}>
+                {[
+                  [byId.revenue, [0.04, 0.2]],
+                  [byId.payments, [0.12, 0.28]],
+                  [byId.debt, [0.2, 0.34]],
+                ].map(([m, range]) => {
+                  const metric = m as typeof byId.revenue
+                  return (
+                    <div key={metric.id} className={compact ? 'min-w-0' : 'mt-4 first:mt-3'}>
+                      <p className={`${label} ${compact ? 'leading-tight' : ''}`}>{metric.label}</p>
+                      <Scrub
+                        progress={progress}
+                        range={range as [number, number]}
+                        value={metric.value}
+                        className={`${num} ${TEXT[metric.tone]} ${compact ? '!text-[15px]' : ''}`}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </Appear>
+            <Arrow progress={progress} at={0.34} compact={compact} />
 
-          {/* Chiqim */}
-          <Reveal delay={0.06}>
-            <div className="h-full rounded-2xl border border-white/10 bg-white/[0.04] p-6">
-              <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400">
-                {locale === 'uz' ? 'Chiqim' : 'Расход'}
+            {/* Chiqim */}
+            <Appear progress={progress} at={0.38} className={card}>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                {uz ? 'Chiqim' : 'Расход'}
               </p>
-              {[byId.expenses, byId.salaries].map((m) => (
-                <div key={m.id} className="mt-5 first:mt-4">
-                  <p className="text-[13px] text-slate-400">{m.label}</p>
-                  <p className="mt-0.5 text-2xl font-bold tabular-nums tracking-tight text-rose-300">
-                    <CountUp to={m.value} format={groupThousands} />
-                  </p>
-                </div>
-              ))}
-            </div>
-          </Reveal>
-          <div className="hidden items-center lg:flex">
-            <ArrowRight className="h-6 w-6 text-slate-600" />
-          </div>
-          <div className="flex justify-center lg:hidden">
-            <ArrowDown className="h-5 w-5 text-slate-600" />
-          </div>
+              <div className={compact ? 'mt-2 grid grid-cols-2 gap-2' : ''}>
+                {[
+                  [byId.expenses, [0.4, 0.52]],
+                  [byId.salaries, [0.46, 0.58]],
+                ].map(([m, range]) => {
+                  const metric = m as typeof byId.expenses
+                  return (
+                    <div key={metric.id} className={compact ? 'min-w-0' : 'mt-4 first:mt-3'}>
+                      <p className={label}>{metric.label}</p>
+                      <Scrub
+                        progress={progress}
+                        range={range as [number, number]}
+                        value={metric.value}
+                        className={`${num} ${TEXT[metric.tone]} ${compact ? '!text-[15px]' : ''}`}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </Appear>
+            <Arrow progress={progress} at={0.58} compact={compact} />
 
-          {/* Balans */}
-          <Reveal delay={0.12}>
-            <div className="h-full rounded-2xl border border-brand-400/40 bg-brand-500/10 p-6">
-              <p className="text-[12px] font-semibold uppercase tracking-wider text-brand-300">
+            {/* Balans */}
+            <Appear
+              progress={progress}
+              at={0.6}
+              className="rounded-2xl border border-brand-400/40 bg-brand-500/10 p-4 lg:p-6"
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-300">
                 {byId.balance.label}
               </p>
-              <p className="mt-4 text-4xl font-extrabold tabular-nums tracking-tight text-white">
-                <CountUp to={byId.balance.value} format={groupThousands} duration={1800} />
+              <p className="mt-2 text-3xl font-extrabold tabular-nums tracking-tight text-white lg:mt-4 lg:text-4xl">
+                <Scrub progress={progress} range={[0.62, 0.8]} value={byId.balance.value} />
               </p>
-              <p className="mt-1 text-[13px] text-slate-400">
-                {locale === 'uz' ? 'so‘m · sentabr' : 'сум · сентябрь'}
+              <p className="mt-0.5 text-[12px] text-slate-400 lg:text-[13px]">
+                {uz ? 'so‘m · sentabr' : 'сум · сентябрь'}
               </p>
-              <p className="mt-6 text-[13px] leading-5 text-slate-300">{t.equation}</p>
-            </div>
-          </Reveal>
-        </div>
+              <motion.p
+                style={{ opacity: equationOpacity }}
+                className="mt-2 text-[12px] leading-5 text-slate-300 lg:mt-6 lg:text-[13px]"
+              >
+                {t.equation}
+              </motion.p>
+            </Appear>
+          </div>
 
-        {/* To'lovlar qanday taqsimlanadi — bitta chiziq. */}
-        <Reveal delay={0.1}>
-          <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+          {/* To'lovlar qanday taqsimlanadi — bo'lak-bo'lak. */}
+          <Appear progress={progress} at={0.66} className={`${card} mt-3 lg:mt-6`}>
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <p className="text-[13px] text-slate-400">{byId.payments.label}</p>
+              <p className={label}>{byId.payments.label}</p>
               <p className="text-sm font-semibold tabular-nums text-white">
                 {money(payments, locale)}
               </p>
             </div>
-            <div className="mt-3 flex h-3 overflow-hidden rounded-full bg-white/10">
-              {parts.map((m) => (
-                <div
+            <div className="mt-2 flex h-3 overflow-hidden rounded-full bg-white/10 lg:mt-3">
+              {parts.map((m, i) => (
+                <motion.div
                   key={m.id}
-                  className={`rx-grow-x h-full origin-left ${BAR[m.tone]}`}
-                  style={{ width: `${(m.value / payments) * 100}%` }}
+                  style={{ scaleX: seg[i], width: `${(m.value / payments) * 100}%` }}
+                  className={`h-full origin-left ${BAR[m.tone]}`}
                 />
               ))}
             </div>
-            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
-              {parts.map((m) => (
-                <span key={m.id} className="flex items-center gap-2 text-[13px] text-slate-300">
+            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 lg:mt-3">
+              {parts.map((m, i) => (
+                <motion.span
+                  key={m.id}
+                  style={{ opacity: seg[i] }}
+                  className="flex items-center gap-2 text-[12px] text-slate-300 lg:text-[13px]"
+                >
                   <span className={`h-2.5 w-2.5 rounded-full ${BAR[m.tone]}`} />
                   {m.label} ·{' '}
-                  <span
-                    className={`font-semibold tabular-nums ${TONE[m.tone] === 'text-slate-900' ? 'text-white' : ''}`}
-                  >
+                  <span className="font-semibold tabular-nums text-white">
                     {Math.round((m.value / payments) * 100)}%
                   </span>
-                </span>
+                </motion.span>
               ))}
             </div>
-          </div>
-        </Reveal>
+          </Appear>
+        </div>
       </div>
     </section>
   )

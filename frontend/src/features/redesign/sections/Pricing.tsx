@@ -6,24 +6,52 @@
  * tushuntirish uchun.
  */
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useMotionValueEvent, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, Check } from 'lucide-react'
 import { marketingApi } from '@/features/marketing/api'
 import { copy, groupThousands, money, type Locale } from '../content'
-import { Reveal } from '../motion'
+import { Reveal, useStatic } from '../motion'
 import { Num } from '../ui/Num'
 
 type Term = 'monthly' | 'annual'
 
+// Bo'lim ekranga kirayotganda slayder o'zi "namoyish" qiladi: 20 → 50 bola,
+// narx shunga qarab o'zgaradi. Foydalanuvchi slayderga tegishi bilan
+// namoyish to'xtaydi — kalkulyator uniki.
+const DEMO_FROM = 20
+const DEMO_TO = 50
+
 export function Pricing({ locale }: { locale: Locale }) {
   const t = copy[locale].pricing
-  const [children, setChildren] = useState(50)
+  const ref = useRef<HTMLElement>(null)
+  const isStatic = useStatic()
+  const [children, setChildren] = useState(isStatic ? DEMO_TO : DEMO_FROM)
+  const [touched, setTouched] = useState(false)
   const [term, setTerm] = useState<Term>('monthly')
 
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 90%', 'start 25%'] })
+  const demo = useTransform(scrollYProgress, [0, 1], [DEMO_FROM, DEMO_TO], { clamp: true })
+  useMotionValueEvent(demo, 'change', (v) => {
+    if (!touched && !isStatic) setChildren(Math.round(v))
+  })
+
+  // API'ga har bir oraliq qiymat uchun emas — to'xtagandan keyin so'raladi.
+  const [queried, setQueried] = useState(children)
+  useEffect(() => {
+    const timer = window.setTimeout(() => setQueried(children), 160)
+    return () => window.clearTimeout(timer)
+  }, [children])
+
+  const pick = (value: number) => {
+    setTouched(true)
+    setChildren(value)
+  }
+
   const quote = useQuery({
-    queryKey: ['public-pricing', children],
-    queryFn: () => marketingApi.pricing(children),
+    queryKey: ['public-pricing', queried],
+    queryFn: () => marketingApi.pricing(queried),
     staleTime: 60_000,
     placeholderData: (previous) => previous,
   })
@@ -34,7 +62,7 @@ export function Pricing({ locale }: { locale: Locale }) {
   const effective = annual !== null ? annual / 12 : null
 
   return (
-    <section id="pricing" className="scroll-mt-16 bg-white py-20 lg:py-32">
+    <section ref={ref} id="pricing" className="scroll-mt-16 bg-white py-20 lg:py-32">
       <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
         <Reveal>
           <div className="max-w-3xl">
@@ -77,7 +105,8 @@ export function Pricing({ locale }: { locale: Locale }) {
                 max={300}
                 step={1}
                 value={Math.min(300, children)}
-                onChange={(e) => setChildren(Number(e.target.value))}
+                onChange={(e) => pick(Number(e.target.value))}
+                onPointerDown={() => setTouched(true)}
                 className="mt-5 h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-brand-600"
               />
               <div className="mt-1 flex justify-between text-[11px] text-slate-400">

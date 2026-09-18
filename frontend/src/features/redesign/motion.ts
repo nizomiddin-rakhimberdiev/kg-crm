@@ -44,3 +44,15 @@ export const span = (p: number, a: number, b: number) => Math.min(1, Math.max(0,
 
 export const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
 export const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+
+/**
+ * Gorizontal chip qatorida faol elementni markazga keltiradi — FAQAT
+ * gorizontal. `scrollIntoView` overflow-hidden sticky konteynerni vertikal
+ * ham surib yuborardi (kichik ekranda kontent sig'maganda).
+ */
+export function centerInStrip(el: HTMLElement | null) {
+  const strip = el?.parentElement
+  if (!el || !strip) return
+  const left = el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2
+  strip.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
+}

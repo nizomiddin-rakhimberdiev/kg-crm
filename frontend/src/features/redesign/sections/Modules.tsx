@@ -4,14 +4,14 @@
  * Chap ustunda ro'yxat, o'ngda panel. Har bir modul uchun ekran balandligi
  * bitta "qadam": qadam ichida (local 0 → 1) UI o'z hikoyasini ko'rsatadi —
  * ro'yxat filtrlanadi, to'lov holati o'zgaradi, davomat to'ladi, ombor
- * kamayadi. Mobil: ustma-ust, har modul o'z yakuniy holatida.
+ * kamayadi. Mobil: ham pinned — chip qatori + panel + matn.
  */
 
 import { useRef, useState, type ReactNode } from 'react'
 import { useMotionValue, useMotionValueEvent, useTransform, type MotionValue } from 'framer-motion'
 import { Check, ChevronRight } from 'lucide-react'
 import { copy, groupThousands, type Locale, type ModuleCopy } from '../content'
-import { Reveal, useCompact, useScene, useStatic } from '../motion'
+import { centerInStrip, Reveal, useCompact, useScene, useStatic } from '../motion'
 import { Bars, Frame, Kpi, Pill, Row } from '../ui/Mock'
 import { Num } from '../ui/Num'
 
@@ -35,7 +35,9 @@ const CHILDREN = [
   ['Umarov Sanjar', 'Quyosh'],
 ] as const
 
-export function ChildrenUi({ local, locale }: { local: MotionValue<number>; locale: Locale }) {
+type UiProps = { local: MotionValue<number>; locale: Locale; compact?: boolean }
+
+export function ChildrenUi({ local, locale, compact = false }: UiProps) {
   const phase = usePhase(local, [0.35, 0.7])
   const groups =
     locale === 'uz'
@@ -59,7 +61,7 @@ export function ChildrenUi({ local, locale }: { local: MotionValue<number>; loca
           ))}
         </div>
         <div className="mt-2 space-y-0.5">
-          {CHILDREN.map(([name, group], i) => (
+          {CHILDREN.slice(0, compact ? (phase === 2 ? 2 : 5) : 7).map(([name, group], i) => (
             <div
               key={name}
               className="transition-all duration-500"
@@ -111,7 +113,7 @@ export function ChildrenUi({ local, locale }: { local: MotionValue<number>; loca
   )
 }
 
-export function PaymentsUi({ local, locale }: { local: MotionValue<number>; locale: Locale }) {
+export function PaymentsUi({ local, locale }: UiProps) {
   const phase = usePhase(local, [0.33, 0.66])
   const L =
     locale === 'uz'
@@ -155,7 +157,7 @@ export function PaymentsUi({ local, locale }: { local: MotionValue<number>; loca
   )
 }
 
-export function AttendanceUi({ local, locale }: { local: MotionValue<number>; locale: Locale }) {
+export function AttendanceUi({ local, locale }: UiProps) {
   const toMarked = (v: number) => Math.min(19, Math.round(v * 24))
   const [marked, setMarked] = useState(() => toMarked(local.get()))
   useMotionValueEvent(local, 'change', (v) => setMarked(toMarked(v)))
@@ -209,7 +211,7 @@ export function AttendanceUi({ local, locale }: { local: MotionValue<number>; lo
   )
 }
 
-export function StaffUi({ local, locale }: { local: MotionValue<number>; locale: Locale }) {
+export function StaffUi({ local, locale }: UiProps) {
   const phase = usePhase(local, [0.35, 0.7])
   const uz = locale === 'uz'
   const rows = [
@@ -267,7 +269,7 @@ export function StaffUi({ local, locale }: { local: MotionValue<number>; locale:
   )
 }
 
-export function InventoryUi({ local, locale }: { local: MotionValue<number>; locale: Locale }) {
+export function InventoryUi({ local, locale, compact = false }: UiProps) {
   const phase = usePhase(local, [0.4, 0.75])
   const uz = locale === 'uz'
   const stock = [
@@ -288,7 +290,7 @@ export function InventoryUi({ local, locale }: { local: MotionValue<number>; loc
           {uz ? 'Ombor qoldig‘i' : 'Остаток на складе'}
         </p>
         <ul className="mt-2 space-y-2">
-          {stock.map(([name, unit, from, to]) => {
+          {stock.slice(0, compact ? 3 : 4).map(([name, unit, from, to]) => {
             const value = phase === 0 ? from : phase === 1 ? Math.round((from + to) / 2) : to
             return (
               <li key={name}>
@@ -337,7 +339,7 @@ export function InventoryUi({ local, locale }: { local: MotionValue<number>; loc
   )
 }
 
-export function ReportsUi({ local, locale }: { local: MotionValue<number>; locale: Locale }) {
+export function ReportsUi({ local, locale, compact = false }: UiProps) {
   const phase = usePhase(local, [0.3, 0.6])
   const t = copy[locale].demo
   const spread = ['-14px, -10px', '14px, -8px', '-10px, 10px', '12px, 12px']
@@ -366,17 +368,14 @@ export function ReportsUi({ local, locale }: { local: MotionValue<number>; local
           values={[61, 68, 72, 70, 79, 86]}
           labels={t.months}
           progress={phase === 2 ? 1 : phase === 1 ? 0.45 : 0.1}
-          className="mt-2"
+          className={compact ? 'mt-2 [&>div]:!h-14' : 'mt-2'}
         />
       </div>
     </div>
   )
 }
 
-const UI: Record<
-  ModuleCopy['id'],
-  (p: { local: MotionValue<number>; locale: Locale }) => ReactNode
-> = {
+const UI: Record<ModuleCopy['id'], (p: UiProps) => ReactNode> = {
   children: ChildrenUi,
   payments: PaymentsUi,
   attendance: AttendanceUi,
@@ -401,7 +400,7 @@ export function Modules({ locale }: { locale: Locale }) {
   useMotionValueEvent(activeMv, 'change', (v) => setActive(v))
   const one = useMotionValue(1)
 
-  if (compact || isStatic) {
+  if (isStatic) {
     return (
       <section ref={ref} id="capabilities" className="bg-slate-50 py-16 lg:py-24">
         <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
@@ -432,6 +431,55 @@ export function Modules({ locale }: { locale: Locale }) {
                 </Reveal>
               )
             })}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (compact) {
+    const item = t.modules.items[active]
+    const Ui = UI[item.id]
+    return (
+      <section
+        ref={ref}
+        id="capabilities"
+        className="relative bg-slate-50"
+        style={{ height: `${STEPS * 80}vh` }}
+      >
+        <div className="sticky top-0 flex h-screen flex-col overflow-hidden pt-[76px]">
+          <div className="px-5 pt-3">
+            <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
+              {t.modules.eyebrow}
+            </p>
+            <h2 className="mt-1.5 text-balance text-[1.6rem] font-extrabold !leading-[1.08] tracking-[-0.03em] text-slate-950">
+              {t.modules.title}
+            </h2>
+          </div>
+          {/* Qadam chiplari — faol modul markazda turadi. */}
+          <div className="mt-3 flex gap-1.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
+            {t.modules.items.map((m, i) => (
+              <span
+                key={m.id}
+                ref={(el) => i === active && centerInStrip(el)}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors duration-300 ${
+                  i === active
+                    ? 'bg-slate-950 text-white'
+                    : 'bg-white text-slate-500 ring-1 ring-slate-200'
+                }`}
+              >
+                0{i + 1} · {m.title}
+              </span>
+            ))}
+          </div>
+          <div className="mt-3 px-5">
+            <Frame demo={t.demo} compact className="rx-fade" key={item.id}>
+              <Ui local={local} locale={locale} compact />
+            </Frame>
+          </div>
+          <div className="px-5 pt-3">
+            <h3 className="text-lg font-bold tracking-tight text-slate-950">{item.title}</h3>
+            <p className="mt-1 line-clamp-3 text-[14px] leading-6 text-slate-600">{item.text}</p>
           </div>
         </div>
       </section>
