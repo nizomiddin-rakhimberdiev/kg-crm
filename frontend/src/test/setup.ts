@@ -34,5 +34,22 @@ class IntersectionObserverStub implements IntersectionObserver {
   }
 }
 
-globalThis.IntersectionObserver =
-  IntersectionObserverStub as unknown as typeof IntersectionObserver
+globalThis.IntersectionObserver = IntersectionObserverStub as unknown as typeof IntersectionObserver
+
+/**
+ * `matchMedia` — jsdom'da yo'q. Redesign sahifasi (`useCompact`) ekran
+ * kengligini shu orqali so'raydi; stub "desktop" deb javob beradi.
+ */
+if (typeof window !== 'undefined' && !window.matchMedia) {
+  window.matchMedia = (query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }) as MediaQueryList
+}
