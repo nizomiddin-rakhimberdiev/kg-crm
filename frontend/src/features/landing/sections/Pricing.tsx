@@ -228,6 +228,38 @@ export function Pricing({ locale }: { locale: Locale }) {
               </div>
             </div>
           </Reveal>
+
+          {/* Ikkinchi model — alohida o'rnatma (ADR-13): narx kelishuv asosida. */}
+          <Reveal delay={0.12} className="lg:col-span-2">
+            <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-slate-950 p-6 text-white sm:flex-row sm:items-center sm:justify-between sm:p-8">
+              <div>
+                <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-slate-200">
+                  {t.standalone.badge}
+                </span>
+                <p className="mt-3 text-xl font-bold tracking-tight">{t.standalone.title}</p>
+                <p className="mt-1 max-w-xl text-[15px] leading-6 text-slate-300">
+                  {t.standalone.text}
+                </p>
+                <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5">
+                  {t.standalone.points.map((point) => (
+                    <li
+                      key={point}
+                      className="flex items-center gap-1.5 text-[13px] text-slate-300"
+                    >
+                      <Check className="h-3.5 w-3.5 text-emerald-400" strokeWidth={3} />
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <a
+                href="#demo"
+                className="inline-flex min-h-[48px] shrink-0 items-center justify-center rounded-xl border border-white/20 px-5 text-[15px] font-semibold text-white transition hover:bg-white/10"
+              >
+                {t.standalone.cta}
+              </a>
+            </div>
+          </Reveal>
         </div>
       </div>
     </section>

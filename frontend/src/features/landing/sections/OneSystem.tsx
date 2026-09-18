@@ -76,7 +76,7 @@ function Tile({
         <Icon className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
       </span>
       <span
-        className={`truncate font-semibold text-slate-800 ${compact ? 'text-[10px]' : 'text-[12px]'}`}
+        className={`truncate font-semibold text-slate-800 ${compact ? 'text-[11px] lg:text-[10px]' : 'text-[12px]'}`}
       >
         {label}
       </span>
@@ -153,12 +153,12 @@ function Panel({ locale, factor }: { locale: Locale; factor: number }) {
     >
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2">
-          <span className="grid h-6 w-6 place-items-center rounded-md bg-slate-950 text-[10px] font-bold text-white">
+          <span className="grid h-6 w-6 place-items-center rounded-md bg-slate-950 text-[11px] lg:text-[10px] font-bold text-white">
             R
           </span>
           <span className="text-[12px] font-semibold text-slate-800">{t.demo.org}</span>
         </div>
-        <span className="text-[11px] text-slate-400">{t.demo.today}</span>
+        <span className="text-[12px] lg:text-[11px] text-slate-400">{t.demo.today}</span>
       </div>
       <div className={`mt-3 grid gap-2 ${factor < 1 ? 'grid-cols-2' : 'grid-cols-4'}`}>
         {t.oneSystem.modules.map((label, i) => (
@@ -178,7 +178,7 @@ function Panel({ locale, factor }: { locale: Locale; factor: number }) {
         {t.oneSystem.links.map(([cause, effect]) => (
           <li
             key={cause}
-            className="flex items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-2 text-[11px]"
+            className="flex items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-2 text-[12px] lg:text-[11px]"
           >
             <span className="text-slate-600">{cause}</span>
             <ArrowRight className="h-3 w-3 shrink-0 text-brand-600" />
@@ -226,7 +226,7 @@ export function OneSystem({ locale }: { locale: Locale }) {
       <div className="sticky top-0 flex h-screen flex-col overflow-hidden pt-[76px]">
         <motion.div
           style={{ y: titleY, scale: titleScale }}
-          className="mx-auto w-full max-w-[1280px] px-5 pt-6 lg:px-8 lg:pt-8"
+          className="mx-auto w-full max-w-[1280px] px-5 pt-3 lg:px-8 lg:pt-8"
         >
           <Heading locale={locale} />
         </motion.div>

@@ -27,7 +27,9 @@ function GroupsUi({ locale }: { locale: Locale }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <div className="rounded-xl border border-slate-200/80 p-3">
-        <p className="text-[11px] font-semibold text-slate-800">{uz ? 'Guruhlar' : 'Группы'}</p>
+        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
+          {uz ? 'Guruhlar' : 'Группы'}
+        </p>
         {[
           ['Quyosh', '20 / 20', 'neutral'],
           ['Yulduzcha', '19 / 20', 'ok'],
@@ -44,17 +46,17 @@ function GroupsUi({ locale }: { locale: Locale }) {
         ))}
       </div>
       <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+        <p className="text-[11px] lg:text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
           {uz ? 'Yangi bola' : 'Новый ребёнок'}
         </p>
         <p className="mt-1 text-[12px] font-bold text-slate-900">Nazarova Madina</p>
-        <p className="text-[10px] text-slate-500">
+        <p className="text-[11px] lg:text-[10px] text-slate-500">
           {uz ? 'Yulduzcha guruhiga biriktirildi' : 'Зачислена в группу Yulduzcha'}
         </p>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-emerald-100">
           <div className="h-full w-[95%] rounded-full bg-emerald-500" />
         </div>
-        <p className="mt-1 text-[10px] text-slate-500">
+        <p className="mt-1 text-[11px] lg:text-[10px] text-slate-500">
           {uz ? 'Sig‘im 19 / 20' : 'Заполненность 19 / 20'}
         </p>
       </div>
@@ -157,7 +159,7 @@ export function Workflow({ locale }: { locale: Locale }) {
               {t.workflow.steps.map((s, i) => (
                 <li
                   key={s.time}
-                  className={`text-[11px] font-semibold tabular-nums transition-colors ${i === step ? 'text-brand-700' : 'text-slate-400'}`}
+                  className={`text-[12px] lg:text-[11px] font-semibold tabular-nums transition-colors ${i === step ? 'text-brand-700' : 'text-slate-400'}`}
                 >
                   {s.time}
                 </li>

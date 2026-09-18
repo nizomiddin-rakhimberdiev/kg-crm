@@ -15,16 +15,11 @@ import { env } from './config/env'
 const MarketingEntry = lazy(() =>
   import('./features/marketing/pages/MarketingPage').then((m) => ({ default: m.MarketingEntry })),
 )
-const MarketingPage = lazy(() =>
-  import('./features/marketing/pages/MarketingPage').then((m) => ({ default: m.MarketingPage })),
-)
 const LegalPage = lazy(() =>
   import('./features/marketing/pages/MarketingPage').then((m) => ({ default: m.LegalPage })),
 )
-// Sinov redizayni — `/test-redesign`. Asosiy landing'dan alohida chunk;
-// yoqsa asosiy sahifaga ko'chiriladi, yoqmasa shu ikki qator o'chadi.
-const RedesignPage = lazy(() =>
-  import('./features/redesign/pages/RedesignPage').then((m) => ({ default: m.RedesignPage })),
+const LandingPage = lazy(() =>
+  import('./features/landing/pages/LandingPage').then((m) => ({ default: m.LandingPage })),
 )
 
 /*
@@ -111,14 +106,15 @@ const saasOnlyRoutes = env.isStandalone
           // ballari teng, va tenglikda tartib hal qiladi — bu daraxt
           // ro'yxatda birinchi turadi.
           { id: 'marketing-root', index: true, element: <MarketingEntry /> },
-          { path: '/uz', element: <MarketingPage locale="uz" /> },
-          { path: '/ru', element: <MarketingPage locale="ru" /> },
+          { path: '/uz', element: <LandingPage locale="uz" /> },
+          { path: '/ru', element: <LandingPage locale="ru" /> },
           { path: '/uz/privacy', element: <LegalPage locale="uz" page="privacy" /> },
           { path: '/ru/privacy', element: <LegalPage locale="ru" page="privacy" /> },
           { path: '/uz/terms', element: <LegalPage locale="uz" page="terms" /> },
           { path: '/ru/terms', element: <LegalPage locale="ru" page="terms" /> },
-          { path: '/test-redesign', element: <RedesignPage locale="uz" /> },
-          { path: '/test-redesign/ru', element: <RedesignPage locale="ru" /> },
+          // Sinov davridagi havolalar — bosh sahifaga.
+          { path: '/test-redesign', element: <Navigate replace to="/uz" /> },
+          { path: '/test-redesign/ru', element: <Navigate replace to="/ru" /> },
         ],
       },
       // --- Vendor tekisligi (ADR-10) ---

@@ -162,8 +162,10 @@ export function DeepDive({ locale }: { locale: Locale }) {
               className={`rounded-xl border p-3 transition-colors ${pinned && step === 3 ? 'border-brand-300 ring-4 ring-brand-500/10' : 'border-slate-200/80'}`}
             >
               <div className="flex items-center justify-between">
-                <p className="text-[11px] font-semibold text-slate-800">{t.demo.chartTitle}</p>
-                <span className="text-[10px] text-slate-400">
+                <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
+                  {t.demo.chartTitle}
+                </p>
+                <span className="text-[11px] lg:text-[10px] text-slate-400">
                   {uz ? 'oxirgi 6 oy' : 'последние 6 мес.'}
                 </span>
               </div>
@@ -174,7 +176,9 @@ export function DeepDive({ locale }: { locale: Locale }) {
               className={`hidden rounded-xl border p-3 transition-colors sm:block ${pinned && !compact && step === 2 ? 'border-brand-300 ring-4 ring-brand-500/10' : 'border-slate-200/80'}`}
             >
               <div className="flex items-center justify-between">
-                <p className="text-[11px] font-semibold text-slate-800">{t.demo.sidebar[4]}</p>
+                <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
+                  {t.demo.sidebar[4]}
+                </p>
                 <Pill tone="debt">9</Pill>
               </div>
               <div className="mt-1.5 space-y-0.5">
@@ -198,12 +202,12 @@ export function DeepDive({ locale }: { locale: Locale }) {
           </div>
           <div className="mt-3 flex items-center gap-2 rounded-xl border border-l-4 border-slate-200/80 border-l-red-500 px-3 py-2">
             <Sparkles className="h-3.5 w-3.5 text-brand-600" />
-            <p className="truncate text-[11px] font-semibold text-slate-800">
+            <p className="truncate text-[12px] lg:text-[11px] font-semibold text-slate-800">
               {uz
                 ? '9 ta bola bo‘yicha to‘lov 15 kundan ortiq kechikmoqda'
                 : 'По 9 детям оплата задерживается более 15 дней'}
             </p>
-            <span className="ml-auto whitespace-nowrap text-[10px] font-semibold text-brand-700">
+            <span className="ml-auto whitespace-nowrap text-[11px] lg:text-[10px] font-semibold text-brand-700">
               {uz ? 'Nega?' : 'Почему?'}
             </span>
           </div>
@@ -255,7 +259,7 @@ export function DeepDive({ locale }: { locale: Locale }) {
           {t.deepDive.steps.map((label, i) => (
             <span
               key={label}
-              className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors duration-300 lg:px-3 lg:text-[12px] ${
+              className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] lg:text-[11px] font-semibold transition-colors duration-300 lg:px-3 lg:text-[12px] ${
                 step === i ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-500'
               }`}
             >

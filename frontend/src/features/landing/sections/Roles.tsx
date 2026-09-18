@@ -28,7 +28,7 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-slate-200/80 p-3">
-            <p className="text-[11px] font-semibold text-slate-800">
+            <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
               {uz ? 'Filiallar' : 'Филиалы'}
             </p>
             <Row
@@ -45,7 +45,9 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
             />
           </div>
           <div className="hidden rounded-xl border border-slate-200/80 p-3 sm:block">
-            <p className="text-[11px] font-semibold text-slate-800">{t.chartTitle}</p>
+            <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
+              {t.chartTitle}
+            </p>
             <Bars values={[61, 68, 72, 70, 79, 86]} labels={t.months} className="mt-2" />
           </div>
         </div>
@@ -61,7 +63,7 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
           ))}
         </div>
         <div className="mt-3 rounded-xl border border-slate-200/80 p-3">
-          <p className="text-[11px] font-semibold text-slate-800">
+          <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
             {uz ? 'Bugungi vazifalar' : 'Задачи на сегодня'}
           </p>
           <Row
@@ -99,7 +101,7 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
             [uz ? 'Qarzdorlik' : 'Долг', '12 450 000', 'text-red-700'],
           ].map(([l, v, c]) => (
             <div key={l} className="min-w-0 rounded-xl border border-slate-200/80 p-2.5">
-              <p className="truncate text-[10px] text-slate-500">{l}</p>
+              <p className="truncate text-[11px] lg:text-[10px] text-slate-500">{l}</p>
               <p
                 className={`whitespace-nowrap text-[12px] font-bold tabular-nums sm:text-[13px] ${c}`}
               >
@@ -109,7 +111,7 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
           ))}
         </div>
         <div className="mt-3 rounded-xl border border-slate-200/80 p-3">
-          <p className="text-[11px] font-semibold text-slate-800">
+          <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
             {uz ? 'To‘lov qabul qilish' : 'Приём оплаты'}
           </p>
           <Row
@@ -140,13 +142,15 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
           [uz ? 'Belgilangan' : 'Отмечено', '5 / 6'],
         ].map(([l, v]) => (
           <div key={l} className="min-w-0 rounded-xl border border-slate-200/80 p-2.5">
-            <p className="truncate text-[10px] text-slate-500">{l}</p>
+            <p className="truncate text-[11px] lg:text-[10px] text-slate-500">{l}</p>
             <p className="text-[13px] font-bold tabular-nums text-slate-900">{v}</p>
           </div>
         ))}
       </div>
       <div className="mt-3 rounded-xl border border-slate-200/80 p-3">
-        <p className="text-[11px] font-semibold text-slate-800">{uz ? 'Guruhlar' : 'Группы'}</p>
+        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
+          {uz ? 'Guruhlar' : 'Группы'}
+        </p>
         {[
           ['Quyosh', '20 / 20', 'ok'],
           ['Yulduzcha', '19 / 20', 'ok'],
@@ -200,12 +204,12 @@ export function Roles({ locale }: { locale: Locale }) {
   const panel = (
     <Frame demo={t.demo} compact={compact} active={SIDEBAR[role]} className="rx-fade" key={role}>
       <div className="mb-3 flex items-center gap-2">
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-amber-100 text-[10px] font-bold text-amber-800">
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-amber-100 text-[11px] lg:text-[10px] font-bold text-amber-800">
           {active.title.slice(0, 1)}
         </span>
         <div className="min-w-0">
           <p className="text-[12px] font-bold text-slate-900">{active.title}</p>
-          <p className="truncate text-[10px] text-slate-500">{active.focus}</p>
+          <p className="truncate text-[11px] lg:text-[10px] text-slate-500">{active.focus}</p>
         </div>
       </div>
       <RoleView role={role} locale={locale} />
@@ -231,7 +235,7 @@ export function Roles({ locale }: { locale: Locale }) {
             onFocus={() => setHover(item.id)}
             onClick={() => setHover(item.id)}
             ref={(el) => compact && on && centerInStrip(el)}
-            className={`min-w-[200px] shrink-0 snap-start rounded-2xl border p-3.5 text-left transition-all duration-300 lg:min-w-0 lg:p-5 ${
+            className={`min-w-[200px] shrink-0 snap-start rounded-2xl border p-3 text-left transition-all duration-300 lg:min-w-0 lg:p-5 ${
               on
                 ? 'border-slate-950 bg-white shadow-[0_20px_50px_-30px_rgba(11,23,48,0.35)]'
                 : 'border-slate-200 bg-white/60 hover:border-slate-300'
@@ -242,7 +246,7 @@ export function Roles({ locale }: { locale: Locale }) {
                 {item.title}
               </p>
               <span
-                className={`text-[11px] font-semibold tabular-nums ${on ? 'text-slate-900' : 'text-slate-300'}`}
+                className={`text-[12px] lg:text-[11px] font-semibold tabular-nums ${on ? 'text-slate-900' : 'text-slate-300'}`}
               >
                 0{i + 1}
               </span>
@@ -288,7 +292,11 @@ export function Roles({ locale }: { locale: Locale }) {
             {tabs}
             <div>{panel}</div>
           </div>
-          {compact && <p className="mt-3 text-[13px] leading-5 text-slate-500">{active.focus}</p>}
+          {compact && (
+            <p className="mt-3 text-[13px] leading-5 text-slate-500 [@media(max-height:780px)]:hidden">
+              {active.focus}
+            </p>
+          )}
         </div>
       </div>
     </section>

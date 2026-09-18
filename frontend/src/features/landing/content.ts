@@ -122,6 +122,8 @@ export interface Copy {
     note: string
     cta: string
     error: string
+    /** Ikkinchi yetkazib berish modeli — alohida o'rnatma (ADR-13). */
+    standalone: { badge: string; title: string; text: string; points: string[]; cta: string }
   }
   faq: { eyebrow: string; title: string; items: { q: string; a: string }[] }
   lead: {
@@ -142,7 +144,7 @@ export interface Copy {
     error: string
   }
   final: { title: string; text: string; cta: string; secondary: string }
-  footer: { privacy: string; terms: string; login: string; copyright: string; test: string }
+  footer: { privacy: string; terms: string; login: string; copyright: string }
   seo: { title: string; description: string }
 }
 
@@ -389,6 +391,17 @@ const uz: Copy = {
     note: 'Radix rivojlanishi va yangi imkoniyatlar qo‘shilishi bilan narxlar kelajakda o‘zgarishi mumkin.',
     cta: 'Demo olish',
     error: 'Narxni yuklab bo‘lmadi — qayta urinib ko‘ring.',
+    standalone: {
+      badge: 'Bir martalik to‘lov',
+      title: 'Alohida o‘rnatma — kelishuv asosida',
+      text: 'Tizim to‘liq sizniki: o‘z serveringizda, o‘z domeningizda, oylik obunasiz.',
+      points: [
+        'Ma’lumot sizning serveringizda qoladi',
+        'O‘rnatish va sozlashni biz bajaramiz',
+        'Yangilanishlar kelishuvga muvofiq',
+      ],
+      cta: 'Narx so‘rash',
+    },
   },
   faq: {
     eyebrow: 'Savollar',
@@ -452,7 +465,6 @@ const uz: Copy = {
     terms: 'Foydalanish shartlari',
     login: 'CRM’ga kirish',
     copyright: '© 2026 Radix CRM',
-    test: 'Sinov sahifasi',
   },
   seo: {
     title: 'Radix CRM — bog‘changizni boshqarishning barchasi bitta tizimda',
@@ -709,6 +721,17 @@ const ru: Copy = {
     note: 'По мере развития Radix и появления новых возможностей цены могут измениться.',
     cta: 'Получить демо',
     error: 'Не удалось загрузить цену — попробуйте ещё раз.',
+    standalone: {
+      badge: 'Разовая оплата',
+      title: 'Отдельная установка — по договорённости',
+      text: 'Система полностью ваша: на вашем сервере, на вашем домене, без ежемесячной подписки.',
+      points: [
+        'Данные остаются на вашем сервере',
+        'Установку и настройку выполняем мы',
+        'Обновления — по договорённости',
+      ],
+      cta: 'Запросить цену',
+    },
   },
   faq: {
     eyebrow: 'Вопросы',
@@ -773,7 +796,6 @@ const ru: Copy = {
     terms: 'Условия использования',
     login: 'Войти в CRM',
     copyright: '© 2026 Radix CRM',
-    test: 'Тестовая страница',
   },
   seo: {
     title: 'Radix CRM — всё управление детским садом в одной системе',

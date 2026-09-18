@@ -50,7 +50,7 @@ export function ChildrenUi({ local, locale, compact = false }: UiProps) {
           {groups.map((g, i) => (
             <span
               key={g}
-              className={`rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors duration-300 ${
+              className={`rounded-full px-2.5 py-1 text-[11px] lg:text-[10px] font-semibold transition-colors duration-300 ${
                 (phase >= 1 ? i === 1 : i === 0)
                   ? 'bg-slate-950 text-white'
                   : 'bg-slate-100 text-slate-600'
@@ -88,17 +88,17 @@ export function ChildrenUi({ local, locale, compact = false }: UiProps) {
         }}
       >
         <div className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-950 text-[11px] font-bold text-white">
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-950 text-[12px] lg:text-[11px] font-bold text-white">
             KA
           </span>
           <div>
             <p className="text-[12px] font-bold text-slate-900">Karimov Ali</p>
-            <p className="text-[10px] text-slate-500">
+            <p className="text-[11px] lg:text-[10px] text-slate-500">
               Quyosh · 4 {locale === 'uz' ? 'yosh' : 'года'}
             </p>
           </div>
         </div>
-        <dl className="mt-3 grid grid-cols-2 gap-x-2 gap-y-1.5 text-[10px]">
+        <dl className="mt-3 grid grid-cols-2 gap-x-2 gap-y-1.5 text-[11px] lg:text-[10px]">
           <dt className="text-slate-500">{locale === 'uz' ? 'Tarif' : 'Тариф'}</dt>
           <dd className="font-semibold text-slate-800">1 500 000</dd>
           <dt className="text-slate-500">{locale === 'uz' ? 'Vasiy' : 'Опекун'}</dt>
@@ -138,7 +138,7 @@ export function PaymentsUi({ local, locale }: UiProps) {
           [L.debt, debt, 'text-red-700'],
         ].map(([label, value, cls]) => (
           <div key={String(label)} className="rounded-xl border border-slate-200/80 p-2.5">
-            <p className="text-[10px] capitalize text-slate-500">{label}</p>
+            <p className="text-[11px] lg:text-[10px] capitalize text-slate-500">{label}</p>
             <Num value={Number(value)} className={`text-[13px] font-bold tabular-nums ${cls}`} />
           </div>
         ))}
@@ -166,14 +166,14 @@ export function AttendanceUi({ local, locale }: UiProps) {
   return (
     <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
       <div>
-        <p className="text-[11px] font-semibold text-slate-800">
+        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
           Quyosh · {locale === 'uz' ? 'bugun' : 'сегодня'}
         </p>
         <div className="mt-2 grid grid-cols-10 gap-1.5">
           {Array.from({ length: 20 }).map((_, i) => (
             <span
               key={i}
-              className={`grid aspect-square place-items-center rounded-md text-[9px] font-bold transition-colors duration-300 ${
+              className={`grid aspect-square place-items-center rounded-md text-[10px] lg:text-[9px] font-bold transition-colors duration-300 ${
                 i < present
                   ? 'bg-emerald-500 text-white'
                   : i === 19 && present >= 19
@@ -193,11 +193,13 @@ export function AttendanceUi({ local, locale }: UiProps) {
         </div>
       </div>
       <div className="rounded-xl border border-slate-200/80 p-3 sm:w-36">
-        <p className="text-[10px] text-slate-500">{locale === 'uz' ? 'Davomat' : 'Посещаемость'}</p>
+        <p className="text-[11px] lg:text-[10px] text-slate-500">
+          {locale === 'uz' ? 'Davomat' : 'Посещаемость'}
+        </p>
         <p className="text-2xl font-bold tabular-nums text-slate-950">
           <Num value={pct} format={(v) => String(Math.round(v))} duration={0.3} />%
         </p>
-        <p className="text-[10px] text-slate-500">
+        <p className="text-[11px] lg:text-[10px] text-slate-500">
           {present} / 20 · {locale === 'uz' ? 'kelgan' : 'пришли'}
         </p>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
@@ -224,11 +226,11 @@ export function StaffUi({ local, locale }: UiProps) {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold text-slate-800">
+        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
           {uz ? 'Xodimlar · 24' : 'Сотрудники · 24'}
         </p>
         <span
-          className="text-[10px] text-slate-500 transition-opacity duration-500"
+          className="text-[11px] lg:text-[10px] text-slate-500 transition-opacity duration-500"
           style={{ opacity: phase >= 1 ? 1 : 0 }}
         >
           {uz ? 'Sentabr ish haqi' : 'Зарплата за сентябрь'}
@@ -246,7 +248,7 @@ export function StaffUi({ local, locale }: UiProps) {
                   <Pill tone="wait">{uz ? 'avans 400 000' : 'аванс 400 000'}</Pill>
                 )}
                 <span
-                  className="text-[11px] font-semibold tabular-nums text-slate-800 transition-opacity duration-500"
+                  className="text-[12px] lg:text-[11px] font-semibold tabular-nums text-slate-800 transition-opacity duration-500"
                   style={{ opacity: phase >= 1 ? 1 : 0 }}
                 >
                   {groupThousands(salary)}
@@ -260,7 +262,7 @@ export function StaffUi({ local, locale }: UiProps) {
         className="mt-2 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 transition-opacity duration-500"
         style={{ opacity: phase === 2 ? 1 : 0 }}
       >
-        <span className="text-[10px] text-slate-500">
+        <span className="text-[11px] lg:text-[10px] text-slate-500">
           {uz ? 'Jami (24 xodim)' : 'Итого (24 сотрудника)'}
         </span>
         <Num value={31_500_000} className="text-[12px] font-bold tabular-nums text-slate-900" />
@@ -286,7 +288,7 @@ export function InventoryUi({ local, locale, compact = false }: UiProps) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <div className="rounded-xl border border-slate-200/80 p-3">
-        <p className="text-[11px] font-semibold text-slate-800">
+        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
           {uz ? 'Ombor qoldig‘i' : 'Остаток на складе'}
         </p>
         <ul className="mt-2 space-y-2">
@@ -294,7 +296,7 @@ export function InventoryUi({ local, locale, compact = false }: UiProps) {
             const value = phase === 0 ? from : phase === 1 ? Math.round((from + to) / 2) : to
             return (
               <li key={name}>
-                <div className="flex justify-between text-[10px]">
+                <div className="flex justify-between text-[11px] lg:text-[10px]">
                   <span className="text-slate-600">{name}</span>
                   <span className="font-semibold tabular-nums text-slate-800">
                     <Num value={value} format={(v) => String(Math.round(v))} duration={0.5} />{' '}
@@ -313,14 +315,14 @@ export function InventoryUi({ local, locale, compact = false }: UiProps) {
         </ul>
       </div>
       <div className="rounded-xl border border-slate-200/80 p-3">
-        <p className="text-[11px] font-semibold text-slate-800">
+        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
           {uz ? 'Xarajatlar · sentabr' : 'Расходы · сентябрь'}
         </p>
         <ul className="mt-2 space-y-1">
           {expenses.map(([name, amount], i) => (
             <li
               key={name}
-              className="flex items-center justify-between rounded-lg px-2 py-1.5 text-[11px] transition-all duration-500"
+              className="flex items-center justify-between rounded-lg px-2 py-1.5 text-[12px] lg:text-[11px] transition-all duration-500"
               style={{
                 opacity: i <= phase ? 1 : 0,
                 transform: i <= phase ? 'none' : 'translateY(6px)',
@@ -363,7 +365,7 @@ export function ReportsUi({ local, locale, compact = false }: UiProps) {
         className="mt-3 rounded-xl border border-slate-200/80 p-3 transition-opacity duration-500"
         style={{ opacity: phase >= 1 ? 1 : 0.35 }}
       >
-        <p className="text-[11px] font-semibold text-slate-800">{t.chartTitle}</p>
+        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{t.chartTitle}</p>
         <Bars
           values={[61, 68, 72, 70, 79, 86]}
           labels={t.months}

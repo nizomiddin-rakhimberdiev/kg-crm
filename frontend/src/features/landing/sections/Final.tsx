@@ -65,9 +65,6 @@ export function Final({ locale }: { locale: Locale }) {
             <Link to={basePath(locale)} aria-label="Radix CRM">
               <Brand />
             </Link>
-            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
-              {t.footer.test}
-            </span>
           </div>
           <nav
             className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600"

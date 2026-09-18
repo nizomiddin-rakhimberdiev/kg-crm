@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { routes } from '@/router'
 import { marketingApi } from '@/features/marketing/api'
 import { copy, groupThousands } from '../content'
-import { RedesignPage } from '../pages/RedesignPage'
+import { LandingPage } from '../pages/LandingPage'
 
 vi.mock('@/features/marketing/api', () => ({
   marketingApi: { pricing: vi.fn(), createLead: vi.fn() },
@@ -74,32 +74,38 @@ describe('content', () => {
 })
 
 describe('marshrut', () => {
-  it('/test-redesign va /test-redesign/ru mavjud, asosiy `/uz` o‘zgarmagan', () => {
+  it('/uz va /ru bosh sahifa; eski /test-redesign havolasi yo‘naltiriladi', () => {
     const leaf = (p: string) => {
       const m = matchRoutes(routes, p)
       return m?.[m.length - 1]?.route.path
     }
-    expect(leaf('/test-redesign')).toBe('/test-redesign')
-    expect(leaf('/test-redesign/ru')).toBe('/test-redesign/ru')
     expect(leaf('/uz')).toBe('/uz')
+    expect(leaf('/ru')).toBe('/ru')
+    expect(leaf('/test-redesign')).toBe('/test-redesign')
+    expect(leaf('/uz/privacy')).toBe('/uz/privacy')
   })
 })
 
-describe('RedesignPage', () => {
-  it('render bo‘ladi: hero, narx, forma, noindex', async () => {
+describe('LandingPage', () => {
+  it('render bo‘ladi: hero, narx, forma, SEO meta', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     render(
       <QueryClientProvider client={client}>
-        <MemoryRouter initialEntries={['/test-redesign']}>
-          <RedesignPage locale="uz" />
+        <MemoryRouter initialEntries={['/uz']}>
+          <LandingPage locale="uz" />
         </MemoryRouter>
       </QueryClientProvider>,
     )
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(copy.uz.hero.title)
     expect(await screen.findByText(groupThousands(400_000))).toBeInTheDocument()
     expect(screen.getByRole('button', { name: copy.uz.lead.submit })).toBeInTheDocument()
-    expect(document.head.querySelector('meta[name="robots"]')?.getAttribute('content')).toContain(
-      'noindex',
+    expect(document.head.querySelector('meta[name="robots"]')).toBeNull()
+    expect(document.title).toBe(copy.uz.seo.title)
+    expect(document.head.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(
+      'https://radix-crm.uz/uz',
+    )
+    expect(document.head.querySelector('script[data-jsonld="faq"]')?.textContent).toContain(
+      'FAQPage',
     )
     // Uzbek apostrophes: faqat ‘ (U+2018) va ’ (U+2019), ASCII ' emas.
     expect(copy.uz.hero.title).not.toContain("'")

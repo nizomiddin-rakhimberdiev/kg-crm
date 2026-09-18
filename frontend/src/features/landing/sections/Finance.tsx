@@ -122,7 +122,7 @@ export function Finance({ locale }: { locale: Locale }) {
 
   if (isStatic) {
     return (
-      <section ref={ref} className="bg-[#0B1730] py-20 text-white lg:py-32">
+      <section ref={ref} data-nav-dark className="bg-[#0B1730] py-20 text-white lg:py-32">
         <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
           <Reveal>{heading}</Reveal>
           <div className="mt-10 grid gap-4 lg:grid-cols-3">
@@ -148,13 +148,14 @@ export function Finance({ locale }: { locale: Locale }) {
     )
   }
 
-  const card = 'rounded-2xl border border-white/10 bg-white/[0.04] p-4 lg:p-6'
+  const card = 'rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 lg:p-6'
   const label = 'text-[12px] text-slate-400 lg:text-[13px]'
   const num = 'text-xl font-bold tabular-nums tracking-tight lg:text-2xl'
 
   return (
     <section
       ref={ref}
+      data-nav-dark
       className="relative bg-[#0B1730] text-white"
       style={{ height: compact ? '300vh' : '280vh' }}
     >
@@ -162,7 +163,7 @@ export function Finance({ locale }: { locale: Locale }) {
         <div className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col justify-center px-5 py-4 lg:px-8">
           {heading}
 
-          <div className="mt-5 grid gap-2 lg:mt-12 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:gap-4">
+          <div className="mt-4 grid gap-2 lg:mt-12 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:gap-4">
             {/* Kirim */}
             <Appear progress={progress} at={0.02} className={card}>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
@@ -222,7 +223,7 @@ export function Finance({ locale }: { locale: Locale }) {
             <Appear
               progress={progress}
               at={0.6}
-              className="rounded-2xl border border-brand-400/40 bg-brand-500/10 p-4 lg:p-6"
+              className="rounded-2xl border border-brand-400/40 bg-brand-500/10 p-3.5 lg:p-6"
             >
               <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-300">
                 {byId.balance.label}
@@ -235,7 +236,7 @@ export function Finance({ locale }: { locale: Locale }) {
               </p>
               <motion.p
                 style={{ opacity: equationOpacity }}
-                className="mt-2 text-[12px] leading-5 text-slate-300 lg:mt-6 lg:text-[13px]"
+                className="mt-2 text-[12px] leading-5 text-slate-300 lg:mt-6 lg:text-[13px] [@media(max-height:780px)]:hidden"
               >
                 {t.equation}
               </motion.p>
@@ -259,7 +260,7 @@ export function Finance({ locale }: { locale: Locale }) {
                 />
               ))}
             </div>
-            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 lg:mt-3">
+            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 lg:mt-3 [@media(max-height:780px)]:hidden">
               {parts.map((m, i) => (
                 <motion.span
                   key={m.id}

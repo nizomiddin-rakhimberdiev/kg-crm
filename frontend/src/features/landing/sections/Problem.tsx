@@ -72,11 +72,11 @@ function Paper({
     <div
       className={`rounded-lg border p-3 text-left shadow-[0_18px_40px_-18px_rgba(11,23,48,0.35)] ${compact ? 'w-40' : 'w-56'} ${SKIN[kind] ?? SKIN.note} ${className}`}
     >
-      <div className="flex items-center gap-1.5 text-[11px] font-semibold">
+      <div className="flex items-center gap-1.5 text-[12px] lg:text-[11px] font-semibold">
         <Icon className="h-3.5 w-3.5 opacity-70" />
         <span className="truncate">{fragment.title}</span>
       </div>
-      <ul className="mt-2 space-y-1 text-[11px] leading-snug opacity-90">
+      <ul className="mt-2 space-y-1 text-[12px] lg:text-[11px] leading-snug opacity-90">
         {fragment.lines.map((line) => (
           <li key={line} className="truncate">
             {line}
@@ -126,7 +126,7 @@ function Resolved({ locale, compact }: { locale: Locale; compact: boolean }) {
     <Frame demo={t.demo} active={0} compact={compact} className="w-full">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-slate-200/80 p-3">
-          <p className="text-[11px] font-semibold text-slate-800">{f[4].title}</p>
+          <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{f[4].title}</p>
           <Row
             name={f[4].lines[0].split(' · ')[0]}
             meta={t.demo.today}
@@ -141,7 +141,9 @@ function Resolved({ locale, compact }: { locale: Locale; compact: boolean }) {
           />
         </div>
         <div className="rounded-xl border border-slate-200/80 p-3">
-          <p className="text-[11px] font-semibold text-slate-800">{t.demo.sidebar[3]}</p>
+          <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
+            {t.demo.sidebar[3]}
+          </p>
           <Row
             name="Karimov A."
             meta="1 500 000"
@@ -159,7 +161,9 @@ function Resolved({ locale, compact }: { locale: Locale; compact: boolean }) {
           />
         </div>
         <div className="hidden rounded-xl border border-slate-200/80 p-3 sm:block">
-          <p className="text-[11px] font-semibold text-slate-800">{t.demo.sidebar[6]}</p>
+          <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
+            {t.demo.sidebar[6]}
+          </p>
           <Row
             name={f[5].lines[0].split(' · ')[0]}
             meta={f[5].lines[1]}
@@ -174,7 +178,9 @@ function Resolved({ locale, compact }: { locale: Locale; compact: boolean }) {
           />
         </div>
         <div className="hidden rounded-xl border border-slate-200/80 p-3 sm:block">
-          <p className="text-[11px] font-semibold text-slate-800">{t.demo.sidebar[7]}</p>
+          <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
+            {t.demo.sidebar[7]}
+          </p>
           <Row
             name={f[6].lines[0]}
             meta={f[3].lines[1].split(' · ')[0]}
@@ -235,7 +241,7 @@ export function Problem({ locale }: { locale: Locale }) {
       <div className="sticky top-0 flex h-screen flex-col overflow-hidden pt-[76px]">
         <motion.div
           style={{ y: headY }}
-          className="mx-auto w-full max-w-[1280px] px-5 pt-6 lg:px-8 lg:pt-10"
+          className="mx-auto w-full max-w-[1280px] px-5 pt-3 lg:px-8 lg:pt-10"
         >
           <Heading t={t} />
         </motion.div>

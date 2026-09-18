@@ -1,13 +1,13 @@
 /**
- * Sinov sahifasi — `/test-redesign` (UZ) va `/test-redesign/ru`.
+ * Bosh sahifa — radix-crm.uz (`/uz`, `/ru`).
  *
- * Asosiy landing'ga TEGMAYDI: alohida feature, alohida CSS, alohida
- * marshrut. Qidiruv tizimlariga `noindex` — bu sahifa ikki nusxa (duplicate)
- * kontent bo'lib qolmasin. Onest shrifti faqat shu marshrutda yuklanadi.
+ * Scroll-hikoya: har bo'lim o'z faylida (`../sections/`), tartib shu yerda.
+ * Onest shrifti faqat shu marshrutda yuklanadi — CRM ilovasi Inter'da
+ * qoladi. Meta/OG/JSON-LD — `../seo.tsx`.
  */
 
 import { useEffect } from 'react'
-import { copy, type Locale } from '../content'
+import { type Locale } from '../content'
 import { DeepDive } from '../sections/DeepDive'
 import { Faq } from '../sections/Faq'
 import { Final } from '../sections/Final'
@@ -21,39 +21,27 @@ import { Pricing } from '../sections/Pricing'
 import { Problem } from '../sections/Problem'
 import { Roles } from '../sections/Roles'
 import { Workflow } from '../sections/Workflow'
-import '../redesign.css'
+import { LandingSeo } from '../seo'
+import '../landing.css'
 
 const FONT_HREF =
   'https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap'
 
-function useHead(locale: Locale) {
-  const t = copy[locale].seo
+function useFont() {
   useEffect(() => {
-    document.title = `${t.title} · test`
-    document.documentElement.lang = locale
-
-    const robots = document.createElement('meta')
-    robots.name = 'robots'
-    robots.content = 'noindex, nofollow'
-    document.head.appendChild(robots)
-
-    let font = document.head.querySelector<HTMLLinkElement>(`link[href="${FONT_HREF}"]`)
-    if (!font) {
-      font = document.createElement('link')
-      font.rel = 'stylesheet'
-      font.href = FONT_HREF
-      document.head.appendChild(font)
-    }
-    return () => {
-      robots.remove()
-    }
-  }, [locale, t.title])
+    if (document.head.querySelector(`link[href="${FONT_HREF}"]`)) return
+    const font = document.createElement('link')
+    font.rel = 'stylesheet'
+    font.href = FONT_HREF
+    document.head.appendChild(font)
+  }, [])
 }
 
-export function RedesignPage({ locale }: { locale: Locale }) {
-  useHead(locale)
+export function LandingPage({ locale }: { locale: Locale }) {
+  useFont()
   return (
     <div className="marketing rx bg-white text-slate-900">
+      <LandingSeo locale={locale} />
       <Nav locale={locale} />
       <main>
         <Hero locale={locale} />
