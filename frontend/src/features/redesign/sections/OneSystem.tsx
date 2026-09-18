@@ -180,9 +180,9 @@ function Panel({ locale, factor }: { locale: Locale; factor: number }) {
             key={cause}
             className="flex items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-2 text-[11px]"
           >
-            <span className="truncate text-slate-600">{cause}</span>
+            <span className="text-slate-600">{cause}</span>
             <ArrowRight className="h-3 w-3 shrink-0 text-brand-600" />
-            <span className="truncate font-semibold text-slate-900">{effect}</span>
+            <span className="whitespace-nowrap font-semibold text-slate-900">{effect}</span>
           </li>
         ))}
       </ul>

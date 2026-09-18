@@ -229,9 +229,9 @@ const uz: Copy = {
     text: 'Har bir modul o‘z ishini qiladi va bir-biri bilan bog‘langan: davomat belgilansa — hisobot yangilanadi, to‘lov kirsa — qarzdorlik kamayadi.',
     modules: ['Bolalar', 'To‘lovlar', 'Davomat', 'Xodimlar', 'Ombor', 'Xarajatlar', 'Hisobotlar'],
     links: [
-      ['Davomat belgilandi', 'Hisobot: 94 %'],
-      ['To‘lov qabul qilindi', 'Qarzdorlik: −1 500 000'],
-      ['Ombordan chiqim', 'Xarajat: +2 300 000'],
+      ['Davomat belgilandi', 'Hisobot 94 %'],
+      ['To‘lov kirdi', 'Qarz −1,5 mln'],
+      ['Ombor chiqimi', 'Xarajat +2,3 mln'],
     ],
   },
   modules: {
@@ -549,9 +549,9 @@ const ru: Copy = {
     text: 'Каждый модуль делает своё дело и связан с остальными: отметили посещаемость — обновился отчёт, пришла оплата — уменьшился долг.',
     modules: ['Дети', 'Оплаты', 'Посещаемость', 'Сотрудники', 'Склад', 'Расходы', 'Отчёты'],
     links: [
-      ['Отмечена посещаемость', 'Отчёт: 94 %'],
-      ['Принята оплата', 'Долг: −1 500 000'],
-      ['Списание со склада', 'Расход: +2 300 000'],
+      ['Посещаемость отмечена', 'Отчёт 94 %'],
+      ['Оплата принята', 'Долг −1,5 млн'],
+      ['Расход со склада', 'Расход +2,3 млн'],
     ],
   },
   modules: {
