@@ -72,7 +72,8 @@ export function tenantPath(slug: string, path = '/dashboard'): string {
  * talab qiladi (`window.location`). Bu kamchilik emas: ikki bog'cha —
  * ikki alohida sessiya, va ular orasida hech narsa qolmagani ma'qul.
  */
-export const currentSlug = slugFromPath()
+// Prerender (Node) da `window` yo'q — sotuv sahifasi tenant'siz.
+export const currentSlug = typeof window !== 'undefined' ? slugFromPath() : null
 
 export function shouldLandOnTenantAddress(
   slug: string | null,

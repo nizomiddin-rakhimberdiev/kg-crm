@@ -410,6 +410,7 @@ Matches [02 §21](./02_Software_Architecture.md):
 | **Memoization** | `useMemo`/`React.memo` on heavy renders. |
 | **Lazy images / charts** | Photos and report charts load on demand. |
 | **Production build** | Vite tree-shaking + minification; Nginx gzip/brotli + static caching. |
+| **Prerendered public pages** | The product website (`features/landing`, `/uz`, `/ru`, legal pages) is rendered to static HTML at build time — `npm run build` runs `vite build --ssr src/prerender/entry.tsx` and `scripts/prerender.mjs`, writing `dist/uz/index.html` etc. with the full text, per-page meta, hreflang and FAQ JSON-LD **inside the response**. Nginx `try_files $uri $uri/ /index.html` serves them; every other route still gets the SPA shell. Reason: a bare SPA shell (1.8 KB, 42 words) is what Google — slowly — and ChatGPT, Telegram/WhatsApp previews, Yandex — never — render; the same defect had been found on another site's audit. On the client the app still mounts with `createRoot().render`; `router.tsx` gives `lazy()` a synchronous thenable when `main.tsx` has preloaded the landing chunk, so the prerendered content is never replaced by a Suspense fallback (verified with a MutationObserver: the root is never emptied, "Yuklanmoqda…" never appears). The pure meta builders (`buildPageMeta`, `headHtml`, `landingMeta`, `landingJsonLd`) feed both the prerender and the in-browser `applyPageMeta`, so bot and browser see one source. Standalone builds (`VITE_DEPLOYMENT_MODE=standalone`) skip the step — there is no public site there. |
 
 ---
 

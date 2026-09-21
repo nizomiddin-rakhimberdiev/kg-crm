@@ -37,7 +37,15 @@ export const env = {
   isStandalone: deploymentMode === 'standalone',
   // Public saytdan CRM'ga o'tish bitta joyda sozlanadi. Build paytida
   // yoziladi; productionda `https://app.radix-crm.uz` bo'ladi.
-  appUrl: required('VITE_APP_URL', import.meta.env.VITE_APP_URL, window.location.origin),
+  // Prerender (Node) da `window` yo'q — o'shanda public host olinadi; bu
+  // faqat sotuv sahifasidagi «CRM'ga kirish» havolasi uchun kerak.
+  appUrl: required(
+    'VITE_APP_URL',
+    import.meta.env.VITE_APP_URL,
+    typeof window !== 'undefined'
+      ? window.location.origin
+      : `https://${import.meta.env.VITE_PUBLIC_HOST ?? 'radix-crm.uz'}`,
+  ),
   /**
    * CRM'ga kirish havolasi — har doim `/login` bilan.
    *

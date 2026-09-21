@@ -111,3 +111,30 @@ describe('LandingPage', () => {
     expect(copy.uz.hero.title).not.toContain("'")
   })
 })
+
+describe('prerender', () => {
+  it('6 sahifa: to‘liq matn, meta va FAQ JSON-LD javobning ichida', async () => {
+    const { prerenderPages } = await import('@/prerender/entry')
+    const pages = prerenderPages()
+    expect(pages.map((p) => p.path)).toEqual([
+      '/uz',
+      '/uz/privacy',
+      '/uz/terms',
+      '/ru',
+      '/ru/privacy',
+      '/ru/terms',
+    ])
+    const uz = pages[0]
+    expect(uz.body).toContain(copy.uz.hero.title)
+    expect(uz.body).toContain(copy.uz.faq.items[6].q)
+    expect(uz.body.replace(/<[^>]+>/g, ' ').split(/\s+/).length).toBeGreaterThan(800)
+    expect(uz.head).toContain(`<title>${copy.uz.seo.title}</title>`)
+    expect(uz.head).toContain('rel="canonical" href="https://radix-crm.uz/uz"')
+    expect(uz.head).toContain('hreflang="ru" href="https://radix-crm.uz/ru"')
+    expect(uz.head).toContain('"@type":"FAQPage"')
+    // Narx birinchi kadrda «…» emas — kesh content.ts misolidan to‘ldirilgan.
+    expect(uz.body).toContain('400 000')
+    // Reveal serverda yashirmaydi: kontent JS'siz ko‘rinadi.
+    expect(uz.body).not.toContain('reveal-pending')
+  })
+})

@@ -18,10 +18,29 @@ const MarketingEntry = lazy(() =>
 const LegalPage = lazy(() =>
   import('./features/marketing/pages/MarketingPage').then((m) => ({ default: m.LegalPage })),
 )
-const LandingPage = lazy(() =>
-  import('./features/landing/pages/LandingPage').then((m) => ({ default: m.LandingPage })),
-)
-
+// Bosh sahifa prerender qilingan (dist/uz/index.html): HTML kontent bilan
+// keladi, React keyin ustidan chizadi. `lazy()` odatdagidek promise bilan
+// bo'lsa, birinchi renderda Suspense «Yuklanmoqda…» ni chizib, tayyor
+// kontentni bir lahzaga o'chirib yuborardi. Shuning uchun modul oldindan
+// yuklangan bo'lsa (main.tsx `preloadLanding`), lazy'ga SINXRON thenable
+// beriladi — React uni kutmasdan chizadi.
+type LandingModule = typeof import('./features/landing/pages/LandingPage')
+let landingModule: LandingModule | null = null
+export const preloadLanding = (): Promise<LandingModule> =>
+  import('./features/landing/pages/LandingPage').then((m) => (landingModule = m))
+const LandingPage = lazy(() => {
+  if (landingModule) {
+    const m = landingModule
+    // Sinxron thenable: React'ning lazyInitializer'i `.then` ni darhol
+    // chaqiradi va modul tayyor bo'lsa suspend qilmaydi.
+    const resolved = {
+      then: (resolve: (v: { default: LandingModule['LandingPage'] }) => void) =>
+        resolve({ default: m.LandingPage }),
+    }
+    return resolved as unknown as Promise<{ default: LandingModule['LandingPage'] }>
+  }
+  return preloadLanding().then((m) => ({ default: m.LandingPage }))
+})
 /*
  * Sahifalar TALAB BO'YICHA yuklanadi (docs/05 §15).
  *
@@ -32,8 +51,12 @@ const LandingPage = lazy(() =>
  */
 const PlatformLoginPage = lazy(() => import('./features/platform/pages/PlatformLoginPage'))
 const PlatformDashboardPage = lazy(() => import('./features/platform/pages/PlatformDashboardPage'))
-const PlatformOrganizationsPage = lazy(() => import('./features/platform/pages/PlatformOrganizationsPage'))
-const PlatformOrganizationPage = lazy(() => import('./features/platform/pages/PlatformOrganizationPage'))
+const PlatformOrganizationsPage = lazy(
+  () => import('./features/platform/pages/PlatformOrganizationsPage'),
+)
+const PlatformOrganizationPage = lazy(
+  () => import('./features/platform/pages/PlatformOrganizationPage'),
+)
 const PlatformInvoicesPage = lazy(() => import('./features/platform/pages/PlatformInvoicesPage'))
 const PlatformGrantsPage = lazy(() => import('./features/platform/pages/PlatformGrantsPage'))
 const SupportEntryPage = lazy(() => import('./features/auth/pages/SupportEntryPage'))
@@ -90,7 +113,13 @@ const saasOnlyRoutes = env.isStandalone
         // chegarani beradi; bu daraxt esa ikkalasidan ham TASHQARIDA
         // yashaydi, shuning uchun o'ziniki kerak.
         element: (
-          <Suspense fallback={<div className="grid min-h-screen place-items-center text-sm text-slate-400">Yuklanmoqda…</div>}>
+          <Suspense
+            fallback={
+              <div className="grid min-h-screen place-items-center text-sm text-slate-400">
+                Yuklanmoqda…
+              </div>
+            }
+          >
             <Outlet />
           </Suspense>
         ),
@@ -160,9 +189,7 @@ export const routes: RouteObject[] = [
   ...saasOnlyRoutes,
   {
     element: <PublicOnlyRoute />,
-    children: [
-      { path: '/login', element: <LoginPage /> },
-    ],
+    children: [{ path: '/login', element: <LoginPage /> }],
   },
   {
     element: <ProtectedRoute />,

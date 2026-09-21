@@ -61,8 +61,25 @@ export function upsertJsonLd(id: string, data: object | null) {
   element.textContent = JSON.stringify(data)
 }
 
-/** Bir sahifaning asosiy meta to'plami — bosh sahifa va huquqiy sahifalar uchun umumiy. */
-export function applyPageMeta({
+export interface PageMeta {
+  locale: Locale
+  title: string
+  description: string
+  canonical: string
+  /** [hreflang, href] — uz, ru va x-default. */
+  alternates: [string, string][]
+  ogImage: string
+  ogLocale: string
+}
+
+/**
+ * Sahifa meta'sining SOF ta'rifi — DOM'siz. Ikki iste'molchi bor: brauzerda
+ * `applyPageMeta` (teglarni <head> ga yozadi) va build vaqtidagi prerender
+ * (`headHtml` — o'sha teglar matn sifatida, bot JS'siz ham ko'rsin).
+ * Ikkalasi bitta manbadan — aks holda bot bilan brauzer boshqa-boshqa
+ * sarlavha ko'rardi.
+ */
+export function buildPageMeta({
   locale,
   title,
   description,
@@ -73,49 +90,106 @@ export function applyPageMeta({
   description: string
   /** Lokal prefiksdan keyingi yo'l: '' (bosh sahifa) yoki '/privacy'. */
   path: string
-}) {
-  const canonical = `${ORIGIN}/${locale}${path}`
-  document.title = title
-  document.documentElement.lang = locale
+}): PageMeta {
+  return {
+    locale,
+    title,
+    description,
+    canonical: `${ORIGIN}/${locale}${path}`,
+    alternates: [
+      ['uz', `${ORIGIN}/uz${path}`],
+      ['ru', `${ORIGIN}/ru${path}`],
+      ['x-default', `${ORIGIN}/uz${path}`],
+    ],
+    ogImage: `${ORIGIN}/og-${locale}.png`,
+    ogLocale: locale === 'uz' ? 'uz_UZ' : 'ru_RU',
+  }
+}
 
-  upsertMeta('meta[name="description"]', 'name', 'description', description)
-  upsertMeta('meta[property="og:title"]', 'property', 'og:title', title)
-  upsertMeta('meta[property="og:description"]', 'property', 'og:description', description)
+const escapeAttr = (value: string) =>
+  value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+/** Prerender uchun: <head> ichiga qo'yiladigan teglar (title, meta, link, JSON-LD). */
+export function headHtml(meta: PageMeta, jsonLd: object | null = null): string {
+  const m = (attr: 'name' | 'property', key: string, value: string) =>
+    `<meta ${attr}="${key}" content="${escapeAttr(value)}" />`
+  const lines = [
+    `<title>${escapeAttr(meta.title)}</title>`,
+    m('name', 'description', meta.description),
+    m('name', 'robots', 'index,follow'),
+    m('property', 'og:type', 'website'),
+    m('property', 'og:site_name', 'Radix CRM'),
+    m('property', 'og:title', meta.title),
+    m('property', 'og:description', meta.description),
+    m('property', 'og:url', meta.canonical),
+    m('property', 'og:locale', meta.ogLocale),
+    m('property', 'og:image', meta.ogImage),
+    m('property', 'og:image:width', '1200'),
+    m('property', 'og:image:height', '630'),
+    m('name', 'twitter:card', 'summary_large_image'),
+    m('name', 'twitter:title', meta.title),
+    m('name', 'twitter:description', meta.description),
+    m('name', 'twitter:image', meta.ogImage),
+    `<link rel="canonical" href="${escapeAttr(meta.canonical)}" />`,
+    ...meta.alternates.map(
+      ([lang, href]) => `<link rel="alternate" hreflang="${lang}" href="${escapeAttr(href)}" />`,
+    ),
+  ]
+  if (jsonLd) {
+    // `</script>` ichkarida uchrasa HTML'ni buzadi — `<` ni qochiramiz.
+    lines.push(
+      `<script type="application/ld+json" data-jsonld="faq">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>`,
+    )
+  }
+  return lines.join('\n    ')
+}
+
+/** Brauzerda: meta'ni <head> ga yozadi (SPA navigatsiyasida ham). */
+export function applyPageMeta(input: {
+  locale: Locale
+  title: string
+  description: string
+  path: string
+}) {
+  const meta = buildPageMeta(input)
+  document.title = meta.title
+  document.documentElement.lang = meta.locale
+
+  upsertMeta('meta[name="description"]', 'name', 'description', meta.description)
+  upsertMeta('meta[property="og:title"]', 'property', 'og:title', meta.title)
+  upsertMeta('meta[property="og:description"]', 'property', 'og:description', meta.description)
   upsertMeta('meta[property="og:type"]', 'property', 'og:type', 'website')
-  upsertMeta('meta[property="og:url"]', 'property', 'og:url', canonical)
+  upsertMeta('meta[property="og:url"]', 'property', 'og:url', meta.canonical)
   upsertMeta('meta[property="og:site_name"]', 'property', 'og:site_name', 'Radix CRM')
-  upsertMeta(
-    'meta[property="og:locale"]',
-    'property',
-    'og:locale',
-    locale === 'uz' ? 'uz_UZ' : 'ru_RU',
-  )
-  upsertMeta('meta[property="og:image"]', 'property', 'og:image', `${ORIGIN}/og-${locale}.png`)
+  upsertMeta('meta[property="og:locale"]', 'property', 'og:locale', meta.ogLocale)
+  upsertMeta('meta[property="og:image"]', 'property', 'og:image', meta.ogImage)
   upsertMeta('meta[property="og:image:width"]', 'property', 'og:image:width', '1200')
   upsertMeta('meta[property="og:image:height"]', 'property', 'og:image:height', '630')
   upsertMeta('meta[name="twitter:card"]', 'name', 'twitter:card', 'summary_large_image')
-  upsertMeta('meta[name="twitter:title"]', 'name', 'twitter:title', title)
-  upsertMeta('meta[name="twitter:description"]', 'name', 'twitter:description', description)
-  upsertMeta('meta[name="twitter:image"]', 'name', 'twitter:image', `${ORIGIN}/og-${locale}.png`)
+  upsertMeta('meta[name="twitter:title"]', 'name', 'twitter:title', meta.title)
+  upsertMeta('meta[name="twitter:description"]', 'name', 'twitter:description', meta.description)
+  upsertMeta('meta[name="twitter:image"]', 'name', 'twitter:image', meta.ogImage)
 
-  upsertLink('canonical', canonical)
+  upsertLink('canonical', meta.canonical)
   // Ikki tilli sayt uchun `hreflang` — qidiruv tizimi bir xil sahifaning
   // ikki versiyasini nusxa deb hisoblamasligi uchun.
-  upsertLink('alternate', `${ORIGIN}/uz${path}`, 'uz')
-  upsertLink('alternate', `${ORIGIN}/ru${path}`, 'ru')
-  upsertLink('alternate', `${ORIGIN}/uz${path}`, 'x-default')
+  for (const [lang, href] of meta.alternates) upsertLink('alternate', href, lang)
+}
+
+export function legalMeta(locale: Locale, page: 'privacy' | 'terms') {
+  const t = legal[locale]
+  const title = page === 'privacy' ? t.privacy : t.terms
+  return {
+    locale,
+    title: `${title} — Radix CRM`,
+    description: `${title} — Radix CRM.`,
+    path: `/${page}`,
+  }
 }
 
 export function LegalSeo({ locale, page }: { locale: Locale; page: 'privacy' | 'terms' }) {
   useEffect(() => {
-    const t = legal[locale]
-    const title = page === 'privacy' ? t.privacy : t.terms
-    applyPageMeta({
-      locale,
-      title: `${title} — Radix CRM`,
-      description: `${title} — Radix CRM.`,
-      path: `/${page}`,
-    })
+    applyPageMeta(legalMeta(locale, page))
     upsertJsonLd('faq', null)
   }, [locale, page])
   return null
