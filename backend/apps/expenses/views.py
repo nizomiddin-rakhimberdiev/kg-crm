@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from django.utils.translation import gettext
 from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -73,7 +74,7 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
         """Tasdiqlangan chiqim tahrirlanmaydi — summani keyin o'zgartirish
         tasdiqni ma'nosiz qilardi."""
         if serializer.instance.status != "pending":
-            raise BusinessRuleViolation("Faqat kutilayotgan chiqimni tahrirlash mumkin.")
+            raise BusinessRuleViolation(gettext("Faqat kutilayotgan chiqimni tahrirlash mumkin."))
         serializer.save()
 
     @action(detail=True, methods=["post"])
@@ -126,11 +127,15 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
         def parse(key: str) -> Any:
             raw = request.query_params.get(key)
             if not raw:
-                raise BusinessRuleViolation(f"`{key}` parametri majburiy (2026-07-01).")
+                raise BusinessRuleViolation(
+                    gettext("`{key}` parametri majburiy (2026-07-01).").format(key=key)
+                )
             try:
                 return datetime.strptime(raw, "%Y-%m-%d").date()
             except ValueError as exc:
-                raise BusinessRuleViolation(f"`{key}` formati: 2026-07-01") from exc
+                raise BusinessRuleViolation(
+                    gettext("`{key}` formati: 2026-07-01").format(key=key)
+                ) from exc
 
         user = request_user(request)
         return Response(

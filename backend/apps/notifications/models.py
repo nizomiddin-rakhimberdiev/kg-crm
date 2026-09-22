@@ -8,6 +8,7 @@ qo'shish — yangi **adapter**, tizimni qayta yozish emas (P2, docs/02 §17).
 from __future__ import annotations
 
 from django.db import models
+from django.utils.translation import gettext_lazy
 
 from apps.core.models import BranchScopedModel
 
@@ -21,18 +22,18 @@ __all__ = [
 
 
 class Channel(models.TextChoices):
-    SMS = "sms", "SMS"
-    TELEGRAM = "telegram", "Telegram"
-    EMAIL = "email", "Email"
+    SMS = "sms", gettext_lazy("SMS")
+    TELEGRAM = "telegram", gettext_lazy("Telegram")
+    EMAIL = "email", gettext_lazy("Email")
 
 
 class TemplateCode(models.TextChoices):
     """MVP shablonlari — ular signup'da seed qilinadi."""
 
-    PAYMENT_RECEIVED = "payment_received", "To'lov qabul qilindi"
-    DEBT_REMINDER = "debt_reminder", "Qarz eslatmasi"
-    ABSENCE_NOTICE = "absence_notice", "Kelmagani haqida"
-    CUSTOM = "custom", "Erkin xabar"
+    PAYMENT_RECEIVED = "payment_received", gettext_lazy("To'lov qabul qilindi")
+    DEBT_REMINDER = "debt_reminder", gettext_lazy("Qarz eslatmasi")
+    ABSENCE_NOTICE = "absence_notice", gettext_lazy("Kelmagani haqida")
+    CUSTOM = "custom", gettext_lazy("Erkin xabar")
 
 
 class NotificationTemplate(BranchScopedModel):
@@ -72,11 +73,11 @@ class NotificationTemplate(BranchScopedModel):
 
 
 class NotificationStatus(models.TextChoices):
-    QUEUED = "queued", "Navbatda"
-    SENT = "sent", "Yuborildi"
-    DELIVERED = "delivered", "Yetkazildi"
-    FAILED = "failed", "Muvaffaqiyatsiz"
-    CANCELLED = "cancelled", "Bekor qilindi"
+    QUEUED = "queued", gettext_lazy("Navbatda")
+    SENT = "sent", gettext_lazy("Yuborildi")
+    DELIVERED = "delivered", gettext_lazy("Yetkazildi")
+    FAILED = "failed", gettext_lazy("Muvaffaqiyatsiz")
+    CANCELLED = "cancelled", gettext_lazy("Bekor qilindi")
 
 
 class Notification(BranchScopedModel):

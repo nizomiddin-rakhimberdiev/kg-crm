@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from django.utils.translation import gettext
 from rest_framework import status, viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -39,7 +40,7 @@ class SettingsViewSet(viewsets.ViewSet):
         user = request_user(request)
         value = services.get_setting(key=pk or "", branch=user.branch)
         if value is None and pk not in services.DEFAULTS:
-            raise BusinessRuleViolation(f"'{pk}' sozlamasi mavjud emas.")
+            raise BusinessRuleViolation(gettext("'{pk}' sozlamasi mavjud emas.").format(pk=pk))
         return Response({"key": pk, "value": value})
 
     def update(self, request: Request, pk: str | None = None) -> Response:
@@ -54,7 +55,7 @@ class SettingsViewSet(viewsets.ViewSet):
             # `Branch.objects` tenant bilan cheklangan.
             branch = Branch.objects.filter(pk=data["branch_id"]).first()
             if branch is None:
-                raise BusinessRuleViolation("Filial topilmadi.")
+                raise BusinessRuleViolation(gettext("Filial topilmadi."))
 
         previous = services.get_setting(key=pk or "", branch=branch)
         setting = services.set_setting(

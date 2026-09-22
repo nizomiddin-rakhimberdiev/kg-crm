@@ -18,31 +18,31 @@ import { billingApi } from '@/features/billing/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { cn, formatDate, formatUZS } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 const STATUS: Record<string, [string, string]> = {
-  trialing: ['Sinov davri', 'bg-brand-50 text-brand-700'],
-  pending_payment: ["To'lov kutilmoqda", 'bg-amber-50 text-amber-700'],
-  active: ['Faol', 'bg-emerald-50 text-emerald-700'],
-  past_due: ["Muddati o'tgan", 'bg-amber-50 text-amber-800'],
-  suspended: ["To'xtatilgan", 'bg-red-50 text-red-700'],
-  cancelled: ['Bekor qilingan', 'bg-slate-100 text-slate-600'],
+  trialing: [t('Sinov davri'), 'bg-brand-50 text-brand-700'],
+  pending_payment: [t("To'lov kutilmoqda"), 'bg-amber-50 text-amber-700'],
+  active: [t('Faol'), 'bg-emerald-50 text-emerald-700'],
+  past_due: [t("Muddati o'tgan"), 'bg-amber-50 text-amber-800'],
+  suspended: [t("To'xtatilgan"), 'bg-red-50 text-red-700'],
+  cancelled: [t('Bekor qilingan'), 'bg-slate-100 text-slate-600'],
 }
 
 const INVOICE_STATUS: Record<string, [string, string]> = {
-  issued: ['Yozilgan', 'bg-sky-50 text-sky-700'],
-  paid: ["To'langan", 'bg-emerald-50 text-emerald-700'],
-  overdue: ["Muddati o'tgan", 'bg-red-50 text-red-700'],
-  cancelled: ['Bekor qilingan', 'bg-slate-100 text-slate-600'],
+  issued: [t('Yozilgan'), 'bg-sky-50 text-sky-700'],
+  paid: [t("To'langan"), 'bg-emerald-50 text-emerald-700'],
+  overdue: [t("Muddati o'tgan"), 'bg-red-50 text-red-700'],
+  cancelled: [t('Bekor qilingan'), 'bg-slate-100 text-slate-600'],
 }
 
 const TERMS: Array<{ code: string; label: string; hint: string }> = [
-  { code: 'monthly', label: 'Oylik', hint: 'Chegirmasiz, 12 ta to‘lov' },
-  { code: 'semiannual', label: 'Yarim yillik', hint: '15 % chegirma, 2 ta to‘lov' },
-  { code: 'annual', label: 'Yillik', hint: '25 % chegirma, 1 ta to‘lov' },
+  { code: 'monthly', label: t('Oylik'), hint: t('Chegirmasiz, 12 ta to‘lov') },
+  { code: 'semiannual', label: t('Yarim yillik'), hint: t('15 % chegirma, 2 ta to‘lov') },
+  { code: 'annual', label: t('Yillik'), hint: t('25 % chegirma, 1 ta to‘lov') },
 ]
 
-const day = (iso: string | null) =>
-  formatDate(iso)
+const day = (iso: string | null) => formatDate(iso)
 
 const daysLeft = (iso: string | null) => {
   if (!iso) return null
@@ -79,14 +79,19 @@ export default function BillingPage() {
     void queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'billing'] })
   const fail = (err: unknown) => {
     setNotice(null)
-    setError(err instanceof ApiError ? err.message : 'Amalni bajarib bo‘lmadi.')
+    setError(err instanceof ApiError ? err.message : t('Amalni bajarib bo‘lmadi.'))
   }
 
   const accept = useMutation({
     mutationFn: () => billingApi.acceptTrial(term),
     onSuccess: (invoice) => {
       setError(null)
-      setNotice(`Hisob ${invoice.number} yozildi — ${formatUZS(Number(invoice.total_amount))}.`)
+      setNotice(
+        t('Hisob {number} yozildi — {formatUZS}.', {
+          number: invoice.number,
+          formatUZS: formatUZS(Number(invoice.total_amount)),
+        }),
+      )
       invalidate()
     },
     onError: fail,
@@ -101,9 +106,9 @@ export default function BillingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Obuna va to'lov</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t("Obuna va to'lov")}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Bitta obuna — cheksiz filial va cheksiz xodim. To'lov faqat bolalar soniga.
+          {t("Bitta obuna — cheksiz filial va cheksiz xodim. To'lov faqat bolalar soniga.")}
         </p>
       </div>
 
@@ -121,7 +126,7 @@ export default function BillingPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold text-slate-900">
-                {subscription?.plan_name ?? 'Reja'}
+                {subscription?.plan_name ?? t('Reja')}
               </h2>
               <p className="mt-0.5 text-xs text-slate-500">
                 {subscription
@@ -137,7 +142,7 @@ export default function BillingPage() {
           {subscription && (
             <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <div>
-                <dt className="text-xs text-slate-500">To'lov muddati</dt>
+                <dt className="text-xs text-slate-500">{t("To'lov muddati")}</dt>
                 <dd className="font-medium text-slate-900">
                   {TERMS.find((t) => t.code === subscription.payment_term)?.label ??
                     subscription.payment_term}
@@ -146,23 +151,23 @@ export default function BillingPage() {
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-500">Joriy davr</dt>
+                <dt className="text-xs text-slate-500">{t('Joriy davr')}</dt>
                 <dd className="font-medium text-slate-900">
                   {day(subscription.current_period_start)} — {day(subscription.current_period_end)}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-500">Har qo'shimcha 10 bola</dt>
+                <dt className="text-xs text-slate-500">{t("Har qo'shimcha 10 bola")}</dt>
                 <dd className="font-medium text-slate-900">
                   +{formatUZS(Number(subscription.overage_step_price))}
                 </dd>
               </div>
               {isTrial && (
                 <div>
-                  <dt className="text-xs text-slate-500">Sinov tugaydi</dt>
+                  <dt className="text-xs text-slate-500">{t('Sinov tugaydi')}</dt>
                   <dd className="font-medium text-slate-900">
                     {day(subscription.trial_ends_at)}
-                    {remaining !== null && ` (${remaining} kun)`}
+                    {remaining !== null && t(' ({remaining} kun)', { remaining })}
                   </dd>
                 </div>
               )}
@@ -173,7 +178,7 @@ export default function BillingPage() {
         <section className="rounded-2xl border border-slate-200 bg-white p-5">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-brand-600" />
-            <h2 className="text-sm font-semibold text-slate-900">Joriy davr prognozi</h2>
+            <h2 className="text-sm font-semibold text-slate-900">{t('Joriy davr prognozi')}</h2>
           </div>
 
           {usage ? (
@@ -182,28 +187,29 @@ export default function BillingPage() {
                 {formatUZS(Number(usage.projected.total_amount))}
               </p>
               {/* Bu raqam hali OLINMAGAN — haqiqiy hisob yopilgan dalildan chiqadi. */}
-              <p className="text-xs text-amber-700">Prognoz — hali hisoblanmagan</p>
+              <p className="text-xs text-amber-700">{t('Prognoz — hali hisoblanmagan')}</p>
 
               <dl className="mt-4 space-y-1.5 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">Hozirgi bolalar</dt>
+                  <dt className="text-slate-500">{t('Hozirgi bolalar')}</dt>
                   <dd className="font-medium text-slate-900">{usage.current_children}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">Hisoblanadi</dt>
+                  <dt className="text-slate-500">{t('Hisoblanadi')}</dt>
                   <dd className="font-medium text-slate-900">{usage.billable_children}</dd>
                 </div>
                 {usage.overage_steps > 0 && (
                   <div className="flex justify-between">
-                    <dt className="text-slate-500">Qo'shimcha qadam</dt>
+                    <dt className="text-slate-500">{t("Qo'shimcha qadam")}</dt>
                     <dd className="font-medium text-slate-900">
-                      {usage.overage_steps} × {formatUZS(Number(usage.projected.overage_amount) / usage.overage_steps)}
+                      {usage.overage_steps} ×{' '}
+                      {formatUZS(Number(usage.projected.overage_amount) / usage.overage_steps)}
                     </dd>
                   </div>
                 )}
                 {usage.prepaid_base && (
                   <p className="pt-1 text-xs text-emerald-700">
-                    Baza oldindan to'langan — faqat o'sish hisoblanadi.
+                    {t("Baza oldindan to'langan — faqat o'sish hisoblanadi.")}
                   </p>
                 )}
               </dl>
@@ -218,13 +224,15 @@ export default function BillingPage() {
         <section className="rounded-2xl border border-brand-200 bg-brand-50/50 p-5">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-brand-600" />
-            <h2 className="text-sm font-semibold text-slate-900">To'lovli rejimga o'tish</h2>
+            <h2 className="text-sm font-semibold text-slate-900">{t("To'lovli rejimga o'tish")}</h2>
           </div>
 
           {/* Bu jumla siyosatning halolligi uchun MAJBURIY (docs/01 §4.4). */}
           <p className="mt-2 text-sm text-slate-600">
-            Birinchi to'langan oy <strong>sinov boshlangan kundan</strong> hisoblanadi — ya'ni
-            sinov kunlari shu oyning ichiga kiradi. Sinov yoqmasa, hech qanday to'lov olinmaydi.
+            {t("Birinchi to'langan oy")} <strong>{t('sinov boshlangan kundan')}</strong>{' '}
+            {t(
+              "hisoblanadi — ya'ni sinov kunlari shu oyning ichiga kiradi. Sinov yoqmasa, hech qanday to'lov olinmaydi.",
+            )}
           </p>
 
           <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -255,30 +263,33 @@ export default function BillingPage() {
             onClick={() => accept.mutate()}
             className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
           >
-            Qabul qilaman va hisobni olaman
+            {t('Qabul qilaman va hisobni olaman')}
           </button>
         </section>
       )}
 
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         <h2 className="border-b border-slate-100 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-900">
-          Hisob-fakturalar
+          {t('Hisob-fakturalar')}
         </h2>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
             <thead className="text-left text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-4 py-2">Raqam</th>
-                <th className="px-4 py-2">Davr</th>
-                <th className="px-4 py-2">Bolalar</th>
-                <th className="px-4 py-2 text-right">Summa</th>
-                <th className="px-4 py-2">Muddat</th>
-                <th className="px-4 py-2">Holat</th>
+                <th className="px-4 py-2">{t('Raqam')}</th>
+                <th className="px-4 py-2">{t('Davr')}</th>
+                <th className="px-4 py-2">{t('Bolalar')}</th>
+                <th className="px-4 py-2 text-right">{t('Summa')}</th>
+                <th className="px-4 py-2">{t('Muddat')}</th>
+                <th className="px-4 py-2">{t('Holat')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {(invoicesQuery.data ?? []).map((invoice) => {
-                const [label, tone] = INVOICE_STATUS[invoice.status] ?? [invoice.status, 'bg-slate-100']
+                const [label, tone] = INVOICE_STATUS[invoice.status] ?? [
+                  invoice.status,
+                  'bg-slate-100',
+                ]
                 return (
                   <tr key={invoice.id}>
                     <td className="px-4 py-3 font-medium text-slate-900">{invoice.number}</td>
@@ -290,7 +301,9 @@ export default function BillingPage() {
                       {formatUZS(Number(invoice.total_amount))}
                       {Number(invoice.discount_amount) > 0 && (
                         <span className="block text-xs font-normal text-emerald-600">
-                          −{formatUZS(Number(invoice.discount_amount))} chegirma
+                          {t('−{formatUZS} chegirma', {
+                            formatUZS: formatUZS(Number(invoice.discount_amount)),
+                          })}
                         </span>
                       )}
                     </td>
@@ -307,7 +320,7 @@ export default function BillingPage() {
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
                     <FileText className="mx-auto mb-2 h-6 w-6" />
-                    Hozircha hisob yozilmagan.
+                    {t('Hozircha hisob yozilmagan.')}
                   </td>
                 </tr>
               )}
@@ -318,9 +331,9 @@ export default function BillingPage() {
 
       {(historyQuery.data ?? []).length > 0 && (
         <section className="rounded-xl border border-slate-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-slate-900">Hisoblash dalili</h2>
+          <h2 className="text-sm font-semibold text-slate-900">{t('Hisoblash dalili')}</h2>
           <p className="mt-0.5 text-xs text-slate-500">
-            Har bir hisob ortidagi asos — o'zgartirilmaydigan yozuv.
+            {t("Har bir hisob ortidagi asos — o'zgartirilmaydigan yozuv.")}
           </p>
           <ul className="mt-3 divide-y divide-slate-100 border-t border-slate-100">
             {(historyQuery.data ?? []).map((row) => (
@@ -329,13 +342,15 @@ export default function BillingPage() {
                   {row.period_year}-{String(row.period_month).padStart(2, '0')}
                   {row.measurement_method === 'manual_adjustment' && (
                     <span className="ml-2 rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-700">
-                      qo'lda tuzatilgan
+                      {t("qo'lda tuzatilgan")}
                     </span>
                   )}
                   {row.note && <span className="ml-2 text-xs text-slate-400">{row.note}</span>}
                 </span>
                 <span className="text-slate-900">
-                  eng yuqori {row.peak_children} → hisoblangan{' '}
+                  {t('eng yuqori {peak_children} → hisoblangan', {
+                    peak_children: row.peak_children,
+                  })}{' '}
                   <strong>{row.billable_children}</strong>
                 </span>
               </li>

@@ -82,6 +82,7 @@ Never violate these without a superseding ADR:
 - Database naming, types, and constraints: [03 §2–§5](./docs/03_Database_Design.md).
 - API conventions (versioning, pagination, filtering, envelope, errors): [02 §13](./docs/02_Software_Architecture.md) and [04](./docs/04_Backend_API_Specification.md).
 - Build order and Definition of Done: [06](./docs/06_Development_Roadmap.md).
+- **Three languages (uz/ru/en), ADR-16:** UI text is Uzbek in the source, wrapped in `t('…')` ([05 §17](./docs/05_Frontend_Architecture.md)); backend messages go through `gettext` with `.po` files in `backend/locale/`. Both sides have a catalog-completeness test — add the `ru`/`en` lines it asks for. The public site has its own content layer (`features/landing/content.ts`, all three locales); the platform console stays Uzbek.
 
 ### Two checks before every backend PR
 

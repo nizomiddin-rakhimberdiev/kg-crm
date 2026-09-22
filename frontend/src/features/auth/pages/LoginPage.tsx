@@ -13,6 +13,8 @@ import { useAuth } from '@/app/providers/AuthProvider'
 import { authApi } from '@/features/auth/api'
 import { ApiError, isPendingChoice, type OrganizationSummary } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
+import { LanguageSwitch } from '@/components/layout/LanguageSwitch'
+import { t } from '@/lib/i18n'
 
 type Stage =
   | { kind: 'credentials' }
@@ -30,7 +32,7 @@ export default function LoginPage() {
 
   const handleError = (err: unknown) => {
     setError(
-      err instanceof ApiError ? err.message : 'Kutilmagan xatolik. Qaytadan urinib ko\'ring.',
+      err instanceof ApiError ? err.message : t("Kutilmagan xatolik. Qaytadan urinib ko'ring."),
     )
   }
 
@@ -84,16 +86,13 @@ export default function LoginPage() {
           {/* Mijozga ko'rinadigan yuza — ommaviy brend nomi. Ichki
               nomlar (repo, Docker, DB rollari) ataylab `kg-crm` bo'lib
               qoladi; bu yerda esa mijoz ko'radigan nom turishi kerak. */}
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Radix CRM</h1>
-          <p className="mt-1 text-sm text-slate-500">Bog'cha boshqaruv tizimi</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Radix CRM')}</h1>
+          <p className="mt-1 text-sm text-slate-500">{t("Bog'cha boshqaruv tizimi")}</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
           {error && (
-            <div
-              role="alert"
-              className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
-            >
+            <div role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
               {error}
             </div>
           )}
@@ -102,7 +101,7 @@ export default function LoginPage() {
             <form onSubmit={submitCredentials} className="space-y-4">
               <div>
                 <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-700">
-                  Email
+                  {t('Email')}
                 </label>
                 <input
                   id="email"
@@ -116,11 +115,8 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label
-                  htmlFor="password"
-                  className="mb-1 block text-sm font-medium text-slate-700"
-                >
-                  Parol
+                <label htmlFor="password" className="mb-1 block text-sm font-medium text-slate-700">
+                  {t('Parol')}
                 </label>
                 <input
                   id="password"
@@ -142,15 +138,15 @@ export default function LoginPage() {
                 )}
               >
                 <LogIn className="h-4 w-4" />
-                {busy ? 'Tekshirilmoqda…' : 'Kirish'}
+                {busy ? t('Tekshirilmoqda…') : t('Kirish')}
               </button>
             </form>
           ) : (
             <div className="space-y-3">
               <div>
-                <h2 className="text-sm font-semibold text-slate-900">Tashkilotni tanlang</h2>
+                <h2 className="text-sm font-semibold text-slate-900">{t('Tashkilotni tanlang')}</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Bu email bir nechta bog'chada ro'yxatdan o'tgan.
+                  {t("Bu email bir nechta bog'chada ro'yxatdan o'tgan.")}
                 </p>
               </div>
 
@@ -172,7 +168,7 @@ export default function LoginPage() {
                 onClick={() => setStage({ kind: 'credentials' })}
                 className="w-full pt-1 text-center text-sm text-slate-500 hover:text-slate-700"
               >
-                Orqaga
+                {t('Orqaga')}
               </button>
             </div>
           )}
@@ -182,8 +178,11 @@ export default function LoginPage() {
             havolasi endi hech qayerga olib bormasdi. O'rniga aloqa yo'li:
             bu sahifaga adashib tushgan odam nima qilishini bilsin. */}
         <p className="mt-6 text-center text-xs text-slate-400">
-          Hisobingiz yo'qmi? Bog'changiz uchun akkaunt ochish uchun biz bilan bog'laning.
+          {t("Hisobingiz yo'qmi? Bog'changiz uchun akkaunt ochish uchun biz bilan bog'laning.")}
         </p>
+        <div className="mt-4 flex justify-center">
+          <LanguageSwitch size="md" />
+        </div>
       </div>
     </div>
   )

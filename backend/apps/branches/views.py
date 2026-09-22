@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from django.utils.translation import gettext
+
 from apps.accounts.serializers import BranchSerializer
 from apps.audit import services as audit
 from apps.branches.models import Branch
@@ -36,7 +38,7 @@ class BranchViewSet(TenantViewSet):
     def perform_destroy(self, instance: Branch) -> None:
         if instance.users.filter(is_active=True).exists():
             raise BusinessRuleViolation(
-                "Filialda faol xodimlar bor — avval ularni ko'chiring yoki o'chiring."
+                gettext("Filialda faol xodimlar bor — avval ularni ko'chiring yoki o'chiring.")
             )
         instance.is_active = False
         instance.save(update_fields=["is_active"])

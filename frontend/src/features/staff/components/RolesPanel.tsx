@@ -17,6 +17,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Permission } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 /** "Kassir yordamchisi" → "kassir_yordamchisi" */
 const toCode = (name: string) =>
@@ -27,12 +28,12 @@ const toCode = (name: string) =>
     .replace(/^_+|_+$/g, '')
 
 const ACTION_LABELS: Record<string, string> = {
-  read: "Ko'rish",
-  create: 'Yaratish',
-  update: 'Tahrirlash',
-  delete: "O'chirish",
-  export: 'Eksport',
-  approve: 'Tasdiqlash',
+  read: t("Ko'rish"),
+  create: t('Yaratish'),
+  update: t('Tahrirlash'),
+  delete: t("O'chirish"),
+  export: t('Eksport'),
+  approve: t('Tasdiqlash'),
 }
 
 export function RolesPanel() {
@@ -93,7 +94,7 @@ export function RolesPanel() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.roles(organizationId) })
     },
     onError: (err) => {
-      setError(err instanceof ApiError ? err.message : 'Saqlab bo\'lmadi.')
+      setError(err instanceof ApiError ? err.message : t("Saqlab bo'lmadi."))
     },
   })
 
@@ -105,7 +106,7 @@ export function RolesPanel() {
       setSelectedRoleId(role.id)
       void queryClient.invalidateQueries({ queryKey: queryKeys.roles(organizationId) })
     },
-    onError: (err) => setError(err instanceof ApiError ? err.message : "Rol yaratilmadi."),
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Rol yaratilmadi.')),
   })
 
   const deleteMutation = useMutation({
@@ -115,7 +116,7 @@ export function RolesPanel() {
       setError(null)
       void queryClient.invalidateQueries({ queryKey: queryKeys.roles(organizationId) })
     },
-    onError: (err) => setError(err instanceof ApiError ? err.message : "O'chirib bo'lmadi."),
+    onError: (err) => setError(err instanceof ApiError ? err.message : t("O'chirib bo'lmadi.")),
   })
 
   const toggle = (code: string) => {
@@ -135,7 +136,7 @@ export function RolesPanel() {
       selectedRole.permissions.some((code) => !draft.has(code)))
 
   if (rolesQuery.isPending || permissionsQuery.isPending) {
-    return <p className="py-8 text-center text-sm text-slate-400">Yuklanmoqda…</p>
+    return <p className="py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
   }
 
   return (
@@ -172,7 +173,7 @@ export function RolesPanel() {
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-brand-700 transition hover:bg-brand-50"
               >
                 <Plus className="h-3.5 w-3.5 shrink-0" />
-                Yangi rol
+                {t('Yangi rol')}
               </button>
             ) : (
               <form
@@ -187,7 +188,7 @@ export function RolesPanel() {
                   autoFocus
                   value={newRoleName}
                   onChange={(e) => setNewRoleName(e.target.value)}
-                  placeholder="Rol nomi"
+                  placeholder={t('Rol nomi')}
                   className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
                 />
                 <div className="flex gap-1">
@@ -196,14 +197,14 @@ export function RolesPanel() {
                     disabled={!newRoleName.trim() || createMutation.isPending}
                     className="flex-1 rounded-lg bg-brand-600 px-2 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
                   >
-                    {createMutation.isPending ? '…' : "Qo'shish"}
+                    {createMutation.isPending ? '…' : t("Qo'shish")}
                   </button>
                   <button
                     type="button"
                     onClick={() => setNewRoleName(null)}
                     className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600 transition hover:bg-slate-50"
                   >
-                    Bekor
+                    {t('Bekor')}
                   </button>
                 </div>
               </form>
@@ -215,7 +216,7 @@ export function RolesPanel() {
       {/* Ruxsatlar */}
       <div className="rounded-2xl border border-slate-200 bg-white p-4">
         {!selectedRole ? (
-          <p className="py-8 text-center text-sm text-slate-400">Rol tanlang.</p>
+          <p className="py-8 text-center text-sm text-slate-400">{t('Rol tanlang.')}</p>
         ) : (
           <>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -223,8 +224,10 @@ export function RolesPanel() {
                 <h3 className="text-sm font-semibold text-slate-900">{selectedRole.name}</h3>
                 <p className="mt-0.5 text-xs text-slate-500">
                   {selectedRole.is_system
-                    ? "Tizim roli — ruxsatlarini o'zgartirsangiz bo'ladi, faqat kodi qotib qoladi."
-                    : "Maxsus rol — ruxsatlari ham, o'zi ham to'liq sizning ixtiyoringizda."}
+                    ? t(
+                        "Tizim roli — ruxsatlarini o'zgartirsangiz bo'ladi, faqat kodi qotib qoladi.",
+                      )
+                    : t("Maxsus rol — ruxsatlari ham, o'zi ham to'liq sizning ixtiyoringizda.")}
                 </p>
               </div>
 
@@ -242,7 +245,7 @@ export function RolesPanel() {
                     )}
                   >
                     <Save className="h-4 w-4" />
-                    {saveMutation.isPending ? 'Saqlanmoqda…' : 'Saqlash'}
+                    {saveMutation.isPending ? t('Saqlanmoqda…') : t('Saqlash')}
                   </button>
                 )}
                 {!selectedRole.is_system && can('users.delete') && (
@@ -251,7 +254,7 @@ export function RolesPanel() {
                     disabled={deleteMutation.isPending}
                     onClick={() => deleteMutation.mutate(selectedRole.id)}
                     className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                    title="Rolni o'chirish"
+                    title={t("Rolni o'chirish")}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -260,13 +263,16 @@ export function RolesPanel() {
             </div>
 
             {error && (
-              <div role="alert" className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              <div
+                role="alert"
+                className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
+              >
                 {error}
               </div>
             )}
             {saved && !dirty && (
               <div className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                Saqlandi.
+                {t('Saqlandi.')}
               </div>
             )}
 

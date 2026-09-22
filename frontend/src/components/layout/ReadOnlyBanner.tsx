@@ -8,6 +8,7 @@
 import { AlertTriangle, Clock, CreditCard } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/app/providers/AuthProvider'
+import { t } from '@/lib/i18n'
 
 /** Sinov tugashiga necha kun qolgani — soatlarni tepaga yaxlitlaydi. */
 const daysLeft = (iso: string | null | undefined) => {
@@ -24,11 +25,11 @@ export function SubscriptionBanner() {
       <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-6 py-2.5 text-sm text-amber-900">
         <AlertTriangle className="h-4 w-4 shrink-0" />
         <span>
-          Obuna to'xtatilgan — ma'lumotlarni <strong>ko'rish</strong> mumkin, o'zgartirish
-          mumkin emas. Hisobingiz va tariximiz saqlanib turibdi.
+          {t("Obuna to'xtatilgan — ma'lumotlarni")} <strong>{t("ko'rish")}</strong>{' '}
+          {t("mumkin, o'zgartirish mumkin emas. Hisobingiz va tariximiz saqlanib turibdi.")}
         </span>
         <Link to="/billing" className="ml-auto shrink-0 font-semibold underline">
-          Hisobni ko'rish
+          {t("Hisobni ko'rish")}
         </Link>
       </div>
     )
@@ -40,12 +41,12 @@ export function SubscriptionBanner() {
       <div className="flex items-center gap-2 border-b border-brand-200 bg-brand-50 px-6 py-2.5 text-sm text-brand-900">
         <Clock className="h-4 w-4 shrink-0" />
         <span>
-          Sinov davri faol
-          {remaining !== null && ` — ${remaining} kun qoldi`}. Yoqmasa, hech qanday to'lov
-          olinmaydi.
+          {t('Sinov davri faol')}
+          {remaining !== null && t(' — {remaining} kun qoldi', { remaining })}
+          {t(". Yoqmasa, hech qanday to'lov olinmaydi.")}
         </span>
         <Link to="/billing" className="ml-auto shrink-0 font-semibold underline">
-          Rejani tanlash
+          {t('Rejani tanlash')}
         </Link>
       </div>
     )
@@ -61,11 +62,11 @@ export function SubscriptionBanner() {
         <CreditCard className="h-4 w-4 shrink-0" />
         <span>
           {isPending
-            ? "Hisob yozildi — to'lov kutilmoqda. Kirish to'liq ochiq."
-            : "Hisob muddati o'tdi. Kirish hozircha to'liq ochiq."}
+            ? t("Hisob yozildi — to'lov kutilmoqda. Kirish to'liq ochiq.")
+            : t("Hisob muddati o'tdi. Kirish hozircha to'liq ochiq.")}
         </span>
         <Link to="/billing" className="ml-auto shrink-0 font-semibold underline">
-          Hisobni ko'rish
+          {t("Hisobni ko'rish")}
         </Link>
       </div>
     )

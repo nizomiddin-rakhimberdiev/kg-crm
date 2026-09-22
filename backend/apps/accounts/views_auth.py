@@ -8,6 +8,7 @@ from typing import Any
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.db import transaction
+from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -100,7 +101,7 @@ class LoginView(APIView):
                     "success": False,
                     "error": {
                         "code": "AUTHENTICATION_REQUIRED",
-                        "message": "Email yoki parol noto'g'ri.",
+                        "message": gettext("Email yoki parol noto'g'ri."),
                         "details": None,
                     },
                 },
@@ -154,7 +155,7 @@ class SelectOrganizationView(APIView):
         try:
             payload = read_pending_token(serializer.validated_data["pending_token"])
         except TokenError:
-            return _auth_error("Tanlov muddati tugadi. Qaytadan kiring.")
+            return _auth_error(gettext("Tanlov muddati tugadi. Qaytadan kiring."))
 
         with auth_lookup_context():
             user = User.auth_objects.filter(
@@ -167,7 +168,7 @@ class SelectOrganizationView(APIView):
         if user is None:
             # Pending token to'g'ri, lekin tashkilot ro'yxatda yo'q edi.
             # Bir xil umumiy xato — mavjudlikni oshkor qilmaymiz.
-            return _auth_error("Tanlangan tashkilot mavjud emas.")
+            return _auth_error(gettext("Tanlangan tashkilot mavjud emas."))
 
         return Response(LoginView._complete_login(request, user))
 
@@ -180,7 +181,7 @@ class RefreshView(APIView):
     def post(self, request: Request) -> Response:
         raw = request.data.get("refresh")
         if not raw:
-            return _auth_error("Refresh token ko'rsatilmagan.")
+            return _auth_error(gettext("Refresh token ko'rsatilmagan."))
 
         # Refresh token — tenant hali noma'lum bo'lgan paytdagi qidiruv,
         # xuddi login kabi. Tor eshik shuning uchun `refresh_token` ni
@@ -190,7 +191,7 @@ class RefreshView(APIView):
                 token_hash=services.hash_token(raw)
             ).first()
         if stored is None:
-            return _auth_error("Refresh token yaroqsiz.")
+            return _auth_error(gettext("Refresh token yaroqsiz."))
 
         if not stored.is_valid:
             # BEKOR QILINGAN tokenni qayta ishlatish — o'g'irlangan
@@ -225,19 +226,19 @@ class RefreshView(APIView):
                     logger.warning(
                         "Bekor qilingan refresh token qayta ishlatildi — barcha sessiyalar yopildi"
                     )
-            return _auth_error("Refresh token yaroqsiz.")
+            return _auth_error(gettext("Refresh token yaroqsiz."))
 
         try:
             token = JWTRefreshToken(raw)
         except TokenError:
-            return _auth_error("Refresh token yaroqsiz.")
+            return _auth_error(gettext("Refresh token yaroqsiz."))
 
         with auth_lookup_context():
             user = User.auth_objects.filter(pk=token["user_id"], is_active=True).first()
         if user is not None:
             user = hydrate_user(user)
         if user is None:
-            return _auth_error("Refresh token yaroqsiz.")
+            return _auth_error(gettext("Refresh token yaroqsiz."))
 
         with transaction.atomic(), organization_context(user.organization_id):
             services.revoke_refresh_token(raw)  # rotatsiya: eskisi darhol o'ladi
@@ -378,7 +379,7 @@ class PasswordChangeView(APIView):
 
         user = request_user(request)
         if not check_password(serializer.validated_data["current_password"], user.password):
-            return _auth_error("Joriy parol noto'g'ri.")
+            return _auth_error(gettext("Joriy parol noto'g'ri."))
 
         user.set_password(serializer.validated_data["new_password"])
         user.save(update_fields=["password"])

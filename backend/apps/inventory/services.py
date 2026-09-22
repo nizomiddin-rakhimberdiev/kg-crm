@@ -14,6 +14,7 @@ from typing import Any
 from django.db import transaction
 from django.db.models import F, Q, Sum
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from apps.core.exceptions import BusinessRuleViolation
 from apps.inventory.models import (
@@ -48,7 +49,7 @@ def direction_for(movement_type: str, explicit: str | None = None) -> str:
     # `adjustment` ikki tomonlama — yo'nalish aniq ko'rsatilishi shart.
     if explicit not in (MovementDirection.IN, MovementDirection.OUT):
         raise BusinessRuleViolation(
-            "Tuzatish harakati uchun yo'nalish ('in' yoki 'out') ko'rsatilishi shart."
+            gettext("Tuzatish harakati uchun yo'nalish ('in' yoki 'out') ko'rsatilishi shart.")
         )
     return explicit
 
@@ -97,10 +98,10 @@ def record_movement(
     (docs/03 §26).
     """
     if quantity <= 0:
-        raise BusinessRuleViolation("Miqdor musbat bo'lishi kerak.")
+        raise BusinessRuleViolation(gettext("Miqdor musbat bo'lishi kerak."))
 
     if warehouse.branch_id != product.branch_id:
-        raise BusinessRuleViolation("Ombor mahsulot bilan boshqa filialda.")
+        raise BusinessRuleViolation(gettext("Ombor mahsulot bilan boshqa filialda."))
 
     resolved = direction_for(movement_type, direction)
 
@@ -109,8 +110,16 @@ def record_movement(
         available = product_stock(product_id=locked.id)
         if quantity > available:
             raise BusinessRuleViolation(
-                f"'{locked.name}' uchun qoldiq yetarli emas: mavjud {available} "
-                f"{locked.unit}, so'ralgan {quantity} {locked.unit}."
+                gettext(
+                    "'{name}' uchun qoldiq yetarli emas: "
+                    "mavjud {available} {unit}, so'ralgan {quantity} {unit2}."
+                ).format(
+                    name=locked.name,
+                    available=available,
+                    unit=locked.unit,
+                    quantity=quantity,
+                    unit2=locked.unit,
+                )
             )
         product = locked
 

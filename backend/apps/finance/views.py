@@ -7,6 +7,7 @@ from typing import Any
 
 from django.http import Http404
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -55,7 +56,9 @@ class TariffPlanViewSet(BranchScopedMixin, TenantViewSet):
     def perform_destroy(self, instance: TariffPlan) -> None:
         if instance.children.filter(is_active=True).exists():
             raise BusinessRuleViolation(
-                "Bu tarifga biriktirilgan bolalar bor — avval ularni boshqa tarifga o'tkazing."
+                gettext(
+                    "Bu tarifga biriktirilgan bolalar bor — avval ularni boshqa tarifga o'tkazing."
+                )
             )
         instance.is_active = False
         instance.save(update_fields=["is_active"])
@@ -179,14 +182,14 @@ class LedgerViewSet(BranchScopedMixin, TenantReadOnlyViewSet):
         """`GET /ledger/balance?child=<uuid>` — ledger'dan hisoblangan balans."""
         child_id = request.query_params.get("child")
         if not child_id:
-            raise BusinessRuleViolation("`child` parametri majburiy.")
+            raise BusinessRuleViolation(gettext("`child` parametri majburiy."))
 
         from apps.children.models import Child
 
         # `Child.objects` tenant bilan cheklangan — begona bola "topilmadi".
         child = Child.objects.filter(pk=child_id).first()
         if child is None:
-            raise BusinessRuleViolation("Bola topilmadi.")
+            raise BusinessRuleViolation(gettext("Bola topilmadi."))
 
         return Response(
             {
@@ -281,7 +284,7 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
         try:
             on_date = datetime.strptime(raw, "%Y-%m-%d").date() if raw else timezone.localdate()
         except ValueError as exc:
-            raise BusinessRuleViolation("`date` formati: 2026-07-24") from exc
+            raise BusinessRuleViolation(gettext("`date` formati: 2026-07-24")) from exc
 
         user = request_user(request)
         return Response(

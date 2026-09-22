@@ -12,6 +12,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from django.db import models
+from django.utils.translation import gettext_lazy
 
 from apps.core.models import BranchScopedModel
 
@@ -40,9 +41,9 @@ class Position(BranchScopedModel):
 
 
 class EmploymentStatus(models.TextChoices):
-    ACTIVE = "active", "Ishlayapti"
-    ON_LEAVE = "on_leave", "Ta'tilda"
-    TERMINATED = "terminated", "Ishdan bo'shagan"
+    ACTIVE = "active", gettext_lazy("Ishlayapti")
+    ON_LEAVE = "on_leave", gettext_lazy("Ta'tilda")
+    TERMINATED = "terminated", gettext_lazy("Ishdan bo'shagan")
 
 
 class Employee(BranchScopedModel):

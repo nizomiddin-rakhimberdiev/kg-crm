@@ -24,6 +24,7 @@ from datetime import date, datetime
 from typing import Any
 
 from django.db import transaction
+from django.utils.translation import gettext
 
 from apps.children.models import Child, EnrollmentStatus, Gender, Group
 from apps.children.services import attach_guardian, enroll_child, upsert_guardian
@@ -150,8 +151,10 @@ def _rows_from_xlsx(file_bytes: bytes) -> tuple[list[list[str]], list[RowError]]
             RowError(
                 0,
                 "file",
-                "Excel faylini o'qib bo'lmadi. Fayl to'liq yuklanganini va "
-                "parol bilan himoyalanmaganini tekshiring.",
+                gettext(
+                    "Excel faylini o'qib bo'lmadi. Fayl to'liq yuklanganini va "
+                    "parol bilan himoyalanmaganini tekshiring."
+                ),
             )
         ]
 
@@ -196,7 +199,7 @@ def parse_rows(file_bytes: bytes) -> tuple[list[dict[str, str]], list[RowError]]
         try:
             text = file_bytes.decode("cp1251")  # Windows'dagi eski fayllar
         except UnicodeDecodeError:
-            return [], [RowError(0, "file", "Faylni o'qib bo'lmadi (kodlash noma'lum).")]
+            return [], [RowError(0, "file", gettext("Faylni o'qib bo'lmadi (kodlash noma'lum)."))]
 
     # Ajratgichni aniqlaymiz: bog'chalar `,` ham, `;` ham ishlatadi.
     sample = text[:2048]
@@ -215,7 +218,7 @@ def _rows_from_table(table: list[list[str]]) -> tuple[list[dict[str, str]], list
     """
     errors: list[RowError] = []
     if not table:
-        return [], [RowError(0, "file", "Fayl bo'sh.")]
+        return [], [RowError(0, "file", gettext("Fayl bo'sh."))]
 
     header = table[0]
 
@@ -228,7 +231,13 @@ def _rows_from_table(table: list[list[str]]) -> tuple[list[dict[str, str]], list
     missing = {"last_name", "first_name", "date_of_birth"} - set(mapping.values())
     if missing:
         return [], [
-            RowError(0, "header", f"Majburiy ustunlar topilmadi: {', '.join(sorted(missing))}")
+            RowError(
+                0,
+                "header",
+                gettext("Majburiy ustunlar topilmadi: {join}").format(
+                    join=", ".join(sorted(missing))
+                ),
+            )
         ]
 
     rows: list[dict[str, str]] = []
@@ -251,32 +260,44 @@ def _validate(row: dict[str, str], line: int) -> tuple[dict[str, Any] | None, li
     last_name = row.get("last_name", "").strip()
     first_name = row.get("first_name", "").strip()
     if not last_name:
-        errors.append(RowError(line, "last_name", "Familiya bo'sh."))
+        errors.append(RowError(line, "last_name", gettext("Familiya bo'sh.")))
     if not first_name:
-        errors.append(RowError(line, "first_name", "Ism bo'sh."))
+        errors.append(RowError(line, "first_name", gettext("Ism bo'sh.")))
 
     dob = _parse_date(row.get("date_of_birth", ""))
     if dob is None:
         errors.append(
             RowError(
-                line, "date_of_birth", "Sana o'qilmadi (kutilgan: 2020-05-14 yoki 14.05.2020)."
+                line,
+                "date_of_birth",
+                gettext("Sana o'qilmadi (kutilgan: 2020-05-14 yoki 14.05.2020)."),
             )
         )
     elif dob >= date.today():
         errors.append(
-            RowError(line, "date_of_birth", "Tug'ilgan sana kelajakda bo'lishi mumkin emas.")
+            RowError(
+                line, "date_of_birth", gettext("Tug'ilgan sana kelajakda bo'lishi mumkin emas.")
+            )
         )
 
     gender_raw = row.get("gender", "").strip().lower()
     gender = _GENDER_WORDS.get(gender_raw)
     if gender_raw and gender is None:
-        errors.append(RowError(line, "gender", f"Jinsni tushunmadim: '{row.get('gender')}'."))
+        errors.append(
+            RowError(
+                line,
+                "gender",
+                gettext("Jinsni tushunmadim: '{get}'.").format(get=row.get("gender")),
+            )
+        )
     gender = gender or Gender.MALE
 
     phone = row.get("guardian_phone", "").strip()
     guardian_name = row.get("guardian_name", "").strip()
     if phone and not guardian_name:
-        errors.append(RowError(line, "guardian_name", "Telefon bor, lekin ota-ona ismi yo'q."))
+        errors.append(
+            RowError(line, "guardian_name", gettext("Telefon bor, lekin ota-ona ismi yo'q."))
+        )
 
     if errors:
         return None, errors

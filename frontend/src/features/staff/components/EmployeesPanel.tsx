@@ -25,11 +25,12 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Employee } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { avatarTone, cn, formatDate, formatMoney, initials } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 const STATUS: Record<Employee['employment_status'], [string, string]> = {
-  active: ['Ishlayapti', 'bg-emerald-50 text-emerald-700'],
-  on_leave: ["Ta'tilda", 'bg-amber-50 text-amber-700'],
-  terminated: ["Bo'shagan", 'bg-slate-100 text-slate-500'],
+  active: [t('Ishlayapti'), 'bg-emerald-50 text-emerald-700'],
+  on_leave: [t("Ta'tilda"), 'bg-amber-50 text-amber-700'],
+  terminated: [t("Bo'shagan"), 'bg-slate-100 text-slate-500'],
 }
 
 const EMPTY_FORM: EmployeeInput = {
@@ -50,7 +51,6 @@ const inputClass = (invalid?: boolean) =>
       ? 'border-red-300 focus:ring-red-100'
       : 'border-slate-200 focus:border-brand-500 focus:ring-brand-100',
   )
-
 
 export function EmployeesPanel() {
   const organizationId = useOrganizationId()
@@ -121,7 +121,7 @@ export function EmployeesPanel() {
       setError(err.message)
       setFieldErrors(err.fieldErrors())
     } else {
-      setError('Xatolik yuz berdi.')
+      setError(t('Xatolik yuz berdi.'))
     }
   }
 
@@ -258,7 +258,7 @@ export function EmployeesPanel() {
             {employee.phone}
           </a>
         ) : (
-          <p className="text-xs text-slate-300">telefon yo'q</p>
+          <p className="text-xs text-slate-300">{t("telefon yo'q")}</p>
         )}
       </div>
     </div>
@@ -267,7 +267,9 @@ export function EmployeesPanel() {
   const renderStatus = (status: Employee['employment_status']) => {
     const [label, tone] = STATUS[status]
     return (
-      <span className={cn('inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium', tone)}>
+      <span
+        className={cn('inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium', tone)}
+      >
         {label}
       </span>
     )
@@ -280,7 +282,7 @@ export function EmployeesPanel() {
           type="button"
           onClick={() => openEdit(employee)}
           className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-          title="Tahrirlash"
+          title={t('Tahrirlash')}
         >
           <Pencil className="h-4 w-4" />
         </button>
@@ -289,7 +291,7 @@ export function EmployeesPanel() {
             type="button"
             onClick={() => setConfirmTerminate(employee)}
             className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-            title="Ishdan bo'shatish"
+            title={t("Ishdan bo'shatish")}
           >
             <UserMinus className="h-4 w-4" />
           </button>
@@ -313,20 +315,20 @@ export function EmployeesPanel() {
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Ism, familiya yoki telefon…"
+            placeholder={t('Ism, familiya yoki telefon…')}
             className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-          aria-label="Holat"
+          aria-label={t('Holat')}
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
         >
-          <option value="active">Ishlayotganlar</option>
-          <option value="on_leave">Ta'tildagilar</option>
-          <option value="terminated">Bo'shaganlar</option>
-          <option value="">Barchasi</option>
+          <option value="active">{t('Ishlayotganlar')}</option>
+          <option value="on_leave">{t("Ta'tildagilar")}</option>
+          <option value="terminated">{t("Bo'shaganlar")}</option>
+          <option value="">{t('Barchasi')}</option>
         </select>
         {can('payroll.create') && (
           <button
@@ -335,7 +337,7 @@ export function EmployeesPanel() {
             className="flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 sm:ml-auto"
           >
             <UserPlus className="h-4 w-4" />
-            Xodim qo'shish
+            {t("Xodim qo'shish")}
           </button>
         )}
       </div>
@@ -343,13 +345,13 @@ export function EmployeesPanel() {
       {/* Ro'yxat */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         {employeesQuery.isPending && (
-          <p className="px-4 py-8 text-center text-sm text-slate-400">Yuklanmoqda…</p>
+          <p className="px-4 py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
         )}
         {employeesQuery.isError && (
           <p className="px-4 py-8 text-center text-sm text-red-600">
             {employeesQuery.error instanceof ApiError
               ? employeesQuery.error.message
-              : "Ma'lumotni yuklab bo'lmadi."}
+              : t("Ma'lumotni yuklab bo'lmadi.")}
           </p>
         )}
         {employeesQuery.data && employees.length === 0 && (
@@ -357,8 +359,8 @@ export function EmployeesPanel() {
             <Briefcase className="mx-auto mb-3 h-10 w-10 text-slate-200" />
             <p className="text-sm text-slate-500">
               {debouncedSearch || statusFilter !== 'active'
-                ? 'Shartga mos xodim topilmadi.'
-                : "Hozircha xodim yo'q."}
+                ? t('Shartga mos xodim topilmadi.')
+                : t("Hozircha xodim yo'q.")}
             </p>
             {can('payroll.create') && !debouncedSearch && statusFilter === 'active' && (
               <button
@@ -366,23 +368,25 @@ export function EmployeesPanel() {
                 onClick={openCreate}
                 className="mt-3 text-sm font-medium text-brand-600 hover:underline"
               >
-                Birinchi xodimni qo'shing
+                {t("Birinchi xodimni qo'shing")}
               </button>
             )}
           </div>
         )}
 
         {employees.length > 0 && (
-          <div className={cn('transition-opacity', employeesQuery.isPlaceholderData && 'opacity-60')}>
+          <div
+            className={cn('transition-opacity', employeesQuery.isPlaceholderData && 'opacity-60')}
+          >
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[720px] text-sm">
                 <thead className="border-b border-slate-100 bg-slate-50/70 text-left text-[11px] uppercase tracking-wider text-slate-400">
                   <tr>
-                    <th className="px-4 py-3 font-medium">Xodim</th>
-                    <th className="px-4 py-3 font-medium">Lavozim</th>
-                    <th className="px-4 py-3 font-medium">Ishga kirgan</th>
-                    <th className="px-4 py-3 font-medium">Holat</th>
-                    <th className="px-4 py-3 text-right font-medium">Maosh</th>
+                    <th className="px-4 py-3 font-medium">{t('Xodim')}</th>
+                    <th className="px-4 py-3 font-medium">{t('Lavozim')}</th>
+                    <th className="px-4 py-3 font-medium">{t('Ishga kirgan')}</th>
+                    <th className="px-4 py-3 font-medium">{t('Holat')}</th>
+                    <th className="px-4 py-3 text-right font-medium">{t('Maosh')}</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
@@ -396,7 +400,9 @@ export function EmployeesPanel() {
                       </td>
                       <td className="px-4 py-3">{renderStatus(employee.employment_status)}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-right text-slate-700 tabular-nums">
-                        {formatMoney(Number(employee.base_salary))} so'm
+                        {t("{formatMoney} so'm", {
+                          formatMoney: formatMoney(Number(employee.base_salary)),
+                        })}
                       </td>
                       <td className="px-4 py-3">{renderActions(employee)}</td>
                     </tr>
@@ -414,17 +420,21 @@ export function EmployeesPanel() {
                   </div>
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-500">
                     <p className="truncate">
-                      <span className="text-slate-400">Lavozim:</span>{' '}
+                      <span className="text-slate-400">{t('Lavozim:')}</span>{' '}
                       <span className="text-slate-700">{employee.position_title ?? '—'}</span>
                     </p>
                     <p>
-                      <span className="text-slate-400">Ishga kirgan:</span>{' '}
-                      <span className="text-slate-700 tabular-nums">{formatDate(employee.hire_date)}</span>
+                      <span className="text-slate-400">{t('Ishga kirgan:')}</span>{' '}
+                      <span className="text-slate-700 tabular-nums">
+                        {formatDate(employee.hire_date)}
+                      </span>
                     </p>
                     <p className="col-span-2">
-                      <span className="text-slate-400">Maosh:</span>{' '}
+                      <span className="text-slate-400">{t('Maosh:')}</span>{' '}
                       <span className="font-medium text-slate-800 tabular-nums">
-                        {formatMoney(Number(employee.base_salary))} so'm
+                        {t("{formatMoney} so'm", {
+                          formatMoney: formatMoney(Number(employee.base_salary)),
+                        })}
                       </span>
                     </p>
                   </div>
@@ -459,11 +469,14 @@ export function EmployeesPanel() {
         >
           <div className="pr-8">
             <h2 className="text-base font-semibold text-slate-900">
-              {editing ? `${editing.full_name} — tahrirlash` : 'Yangi xodim'}
+              {editing
+                ? t('{full_name} — tahrirlash', { full_name: editing.full_name })
+                : t('Yangi xodim')}
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
-              Bazaviy maosh oylik hisoblashda nusxalanadi — keyin o'zgartirilsa, o'tgan
-              oylar o'zgarmaydi.
+              {t(
+                "Bazaviy maosh oylik hisoblashda nusxalanadi — keyin o'zgartirilsa, o'tgan oylar o'zgarmaydi.",
+              )}
             </p>
           </div>
 
@@ -476,15 +489,18 @@ export function EmployeesPanel() {
           <div className="grid gap-3 sm:grid-cols-2">
             {(
               [
-                ['last_name', 'Familiya', 'text', true],
-                ['first_name', 'Ism', 'text', true],
-                ['phone', 'Telefon', 'tel', false],
-                ['hire_date', 'Ishga kirgan sana', 'date', true],
-                ['base_salary', "Oylik maosh (so'm)", 'number', true],
+                ['last_name', t('Familiya'), 'text', true],
+                ['first_name', t('Ism'), 'text', true],
+                ['phone', t('Telefon'), 'tel', false],
+                ['hire_date', t('Ishga kirgan sana'), 'date', true],
+                ['base_salary', t("Oylik maosh (so'm)"), 'number', true],
               ] as const
             ).map(([key, label, type, required]) => (
               <div key={key}>
-                <label htmlFor={`emp-${key}`} className="mb-1 block text-xs font-medium text-slate-600">
+                <label
+                  htmlFor={`emp-${key}`}
+                  className="mb-1 block text-xs font-medium text-slate-600"
+                >
                   {label}
                   {required && <span className="text-red-500"> *</span>}
                 </label>
@@ -500,14 +516,20 @@ export function EmployeesPanel() {
                   onChange={(e) => setForm((prev) => ({ ...prev, [key]: e.target.value }))}
                   className={inputClass(Boolean(fieldErrors[key]))}
                 />
-                {fieldErrors[key] && <p className="mt-1 text-xs text-red-600">{fieldErrors[key]}</p>}
+                {fieldErrors[key] && (
+                  <p className="mt-1 text-xs text-red-600">{fieldErrors[key]}</p>
+                )}
               </div>
             ))}
 
             {!editing && isOrgOwner && branches.length > 0 && (
               <div>
-                <label htmlFor="emp-branch" className="mb-1 block text-xs font-medium text-slate-600">
-                  Filial{branchRequired && <span className="text-red-500"> *</span>}
+                <label
+                  htmlFor="emp-branch"
+                  className="mb-1 block text-xs font-medium text-slate-600"
+                >
+                  {t('Filial')}
+                  {branchRequired && <span className="text-red-500"> *</span>}
                 </label>
                 <select
                   id="emp-branch"
@@ -516,7 +538,7 @@ export function EmployeesPanel() {
                   onChange={(e) => setBranchId(e.target.value)}
                   className={inputClass(Boolean(fieldErrors.branch_id))}
                 >
-                  <option value="">{branchRequired ? 'Tanlang…' : branches[0]?.name}</option>
+                  <option value="">{branchRequired ? t('Tanlang…') : branches[0]?.name}</option>
                   {branches.map((branch) => (
                     <option key={branch.id} value={branch.id}>
                       {branch.name}
@@ -530,8 +552,11 @@ export function EmployeesPanel() {
             )}
 
             <div>
-              <label htmlFor="emp-position" className="mb-1 block text-xs font-medium text-slate-600">
-                Lavozim
+              <label
+                htmlFor="emp-position"
+                className="mb-1 block text-xs font-medium text-slate-600"
+              >
+                {t('Lavozim')}
               </label>
               <select
                 id="emp-position"
@@ -539,7 +564,7 @@ export function EmployeesPanel() {
                 onChange={(e) => setForm((prev) => ({ ...prev, position_id: e.target.value }))}
                 className={inputClass(Boolean(fieldErrors.position_id))}
               >
-                <option value="">— tanlanmagan —</option>
+                <option value="">{t('— tanlanmagan —')}</option>
                 {positionsQuery.data?.items.map((position) => (
                   <option key={position.id} value={position.id}>
                     {position.title}
@@ -556,20 +581,22 @@ export function EmployeesPanel() {
                     type="text"
                     value={newPosition}
                     onChange={(e) => setNewPosition(e.target.value)}
-                    placeholder="Yangi lavozim nomi…"
-                    aria-label="Yangi lavozim"
+                    placeholder={t('Yangi lavozim nomi…')}
+                    aria-label={t('Yangi lavozim')}
                     className="min-w-0 flex-1 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-xs outline-none focus:border-brand-500"
                   />
                   <button
                     type="button"
                     disabled={
-                      !newPosition.trim() || createPosition.isPending || (branchRequired && !branchId)
+                      !newPosition.trim() ||
+                      createPosition.isPending ||
+                      (branchRequired && !branchId)
                     }
                     onClick={() => createPosition.mutate(newPosition.trim())}
                     className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    Qo'shish
+                    {t("Qo'shish")}
                   </button>
                 </div>
               )}
@@ -578,8 +605,11 @@ export function EmployeesPanel() {
             {editing && (
               <>
                 <div>
-                  <label htmlFor="emp-status" className="mb-1 block text-xs font-medium text-slate-600">
-                    Holat
+                  <label
+                    htmlFor="emp-status"
+                    className="mb-1 block text-xs font-medium text-slate-600"
+                  >
+                    {t('Holat')}
                   </label>
                   <select
                     id="emp-status"
@@ -605,7 +635,7 @@ export function EmployeesPanel() {
                       htmlFor="emp-termination"
                       className="mb-1 block text-xs font-medium text-slate-600"
                     >
-                      Bo'shagan sana
+                      {t("Bo'shagan sana")}
                     </label>
                     <input
                       id="emp-termination"
@@ -632,14 +662,14 @@ export function EmployeesPanel() {
               onClick={closeForm}
               className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
             >
-              Bekor qilish
+              {t('Bekor qilish')}
             </button>
             <button
               type="submit"
               disabled={saving}
               className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
             >
-              {saving ? 'Saqlanmoqda…' : 'Saqlash'}
+              {saving ? t('Saqlanmoqda…') : t('Saqlash')}
             </button>
           </div>
         </form>
@@ -647,13 +677,21 @@ export function EmployeesPanel() {
 
       {/* Bo'shatish — tasdiq bilan: bu qaytarish uchun tahrirlash kerak
           bo'ladigan amal, bexosdan bosilmasin. */}
-      <Modal open={Boolean(confirmTerminate)} onClose={() => setConfirmTerminate(null)} className="max-w-md">
+      <Modal
+        open={Boolean(confirmTerminate)}
+        onClose={() => setConfirmTerminate(null)}
+        className="max-w-md"
+      >
         {confirmTerminate && (
           <div className="p-5 sm:p-6">
-            <h2 className="pr-8 text-base font-semibold text-slate-900">Ishdan bo'shatish</h2>
+            <h2 className="pr-8 text-base font-semibold text-slate-900">
+              {t("Ishdan bo'shatish")}
+            </h2>
             <p className="mt-2 text-sm text-slate-600">
-              <strong>{confirmTerminate.full_name}</strong> "bo'shagan" holatiga o'tadi va keyingi
-              oylik hisoblashga kirmaydi. O'tgan oylardagi maosh tarixi saqlanib qoladi.
+              <strong>{confirmTerminate.full_name}</strong>{' '}
+              {t(
+                "\"bo'shagan\" holatiga o'tadi va keyingi oylik hisoblashga kirmaydi. O'tgan oylardagi maosh tarixi saqlanib qoladi.",
+              )}
             </p>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button
@@ -661,7 +699,7 @@ export function EmployeesPanel() {
                 onClick={() => setConfirmTerminate(null)}
                 className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
               >
-                Bekor qilish
+                {t('Bekor qilish')}
               </button>
               <button
                 type="button"
@@ -669,7 +707,7 @@ export function EmployeesPanel() {
                 onClick={() => terminateMutation.mutate(confirmTerminate.id)}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
               >
-                {terminateMutation.isPending ? 'Bajarilmoqda…' : "Bo'shatish"}
+                {terminateMutation.isPending ? t('Bajarilmoqda…') : t("Bo'shatish")}
               </button>
             </div>
           </div>

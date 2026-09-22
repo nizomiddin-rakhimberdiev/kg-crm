@@ -22,13 +22,14 @@ import { EmployeesPanel } from '@/features/staff/components/EmployeesPanel'
 import { RolesPanel } from '@/features/staff/components/RolesPanel'
 import { useCan, type PermissionCode } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 type Tab = 'employees' | 'accounts' | 'roles'
 
 const TABS: Array<{ key: Tab; label: string; permission: PermissionCode }> = [
-  { key: 'employees', label: 'Xodimlar', permission: 'payroll.read' },
-  { key: 'accounts', label: 'Tizim hisoblari', permission: 'users.read' },
-  { key: 'roles', label: 'Rollar va ruxsatlar', permission: 'users.read' },
+  { key: 'employees', label: t('Xodimlar'), permission: 'payroll.read' },
+  { key: 'accounts', label: t('Tizim hisoblari'), permission: 'users.read' },
+  { key: 'roles', label: t('Rollar va ruxsatlar'), permission: 'users.read' },
 ]
 
 export default function StaffPage() {
@@ -51,9 +52,9 @@ export default function StaffPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Xodimlar</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Xodimlar')}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Xodimlar soni cheklanmagan — narx faqat bolalar soniga bog'liq.
+          {t("Xodimlar soni cheklanmagan — narx faqat bolalar soniga bog'liq.")}
         </p>
       </div>
 

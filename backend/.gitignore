@@ -83,3 +83,6 @@ backups/
 
 # NOTE: migrations/ are committed on purpose — they are part of the schema history
 # (see docs/03_Database_Design.md). Only __pycache__ inside them is ignored.
+
+# Kompilyatsiya qilingan tarjimalar — build paytida yaratiladi (Dockerfile).
+*.mo

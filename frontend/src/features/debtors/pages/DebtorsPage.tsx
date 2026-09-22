@@ -19,9 +19,9 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
 import { EmptyRow } from '@/components/ui/EmptyState'
+import { t } from '@/lib/i18n'
 
-const money = (value: string) =>
-  new Intl.NumberFormat('uz-UZ').format(Number(value)) + " so'm"
+const money = (value: string) => new Intl.NumberFormat('uz-UZ').format(Number(value)) + t(" so'm")
 
 function StatementDrawer({ childId, onClose }: { childId: string; onClose: () => void }) {
   const organizationId = useOrganizationId()
@@ -35,21 +35,21 @@ function StatementDrawer({ childId, onClose }: { childId: string; onClose: () =>
       <div className="p-6">
         <div className="mb-4 pr-10">
           <h2 className="text-lg font-bold text-slate-900">
-            {query.data?.child.full_name ?? 'Ko\'chirma'}
+            {query.data?.child.full_name ?? t("Ko'chirma")}
           </h2>
           <p className="mt-1 text-sm text-slate-500">
-            Moliyaviy ko'chirma — har bir harakat ledger'dan
+            {t("Moliyaviy ko'chirma — har bir harakat ledger'dan")}
           </p>
         </div>
 
         {query.isPending && (
-          <p className="py-8 text-center text-sm text-slate-400">Yuklanmoqda…</p>
+          <p className="py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
         )}
 
         {query.data && (
           <>
             <div className="mb-4 rounded-lg bg-red-50 px-3 py-2">
-              <span className="text-sm text-red-700">Joriy qarz: </span>
+              <span className="text-sm text-red-700">{t('Joriy qarz:')} </span>
               <span className="font-bold text-red-900">{money(query.data.balance)}</span>
             </div>
 
@@ -57,10 +57,10 @@ function StatementDrawer({ childId, onClose }: { childId: string; onClose: () =>
               <table className="w-full min-w-[560px] text-sm">
                 <thead className="text-left text-xs uppercase tracking-wide text-slate-400">
                   <tr>
-                    <th className="py-2 font-medium">Sana</th>
-                    <th className="py-2 font-medium">Izoh</th>
-                    <th className="py-2 text-right font-medium">Summa</th>
-                    <th className="py-2 text-right font-medium">Qoldiq</th>
+                    <th className="py-2 font-medium">{t('Sana')}</th>
+                    <th className="py-2 font-medium">{t('Izoh')}</th>
+                    <th className="py-2 text-right font-medium">{t('Summa')}</th>
+                    <th className="py-2 text-right font-medium">{t('Qoldiq')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -69,7 +69,9 @@ function StatementDrawer({ childId, onClose }: { childId: string; onClose: () =>
                       <td className="py-2 text-xs text-slate-500">
                         {entry.occurred_at.slice(0, 10)}
                       </td>
-                      <td className="py-2 text-slate-700">{entry.description || entry.entry_type}</td>
+                      <td className="py-2 text-slate-700">
+                        {entry.description || entry.entry_type}
+                      </td>
                       <td
                         className={cn(
                           'py-2 text-right font-medium',
@@ -88,8 +90,10 @@ function StatementDrawer({ childId, onClose }: { childId: string; onClose: () =>
                     <EmptyRow
                       colSpan={12}
                       icon={CheckCircle2}
-                      title="Qarzdor yo'q"
-                      hint="Hamma to'lagan. Muddati o'tgan hisob-faktura paydo bo'lsa, bola shu ro'yxatga tushadi."
+                      title={t("Qarzdor yo'q")}
+                      hint={t(
+                        "Hamma to'lagan. Muddati o'tgan hisob-faktura paydo bo'lsa, bola shu ro'yxatga tushadi.",
+                      )}
                     />
                   )}
                 </tbody>
@@ -150,17 +154,15 @@ export default function DebtorsPage() {
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Qarzdorlar</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Qarzdorlar')}</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Ro'yxat ledger'dan hisoblanadi — u hech qachon haqiqatdan ajralmaydi.
+            {t("Ro'yxat ledger'dan hisoblanadi — u hech qachon haqiqatdan ajralmaydi.")}
           </p>
         </div>
         {debtorsQuery.data && debtorsQuery.data.count > 0 && (
           <div className="text-right">
-            <p className="text-xs text-slate-500">Jami qarz</p>
-            <p className="text-xl font-bold text-red-700">
-              {money(debtorsQuery.data.total_debt)}
-            </p>
+            <p className="text-xs text-slate-500">{t('Jami qarz')}</p>
+            <p className="text-xl font-bold text-red-700">{money(debtorsQuery.data.total_debt)}</p>
           </div>
         )}
       </div>
@@ -172,24 +174,24 @@ export default function DebtorsPage() {
           disabled={overdueDays !== null}
           onChange={(e) => setOverdueOnly(e.target.checked)}
         />
-        Faqat muddati o'tganlar
+        {t("Faqat muddati o'tganlar")}
       </label>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         {debtorsQuery.isPending && (
-          <p className="px-4 py-8 text-center text-sm text-slate-400">Yuklanmoqda…</p>
+          <p className="px-4 py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
         )}
         {debtorsQuery.isError && (
           <p className="px-4 py-8 text-center text-sm text-red-600">
             {debtorsQuery.error instanceof ApiError
               ? debtorsQuery.error.message
-              : "Ma'lumotni yuklab bo'lmadi."}
+              : t("Ma'lumotni yuklab bo'lmadi.")}
           </p>
         )}
         {debtorsQuery.data && rows.length === 0 && (
           <div className="px-4 py-12 text-center">
             <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-slate-200" />
-            <p className="text-sm text-slate-500">Qarzdorlar yo'q.</p>
+            <p className="text-sm text-slate-500">{t("Qarzdorlar yo'q.")}</p>
           </div>
         )}
 
@@ -198,11 +200,11 @@ export default function DebtorsPage() {
             <table className="w-full min-w-[560px] text-sm">
               <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Bola</th>
-                  <th className="px-4 py-3 font-medium">Guruh</th>
-                  <th className="px-4 py-3 font-medium">Vasiy</th>
-                  <th className="px-4 py-3 font-medium">Eng eski muddat</th>
-                  <th className="px-4 py-3 text-right font-medium">Qarz</th>
+                  <th className="px-4 py-3 font-medium">{t('Bola')}</th>
+                  <th className="px-4 py-3 font-medium">{t('Guruh')}</th>
+                  <th className="px-4 py-3 font-medium">{t('Vasiy')}</th>
+                  <th className="px-4 py-3 font-medium">{t('Eng eski muddat')}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t('Qarz')}</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -213,9 +215,7 @@ export default function DebtorsPage() {
                     className="cursor-pointer hover:bg-slate-50"
                     onClick={() => setOpenChild(row.child.id)}
                   >
-                    <td className="px-4 py-3 font-medium text-slate-800">
-                      {row.child.full_name}
-                    </td>
+                    <td className="px-4 py-3 font-medium text-slate-800">{row.child.full_name}</td>
                     <td className="px-4 py-3 text-slate-600">{row.child.group ?? '—'}</td>
                     <td className="px-4 py-3 text-slate-600">
                       {row.primary_guardian ? (
@@ -227,7 +227,7 @@ export default function DebtorsPage() {
                           </p>
                         </>
                       ) : (
-                        <span className="text-amber-700">vasiy yo'q</span>
+                        <span className="text-amber-700">{t("vasiy yo'q")}</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -236,7 +236,7 @@ export default function DebtorsPage() {
                           {row.oldest_overdue_date}
                         </span>
                       ) : (
-                        <span className="text-xs text-slate-400">muddati kelmagan</span>
+                        <span className="text-xs text-slate-400">{t('muddati kelmagan')}</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-red-700">

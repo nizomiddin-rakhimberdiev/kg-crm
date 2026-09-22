@@ -23,8 +23,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     DJANGO_SETTINGS_MODULE=config.settings.production
 
+# `gettext` — tarjima kataloglarini (`locale/*/django.po`) build paytida
+# `.mo` ga kompilyatsiya qilish uchun (docs/02 ADR-16). Binar `.mo` git'da
+# saqlanmaydi: manba `.po`, natija — tasvir ichida.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libpq5 curl \
+        libpq5 curl gettext \
     && rm -rf /var/lib/apt/lists/*
 
 # Root bo'lmagan foydalanuvchi: konteyner buzilsa ham zarar doirasi tor.
@@ -39,6 +42,10 @@ RUN pip install --no-index --find-links=/wheels -r ${REQUIREMENTS} \
     && rm -rf /wheels
 
 COPY --chown=app:app . .
+
+# Tarjimalar: `.po` → `.mo`. Sozlamalarsiz (env yo'q) — buyruq daraxtni
+# o'zi aylanib `locale/` ni topadi; DB ham, SECRET_KEY ham kerak emas.
+RUN DJANGO_SETTINGS_MODULE= django-admin compilemessages
 
 # Statik va media kataloglari TASVIR ICHIDA, `app` nomiga yaratiladi.
 #

@@ -15,6 +15,7 @@ import { groupsApi } from '@/features/children/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { avatarTone, cn, initials } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 export function GroupChildrenModal({
   groupId,
@@ -51,7 +52,7 @@ export function GroupChildrenModal({
           <div className="min-w-0">
             <h2 className="truncate text-lg font-bold text-slate-900">{groupName}</h2>
             <p className="text-sm text-slate-500">
-              {data ? `${data.children.length} ta bola` : 'Yuklanmoqda…'}
+              {data ? t('{length} ta bola', { length: data.children.length }) : t('Yuklanmoqda…')}
               {data && limited && ` / ${data.capacity}`}
             </p>
           </div>
@@ -69,26 +70,28 @@ export function GroupChildrenModal({
             )}
           >
             {!limited
-              ? "Sig'im cheklanmagan"
+              ? t("Sig'im cheklanmagan")
               : full
-                ? "Guruh to'lgan — yangi bola qo'shib bo'lmaydi"
-                : `${data.free_seats} ta joy bo'sh`}
+                ? t("Guruh to'lgan — yangi bola qo'shib bo'lmaydi")
+                : t("{free_seats} ta joy bo'sh", { free_seats: data.free_seats })}
           </div>
         )}
 
         {query.isPending && (
-          <p className="py-8 text-center text-sm text-slate-400">Yuklanmoqda…</p>
+          <p className="py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
         )}
         {query.isError && (
           <p className="py-8 text-center text-sm text-red-600">
-            {query.error instanceof ApiError ? query.error.message : "Ma'lumotni yuklab bo'lmadi."}
+            {query.error instanceof ApiError
+              ? query.error.message
+              : t("Ma'lumotni yuklab bo'lmadi.")}
           </p>
         )}
 
         {data && data.children.length === 0 && (
           <div className="py-10 text-center">
             <Users2 className="mx-auto mb-3 h-10 w-10 text-slate-200" />
-            <p className="text-sm text-slate-500">Bu guruhda hozircha bola yo'q.</p>
+            <p className="text-sm text-slate-500">{t("Bu guruhda hozircha bola yo'q.")}</p>
           </div>
         )}
 
@@ -113,7 +116,9 @@ export function GroupChildrenModal({
                     <span className="block truncate text-sm font-medium text-slate-800 transition-colors group-hover:text-brand-700">
                       {child.last_name} {child.first_name}
                     </span>
-                    <span className="block text-xs text-slate-400">{child.age_years} yosh</span>
+                    <span className="block text-xs text-slate-400">
+                      {t('{age_years} yosh', { age_years: child.age_years })}
+                    </span>
                   </span>
                 </Link>
               </li>

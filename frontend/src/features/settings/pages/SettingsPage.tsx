@@ -15,6 +15,7 @@ import { settingsApi } from '@/features/notifications/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type SettingValue } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
+import { t } from '@/lib/i18n'
 
 interface SettingMeta {
   label: string
@@ -28,31 +29,31 @@ interface SettingMeta {
  */
 const META: Record<string, SettingMeta> = {
   'finance.due_day': {
-    label: "To'lov muddati (oy kuni)",
-    help: "Hisob-faktura shu kungacha to'lanishi kutiladi.",
+    label: t("To'lov muddati (oy kuni)"),
+    help: t("Hisob-faktura shu kungacha to'lanishi kutiladi."),
   },
   'finance.reminder_day': {
-    label: 'Eslatma kuni',
-    help: 'Qarzdorlarga eslatma shu kundan boshlab yuboriladi.',
+    label: t('Eslatma kuni'),
+    help: t('Qarzdorlarga eslatma shu kundan boshlab yuboriladi.'),
   },
   'notifications.sms_enabled': {
-    label: 'SMS xabarnomalar',
-    help: "O'chirilsa hech qanday SMS yuborilmaydi.",
+    label: t('SMS xabarnomalar'),
+    help: t("O'chirilsa hech qanday SMS yuborilmaydi."),
   },
   'notifications.payment_receipt': {
-    label: "To'lov haqida SMS",
-    help: "To'lov qabul qilinganda ota-onaga xabar ketadi.",
+    label: t("To'lov haqida SMS"),
+    help: t("To'lov qabul qilinganda ota-onaga xabar ketadi."),
   },
   'attendance.auto_absent': {
-    label: 'Avtomatik "kelmadi"',
-    help: 'Belgilanmagan bolalar kun oxirida kelmagan deb yoziladi.',
+    label: t('Avtomatik "kelmadi"'),
+    help: t('Belgilanmagan bolalar kun oxirida kelmagan deb yoziladi.'),
   },
 }
 
 const GROUPS: Array<[string, string]> = [
-  ['finance', 'Moliya'],
-  ['notifications', 'Bildirishnomalar'],
-  ['attendance', 'Davomat'],
+  ['finance', t('Moliya')],
+  ['notifications', t('Bildirishnomalar')],
+  ['attendance', t('Davomat')],
 ]
 
 export default function SettingsPage() {
@@ -77,7 +78,8 @@ export default function SettingsPage() {
       setSavedKey(result.key)
       void queryClient.invalidateQueries({ queryKey: queryKeys.settings(organizationId) })
     },
-    onError: (err: unknown) => setError(err instanceof ApiError ? err.message : "Saqlab bo'lmadi."),
+    onError: (err: unknown) =>
+      setError(err instanceof ApiError ? err.message : t("Saqlab bo'lmadi.")),
   })
 
   const settings = settingsQuery.data ?? {}
@@ -129,15 +131,15 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Sozlamalar</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Sozlamalar')}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          O'zgarish darhol saqlanadi va tashkilotning barcha filiallariga tegishli.
+          {t("O'zgarish darhol saqlanadi va tashkilotning barcha filiallariga tegishli.")}
         </p>
       </div>
 
       {!editable && (
         <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          Sozlamalarni faqat ko'rishingiz mumkin.
+          {t("Sozlamalarni faqat ko'rishingiz mumkin.")}
         </div>
       )}
       {error && (
@@ -166,7 +168,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     {savedKey === key && !save.isPending && (
-                      <span className="text-xs text-emerald-600">Saqlandi</span>
+                      <span className="text-xs text-emerald-600">{t('Saqlandi')}</span>
                     )}
                     {renderControl(key, settings[key])}
                   </div>

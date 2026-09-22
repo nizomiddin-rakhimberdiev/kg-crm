@@ -14,6 +14,7 @@ from typing import Any
 from django.db import IntegrityError, transaction
 from django.db.models import Sum
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from apps.core.exceptions import BusinessRuleViolation
 from apps.hr.models import Employee, EmploymentStatus
@@ -38,8 +39,10 @@ def _money(value: Decimal) -> Decimal:
 def _assert_editable(run: PayrollRun) -> None:
     if not run.is_editable:
         raise BusinessRuleViolation(
-            f"Hisoblash '{run.get_status_display()}' holatida — o'zgartirib bo'lmaydi. "
-            f"Tuzatishni keyingi oyda bonus yoki ushlab qolish bilan kiriting."
+            gettext(
+                "Hisoblash '{status}' holatida — o'zgartirib bo'lmaydi. "
+                "Tuzatishni keyingi oyda bonus yoki ushlab qolish bilan kiriting."
+            ).format(status=run.get_status_display())
         )
 
 
@@ -55,7 +58,7 @@ def create_run(
     hisoblash xodimga ikki marta oylik to'lash xavfini yaratardi.
     """
     if not 1 <= period_month <= 12:
-        raise BusinessRuleViolation("Oy 1–12 oralig'ida bo'lishi kerak.")
+        raise BusinessRuleViolation(gettext("Oy 1–12 oralig'ida bo'lishi kerak."))
 
     try:
         run = PayrollRun.objects.create(
@@ -66,7 +69,9 @@ def create_run(
         )
     except IntegrityError as exc:
         raise BusinessRuleViolation(
-            f"{period_year}-{period_month:02d} uchun bu filialda hisoblash allaqachon mavjud."
+            gettext(
+                "{period_year}-{period_month:02d} uchun bu filialda hisoblash allaqachon mavjud."
+            ).format(period_year=period_year, period_month=period_month)
         ) from exc
 
     employees = Employee.objects.filter(
@@ -106,11 +111,11 @@ def update_item(
 
     if bonus is not None:
         if bonus < 0:
-            raise BusinessRuleViolation("Bonus manfiy bo'lolmaydi.")
+            raise BusinessRuleViolation(gettext("Bonus manfiy bo'lolmaydi."))
         item.bonus = _money(bonus)
     if deduction is not None:
         if deduction < 0:
-            raise BusinessRuleViolation("Ushlab qolish manfiy bo'lolmaydi.")
+            raise BusinessRuleViolation(gettext("Ushlab qolish manfiy bo'lolmaydi."))
         item.deduction = _money(deduction)
     if note is not None:
         item.note = note[:255]
@@ -119,8 +124,10 @@ def update_item(
     net = item.gross - item.deduction
     if net < 0:
         raise BusinessRuleViolation(
-            f"Ushlab qolish yalpi maoshdan oshib ketdi ({item.deduction} > {item.gross}). "
-            f"Sof maosh manfiy bo'lolmaydi."
+            gettext(
+                "Ushlab qolish yalpi maoshdan oshib ketdi ({deduction} > {gross}). "
+                "Sof maosh manfiy bo'lolmaydi."
+            ).format(deduction=item.deduction, gross=item.gross)
         )
     item.net = _money(net)
     item.save(update_fields=["bonus", "deduction", "note", "gross", "net", "updated_at"])
@@ -158,10 +165,12 @@ def finalize_run(*, run: PayrollRun, finalized_by: Any = None) -> PayrollRun:
     bo'lmaydi.
     """
     if run.status != PayrollStatus.DRAFT:
-        raise BusinessRuleViolation("Faqat qoralama hisoblashni yakunlash mumkin.")
+        raise BusinessRuleViolation(gettext("Faqat qoralama hisoblashni yakunlash mumkin."))
 
     if not PayrollItem.objects.filter(payroll_run=run).exists():
-        raise BusinessRuleViolation("Bo'sh hisoblashni yakunlab bo'lmaydi — xodimlar yo'q.")
+        raise BusinessRuleViolation(
+            gettext("Bo'sh hisoblashni yakunlab bo'lmaydi — xodimlar yo'q.")
+        )
 
     recompute_run_totals(run)
     run.status = PayrollStatus.FINALIZED
@@ -175,7 +184,9 @@ def finalize_run(*, run: PayrollRun, finalized_by: Any = None) -> PayrollRun:
 def mark_run_paid(*, run: PayrollRun) -> PayrollRun:
     """Yakunlangan hisoblashni to'langan deb belgilaydi."""
     if run.status != PayrollStatus.FINALIZED:
-        raise BusinessRuleViolation("Faqat yakunlangan hisoblashni to'langan deb belgilash mumkin.")
+        raise BusinessRuleViolation(
+            gettext("Faqat yakunlangan hisoblashni to'langan deb belgilash mumkin.")
+        )
     run.status = PayrollStatus.PAID
     run.paid_at = timezone.now()
     run.save(update_fields=["status", "paid_at", "updated_at"])

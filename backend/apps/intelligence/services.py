@@ -15,6 +15,7 @@ from typing import Any
 
 from django.db import IntegrityError, transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from apps.audit import services as audit
 from apps.core.exceptions import BusinessRuleViolation
@@ -188,7 +189,7 @@ def mark_seen(*, insight: Insight) -> Insight:
 
 def _require_open(insight: Insight) -> None:
     if not insight.is_open:
-        raise BusinessRuleViolation("Bu signal allaqachon yopilgan.")
+        raise BusinessRuleViolation(gettext("Bu signal allaqachon yopilgan."))
 
 
 @transaction.atomic

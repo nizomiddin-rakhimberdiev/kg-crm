@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from django.http import FileResponse
+from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser
@@ -135,7 +136,7 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
         child = self.get_object()
         phone = (request.data.get("phone") or "").strip()
         if not phone:
-            raise BusinessRuleViolation("Telefon raqami majburiy.")
+            raise BusinessRuleViolation(gettext("Telefon raqami majburiy."))
 
         guardian = services.upsert_guardian(
             organization=child.organization,
@@ -187,7 +188,7 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
         """
         uploaded = request.FILES.get("file")
         if uploaded is None:
-            raise BusinessRuleViolation("Fayl yuborilmagan.")
+            raise BusinessRuleViolation(gettext("Fayl yuborilmagan."))
 
         user = request_user(request)
         branch = resolve_branch(user, request.data.get("branch_id"))
@@ -238,7 +239,9 @@ class GroupViewSet(BranchScopedMixin, TenantViewSet):
         ).count()
         if active:
             raise BusinessRuleViolation(
-                f"Guruhda {active} ta faol bola bor — avval ularni ko'chiring."
+                gettext("Guruhda {active} ta faol bola bor — avval ularni ko'chiring.").format(
+                    active=active
+                )
             )
         instance.is_active = False
         instance.save(update_fields=["is_active"])

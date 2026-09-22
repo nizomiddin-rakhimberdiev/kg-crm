@@ -12,6 +12,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from django.db import models
+from django.utils.translation import gettext_lazy
 
 from apps.core.models import BranchScopedModel
 
@@ -19,9 +20,9 @@ __all__ = ["PayrollRun", "PayrollItem", "PayrollStatus"]
 
 
 class PayrollStatus(models.TextChoices):
-    DRAFT = "draft", "Qoralama"
-    FINALIZED = "finalized", "Yakunlangan"
-    PAID = "paid", "To'langan"
+    DRAFT = "draft", gettext_lazy("Qoralama")
+    FINALIZED = "finalized", gettext_lazy("Yakunlangan")
+    PAID = "paid", gettext_lazy("To'langan")
 
 
 class PayrollRun(BranchScopedModel):

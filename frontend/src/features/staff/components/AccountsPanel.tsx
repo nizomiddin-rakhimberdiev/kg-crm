@@ -22,6 +22,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type StaffUser } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { avatarTone, cn, formatDateTime, initials } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 const EMPTY_FORM: StaffInput = {
   full_name: '',
@@ -51,7 +52,9 @@ export function AccountsPanel() {
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebouncedValue(search.trim())
   const [pageSize, setPageSize] = useState(25)
-  const [page, setPage] = usePageState(JSON.stringify([debouncedSearch, selectedBranchId, pageSize]))
+  const [page, setPage] = usePageState(
+    JSON.stringify([debouncedSearch, selectedBranchId, pageSize]),
+  )
   const [showForm, setShowForm] = useState(false)
   // `null` — yangi hisob; obyekt — mavjudi tahrirlanyapti.
   const [editing, setEditing] = useState<StaffUser | null>(null)
@@ -121,7 +124,7 @@ export function AccountsPanel() {
       setError(err.message)
       setFieldErrors(err.fieldErrors())
     } else {
-      setError('Xatolik yuz berdi.')
+      setError(t('Xatolik yuz berdi.'))
     }
   }
 
@@ -215,7 +218,7 @@ export function AccountsPanel() {
         member.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500',
       )}
     >
-      {member.is_active ? 'Faol' : 'Faol emas'}
+      {member.is_active ? t('Faol') : t('Faol emas')}
     </span>
   )
 
@@ -226,7 +229,7 @@ export function AccountsPanel() {
           type="button"
           onClick={() => openEdit(member)}
           className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-          title="Tahrirlash"
+          title={t('Tahrirlash')}
         >
           <Pencil className="h-4 w-4" />
         </button>
@@ -238,7 +241,7 @@ export function AccountsPanel() {
               disabled={deactivateMutation.isPending}
               onClick={() => deactivateMutation.mutate(member.id)}
               className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-              title="Faolsizlantirish"
+              title={t('Faolsizlantirish')}
             >
               <UserX className="h-4 w-4" />
             </button>
@@ -249,7 +252,7 @@ export function AccountsPanel() {
               disabled={reactivateMutation.isPending}
               onClick={() => reactivateMutation.mutate(member.id)}
               className="rounded-lg p-2 text-slate-400 transition hover:bg-emerald-50 hover:text-emerald-700 disabled:opacity-50"
-              title="Qayta faollashtirish"
+              title={t('Qayta faollashtirish')}
             >
               <UserCheck className="h-4 w-4" />
             </button>
@@ -272,7 +275,7 @@ export function AccountsPanel() {
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Ism yoki email bo'yicha qidirish…"
+            placeholder={t("Ism yoki email bo'yicha qidirish…")}
             className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
           />
         </div>
@@ -283,27 +286,29 @@ export function AccountsPanel() {
             className="flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 sm:ml-auto"
           >
             <Plus className="h-4 w-4" />
-            Hisob ochish
+            {t('Hisob ochish')}
           </button>
         )}
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         {staffQuery.isPending && (
-          <p className="px-4 py-8 text-center text-sm text-slate-400">Yuklanmoqda…</p>
+          <p className="px-4 py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
         )}
         {staffQuery.isError && (
           <p className="px-4 py-8 text-center text-sm text-red-600">
             {staffQuery.error instanceof ApiError
               ? staffQuery.error.message
-              : "Ma'lumotni yuklab bo'lmadi."}
+              : t("Ma'lumotni yuklab bo'lmadi.")}
           </p>
         )}
         {staffQuery.data && members.length === 0 && (
           <div className="px-4 py-12 text-center">
             <KeyRound className="mx-auto mb-3 h-10 w-10 text-slate-200" />
             <p className="text-sm text-slate-500">
-              {debouncedSearch ? 'Shartga mos hisob topilmadi.' : "Hozircha tizim hisobi yo'q."}
+              {debouncedSearch
+                ? t('Shartga mos hisob topilmadi.')
+                : t("Hozircha tizim hisobi yo'q.")}
             </p>
           </div>
         )}
@@ -314,11 +319,11 @@ export function AccountsPanel() {
               <table className="w-full min-w-[640px] text-sm">
                 <thead className="border-b border-slate-100 bg-slate-50/70 text-left text-[11px] uppercase tracking-wider text-slate-400">
                   <tr>
-                    <th className="px-4 py-3 font-medium">Hisob</th>
-                    <th className="px-4 py-3 font-medium">Rol</th>
-                    <th className="px-4 py-3 font-medium">Filial</th>
-                    <th className="px-4 py-3 font-medium">Oxirgi kirish</th>
-                    <th className="px-4 py-3 font-medium">Holat</th>
+                    <th className="px-4 py-3 font-medium">{t('Hisob')}</th>
+                    <th className="px-4 py-3 font-medium">{t('Rol')}</th>
+                    <th className="px-4 py-3 font-medium">{t('Filial')}</th>
+                    <th className="px-4 py-3 font-medium">{t('Oxirgi kirish')}</th>
+                    <th className="px-4 py-3 font-medium">{t('Holat')}</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
@@ -328,7 +333,7 @@ export function AccountsPanel() {
                       <td className="px-4 py-3">{renderName(member)}</td>
                       <td className="px-4 py-3 text-slate-600">{member.role?.name ?? '—'}</td>
                       <td className="px-4 py-3 text-slate-600">
-                        {member.branch?.name ?? 'Barcha filiallar'}
+                        {member.branch?.name ?? t('Barcha filiallar')}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-500 tabular-nums">
                         {dateTime(member.last_login_at)}
@@ -350,16 +355,18 @@ export function AccountsPanel() {
                   </div>
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-500">
                     <p className="truncate">
-                      <span className="text-slate-400">Rol:</span>{' '}
+                      <span className="text-slate-400">{t('Rol:')}</span>{' '}
                       <span className="text-slate-700">{member.role?.name ?? '—'}</span>
                     </p>
                     <p className="truncate">
-                      <span className="text-slate-400">Filial:</span>{' '}
-                      <span className="text-slate-700">{member.branch?.name ?? 'Barchasi'}</span>
+                      <span className="text-slate-400">{t('Filial:')}</span>{' '}
+                      <span className="text-slate-700">{member.branch?.name ?? t('Barchasi')}</span>
                     </p>
                     <p className="col-span-2">
-                      <span className="text-slate-400">Oxirgi kirish:</span>{' '}
-                      <span className="text-slate-700 tabular-nums">{dateTime(member.last_login_at)}</span>
+                      <span className="text-slate-400">{t('Oxirgi kirish:')}</span>{' '}
+                      <span className="text-slate-700 tabular-nums">
+                        {dateTime(member.last_login_at)}
+                      </span>
                     </p>
                   </div>
                   <div className="flex justify-end">{renderActions(member)}</div>
@@ -391,29 +398,32 @@ export function AccountsPanel() {
         >
           <div className="pr-8">
             <h2 className="text-base font-semibold text-slate-900">
-              {editing ? `${editing.full_name} — tahrirlash` : 'Yangi tizim hisobi'}
+              {editing
+                ? t('{full_name} — tahrirlash', { full_name: editing.full_name })
+                : t('Yangi tizim hisobi')}
             </h2>
             {editing ? (
               <dl className="mt-2 grid gap-x-6 gap-y-1 text-xs text-slate-500 sm:grid-cols-3">
                 <div className="flex gap-2">
-                  <dt>Holat:</dt>
+                  <dt>{t('Holat:')}</dt>
                   <dd className={editing.is_active ? 'text-emerald-700' : 'text-slate-500'}>
-                    {editing.is_active ? 'Faol' : 'Faol emas'}
+                    {editing.is_active ? t('Faol') : t('Faol emas')}
                   </dd>
                 </div>
                 <div className="flex gap-2">
-                  <dt>Oxirgi kirish:</dt>
+                  <dt>{t('Oxirgi kirish:')}</dt>
                   <dd>{dateTime(editing.last_login_at)}</dd>
                 </div>
                 <div className="flex gap-2">
-                  <dt>Qo'shilgan:</dt>
+                  <dt>{t("Qo'shilgan:")}</dt>
                   <dd>{dateTime(editing.created_at)}</dd>
                 </div>
               </dl>
             ) : (
               <p className="mt-0.5 text-xs text-slate-500">
-                Hisob egasi ko'rsatilgan email va parol bilan tizimga kiradi; nimani ko'rishi
-                rolga bog'liq.
+                {t(
+                  "Hisob egasi ko'rsatilgan email va parol bilan tizimga kiradi; nimani ko'rishi rolga bog'liq.",
+                )}
               </p>
             )}
           </div>
@@ -427,14 +437,17 @@ export function AccountsPanel() {
           <div className="grid gap-3 sm:grid-cols-2">
             {(
               [
-                ['full_name', 'Ism familiya', 'text'],
-                ['email', 'Email', 'email'],
-                ['phone', 'Telefon', 'tel'],
-                ['password', editing ? 'Yangi parol (ixtiyoriy)' : 'Parol', 'password'],
+                ['full_name', t('Ism familiya'), 'text'],
+                ['email', t('Email'), 'email'],
+                ['phone', t('Telefon'), 'tel'],
+                ['password', editing ? t('Yangi parol (ixtiyoriy)') : t('Parol'), 'password'],
               ] as const
             ).map(([key, label, type]) => (
               <div key={key}>
-                <label htmlFor={`acc-${key}`} className="mb-1 block text-xs font-medium text-slate-600">
+                <label
+                  htmlFor={`acc-${key}`}
+                  className="mb-1 block text-xs font-medium text-slate-600"
+                >
                   {label}
                 </label>
                 <input
@@ -442,20 +455,26 @@ export function AccountsPanel() {
                   type={type}
                   required={key !== 'phone' && !(key === 'password' && editing)}
                   placeholder={
-                    key === 'password' && editing ? "O'zgartirmaslik uchun bo'sh qoldiring" : undefined
+                    key === 'password' && editing
+                      ? t("O'zgartirmaslik uchun bo'sh qoldiring")
+                      : undefined
                   }
-                  autoComplete={key === 'password' ? 'new-password' : key === 'email' ? 'off' : undefined}
+                  autoComplete={
+                    key === 'password' ? 'new-password' : key === 'email' ? 'off' : undefined
+                  }
                   value={form[key] ?? ''}
                   onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
                   className={inputClass(Boolean(fieldErrors[key]))}
                 />
-                {fieldErrors[key] && <p className="mt-1 text-xs text-red-600">{fieldErrors[key]}</p>}
+                {fieldErrors[key] && (
+                  <p className="mt-1 text-xs text-red-600">{fieldErrors[key]}</p>
+                )}
               </div>
             ))}
 
             <div>
               <label htmlFor="acc-role" className="mb-1 block text-xs font-medium text-slate-600">
-                Rol
+                {t('Rol')}
               </label>
               <select
                 id="acc-role"
@@ -464,19 +483,21 @@ export function AccountsPanel() {
                 onChange={(e) => setForm((p) => ({ ...p, role_id: e.target.value }))}
                 className={inputClass(Boolean(fieldErrors.role_id))}
               >
-                <option value="">Tanlang…</option>
+                <option value="">{t('Tanlang…')}</option>
                 {rolesQuery.data?.items.map((role) => (
                   <option key={role.id} value={role.id}>
                     {role.name}
                   </option>
                 ))}
               </select>
-              {fieldErrors.role_id && <p className="mt-1 text-xs text-red-600">{fieldErrors.role_id}</p>}
+              {fieldErrors.role_id && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.role_id}</p>
+              )}
             </div>
 
             <div>
               <label htmlFor="acc-branch" className="mb-1 block text-xs font-medium text-slate-600">
-                Filial {branchRequired && <span className="text-red-500">*</span>}
+                {t('Filial')} {branchRequired && <span className="text-red-500">*</span>}
               </label>
               <select
                 id="acc-branch"
@@ -485,7 +506,9 @@ export function AccountsPanel() {
                 onChange={(e) => setForm((p) => ({ ...p, branch_id: e.target.value }))}
                 className={inputClass(Boolean(fieldErrors.branch_id))}
               >
-                <option value="">{branchRequired ? 'Tanlang…' : 'Barcha filiallar (Org Owner)'}</option>
+                <option value="">
+                  {branchRequired ? t('Tanlang…') : t('Barcha filiallar (Org Owner)')}
+                </option>
                 {branchesQuery.data?.items.map((branch) => (
                   <option key={branch.id} value={branch.id}>
                     {branch.name}
@@ -504,14 +527,14 @@ export function AccountsPanel() {
               onClick={closeForm}
               className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
             >
-              Bekor qilish
+              {t('Bekor qilish')}
             </button>
             <button
               type="submit"
               disabled={saving}
               className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
             >
-              {saving ? 'Saqlanmoqda…' : 'Saqlash'}
+              {saving ? t('Saqlanmoqda…') : t('Saqlash')}
             </button>
           </div>
         </form>

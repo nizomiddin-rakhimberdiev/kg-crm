@@ -23,6 +23,7 @@ import { ApiError } from '@/lib/api/types'
 import type { Insight } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatUZS } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 interface InsightCardProps {
   insight: Insight
@@ -55,12 +56,12 @@ export function InsightCard({ insight }: InsightCardProps) {
   const resolve = useMutation({
     mutationFn: (id: string) => insightsApi.resolve(id),
     onSuccess: invalidate,
-    onError: (err) => setError(err instanceof ApiError ? err.message : 'Xatolik yuz berdi.'),
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
   const dismiss = useMutation({
     mutationFn: (id: string) => insightsApi.dismiss(id),
     onSuccess: invalidate,
-    onError: (err) => setError(err instanceof ApiError ? err.message : 'Xatolik yuz berdi.'),
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
   const canAct = can('dashboard.update')

@@ -16,6 +16,7 @@ edi.
 from __future__ import annotations
 
 from django.db import models
+from django.utils.translation import gettext_lazy
 
 from apps.core.models import TenantScopedModel
 
@@ -34,10 +35,10 @@ REPORT_TYPES: tuple[str, ...] = (
 
 
 class ExportStatus(models.TextChoices):
-    QUEUED = "queued", "Navbatda"
-    RUNNING = "running", "Bajarilmoqda"
-    READY = "ready", "Tayyor"
-    FAILED = "failed", "Xato"
+    QUEUED = "queued", gettext_lazy("Navbatda")
+    RUNNING = "running", gettext_lazy("Bajarilmoqda")
+    READY = "ready", gettext_lazy("Tayyor")
+    FAILED = "failed", gettext_lazy("Xato")
 
 
 class ReportExport(TenantScopedModel):

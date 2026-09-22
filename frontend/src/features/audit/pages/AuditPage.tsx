@@ -14,41 +14,42 @@ import { auditApi } from '@/features/dashboard/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { cn } from '@/lib/utils'
 import { env } from '@/config/env'
+import { t } from '@/lib/i18n'
 
 const ACTION: Record<string, [string, string]> = {
-  login: ['Kirish', 'bg-slate-100 text-slate-600'],
-  login_failed: ['Kirish urinishi', 'bg-amber-50 text-amber-700'],
-  logout: ['Chiqish', 'bg-slate-100 text-slate-600'],
-  signup: ["Ro'yxatdan o'tish", 'bg-sky-50 text-sky-700'],
-  password_change: ["Parol o'zgardi", 'bg-amber-50 text-amber-700'],
-  create: ['Yaratildi', 'bg-emerald-50 text-emerald-700'],
-  update: ['Yangilandi', 'bg-sky-50 text-sky-700'],
-  delete: ["O'chirildi", 'bg-red-50 text-red-700'],
+  login: [t('Kirish'), 'bg-slate-100 text-slate-600'],
+  login_failed: [t('Kirish urinishi'), 'bg-amber-50 text-amber-700'],
+  logout: [t('Chiqish'), 'bg-slate-100 text-slate-600'],
+  signup: [t("Ro'yxatdan o'tish"), 'bg-sky-50 text-sky-700'],
+  password_change: [t("Parol o'zgardi"), 'bg-amber-50 text-amber-700'],
+  create: [t('Yaratildi'), 'bg-emerald-50 text-emerald-700'],
+  update: [t('Yangilandi'), 'bg-sky-50 text-sky-700'],
+  delete: [t("O'chirildi"), 'bg-red-50 text-red-700'],
 }
 
 const ENTITY: Record<string, string> = {
-  child: 'Bola',
-  child_import: 'Bolalar importi',
-  payment: "To'lov",
-  invoice: 'Hisob-faktura',
-  invoice_run: 'Hisob-faktura generatsiyasi',
-  discount: 'Chegirma',
-  expense: 'Chiqim',
-  stock_movement: 'Stok harakati',
-  system_setting: 'Sozlama',
-  user: 'Foydalanuvchi',
-  role: 'Rol',
-  branch: 'Filial',
-  organization: 'Tashkilot',
-  payroll_run: 'Oylik hisoblash',
+  child: t('Bola'),
+  child_import: t('Bolalar importi'),
+  payment: t("To'lov"),
+  invoice: t('Hisob-faktura'),
+  invoice_run: t('Hisob-faktura generatsiyasi'),
+  discount: t('Chegirma'),
+  expense: t('Chiqim'),
+  stock_movement: t('Stok harakati'),
+  system_setting: t('Sozlama'),
+  user: t('Foydalanuvchi'),
+  role: t('Rol'),
+  branch: t('Filial'),
+  organization: t('Tashkilot'),
+  payroll_run: t('Oylik hisoblash'),
 }
 
 const FILTERS: Array<[string, string]> = [
-  ['', 'Hammasi'],
-  ['create', 'Yaratish'],
-  ['update', 'Yangilash'],
-  ['delete', "O'chirish"],
-  ['login_failed', 'Kirish urinishlari'],
+  ['', t('Hammasi')],
+  ['create', t('Yaratish')],
+  ['update', t('Yangilash')],
+  ['delete', t("O'chirish")],
+  ['login_failed', t('Kirish urinishlari')],
 ]
 
 const when = (iso: string) =>
@@ -78,9 +79,9 @@ export default function AuditPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Audit jurnali</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Audit jurnali')}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Kim, nima va qachon — o'zgartirib bo'lmaydigan yozuv.
+          {t("Kim, nima va qachon — o'zgartirib bo'lmaydigan yozuv.")}
         </p>
       </div>
 
@@ -90,41 +91,46 @@ export default function AuditPage() {
           mijozda "demak kimdir kira oladi" degan noto'g'ri taassurot
           qoldirardi — aynan u sotib olmagan narsa haqida. */}
       {!env.isStandalone && (
-      <section className="rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 text-brand-600" />
-          <h2 className="text-sm font-semibold text-slate-900">Tizim provayderi kirishi</h2>
-        </div>
-        <p className="mt-1 text-xs text-slate-500">
-          Radix CRM xodimlari sukut bo'yicha sizning ma'lumotingizni ko'rmaydi. Har qanday kirish
-          vaqt bilan cheklanadi, sababi yoziladi va shu yerda ko'rinadi.
-        </p>
-
-        {platformRows.length === 0 ? (
-          <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-            Hech qanday kirish qayd etilmagan.
+        <section className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-brand-600" />
+            <h2 className="text-sm font-semibold text-slate-900">
+              {t('Tizim provayderi kirishi')}
+            </h2>
+          </div>
+          <p className="mt-1 text-xs text-slate-500">
+            {t(
+              "Radix CRM xodimlari sukut bo'yicha sizning ma'lumotingizni ko'rmaydi. Har qanday kirish vaqt bilan cheklanadi, sababi yoziladi va shu yerda ko'rinadi.",
+            )}
           </p>
-        ) : (
-          <ul className="mt-3 divide-y divide-slate-100 border-t border-slate-100">
-            {platformRows.map((row) => (
-              <li key={row.id} className="py-2.5 text-sm">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="font-medium text-slate-900">{row.actor_email}</span>
-                  <span className="text-xs text-slate-400">{when(row.created_at)}</span>
-                </div>
-                {typeof row.changes?.reason === 'string' && (
-                  <p className="mt-0.5 text-slate-600">Sabab: {row.changes.reason}</p>
-                )}
-                {typeof row.changes?.expires_at === 'string' && (
-                  <p className="text-xs text-slate-400">
-                    Amal qiladi: {when(row.changes.expires_at)} gacha
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+
+          {platformRows.length === 0 ? (
+            <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+              {t('Hech qanday kirish qayd etilmagan.')}
+            </p>
+          ) : (
+            <ul className="mt-3 divide-y divide-slate-100 border-t border-slate-100">
+              {platformRows.map((row) => (
+                <li key={row.id} className="py-2.5 text-sm">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <span className="font-medium text-slate-900">{row.actor_email}</span>
+                    <span className="text-xs text-slate-400">{when(row.created_at)}</span>
+                  </div>
+                  {typeof row.changes?.reason === 'string' && (
+                    <p className="mt-0.5 text-slate-600">
+                      {t('Sabab: {reason}', { reason: row.changes.reason })}
+                    </p>
+                  )}
+                  {typeof row.changes?.expires_at === 'string' && (
+                    <p className="text-xs text-slate-400">
+                      {t('Amal qiladi: {when} gacha', { when: when(row.changes.expires_at) })}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       )}
 
       <div className="flex flex-wrap items-center gap-2">
@@ -135,7 +141,9 @@ export default function AuditPage() {
             onClick={() => setAction(key)}
             className={cn(
               'rounded-lg px-3 py-1.5 text-sm font-medium',
-              action === key ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50',
+              action === key
+                ? 'bg-slate-900 text-white'
+                : 'bg-white text-slate-600 hover:bg-slate-50',
             )}
           >
             {label}
@@ -148,16 +156,19 @@ export default function AuditPage() {
           <table className="w-full min-w-[560px] text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-4 py-3">Vaqt</th>
-                <th className="px-4 py-3">Kim</th>
-                <th className="px-4 py-3">Amal</th>
-                <th className="px-4 py-3">Obyekt</th>
-                <th className="px-4 py-3">Tafsilot</th>
+                <th className="px-4 py-3">{t('Vaqt')}</th>
+                <th className="px-4 py-3">{t('Kim')}</th>
+                <th className="px-4 py-3">{t('Amal')}</th>
+                <th className="px-4 py-3">{t('Obyekt')}</th>
+                <th className="px-4 py-3">{t('Tafsilot')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {rows.map((row) => {
-                const [label, tone] = ACTION[row.action] ?? [row.action, 'bg-slate-100 text-slate-600']
+                const [label, tone] = ACTION[row.action] ?? [
+                  row.action,
+                  'bg-slate-100 text-slate-600',
+                ]
                 const changes = Object.entries(row.changes ?? {})
                 return (
                   <tr key={row.id} className="align-top">
@@ -190,7 +201,7 @@ export default function AuditPage() {
                 <tr>
                   <td colSpan={5} className="px-4 py-10 text-center text-slate-400">
                     <ScrollText className="mx-auto mb-2 h-6 w-6" />
-                    Yozuv topilmadi.
+                    {t('Yozuv topilmadi.')}
                   </td>
                 </tr>
               )}

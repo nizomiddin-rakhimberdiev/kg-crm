@@ -5,12 +5,13 @@
  * "xavf ostida" — yo'q. Har bir jumla evidence'dagi raqamdan tuziladi;
  * `{placeholder}` kalitlari evidence maydonlari bilan bir xil.
  *
- * Backend `apps/intelligence/content/{uz,ru}.py` bilan bir xil kalitlar.
+ * Backend `apps/intelligence/content/{uz,ru,en}.py` bilan bir xil kalitlar.
  */
 
 import type { InsightSeverity, InsightType } from '@/lib/api/types'
+import { locale as appLocale, type AppLocale } from '@/lib/i18n'
 
-export type Locale = 'uz' | 'ru'
+export type Locale = AppLocale
 
 export interface IntelligenceCopy {
   brand: string
@@ -206,10 +207,79 @@ export const ru: IntelligenceCopy = {
   },
 }
 
-const copies: Record<Locale, IntelligenceCopy> = { uz, ru }
+export const en: IntelligenceCopy = {
+  brand: 'Radix AI',
+  briefingTitle: 'Daily briefing',
+  noOpenInsights: 'No open signals today.',
+  loadError: 'Couldn’t load the briefing.',
+  severity: { critical: 'Serious', warning: 'Attention' },
+  statusNew: 'New',
+  titles: {
+    payment_delay:
+      'Payments for {children_count} children are more than {overdue_days_threshold} days overdue',
+    attendance_drop: 'Group attendance dropped {drop_points} points below its baseline',
+  },
+  recommendations: {
+    'payment_delay.review_debtors': 'Review the debtors list and consider sending reminders.',
+    'attendance_drop.ask_teacher': 'Ask the group’s teacher about the reason for the drop.',
+  },
+  actions: {
+    why: 'Why?',
+    open: 'Open the list',
+    resolve: 'Resolved',
+    dismiss: 'Later',
+    close: 'Close',
+  },
+  facts: {
+    totalOverdue: 'Overdue amount',
+    maxDays: 'Longest delay',
+    avgDays: 'Average delay',
+    children: 'Children',
+    ofActive: 'of {active_children} active',
+    dayUnit: 'days',
+    invoices: 'invoices',
+  },
+  why: {
+    title: 'Why did this signal appear?',
+    rule: 'Rule',
+    ruleBody:
+      'Children with an unpaid part of an invoice overdue by more than {overdue_days_threshold} days. Debt is computed from the ledger — the same as on the Debtors page; a payment without an invoice settles the oldest invoice first.',
+    severityTitle: 'Why {severity}?',
+    criticalByDays:
+      'Longest delay {max_days_overdue} days — threshold {critical_days_threshold} days.',
+    criticalByCount:
+      '{children_count} children — threshold {critical_children_threshold} (10 % of active children, at least 3).',
+    warningReason:
+      'Longest delay {max_days_overdue} days (under {critical_days_threshold}) and {children_count} children (under {critical_children_threshold}).',
+    snapshotTitle: 'As of {as_of}',
+    snapshotBody:
+      'The numbers are from the moment the signal appeared. Names are live. If you open the list, the current state may differ — for example, if someone has paid since.',
+    capped: 'Showing the {shown} longest-overdue (of {children_count}).',
+    childCol: 'Child',
+    groupCol: 'Group',
+    daysCol: 'Delay',
+    invoicesCol: 'Invoices',
+    amountCol: 'Amount',
+    deletedChild: 'deleted child',
+    noGroup: 'no group',
+  },
+  checks: {
+    attendanceTitle: 'Today’s attendance',
+    attendanceBody: '{recorded} / {expected} children marked',
+    attendanceComplete: 'Complete',
+    attendanceIncomplete: '{missing} children not marked',
+    open: 'Open attendance',
+  },
+  debtors: {
+    banner: 'Radix AI signal: showing delays of more than {days} days.',
+    showAll: 'Show all',
+  },
+}
 
-/** Ilova hozircha o‘zbek tilida; RU nusxa kalit-ma-kalit tayyor. */
-export function getCopy(locale: Locale = 'uz'): IntelligenceCopy {
+const copies: Record<Locale, IntelligenceCopy> = { uz, ru, en }
+
+/** Ilova tili (lib/i18n) bo‘yicha nusxa; testlar tilni aniq beradi. */
+export function getCopy(locale: Locale = appLocale): IntelligenceCopy {
   return copies[locale]
 }
 

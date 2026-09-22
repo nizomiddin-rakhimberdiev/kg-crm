@@ -13,6 +13,7 @@ from typing import Any
 from django.db import transaction
 from django.http import FileResponse, Http404
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -37,7 +38,9 @@ def _parse_date(value: Any, fallback: date) -> date:
     try:
         return date.fromisoformat(str(value))
     except ValueError as exc:
-        raise BusinessRuleViolation(f"Sana formati noto'g'ri: {value}") from exc
+        raise BusinessRuleViolation(
+            gettext("Sana formati noto'g'ri: {value}").format(value=value)
+        ) from exc
 
 
 def _parse_int(value: Any, fallback: int, *, low: int, high: int) -> int:
@@ -46,9 +49,15 @@ def _parse_int(value: Any, fallback: int, *, low: int, high: int) -> int:
     try:
         parsed = int(value)
     except (TypeError, ValueError) as exc:
-        raise BusinessRuleViolation(f"Butun son kutilgan: {value}") from exc
+        raise BusinessRuleViolation(
+            gettext("Butun son kutilgan: {value}").format(value=value)
+        ) from exc
     if not low <= parsed <= high:
-        raise BusinessRuleViolation(f"Qiymat {low}–{high} oralig'ida bo'lishi kerak: {parsed}")
+        raise BusinessRuleViolation(
+            gettext("Qiymat {low}–{high} oralig'ida bo'lishi kerak: {parsed}").format(
+                low=low, high=high, parsed=parsed
+            )
+        )
     return parsed
 
 
@@ -226,7 +235,7 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
         """
         export = self._get_export(job_id)
         if export.status != ExportStatus.READY or not export.file:
-            raise BusinessRuleViolation("Eksport hali tayyor emas.")
+            raise BusinessRuleViolation(gettext("Eksport hali tayyor emas."))
         return FileResponse(
             export.file.open("rb"),
             as_attachment=True,

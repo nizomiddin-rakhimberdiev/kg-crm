@@ -13,6 +13,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from django.db import models
+from django.utils.translation import gettext_lazy
 
 from apps.core.models import BranchScopedModel
 
@@ -68,12 +69,12 @@ class ProductCategory(BranchScopedModel):
 
 
 class Unit(models.TextChoices):
-    KG = "kg", "kg"
+    KG = "kg", gettext_lazy("kg")
     G = "g", "g"
     L = "l", "l"
-    ML = "ml", "ml"
-    PCS = "pcs", "dona"
-    PACK = "pack", "upakovka"
+    ML = "ml", gettext_lazy("ml")
+    PCS = "pcs", gettext_lazy("dona")
+    PACK = "pack", gettext_lazy("upakovka")
 
 
 class Product(BranchScopedModel):
@@ -145,16 +146,16 @@ class Supplier(BranchScopedModel):
 
 
 class MovementDirection(models.TextChoices):
-    IN = "in", "Kirim"
-    OUT = "out", "Chiqim"
+    IN = "in", gettext_lazy("Kirim")
+    OUT = "out", gettext_lazy("Chiqim")
 
 
 class MovementType(models.TextChoices):
-    PURCHASE = "purchase", "Xarid"
-    CONSUMPTION = "consumption", "Iste'mol"
-    ADJUSTMENT = "adjustment", "Tuzatish"
-    WASTE = "waste", "Yaroqsiz"
-    TRANSFER = "transfer", "Ko'chirish"
+    PURCHASE = "purchase", gettext_lazy("Xarid")
+    CONSUMPTION = "consumption", gettext_lazy("Iste'mol")
+    ADJUSTMENT = "adjustment", gettext_lazy("Tuzatish")
+    WASTE = "waste", gettext_lazy("Yaroqsiz")
+    TRANSFER = "transfer", gettext_lazy("Ko'chirish")
 
 
 class StockMovement(BranchScopedModel):

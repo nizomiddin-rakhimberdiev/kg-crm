@@ -19,6 +19,7 @@ from typing import Any
 
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -73,22 +74,24 @@ class TenantJWTAuthentication(JWTAuthentication):
             grant = SupportGrant.objects.filter(pk=token.get("grant_id")).first()
 
         if grant is None or grant.revoked_at is not None or grant.expires_at <= timezone.now():
-            raise AuthenticationFailed("Qo'llab-quvvatlash ruxsati amal qilmaydi.")
+            raise AuthenticationFailed(gettext("Qo'llab-quvvatlash ruxsati amal qilmaydi."))
 
         if str(grant.organization_id) != str(token.get("organization_id")):
             # Kod xatosi bo'lishi mumkin bo'lgan yagona holat — baribir yopamiz.
-            raise AuthenticationFailed("Ruxsat boshqa tashkilotga tegishli.")
+            raise AuthenticationFailed(gettext("Ruxsat boshqa tashkilotga tegishli."))
 
         if request.method not in SAFE_METHODS:
             raise PermissionDenied(
-                "Qo'llab-quvvatlash sessiyasi faqat o'qish uchun. "
-                "O'zgartirishni bog'chaning o'zi bajarishi kerak."
+                gettext(
+                    "Qo'llab-quvvatlash sessiyasi faqat o'qish uchun. "
+                    "O'zgartirishni bog'chaning o'zi bajarishi kerak."
+                )
             )
 
     def get_user(self, validated_token: Any) -> Any:
         user_id = validated_token.get(api_settings.USER_ID_CLAIM)
         if user_id is None:
-            raise InvalidToken("Tokenda foydalanuvchi identifikatori yo'q.")
+            raise InvalidToken(gettext("Tokenda foydalanuvchi identifikatori yo'q."))
 
         # Tashkilot TOKENDAN olinadi va kontekst foydalanuvchini
         # qidirishdan OLDIN o'rnatiladi.
@@ -103,7 +106,7 @@ class TenantJWTAuthentication(JWTAuthentication):
         # tekshiruvni kod bilan BIRGA bajaradi, kod o'rniga emas.
         claimed = validated_token.get("organization_id")
         if not claimed:
-            raise InvalidToken("Tokenda tashkilot ko'rsatilmagan.")
+            raise InvalidToken(gettext("Tokenda tashkilot ko'rsatilmagan."))
 
         set_current_organization_id(uuid.UUID(str(claimed)))
         apply_tenant_setting(claimed)
@@ -115,15 +118,15 @@ class TenantJWTAuthentication(JWTAuthentication):
             .first()
         )
         if user is None:
-            raise AuthenticationFailed("Foydalanuvchi topilmadi.", code="user_not_found")
+            raise AuthenticationFailed(gettext("Foydalanuvchi topilmadi."), code="user_not_found")
         if not user.is_active:
-            raise AuthenticationFailed("Hisob faol emas.", code="user_inactive")
+            raise AuthenticationFailed(gettext("Hisob faol emas."), code="user_inactive")
 
         # Ikki qavatli tekshiruv: yuqoridagi filtr allaqachon tashkilotni
         # cheklaydi, lekin bu shart aniq XABAR beradi va menejer
         # o'zgarsa ham qoladi.
         actual = str(user.organization_id) if user.organization_id else None
         if str(claimed) != actual:
-            raise InvalidToken("Token tashkiloti hisob bilan mos kelmaydi.")
+            raise InvalidToken(gettext("Token tashkiloti hisob bilan mos kelmaydi."))
 
         return user

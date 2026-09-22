@@ -9,6 +9,7 @@ from typing import Any
 from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from apps.core.exceptions import BusinessRuleViolation
 from apps.expenses.models import Expense, ExpenseStatus
@@ -19,7 +20,9 @@ __all__ = ["approve_expense", "reject_expense", "mark_expense_paid", "expense_su
 def _assert_pending(expense: Expense, action: str) -> None:
     if expense.status != ExpenseStatus.PENDING:
         raise BusinessRuleViolation(
-            f"Chiqim '{expense.get_status_display()}' holatida — {action} mumkin emas."
+            gettext("Chiqim '{status}' holatida — {action} mumkin emas.").format(
+                status=expense.get_status_display(), action=action
+            )
         )
 
 
@@ -58,7 +61,9 @@ def reject_expense(*, expense: Expense, approved_by: Any, note: str = "") -> Exp
 @transaction.atomic
 def mark_expense_paid(*, expense: Expense) -> Expense:
     if expense.status != ExpenseStatus.APPROVED:
-        raise BusinessRuleViolation("Faqat tasdiqlangan chiqimni to'langan deb belgilash mumkin.")
+        raise BusinessRuleViolation(
+            gettext("Faqat tasdiqlangan chiqimni to'langan deb belgilash mumkin.")
+        )
     expense.status = ExpenseStatus.PAID
     expense.save(update_fields=["status", "updated_at"])
     return expense

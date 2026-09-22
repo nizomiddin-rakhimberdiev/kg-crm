@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { locale } from '@/lib/i18n'
 
 /** Merge Tailwind class names, resolving conflicts. */
 export function cn(...inputs: ClassValue[]) {
@@ -71,12 +72,59 @@ export function avatarTone(seed: string): string {
  *
  * Brauzerlarning `uz` lokali to'liq emas: Chromium `dateStyle: 'medium'`
  * ni "2023 M09 14" deb chiqaradi (oy nomi o'rniga "M09"). Foydalanuvchi
- * ko'radigan sana brauzerga emas, bizga bog'liq bo'lishi kerak.
+ * ko'radigan sana brauzerga emas, bizga bog'liq bo'lishi kerak. Oy nomlari
+ * ilova tiliga qarab (lib/i18n); raqamli shakl (14.09.2023) uch tilda
+ * bir xil — o'zgarmas.
  */
-export const UZ_MONTHS = [
-  'yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun',
-  'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr',
-] as const
+const MONTHS_BY_LOCALE = {
+  uz: [
+    'yanvar',
+    'fevral',
+    'mart',
+    'aprel',
+    'may',
+    'iyun',
+    'iyul',
+    'avgust',
+    'sentabr',
+    'oktabr',
+    'noyabr',
+    'dekabr',
+  ],
+  ru: [
+    'января',
+    'февраля',
+    'марта',
+    'апреля',
+    'мая',
+    'июня',
+    'июля',
+    'августа',
+    'сентября',
+    'октября',
+    'ноября',
+    'декабря',
+  ],
+  en: [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ],
+} as const
+
+/** Joriy tildagi oy nomlari (sana ichida: «14-sentabr» / «14 сентября»). */
+export const MONTHS: readonly string[] = MONTHS_BY_LOCALE[locale]
+/** @deprecated `MONTHS` — til bo'yicha. Eski import nomi uchun saqlangan. */
+export const UZ_MONTHS = MONTHS
 
 const two = (n: number) => String(n).padStart(2, '0')
 
@@ -100,9 +148,11 @@ export function formatDateTime(value: string | Date | null | undefined): string 
   return `${formatDate(date)}, ${two(date.getHours())}:${two(date.getMinutes())}`
 }
 
-/** "14-sentabr, 2023" — sarlavhalar uchun. */
+/** "14-sentabr, 2023" / "14 сентября 2023" / "14 September 2023" — sarlavhalar uchun. */
 export function formatDateLong(value: string | Date | null | undefined): string {
   const date = toDate(value)
   if (!date) return '—'
-  return `${date.getDate()}-${UZ_MONTHS[date.getMonth()]}, ${date.getFullYear()}`
+  const month = MONTHS[date.getMonth()]
+  if (locale === 'uz') return `${date.getDate()}-${month}, ${date.getFullYear()}`
+  return `${date.getDate()} ${month} ${date.getFullYear()}`
 }

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.branches.models import Branch
@@ -143,5 +144,5 @@ class ChildWriteSerializer(serializers.ModelSerializer):
         from django.utils import timezone
 
         if value >= timezone.localdate():
-            raise serializers.ValidationError("Tug'ilgan sana o'tgan bo'lishi kerak.")
+            raise serializers.ValidationError(gettext("Tug'ilgan sana o'tgan bo'lishi kerak."))
         return value

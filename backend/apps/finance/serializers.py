@@ -5,6 +5,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.children.models import Child
@@ -59,7 +60,7 @@ class DiscountSerializer(serializers.ModelSerializer):
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if attrs.get("discount_type") == "percent" and attrs.get("value", 0) > 100:
             raise serializers.ValidationError(
-                {"value": "Foizli chegirma 100 dan oshmasligi kerak."}
+                {"value": gettext("Foizli chegirma 100 dan oshmasligi kerak.")}
             )
         return attrs
 

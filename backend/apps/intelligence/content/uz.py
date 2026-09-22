@@ -1,5 +1,5 @@
 """
-Radix Intelligence matnlari — O'zbekcha (docs/07 §12).
+Radix Intelligence matnlari — O'zbekcha (docs/07 §12). RU va EN nusxalari ru.py, en.py da.
 
 Faqat buyruq chiqishi va (V2) bildirishnoma uchun. Dashboard matni
 frontend'ning o'z content qatlamida — API gap emas, kalit+evidence beradi.

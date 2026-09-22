@@ -15,6 +15,7 @@ from typing import Any
 from django.db import transaction
 from django.utils import timezone
 from django.utils.text import slugify
+from django.utils.translation import gettext
 
 from apps.accounts.constants import (
     ACTIONS,
@@ -251,11 +252,15 @@ def _checked_slug(slug: str) -> str:
     """
     candidate = slugify(slug)[:50]
     if not candidate:
-        raise BusinessRuleViolation("Manzil (slug) bo'sh bo'lishi mumkin emas.")
+        raise BusinessRuleViolation(gettext("Manzil (slug) bo'sh bo'lishi mumkin emas."))
     if candidate in RESERVED_SLUGS:
-        raise BusinessRuleViolation(f"'{candidate}' — band nom, boshqasini tanlang.")
+        raise BusinessRuleViolation(
+            gettext("'{candidate}' — band nom, boshqasini tanlang.").format(candidate=candidate)
+        )
     if Organization.objects.filter(slug=candidate).exists():
-        raise BusinessRuleViolation(f"'{candidate}' allaqachon band.")
+        raise BusinessRuleViolation(
+            gettext("'{candidate}' allaqachon band.").format(candidate=candidate)
+        )
     return candidate
 
 
@@ -274,14 +279,14 @@ def create_user(
     if role.organization_id != organization.id:
         # Bu holat faqat kod xatosi bo'lishi mumkin — serializer roldan
         # oldin tenant filtridan o'tkazadi. Baribir tekshiramiz.
-        raise BusinessRuleViolation("Rol boshqa tashkilotga tegishli.")
+        raise BusinessRuleViolation(gettext("Rol boshqa tashkilotga tegishli."))
 
     if branch is not None and branch.organization_id != organization.id:
-        raise BusinessRuleViolation("Filial boshqa tashkilotga tegishli.")
+        raise BusinessRuleViolation(gettext("Filial boshqa tashkilotga tegishli."))
 
     if role.code != "org_owner" and branch is None:
         raise BusinessRuleViolation(
-            "Org Owner'dan boshqa barcha rollar uchun filial ko'rsatilishi shart."
+            gettext("Org Owner'dan boshqa barcha rollar uchun filial ko'rsatilishi shart.")
         )
 
     return User.objects.create_user(

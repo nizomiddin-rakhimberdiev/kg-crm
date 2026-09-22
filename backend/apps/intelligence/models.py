@@ -13,31 +13,32 @@ RLS ostida olinadi (docs/07 §6).
 from __future__ import annotations
 
 from django.db import models
+from django.utils.translation import gettext_lazy
 
 from apps.core.models import BranchScopedModel
 
 
 class InsightType(models.TextChoices):
-    PAYMENT_DELAY = "payment_delay", "To'lov kechikishi"
-    ATTENDANCE_DROP = "attendance_drop", "Davomat pasayishi"
+    PAYMENT_DELAY = "payment_delay", gettext_lazy("To'lov kechikishi")
+    ATTENDANCE_DROP = "attendance_drop", gettext_lazy("Davomat pasayishi")
 
 
 class InsightSeverity(models.TextChoices):
-    WARNING = "warning", "Ogohlantirish"
-    CRITICAL = "critical", "Jiddiy"
+    WARNING = "warning", gettext_lazy("Ogohlantirish")
+    CRITICAL = "critical", gettext_lazy("Jiddiy")
 
 
 class InsightStatus(models.TextChoices):
-    NEW = "new", "Yangi"
-    SEEN = "seen", "Ko'rilgan"
-    RESOLVED = "resolved", "Hal qilingan"
-    DISMISSED = "dismissed", "Rad etilgan"
-    AUTO_RESOLVED = "auto_resolved", "O'zi hal bo'lgan"
+    NEW = "new", gettext_lazy("Yangi")
+    SEEN = "seen", gettext_lazy("Ko'rilgan")
+    RESOLVED = "resolved", gettext_lazy("Hal qilingan")
+    DISMISSED = "dismissed", gettext_lazy("Rad etilgan")
+    AUTO_RESOLVED = "auto_resolved", gettext_lazy("O'zi hal bo'lgan")
 
 
 class SubjectType(models.TextChoices):
-    BRANCH = "branch", "Filial"
-    GROUP = "group", "Guruh"
+    BRANCH = "branch", gettext_lazy("Filial")
+    GROUP = "group", gettext_lazy("Guruh")
 
 
 OPEN_STATUSES = (InsightStatus.NEW, InsightStatus.SEEN)

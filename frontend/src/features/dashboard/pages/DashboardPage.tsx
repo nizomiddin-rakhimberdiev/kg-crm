@@ -16,8 +16,22 @@ import { dashboardApi } from '@/features/dashboard/api'
 import { BriefingSection } from '@/features/intelligence/components/BriefingSection'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { formatDateLong, formatUZS } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
-const MONTHS = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek']
+const MONTHS = [
+  t('Yan'),
+  t('Fev'),
+  t('Mar'),
+  t('Apr'),
+  t('May'),
+  t('Iyn'),
+  t('Iyl'),
+  t('Avg'),
+  t('Sen'),
+  t('Okt'),
+  t('Noy'),
+  t('Dek'),
+]
 
 const shortMonth = (iso: string) => MONTHS[Number(iso.slice(5, 7)) - 1] ?? iso
 
@@ -61,7 +75,7 @@ export default function DashboardPage() {
   if (isError) {
     return (
       <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-        Ko'rsatkichlarni yuklab bo'lmadi.
+        {t("Ko'rsatkichlarni yuklab bo'lmadi.")}
       </div>
     )
   }
@@ -74,10 +88,10 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Boshqaruv paneli</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {data ? formatDateLong(data.date) : '—'}
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          {t('Boshqaruv paneli')}
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">{data ? formatDateLong(data.date) : '—'}</p>
       </div>
 
       {/* Radix AI — kunlik brifing (docs/07 §11): KPI'lardan OLDIN, chunki
@@ -86,33 +100,33 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Tile
-          label="Faol bolalar"
-          value={isLoading ? '…' : `${data?.active_children ?? 0} nafar`}
-          hint="Ro'yxatdagi bolalar"
+          label={t('Faol bolalar')}
+          value={isLoading ? '…' : t('{v} nafar', { v: data?.active_children ?? 0 })}
+          hint={t("Ro'yxatdagi bolalar")}
           icon={Users}
           tone="bg-sky-50 text-sky-600"
           to="/children"
         />
         <Tile
-          label="Shu oy tushum"
+          label={t('Shu oy tushum')}
           value={isLoading ? '…' : formatUZS(Number(data?.month_revenue ?? 0))}
-          hint="Qabul qilingan to'lovlar"
+          hint={t("Qabul qilingan to'lovlar")}
           icon={Wallet}
           tone="bg-emerald-50 text-emerald-600"
           to="/payments"
         />
         <Tile
-          label="Qarzdorlik"
+          label={t('Qarzdorlik')}
           value={isLoading ? '…' : formatUZS(Number(data?.outstanding_debt ?? 0))}
-          hint={`${data?.debtor_count ?? 0} nafar bola bo'yicha`}
+          hint={t("{v} nafar bola bo'yicha", { v: data?.debtor_count ?? 0 })}
           icon={AlertTriangle}
           tone="bg-red-50 text-red-600"
           to="/debtors"
         />
         <Tile
-          label="Davomat (shu oy)"
+          label={t('Davomat (shu oy)')}
           value={isLoading ? '…' : `${data?.attendance_month_pct ?? 0}%`}
-          hint="Kelgan / belgilangan"
+          hint={t('Kelgan / belgilangan')}
           icon={CalendarCheck}
           tone="bg-teal-50 text-teal-600"
           to="/attendance"
@@ -121,8 +135,10 @@ export default function DashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
-          <h2 className="text-sm font-semibold text-slate-900">Tushum dinamikasi</h2>
-          <p className="mt-0.5 text-xs text-slate-500">Oxirgi 6 oy, qabul qilingan to'lovlar</p>
+          <h2 className="text-sm font-semibold text-slate-900">{t('Tushum dinamikasi')}</h2>
+          <p className="mt-0.5 text-xs text-slate-500">
+            {t("Oxirgi 6 oy, qabul qilingan to'lovlar")}
+          </p>
           <div className="mt-4 h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={trend}>
@@ -132,7 +148,7 @@ export default function DashboardPage() {
                   tickLine={false}
                   axisLine={false}
                   fontSize={12}
-                  tickFormatter={(v: number) => `${Math.round(v / 1_000_000)}mln`}
+                  tickFormatter={(v: number) => t('{v} mln', { v: Math.round(v / 1_000_000) })}
                 />
                 <Tooltip
                   formatter={(v: number) => formatUZS(v)}
@@ -145,7 +161,7 @@ export default function DashboardPage() {
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
-          <h2 className="text-sm font-semibold text-slate-900">Oxirgi to'lovlar</h2>
+          <h2 className="text-sm font-semibold text-slate-900">{t("Oxirgi to'lovlar")}</h2>
           <ul className="mt-4 space-y-3">
             {(data?.recent_payments ?? []).map((payment, index) => (
               <li key={`${payment.paid_at}-${index}`} className="flex items-center justify-between">
@@ -160,7 +176,7 @@ export default function DashboardPage() {
             ))}
             {!isLoading && (data?.recent_payments ?? []).length === 0 && (
               <li className="py-6 text-center text-sm text-slate-400">
-                Hozircha to'lov qabul qilinmagan.
+                {t("Hozircha to'lov qabul qilinmagan.")}
               </li>
             )}
           </ul>
@@ -171,7 +187,9 @@ export default function DashboardPage() {
               className="mt-5 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 hover:bg-amber-100"
             >
               <Package className="h-4 w-4 shrink-0" />
-              {data?.low_stock_count} ta mahsulot minimumdan kam
+              {t('{low_stock_count} ta mahsulot minimumdan kam', {
+                low_stock_count: data?.low_stock_count,
+              })}
             </Link>
           )}
         </section>

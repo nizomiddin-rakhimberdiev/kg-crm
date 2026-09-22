@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -62,7 +63,7 @@ class NotificationViewSet(BranchScopedMixin, TenantReadOnlyViewSet):
         # ro'yxatga umuman tushmaydi.
         guardians = list(Guardian.objects.filter(id__in=data["guardian_ids"]))
         if not guardians:
-            raise BusinessRuleViolation("Vasiylar topilmadi.")
+            raise BusinessRuleViolation(gettext("Vasiylar topilmadi."))
 
         queued: list[Notification] = []
         for guardian in guardians:
@@ -93,7 +94,9 @@ class NotificationViewSet(BranchScopedMixin, TenantReadOnlyViewSet):
         """Muvaffaqiyatsiz xabarni qayta yuboradi."""
         notification = self.get_object()
         if notification.status != NotificationStatus.FAILED:
-            raise BusinessRuleViolation("Faqat muvaffaqiyatsiz xabarni qayta yuborish mumkin.")
+            raise BusinessRuleViolation(
+                gettext("Faqat muvaffaqiyatsiz xabarni qayta yuborish mumkin.")
+            )
         services.dispatch_notification(notification)
         notification.refresh_from_db()
         return Response(NotificationSerializer(notification).data)

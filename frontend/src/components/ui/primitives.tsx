@@ -1,19 +1,24 @@
 import * as React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowUpRight, Check, ChevronDown, ChevronLeft, ChevronRight, type LucideIcon } from 'lucide-react'
+import {
+  ArrowUpRight,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  type LucideIcon,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Modal } from './Modal'
+import { t } from '@/lib/i18n'
 
 /* ------------------------------------------------------------------ Card */
 
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        'rounded-2xl border border-slate-200 bg-white shadow-card',
-        className,
-      )}
+      className={cn('rounded-2xl border border-slate-200 bg-white shadow-card', className)}
       {...props}
     />
   )
@@ -305,7 +310,12 @@ export function StatCard({
         className="group w-full rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md active:scale-[0.99]"
       >
         <div className="flex items-start justify-between">
-          <div className={cn('grid place-items-center w-10 h-10 rounded-xl', iconToneClasses[iconTone])}>
+          <div
+            className={cn(
+              'grid place-items-center w-10 h-10 rounded-xl',
+              iconToneClasses[iconTone],
+            )}
+          >
             <Icon className="w-5 h-5" />
           </div>
           <div className="flex items-center gap-2">
@@ -313,7 +323,9 @@ export function StatCard({
             <ArrowUpRight className="w-4 h-4 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100" />
           </div>
         </div>
-        <p className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+        <p className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+          {label}
+        </p>
         <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
         {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
       </button>
@@ -321,11 +333,18 @@ export function StatCard({
       <Modal open={open} onClose={() => setOpen(false)}>
         <div className="p-6">
           <div className="flex items-start gap-4 pr-8">
-            <div className={cn('grid place-items-center w-12 h-12 rounded-2xl', iconToneClasses[iconTone])}>
+            <div
+              className={cn(
+                'grid place-items-center w-12 h-12 rounded-2xl',
+                iconToneClasses[iconTone],
+              )}
+            >
               <Icon className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                {label}
+              </p>
               <p className="text-3xl font-bold text-slate-900">{value}</p>
               {(delta || hint) && (
                 <p className="mt-0.5 text-sm">
@@ -339,19 +358,25 @@ export function StatCard({
 
           <p className="mt-5 text-sm leading-relaxed text-slate-600">
             {detail?.description ??
-              "Bu ko'rsatkich real vaqt rejimida yangilanib turadi. To'liq ma'lumot uchun tegishli bo'limga o'ting."}
+              t(
+                "Bu ko'rsatkich real vaqt rejimida yangilanib turadi. To'liq ma'lumot uchun tegishli bo'limga o'ting.",
+              )}
           </p>
 
           {detail?.breakdown && detail.breakdown.length > 0 && (
             <div className="mt-5 space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Taqsimot</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                {t('Taqsimot')}
+              </p>
               {detail.breakdown.map((row) => (
                 <div
                   key={row.label}
                   className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-2.5"
                 >
                   <span className="text-sm text-slate-600">{row.label}</span>
-                  <span className={cn('text-sm font-semibold', rowClass(row.tone))}>{row.value}</span>
+                  <span className={cn('text-sm font-semibold', rowClass(row.tone))}>
+                    {row.value}
+                  </span>
                 </div>
               ))}
             </div>
@@ -359,7 +384,7 @@ export function StatCard({
 
           <div className="mt-6 flex items-center justify-end gap-2">
             <Button variant="outline" onClick={() => setOpen(false)}>
-              Yopish
+              {t('Yopish')}
             </Button>
             {detail?.linkTo && (
               <Button
@@ -369,7 +394,7 @@ export function StatCard({
                   navigate(detail.linkTo!)
                 }}
               >
-                {detail.linkLabel ?? "Batafsil ko'rish"} →
+                {detail.linkLabel ?? t("Batafsil ko'rish")} →
               </Button>
             )}
           </div>
@@ -459,26 +484,26 @@ export function Pagination({
       <div className="ml-auto flex items-center gap-2">
         {onPageSizeChange && (
           <select
-            aria-label="Sahifadagi qatorlar"
+            aria-label={t('Sahifadagi qatorlar')}
             value={pageSize}
             onChange={(event) => onPageSizeChange(Number(event.target.value))}
             className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-600 outline-none focus:border-brand-500"
           >
             {pageSizeOptions.map((size) => (
               <option key={size} value={size}>
-                {size} tadan
+                {t('{size} tadan', { size })}
               </option>
             ))}
           </select>
         )}
 
         {totalPages > 1 && (
-          <nav aria-label="Sahifalar" className="flex items-center gap-1">
+          <nav aria-label={t('Sahifalar')} className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => go(page - 1)}
               disabled={page <= 1}
-              aria-label="Oldingi sahifa"
+              aria-label={t('Oldingi sahifa')}
               className={navButton}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -517,7 +542,7 @@ export function Pagination({
               type="button"
               onClick={() => go(page + 1)}
               disabled={page >= totalPages}
-              aria-label="Keyingi sahifa"
+              aria-label={t('Keyingi sahifa')}
               className={navButton}
             >
               <ChevronRight className="h-4 w-4" />
@@ -554,7 +579,7 @@ export function Select({
   value,
   defaultValue,
   onChange,
-  placeholder = 'Tanlang',
+  placeholder = t('Tanlang'),
   className,
 }: SelectProps) {
   const [open, setOpen] = React.useState(false)
@@ -593,14 +618,19 @@ export function Select({
           onClick={() => setOpen((o) => !o)}
           className={cn(
             'flex w-full items-center justify-between gap-2 rounded-lg border bg-white px-3 py-2 text-sm transition-colors',
-            open ? 'border-brand-400 ring-2 ring-brand-500/20' : 'border-slate-200 hover:border-slate-300',
+            open
+              ? 'border-brand-400 ring-2 ring-brand-500/20'
+              : 'border-slate-200 hover:border-slate-300',
           )}
         >
           <span className={selected ? 'text-slate-700' : 'text-slate-400'}>
             {selected?.label ?? placeholder}
           </span>
           <ChevronDown
-            className={cn('w-4 h-4 shrink-0 text-slate-400 transition-transform', open && 'rotate-180')}
+            className={cn(
+              'w-4 h-4 shrink-0 text-slate-400 transition-transform',
+              open && 'rotate-180',
+            )}
           />
         </button>
 

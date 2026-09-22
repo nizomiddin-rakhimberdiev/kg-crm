@@ -15,6 +15,7 @@ import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { EmptyRow } from '@/components/ui/EmptyState'
+import { t } from '@/lib/i18n'
 
 export default function BranchesPage() {
   const organizationId = useOrganizationId()
@@ -40,7 +41,7 @@ export default function BranchesPage() {
       void invalidate()
     },
     onError: (error) => {
-      setFormError(error instanceof ApiError ? error.message : 'Xatolik yuz berdi.')
+      setFormError(error instanceof ApiError ? error.message : t('Xatolik yuz berdi.'))
     },
   })
 
@@ -48,16 +49,16 @@ export default function BranchesPage() {
     mutationFn: branchesApi.remove,
     onSuccess: invalidate,
     onError: (error) => {
-      setFormError(error instanceof ApiError ? error.message : 'Xatolik yuz berdi.')
+      setFormError(error instanceof ApiError ? error.message : t('Xatolik yuz berdi.'))
     },
   })
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Filiallar</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Filiallar')}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Bitta obuna — cheksiz filial. To'lov faqat bolalar soniga bog'liq.
+          {t("Bitta obuna — cheksiz filial. To'lov faqat bolalar soniga bog'liq.")}
         </p>
       </div>
 
@@ -77,7 +78,7 @@ export default function BranchesPage() {
         >
           <div className="min-w-[200px] flex-1">
             <label htmlFor="branch-name" className="mb-1 block text-xs font-medium text-slate-600">
-              Filial nomi
+              {t('Filial nomi')}
             </label>
             <input
               id="branch-name"
@@ -89,7 +90,7 @@ export default function BranchesPage() {
           </div>
           <div className="w-32">
             <label htmlFor="branch-code" className="mb-1 block text-xs font-medium text-slate-600">
-              Kod
+              {t('Kod')}
             </label>
             <input
               id="branch-code"
@@ -109,26 +110,28 @@ export default function BranchesPage() {
             )}
           >
             <Plus className="h-4 w-4" />
-            Qo'shish
+            {t("Qo'shish")}
           </button>
         </form>
       )}
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         {branchesQuery.isPending && (
-          <p className="px-4 py-8 text-center text-sm text-slate-400">Yuklanmoqda…</p>
+          <p className="px-4 py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
         )}
 
         {branchesQuery.isError && (
           <p className="px-4 py-8 text-center text-sm text-red-600">
             {branchesQuery.error instanceof ApiError
               ? branchesQuery.error.message
-              : 'Ma\'lumotni yuklab bo\'lmadi.'}
+              : t("Ma'lumotni yuklab bo'lmadi.")}
           </p>
         )}
 
         {branchesQuery.data?.items.length === 0 && (
-          <p className="px-4 py-8 text-center text-sm text-slate-400">Hozircha filial yo'q.</p>
+          <p className="px-4 py-8 text-center text-sm text-slate-400">
+            {t("Hozircha filial yo'q.")}
+          </p>
         )}
 
         {branchesQuery.data && branchesQuery.data.items.length > 0 && (
@@ -136,9 +139,9 @@ export default function BranchesPage() {
             <table className="w-full min-w-[560px] text-sm">
               <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Nomi</th>
-                  <th className="px-4 py-3 font-medium">Kod</th>
-                  <th className="px-4 py-3 font-medium">Valyuta</th>
+                  <th className="px-4 py-3 font-medium">{t('Nomi')}</th>
+                  <th className="px-4 py-3 font-medium">{t('Kod')}</th>
+                  <th className="px-4 py-3 font-medium">{t('Valyuta')}</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -160,7 +163,7 @@ export default function BranchesPage() {
                           onClick={() => deleteMutation.mutate(branch.id)}
                           disabled={deleteMutation.isPending}
                           className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                          title="O'chirish"
+                          title={t("O'chirish")}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -172,8 +175,10 @@ export default function BranchesPage() {
                   <EmptyRow
                     colSpan={5}
                     icon={Building2}
-                    title="Filial yo'q"
-                    hint="Bog'chaning birinchi filiali ro'yxatdan o'tishda yaratiladi. Yangi bino ochsangiz shu yerdan qo'shasiz."
+                    title={t("Filial yo'q")}
+                    hint={t(
+                      "Bog'chaning birinchi filiali ro'yxatdan o'tishda yaratiladi. Yangi bino ochsangiz shu yerdan qo'shasiz.",
+                    )}
                   />
                 )}
               </tbody>

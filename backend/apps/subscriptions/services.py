@@ -23,6 +23,7 @@ from typing import Any
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from apps.core.exceptions import BusinessRuleViolation
 from apps.core.tenancy import organization_context, platform_context
@@ -81,7 +82,9 @@ def current_plan(code: str = "standard", *, on: date | None = None) -> Subscript
         .first()
     )
     if plan is None:
-        raise BusinessRuleViolation(f"'{code}' uchun amaldagi plan topilmadi.")
+        raise BusinessRuleViolation(
+            gettext("'{code}' uchun amaldagi plan topilmadi.").format(code=code)
+        )
     return plan
 
 
@@ -113,7 +116,7 @@ def start_trial(*, organization: Any, plan: SubscriptionPlan | None = None) -> S
         .exclude(status=SubscriptionStatus.CANCELLED)
         .exists()
     ):
-        raise BusinessRuleViolation("Bu tashkilotda allaqachon obuna bor.")
+        raise BusinessRuleViolation(gettext("Bu tashkilotda allaqachon obuna bor."))
 
     now = timezone.now()
     today = timezone.localdate()
@@ -151,9 +154,11 @@ def accept_trial(
     ochiq aytilgani.
     """
     if subscription.status != SubscriptionStatus.TRIALING:
-        raise BusinessRuleViolation("Faqat sinov davridagi obunani o'tkazish mumkin.")
+        raise BusinessRuleViolation(gettext("Faqat sinov davridagi obunani o'tkazish mumkin."))
     if payment_term not in TERM_DISCOUNTS:
-        raise BusinessRuleViolation(f"Noma'lum to'lov muddati: {payment_term}")
+        raise BusinessRuleViolation(
+            gettext("Noma'lum to'lov muddati: {payment_term}").format(payment_term=payment_term)
+        )
 
     months = TERM_MONTHS[payment_term]
     # Chegirma obunaga NUSXA qilinadi: keyin vendor "yillik" nimaga
@@ -205,9 +210,11 @@ def change_payment_term(*, subscription: Subscription, payment_term: str) -> Sub
     tahrirlashni.
     """
     if payment_term not in TERM_DISCOUNTS:
-        raise BusinessRuleViolation(f"Noma'lum to'lov muddati: {payment_term}")
+        raise BusinessRuleViolation(
+            gettext("Noma'lum to'lov muddati: {payment_term}").format(payment_term=payment_term)
+        )
     if subscription.status in (SubscriptionStatus.CANCELLED, SubscriptionStatus.SUSPENDED):
-        raise BusinessRuleViolation("Bu holatda muddatni o'zgartirib bo'lmaydi.")
+        raise BusinessRuleViolation(gettext("Bu holatda muddatni o'zgartirib bo'lmaydi."))
 
     subscription.payment_term = payment_term
     subscription.discount_percent = TERM_DISCOUNTS[payment_term]
@@ -305,7 +312,7 @@ def adjust_usage(*, snapshot: UsageSnapshot, billable_children: int, note: str) 
     o'zgartirdi" javobsiz qolsa, dalilning butun ma'nosi yo'qoladi.
     """
     if not note.strip():
-        raise BusinessRuleViolation("Tuzatish uchun izoh majburiy.")
+        raise BusinessRuleViolation(gettext("Tuzatish uchun izoh majburiy."))
 
     return UsageSnapshot.objects.create(
         organization=snapshot.organization,
@@ -426,7 +433,7 @@ def issue_invoice(
     ya'ni ortiqcha faqat undan oshgani uchun olinadi (docs/01 §4.3).
     """
     if snapshot.closed_at is None:
-        raise BusinessRuleViolation("Yopilmagan o'lchovdan hisob yozib bo'lmaydi.")
+        raise BusinessRuleViolation(gettext("Yopilmagan o'lchovdan hisob yozib bo'lmaydi."))
 
     quote = pricing.quote(
         plan=subscription.plan,
@@ -475,14 +482,16 @@ def record_subscription_payment(
     """
     locked = SubscriptionInvoice.objects.select_for_update().get(pk=invoice.pk)
     if locked.status == SubscriptionInvoiceStatus.CANCELLED:
-        raise BusinessRuleViolation("Bekor qilingan hisobga to'lov yozib bo'lmaydi.")
+        raise BusinessRuleViolation(gettext("Bekor qilingan hisobga to'lov yozib bo'lmaydi."))
     if amount <= 0:
-        raise BusinessRuleViolation("To'lov summasi noldan katta bo'lishi kerak.")
+        raise BusinessRuleViolation(gettext("To'lov summasi noldan katta bo'lishi kerak."))
 
     paid = sum((payment.amount for payment in locked.payments.all()), Decimal("0"))
     if paid + amount > locked.total_amount:
         raise BusinessRuleViolation(
-            f"Ortiqcha to'lov: qoldiq {locked.total_amount - paid}, kiritilgan {amount}."
+            gettext("Ortiqcha to'lov: qoldiq {v}, kiritilgan {amount}.").format(
+                v=locked.total_amount - paid, amount=amount
+            )
         )
 
     payment = SubscriptionPayment.objects.create(

@@ -16,6 +16,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from django.db import models
+from django.utils.translation import gettext_lazy
 
 from apps.core.models import BaseModel, BranchScopedModel
 
@@ -30,9 +31,9 @@ __all__ = [
 
 
 class BillingPeriod(models.TextChoices):
-    MONTHLY = "monthly", "Oylik"
-    DAILY = "daily", "Kunlik"
-    TERMLY = "termly", "Semestrli"
+    MONTHLY = "monthly", gettext_lazy("Oylik")
+    DAILY = "daily", gettext_lazy("Kunlik")
+    TERMLY = "termly", gettext_lazy("Semestrli")
 
 
 class TariffPlan(BranchScopedModel):
@@ -63,8 +64,8 @@ class TariffPlan(BranchScopedModel):
 
 
 class DiscountType(models.TextChoices):
-    PERCENT = "percent", "Foiz"
-    FIXED = "fixed", "Belgilangan summa"
+    PERCENT = "percent", gettext_lazy("Foiz")
+    FIXED = "fixed", gettext_lazy("Belgilangan summa")
 
 
 class Discount(BranchScopedModel):
@@ -103,12 +104,12 @@ class Discount(BranchScopedModel):
 
 
 class InvoiceStatus(models.TextChoices):
-    DRAFT = "draft", "Qoralama"
-    ISSUED = "issued", "Chiqarilgan"
-    PARTIALLY_PAID = "partially_paid", "Qisman to'langan"
-    PAID = "paid", "To'langan"
-    OVERDUE = "overdue", "Muddati o'tgan"
-    CANCELLED = "cancelled", "Bekor qilingan"
+    DRAFT = "draft", gettext_lazy("Qoralama")
+    ISSUED = "issued", gettext_lazy("Chiqarilgan")
+    PARTIALLY_PAID = "partially_paid", gettext_lazy("Qisman to'langan")
+    PAID = "paid", gettext_lazy("To'langan")
+    OVERDUE = "overdue", gettext_lazy("Muddati o'tgan")
+    CANCELLED = "cancelled", gettext_lazy("Bekor qilingan")
 
 
 class Invoice(BranchScopedModel):
@@ -218,10 +219,10 @@ class InvoiceLine(BaseModel):
 
 
 class PaymentMethod(models.TextChoices):
-    CASH = "cash", "Naqd"
-    CARD = "card", "Karta"
-    BANK_TRANSFER = "bank_transfer", "Bank o'tkazmasi"
-    ONLINE = "online", "Onlayn"
+    CASH = "cash", gettext_lazy("Naqd")
+    CARD = "card", gettext_lazy("Karta")
+    BANK_TRANSFER = "bank_transfer", gettext_lazy("Bank o'tkazmasi")
+    ONLINE = "online", gettext_lazy("Onlayn")
 
 
 class Payment(BranchScopedModel):
@@ -311,23 +312,23 @@ class Payment(BranchScopedModel):
 
 
 class EntryType(models.TextChoices):
-    CHARGE = "charge", "Hisoblangan"
-    PAYMENT = "payment", "To'lov"
-    DISCOUNT = "discount", "Chegirma"
-    ADJUSTMENT = "adjustment", "Tuzatish"
-    REFUND = "refund", "Qaytarish"
+    CHARGE = "charge", gettext_lazy("Hisoblangan")
+    PAYMENT = "payment", gettext_lazy("To'lov")
+    DISCOUNT = "discount", gettext_lazy("Chegirma")
+    ADJUSTMENT = "adjustment", gettext_lazy("Tuzatish")
+    REFUND = "refund", gettext_lazy("Qaytarish")
 
 
 class Direction(models.TextChoices):
-    DEBIT = "debit", "Debet"
-    CREDIT = "credit", "Kredit"
+    DEBIT = "debit", gettext_lazy("Debet")
+    CREDIT = "credit", gettext_lazy("Kredit")
 
 
 class SourceType(models.TextChoices):
-    INVOICE = "invoice", "Hisob-faktura"
-    PAYMENT = "payment", "To'lov"
-    DISCOUNT = "discount", "Chegirma"
-    MANUAL = "manual", "Qo'lda"
+    INVOICE = "invoice", gettext_lazy("Hisob-faktura")
+    PAYMENT = "payment", gettext_lazy("To'lov")
+    DISCOUNT = "discount", gettext_lazy("Chegirma")
+    MANUAL = "manual", gettext_lazy("Qo'lda")
 
 
 class ChildLedgerEntry(BranchScopedModel):

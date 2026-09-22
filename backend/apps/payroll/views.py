@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -66,8 +67,10 @@ class PayrollRunViewSet(BranchScopedMixin, TenantViewSet):
         # (docs/02 §11.3 — tashkilot → ruxsat → biznes qoidasi).
         self.get_object()
         raise BusinessRuleViolation(
-            "Hisoblash to'g'ridan-to'g'ri tahrirlanmaydi — `finalize` yoki "
-            "`mark-paid` amallaridan foydalaning."
+            gettext(
+                "Hisoblash to'g'ridan-to'g'ri tahrirlanmaydi — `finalize` yoki "
+                "`mark-paid` amallaridan foydalaning."
+            )
         )
 
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
@@ -101,7 +104,7 @@ class PayrollRunViewSet(BranchScopedMixin, TenantViewSet):
         run = self.get_object()
         item = PayrollItem.objects.filter(payroll_run=run, pk=item_id).first()
         if item is None:
-            raise BusinessRuleViolation("Satr topilmadi.")
+            raise BusinessRuleViolation(gettext("Satr topilmadi."))
 
         payload = UpdateItemSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -149,5 +152,5 @@ class PayrollRunViewSet(BranchScopedMixin, TenantViewSet):
         run = self.get_object()
         item = PayrollItem.objects.filter(payroll_run=run, employee_id=employee_id).first()
         if item is None:
-            raise BusinessRuleViolation("Bu xodim uchun satr topilmadi.")
+            raise BusinessRuleViolation(gettext("Bu xodim uchun satr topilmadi."))
         return Response(services.payslip(item=item))

@@ -22,6 +22,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from django.db import models
+from django.utils.translation import gettext_lazy
 
 from apps.core.models import BaseModel, TenantScopedModel
 
@@ -92,12 +93,12 @@ class SubscriptionPlan(BaseModel):
 
 
 class SubscriptionStatus(models.TextChoices):
-    TRIALING = "trialing", "Sinov davri"
-    PENDING_PAYMENT = "pending_payment", "To'lov kutilmoqda"
-    ACTIVE = "active", "Faol"
-    PAST_DUE = "past_due", "Muddati o'tgan"
-    SUSPENDED = "suspended", "To'xtatilgan"
-    CANCELLED = "cancelled", "Bekor qilingan"
+    TRIALING = "trialing", gettext_lazy("Sinov davri")
+    PENDING_PAYMENT = "pending_payment", gettext_lazy("To'lov kutilmoqda")
+    ACTIVE = "active", gettext_lazy("Faol")
+    PAST_DUE = "past_due", gettext_lazy("Muddati o'tgan")
+    SUSPENDED = "suspended", gettext_lazy("To'xtatilgan")
+    CANCELLED = "cancelled", gettext_lazy("Bekor qilingan")
 
 
 # Yozish taqiqlanadigan holatlar. Ma'lumot HECH QACHON o'chirilmaydi va
@@ -110,9 +111,9 @@ READ_ONLY_STATUSES: tuple[str, ...] = (
 
 
 class PaymentTerm(models.TextChoices):
-    MONTHLY = "monthly", "Oylik"
-    SEMIANNUAL = "semiannual", "Yarim yillik"
-    ANNUAL = "annual", "Yillik"
+    MONTHLY = "monthly", gettext_lazy("Oylik")
+    SEMIANNUAL = "semiannual", gettext_lazy("Yarim yillik")
+    ANNUAL = "annual", gettext_lazy("Yillik")
 
 
 # Muddat → chegirma foizi (docs/01 §4.3). Bu **standart taklif**;
@@ -206,8 +207,8 @@ class Subscription(TenantScopedModel):
 
 
 class MeasurementMethod(models.TextChoices):
-    DAILY_PEAK = "daily_peak", "Kunlik eng yuqori"
-    MANUAL_ADJUSTMENT = "manual_adjustment", "Qo'lda tuzatish"
+    DAILY_PEAK = "daily_peak", gettext_lazy("Kunlik eng yuqori")
+    MANUAL_ADJUSTMENT = "manual_adjustment", gettext_lazy("Qo'lda tuzatish")
 
 
 class UsageSnapshot(TenantScopedModel):
@@ -284,10 +285,10 @@ class UsageSnapshot(TenantScopedModel):
 
 
 class SubscriptionInvoiceStatus(models.TextChoices):
-    ISSUED = "issued", "Yozilgan"
-    PAID = "paid", "To'langan"
-    OVERDUE = "overdue", "Muddati o'tgan"
-    CANCELLED = "cancelled", "Bekor qilingan"
+    ISSUED = "issued", gettext_lazy("Yozilgan")
+    PAID = "paid", gettext_lazy("To'langan")
+    OVERDUE = "overdue", gettext_lazy("Muddati o'tgan")
+    CANCELLED = "cancelled", gettext_lazy("Bekor qilingan")
 
 
 class SubscriptionInvoice(TenantScopedModel):
@@ -369,9 +370,9 @@ class SubscriptionInvoice(TenantScopedModel):
 
 
 class SubscriptionPaymentMethod(models.TextChoices):
-    BANK_TRANSFER = "bank_transfer", "Bank o'tkazmasi"
-    CARD = "card", "Karta"
-    CASH = "cash", "Naqd"
+    BANK_TRANSFER = "bank_transfer", gettext_lazy("Bank o'tkazmasi")
+    CARD = "card", gettext_lazy("Karta")
+    CASH = "cash", gettext_lazy("Naqd")
 
 
 class SubscriptionPayment(TenantScopedModel):

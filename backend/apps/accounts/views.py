@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from django.db.models import QuerySet
+from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -110,8 +111,8 @@ class UserViewSet(BranchScopedMixin, TenantViewSet):
                     "success": False,
                     "error": {
                         "code": "VALIDATION_ERROR",
-                        "message": "Yangi parol ko'rsatilmagan.",
-                        "details": {"password": ["Bu maydon majburiy."]},
+                        "message": gettext("Yangi parol ko'rsatilmagan."),
+                        "details": {"password": [gettext("Bu maydon majburiy.")]},
                     },
                 },
                 status=status.HTTP_400_BAD_REQUEST,
@@ -141,7 +142,7 @@ class RoleViewSet(TenantViewSet):
         if instance.is_system:
             from apps.core.exceptions import BusinessRuleViolation
 
-            raise BusinessRuleViolation("Tizim rolini o'chirib bo'lmaydi.")
+            raise BusinessRuleViolation(gettext("Tizim rolini o'chirib bo'lmaydi."))
         instance.is_active = False
         instance.save(update_fields=["is_active"])
 
@@ -165,8 +166,10 @@ class RoleViewSet(TenantViewSet):
 
             missing = sorted(OWNER_LOCKED_PERMISSIONS - wanted)
             raise BusinessRuleViolation(
-                "Tashkilot egasi rolidan quyidagi ruxsatlarni olib tashlab bo'lmaydi "
-                f"(aks holda rollarni hech kim sozlay olmay qoladi): {', '.join(missing)}."
+                gettext(
+                    "Tashkilot egasi rolidan quyidagi ruxsatlarni olib tashlab bo'lmaydi "
+                    "(aks holda rollarni hech kim sozlay olmay qoladi): {join}."
+                ).format(join=", ".join(missing))
             )
 
         permissions = list(Permission.objects.filter(code__in=wanted))

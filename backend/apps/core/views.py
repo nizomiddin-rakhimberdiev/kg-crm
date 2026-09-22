@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import Any
 
 from django.http import HttpRequest, JsonResponse
+from django.utils.translation import gettext
 
 __all__ = ["api_not_found", "api_server_error"]
 
@@ -28,7 +29,7 @@ def _envelope(code: str, message: str, status: int) -> JsonResponse:
 
 def api_not_found(request: HttpRequest, exception: Exception | None = None) -> Any:
     if request.path.startswith(_API_PREFIX):
-        return _envelope("NOT_FOUND", "So'ralgan resurs topilmadi.", 404)
+        return _envelope("NOT_FOUND", gettext("So'ralgan resurs topilmadi."), 404)
     from django.views.defaults import page_not_found
 
     return page_not_found(request, exception)  # type: ignore[arg-type]
@@ -37,7 +38,7 @@ def api_not_found(request: HttpRequest, exception: Exception | None = None) -> A
 def api_server_error(request: HttpRequest) -> Any:
     if request.path.startswith(_API_PREFIX):
         # Ichki tafsilotlar hech qachon mijozga chiqmaydi (docs/02 §20).
-        return _envelope("INTERNAL_ERROR", "Kutilmagan xatolik yuz berdi.", 500)
+        return _envelope("INTERNAL_ERROR", gettext("Kutilmagan xatolik yuz berdi."), 500)
     from django.views.defaults import server_error
 
     return server_error(request)

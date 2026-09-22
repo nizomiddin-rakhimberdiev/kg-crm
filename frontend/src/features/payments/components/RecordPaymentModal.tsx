@@ -15,11 +15,12 @@ import { Modal } from '@/components/ui/Modal'
 import { paymentsApi } from '@/features/payments/api'
 import { ApiError, type Invoice } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 const METHODS: Array<[string, string]> = [
-  ['cash', 'Naqd'],
-  ['card', 'Karta'],
-  ['bank_transfer', "Bank o'tkazmasi"],
+  ['cash', t('Naqd')],
+  ['card', t('Karta')],
+  ['bank_transfer', t("Bank o'tkazmasi")],
 ]
 
 const money = (value: string) => new Intl.NumberFormat('uz-UZ').format(Number(value))
@@ -68,7 +69,7 @@ export function RecordPaymentModal({
       }
       onClose()
     },
-    onError: (err) => setError(err instanceof ApiError ? err.message : 'Xatolik yuz berdi.'),
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
   const tooMuch = Number(amount) > outstanding
@@ -77,15 +78,17 @@ export function RecordPaymentModal({
     <Modal open onClose={onClose} className="max-w-md">
       <div className="p-6">
         <div className="mb-4 pr-10">
-          <h2 className="text-lg font-bold text-slate-900">To'lov qabul qilish</h2>
+          <h2 className="text-lg font-bold text-slate-900">{t("To'lov qabul qilish")}</h2>
           <p className="mt-1 text-sm text-slate-500">
             {invoice.child_name} · {invoice.number}
           </p>
         </div>
 
         <div className="mb-4 rounded-lg bg-slate-50 px-3 py-2 text-sm">
-          <span className="text-slate-500">To'lanishi kerak: </span>
-          <span className="font-semibold text-slate-900">{money(invoice.amount_outstanding)} so'm</span>
+          <span className="text-slate-500">{t("To'lanishi kerak:")} </span>
+          <span className="font-semibold text-slate-900">
+            {t("{money} so'm", { money: money(invoice.amount_outstanding) })}
+          </span>
         </div>
 
         {error && (
@@ -103,7 +106,7 @@ export function RecordPaymentModal({
         >
           <div>
             <label htmlFor="amount" className="mb-1 block text-xs font-medium text-slate-600">
-              Summa
+              {t('Summa')}
             </label>
             <input
               id="amount"
@@ -123,13 +126,15 @@ export function RecordPaymentModal({
             />
             {tooMuch && (
               <p className="mt-1 text-xs text-red-600">
-                Qoldiqdan ortiq. Ortiqcha summani alohida avans sifatida kiriting.
+                {t('Qoldiqdan ortiq. Ortiqcha summani alohida avans sifatida kiriting.')}
               </p>
             )}
           </div>
 
           <div>
-            <span className="mb-1 block text-xs font-medium text-slate-600">To'lov usuli</span>
+            <span className="mb-1 block text-xs font-medium text-slate-600">
+              {t("To'lov usuli")}
+            </span>
             <div className="flex gap-2">
               {METHODS.map(([value, label]) => (
                 <button
@@ -152,13 +157,13 @@ export function RecordPaymentModal({
           {method !== 'cash' && (
             <div>
               <label htmlFor="reference" className="mb-1 block text-xs font-medium text-slate-600">
-                Ma'lumotnoma (ixtiyoriy)
+                {t("Ma'lumotnoma (ixtiyoriy)")}
               </label>
               <input
                 id="reference"
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
-                placeholder="Tranzaksiya raqami"
+                placeholder={t('Tranzaksiya raqami')}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
               />
             </div>
@@ -173,7 +178,9 @@ export function RecordPaymentModal({
             )}
           >
             <Banknote className="h-4 w-4" />
-            {record.isPending ? 'Saqlanmoqda…' : `${money(amount || '0')} so'm qabul qilish`}
+            {record.isPending
+              ? t('Saqlanmoqda…')
+              : t("{money} so'm qabul qilish", { money: money(amount || '0') })}
           </button>
         </form>
       </div>

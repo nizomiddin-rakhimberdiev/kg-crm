@@ -7,6 +7,7 @@ import { PermissionRoute, ProtectedRoute, PublicOnlyRoute } from './app/routes/P
 import LoginPage from './features/auth/pages/LoginPage'
 import { basenameFor, currentSlug } from './lib/tenantAddress'
 import { env } from './config/env'
+import { t } from '@/lib/i18n'
 // Nomlangan eksportlar uchun `lazy()` modulni default eksportga
 // map qilishni talab qiladi. Bu uchtasi ham public saytga tegishli
 // va CRM foydalanuvchisiga hech qachon kerak bo'lmaydi — ular
@@ -117,7 +118,7 @@ const saasOnlyRoutes = env.isStandalone
           <Suspense
             fallback={
               <div className="grid min-h-screen place-items-center text-sm text-slate-400">
-                Yuklanmoqda…
+                {t('Yuklanmoqda…')}
               </div>
             }
           >

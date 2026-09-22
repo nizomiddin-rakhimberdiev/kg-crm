@@ -15,18 +15,19 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 const STATUS: Record<string, [string, string]> = {
-  queued: ['Navbatda', 'bg-slate-100 text-slate-600'],
-  sent: ['Yuborildi', 'bg-emerald-50 text-emerald-700'],
-  failed: ['Xato', 'bg-red-50 text-red-700'],
-  cancelled: ['Bekor qilingan', 'bg-amber-50 text-amber-700'],
+  queued: [t('Navbatda'), 'bg-slate-100 text-slate-600'],
+  sent: [t('Yuborildi'), 'bg-emerald-50 text-emerald-700'],
+  failed: [t('Xato'), 'bg-red-50 text-red-700'],
+  cancelled: [t('Bekor qilingan'), 'bg-amber-50 text-amber-700'],
 }
 
 const TEMPLATE_LABEL: Record<string, string> = {
-  payment_received: "To'lov qabul qilindi",
-  debt_reminder: 'Qarzdorlik eslatmasi',
-  absence_notice: 'Kelmagani haqida',
+  payment_received: t("To'lov qabul qilindi"),
+  debt_reminder: t('Qarzdorlik eslatmasi'),
+  absence_notice: t('Kelmagani haqida'),
 }
 
 const when = (value: string | null) =>
@@ -56,7 +57,7 @@ export default function NotificationsPage() {
     void queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'notifications'] })
   const fail = (err: unknown) => {
     setNotice(null)
-    setError(err instanceof ApiError ? err.message : 'Xatolik yuz berdi.')
+    setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.'))
   }
 
   const remind = useMutation({
@@ -65,8 +66,8 @@ export default function NotificationsPage() {
       setError(null)
       setNotice(
         result.queued === 0
-          ? 'Qarzdor topilmadi — hech kimga eslatma yuborilmadi.'
-          : `${result.queued} ta eslatma yuborildi.`,
+          ? t('Qarzdor topilmadi — hech kimga eslatma yuborilmadi.')
+          : t('{queued} ta eslatma yuborildi.', { queued: result.queued }),
       )
       invalidate()
     },
@@ -86,7 +87,7 @@ export default function NotificationsPage() {
     mutationFn: ({ id, body }: { id: string; body: string }) => templatesApi.update(id, { body }),
     onSuccess: (template) => {
       setError(null)
-      setNotice('Shablon saqlandi.')
+      setNotice(t('Shablon saqlandi.'))
       setDraft((prev) => {
         const next = { ...prev }
         delete next[template.id]
@@ -105,9 +106,11 @@ export default function NotificationsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Bildirishnomalar</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            {t('Bildirishnomalar')}
+          </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Yuborilgan har bir xabar shu yerda qoladi — holati va sababi bilan.
+            {t('Yuborilgan har bir xabar shu yerda qoladi — holati va sababi bilan.')}
           </p>
         </div>
         {can('notifications.create') && (
@@ -118,7 +121,7 @@ export default function NotificationsPage() {
             className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
           >
             <BellRing className="h-4 w-4" />
-            Qarzdorlarga eslatma
+            {t('Qarzdorlarga eslatma')}
           </button>
         )}
       </div>
@@ -135,13 +138,13 @@ export default function NotificationsPage() {
       {/* Shablonlar — matnni bog'cha o'zi tahrirlaydi, bu mahsulot qarori emas. */}
       {can('notifications.update') && templatesQuery.data && (
         <section className="rounded-xl border border-slate-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-slate-900">Xabar shablonlari</h2>
+          <h2 className="text-sm font-semibold text-slate-900">{t('Xabar shablonlari')}</h2>
           <p className="mt-1 text-xs text-slate-500">
             <code className="rounded bg-slate-100 px-1">${'{guardian}'}</code>,{' '}
             <code className="rounded bg-slate-100 px-1">${'{child}'}</code>,{' '}
             <code className="rounded bg-slate-100 px-1">${'{amount}'}</code>,{' '}
-            <code className="rounded bg-slate-100 px-1">${'{organization}'}</code> o'rinbosarlari
-            yuborishda to'ldiriladi.
+            <code className="rounded bg-slate-100 px-1">${'{organization}'}</code>{' '}
+            {t("o'rinbosarlari yuborishda to'ldiriladi.")}
           </p>
           <div className="mt-3 space-y-3">
             {templatesQuery.data.items.map((template) => {
@@ -171,7 +174,7 @@ export default function NotificationsPage() {
                       onClick={() => saveTemplate.mutate({ id: template.id, body: value })}
                       className="h-fit rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40"
                     >
-                      Saqlash
+                      {t('Saqlash')}
                     </button>
                   </div>
                 </div>
@@ -183,10 +186,10 @@ export default function NotificationsPage() {
 
       <div className="flex items-center gap-2">
         {[
-          ['', 'Hammasi'],
-          ['sent', 'Yuborilgan'],
-          ['failed', 'Xato'],
-          ['queued', 'Navbatda'],
+          ['', t('Hammasi')],
+          ['sent', t('Yuborilgan')],
+          ['failed', t('Xato')],
+          ['queued', t('Navbatda')],
         ].map(([key, label]) => (
           <button
             key={key || 'all'}
@@ -194,7 +197,9 @@ export default function NotificationsPage() {
             onClick={() => setStatus(key)}
             className={cn(
               'rounded-lg px-3 py-1.5 text-sm font-medium',
-              status === key ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50',
+              status === key
+                ? 'bg-slate-900 text-white'
+                : 'bg-white text-slate-600 hover:bg-slate-50',
             )}
           >
             {label}
@@ -207,16 +212,19 @@ export default function NotificationsPage() {
           <table className="w-full min-w-[560px] text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-4 py-3">Qabul qiluvchi</th>
-                <th className="px-4 py-3">Matn</th>
-                <th className="px-4 py-3">Holat</th>
-                <th className="px-4 py-3">Yuborilgan</th>
+                <th className="px-4 py-3">{t('Qabul qiluvchi')}</th>
+                <th className="px-4 py-3">{t('Matn')}</th>
+                <th className="px-4 py-3">{t('Holat')}</th>
+                <th className="px-4 py-3">{t('Yuborilgan')}</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {rows.map((row) => {
-                const [label, tone] = STATUS[row.status] ?? [row.status, 'bg-slate-100 text-slate-600']
+                const [label, tone] = STATUS[row.status] ?? [
+                  row.status,
+                  'bg-slate-100 text-slate-600',
+                ]
                 return (
                   <tr key={row.id} className="align-top">
                     <td className="px-4 py-3">
@@ -232,10 +240,14 @@ export default function NotificationsPage() {
                         {label}
                       </span>
                       {row.retry_count > 0 && (
-                        <p className="mt-1 text-xs text-slate-400">{row.retry_count} urinish</p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {t('{retry_count} urinish', { retry_count: row.retry_count })}
+                        </p>
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-slate-500">{when(row.sent_at)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-slate-500">
+                      {when(row.sent_at)}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       {row.status === 'failed' && can('notifications.create') && (
                         <button
@@ -245,7 +257,7 @@ export default function NotificationsPage() {
                           className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
                         >
                           <RefreshCw className="h-3 w-3" />
-                          Qayta
+                          {t('Qayta')}
                         </button>
                       )}
                     </td>
@@ -256,7 +268,7 @@ export default function NotificationsPage() {
                 <tr>
                   <td colSpan={5} className="px-4 py-10 text-center text-slate-400">
                     <Send className="mx-auto mb-2 h-6 w-6" />
-                    Hozircha xabar yuborilmagan.
+                    {t('Hozircha xabar yuborilmagan.')}
                   </td>
                 </tr>
               )}

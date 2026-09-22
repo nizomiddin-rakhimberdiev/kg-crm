@@ -7,6 +7,7 @@ from typing import Any
 
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.accounts.models import Permission, Role, User
@@ -76,13 +77,15 @@ class ProfilePhotoSerializer(serializers.ModelSerializer):
     def validate_photo(self, value: Any) -> Any:
         if value.size > self.MAX_BYTES:
             raise serializers.ValidationError(
-                f"Rasm hajmi {self.MAX_BYTES // (1024 * 1024)} MB dan oshmasin."
+                gettext("Rasm hajmi {v} MB dan oshmasin.").format(v=self.MAX_BYTES // (1024 * 1024))
             )
 
         extension = (value.name or "").rsplit(".", 1)[-1].lower()
         if extension not in self.ALLOWED_EXTENSIONS:
             allowed = ", ".join(self.ALLOWED_EXTENSIONS)
-            raise serializers.ValidationError(f"Faqat quyidagi formatlar: {allowed}.")
+            raise serializers.ValidationError(
+                gettext("Faqat quyidagi formatlar: {allowed}.").format(allowed=allowed)
+            )
         return value
 
 
@@ -138,14 +141,16 @@ class RoleSerializer(serializers.ModelSerializer):
         """
         normalized = re.sub(r"[^a-z0-9_]+", "_", value.strip().lower()).strip("_")
         if not normalized:
-            raise serializers.ValidationError("Kod lotin harflari va raqamlardan iborat bo'lsin.")
+            raise serializers.ValidationError(
+                gettext("Kod lotin harflari va raqamlardan iborat bo'lsin.")
+            )
 
         organization = request_user(self.context["request"]).organization
         qs = Role.all_objects.filter(organization=organization, code=normalized)
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError("Bu kod tashkilotda allaqachon mavjud.")
+            raise serializers.ValidationError(gettext("Bu kod tashkilotda allaqachon mavjud."))
         return normalized
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
@@ -157,7 +162,7 @@ class RoleSerializer(serializers.ModelSerializer):
             new_code = attrs.get("code")
             if new_code is not None and new_code != self.instance.code:
                 raise serializers.ValidationError(
-                    {"code": "Tizim rolining kodini o'zgartirib bo'lmaydi."}
+                    {"code": gettext("Tizim rolining kodini o'zgartirib bo'lmaydi.")}
                 )
         return attrs
 
@@ -238,7 +243,7 @@ class UserWriteSerializer(serializers.ModelSerializer):
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError("Bu email tashkilotda allaqachon mavjud.")
+            raise serializers.ValidationError(gettext("Bu email tashkilotda allaqachon mavjud."))
         return value
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
@@ -246,8 +251,8 @@ class UserWriteSerializer(serializers.ModelSerializer):
         branch = attrs.get("branch", getattr(self.instance, "branch", None))
         if role and role.code != "org_owner" and branch is None:
             raise serializers.ValidationError(
-                {"branch_id": "Org Owner'dan boshqa rollar uchun filial majburiy."}
+                {"branch_id": gettext("Org Owner'dan boshqa rollar uchun filial majburiy.")}
             )
         if self.instance is None and not attrs.get("password"):
-            raise serializers.ValidationError({"password": "Parol majburiy."})
+            raise serializers.ValidationError({"password": gettext("Parol majburiy.")})
         return attrs

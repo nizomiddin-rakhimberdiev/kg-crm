@@ -8,6 +8,7 @@ from typing import Any
 from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from apps.attendance.models import AttendanceRecord, AttendanceStatus
 from apps.children.models import Child, Enrollment, EnrollmentState, Group
@@ -33,10 +34,10 @@ def mark_bulk(
     belgilab, tushdan keyin tuzatishi — normal ish oqimi, xato emas.
     """
     if attendance_date > timezone.localdate():
-        raise BusinessRuleViolation("Kelajakdagi kunga davomat belgilab bo'lmaydi.")
+        raise BusinessRuleViolation(gettext("Kelajakdagi kunga davomat belgilab bo'lmaydi."))
 
     if group.organization_id != organization.id:
-        raise BusinessRuleViolation("Guruh boshqa tashkilotga tegishli.")
+        raise BusinessRuleViolation(gettext("Guruh boshqa tashkilotga tegishli."))
 
     # Guruhdagi faol bolalar — faqat shularni belgilash mumkin. Aks holda
     # mijoz istalgan `child_id` yuborib, boshqa guruhning bolasiga yozuv
@@ -53,11 +54,13 @@ def mark_bulk(
     for row in records:
         child_id = row.get("child_id")
         if child_id not in allowed:
-            raise BusinessRuleViolation(f"Bola {child_id} bu guruhda faol emas.")
+            raise BusinessRuleViolation(
+                gettext("Bola {child_id} bu guruhda faol emas.").format(child_id=child_id)
+            )
 
         status = row.get("status")
         if status not in valid_statuses:
-            raise BusinessRuleViolation(f"Noma'lum holat: {status}")
+            raise BusinessRuleViolation(gettext("Noma'lum holat: {status}").format(status=status))
 
         record, _ = AttendanceRecord.objects.update_or_create(
             child_id=child_id,

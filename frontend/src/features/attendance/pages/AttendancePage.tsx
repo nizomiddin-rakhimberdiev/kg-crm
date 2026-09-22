@@ -19,6 +19,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type AttendanceStatus } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 const STATUS_BUTTONS: Array<{
   value: AttendanceStatus
@@ -26,9 +27,9 @@ const STATUS_BUTTONS: Array<{
   icon: typeof Check
   active: string
 }> = [
-  { value: 'present', label: 'Keldi', icon: Check, active: 'bg-emerald-600 text-white' },
-  { value: 'excused', label: 'Sababli', icon: CalendarCheck, active: 'bg-sky-600 text-white' },
-  { value: 'absent', label: 'Kelmagan', icon: X, active: 'bg-red-600 text-white' },
+  { value: 'present', label: t('Keldi'), icon: Check, active: 'bg-emerald-600 text-white' },
+  { value: 'excused', label: t('Sababli'), icon: CalendarCheck, active: 'bg-sky-600 text-white' },
+  { value: 'absent', label: t('Kelmagan'), icon: X, active: 'bg-red-600 text-white' },
 ]
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -91,7 +92,7 @@ export default function AttendancePage() {
         queryKey: queryKeys.attendanceDaily(organizationId, groupId, date),
       })
     },
-    onError: (err) => setError(err instanceof ApiError ? err.message : 'Saqlab bo\'lmadi.'),
+    onError: (err) => setError(err instanceof ApiError ? err.message : t("Saqlab bo'lmadi.")),
   })
 
   const rows = registerQuery.data?.rows ?? []
@@ -117,9 +118,9 @@ export default function AttendancePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Davomat</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Davomat')}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Guruhni tanlang va butun kunni bitta bosishda saqlang.
+          {t('Guruhni tanlang va butun kunni bitta bosishda saqlang.')}
         </p>
       </div>
 
@@ -132,7 +133,7 @@ export default function AttendancePage() {
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-[200px]">
           <label htmlFor="group" className="mb-1 block text-xs font-medium text-slate-600">
-            Guruh
+            {t('Guruh')}
           </label>
           <select
             id="group"
@@ -149,7 +150,7 @@ export default function AttendancePage() {
         </div>
         <div>
           <label htmlFor="date" className="mb-1 block text-xs font-medium text-slate-600">
-            Sana
+            {t('Sana')}
           </label>
           <input
             id="date"
@@ -168,7 +169,7 @@ export default function AttendancePage() {
               onClick={() => markAll('present')}
               className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
-              Hammasi keldi
+              {t('Hammasi keldi')}
             </button>
             <button
               type="button"
@@ -182,7 +183,7 @@ export default function AttendancePage() {
               )}
             >
               <Save className="h-4 w-4" />
-              {saveMutation.isPending ? 'Saqlanmoqda…' : 'Saqlash'}
+              {saveMutation.isPending ? t('Saqlanmoqda…') : t('Saqlash')}
             </button>
           </div>
         )}
@@ -191,10 +192,10 @@ export default function AttendancePage() {
       {rows.length > 0 && (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
-            ['Keldi', counts.present, 'text-emerald-700'],
-            ['Sababli', counts.excused, 'text-sky-700'],
-            ['Kelmagan', counts.absent, 'text-red-700'],
-            ['Belgilanmagan', counts.unmarked, 'text-slate-500'],
+            [t('Keldi'), counts.present, 'text-emerald-700'],
+            [t('Sababli'), counts.excused, 'text-sky-700'],
+            [t('Kelmagan'), counts.absent, 'text-red-700'],
+            [t('Belgilanmagan'), counts.unmarked, 'text-slate-500'],
           ].map(([label, value, tone]) => (
             <div key={String(label)} className="rounded-xl bg-white p-3 text-center shadow-sm">
               <p className={cn('text-xl font-bold', tone as string)}>{value}</p>
@@ -206,22 +207,22 @@ export default function AttendancePage() {
 
       {saved && !dirty && (
         <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          Saqlandi.
+          {t('Saqlandi.')}
         </div>
       )}
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         {registerQuery.isPending && groupId && (
-          <p className="px-4 py-8 text-center text-sm text-slate-400">Yuklanmoqda…</p>
+          <p className="px-4 py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
         )}
         {!groupId && !groupsQuery.isPending && (
           <p className="px-4 py-8 text-center text-sm text-slate-400">
-            Avval guruh yarating.
+            {t('Avval guruh yarating.')}
           </p>
         )}
         {registerQuery.data?.rows.length === 0 && (
           <p className="px-4 py-8 text-center text-sm text-slate-400">
-            Bu guruhda faol bola yo'q.
+            {t("Bu guruhda faol bola yo'q.")}
           </p>
         )}
 

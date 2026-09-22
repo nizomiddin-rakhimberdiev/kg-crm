@@ -10,7 +10,8 @@
  */
 
 import type { ReportGroupBy } from '@/lib/api/types'
-import { UZ_MONTHS } from '@/lib/utils'
+import { MONTHS as MONTH_NAMES } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 export type PeriodPreset = 'day' | 'week' | 'month' | 'quarter' | 'year' | 'custom'
 
@@ -22,16 +23,29 @@ export interface Period {
 }
 
 export const PRESETS: Array<{ key: PeriodPreset; label: string }> = [
-  { key: 'day', label: 'Kun' },
-  { key: 'week', label: 'Hafta' },
-  { key: 'month', label: 'Oy' },
-  { key: 'quarter', label: 'Chorak' },
-  { key: 'year', label: 'Yil' },
-  { key: 'custom', label: 'Ixtiyoriy' },
+  { key: 'day', label: t('Kun') },
+  { key: 'week', label: t('Hafta') },
+  { key: 'month', label: t('Oy') },
+  { key: 'quarter', label: t('Chorak') },
+  { key: 'year', label: t('Yil') },
+  { key: 'custom', label: t('Ixtiyoriy') },
 ]
 
-const MONTHS = UZ_MONTHS
-const MONTHS_SHORT = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek']
+const MONTHS = MONTH_NAMES
+const MONTHS_SHORT = [
+  t('Yan'),
+  t('Fev'),
+  t('Mar'),
+  t('Apr'),
+  t('May'),
+  t('Iyn'),
+  t('Iyl'),
+  t('Avg'),
+  t('Sen'),
+  t('Okt'),
+  t('Noy'),
+  t('Dek'),
+]
 const ROMAN = ['I', 'II', 'III', 'IV']
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -146,7 +160,11 @@ export function periodLabel(period: Period): string {
   const to = parseISODate(period.to)
   switch (period.preset) {
     case 'day':
-      return `${from.getDate()}-${MONTHS[from.getMonth()]}, ${from.getFullYear()}`
+      return t('{day}-{month}, {year}', {
+        day: from.getDate(),
+        month: MONTHS[from.getMonth()],
+        year: from.getFullYear(),
+      })
     case 'week':
       if (from.getMonth() === to.getMonth()) {
         return `${from.getDate()}–${to.getDate()} ${MONTHS[from.getMonth()]} ${from.getFullYear()}`
@@ -157,15 +175,19 @@ export function periodLabel(period: Period): string {
       return `${name[0].toUpperCase()}${name.slice(1)} ${from.getFullYear()}`
     }
     case 'quarter':
-      return `${ROMAN[Math.floor(from.getMonth() / 3)]} chorak ${from.getFullYear()}`
+      return t('{roman} chorak {year}', {
+        roman: ROMAN[Math.floor(from.getMonth() / 3)],
+        year: from.getFullYear(),
+      })
     case 'year':
-      return `${from.getFullYear()}-yil`
+      return t('{year}-yil', { year: from.getFullYear() })
     case 'custom':
       return `${formatShort(from)} – ${formatShort(to)}`
   }
 }
 
-const formatShort = (date: Date) => `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()}`
+const formatShort = (date: Date) =>
+  `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()}`
 
 /** Grafik o'qi uchun qisqa yorliq: davr boshi ISO sanasidan. */
 export function bucketLabel(periodStart: string, groupBy: ReportGroupBy): string {
@@ -178,7 +200,10 @@ export function bucketLabel(periodStart: string, groupBy: ReportGroupBy): string
     case 'month':
       return `${MONTHS_SHORT[date.getMonth()]} ${String(date.getFullYear()).slice(2)}`
     case 'quarter':
-      return `${ROMAN[Math.floor(date.getMonth() / 3)]} ch. ${date.getFullYear()}`
+      return t('{roman} ch. {year}', {
+        roman: ROMAN[Math.floor(date.getMonth() / 3)],
+        year: date.getFullYear(),
+      })
     case 'year':
       return String(date.getFullYear())
   }
@@ -191,7 +216,7 @@ export function bucketTitle(periodStart: string, groupBy: ReportGroupBy): string
     case 'day':
       return periodLabel(periodFor('day', date))
     case 'week':
-      return `Hafta: ${periodLabel(periodFor('week', date))}`
+      return t('Hafta: {periodLabel}', { periodLabel: periodLabel(periodFor('week', date)) })
     case 'month':
       return periodLabel(periodFor('month', date))
     case 'quarter':

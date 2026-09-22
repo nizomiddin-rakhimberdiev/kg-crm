@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import type { PermissionCode } from '@/lib/rbac/useCan'
 import { env } from '@/config/env'
+import { t } from '@/lib/i18n'
 
 export interface NavItem {
   label: string
@@ -41,22 +42,27 @@ export interface NavItem {
  * tugmani ko'rsatmaslik uchun.
  */
 const allNavItems: NavItem[] = [
-  { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard, permission: 'dashboard.read' },
-  { label: 'Bolalar', to: '/children', icon: Users, permission: 'children.read' },
-  { label: 'Guruhlar', to: '/groups', icon: Users2, permission: 'children.read' },
-  { label: "To'lovlar", to: '/payments', icon: CreditCard, permission: 'payments.read' },
-  { label: 'Qarzdorlar', to: '/debtors', icon: AlertTriangle, permission: 'debtors.read' },
-  { label: 'Davomat', to: '/attendance', icon: CalendarCheck, permission: 'attendance.read' },
-  { label: 'Xodimlar', to: '/staff', icon: UserCog, permission: ['payroll.read', 'users.read'] },
-  { label: 'Oylik', to: '/payroll', icon: Wallet, permission: 'payroll.read' },
-  { label: 'Ombor', to: '/inventory', icon: Package, permission: 'inventory.read' },
-  { label: 'Chiqimlar', to: '/expenses', icon: Receipt, permission: 'expenses.read' },
-  { label: 'Hisobotlar', to: '/reports', icon: BarChart3, permission: 'reports.read' },
-  { label: 'Bildirishnomalar', to: '/notifications', icon: BellRing, permission: 'notifications.read' },
-  { label: 'Filiallar', to: '/branches', icon: Building2, permission: 'branches.read' },
-  { label: 'Obuna', to: '/billing', icon: CreditCardIcon, permission: 'billing.read' },
-  { label: 'Audit jurnali', to: '/audit', icon: ScrollText, permission: 'audit.read' },
-  { label: 'Sozlamalar', to: '/settings', icon: Settings, permission: 'settings.read' },
+  { label: t('Dashboard'), to: '/dashboard', icon: LayoutDashboard, permission: 'dashboard.read' },
+  { label: t('Bolalar'), to: '/children', icon: Users, permission: 'children.read' },
+  { label: t('Guruhlar'), to: '/groups', icon: Users2, permission: 'children.read' },
+  { label: t("To'lovlar"), to: '/payments', icon: CreditCard, permission: 'payments.read' },
+  { label: t('Qarzdorlar'), to: '/debtors', icon: AlertTriangle, permission: 'debtors.read' },
+  { label: t('Davomat'), to: '/attendance', icon: CalendarCheck, permission: 'attendance.read' },
+  { label: t('Xodimlar'), to: '/staff', icon: UserCog, permission: ['payroll.read', 'users.read'] },
+  { label: t('Oylik maosh'), to: '/payroll', icon: Wallet, permission: 'payroll.read' },
+  { label: t('Ombor'), to: '/inventory', icon: Package, permission: 'inventory.read' },
+  { label: t('Chiqimlar'), to: '/expenses', icon: Receipt, permission: 'expenses.read' },
+  { label: t('Hisobotlar'), to: '/reports', icon: BarChart3, permission: 'reports.read' },
+  {
+    label: t('Bildirishnomalar'),
+    to: '/notifications',
+    icon: BellRing,
+    permission: 'notifications.read',
+  },
+  { label: t('Filiallar'), to: '/branches', icon: Building2, permission: 'branches.read' },
+  { label: t('Obuna'), to: '/billing', icon: CreditCardIcon, permission: 'billing.read' },
+  { label: t('Audit jurnali'), to: '/audit', icon: ScrollText, permission: 'audit.read' },
+  { label: t('Sozlamalar'), to: '/settings', icon: Settings, permission: 'settings.read' },
 ]
 
 /**

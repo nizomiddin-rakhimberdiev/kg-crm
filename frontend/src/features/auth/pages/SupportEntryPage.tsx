@@ -11,6 +11,7 @@ import { Navigate } from 'react-router-dom'
 import { ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { supportHandoff } from '@/lib/auth/supportSession'
+import { t } from '@/lib/i18n'
 
 export default function SupportEntryPage() {
   const { applySupportSession, isAuthenticated } = useAuth()
@@ -25,11 +26,11 @@ export default function SupportEntryPage() {
 
     const token = supportHandoff.take()
     if (!token) {
-      setError("Kirish tokeni topilmadi. Konsoldan qayta urinib ko'ring.")
+      setError(t("Kirish tokeni topilmadi. Konsoldan qayta urinib ko'ring."))
       return
     }
     applySupportSession(token).catch(() =>
-      setError("Sessiya ochilmadi — ruxsat muddati tugagan bo'lishi mumkin."),
+      setError(t("Sessiya ochilmadi — ruxsat muddati tugagan bo'lishi mumkin.")),
     )
   }, [applySupportSession])
 
@@ -40,7 +41,7 @@ export default function SupportEntryPage() {
       <div className="w-full max-w-sm text-center">
         <ShieldCheck className="mx-auto h-8 w-8 text-brand-600" />
         <p className="mt-4 text-sm text-slate-600">
-          {error ?? "Qo'llab-quvvatlash sessiyasi ochilmoqda…"}
+          {error ?? t("Qo'llab-quvvatlash sessiyasi ochilmoqda…")}
         </p>
       </div>
     </div>

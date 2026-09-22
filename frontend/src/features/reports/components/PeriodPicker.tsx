@@ -18,6 +18,7 @@ import {
   type Period,
   type PeriodPreset,
 } from '../period'
+import { t } from '@/lib/i18n'
 
 interface PeriodPickerProps {
   value: Period
@@ -40,9 +41,8 @@ export function PeriodPicker({ value, onChange, className }: PeriodPickerProps) 
     // Yangi preset joriy davr ichidagi sanaga qarab: oydan haftaga
     // o'tilsa, o'sha oyning emas, bugungi hafta ochiladi — foydalanuvchi
     // ko'pincha "hozir"ni ko'rmoqchi.
-    const anchor = value.from <= toISODate(today) && toISODate(today) <= value.to
-      ? today
-      : new Date(value.from)
+    const anchor =
+      value.from <= toISODate(today) && toISODate(today) <= value.to ? today : new Date(value.from)
     onChange(periodFor(preset, anchor))
   }
 
@@ -52,7 +52,7 @@ export function PeriodPicker({ value, onChange, className }: PeriodPickerProps) 
       <div className="-mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0">
         <div
           role="tablist"
-          aria-label="Davr turi"
+          aria-label={t('Davr turi')}
           className="inline-flex min-w-max rounded-lg border border-slate-200 bg-slate-50 p-1"
         >
           {PRESETS.map(({ key, label }) => (
@@ -80,7 +80,7 @@ export function PeriodPicker({ value, onChange, className }: PeriodPickerProps) 
           <button
             type="button"
             onClick={() => onChange(shiftPeriod(value, -1))}
-            aria-label="Oldingi davr"
+            aria-label={t('Oldingi davr')}
             className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 active:scale-90"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -92,7 +92,7 @@ export function PeriodPicker({ value, onChange, className }: PeriodPickerProps) 
             type="button"
             onClick={() => onChange(next)}
             disabled={!canGoForward}
-            aria-label="Keyingi davr"
+            aria-label={t('Keyingi davr')}
             className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 active:scale-90 disabled:opacity-40 disabled:active:scale-100"
           >
             <ChevronRight className="h-4 w-4" />
@@ -106,7 +106,7 @@ export function PeriodPicker({ value, onChange, className }: PeriodPickerProps) 
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
           >
             <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
-            Bugun
+            {t('Bugun')}
           </button>
         )}
 
@@ -114,7 +114,7 @@ export function PeriodPicker({ value, onChange, className }: PeriodPickerProps) 
           <div className="flex flex-wrap items-center gap-2">
             <input
               type="date"
-              aria-label="Dan"
+              aria-label={t('Dan')}
               value={value.from}
               max={value.to}
               onChange={(e) => e.target.value && onChange({ ...value, from: e.target.value })}
@@ -123,7 +123,7 @@ export function PeriodPicker({ value, onChange, className }: PeriodPickerProps) 
             <span className="text-slate-400">—</span>
             <input
               type="date"
-              aria-label="Gacha"
+              aria-label={t('Gacha')}
               value={value.to}
               min={value.from}
               max={toISODate(today)}

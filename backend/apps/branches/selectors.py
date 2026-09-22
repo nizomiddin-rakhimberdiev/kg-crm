@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.utils.translation import gettext
+
 from apps.branches.models import Branch
 from apps.core.exceptions import BusinessRuleViolation
 
@@ -29,7 +31,7 @@ def resolve_branch(user: Any, explicit_id: Any = None) -> Branch:
     if explicit_id:
         branch = Branch.objects.filter(pk=explicit_id, is_active=True).first()
         if branch is None:
-            raise BusinessRuleViolation("Ko'rsatilgan filial topilmadi.")
+            raise BusinessRuleViolation(gettext("Ko'rsatilgan filial topilmadi."))
         return branch
 
     if getattr(user, "branch_id", None):
@@ -40,5 +42,5 @@ def resolve_branch(user: Any, explicit_id: Any = None) -> Branch:
         return candidates[0]
 
     raise BusinessRuleViolation(
-        "Tashkilotda bir nechta filial bor — `branch_id` ko'rsatilishi shart."
+        gettext("Tashkilotda bir nechta filial bor — `branch_id` ko'rsatilishi shart.")
     )

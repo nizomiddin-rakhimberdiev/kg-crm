@@ -6,6 +6,7 @@ import { SupportSessionBanner } from './SupportSessionBanner'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { MobileSidebar, Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
+import { t } from '@/lib/i18n'
 
 export function AppLayout() {
   const location = useLocation()
@@ -47,7 +48,13 @@ export function AppLayout() {
               exit={{ opacity: 0, x: -20, filter: 'blur(6px)' }}
               transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             >
-              <Suspense fallback={<div className="grid place-items-center py-20 text-sm text-slate-400">Yuklanmoqda…</div>}>
+              <Suspense
+                fallback={
+                  <div className="grid place-items-center py-20 text-sm text-slate-400">
+                    {t('Yuklanmoqda…')}
+                  </div>
+                }
+              >
                 {/* Chegara sahifa DARAJASIDA: bitta ekran yiqilsa,
                     yon panel va yuqori panel joyida qoladi va
                     foydalanuvchi boshqa bo'limga o'ta oladi. Chegara

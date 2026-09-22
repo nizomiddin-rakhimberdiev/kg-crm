@@ -13,6 +13,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.db import IntegrityError
 from django.http import Http404
+from django.utils.translation import gettext_lazy
 from rest_framework import exceptions as drf_exceptions
 from rest_framework import status
 from rest_framework.response import Response
@@ -33,7 +34,7 @@ class BusinessRuleViolation(drf_exceptions.APIException):
     """422 — kirish ma'lumoti to'g'ri, lekin domen qoidasini buzadi."""
 
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
-    default_detail = "Bu amal biznes qoidasini buzadi."
+    default_detail = gettext_lazy("Bu amal biznes qoidasini buzadi.")
     default_code = "BUSINESS_RULE_VIOLATION"
 
 
@@ -45,7 +46,9 @@ class SubscriptionInactive(drf_exceptions.APIException):
     """
 
     status_code = status.HTTP_402_PAYMENT_REQUIRED
-    default_detail = "Obuna faol emas. Ma'lumotlarni o'qish mumkin, o'zgartirish mumkin emas."
+    default_detail = gettext_lazy(
+        "Obuna faol emas. Ma'lumotlarni o'qish mumkin, o'zgartirish mumkin emas."
+    )
     default_code = "SUBSCRIPTION_INACTIVE"
 
 
@@ -62,22 +65,22 @@ _STATUS_TO_CODE = {
 }
 
 _DEFAULT_MESSAGES = {
-    "VALIDATION_ERROR": "Yuborilgan ma'lumot noto'g'ri.",
-    "AUTHENTICATION_REQUIRED": "Autentifikatsiya talab qilinadi.",
+    "VALIDATION_ERROR": gettext_lazy("Yuborilgan ma'lumot noto'g'ri."),
+    "AUTHENTICATION_REQUIRED": gettext_lazy("Autentifikatsiya talab qilinadi."),
     # Platforma konsoli: 2FA yoqilgan, lekin so'rovda `code` yo'q (ADR-15).
-    "TOTP_REQUIRED": "Authenticator kodini kiriting.",
-    "PERMISSION_DENIED": "Bu amalga ruxsat yo'q.",
-    "NOT_FOUND": "So'ralgan resurs topilmadi.",
-    "CONFLICT": "Bu amal mavjud ma'lumot bilan ziddiyatga kirdi.",
-    "RATE_LIMITED": "So'rovlar soni chegaradan oshdi.",
-    "INTERNAL_ERROR": "Kutilmagan xatolik yuz berdi.",
+    "TOTP_REQUIRED": gettext_lazy("Authenticator kodini kiriting."),
+    "PERMISSION_DENIED": gettext_lazy("Bu amalga ruxsat yo'q."),
+    "NOT_FOUND": gettext_lazy("So'ralgan resurs topilmadi."),
+    "CONFLICT": gettext_lazy("Bu amal mavjud ma'lumot bilan ziddiyatga kirdi."),
+    "RATE_LIMITED": gettext_lazy("So'rovlar soni chegaradan oshdi."),
+    "INTERNAL_ERROR": gettext_lazy("Kutilmagan xatolik yuz berdi."),
 }
 
 
 def _extract(detail: Any) -> tuple[str, Any]:
     """DRF `detail` dan (xabar, tafsilotlar) juftligini ajratadi."""
     if isinstance(detail, dict):
-        message = _DEFAULT_MESSAGES["VALIDATION_ERROR"]
+        message = str(_DEFAULT_MESSAGES["VALIDATION_ERROR"])
         if "detail" in detail and isinstance(detail["detail"], str):
             message = detail["detail"]
             detail = {k: v for k, v in detail.items() if k != "detail"}
@@ -93,7 +96,7 @@ def envelope_exception_handler(exc: Exception, context: dict[str, Any]) -> Respo
     # Tenant konteksti yo'q — bu dasturchi xatosi, mijozga hech narsa aytilmaydi.
     if isinstance(exc, TenantScopeMissing):
         logger.exception("Tenant konteksti o'rnatilmagan holda so'rov bajarildi")
-        return _error_response(500, "INTERNAL_ERROR", _DEFAULT_MESSAGES["INTERNAL_ERROR"])
+        return _error_response(500, "INTERNAL_ERROR", str(_DEFAULT_MESSAGES["INTERNAL_ERROR"]))
 
     # Django darajasidagi xatolarni DRF ekvivalentiga o'giramiz.
     if isinstance(exc, (Http404, ObjectDoesNotExist)):
@@ -102,13 +105,13 @@ def envelope_exception_handler(exc: Exception, context: dict[str, Any]) -> Respo
         exc = drf_exceptions.PermissionDenied()
     elif isinstance(exc, IntegrityError):
         logger.warning("Integrity error: %s", exc)
-        return _error_response(409, "CONFLICT", _DEFAULT_MESSAGES["CONFLICT"])
+        return _error_response(409, "CONFLICT", str(_DEFAULT_MESSAGES["CONFLICT"]))
 
     response = drf_exception_handler(exc, context)
     if response is None:
         # Ushlanmagan istisno: log'ga to'liq, mijozga hech qanday ichki tafsilot yo'q.
         logger.exception("Ushlanmagan istisno", exc_info=exc)
-        return _error_response(500, "INTERNAL_ERROR", _DEFAULT_MESSAGES["INTERNAL_ERROR"])
+        return _error_response(500, "INTERNAL_ERROR", str(_DEFAULT_MESSAGES["INTERNAL_ERROR"]))
 
     code = _STATUS_TO_CODE.get(response.status_code, "INTERNAL_ERROR")
     if isinstance(exc, drf_exceptions.APIException) and isinstance(

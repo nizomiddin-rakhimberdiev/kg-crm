@@ -28,6 +28,7 @@ from django.db.models.functions import (
     TruncWeek,
     TruncYear,
 )
+from django.utils.translation import gettext
 
 from apps.attendance.models import AttendanceRecord, AttendanceStatus
 from apps.children.models import Child
@@ -88,7 +89,9 @@ _TRUNC = {
 def _validate_group_by(group_by: str) -> str:
     if group_by not in GROUP_BY_CHOICES:
         raise BusinessRuleViolation(
-            f"`group_by` noto'g'ri: {group_by!r}. Mumkin: {', '.join(GROUP_BY_CHOICES)}."
+            gettext("`group_by` noto'g'ri: {group_by!r}. Mumkin: {join}.").format(
+                group_by=group_by, join=", ".join(GROUP_BY_CHOICES)
+            )
         )
     return group_by
 
@@ -133,7 +136,7 @@ def period_buckets(date_from: date, date_to: date, group_by: str) -> list[date]:
     """
     group_by = _validate_group_by(group_by)
     if date_from > date_to:
-        raise BusinessRuleViolation("Davr boshi oxiridan keyin bo'lishi mumkin emas.")
+        raise BusinessRuleViolation(gettext("Davr boshi oxiridan keyin bo'lishi mumkin emas."))
 
     buckets: list[date] = []
     cursor = _bucket_start(date_from, group_by)
@@ -141,8 +144,10 @@ def period_buckets(date_from: date, date_to: date, group_by: str) -> list[date]:
         buckets.append(cursor)
         if len(buckets) > MAX_BUCKETS:
             raise BusinessRuleViolation(
-                f"Bu davr {group_by!r} kesimida {MAX_BUCKETS} dan ortiq qator beradi — "
-                f"yirikroq kesim tanlang."
+                gettext(
+                    "Bu davr {group_by!r} kesimida {MAX_BUCKETS} dan ortiq qator beradi — "
+                    "yirikroq kesim tanlang."
+                ).format(group_by=group_by, MAX_BUCKETS=MAX_BUCKETS)
             )
         cursor = _next_bucket(cursor, group_by)
     return buckets

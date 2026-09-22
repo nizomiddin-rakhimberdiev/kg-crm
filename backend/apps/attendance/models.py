@@ -11,6 +11,7 @@ from datetime import timedelta
 
 from django.db import models
 from django.db.models.functions import Now, TruncDate
+from django.utils.translation import gettext_lazy
 
 from apps.core.models import BranchScopedModel
 
@@ -28,9 +29,9 @@ class AttendanceStatus(models.TextChoices):
     `present`; kelish vaqti kerak bo'lsa, `check_in_at` da turadi.
     """
 
-    PRESENT = "present", "Keldi"
-    ABSENT = "absent", "Kelmagan"
-    EXCUSED = "excused", "Sababli"
+    PRESENT = "present", gettext_lazy("Keldi")
+    ABSENT = "absent", gettext_lazy("Kelmagan")
+    EXCUSED = "excused", gettext_lazy("Sababli")
 
 
 class AttendanceRecord(BranchScopedModel):

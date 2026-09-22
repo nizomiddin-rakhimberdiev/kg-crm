@@ -15,6 +15,7 @@ from typing import Any
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from apps.core.exceptions import BusinessRuleViolation
 from apps.notifications.models import (
@@ -124,7 +125,7 @@ def queue_notification(
     )
     body = body_override or (template.body if template else DEFAULT_TEMPLATES.get(code, ""))
     if not body:
-        raise BusinessRuleViolation(f"'{code}' uchun shablon topilmadi.")
+        raise BusinessRuleViolation(gettext("'{code}' uchun shablon topilmadi.").format(code=code))
 
     return Notification.objects.create(
         organization=organization,
@@ -150,7 +151,9 @@ def dispatch_notification(notification: Notification) -> Notification:
     """
     if notification.status not in (NotificationStatus.QUEUED, NotificationStatus.FAILED):
         raise BusinessRuleViolation(
-            f"'{notification.get_status_display()}' holatidagi xabarni yuborib bo'lmaydi."
+            gettext("'{status}' holatidagi xabarni yuborib bo'lmaydi.").format(
+                status=notification.get_status_display()
+            )
         )
 
     provider = get_provider(notification.channel)

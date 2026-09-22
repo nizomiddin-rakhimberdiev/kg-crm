@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.attendance.models import AttendanceRecord, AttendanceStatus
@@ -61,7 +62,9 @@ class AttendanceWriteSerializer(serializers.ModelSerializer):
         from django.utils import timezone
 
         if value > timezone.localdate():
-            raise serializers.ValidationError("Kelajakdagi kunga davomat belgilab bo'lmaydi.")
+            raise serializers.ValidationError(
+                gettext("Kelajakdagi kunga davomat belgilab bo'lmaydi.")
+            )
         return value
 
 
@@ -83,5 +86,7 @@ class BulkAttendanceSerializer(serializers.Serializer):
         if len(seen) != len(value):
             # Bitta so'rovda bir bola ikki marta — qaysi biri to'g'ri
             # ekanini taxmin qilishdan ko'ra rad etgan ma'qul.
-            raise serializers.ValidationError("Bitta so'rovda bir bola bir marta bo'lishi kerak.")
+            raise serializers.ValidationError(
+                gettext("Bitta so'rovda bir bola bir marta bo'lishi kerak.")
+            )
         return value

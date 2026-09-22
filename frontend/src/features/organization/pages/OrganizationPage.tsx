@@ -15,13 +15,14 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 const FIELDS: Array<[keyof OrganizationInput, string, string]> = [
-  ['name', "Bog'cha nomi", 'text'],
-  ['legal_name', 'Yuridik nomi', 'text'],
-  ['tax_id', 'STIR / INN', 'text'],
-  ['contact_email', 'Aloqa emaili', 'email'],
-  ['contact_phone', 'Aloqa telefoni', 'tel'],
+  ['name', t("Bog'cha nomi"), 'text'],
+  ['legal_name', t('Yuridik nomi'), 'text'],
+  ['tax_id', t('STIR / INN'), 'text'],
+  ['contact_email', t('Aloqa emaili'), 'email'],
+  ['contact_phone', t('Aloqa telefoni'), 'tel'],
 ]
 
 const EMPTY: OrganizationInput = {
@@ -77,18 +78,18 @@ export default function OrganizationPage() {
         setError(err.message)
         setFieldErrors(err.fieldErrors())
       } else {
-        setError("Saqlab bo'lmadi.")
+        setError(t("Saqlab bo'lmadi."))
       }
     },
   })
 
   if (query.isPending) {
-    return <p className="py-8 text-center text-sm text-slate-400">Yuklanmoqda…</p>
+    return <p className="py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
   }
   if (query.isError) {
     return (
       <p className="py-8 text-center text-sm text-red-600">
-        {query.error instanceof ApiError ? query.error.message : "Ma'lumotni yuklab bo'lmadi."}
+        {query.error instanceof ApiError ? query.error.message : t("Ma'lumotni yuklab bo'lmadi.")}
       </p>
     )
   }
@@ -96,9 +97,9 @@ export default function OrganizationPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Bog'cha profili</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t("Bog'cha profili")}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Tashkilot ma'lumotlari — schyot-faktura va hujjatlarda shular ishlatiladi.
+          {t("Tashkilot ma'lumotlari — schyot-faktura va hujjatlarda shular ishlatiladi.")}
         </p>
       </div>
 
@@ -110,7 +111,7 @@ export default function OrganizationPage() {
           <div>
             <p className="font-semibold text-slate-900">{query.data?.name}</p>
             <p className="text-xs text-slate-400">
-              Identifikator: {query.data?.slug} · Ro'yxatdan o'tgan:{' '}
+              {t("Identifikator: {slug} · Ro'yxatdan o'tgan:", { slug: query.data?.slug })}{' '}
               {query.data ? formatDate(query.data.created_at) : '—'}
             </p>
           </div>
@@ -158,7 +159,7 @@ export default function OrganizationPage() {
           )}
           {saved && (
             <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 sm:col-span-2">
-              Saqlandi.
+              {t('Saqlandi.')}
             </div>
           )}
 
@@ -170,13 +171,13 @@ export default function OrganizationPage() {
                 className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
               >
                 <Save className="h-4 w-4" />
-                {save.isPending ? 'Saqlanmoqda…' : 'Saqlash'}
+                {save.isPending ? t('Saqlanmoqda…') : t('Saqlash')}
               </button>
             </div>
           )}
           {!editable && (
             <p className="text-xs text-slate-400 sm:col-span-2">
-              Tahrirlash uchun tashkilot egasi huquqi kerak.
+              {t('Tahrirlash uchun tashkilot egasi huquqi kerak.')}
             </p>
           )}
         </form>

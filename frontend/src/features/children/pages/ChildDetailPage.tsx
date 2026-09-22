@@ -17,13 +17,14 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 const RELATIONS: Array<[string, string]> = [
-  ['mother', 'Onasi'],
-  ['father', 'Otasi'],
+  ['mother', t('Onasi')],
+  ['father', t('Otasi')],
   ['grandparent', 'Buvi/bobo'],
   ['sibling', 'Aka/opa'],
-  ['other', 'Boshqa'],
+  ['other', t('Boshqa')],
 ]
 
 const EMPTY_GUARDIAN = {
@@ -73,34 +74,33 @@ export default function ChildDetailPage() {
       setError(null)
       invalidate()
     },
-    onError: (err) => setError(err instanceof ApiError ? err.message : 'Xatolik yuz berdi.'),
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
   const setTariff = useMutation({
-    mutationFn: (tariffId: string) =>
-      childrenApi.update(childId, { tariff_id: tariffId || null }),
+    mutationFn: (tariffId: string) => childrenApi.update(childId, { tariff_id: tariffId || null }),
     onSuccess: invalidate,
-    onError: (err) => setError(err instanceof ApiError ? err.message : 'Xatolik yuz berdi.'),
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
   const enroll = useMutation({
     mutationFn: (groupId: string) => childrenApi.enroll(childId, groupId),
     onSuccess: invalidate,
-    onError: (err) => setError(err instanceof ApiError ? err.message : 'Xatolik yuz berdi.'),
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
   if (childQuery.isPending) {
-    return <p className="py-12 text-center text-sm text-slate-400">Yuklanmoqda…</p>
+    return <p className="py-12 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
   }
 
   if (childQuery.isError || !childQuery.data) {
     return (
       <div className="py-12 text-center">
         <p className="text-sm text-red-600">
-          {childQuery.error instanceof ApiError ? childQuery.error.message : 'Bola topilmadi.'}
+          {childQuery.error instanceof ApiError ? childQuery.error.message : t('Bola topilmadi.')}
         </p>
         <Link to="/children" className="mt-3 inline-block text-sm text-brand-600 hover:underline">
-          Ro'yxatga qaytish
+          {t("Ro'yxatga qaytish")}
         </Link>
       </div>
     )
@@ -115,15 +115,16 @@ export default function ChildDetailPage() {
         className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800"
       >
         <ArrowLeft className="h-4 w-4" />
-        Bolalar
+        {t('Bolalar')}
       </Link>
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">{child.full_name}</h1>
           <p className="mt-1 text-sm text-slate-500">
-            {child.age_years} yosh · {child.gender === 'male' ? "O'g'il bola" : 'Qiz bola'} ·
-            tug'ilgan {child.date_of_birth}
+            {t('{age_years} yosh ·', { age_years: child.age_years })}{' '}
+            {child.gender === 'male' ? t("O'g'il bola") : t('Qiz bola')}{' '}
+            {t("· tug'ilgan {date_of_birth}", { date_of_birth: child.date_of_birth })}
           </p>
         </div>
       </div>
@@ -137,15 +138,15 @@ export default function ChildDetailPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Guruh */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Guruh</h2>
+          <h2 className="mb-3 text-sm font-semibold text-slate-900">{t('Guruh')}</h2>
           {can('children.update') ? (
             <select
-              aria-label="Guruh"
+              aria-label={t('Guruh')}
               value={child.current_group?.id ?? ''}
               onChange={(e) => e.target.value && enroll.mutate(e.target.value)}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             >
-              <option value="">— guruhsiz —</option>
+              <option value="">{t('— guruhsiz —')}</option>
               {groupsQuery.data?.items.map((group) => (
                 <option key={group.id} value={group.id}>
                   {group.name}
@@ -160,18 +161,21 @@ export default function ChildDetailPage() {
 
         {/* Tarif */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Tarif</h2>
+          <h2 className="mb-3 text-sm font-semibold text-slate-900">{t('Tarif')}</h2>
           {can('payments.update') ? (
             <select
-              aria-label="Tarif"
+              aria-label={t('Tarif')}
               value={child.tariff ?? ''}
               onChange={(e) => setTariff.mutate(e.target.value)}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             >
-              <option value="">— tarifsiz —</option>
+              <option value="">{t('— tarifsiz —')}</option>
               {tariffsQuery.data?.items.map((tariff) => (
                 <option key={tariff.id} value={tariff.id}>
-                  {tariff.name} — {Number(tariff.amount).toLocaleString('uz-UZ')} so'm
+                  {t("{name} — {toLocaleString} so'm", {
+                    name: tariff.name,
+                    toLocaleString: Number(tariff.amount).toLocaleString('uz-UZ'),
+                  })}
                 </option>
               ))}
             </select>
@@ -180,7 +184,7 @@ export default function ChildDetailPage() {
           )}
           {!child.tariff && (
             <p className="mt-2 text-xs text-amber-700">
-              Tarifsiz bolaga hisob-faktura chiqarilmaydi.
+              {t('Tarifsiz bolaga hisob-faktura chiqarilmaydi.')}
             </p>
           )}
         </div>
@@ -188,7 +192,7 @@ export default function ChildDetailPage() {
         {/* Vasiylar */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Vasiylar</h2>
+            <h2 className="text-sm font-semibold text-slate-900">{t('Vasiylar')}</h2>
             {can('children.update') && (
               <button
                 type="button"
@@ -196,13 +200,13 @@ export default function ChildDetailPage() {
                 className="flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:underline"
               >
                 <UserPlus className="h-3.5 w-3.5" />
-                Qo'shish
+                {t("Qo'shish")}
               </button>
             )}
           </div>
 
           {child.guardians.length === 0 && !showGuardianForm && (
-            <p className="text-sm text-slate-400">Vasiy biriktirilmagan.</p>
+            <p className="text-sm text-slate-400">{t('Vasiy biriktirilmagan.')}</p>
           )}
 
           <ul className="space-y-2">
@@ -241,19 +245,15 @@ export default function ChildDetailPage() {
               <div className="grid grid-cols-2 gap-2">
                 <input
                   required
-                  placeholder="Familiya"
+                  placeholder={t('Familiya')}
                   value={guardianForm.last_name}
-                  onChange={(e) =>
-                    setGuardianForm((p) => ({ ...p, last_name: e.target.value }))
-                  }
+                  onChange={(e) => setGuardianForm((p) => ({ ...p, last_name: e.target.value }))}
                   className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
                 />
                 <input
-                  placeholder="Ism"
+                  placeholder={t('Ism')}
                   value={guardianForm.first_name}
-                  onChange={(e) =>
-                    setGuardianForm((p) => ({ ...p, first_name: e.target.value }))
-                  }
+                  onChange={(e) => setGuardianForm((p) => ({ ...p, first_name: e.target.value }))}
                   className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
                 />
               </div>
@@ -267,11 +267,9 @@ export default function ChildDetailPage() {
               />
               <div className="flex items-center gap-2">
                 <select
-                  aria-label="Kim bo'ladi"
+                  aria-label={t("Kim bo'ladi")}
                   value={guardianForm.relation}
-                  onChange={(e) =>
-                    setGuardianForm((p) => ({ ...p, relation: e.target.value }))
-                  }
+                  onChange={(e) => setGuardianForm((p) => ({ ...p, relation: e.target.value }))}
                   className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
                 >
                   {RELATIONS.map(([code, label]) => (
@@ -288,7 +286,7 @@ export default function ChildDetailPage() {
                       setGuardianForm((p) => ({ ...p, is_primary: e.target.checked }))
                     }
                   />
-                  Asosiy
+                  {t('Asosiy')}
                 </label>
               </div>
               <button
@@ -299,11 +297,12 @@ export default function ChildDetailPage() {
                   addGuardian.isPending ? 'opacity-60' : 'hover:bg-brand-700',
                 )}
               >
-                {addGuardian.isPending ? 'Saqlanmoqda…' : 'Vasiyni biriktirish'}
+                {addGuardian.isPending ? t('Saqlanmoqda…') : t('Vasiyni biriktirish')}
               </button>
               <p className="text-xs text-slate-400">
-                Bu telefon bilan vasiy allaqachon mavjud bo'lsa, yangi yozuv
-                yaratilmaydi — mavjudi biriktiriladi.
+                {t(
+                  "Bu telefon bilan vasiy allaqachon mavjud bo'lsa, yangi yozuv yaratilmaydi — mavjudi biriktiriladi.",
+                )}
               </p>
             </form>
           )}

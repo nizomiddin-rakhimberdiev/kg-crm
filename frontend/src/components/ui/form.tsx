@@ -1,5 +1,6 @@
 import type { InputHTMLAttributes, TextareaHTMLAttributes, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 export function Field({
   label,
@@ -49,7 +50,7 @@ export function TextArea({ className, ...props }: TextareaHTMLAttributes<HTMLTex
 export function SearchInput({
   value,
   onChange,
-  placeholder = "Qidirish...",
+  placeholder = t('Qidirish...'),
   className,
 }: {
   value: string

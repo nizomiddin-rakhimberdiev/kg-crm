@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 interface ModalProps {
   open: boolean
@@ -58,7 +59,7 @@ export function Modal({ open, onClose, children, className }: ModalProps) {
           >
             <button
               onClick={onClose}
-              aria-label="Yopish"
+              aria-label={t('Yopish')}
               className="absolute top-4 right-4 grid place-items-center w-8 h-8 rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 active:scale-90"
             >
               <X className="w-4 h-4" />

@@ -11,10 +11,13 @@ import { env } from '@/config/env'
 import { tokenStorage } from '@/lib/auth/tokenStorage'
 import { supportSession } from '@/lib/auth/supportSession'
 import { ApiError, type Envelope, type ErrorEnvelope } from './types'
+import { locale, t } from '@/lib/i18n'
 
 export const httpClient: AxiosInstance = axios.create({
   baseURL: env.apiBaseUrl,
-  headers: { 'Content-Type': 'application/json' },
+  // Backend xabarlari (validatsiya, xatolar, tanlov yorliqlari) shu tilda
+  // keladi — Django `LocaleMiddleware` sarlavhani o'qiydi.
+  headers: { 'Content-Type': 'application/json', 'Accept-Language': locale },
   timeout: 30_000,
 })
 
@@ -51,7 +54,7 @@ let refreshPromise: Promise<string> | null = null
 
 const refreshAccessToken = async (): Promise<string> => {
   const refresh = tokenStorage.getRefresh()
-  if (!refresh) throw new ApiError('AUTHENTICATION_REQUIRED', 'Sessiya topilmadi.')
+  if (!refresh) throw new ApiError('AUTHENTICATION_REQUIRED', t('Sessiya topilmadi.'))
 
   const response = await axios.post<Envelope<{ access: string; refresh: string }>>(
     `${env.apiBaseUrl}/auth/refresh`,
@@ -76,7 +79,7 @@ httpClient.interceptors.response.use(
     const config = error.config as (InternalAxiosRequestConfig & { _retried?: boolean }) | undefined
 
     if (!error.response) {
-      throw new ApiError('NETWORK_ERROR', 'Serverga ulanib bo\'lmadi. Internetni tekshiring.')
+      throw new ApiError('NETWORK_ERROR', t("Serverga ulanib bo'lmadi. Internetni tekshiring."))
     }
 
     _lastRequestId = (error.response.headers?.['x-request-id'] as string) ?? _lastRequestId
@@ -106,14 +109,14 @@ httpClient.interceptors.response.use(
       } catch {
         tokenStorage.clear()
         onSessionExpired()
-        throw new ApiError('AUTHENTICATION_REQUIRED', 'Sessiya muddati tugadi. Qaytadan kiring.')
+        throw new ApiError('AUTHENTICATION_REQUIRED', t('Sessiya muddati tugadi. Qaytadan kiring.'))
       }
     }
 
     const envelope = data?.error
     throw new ApiError(
       envelope?.code ?? 'INTERNAL_ERROR',
-      envelope?.message ?? 'Kutilmagan xatolik yuz berdi.',
+      envelope?.message ?? t('Kutilmagan xatolik yuz berdi.'),
       envelope?.details ?? null,
       status,
     )

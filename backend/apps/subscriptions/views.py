@@ -9,6 +9,7 @@ umuman ID qabul qilmaydi, obuna tokendan aniqlanadi.
 from __future__ import annotations
 
 from django.http import Http404
+from django.utils.translation import gettext
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -60,7 +61,7 @@ class BillingViewSet(viewsets.ViewSet):
             .first()
         )
         if subscription is None:
-            raise BusinessRuleViolation("Bu tashkilotda faol obuna yo'q.")
+            raise BusinessRuleViolation(gettext("Bu tashkilotda faol obuna yo'q."))
         return subscription
 
     @action(detail=False, methods=["get"])

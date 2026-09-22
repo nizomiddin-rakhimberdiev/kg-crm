@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fill, ru, uz } from '../content'
+import { en, fill, ru, uz } from '../content'
 import { isPaymentDelayEvidence, paymentDelayReason } from '../severity'
 import type { PaymentDelayEvidence } from '@/lib/api/types'
 
@@ -27,12 +27,13 @@ describe('fill', () => {
     expect(fill('{a} va {b}', { a: 1 })).toBe('1 va {b}')
   })
 
-  it('UZ va RU bir xil kalitlarga ega', () => {
+  it('UZ, RU va EN bir xil kalitlarga ega', () => {
     const keys = (o: object): string[] =>
       Object.entries(o).flatMap(([k, v]) =>
         v && typeof v === 'object' ? keys(v).map((x) => `${k}.${x}`) : [k],
       )
     expect(keys(ru).sort()).toEqual(keys(uz).sort())
+    expect(keys(en).sort()).toEqual(keys(uz).sort())
   })
 
   it("matnda bashorat so'zlari yo'q — faqat fakt (docs/07 §7)", () => {

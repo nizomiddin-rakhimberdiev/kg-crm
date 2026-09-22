@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -27,20 +28,22 @@ __all__ = ["AttendanceViewSet"]
 
 def _parse_date(raw: str | None, field: str) -> Any:
     if not raw:
-        raise BusinessRuleViolation(f"`{field}` parametri majburiy.")
+        raise BusinessRuleViolation(gettext("`{field}` parametri majburiy.").format(field=field))
     try:
         return datetime.strptime(raw, "%Y-%m-%d").date()
     except ValueError as exc:
-        raise BusinessRuleViolation(f"`{field}` formati noto'g'ri (kutilgan: 2026-07-24).") from exc
+        raise BusinessRuleViolation(
+            gettext("`{field}` formati noto'g'ri (kutilgan: 2026-07-24).").format(field=field)
+        ) from exc
 
 
 def _resolve_group(group_id: str | None) -> Group:
     if not group_id:
-        raise BusinessRuleViolation("`group` parametri majburiy.")
+        raise BusinessRuleViolation(gettext("`group` parametri majburiy."))
     # `Group.objects` tenant bilan cheklangan — begona guruh "topilmadi".
     group = Group.objects.filter(pk=group_id).first()
     if group is None:
-        raise BusinessRuleViolation("Guruh topilmadi.")
+        raise BusinessRuleViolation(gettext("Guruh topilmadi."))
     return group
 
 
@@ -117,11 +120,11 @@ class AttendanceViewSet(BranchScopedMixin, TenantViewSet):
         """`GET /attendance/summary?month=2026-07&group=` — oylik yig'ma."""
         raw_month = request.query_params.get("month")
         if not raw_month:
-            raise BusinessRuleViolation("`month` parametri majburiy (masalan 2026-07).")
+            raise BusinessRuleViolation(gettext("`month` parametri majburiy (masalan 2026-07)."))
         try:
             year, month = (int(part) for part in raw_month.split("-", 1))
         except ValueError as exc:
-            raise BusinessRuleViolation("`month` formati: 2026-07") from exc
+            raise BusinessRuleViolation(gettext("`month` formati: 2026-07")) from exc
 
         group_id = request.query_params.get("group")
         group = _resolve_group(group_id) if group_id else None

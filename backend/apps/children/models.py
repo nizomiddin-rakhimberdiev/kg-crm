@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy
 
 from apps.core.models import BranchScopedModel
 
@@ -17,16 +18,16 @@ __all__ = ["Child", "Guardian", "ChildGuardian", "Group", "Enrollment"]
 
 
 class Gender(models.TextChoices):
-    MALE = "male", "O'g'il bola"
-    FEMALE = "female", "Qiz bola"
+    MALE = "male", gettext_lazy("O'g'il bola")
+    FEMALE = "female", gettext_lazy("Qiz bola")
 
 
 class EnrollmentStatus(models.TextChoices):
-    PROSPECT = "prospect", "Nomzod"
-    ACTIVE = "active", "Faol"
-    PAUSED = "paused", "To'xtatilgan"
-    GRADUATED = "graduated", "Bitirgan"
-    WITHDRAWN = "withdrawn", "Chiqib ketgan"
+    PROSPECT = "prospect", gettext_lazy("Nomzod")
+    ACTIVE = "active", gettext_lazy("Faol")
+    PAUSED = "paused", gettext_lazy("To'xtatilgan")
+    GRADUATED = "graduated", gettext_lazy("Bitirgan")
+    WITHDRAWN = "withdrawn", gettext_lazy("Chiqib ketgan")
 
 
 class Child(BranchScopedModel):
@@ -121,11 +122,11 @@ class Guardian(BranchScopedModel):
 
 
 class Relation(models.TextChoices):
-    MOTHER = "mother", "Onasi"
-    FATHER = "father", "Otasi"
-    GRANDPARENT = "grandparent", "Buvi/bobo"
-    SIBLING = "sibling", "Aka/opa"
-    OTHER = "other", "Boshqa"
+    MOTHER = "mother", gettext_lazy("Onasi")
+    FATHER = "father", gettext_lazy("Otasi")
+    GRANDPARENT = "grandparent", gettext_lazy("Buvi/bobo")
+    SIBLING = "sibling", gettext_lazy("Aka/opa")
+    OTHER = "other", gettext_lazy("Boshqa")
 
 
 class ChildGuardian(BranchScopedModel):
@@ -196,9 +197,9 @@ class Group(BranchScopedModel):
 
 
 class EnrollmentState(models.TextChoices):
-    ACTIVE = "active", "Faol"
-    ENDED = "ended", "Tugagan"
-    TRANSFERRED = "transferred", "Ko'chirilgan"
+    ACTIVE = "active", gettext_lazy("Faol")
+    ENDED = "ended", gettext_lazy("Tugagan")
+    TRANSFERRED = "transferred", gettext_lazy("Ko'chirilgan")
 
 
 class Enrollment(BranchScopedModel):

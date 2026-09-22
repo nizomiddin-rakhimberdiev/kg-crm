@@ -9,6 +9,7 @@ qayerdan?" degan savolni javobsiz qoldirardi.
 from __future__ import annotations
 
 from django.db import models
+from django.utils.translation import gettext_lazy
 
 from apps.core.models import BranchScopedModel
 
@@ -35,10 +36,10 @@ class ExpenseCategory(BranchScopedModel):
 
 
 class ExpenseStatus(models.TextChoices):
-    PENDING = "pending", "Kutilmoqda"
-    APPROVED = "approved", "Tasdiqlangan"
-    REJECTED = "rejected", "Rad etilgan"
-    PAID = "paid", "To'langan"
+    PENDING = "pending", gettext_lazy("Kutilmoqda")
+    APPROVED = "approved", gettext_lazy("Tasdiqlangan")
+    REJECTED = "rejected", gettext_lazy("Rad etilgan")
+    PAID = "paid", gettext_lazy("To'langan")
 
 
 class Expense(BranchScopedModel):

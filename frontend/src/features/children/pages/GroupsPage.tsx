@@ -16,6 +16,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { avatarTone, cn, initials } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 export default function GroupsPage() {
   const organizationId = useOrganizationId()
@@ -41,14 +42,14 @@ export default function GroupsPage() {
       setError(null)
       void invalidate()
     },
-    onError: (err) => setError(err instanceof ApiError ? err.message : 'Xatolik yuz berdi.'),
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
   const removeMutation = useMutation({
     mutationFn: groupsApi.remove,
     onSuccess: invalidate,
     // Backend to'la guruhni o'chirishga 422 qaytaradi — xabarni ko'rsatamiz.
-    onError: (err) => setError(err instanceof ApiError ? err.message : 'Xatolik yuz berdi.'),
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
   return (
@@ -62,10 +63,8 @@ export default function GroupsPage() {
       )}
 
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Guruhlar</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Sig'im bo'sh qoldirilsa — cheklovsiz.
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Guruhlar')}</h1>
+        <p className="mt-1 text-sm text-slate-500">{t("Sig'im bo'sh qoldirilsa — cheklovsiz.")}</p>
       </div>
 
       {error && (
@@ -87,7 +86,7 @@ export default function GroupsPage() {
         >
           <div className="min-w-[200px] flex-1">
             <label htmlFor="group-name" className="mb-1 block text-xs font-medium text-slate-600">
-              Guruh nomi
+              {t('Guruh nomi')}
             </label>
             <input
               id="group-name"
@@ -102,7 +101,7 @@ export default function GroupsPage() {
               htmlFor="group-capacity"
               className="mb-1 block text-xs font-medium text-slate-600"
             >
-              Sig'im
+              {t("Sig'im")}
             </label>
             <input
               id="group-capacity"
@@ -120,19 +119,19 @@ export default function GroupsPage() {
             className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
           >
             <Plus className="h-4 w-4" />
-            Qo'shish
+            {t("Qo'shish")}
           </button>
         </form>
       )}
 
       {groupsQuery.isPending && (
-        <p className="py-8 text-center text-sm text-slate-400">Yuklanmoqda…</p>
+        <p className="py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
       )}
 
       {groupsQuery.data?.items.length === 0 && (
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-12 text-center">
           <Users2 className="mx-auto mb-3 h-10 w-10 text-slate-200" />
-          <p className="text-sm text-slate-500">Hozircha guruh yo'q.</p>
+          <p className="text-sm text-slate-500">{t("Hozircha guruh yo'q.")}</p>
         </div>
       )}
 
@@ -158,7 +157,7 @@ export default function GroupsPage() {
                   <button
                     type="button"
                     onClick={() => setOpenGroup({ id: group.id, name: group.name })}
-                    title="Guruh tarkibini ko'rish"
+                    title={t("Guruh tarkibini ko'rish")}
                     className="flex min-w-0 flex-1 items-start gap-3 text-left"
                   >
                     <span
@@ -176,7 +175,7 @@ export default function GroupsPage() {
                       </span>
                       <span className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
                         <Users2 className="h-3.5 w-3.5" />
-                        {group.enrolled_count} ta bola
+                        {t('{enrolled_count} ta bola', { enrolled_count: group.enrolled_count })}
                         {limited && ` / ${group.capacity}`}
                       </span>
                     </span>
@@ -187,7 +186,7 @@ export default function GroupsPage() {
                       type="button"
                       onClick={() => removeMutation.mutate(group.id)}
                       className="shrink-0 rounded-lg p-1.5 text-slate-300 opacity-0 transition hover:bg-red-50 hover:text-red-600 focus:opacity-100 group-hover:opacity-100"
-                      title="O'chirish"
+                      title={t("O'chirish")}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -203,7 +202,7 @@ export default function GroupsPage() {
                           full ? 'text-amber-700' : 'text-slate-500',
                         )}
                       >
-                        {full ? "Guruh to'lgan" : `${free} ta joy bo'sh`}
+                        {full ? t("Guruh to'lgan") : t("{free} ta joy bo'sh", { free })}
                       </span>
                       <span className="text-xs font-semibold tabular-nums text-slate-400">
                         {percent}%
@@ -221,7 +220,7 @@ export default function GroupsPage() {
                   </div>
                 ) : (
                   <p className="mt-4 inline-flex rounded-full bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500">
-                    Sig'im cheklanmagan
+                    {t("Sig'im cheklanmagan")}
                   </p>
                 )}
               </div>

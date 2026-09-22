@@ -79,6 +79,10 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    # Javob tili — `Accept-Language` dan (frontend ilova tilini yuboradi).
+    # URL prefiksi yo'q (`i18n_patterns` ishlatilmaydi): API manzili bitta,
+    # faqat xabar matni o'zgaradi. Sukut — LANGUAGE_CODE (uz).
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -148,7 +152,15 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # --- Til va vaqt ---
+# Foydalanuvchiga boradigan xabarlar (validatsiya, xatolar, tanlov yorliqlari)
+# manbada O'ZBEKCHA yoziladi va `gettext` bilan o'raladi; ru/en tarjimalari
+# `locale/<til>/LC_MESSAGES/django.po` da. Yangi xabar qo'shilganda:
+#   python manage.py makemessages -l ru -l en --ignore=.venv --ignore=venv
+#   (tarjimani yozing) → python manage.py compilemessages
+# Docker tasviri `compilemessages` ni build paytida bajaradi.
 LANGUAGE_CODE = env("LANGUAGE_CODE", default="uz")
+LANGUAGES = [("uz", "O‘zbekcha"), ("ru", "Русский"), ("en", "English")]
+LOCALE_PATHS = [BASE_DIR / "locale"]
 TIME_ZONE = env("TIME_ZONE", default="Asia/Tashkent")
 USE_I18N = True
 USE_TZ = True  # D7: har doim timestamptz (UTC)

@@ -19,6 +19,7 @@ from typing import Any
 from django.db import IntegrityError, transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from apps.children.models import Child, EnrollmentStatus
 from apps.core.exceptions import BusinessRuleViolation
@@ -94,7 +95,7 @@ def post_ledger_entry(
     o'tadi, shuning uchun invariantlar bir joyda tekshiriladi.
     """
     if amount <= 0:
-        raise BusinessRuleViolation("Ledger summasi musbat bo'lishi kerak.")
+        raise BusinessRuleViolation(gettext("Ledger summasi musbat bo'lishi kerak."))
 
     return ChildLedgerEntry.objects.create(
         organization=child.organization,
@@ -190,7 +191,9 @@ def issue_invoice(
     """
     if child.tariff_id is None:
         raise BusinessRuleViolation(
-            f"{child.full_name}: tarif biriktirilmagan — hisob-faktura chiqarib bo'lmaydi."
+            gettext(
+                "{full_name}: tarif biriktirilmagan — hisob-faktura chiqarib bo'lmaydi."
+            ).format(full_name=child.full_name)
         )
 
     existing = (
@@ -238,7 +241,7 @@ def issue_invoice(
         )
         if existing:
             return existing
-        raise BusinessRuleViolation("Hisob-fakturani yaratib bo'lmadi.") from exc
+        raise BusinessRuleViolation(gettext("Hisob-fakturani yaratib bo'lmadi.")) from exc
 
     InvoiceLine.objects.create(
         invoice=invoice,
@@ -296,7 +299,9 @@ def cancel_invoice(*, invoice: Invoice, reason: str = "", created_by: Any = None
         return invoice
     if invoice.amount_paid > 0:
         raise BusinessRuleViolation(
-            "To'lov qilingan hisob-fakturani bekor qilib bo'lmaydi — avval to'lovni qaytaring."
+            gettext(
+                "To'lov qilingan hisob-fakturani bekor qilib bo'lmaydi — avval to'lovni qaytaring."
+            )
         )
 
     invoice.status = InvoiceStatus.CANCELLED
@@ -354,7 +359,7 @@ def generate_monthly_invoices(
     bog'chada bitta nosozlik oyni bloklab qo'yardi.
     """
     if not 1 <= period_month <= 12:
-        raise BusinessRuleViolation("Oy 1–12 oralig'ida bo'lishi kerak.")
+        raise BusinessRuleViolation(gettext("Oy 1–12 oralig'ida bo'lishi kerak."))
 
     result = BillingRunResult(period=f"{period_year}-{period_month:02d}")
 
@@ -449,7 +454,7 @@ def record_payment(
     ushlay olmaydi — u boshqa tranzaksiyani ko'rmaydi.
     """
     if amount <= 0:
-        raise BusinessRuleViolation("To'lov summasi musbat bo'lishi kerak.")
+        raise BusinessRuleViolation(gettext("To'lov summasi musbat bo'lishi kerak."))
 
     amount = _money(amount)
 
@@ -464,16 +469,20 @@ def record_payment(
 
     if invoice is not None:
         if invoice.child_id != child.id:
-            raise BusinessRuleViolation("Hisob-faktura boshqa bolaga tegishli.")
+            raise BusinessRuleViolation(gettext("Hisob-faktura boshqa bolaga tegishli."))
         if invoice.status == InvoiceStatus.CANCELLED:
-            raise BusinessRuleViolation("Bekor qilingan hisob-fakturaga to'lov qabul qilinmaydi.")
+            raise BusinessRuleViolation(
+                gettext("Bekor qilingan hisob-fakturaga to'lov qabul qilinmaydi.")
+            )
 
         locked = Invoice.objects.select_for_update().get(pk=invoice.pk)
         outstanding = locked.amount_due - locked.amount_paid
         if amount > outstanding:
             raise BusinessRuleViolation(
-                f"Ortiqcha to'lov: qoldiq {outstanding}, kiritilgan {amount}. "
-                f"Ortiqcha summani hisob-fakturasiz avans sifatida kiriting."
+                gettext(
+                    "Ortiqcha to'lov: qoldiq {outstanding}, kiritilgan {amount}. "
+                    "Ortiqcha summani hisob-fakturasiz avans sifatida kiriting."
+                ).format(outstanding=outstanding, amount=amount)
             )
     else:
         locked = None
@@ -571,7 +580,7 @@ def reverse_payment(*, payment: Payment, reason: str = "", created_by: Any = Non
     keyin qaytarildi" deb ko'rsatadi — "hech narsa bo'lmagan" emas.
     """
     if payment.is_reversed:
-        raise BusinessRuleViolation("Bu to'lov allaqachon qaytarilgan.")
+        raise BusinessRuleViolation(gettext("Bu to'lov allaqachon qaytarilgan."))
 
     payment.reversed_at = timezone.now()
     payment.reversal_reason = reason[:255]

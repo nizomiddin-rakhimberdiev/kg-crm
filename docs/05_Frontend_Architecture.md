@@ -425,9 +425,28 @@ Matches [02 §21](./02_Software_Architecture.md):
 | Zod schemas | `<entity>.schema.ts`; export schema + inferred type. |
 | Types | No `any`; API types derive from Zod or `types/api.ts`. |
 | Styling | Tailwind classes via `cn()` helper; no inline styles except dynamic values. |
-| Strings | Through the i18n dictionary; no hardcoded UI text. |
+| Strings | Uzbek source text wrapped in `t('…')` from `lib/i18n` (§17); no bare UI text, no dynamic `t(variable)`. |
 | Env | Access only through `config/env.ts` (typed). |
 | Linting | ESLint + Prettier enforced in CI ([06](./06_Development_Roadmap.md)). |
+
+---
+
+## 17. Internationalization (uz / ru / en)
+
+The CRM shell is trilingual ([02 ADR-16](./02_Software_Architecture.md)). The mechanism is deliberately small:
+
+| Piece | Where | Rule |
+|-------|-------|------|
+| `t(source, vars?)` | `lib/i18n/index.ts` | Pure lookup: `catalog[source] ?? source`, `{name}` placeholders filled from `vars`. Usable anywhere — module constants, hooks, JSX — because the locale is fixed for the life of the page. |
+| Locale | `localStorage` `kg-crm.locale` (`uz` default) | Read once in `main.tsx` → `initI18n()` **before** `App` is imported (dynamic import), so module-level `t()` calls already see the catalog. `setLocale()` writes and reloads. |
+| Catalogs | `lib/i18n/messages/{ru,en}.ts` | `Record<sourceString, translation>`, sorted by key. `uz` has no catalog. Only the active one is loaded. |
+| Switcher | `components/layout/LanguageSwitch` | Topbar (`sm+`), mobile drawer footer, login page. |
+| Backend | `Accept-Language: <locale>` on every request (`lib/api/client.ts`) | Error messages, validation and choice labels come back translated (Django `gettext`). |
+| Dates | `lib/utils.ts` `MONTHS`, `formatDateLong`; `features/reports/period.ts` | Month names per locale; numeric dates (`14.09.2026`) are identical in all three. |
+| Intelligence | `features/intelligence/content.ts` `getCopy()` | Its own uz/ru/en copy objects, selected by the app locale (key-parity test). |
+| Guarantee | `lib/i18n/__tests__/catalog.test.ts` | Extracts every `t('…')` literal from `src/` and fails when a source is missing from `ru`/`en`, when a catalog has stale keys, or when placeholders differ. |
+
+**Out of scope on purpose:** the public site (`features/landing`, own content layer + prerender per locale), the vendor console (`features/platform`, Uzbek only), and tenant data (role names, categories, message templates — the customer's own words). When adding UI text: write it in Uzbek, wrap it in `t()`, run the tests, add the `ru`/`en` lines the failing test lists.
 
 ---
 
@@ -437,4 +456,4 @@ Matches [02 §21](./02_Software_Architecture.md):
 - Endpoints, permissions, and payloads consumed here: [04_Backend_API_Specification](./04_Backend_API_Specification.md).
 - Build order: [06_Development_Roadmap](./06_Development_Roadmap.md).
 
-*End of Frontend Architecture v1.2 — organization-scoped query cache, read-only mode, `billing`/`branches`/`onboarding` features; responsive shell (mobile drawer), server pagination, `/staff` tabs, report period picker.*
+*End of Frontend Architecture v1.3 — organization-scoped query cache, read-only mode, `billing`/`branches`/`onboarding` features; responsive shell (mobile drawer), server pagination, `/staff` tabs, report period picker; trilingual shell (§17) and public site (`/uz` `/ru` `/en`).*

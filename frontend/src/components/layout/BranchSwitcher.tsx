@@ -13,6 +13,7 @@ import { useBranchScope } from '@/app/providers/BranchProvider'
 import { branchesApi } from '@/features/branches/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { cn } from '@/lib/utils'
+import { t } from '@/lib/i18n'
 
 interface BranchSwitcherProps {
   /**
@@ -72,7 +73,7 @@ export function BranchSwitcher({ variant = 'topbar' }: BranchSwitcherProps) {
         )}
       />
       <select
-        aria-label="Filial"
+        aria-label={t('Filial')}
         value={selectedBranchId ?? ''}
         onChange={(event) => setSelectedBranchId(event.target.value || null)}
         className={cn(
@@ -80,7 +81,7 @@ export function BranchSwitcher({ variant = 'topbar' }: BranchSwitcherProps) {
           inDrawer && 'w-full',
         )}
       >
-        <option value="">Barcha filiallar</option>
+        <option value="">{t('Barcha filiallar')}</option>
         {branchesQuery.data?.items.map((branch) => (
           <option key={branch.id} value={branch.id}>
             {branch.name}

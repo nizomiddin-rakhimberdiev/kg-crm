@@ -10,6 +10,7 @@ from typing import Any
 from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from apps.children.models import (
     Child,
@@ -71,9 +72,9 @@ def attach_guardian(
 ) -> ChildGuardian:
     """Vasiyni bolaga bog'laydi."""
     if guardian.organization_id != child.organization_id:
-        raise BusinessRuleViolation("Vasiy boshqa tashkilotga tegishli.")
+        raise BusinessRuleViolation(gettext("Vasiy boshqa tashkilotga tegishli."))
     if guardian.branch_id != child.branch_id:
-        raise BusinessRuleViolation("Vasiy boshqa filialga tegishli.")
+        raise BusinessRuleViolation(gettext("Vasiy boshqa filialga tegishli."))
 
     if is_primary:
         # Asosiy vasiy bitta bo'ladi. Qisman unikal indeks buni bazada
@@ -105,9 +106,9 @@ def enroll_child(*, child: Child, group: Group, start_date: date | None = None) 
     qatorlarni ko'rmaydi (docs/03 §26).
     """
     if group.organization_id != child.organization_id:
-        raise BusinessRuleViolation("Guruh boshqa tashkilotga tegishli.")
+        raise BusinessRuleViolation(gettext("Guruh boshqa tashkilotga tegishli."))
     if group.branch_id != child.branch_id:
-        raise BusinessRuleViolation("Guruh boshqa filialga tegishli.")
+        raise BusinessRuleViolation(gettext("Guruh boshqa filialga tegishli."))
 
     locked = Group.objects.select_for_update().get(pk=group.pk)
     active_count = Enrollment.objects.filter(
@@ -115,7 +116,9 @@ def enroll_child(*, child: Child, group: Group, start_date: date | None = None) 
     ).count()
     if locked.capacity and active_count >= locked.capacity:
         raise BusinessRuleViolation(
-            f"'{locked.name}' guruhi to'lgan ({active_count}/{locked.capacity})."
+            gettext("'{name}' guruhi to'lgan ({active_count}/{capacity}).").format(
+                name=locked.name, active_count=active_count, capacity=locked.capacity
+            )
         )
 
     today = start_date or timezone.localdate()

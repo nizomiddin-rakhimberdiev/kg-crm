@@ -9,6 +9,8 @@ import { navItems, type NavItem } from '@/config/navigation'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { BranchSwitcher } from './BranchSwitcher'
+import { LanguageSwitch } from './LanguageSwitch'
+import { t } from '@/lib/i18n'
 
 /**
  * Yon panel ikki qobiqda yashaydi: `lg` dan yuqorida doimiy `<aside>`,
@@ -33,7 +35,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       {/* Brand */}
       <NavLink
         to="/organization"
-        title="Bog'cha profili"
+        title={t("Bog'cha profili")}
         onClick={onNavigate}
         className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-100 px-5 transition-colors hover:bg-slate-50 lg:px-6"
       >
@@ -42,10 +44,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </div>
         <div className="min-w-0 leading-tight">
           <p className="truncate text-sm font-bold text-slate-900">
-            {user?.organization?.name ?? 'Radix CRM'}
+            {user?.organization?.name ?? t('Radix CRM')}
           </p>
           <p className="text-[11px] font-medium tracking-wide text-slate-400">
-            Boshqaruv Tizimi
+            {t('Boshqaruv Tizimi')}
           </p>
         </div>
       </NavLink>
@@ -74,7 +76,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             {({ isActive }) => (
               <>
                 <item.icon
-                  className={cn('h-[18px] w-[18px]', isActive ? 'text-brand-600' : 'text-slate-400')}
+                  className={cn(
+                    'h-[18px] w-[18px]',
+                    isActive ? 'text-brand-600' : 'text-slate-400',
+                  )}
                 />
                 {item.label}
               </>
@@ -85,11 +90,16 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       {/* Profile footer */}
       <div className="shrink-0 border-t border-slate-100 p-4">
+        {/* Til — faqat drawer'da: keng ekranda u Topbar'da. */}
+        <LanguageSwitch
+          size="md"
+          className="mb-3 w-full justify-stretch [&>button]:flex-1 lg:hidden"
+        />
         <div className="flex items-center gap-3">
           {/* Profil — ruxsat talab qilmaydi: har kim faqat o'zini ko'radi. */}
           <NavLink
             to="/profile"
-            title="Mening profilim"
+            title={t('Mening profilim')}
             onClick={onNavigate}
             className="-m-1 flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1 transition-colors hover:bg-slate-50"
           >
@@ -111,7 +121,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <button
             type="button"
             onClick={() => void logout()}
-            title="Chiqish"
+            title={t('Chiqish')}
             className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
           >
             <LogOut className="h-4 w-4" />
@@ -185,7 +195,7 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
           <motion.aside
             role="dialog"
             aria-modal="true"
-            aria-label="Asosiy menyu"
+            aria-label={t('Asosiy menyu')}
             className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-2xl"
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}
@@ -195,7 +205,7 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
             <button
               type="button"
               onClick={onClose}
-              aria-label="Menyuni yopish"
+              aria-label={t('Menyuni yopish')}
               className="absolute right-3 top-3.5 grid h-9 w-9 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
             >
               <X className="h-4 w-4" />
