@@ -7,7 +7,7 @@ from decimal import Decimal
 from rest_framework import serializers
 
 from apps.accounts.serializers import validate_password_strength
-from apps.platform.models import GRANT_MAX_HOURS, Lead, SupportGrant
+from apps.platform.models import GRANT_MAX_HOURS, Lead, LeadStatus, SupportGrant
 
 __all__ = [
     "PlatformLoginSerializer",
@@ -108,7 +108,7 @@ class LeadCreateSerializer(serializers.Serializer):
     message = serializers.CharField(
         max_length=1_000, required=False, allow_blank=True, trim_whitespace=True
     )
-    language = serializers.ChoiceField(choices=["uz", "ru"])
+    language = serializers.ChoiceField(choices=["uz", "ru", "en"])
     consent = serializers.BooleanField()
     privacy_policy_version = serializers.RegexField(r"^[a-zA-Z0-9._-]{1,32}$")
     submission_id = serializers.UUIDField()
@@ -148,9 +148,16 @@ class LeadSerializer(serializers.ModelSerializer):
             "language",
             "source",
             "status",
+            "note",
+            "status_changed_at",
             "consented_at",
             "privacy_policy_version",
             "created_at",
             "updated_at",
         ]
         read_only_fields = fields
+
+
+class LeadStatusSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=LeadStatus.choices)
+    note = serializers.CharField(required=False, allow_blank=True, max_length=2_000)

@@ -59,6 +59,7 @@ const PlatformOrganizationPage = lazy(
 )
 const PlatformInvoicesPage = lazy(() => import('./features/platform/pages/PlatformInvoicesPage'))
 const PlatformGrantsPage = lazy(() => import('./features/platform/pages/PlatformGrantsPage'))
+const PlatformLeadsPage = lazy(() => import('./features/platform/pages/PlatformLeadsPage'))
 const SupportEntryPage = lazy(() => import('./features/auth/pages/SupportEntryPage'))
 const ProfilePage = lazy(() => import('./features/auth/pages/ProfilePage'))
 const OrganizationPage = lazy(() => import('./features/organization/pages/OrganizationPage'))
@@ -168,6 +169,7 @@ const saasOnlyRoutes = env.isStandalone
               { path: 'organizations/:organizationId', element: <PlatformOrganizationPage /> },
               { path: 'invoices', element: <PlatformInvoicesPage /> },
               { path: 'grants', element: <PlatformGrantsPage /> },
+              { path: 'leads', element: <PlatformLeadsPage /> },
             ],
           },
         ],

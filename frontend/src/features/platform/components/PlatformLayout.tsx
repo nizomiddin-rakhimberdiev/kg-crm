@@ -10,12 +10,23 @@
 import { Suspense } from 'react'
 import { NavLink, Navigate, Outlet } from 'react-router-dom'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { Building2, CreditCard, KeyRound, LayoutDashboard, LogOut, ShieldCheck } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import {
+  Building2,
+  CreditCard,
+  Inbox,
+  KeyRound,
+  LayoutDashboard,
+  LogOut,
+  ShieldCheck,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { platform } from '../api'
 import { usePlatformAuth } from '../PlatformAuthProvider'
 
 const NAV = [
   { to: '/platform', label: 'Ish ro‘yxati', icon: LayoutDashboard, end: true },
+  { to: '/platform/leads', label: 'So‘rovlar', icon: Inbox, end: false },
   { to: '/platform/organizations', label: 'Bog‘chalar', icon: Building2, end: false },
   { to: '/platform/invoices', label: 'Hisob-fakturalar', icon: CreditCard, end: false },
   { to: '/platform/grants', label: 'Kirish ruxsatlari', icon: KeyRound, end: false },
@@ -23,6 +34,17 @@ const NAV = [
 
 export function PlatformLayout() {
   const { user, isAuthenticated, logout } = usePlatformAuth()
+
+  // Yangi so'rovlar soni — menyuda belgi. Saytdan kelgan ariza bazaga
+  // tushib, hech kim ko'rmay qolishi mumkin edi; endi u ko'z oldida.
+  const leads = useQuery({
+    queryKey: ['platform', 'leads', 'counts'],
+    queryFn: () => platform.leads(),
+    enabled: isAuthenticated && user?.role === 'platform_admin',
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+  })
+  const newLeads = leads.data?.counts.new ?? 0
 
   if (!isAuthenticated) return <Navigate to="/platform/login" replace />
 
@@ -54,6 +76,11 @@ export function PlatformLayout() {
               >
                 <item.icon className="h-4 w-4" />
                 {item.label}
+                {item.to === '/platform/leads' && newLeads > 0 && (
+                  <span className="ml-1 rounded-full bg-brand-600 px-1.5 text-[11px] font-bold text-white">
+                    {newLeads}
+                  </span>
+                )}
               </NavLink>
             ))}
           </nav>
@@ -78,7 +105,11 @@ export function PlatformLayout() {
       </header>
 
       <main className="mx-auto max-w-7xl px-6 py-6">
-        <Suspense fallback={<div className="grid place-items-center py-20 text-sm text-slate-400">Yuklanmoqda…</div>}>
+        <Suspense
+          fallback={
+            <div className="grid place-items-center py-20 text-sm text-slate-400">Yuklanmoqda…</div>
+          }
+        >
           <ErrorBoundary area="platform">
             <Outlet />
           </ErrorBoundary>

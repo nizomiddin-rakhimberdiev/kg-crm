@@ -57,3 +57,33 @@ def create_lead(*, data: dict[str, Any]) -> tuple[Lead, bool]:
         # rollbackdan keyin yangi so'rovda mavjud qatorni o'qiymiz.
         existing = Lead.objects.get(submission_id=submission_id)
         return existing, False
+
+
+def update_lead_status(
+    *, lead: Lead, status: str, note: str | None, actor: Any, request: Any = None
+) -> Lead:
+    """
+    Sotuvchi holatni o'zgartiradi (yangi → bog'lanildi → mos keladi → yopildi).
+
+    Har o'zgarish platforma audit jurnaliga tushadi: kim, qachon, qaysi
+    holatga. Lead — mijozning shaxsiy ma'lumoti; u bilan nima qilingani
+    izsiz qolmasligi kerak.
+    """
+    from apps.platform import services as platform_services
+
+    previous = lead.status
+    lead.status = status
+    if note is not None:
+        lead.note = note
+    if previous != status:
+        lead.status_changed_at = timezone.now()
+    lead.save(update_fields=["status", "note", "status_changed_at", "updated_at"])
+    platform_services.record_platform_action(
+        actor=actor,
+        action="lead.status",
+        entity_type="lead",
+        entity_id=lead.id,
+        changes={"from": previous, "to": status},
+        request=request,
+    )
+    return lead

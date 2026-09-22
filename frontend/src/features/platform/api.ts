@@ -121,6 +121,32 @@ export interface NewOrgResult {
   branch: string
 }
 
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'closed'
+
+export interface Lead {
+  id: string
+  name: string
+  phone: string
+  kindergarten_name: string
+  children_count: number
+  city: string
+  message: string
+  language: 'uz' | 'ru' | 'en'
+  source: string
+  status: LeadStatus
+  note: string
+  status_changed_at: string | null
+  consented_at: string
+  privacy_policy_version: string
+  created_at: string
+  updated_at: string
+}
+
+export interface LeadList {
+  items: Lead[]
+  counts: Record<LeadStatus, number>
+}
+
 export const platform = {
   // `code` — faqat server 2FA talab qilganda (`TOTP_REQUIRED`, ADR-15).
   login: (email: string, password: string, code?: string) =>
@@ -141,31 +167,38 @@ export const platform = {
   invoices: (status?: string) =>
     platformApi.get<PlatformInvoice[]>('/platform/invoices', status ? { status } : undefined),
   recordPayment: (invoiceId: string, amount: string, reference: string) =>
-    platformApi.post<{ id: string; amount: string }>(
-      `/platform/invoices/${invoiceId}/payments`,
-      { amount, method: 'bank_transfer', reference },
-    ),
+    platformApi.post<{ id: string; amount: string }>(`/platform/invoices/${invoiceId}/payments`, {
+      amount,
+      method: 'bank_transfer',
+      reference,
+    }),
 
   suspend: (id: string, reason: string) =>
     platformApi.post<{ status: string }>(`/platform/organizations/${id}/suspend`, { reason }),
   reactivate: (id: string) =>
     platformApi.post<{ status: string }>(`/platform/organizations/${id}/reactivate`),
   extendTrial: (id: string, days: number, reason: string) =>
-    platformApi.post<{ trial_ends_at: string }>(
-      `/platform/organizations/${id}/extend-trial`,
-      { days, reason },
-    ),
+    platformApi.post<{ trial_ends_at: string }>(`/platform/organizations/${id}/extend-trial`, {
+      days,
+      reason,
+    }),
   supportGrant: (id: string, reason: string, hours: number) =>
     platformApi.post<SupportGrant>(`/platform/organizations/${id}/support-grant`, {
       reason,
       hours,
     }),
   supportGrants: () => platformApi.get<SupportGrant[]>('/platform/support-grants'),
+
+  // Saytdagi «Demo olish» formasi — platforma darajasidagi ma'lumot, tenant emas.
+  leads: (params?: { status?: LeadStatus }) => platformApi.get<LeadList>('/platform/leads', params),
+  setLeadStatus: (id: string, status: LeadStatus, note?: string) =>
+    platformApi.post<Lead>(`/platform/leads/${id}/status`, {
+      status,
+      ...(note !== undefined ? { note } : {}),
+    }),
   /** Amaldagi ruxsat bilan mijoz ilovasiga kirish tokenini oladi. */
   supportSession: (id: string) =>
-    platformApi.post<SupportSessionResult>(
-      `/platform/organizations/${id}/support-session`,
-    ),
+    platformApi.post<SupportSessionResult>(`/platform/organizations/${id}/support-session`),
 
   plans: () => platformApi.get<PlatformPlan[]>('/platform/plans'),
 }

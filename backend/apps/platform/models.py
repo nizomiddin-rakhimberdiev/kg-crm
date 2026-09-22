@@ -168,9 +168,15 @@ class Lead(models.Model):
     children_count = models.PositiveSmallIntegerField()
     city = models.CharField(max_length=120)
     message = models.TextField(blank=True, max_length=1_000)
-    language = models.CharField(max_length=2, choices=[("uz", "O'zbekcha"), ("ru", "Русский")])
+    language = models.CharField(
+        max_length=2, choices=[("uz", "O'zbekcha"), ("ru", "Русский"), ("en", "English")]
+    )
     source = models.CharField(max_length=40, default="website")
     status = models.CharField(max_length=20, choices=LeadStatus.choices, default=LeadStatus.NEW)
+    # Sotuvchining qisqa izohi ("ertaga qo'ng'iroq", "narx yubordim") —
+    # holat bilan birga konsoldan yoziladi.
+    note = models.TextField(blank=True, max_length=2_000)
+    status_changed_at = models.DateTimeField(null=True, blank=True)
 
     # Rozilik dalili hamda so'rovni takror yuborishga qarshi kalit. Kalit
     # brauzerda bir forma ochilganda yaratiladi; qayta urinish yangi lead

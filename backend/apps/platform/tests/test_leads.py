@@ -107,10 +107,59 @@ class TestLeadAccess:
         client.credentials(HTTP_AUTHORIZATION=f"Bearer {issue_platform_token(admin)}")
         response = client.get("/api/v1/platform/leads")
         assert response.status_code == 200
-        assert response.json()["data"][0]["kindergarten_name"] == "Mehrjon bog'chasi"
+        body = response.json()["data"]
+        assert body["items"][0]["kindergarten_name"] == "Mehrjon bog'chasi"
+        assert body["counts"] == {"new": 1, "contacted": 0, "qualified": 0, "closed": 0}
 
     def test_anonymous_user_cannot_list_leads(self):
         assert APIClient().get("/api/v1/platform/leads").status_code == 401
+
+    def test_admin_moves_a_lead_through_statuses_with_audit(self):
+        """Konsoldan holat + izoh; har o'zgarish platforma auditida."""
+        from apps.audit.models import AuditLog
+
+        APIClient().post(URL, payload(), format="json")
+        admin = platform_admin()
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {issue_platform_token(admin)}")
+        lead_id = client.get("/api/v1/platform/leads").json()["data"]["items"][0]["id"]
+
+        response = client.post(
+            f"/api/v1/platform/leads/{lead_id}/status",
+            {"status": "contacted", "note": "Ertaga 10:00 da qo'ng'iroq"},
+            format="json",
+        )
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["status"] == "contacted" and data["note"].startswith("Ertaga")
+        assert data["status_changed_at"] is not None
+
+        listed = client.get("/api/v1/platform/leads", {"status": "contacted"}).json()["data"]
+        assert [row["id"] for row in listed["items"]] == [lead_id]
+        assert listed["counts"]["contacted"] == 1 and listed["counts"]["new"] == 0
+
+        with platform_context():
+            entry = AuditLog.objects.filter(action="lead.status", entity_id=lead_id).first()
+        assert entry is not None
+        assert entry.changes["from"] == "new" and entry.changes["to"] == "contacted"
+        assert entry.changes["platform_email"] == admin.email  # kim o'zgartirgani ham yoziladi
+
+        # Noto'g'ri holat — 400; yo'q lead — 404; tenant — 401.
+        assert (
+            client.post(f"/api/v1/platform/leads/{lead_id}/status", {"status": "x"}).status_code
+            == 400
+        )
+        assert (
+            client.post(
+                f"/api/v1/platform/leads/{'0' * 8}-0000-0000-0000-000000000000/status",
+                {"status": "closed"},
+            ).status_code
+            == 404
+        )
+
+    def test_english_lead_is_accepted(self):
+        response = APIClient().post(URL, {**payload(), "language": "en"}, format="json")
+        assert response.status_code == 201
 
 
 class TestPublicPricing:

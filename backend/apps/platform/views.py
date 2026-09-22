@@ -15,25 +15,28 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.db.models import Count
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.exceptions import BusinessRuleViolation
 from apps.core.tenancy import organization_context, platform_context
-from apps.platform import services
+from apps.platform import services, services_leads
 from apps.platform.authentication import (
     PlatformTokenAuthentication,
     authenticate_platform_user,
     issue_platform_token,
 )
-from apps.platform.models import Lead, PlatformUser, SupportGrant
+from apps.platform.models import Lead, LeadStatus, PlatformUser, SupportGrant
 from apps.platform.permissions import IsPlatformAdmin, IsPlatformStaff
 from apps.platform.serializers import (
     ExtendTrialSerializer,
     LeadSerializer,
+    LeadStatusSerializer,
     OrganizationCreateSerializer,
     PlatformLoginSerializer,
     ReasonSerializer,
@@ -131,13 +134,44 @@ class PlatformConsoleViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=["get"])
     def leads(self, request: Request) -> Response:
-        """Public zayavkalar — faqat platform admin uchun, tenant emas."""
+        """
+        Public zayavkalar — faqat platform admin uchun, tenant emas.
+
+        Javob: ro'yxat + holatlar bo'yicha sanoq (`counts`), konsol
+        yorliqlari uchun — alohida so'rovsiz.
+        """
         self._admin_only(request)
         status_filter = request.query_params.get("status", "")
         queryset = Lead.objects.all()
         if status_filter:
             queryset = queryset.filter(status=status_filter)
-        return Response(LeadSerializer(queryset[:200], many=True).data)
+        counts = {
+            row["status"]: row["n"] for row in Lead.objects.values("status").annotate(n=Count("id"))
+        }
+        return Response(
+            {
+                "items": LeadSerializer(queryset[:200], many=True).data,
+                "counts": {choice: counts.get(choice, 0) for choice in LeadStatus.values},
+            }
+        )
+
+    @action(detail=False, methods=["post"], url_path=r"leads/(?P<lead_id>[0-9a-f-]{36})/status")
+    def lead_status(self, request: Request, lead_id: str = "") -> Response:
+        """`POST /platform/leads/{id}/status` — holat + izoh; audit yoziladi."""
+        self._admin_only(request)
+        lead = Lead.objects.filter(pk=lead_id).first()
+        if lead is None:
+            raise NotFound()
+        serializer = LeadStatusSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        lead = services_leads.update_lead_status(
+            lead=lead,
+            status=serializer.validated_data["status"],
+            note=serializer.validated_data.get("note"),
+            actor=self._actor(request),
+            request=request._request,
+        )
+        return Response(LeadSerializer(lead).data)
 
     # --- Mijoz ochish (faqat administrator) ---
 
