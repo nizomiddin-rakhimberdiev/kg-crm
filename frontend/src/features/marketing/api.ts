@@ -25,7 +25,7 @@ export interface LeadPayload {
   children_count: number
   city: string
   message: string
-  language: 'uz' | 'ru'
+  language: 'uz' | 'ru' | 'en'
   consent: boolean
   privacy_policy_version: string
   submission_id: string
@@ -34,5 +34,6 @@ export interface LeadPayload {
 
 export const marketingApi = {
   pricing: (children: number) => api.get<PublicPricing>('/public/pricing', { children }),
-  createLead: (payload: LeadPayload) => api.post<{ id: string; status: string }>('/public/leads', payload),
+  createLead: (payload: LeadPayload) =>
+    api.post<{ id: string; status: string }>('/public/leads', payload),
 }

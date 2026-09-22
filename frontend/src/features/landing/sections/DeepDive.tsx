@@ -117,7 +117,7 @@ export function DeepDive({ locale }: { locale: Locale }) {
   useMotionValueEvent(stepMv, 'change', (v) => setStep(v >= STOPS.length ? 0 : v))
 
   const pinned = !isStatic
-  const uz = locale === 'uz'
+  const ui = copy[locale].ui.deepDive
 
   const panel = (
     <div className="relative">
@@ -165,9 +165,7 @@ export function DeepDive({ locale }: { locale: Locale }) {
                 <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
                   {t.demo.chartTitle}
                 </p>
-                <span className="text-[11px] lg:text-[10px] text-slate-400">
-                  {uz ? 'oxirgi 6 oy' : 'последние 6 мес.'}
-                </span>
+                <span className="text-[11px] lg:text-[10px] text-slate-400">{ui.last6}</span>
               </div>
               <Bars values={TREND} labels={t.demo.months} className="mt-2" />
             </div>
@@ -203,12 +201,10 @@ export function DeepDive({ locale }: { locale: Locale }) {
           <div className="mt-3 flex items-center gap-2 rounded-xl border border-l-4 border-slate-200/80 border-l-red-500 px-3 py-2">
             <Sparkles className="h-3.5 w-3.5 text-brand-600" />
             <p className="truncate text-[12px] lg:text-[11px] font-semibold text-slate-800">
-              {uz
-                ? '9 ta bola bo‘yicha to‘lov 15 kundan ortiq kechikmoqda'
-                : 'По 9 детям оплата задерживается более 15 дней'}
+              {ui.alert}
             </p>
             <span className="ml-auto whitespace-nowrap text-[11px] lg:text-[10px] font-semibold text-brand-700">
-              {uz ? 'Nega?' : 'Почему?'}
+              {ui.why}
             </span>
           </div>
         </Frame>

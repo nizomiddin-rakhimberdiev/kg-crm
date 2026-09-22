@@ -4,6 +4,7 @@ import { MemoryRouter, matchRoutes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { routes } from '@/router'
 import { marketingApi } from '@/features/marketing/api'
+import { legal } from '@/features/marketing/legal'
 import { copy, groupThousands } from '../content'
 import { LandingPage } from '../pages/LandingPage'
 
@@ -30,16 +31,30 @@ beforeEach(() => {
 })
 
 describe('content', () => {
-  it('UZ va RU bir xil kalitlarga ega', () => {
+  it('UZ, RU va EN bir xil kalitlarga ega (namunaviy ekran yorliqlari ham)', () => {
     const keys = (o: object): string[] =>
       Object.entries(o).flatMap(([k, v]) =>
         v && typeof v === 'object' && !Array.isArray(v) ? keys(v).map((x) => `${k}.${x}`) : [k],
       )
     expect(keys(copy.ru).sort()).toEqual(keys(copy.uz).sort())
+    expect(keys(copy.en).sort()).toEqual(keys(copy.uz).sort())
+    expect(legal.en.privacySections).toHaveLength(legal.uz.privacySections.length)
+    expect(legal.en.termsSections).toHaveLength(legal.uz.termsSections.length)
+  })
+
+  it('EN va RU matnida o‘zbekcha qolib ketmagan', () => {
+    // O'zbek lotin yozuvining o'ziga xos belgilari: o‘ g‘ va ’ bilan yozilgan so'zlar.
+    const uzbek = /\b(bo‘|to‘|so‘m|qarz|davomat|guruh|bola|xodim|hisob|kutilmoqda)/i
+    const walk = (o: unknown): string[] =>
+      typeof o === 'string' ? [o] : o && typeof o === 'object' ? Object.values(o).flatMap(walk) : []
+    for (const locale of ['ru', 'en'] as const) {
+      const hits = walk(copy[locale]).filter((s) => uzbek.test(s))
+      expect(hits, locale).toEqual([])
+    }
   })
 
   it('narx misollari ADR-12 formulasiga mos (400k / 50, +50k / 10, yillik −25 %)', () => {
-    for (const locale of ['uz', 'ru'] as const) {
+    for (const locale of ['uz', 'ru', 'en'] as const) {
       for (const row of copy[locale].pricing.examples) {
         expect(row.monthly).toBe(Number(quote(row.children).monthly.total_amount))
       }
@@ -50,7 +65,7 @@ describe('content', () => {
   })
 
   it('moliya raqamlari bir-biriga mos: to‘lovlar − xarajat − ish haqi = balans', () => {
-    for (const locale of ['uz', 'ru'] as const) {
+    for (const locale of ['uz', 'ru', 'en'] as const) {
       const m = Object.fromEntries(copy[locale].finance.metrics.map((x) => [x.id, x.value]))
       expect(m.payments - m.expenses - m.salaries).toBe(m.balance)
       expect(m.revenue - m.payments).toBe(m.debt)
@@ -74,13 +89,15 @@ describe('content', () => {
 })
 
 describe('marshrut', () => {
-  it('/uz va /ru bosh sahifa; eski /test-redesign havolasi yo‘naltiriladi', () => {
+  it('/uz, /ru, /en bosh sahifa; eski /test-redesign havolasi yo‘naltiriladi', () => {
     const leaf = (p: string) => {
       const m = matchRoutes(routes, p)
       return m?.[m.length - 1]?.route.path
     }
     expect(leaf('/uz')).toBe('/uz')
     expect(leaf('/ru')).toBe('/ru')
+    expect(leaf('/en')).toBe('/en')
+    expect(leaf('/en/terms')).toBe('/en/terms')
     expect(leaf('/test-redesign')).toBe('/test-redesign')
     expect(leaf('/uz/privacy')).toBe('/uz/privacy')
   })
@@ -113,7 +130,7 @@ describe('LandingPage', () => {
 })
 
 describe('prerender', () => {
-  it('6 sahifa: to‘liq matn, meta va FAQ JSON-LD javobning ichida', async () => {
+  it('9 sahifa: to‘liq matn, meta va FAQ JSON-LD javobning ichida', async () => {
     const { prerenderPages } = await import('@/prerender/entry')
     const pages = prerenderPages()
     expect(pages.map((p) => p.path)).toEqual([
@@ -123,6 +140,9 @@ describe('prerender', () => {
       '/ru',
       '/ru/privacy',
       '/ru/terms',
+      '/en',
+      '/en/privacy',
+      '/en/terms',
     ])
     const uz = pages[0]
     expect(uz.body).toContain(copy.uz.hero.title)
@@ -131,6 +151,15 @@ describe('prerender', () => {
     expect(uz.head).toContain(`<title>${copy.uz.seo.title}</title>`)
     expect(uz.head).toContain('rel="canonical" href="https://radix-crm.uz/uz"')
     expect(uz.head).toContain('hreflang="ru" href="https://radix-crm.uz/ru"')
+    expect(uz.head).toContain('hreflang="en" href="https://radix-crm.uz/en"')
+    expect(uz.head).toContain('hreflang="x-default" href="https://radix-crm.uz/uz"')
+    const en = pages[6]
+    expect(en.lang).toBe('en')
+    expect(en.body).toContain(copy.en.hero.title)
+    expect(en.body).toContain(copy.en.ui.hero.alert)
+    expect(en.body).toContain(copy.en.ui.roles.branches)
+    expect(en.head).toContain('og:locale" content="en_US"')
+    expect(en.head).toContain('og-en.png')
     expect(uz.head).toContain('"@type":"FAQPage"')
     // Narx birinchi kadrda «…» emas — kesh content.ts misolidan to‘ldirilgan.
     expect(uz.body).toContain('400 000')

@@ -39,10 +39,8 @@ type UiProps = { local: MotionValue<number>; locale: Locale; compact?: boolean }
 
 export function ChildrenUi({ local, locale, compact = false }: UiProps) {
   const phase = usePhase(local, [0.35, 0.7])
-  const groups =
-    locale === 'uz'
-      ? ['Hammasi', 'Quyosh', 'Yulduzcha', 'Kamalak']
-      : ['Все', 'Quyosh', 'Yulduzcha', 'Kamalak']
+  const ui = copy[locale].ui.children
+  const groups = [ui.all, 'Quyosh', 'Yulduzcha', 'Kamalak']
   return (
     <div className="grid gap-3 sm:grid-cols-[1.3fr_1fr]">
       <div>
@@ -93,19 +91,17 @@ export function ChildrenUi({ local, locale, compact = false }: UiProps) {
           </span>
           <div>
             <p className="text-[12px] font-bold text-slate-900">Karimov Ali</p>
-            <p className="text-[11px] lg:text-[10px] text-slate-500">
-              Quyosh · 4 {locale === 'uz' ? 'yosh' : 'года'}
-            </p>
+            <p className="text-[11px] lg:text-[10px] text-slate-500">Quyosh · 4 {ui.age}</p>
           </div>
         </div>
         <dl className="mt-3 grid grid-cols-2 gap-x-2 gap-y-1.5 text-[11px] lg:text-[10px]">
-          <dt className="text-slate-500">{locale === 'uz' ? 'Tarif' : 'Тариф'}</dt>
+          <dt className="text-slate-500">{ui.tariff}</dt>
           <dd className="font-semibold text-slate-800">1 500 000</dd>
-          <dt className="text-slate-500">{locale === 'uz' ? 'Vasiy' : 'Опекун'}</dt>
+          <dt className="text-slate-500">{ui.guardian}</dt>
           <dd className="font-semibold text-slate-800">Karimova N.</dd>
-          <dt className="text-slate-500">{locale === 'uz' ? 'Balans' : 'Баланс'}</dt>
+          <dt className="text-slate-500">{ui.balance}</dt>
           <dd className="font-semibold text-red-700">−1 500 000</dd>
-          <dt className="text-slate-500">{locale === 'uz' ? 'Davomat' : 'Посещ.'}</dt>
+          <dt className="text-slate-500">{ui.attendance}</dt>
           <dd className="font-semibold text-emerald-700">92 %</dd>
         </dl>
       </div>
@@ -115,10 +111,7 @@ export function ChildrenUi({ local, locale, compact = false }: UiProps) {
 
 export function PaymentsUi({ local, locale }: UiProps) {
   const phase = usePhase(local, [0.33, 0.66])
-  const L =
-    locale === 'uz'
-      ? { paid: 'to‘landi', wait: 'kutilmoqda', debt: 'qarz' }
-      : { paid: 'оплачено', wait: 'ожидает', debt: 'долг' }
+  const L = copy[locale].ui.payments
   const rows = [
     ['Karimov Ali', 1_500_000, phase >= 1 ? 'ok' : 'wait'],
     ['Yusupova Dilnoza', 1_500_000, phase >= 1 ? 'ok' : 'wait'],
@@ -158,6 +151,7 @@ export function PaymentsUi({ local, locale }: UiProps) {
 }
 
 export function AttendanceUi({ local, locale }: UiProps) {
+  const ui = copy[locale].ui.attendance
   const toMarked = (v: number) => Math.min(19, Math.round(v * 24))
   const [marked, setMarked] = useState(() => toMarked(local.get()))
   useMotionValueEvent(local, 'change', (v) => setMarked(toMarked(v)))
@@ -167,7 +161,7 @@ export function AttendanceUi({ local, locale }: UiProps) {
     <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
       <div>
         <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
-          Quyosh · {locale === 'uz' ? 'bugun' : 'сегодня'}
+          Quyosh · {ui.today}
         </p>
         <div className="mt-2 grid grid-cols-10 gap-1.5">
           {Array.from({ length: 20 }).map((_, i) => (
@@ -193,14 +187,12 @@ export function AttendanceUi({ local, locale }: UiProps) {
         </div>
       </div>
       <div className="rounded-xl border border-slate-200/80 p-3 sm:w-36">
-        <p className="text-[11px] lg:text-[10px] text-slate-500">
-          {locale === 'uz' ? 'Davomat' : 'Посещаемость'}
-        </p>
+        <p className="text-[11px] lg:text-[10px] text-slate-500">{ui.title}</p>
         <p className="text-2xl font-bold tabular-nums text-slate-950">
           <Num value={pct} format={(v) => String(Math.round(v))} duration={0.3} />%
         </p>
         <p className="text-[11px] lg:text-[10px] text-slate-500">
-          {present} / 20 · {locale === 'uz' ? 'kelgan' : 'пришли'}
+          {present} / 20 · {ui.present}
         </p>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
           <div
@@ -215,25 +207,23 @@ export function AttendanceUi({ local, locale }: UiProps) {
 
 export function StaffUi({ local, locale }: UiProps) {
   const phase = usePhase(local, [0.35, 0.7])
-  const uz = locale === 'uz'
+  const ui = copy[locale].ui.staff
   const rows = [
-    ['Rahimova Dilnoza', uz ? 'Direktor' : 'Директор', 6_500_000],
-    ['Sodiqova Nilufar', uz ? 'Tarbiyachi' : 'Воспитатель', 3_800_000],
-    ['Karimova Sevara', uz ? 'Tarbiyachi' : 'Воспитатель', 3_800_000],
-    ['Tosheva Gulnora', uz ? 'Kassir' : 'Кассир', 3_200_000],
-    ['Aliyev Rustam', uz ? 'Oshpaz' : 'Повар', 3_000_000],
+    ['Rahimova Dilnoza', ui.director, 6_500_000],
+    ['Sodiqova Nilufar', ui.teacher, 3_800_000],
+    ['Karimova Sevara', ui.teacher, 3_800_000],
+    ['Tosheva Gulnora', ui.cashier, 3_200_000],
+    ['Aliyev Rustam', ui.cook, 3_000_000],
   ] as const
   return (
     <div>
       <div className="flex items-center justify-between">
-        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
-          {uz ? 'Xodimlar · 24' : 'Сотрудники · 24'}
-        </p>
+        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{ui.title}</p>
         <span
           className="text-[11px] lg:text-[10px] text-slate-500 transition-opacity duration-500"
           style={{ opacity: phase >= 1 ? 1 : 0 }}
         >
-          {uz ? 'Sentabr ish haqi' : 'Зарплата за сентябрь'}
+          {ui.payroll}
         </span>
       </div>
       <div className="mt-2 space-y-0.5">
@@ -244,9 +234,7 @@ export function StaffUi({ local, locale }: UiProps) {
             meta={role}
             right={
               <div className="flex items-center gap-1.5">
-                {phase === 2 && i === 4 && (
-                  <Pill tone="wait">{uz ? 'avans 400 000' : 'аванс 400 000'}</Pill>
-                )}
+                {phase === 2 && i === 4 && <Pill tone="wait">{ui.advance}</Pill>}
                 <span
                   className="text-[12px] lg:text-[11px] font-semibold tabular-nums text-slate-800 transition-opacity duration-500"
                   style={{ opacity: phase >= 1 ? 1 : 0 }}
@@ -262,9 +250,7 @@ export function StaffUi({ local, locale }: UiProps) {
         className="mt-2 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 transition-opacity duration-500"
         style={{ opacity: phase === 2 ? 1 : 0 }}
       >
-        <span className="text-[11px] lg:text-[10px] text-slate-500">
-          {uz ? 'Jami (24 xodim)' : 'Итого (24 сотрудника)'}
-        </span>
+        <span className="text-[11px] lg:text-[10px] text-slate-500">{ui.total}</span>
         <Num value={31_500_000} className="text-[12px] font-bold tabular-nums text-slate-900" />
       </div>
     </div>
@@ -273,24 +259,22 @@ export function StaffUi({ local, locale }: UiProps) {
 
 export function InventoryUi({ local, locale, compact = false }: UiProps) {
   const phase = usePhase(local, [0.4, 0.75])
-  const uz = locale === 'uz'
+  const ui = copy[locale].ui.inventory
   const stock = [
-    [uz ? 'Guruch' : 'Рис', 'kg', 42, 26],
-    [uz ? 'Un' : 'Мука', 'kg', 30, 18],
-    [uz ? 'Yog‘' : 'Масло', 'l', 12, 7],
-    [uz ? 'Shakar' : 'Сахар', 'kg', 20, 14],
+    [ui.rice, 'kg', 42, 26],
+    [ui.flour, 'kg', 30, 18],
+    [ui.oil, 'l', 12, 7],
+    [ui.sugar, 'kg', 20, 14],
   ] as const
   const expenses = [
-    [uz ? 'Oziq-ovqat' : 'Продукты', 2_300_000],
-    [uz ? 'Kommunal' : 'Коммунальные', 1_150_000],
-    [uz ? 'Ta’mir' : 'Ремонт', 480_000],
+    [ui.food, 2_300_000],
+    [ui.utilities, 1_150_000],
+    [ui.repair, 480_000],
   ] as const
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <div className="rounded-xl border border-slate-200/80 p-3">
-        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
-          {uz ? 'Ombor qoldig‘i' : 'Остаток на складе'}
-        </p>
+        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{ui.stock}</p>
         <ul className="mt-2 space-y-2">
           {stock.slice(0, compact ? 3 : 4).map(([name, unit, from, to]) => {
             const value = phase === 0 ? from : phase === 1 ? Math.round((from + to) / 2) : to
@@ -315,9 +299,7 @@ export function InventoryUi({ local, locale, compact = false }: UiProps) {
         </ul>
       </div>
       <div className="rounded-xl border border-slate-200/80 p-3">
-        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
-          {uz ? 'Xarajatlar · sentabr' : 'Расходы · сентябрь'}
-        </p>
+        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{ui.expenses}</p>
         <ul className="mt-2 space-y-1">
           {expenses.map(([name, amount], i) => (
             <li

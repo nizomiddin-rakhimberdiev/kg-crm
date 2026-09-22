@@ -121,6 +121,7 @@ function FlyingPaper({
 
 function Resolved({ locale, compact }: { locale: Locale; compact: boolean }) {
   const t = copy[locale]
+  const ui = t.ui.problem
   const f = t.problem.fragments
   return (
     <Frame demo={t.demo} active={0} compact={compact} className="w-full">
@@ -144,21 +145,9 @@ function Resolved({ locale, compact }: { locale: Locale; compact: boolean }) {
           <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
             {t.demo.sidebar[3]}
           </p>
-          <Row
-            name="Karimov A."
-            meta="1 500 000"
-            right={<Pill tone="wait">{locale === 'uz' ? 'kutilmoqda' : 'ожидает'}</Pill>}
-          />
-          <Row
-            name="Rasulova M."
-            meta="1 500 000"
-            right={<Pill tone="ok">{locale === 'uz' ? 'to‘landi' : 'оплачено'}</Pill>}
-          />
-          <Row
-            name="Yusupov S."
-            meta="600 000"
-            right={<Pill tone="debt">{locale === 'uz' ? 'qarz' : 'долг'}</Pill>}
-          />
+          <Row name="Karimov A." meta="1 500 000" right={<Pill tone="wait">{ui.wait}</Pill>} />
+          <Row name="Rasulova M." meta="1 500 000" right={<Pill tone="ok">{ui.paid}</Pill>} />
+          <Row name="Yusupov S." meta="600 000" right={<Pill tone="debt">{ui.debt}</Pill>} />
         </div>
         <div className="hidden rounded-xl border border-slate-200/80 p-3 sm:block">
           <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
@@ -184,9 +173,7 @@ function Resolved({ locale, compact }: { locale: Locale; compact: boolean }) {
           <Row
             name={f[6].lines[0]}
             meta={f[3].lines[1].split(' · ')[0]}
-            right={
-              <Pill tone="neutral">{locale === 'uz' ? 'chek biriktirilgan' : 'чек приложен'}</Pill>
-            }
+            right={<Pill tone="neutral">{ui.receiptAttached}</Pill>}
             avatar={false}
           />
         </div>

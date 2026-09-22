@@ -17,7 +17,7 @@ const SIDEBAR: Record<RoleCopy['id'], number> = { owner: 0, director: 5, cashier
 
 function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
   const t = copy[locale].demo
-  const uz = locale === 'uz'
+  const ui = copy[locale].ui.roles
   if (role === 'owner') {
     return (
       <>
@@ -28,17 +28,15 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-slate-200/80 p-3">
-            <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
-              {uz ? 'Filiallar' : 'Филиалы'}
-            </p>
+            <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{ui.branches}</p>
             <Row
-              name={uz ? 'Chilonzor' : 'Чиланзар'}
+              name={ui.chilonzor}
               meta="68 · 94 %"
               right={<Pill tone="ok">46 800 000</Pill>}
               avatar={false}
             />
             <Row
-              name={uz ? 'Yunusobod' : 'Юнусабад'}
+              name={ui.yunusobod}
               meta="60 · 93 %"
               right={<Pill tone="ok">39 600 000</Pill>}
               avatar={false}
@@ -63,30 +61,14 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
           ))}
         </div>
         <div className="mt-3 rounded-xl border border-slate-200/80 p-3">
-          <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
-            {uz ? 'Bugungi vazifalar' : 'Задачи на сегодня'}
-          </p>
+          <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{ui.tasks}</p>
+          <Row name={ui.attendanceMissing} right={<Pill tone="wait">08:40</Pill>} avatar={false} />
           <Row
-            name={
-              uz
-                ? 'Kamalak guruhi davomati belgilanmagan'
-                : 'Группа Kamalak — посещаемость не отмечена'
-            }
-            right={<Pill tone="wait">08:40</Pill>}
+            name={ui.newChildren}
+            right={<Pill tone="neutral">{ui.today}</Pill>}
             avatar={false}
           />
-          <Row
-            name={
-              uz ? '2 ta yangi bola — guruhga biriktirish' : '2 новых ребёнка — зачислить в группу'
-            }
-            right={<Pill tone="neutral">{uz ? 'bugun' : 'сегодня'}</Pill>}
-            avatar={false}
-          />
-          <Row
-            name={uz ? 'Oshpaz — avans so‘rovi' : 'Повар — запрос аванса'}
-            right={<Pill tone="neutral">400 000</Pill>}
-            avatar={false}
-          />
+          <Row name={ui.cookAdvance} right={<Pill tone="neutral">400 000</Pill>} avatar={false} />
         </div>
       </>
     )
@@ -96,9 +78,9 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
       <>
         <div className="grid grid-cols-3 gap-2">
           {[
-            [uz ? 'Bugun qabul qilindi' : 'Принято сегодня', '4 500 000', 'text-emerald-700'],
-            [uz ? 'Kutilmoqda' : 'Ожидает', '18 000 000', 'text-amber-700'],
-            [uz ? 'Qarzdorlik' : 'Долг', '12 450 000', 'text-red-700'],
+            [ui.acceptedToday, '4 500 000', 'text-emerald-700'],
+            [ui.waiting, '18 000 000', 'text-amber-700'],
+            [ui.debt, '12 450 000', 'text-red-700'],
           ].map(([l, v, c]) => (
             <div key={l} className="min-w-0 rounded-xl border border-slate-200/80 p-2.5">
               <p className="truncate text-[11px] lg:text-[10px] text-slate-500">{l}</p>
@@ -112,22 +94,22 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
         </div>
         <div className="mt-3 rounded-xl border border-slate-200/80 p-3">
           <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
-            {uz ? 'To‘lov qabul qilish' : 'Приём оплаты'}
+            {ui.acceptPayment}
           </p>
           <Row
             name="Karimov Ali"
-            meta={uz ? 'Sentabr · 1 500 000' : 'Сентябрь · 1 500 000'}
-            right={<Pill tone="ok">{uz ? 'naqd' : 'наличные'}</Pill>}
+            meta={ui.septemberInvoice}
+            right={<Pill tone="ok">{ui.cash}</Pill>}
           />
           <Row
             name="Tursunova Malika"
-            meta={uz ? 'Sentabr · 1 500 000' : 'Сентябрь · 1 500 000'}
-            right={<Pill tone="wait">{uz ? 'kutilmoqda' : 'ожидает'}</Pill>}
+            meta={ui.septemberInvoice}
+            right={<Pill tone="wait">{ui.wait}</Pill>}
           />
           <Row
             name="Abdullayev Otabek"
-            meta={uz ? 'Avgust · 600 000' : 'Август · 600 000'}
-            right={<Pill tone="debt">{uz ? 'qarz' : 'долг'}</Pill>}
+            meta={ui.augustInvoice}
+            right={<Pill tone="debt">{ui.debtPill}</Pill>}
           />
         </div>
       </>
@@ -137,9 +119,9 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
     <>
       <div className="grid grid-cols-3 gap-2">
         {[
-          [uz ? 'Bolalar' : 'Дети', '128'],
-          [uz ? 'Guruhlar' : 'Группы', '6'],
-          [uz ? 'Belgilangan' : 'Отмечено', '5 / 6'],
+          [ui.children, '128'],
+          [ui.groups, '6'],
+          [ui.marked, '5 / 6'],
         ].map(([l, v]) => (
           <div key={l} className="min-w-0 rounded-xl border border-slate-200/80 p-2.5">
             <p className="truncate text-[11px] lg:text-[10px] text-slate-500">{l}</p>
@@ -148,9 +130,7 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
         ))}
       </div>
       <div className="mt-3 rounded-xl border border-slate-200/80 p-3">
-        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
-          {uz ? 'Guruhlar' : 'Группы'}
-        </p>
+        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{ui.groups}</p>
         {[
           ['Quyosh', '20 / 20', 'ok'],
           ['Yulduzcha', '19 / 20', 'ok'],
@@ -159,7 +139,7 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
           <Row
             key={n}
             name={n}
-            meta={uz ? 'davomat belgilangan' : 'посещаемость отмечена'}
+            meta={ui.attendanceMarked}
             right={<Pill tone={tone as 'ok' | 'wait'}>{c}</Pill>}
             avatar={false}
           />

@@ -11,7 +11,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useMotionValueEvent, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, Check } from 'lucide-react'
 import { marketingApi } from '@/features/marketing/api'
-import { copy, groupThousands, money, type Locale } from '../content'
+import { CURRENCY, copy, groupThousands, money, type Locale } from '../content'
 import { Reveal, useStatic } from '../motion'
 import { Num } from '../ui/Num'
 
@@ -156,7 +156,7 @@ export function Pricing({ locale }: { locale: Locale }) {
                 <span className="text-base font-medium text-slate-500">
                   {shown === null
                     ? ''
-                    : `${locale === 'uz' ? 'so‘m' : 'сум'} ${term === 'monthly' ? t.perMonth : t.perYear}`}
+                    : `${CURRENCY[locale]} ${term === 'monthly' ? t.perMonth : t.perYear}`}
                 </span>
               </div>
               {term === 'annual' && effective !== null && (

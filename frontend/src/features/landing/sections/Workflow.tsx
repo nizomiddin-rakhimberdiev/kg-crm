@@ -23,13 +23,11 @@ const clock = (minutes: number) => {
 }
 
 function GroupsUi({ locale }: { locale: Locale }) {
-  const uz = locale === 'uz'
+  const ui = copy[locale].ui.workflow
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <div className="rounded-xl border border-slate-200/80 p-3">
-        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
-          {uz ? 'Guruhlar' : 'Группы'}
-        </p>
+        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{ui.groups}</p>
         {[
           ['Quyosh', '20 / 20', 'neutral'],
           ['Yulduzcha', '19 / 20', 'ok'],
@@ -38,7 +36,7 @@ function GroupsUi({ locale }: { locale: Locale }) {
           <Row
             key={n}
             name={n}
-            meta={uz ? '3–4 yosh' : '3–4 года'}
+            meta={ui.age}
             right={<Pill tone={tone as 'ok' | 'neutral'}>{c}</Pill>}
             avatar={false}
             active={n === 'Yulduzcha'}
@@ -47,18 +45,14 @@ function GroupsUi({ locale }: { locale: Locale }) {
       </div>
       <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
         <p className="text-[11px] lg:text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
-          {uz ? 'Yangi bola' : 'Новый ребёнок'}
+          {ui.newChild}
         </p>
         <p className="mt-1 text-[12px] font-bold text-slate-900">Nazarova Madina</p>
-        <p className="text-[11px] lg:text-[10px] text-slate-500">
-          {uz ? 'Yulduzcha guruhiga biriktirildi' : 'Зачислена в группу Yulduzcha'}
-        </p>
+        <p className="text-[11px] lg:text-[10px] text-slate-500">{ui.enrolled}</p>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-emerald-100">
           <div className="h-full w-[95%] rounded-full bg-emerald-500" />
         </div>
-        <p className="mt-1 text-[11px] lg:text-[10px] text-slate-500">
-          {uz ? 'Sig‘im 19 / 20' : 'Заполненность 19 / 20'}
-        </p>
+        <p className="mt-1 text-[11px] lg:text-[10px] text-slate-500">{ui.capacity}</p>
       </div>
     </div>
   )

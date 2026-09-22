@@ -13,6 +13,8 @@ import { Brand } from '@/features/marketing/components/Brand'
 import { copy, type Locale } from '../content'
 import { basePath } from '../paths'
 
+const LOCALES = ['uz', 'ru', 'en'] as const satisfies readonly Locale[]
+
 export function Nav({ locale }: { locale: Locale }) {
   const t = copy[locale].nav
   const [scrolled, setScrolled] = useState(false)
@@ -77,8 +79,6 @@ export function Nav({ locale }: { locale: Locale }) {
     ['#faq', t.faq],
   ] as const
 
-  const other: Locale = locale === 'uz' ? 'ru' : 'uz'
-
   return (
     <header
       data-dark={dark || undefined}
@@ -103,7 +103,7 @@ export function Nav({ locale }: { locale: Locale }) {
           <Brand />
         </Link>
 
-        <nav aria-label="Asosiy" className="hidden items-center gap-1 lg:flex">
+        <nav aria-label={t.menu} className="hidden items-center gap-1 lg:flex">
           {links.map(([href, label]) => (
             <a
               key={href}
@@ -116,22 +116,7 @@ export function Nav({ locale }: { locale: Locale }) {
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <div className="mr-2 flex items-center rounded-lg border border-slate-200 p-0.5 text-[13px] font-semibold group-data-[dark]/nav:border-white/20">
-            {(['uz', 'ru'] as const).map((l) => (
-              <Link
-                key={l}
-                to={basePath(l)}
-                aria-current={l === locale ? 'page' : undefined}
-                className={`rounded-md px-2.5 py-1 transition ${
-                  l === locale
-                    ? 'bg-slate-950 text-white group-data-[dark]/nav:bg-white group-data-[dark]/nav:text-slate-950'
-                    : 'text-slate-500 hover:text-slate-950 group-data-[dark]/nav:text-slate-300 group-data-[dark]/nav:hover:text-white'
-                }`}
-              >
-                {t.lang[l]}
-              </Link>
-            ))}
-          </div>
+          <LangSwitch locale={locale} className="mr-2" />
           <a
             href={env.loginUrl}
             className="inline-flex items-center gap-1 rounded-lg px-3.5 py-2 text-[15px] font-semibold text-slate-800 transition hover:bg-slate-100 group-data-[dark]/nav:text-white group-data-[dark]/nav:hover:bg-white/10"
@@ -148,12 +133,7 @@ export function Nav({ locale }: { locale: Locale }) {
         </div>
 
         <div className="flex items-center gap-2 lg:hidden">
-          <Link
-            to={basePath(other)}
-            className="grid h-11 min-w-11 place-items-center rounded-lg border border-slate-200 px-2 text-[13px] font-semibold text-slate-700 group-data-[dark]/nav:border-white/20 group-data-[dark]/nav:text-white"
-          >
-            {t.lang[other]}
-          </Link>
+          <LangSwitch locale={locale} compact />
           <button
             type="button"
             aria-expanded={open}
@@ -198,5 +178,49 @@ export function Nav({ locale }: { locale: Locale }) {
         </div>
       )}
     </header>
+  )
+}
+
+/**
+ * Til tanlagich — uch til bitta guruhda. Mobilda ham shu: «boshqa til»
+ * tugmasi ikki tilda tushunarli edi, uchtada esa qaysi biriga o'tishini
+ * bildirmaydi. Havola (`<Link>`), tugma emas — har til o'z manzilida
+ * (`/uz`, `/ru`, `/en`), qidiruv tizimi ham shu havolalarni ko'radi.
+ */
+function LangSwitch({
+  locale,
+  compact = false,
+  className = '',
+}: {
+  locale: Locale
+  compact?: boolean
+  className?: string
+}) {
+  const t = copy[locale].nav
+  return (
+    <nav
+      aria-label={t.language}
+      className={`flex items-center rounded-lg border border-slate-200 p-0.5 text-[13px] font-semibold group-data-[dark]/nav:border-white/20 ${
+        compact ? 'h-11' : ''
+      } ${className}`}
+    >
+      {LOCALES.map((l) => (
+        <Link
+          key={l}
+          to={basePath(l)}
+          hrefLang={l}
+          aria-current={l === locale ? 'page' : undefined}
+          className={`grid place-items-center rounded-md transition ${
+            compact ? 'h-full min-w-9 px-1.5' : 'px-2.5 py-1'
+          } ${
+            l === locale
+              ? 'bg-slate-950 text-white group-data-[dark]/nav:bg-white group-data-[dark]/nav:text-slate-950'
+              : 'text-slate-500 hover:text-slate-950 group-data-[dark]/nav:text-slate-300 group-data-[dark]/nav:hover:text-white'
+          }`}
+        >
+          {t.lang[l]}
+        </Link>
+      ))}
+    </nav>
   )
 }

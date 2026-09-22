@@ -18,6 +18,7 @@ const TREND = [61, 68, 72, 70, 79, 86]
 
 export function Hero({ locale }: { locale: Locale }) {
   const t = copy[locale]
+  const ui = t.ui.hero
   const ref = useRef<HTMLElement>(null)
   const compact = useCompact()
   const isStatic = useStatic()
@@ -141,12 +142,10 @@ export function Hero({ locale }: { locale: Locale }) {
                 <Sparkles className="h-3 w-3" /> Radix AI
               </div>
               <p className="mt-1.5 text-[12px] font-semibold leading-snug text-slate-900">
-                {locale === 'uz'
-                  ? '9 ta bola bo‘yicha to‘lov 15 kundan ortiq kechikmoqda'
-                  : 'По 9 детям оплата задерживается более 15 дней'}
+                {ui.alert}
               </p>
               <div className="mt-2 flex gap-1.5">
-                <Pill tone="debt">{locale === 'uz' ? 'Jiddiy' : 'Серьёзно'}</Pill>
+                <Pill tone="debt">{ui.severe}</Pill>
                 <Pill tone="neutral">12 450 000</Pill>
               </div>
             </div>

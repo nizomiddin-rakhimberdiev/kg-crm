@@ -17,6 +17,14 @@ import { legal, type Locale } from './legal'
 
 export const ORIGIN = 'https://radix-crm.uz'
 
+/** Public sayt tillari — `hreflang` va sitemap tartibi shu. `x-default` — uz. */
+export const LOCALES: [Locale, string][] = [
+  ['uz', 'uz_UZ'],
+  ['ru', 'ru_RU'],
+  ['en', 'en_US'],
+]
+const OG_LOCALE = Object.fromEntries(LOCALES) as Record<Locale, string>
+
 export function upsertMeta(
   selector: string,
   attribute: 'name' | 'property',
@@ -66,7 +74,7 @@ export interface PageMeta {
   title: string
   description: string
   canonical: string
-  /** [hreflang, href] — uz, ru va x-default. */
+  /** [hreflang, href] — uz, ru, en va x-default. */
   alternates: [string, string][]
   ogImage: string
   ogLocale: string
@@ -97,12 +105,11 @@ export function buildPageMeta({
     description,
     canonical: `${ORIGIN}/${locale}${path}`,
     alternates: [
-      ['uz', `${ORIGIN}/uz${path}`],
-      ['ru', `${ORIGIN}/ru${path}`],
+      ...LOCALES.map(([lang]) => [lang, `${ORIGIN}/${lang}${path}`] as [string, string]),
       ['x-default', `${ORIGIN}/uz${path}`],
     ],
     ogImage: `${ORIGIN}/og-${locale}.png`,
-    ogLocale: locale === 'uz' ? 'uz_UZ' : 'ru_RU',
+    ogLocale: OG_LOCALE[locale],
   }
 }
 
@@ -171,8 +178,8 @@ export function applyPageMeta(input: {
   upsertMeta('meta[name="twitter:image"]', 'name', 'twitter:image', meta.ogImage)
 
   upsertLink('canonical', meta.canonical)
-  // Ikki tilli sayt uchun `hreflang` — qidiruv tizimi bir xil sahifaning
-  // ikki versiyasini nusxa deb hisoblamasligi uchun.
+  // Ko'p tilli sayt uchun `hreflang` — qidiruv tizimi bir xil sahifaning
+  // uch versiyasini nusxa deb hisoblamasligi uchun.
   for (const [lang, href] of meta.alternates) upsertLink('alternate', href, lang)
 }
 

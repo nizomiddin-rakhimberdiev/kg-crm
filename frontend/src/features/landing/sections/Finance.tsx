@@ -98,7 +98,7 @@ export function Finance({ locale }: { locale: Locale }) {
   const byId = Object.fromEntries(t.metrics.map((m) => [m.id, m]))
   const payments = byId.payments.value
   const parts = [byId.expenses, byId.salaries, byId.balance]
-  const uz = locale === 'uz'
+  const ui = copy[locale].ui.finance
 
   // Taqsimot chizig'i bo'laklari: har biri o'z oralig'ida to'ladi.
   const seg = [
@@ -167,7 +167,7 @@ export function Finance({ locale }: { locale: Locale }) {
             {/* Kirim */}
             <Appear progress={progress} at={0.02} className={card}>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                {uz ? 'Kirim' : 'Приход'}
+                {ui.inflow}
               </p>
               <div className={compact ? 'mt-2 grid grid-cols-3 gap-2' : ''}>
                 {[
@@ -195,7 +195,7 @@ export function Finance({ locale }: { locale: Locale }) {
             {/* Chiqim */}
             <Appear progress={progress} at={0.38} className={card}>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                {uz ? 'Chiqim' : 'Расход'}
+                {ui.outflow}
               </p>
               <div className={compact ? 'mt-2 grid grid-cols-2 gap-2' : ''}>
                 {[
@@ -231,9 +231,7 @@ export function Finance({ locale }: { locale: Locale }) {
               <p className="mt-2 text-3xl font-extrabold tabular-nums tracking-tight text-white lg:mt-4 lg:text-4xl">
                 <Scrub progress={progress} range={[0.62, 0.8]} value={byId.balance.value} />
               </p>
-              <p className="mt-0.5 text-[12px] text-slate-400 lg:text-[13px]">
-                {uz ? 'so‘m · sentabr' : 'сум · сентябрь'}
-              </p>
+              <p className="mt-0.5 text-[12px] text-slate-400 lg:text-[13px]">{ui.unitMonth}</p>
               <motion.p
                 style={{ opacity: equationOpacity }}
                 className="mt-2 text-[12px] leading-5 text-slate-300 lg:mt-6 lg:text-[13px] [@media(max-height:780px)]:hidden"

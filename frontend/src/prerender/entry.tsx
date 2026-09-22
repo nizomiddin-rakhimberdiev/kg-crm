@@ -4,7 +4,7 @@
  * Nega: SPA serverdan bo'sh qobiq qaytaradi (1.8 KB, 42 so'z), kontentni
  * brauzer chizadi. Google JS'ni kechikib ishga tushiradi; ChatGPT,
  * Telegram/WhatsApp preview, Yandex botlari umuman ishga tushirmaydi —
- * ular uchun sayt bo'm-bo'sh edi. Endi `/uz`, `/ru` va huquqiy sahifalar
+ * ular uchun sayt bo'm-bo'sh edi. Endi `/uz`, `/ru`, `/en` va huquqiy sahifalar
  * `dist/<yo'l>/index.html` bo'lib yoziladi: matn, meta, JSON-LD — hammasi
  * javobning ichida. React keyin ustidan o'zi chizadi.
  *
@@ -20,10 +20,10 @@ import { copy, type Locale } from '@/features/landing/content'
 import { LandingPage } from '@/features/landing/pages/LandingPage'
 import { landingJsonLd, landingMeta } from '@/features/landing/seo'
 import { LegalPage } from '@/features/marketing/pages/MarketingPage'
-import { buildPageMeta, headHtml, legalMeta } from '@/features/marketing/seo'
+import { LOCALES, buildPageMeta, headHtml, legalMeta } from '@/features/marketing/seo'
 
 export interface PrerenderedPage {
-  /** `/uz`, `/ru/privacy` … */
+  /** `/uz`, `/ru/privacy`, `/en/terms` … */
   path: string
   lang: Locale
   head: string
@@ -67,7 +67,7 @@ function render(path: string, locale: Locale, element: React.ReactNode): string 
 
 export function prerenderPages(): PrerenderedPage[] {
   const pages: PrerenderedPage[] = []
-  for (const locale of ['uz', 'ru'] as const) {
+  for (const [locale] of LOCALES) {
     pages.push({
       path: `/${locale}`,
       lang: locale,

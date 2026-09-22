@@ -138,10 +138,13 @@ const saasOnlyRoutes = env.isStandalone
           { id: 'marketing-root', index: true, element: <MarketingEntry /> },
           { path: '/uz', element: <LandingPage locale="uz" /> },
           { path: '/ru', element: <LandingPage locale="ru" /> },
+          { path: '/en', element: <LandingPage locale="en" /> },
           { path: '/uz/privacy', element: <LegalPage locale="uz" page="privacy" /> },
           { path: '/ru/privacy', element: <LegalPage locale="ru" page="privacy" /> },
+          { path: '/en/privacy', element: <LegalPage locale="en" page="privacy" /> },
           { path: '/uz/terms', element: <LegalPage locale="uz" page="terms" /> },
           { path: '/ru/terms', element: <LegalPage locale="ru" page="terms" /> },
+          { path: '/en/terms', element: <LegalPage locale="en" page="terms" /> },
           // Sinov davridagi havolalar — bosh sahifaga.
           { path: '/test-redesign', element: <Navigate replace to="/uz" /> },
           { path: '/test-redesign/ru', element: <Navigate replace to="/ru" /> },

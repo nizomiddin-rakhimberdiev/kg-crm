@@ -17,7 +17,7 @@ const rootEl = document.getElementById('root')!
 // tushishidan OLDIN landing chunk'ini yuklab olamiz, shunda birinchi
 // render tayyor kontentni «Yuklanmoqda…» ga almashtirmaydi (router.tsx).
 async function bootstrap() {
-  if (rootEl.hasChildNodes() && /^\/(uz|ru)(\/|$)/.test(window.location.pathname)) {
+  if (rootEl.hasChildNodes() && /^\/(uz|ru|en)(\/|$)/.test(window.location.pathname)) {
     await preloadLanding().catch(() => undefined)
   }
 

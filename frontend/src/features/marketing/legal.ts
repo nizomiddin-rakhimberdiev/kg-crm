@@ -5,7 +5,7 @@
  * `features/landing` da, bu yerda faqat huquqiy matn qoldi.
  */
 
-export type Locale = 'uz' | 'ru'
+export type Locale = 'uz' | 'ru' | 'en'
 
 export interface LegalSection {
   title: string
@@ -98,6 +98,45 @@ export const legal: Record<Locale, LegalCopy> = {
       {
         title: 'Доступ и использование',
         text: 'Учётная запись CRM создаётся командой платформы после разговора о продажах. Каждая организация управляет доступом своих сотрудников.',
+      },
+    ],
+  },
+  en: {
+    privacy: 'Privacy Policy',
+    terms: 'Terms of Use',
+    updated: 'Last updated: September 2026',
+    back: 'Back to the home page',
+    operator: 'Radix CRM operator',
+    privacySections: [
+      {
+        title: 'What data we collect',
+        text: 'In the demo form we collect your name, phone number, kindergarten name, number of children, region and an optional comment.',
+      },
+      {
+        title: 'What we use it for',
+        text: 'To review your request, arrange a demo and get in touch about Radix CRM.',
+      },
+      {
+        title: 'Storage and transfer',
+        text: 'Form data is stored in the platform database. No third-party notification or analytics service is added to the data flow unless this policy says so in advance.',
+      },
+      {
+        title: 'Your choice',
+        text: 'Consent is voluntary but required to review the request. The operator’s official contact channel for questions about your data will be published before launch.',
+      },
+    ],
+    termsSections: [
+      {
+        title: 'Service description',
+        text: 'Radix CRM is a management platform for private kindergartens. The demo form does not open an account or conclude a contract.',
+      },
+      {
+        title: 'Pricing',
+        text: 'The calculator on the website is an indicative estimate based on the current subscription plan. Obligations arise only under an official contract and invoice.',
+      },
+      {
+        title: 'Access and use',
+        text: 'A CRM account is created by the platform team after a sales conversation. Each organization manages access for its own staff.',
       },
     ],
   },
