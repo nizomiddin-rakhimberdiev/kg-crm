@@ -1,5 +1,10 @@
 /**
- * Vendor kirishi — email + parol + TOTP (ADR-10).
+ * Vendor kirishi — email + parol (ADR-10, ADR-15).
+ *
+ * Authenticator kodi maydoni SUKUT BO'YICHA YO'Q. Server
+ * `PLATFORM_2FA_REQUIRED` bilan ishlayotgan bo'lsa, birinchi urinishga
+ * `401 TOTP_REQUIRED` qaytaradi — shundagina maydon paydo bo'ladi.
+ * Frontend serverning sozlamasini bilmaydi va bilishi shart emas.
  *
  * Mijoz login sahifasidan ko'rinishi bilan ham farq qiladi: qorong'i
  * fon va boshqa sarlavha. Bu bezak emas — ikki tekislikni ADASHTIRISH
@@ -19,6 +24,8 @@ export default function PlatformLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
+  // Server kod so'raganida `true` — maydon shundan keyin ko'rinadi.
+  const [needsCode, setNeedsCode] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -29,9 +36,15 @@ export default function PlatformLoginPage() {
     setBusy(true)
     setError(null)
     try {
-      await login(email.trim(), password, code.trim())
+      await login(email.trim(), password, needsCode ? code.trim() : undefined)
       navigate('/platform', { replace: true })
     } catch (err) {
+      if (err instanceof ApiError && err.code === 'TOTP_REQUIRED') {
+        // Bu xato emas — serverda 2FA yoqilgan. Maydonni ochamiz,
+        // foydalanuvchi kodni kiritib qayta yuboradi.
+        setNeedsCode(true)
+        return
+      }
       // Backend qaysi omil noto'g'ri ekanini AYTMAYDI va biz ham
       // aytmaymiz: bu farq hujumchiga qaysi bosqichda ekanini bildirardi.
       setError(err instanceof ApiError ? err.message : 'Kirish amalga oshmadi.')
@@ -93,26 +106,30 @@ export default function PlatformLoginPage() {
           />
         </div>
 
-        <div>
-          <label htmlFor="p-code" className="mb-1 block text-xs font-medium text-slate-400">
-            Authenticator kodi
-          </label>
-          <input
-            id="p-code"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={6}
-            required
-            autoComplete="one-time-code"
-            placeholder="000000"
-            value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-            className={`${field} text-center font-mono text-lg tracking-[0.4em]`}
-          />
-          <p className="mt-1 text-xs text-slate-500">
-            Ikki bosqichli tasdiqlash majburiy — usiz kirish mumkin emas.
-          </p>
-        </div>
+        {needsCode && (
+          <div>
+            <label htmlFor="p-code" className="mb-1 block text-xs font-medium text-slate-400">
+              Authenticator kodi
+            </label>
+            <input
+              id="p-code"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              required
+              autoFocus
+              autoComplete="one-time-code"
+              placeholder="000000"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+              className={`${field} text-center font-mono text-lg tracking-[0.4em]`}
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              Bu serverda ikki bosqichli tasdiqlash yoqilgan — Authenticator ilovasidagi kodni
+              kiriting.
+            </p>
+          </div>
+        )}
 
         <button
           type="submit"

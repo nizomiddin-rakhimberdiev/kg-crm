@@ -28,6 +28,7 @@ export interface ErrorEnvelope {
 export type ApiErrorCode =
   | 'VALIDATION_ERROR'
   | 'AUTHENTICATION_REQUIRED'
+  | 'TOTP_REQUIRED'
   | 'PERMISSION_DENIED'
   | 'NOT_FOUND'
   | 'SUBSCRIPTION_INACTIVE'

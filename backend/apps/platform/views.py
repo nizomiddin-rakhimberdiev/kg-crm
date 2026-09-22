@@ -48,10 +48,11 @@ __all__ = ["PlatformLoginView", "PlatformConsoleViewSet"]
 
 class PlatformLoginView(APIView):
     """
-    `POST /platform/auth/login` — email + parol + TOTP.
+    `POST /platform/auth/login` — email + parol (+ TOTP, agar
+    `PLATFORM_2FA_REQUIRED` yoqilgan bo'lsa — ADR-15).
 
     Mijoz login yo'lidan butunlay alohida (ADR-10): boshqa jadval,
-    boshqa token turi, majburiy ikkinchi omil.
+    boshqa token turi.
     """
 
     # Autentifikator ro'yxati BO'SH EMAS, garchi login anonim bo'lsa
@@ -67,7 +68,7 @@ class PlatformLoginView(APIView):
         user = authenticate_platform_user(
             email=serializer.validated_data["email"],
             password=serializer.validated_data["password"],
-            code=serializer.validated_data["code"],
+            code=serializer.validated_data.get("code") or None,
         )
         services.record_platform_action(
             actor=user, action="login", entity_type="platform_user", request=request._request

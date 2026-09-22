@@ -62,14 +62,22 @@ def _add_children(tenant, count: int) -> None:
             )
 
 
-class TestPlatformLogin:
+class TestPlatformLoginWith2FA:
+    """`PLATFORM_2FA_REQUIRED=true` — uch omil (ADR-10, ADR-15)."""
+
+    @pytest.fixture(autouse=True)
+    def _enable_2fa(self, settings):
+        settings.PLATFORM_2FA_REQUIRED = True
+
     def test_login_requires_all_three_factors(self, tenant_a):
         user = _platform_user()
         client = APIClient()
         url = "/api/v1/platform/auth/login"
 
-        # Kod bo'lmasa — validatsiya xatosi.
-        assert client.post(url, {"email": user.email, "password": PASSWORD}).status_code == 400
+        # Kod bo'lmasa — `TOTP_REQUIRED`: mijoz kod maydonini ko'rsatadi.
+        without_code = client.post(url, {"email": user.email, "password": PASSWORD})
+        assert without_code.status_code == 401
+        assert without_code.json()["error"]["code"] == "TOTP_REQUIRED"
         # Noto'g'ri kod bilan — 401.
         assert (
             client.post(
@@ -116,6 +124,23 @@ class TestPlatformLogin:
         }
         assert len(messages) == 1, f"Xabarlar farq qilyapti: {messages}"
 
+    def test_missing_code_does_not_reveal_whether_the_password_is_right(self, tenant_a):
+        """
+        `TOTP_REQUIRED` parol tekshirilmasdan OLDIN qaytadi.
+
+        Aks holda "kod kerak" javobi faqat to'g'ri parolda chiqib, parolni
+        tekshirish uchun orakulga aylanardi.
+        """
+        user = _platform_user()
+        client = APIClient()
+        url = "/api/v1/platform/auth/login"
+
+        right = client.post(url, {"email": user.email, "password": PASSWORD})
+        wrong = client.post(url, {"email": user.email, "password": "xato"})
+        unknown = client.post(url, {"email": "yoq@kg-crm.uz", "password": "xato"})
+        assert {r.status_code for r in (right, wrong, unknown)} == {401}
+        assert {r.json()["error"]["code"] for r in (right, wrong, unknown)} == {"TOTP_REQUIRED"}
+
     def test_account_without_2fa_cannot_log_in(self, tenant_a):
         """
         2FA sozlanmagan hisob umuman kira olmaydi.
@@ -133,6 +158,62 @@ class TestPlatformLogin:
             {"email": user.email, "password": PASSWORD, "code": "123456"},
         )
         assert response.status_code == 401
+
+
+class TestPlatformLoginWithout2FA:
+    """
+    Sukut rejimi (ADR-15): email + parol yetarli.
+
+    Egasining qarori — Authenticator kodi vendor uchun ortiqcha ishqalanish.
+    Mexanizm o'chirilmagan: bitta sozlama bilan qaytariladi (yuqoridagi sinf).
+    """
+
+    URL = "/api/v1/platform/auth/login"
+
+    @pytest.fixture(autouse=True)
+    def _disable_2fa(self, settings):
+        settings.PLATFORM_2FA_REQUIRED = False
+
+    def test_email_and_password_are_enough(self, tenant_a):
+        user = _platform_user()
+        response = APIClient().post(self.URL, {"email": user.email, "password": PASSWORD})
+        assert response.status_code == 200
+        assert response.json()["data"]["access"]
+        assert response.json()["data"]["user"]["email"] == user.email
+
+    def test_a_stray_code_is_ignored(self, tenant_a):
+        """Eski mijoz `code` yuborsa ham kirish buzilmaydi."""
+        user = _platform_user()
+        response = APIClient().post(
+            self.URL, {"email": user.email, "password": PASSWORD, "code": "000000"}
+        )
+        assert response.status_code == 200
+
+    def test_account_without_totp_can_log_in(self, tenant_a):
+        with platform_context():
+            user = PlatformUser(email="no2fa@kg-crm.uz", full_name="X")
+            user.set_password(PASSWORD)
+            user.save()
+        response = APIClient().post(self.URL, {"email": user.email, "password": PASSWORD})
+        assert response.status_code == 200
+
+    def test_wrong_password_is_still_rejected(self, tenant_a):
+        user = _platform_user()
+        response = APIClient().post(self.URL, {"email": user.email, "password": "xato"})
+        assert response.status_code == 401
+        assert response.json()["error"]["code"] == "AUTHENTICATION_REQUIRED"
+
+    def test_token_still_carries_the_platform_plane(self, tenant_a):
+        """2FA o'chiq bo'lsa ham, token vendor tekisligiga tegishli qoladi."""
+        user = _platform_user()
+        access = (
+            APIClient()
+            .post(self.URL, {"email": user.email, "password": PASSWORD})
+            .json()["data"]["access"]
+        )
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        assert client.get("/api/v1/platform/organizations").status_code == 200
 
 
 class TestPlaneSeparation:

@@ -70,6 +70,8 @@ The split is what stops a single SQL-injection with owner rights from turning of
 
 > The role script runs only when the Postgres volume is first created. Applying it to an existing database is manual.
 
+**`PLATFORM_2FA_REQUIRED`** (default `false`, ADR-15) — whether the vendor console asks for an Authenticator code at sign-in. Off: email + password. On: every platform account needs a confirmed TOTP secret (`create_platform_user` prints it), and a login without a code gets `401 TOTP_REQUIRED`. Changing it needs only a restart of `web`.
+
 ---
 
 ## 4. Deploying a change
@@ -115,7 +117,8 @@ $C run --rm web python manage.py shell
 Create a vendor (platform console) account — a command, not an endpoint, because an endpoint that mints vendor accounts would be the single most valuable target in the system:
 
 ```bash
-$C run --rm web python manage.py create_platform_user
+$C run --rm web python manage.py create_platform_user --email you@example.com --name "Ism" --password '…'
+$C run --rm web python manage.py create_platform_user --email you@example.com --password '…' --update   # parolni yangilash
 ```
 
 ---

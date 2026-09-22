@@ -18,6 +18,7 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Any
 
+from django.conf import settings
 from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
@@ -89,13 +90,32 @@ class PlatformTokenAuthentication(BaseAuthentication):
         return (user, token)
 
 
-def authenticate_platform_user(*, email: str, password: str, code: str) -> PlatformUser:
+class TotpRequired(AuthenticationFailed):
     """
-    Email + parol + TOTP. Uchtasi ham to'g'ri bo'lishi shart.
+    2FA yoqilgan, lekin so'rovda `code` yo'q.
+
+    Bu javob PAROL TEKSHIRILMASDAN OLDIN qaytadi — aks holda "kod kerak"
+    javobi faqat to'g'ri parolda chiqib, parolni tekshirish uchun
+    orakulga aylanardi. Server kod talab qilishi — sir emas.
+    """
+
+    default_code = "TOTP_REQUIRED"
+    default_detail = "Authenticator kodini kiriting."
+
+
+def authenticate_platform_user(
+    *, email: str, password: str, code: str | None = None
+) -> PlatformUser:
+    """
+    Email + parol, va `PLATFORM_2FA_REQUIRED` yoqilganda TOTP (ADR-15).
 
     Xato xabari HAR DOIM bir xil: qaysi omil noto'g'ri ekanini aytish
     hujumchiga qaysi bosqichda ekanini bildirardi.
     """
+    two_factor = bool(settings.PLATFORM_2FA_REQUIRED)
+    if two_factor and not code:
+        raise TotpRequired()
+
     with platform_context():
         user = PlatformUser.objects.filter(email__iexact=email, is_active=True).first()
 
@@ -105,13 +125,15 @@ def authenticate_platform_user(*, email: str, password: str, code: str) -> Platf
         raise generic
     if not user.check_password(password):
         raise generic
-    if not user.has_2fa:
-        raise AuthenticationFailed("Ikki bosqichli tasdiqlash sozlanmagan.")
 
-    from apps.platform.totp import verify
+    if two_factor:
+        if not user.has_2fa:
+            raise AuthenticationFailed("Ikki bosqichli tasdiqlash sozlanmagan.")
 
-    if not verify(user.totp_secret, code):
-        raise generic
+        from apps.platform.totp import verify
+
+        if not verify(user.totp_secret, code or ""):
+            raise generic
 
     with platform_context():
         user.last_login_at = timezone.now()

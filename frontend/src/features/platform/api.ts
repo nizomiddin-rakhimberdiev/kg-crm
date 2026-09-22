@@ -122,8 +122,13 @@ export interface NewOrgResult {
 }
 
 export const platform = {
-  login: (email: string, password: string, code: string) =>
-    platformApi.post<PlatformSession>('/platform/auth/login', { email, password, code }),
+  // `code` — faqat server 2FA talab qilganda (`TOTP_REQUIRED`, ADR-15).
+  login: (email: string, password: string, code?: string) =>
+    platformApi.post<PlatformSession>('/platform/auth/login', {
+      email,
+      password,
+      ...(code ? { code } : {}),
+    }),
 
   createOrganization: (payload: NewOrgPayload) =>
     platformApi.post<NewOrgResult>('/platform/organizations/create', payload),

@@ -25,9 +25,11 @@ __all__ = [
 class PlatformLoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
-    # TOTP MAJBURIY — ixtiyoriy maydon "keyin yoqaman" degan holatni
-    # mumkin qilardi (ADR-10).
-    code = serializers.CharField(min_length=6, max_length=6)
+    # TOTP — `PLATFORM_2FA_REQUIRED` yoqilganda majburiy (ADR-15). Maydon
+    # ixtiyoriy, lekin talab qilinganda uning yo'qligi `TOTP_REQUIRED`
+    # bilan rad etiladi — "keyin yoqaman" holati serializer'da emas,
+    # autentifikatsiyada yopiladi.
+    code = serializers.CharField(min_length=6, max_length=6, required=False, allow_blank=True)
 
 
 class ReasonSerializer(serializers.Serializer):

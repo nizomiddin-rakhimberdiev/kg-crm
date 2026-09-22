@@ -721,7 +721,7 @@ Omitting the header keeps the old behaviour. That is deliberate — making it ma
 
 ## 19. Platform Console (vendor-only)
 
-Module: `platform`. **Not part of the customer API surface** — separate auth path, mandatory 2FA, every call audited (ADR-10, [02 §11.0](./02_Software_Architecture.md)).
+Module: `platform`. **Not part of the customer API surface** — separate auth path, every call audited (ADR-10, [02 §11.0](./02_Software_Architecture.md)). `POST /platform/auth/login` takes `email` + `password`; when the deployment runs with `PLATFORM_2FA_REQUIRED=true` (ADR-15, default off) a request without `code` answers `401 TOTP_REQUIRED` and the client resubmits with the Authenticator code.
 
 | Method | Path | Description |
 |--------|------|-------------|

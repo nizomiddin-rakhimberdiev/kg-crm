@@ -389,6 +389,14 @@ if DEPLOYMENT_MODE not in ("saas", "standalone"):
     )
 
 # --- SaaS / obuna (docs/01 §4) ---
+# Platforma (vendor) konsolida ikkinchi omil — TOTP (ADR-15).
+#
+# Sukut O'CHIQ: egasining qarori (2026-09-22). Yoqilganda har bir vendor
+# hisobida Authenticator sozlangan bo'lishi shart va login `code`siz
+# `401 TOTP_REQUIRED` qaytaradi. Mexanizm o'chirilmagan, faqat kalit
+# bilan boshqariladi: bitta `.env` qatori bilan qaytariladi.
+PLATFORM_2FA_REQUIRED = env.bool("PLATFORM_2FA_REQUIRED", default=False)
+
 TRIAL_DAYS = env.int("TRIAL_DAYS", default=15)
 PAYMENT_GRACE_DAYS = env.int("PAYMENT_GRACE_DAYS", default=7)
 CHURN_EXPORT_RETENTION_DAYS = env.int("CHURN_EXPORT_RETENTION_DAYS", default=30)

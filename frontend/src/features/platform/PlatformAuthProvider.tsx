@@ -26,7 +26,7 @@ interface PlatformAuthValue {
   user: PlatformUser | null
   isAuthenticated: boolean
   isAdmin: boolean
-  login: (email: string, password: string, code: string) => Promise<void>
+  login: (email: string, password: string, code?: string) => Promise<void>
   logout: () => void
 }
 
@@ -65,7 +65,7 @@ export function PlatformAuthProvider({ children }: { children: ReactNode }) {
     })
   }, [navigate])
 
-  const login = useCallback(async (email: string, password: string, code: string) => {
+  const login = useCallback(async (email: string, password: string, code?: string) => {
     const session = await platform.login(email, password, code)
     platformToken.set(session.access)
     try {

@@ -64,6 +64,8 @@ _STATUS_TO_CODE = {
 _DEFAULT_MESSAGES = {
     "VALIDATION_ERROR": "Yuborilgan ma'lumot noto'g'ri.",
     "AUTHENTICATION_REQUIRED": "Autentifikatsiya talab qilinadi.",
+    # Platforma konsoli: 2FA yoqilgan, lekin so'rovda `code` yo'q (ADR-15).
+    "TOTP_REQUIRED": "Authenticator kodini kiriting.",
     "PERMISSION_DENIED": "Bu amalga ruxsat yo'q.",
     "NOT_FOUND": "So'ralgan resurs topilmadi.",
     "CONFLICT": "Bu amal mavjud ma'lumot bilan ziddiyatga kirdi.",
