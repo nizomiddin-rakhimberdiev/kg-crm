@@ -8,7 +8,7 @@
 
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Plus, Receipt, X } from 'lucide-react'
+import { Check, Pencil, Plus, Receipt, Trash2, X } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { expensesApi } from '@/features/expenses/api'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -76,6 +76,33 @@ export default function ExpensesPage() {
     },
     onError: fail,
   })
+  // Kategoriyani qayta nomlash / o'chirish. Ilgari kategoriya faqat
+  // BITTA marta, ro'yxat bo'sh bo'lganda qo'shilardi va keyin unga umuman
+  // tegib bo'lmasdi — xato yozilgan nom abadiy qolardi.
+  const [editingCategory, setEditingCategory] = useState<{ id: string; name: string } | null>(null)
+
+  const renameCategory = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) =>
+      expensesApi.updateCategory(id, { name }),
+    onSuccess: () => {
+      setEditingCategory(null)
+      setError(null)
+      void queryClient.invalidateQueries({ queryKey: queryKeys.expenseCategories(organizationId) })
+    },
+    onError: fail,
+  })
+
+  const removeCategory = useMutation({
+    mutationFn: (id: string) => expensesApi.removeCategory(id),
+    onSuccess: () => {
+      setError(null)
+      void queryClient.invalidateQueries({ queryKey: queryKeys.expenseCategories(organizationId) })
+    },
+    // Kategoriyada chiqim bo'lsa backend `422` qaytaradi (ON DELETE RESTRICT) —
+    // xabarni ko'rsatamiz, jimgina yutmaymiz.
+    onError: fail,
+  })
+
   const addCategory = useMutation({
     mutationFn: () => expensesApi.createCategory({ name: newCategory }),
     onSuccess: () => {
@@ -124,35 +151,98 @@ export default function ExpensesPage() {
 
       {can('expenses.create') && (
         <>
-          {categoriesQuery.data?.items.length === 0 && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                addCategory.mutate()
-              }}
-              className="flex items-end gap-3 rounded-xl border border-slate-200 bg-white p-4"
-            >
-              <div className="flex-1">
-                <label htmlFor="cat" className="mb-1 block text-xs font-medium text-slate-600">
-                  {t('Avval kategoriya yarating')}
-                </label>
+          {/* Kategoriyalar — DOIMO ko'rinadi: qo'shish, qayta nomlash,
+              o'chirish. Ilgari bu forma faqat ro'yxat bo'sh bo'lganda
+              chiqardi, ya'ni ikkinchi kategoriyani qo'shishning iloji
+              yo'q edi. */}
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-xs font-medium text-slate-600">{t('Kategoriyalar')}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {categoriesQuery.data?.items.map((c) =>
+                editingCategory?.id === c.id ? (
+                  <form
+                    key={c.id}
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      renameCategory.mutate(editingCategory)
+                    }}
+                    className="flex items-center gap-1"
+                  >
+                    <input
+                      autoFocus
+                      value={editingCategory.name}
+                      onChange={(e) =>
+                        setEditingCategory((prev) =>
+                          prev ? { ...prev, name: e.target.value } : prev,
+                        )
+                      }
+                      className="w-36 rounded-lg border border-brand-300 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-brand-100"
+                    />
+                    <button
+                      type="submit"
+                      className="rounded-lg bg-brand-600 px-2 py-1 text-xs font-semibold text-white"
+                    >
+                      {t('Saqlash')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingCategory(null)}
+                      className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600"
+                    >
+                      {t('Bekor')}
+                    </button>
+                  </form>
+                ) : (
+                  <span
+                    key={c.id}
+                    className="group flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 py-1 pl-3 pr-1.5 text-sm text-slate-700"
+                  >
+                    {c.name}
+                    <button
+                      type="button"
+                      onClick={() => setEditingCategory({ id: c.id, name: c.name })}
+                      title={t('Tahrirlash')}
+                      className="rounded p-0.5 text-slate-300 transition hover:text-slate-700 group-hover:text-slate-500"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeCategory.mutate(c.id)}
+                      title={t("O'chirish")}
+                      className="rounded p-0.5 text-slate-300 transition hover:text-red-600 group-hover:text-slate-500"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                ),
+              )}
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  addCategory.mutate()
+                }}
+                className="flex items-center gap-1"
+              >
                 <input
                   id="cat"
                   required
                   value={newCategory}
-                  placeholder={t('Kommunal')}
+                  placeholder={t('Yangi kategoriya')}
+                  aria-label={t('Yangi kategoriya')}
                   onChange={(e) => setNewCategory(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                  className="w-40 rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
                 />
-              </div>
-              <button
-                type="submit"
-                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
-              >
-                {t("Qo'shish")}
-              </button>
-            </form>
-          )}
+                <button
+                  type="submit"
+                  className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
+                >
+                  {t("Qo'shish")}
+                </button>
+              </form>
+            </div>
+          </div>
 
           {(categoriesQuery.data?.items.length ?? 0) > 0 && (
             <form
@@ -160,7 +250,7 @@ export default function ExpensesPage() {
                 e.preventDefault()
                 create.mutate()
               }}
-              className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-4"
+              className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-3"
             >
               <div>
                 <label htmlFor="ecat" className="mb-1 block text-xs font-medium text-slate-600">
@@ -206,6 +296,22 @@ export default function ExpensesPage() {
                   required
                   value={form.expense_date}
                   onChange={(e) => setForm((p) => ({ ...p, expense_date: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                />
+              </div>
+              {/* Tavsif maydoni bazada ham, jadvalda ham bor edi — faqat
+                  formada yo'q edi, ya'ni har doim bo'sh saqlanardi.
+                  "Ta'mirlash" o'zi kam: nimaga ketgani yozilsin. */}
+              <div className="sm:col-span-2">
+                <label htmlFor="edesc" className="mb-1 block text-xs font-medium text-slate-600">
+                  {t('Tavsif')}
+                </label>
+                <input
+                  id="edesc"
+                  maxLength={255}
+                  value={form.description}
+                  placeholder={t('Masalan: kraska, konditsioner ta’miri')}
+                  onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
                 />
               </div>

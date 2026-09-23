@@ -58,6 +58,10 @@ export function Modal({ open, onClose, children, className }: ModalProps) {
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
           >
             <button
+              // `type` sukut bo'yicha `submit`: modal ichida forma bo'lsa
+              // (yoki modal formaning ichiga joylashtirilsa) "X" tugmasi
+              // formani yuborib yuborardi.
+              type="button"
               onClick={onClose}
               aria-label={t('Yopish')}
               className="absolute top-4 right-4 grid place-items-center w-8 h-8 rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 active:scale-90"

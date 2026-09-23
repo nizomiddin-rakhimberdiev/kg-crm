@@ -8,12 +8,12 @@
 
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2, Users2 } from 'lucide-react'
+import { Check, Pencil, Plus, Trash2, Users2 } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { GroupChildrenModal } from '@/features/children/components/GroupChildrenModal'
 import { groupsApi } from '@/features/children/api'
 import { queryKeys } from '@/lib/api/queryKeys'
-import { ApiError } from '@/lib/api/types'
+import { ApiError, type Group } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { avatarTone, cn, initials } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -23,7 +23,11 @@ export default function GroupsPage() {
   const queryClient = useQueryClient()
   const { can } = useCan()
 
-  const [form, setForm] = useState({ name: '', capacity: '' })
+  const EMPTY = { name: '', capacity: '', age_min: '', age_max: '' }
+  const [form, setForm] = useState(EMPTY)
+  // `null` — yangi guruh, obyekt — mavjudi tahrirlanyapti. Tahrir AYNI
+  // formada ochiladi: guruh kartochkasi kichik, alohida modal ortiqcha.
+  const [editing, setEditing] = useState<Group | null>(null)
   const [openGroup, setOpenGroup] = useState<{ id: string; name: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -35,11 +39,43 @@ export default function GroupsPage() {
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: queryKeys.groups(organizationId) })
 
+  const closeForm = () => {
+    setEditing(null)
+    setForm(EMPTY)
+    setError(null)
+  }
+
+  const openEdit = (group: Group) => {
+    setEditing(group)
+    setForm({
+      name: group.name,
+      capacity: group.capacity ? String(group.capacity) : '',
+      age_min: group.age_min === null ? '' : String(group.age_min),
+      age_max: group.age_max === null ? '' : String(group.age_max),
+    })
+  }
+
+  const payload = () => ({
+    name: form.name,
+    capacity: form.capacity ? Number(form.capacity) : 0,
+    age_min: form.age_min === '' ? null : Number(form.age_min),
+    age_max: form.age_max === '' ? null : Number(form.age_max),
+  })
+
   const createMutation = useMutation({
     mutationFn: groupsApi.create,
     onSuccess: () => {
-      setForm({ name: '', capacity: '' })
-      setError(null)
+      closeForm()
+      void invalidate()
+    },
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, ...rest }: { id: string } & ReturnType<typeof payload>) =>
+      groupsApi.update(id, rest),
+    onSuccess: () => {
+      closeForm()
       void invalidate()
     },
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
@@ -64,7 +100,11 @@ export default function GroupsPage() {
 
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Guruhlar')}</h1>
-        <p className="mt-1 text-sm text-slate-500">{t("Sig'im bo'sh qoldirilsa — cheklovsiz.")}</p>
+        <p className="mt-1 text-sm text-slate-500">
+          {editing
+            ? t('{name} — tahrirlash', { name: editing.name })
+            : t("Sig'im bo'sh qoldirilsa — cheklovsiz.")}
+        </p>
       </div>
 
       {error && (
@@ -77,10 +117,8 @@ export default function GroupsPage() {
         <form
           onSubmit={(event) => {
             event.preventDefault()
-            createMutation.mutate({
-              name: form.name,
-              capacity: form.capacity ? Number(form.capacity) : 0,
-            })
+            if (editing) updateMutation.mutate({ id: editing.id, ...payload() })
+            else createMutation.mutate(payload())
           }}
           className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4"
         >
@@ -96,7 +134,7 @@ export default function GroupsPage() {
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             />
           </div>
-          <div className="w-32">
+          <div className="w-28">
             <label
               htmlFor="group-capacity"
               className="mb-1 block text-xs font-medium text-slate-600"
@@ -107,20 +145,63 @@ export default function GroupsPage() {
               id="group-capacity"
               type="number"
               min={0}
-              placeholder="cheksiz"
+              placeholder={t('cheksiz')}
               value={form.capacity}
               onChange={(e) => setForm((p) => ({ ...p, capacity: e.target.value }))}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             />
           </div>
+          {/* Yosh oralig'i bazada boshidan bor edi, formada esa yo'q edi.
+              U guruhni tanlashda yo'l ko'rsatadi: "3-4 yosh" degan guruhga
+              6 yoshli bolani qo'yish xato ekanini odam darhol ko'radi. */}
+          <div className="w-40">
+            <label
+              htmlFor="group-age-min"
+              className="mb-1 block text-xs font-medium text-slate-600"
+            >
+              {t('Yosh oralig‘i')}
+            </label>
+            <div className="flex items-center gap-1">
+              <input
+                id="group-age-min"
+                type="number"
+                min={0}
+                max={18}
+                placeholder={t('dan')}
+                value={form.age_min}
+                onChange={(e) => setForm((p) => ({ ...p, age_min: e.target.value }))}
+                className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              />
+              <span className="text-slate-400">–</span>
+              <input
+                id="group-age-max"
+                type="number"
+                min={0}
+                max={18}
+                placeholder={t('gacha')}
+                value={form.age_max}
+                onChange={(e) => setForm((p) => ({ ...p, age_max: e.target.value }))}
+                className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              />
+            </div>
+          </div>
           <button
             type="submit"
-            disabled={createMutation.isPending}
+            disabled={createMutation.isPending || updateMutation.isPending}
             className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
           >
-            <Plus className="h-4 w-4" />
-            {t("Qo'shish")}
+            {editing ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {editing ? t('Saqlash') : t("Qo'shish")}
           </button>
+          {editing && (
+            <button
+              type="button"
+              onClick={closeForm}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            >
+              {t('Bekor qilish')}
+            </button>
+          )}
         </form>
       )}
 
@@ -178,19 +259,36 @@ export default function GroupsPage() {
                         {t('{enrolled_count} ta bola', { enrolled_count: group.enrolled_count })}
                         {limited && ` / ${group.capacity}`}
                       </span>
+                      {(group.age_min !== null || group.age_max !== null) && (
+                        <span className="mt-0.5 block text-xs text-slate-400">
+                          {group.age_min ?? '0'}–{group.age_max ?? '∞'} {t('yosh')}
+                        </span>
+                      )}
                     </span>
                   </button>
 
-                  {can('children.delete') && (
-                    <button
-                      type="button"
-                      onClick={() => removeMutation.mutate(group.id)}
-                      className="shrink-0 rounded-lg p-1.5 text-slate-300 opacity-0 transition hover:bg-red-50 hover:text-red-600 focus:opacity-100 group-hover:opacity-100"
-                      title={t("O'chirish")}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
+                  <span className="flex shrink-0 items-center gap-0.5">
+                    {can('children.update') && (
+                      <button
+                        type="button"
+                        onClick={() => openEdit(group)}
+                        className="rounded-lg p-1.5 text-slate-300 opacity-0 transition hover:bg-slate-100 hover:text-slate-700 focus:opacity-100 group-hover:opacity-100"
+                        title={t('Tahrirlash')}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    )}
+                    {can('children.delete') && (
+                      <button
+                        type="button"
+                        onClick={() => removeMutation.mutate(group.id)}
+                        className="rounded-lg p-1.5 text-slate-300 opacity-0 transition hover:bg-red-50 hover:text-red-600 focus:opacity-100 group-hover:opacity-100"
+                        title={t("O'chirish")}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </span>
                 </div>
 
                 {limited ? (

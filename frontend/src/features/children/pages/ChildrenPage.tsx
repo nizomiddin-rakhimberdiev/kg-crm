@@ -20,12 +20,13 @@ import { useBranchScope } from '@/app/providers/BranchProvider'
 import { Pagination } from '@/components/ui/primitives'
 import { childrenApi, groupsApi, type ChildInput } from '@/features/children/api'
 import { ImportWizard } from '@/features/children/components/ImportWizard'
+import { tariffsApi } from '@/features/payments/api'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { usePageState } from '@/hooks/usePageState'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Child } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
-import { avatarTone, cn, initials } from '@/lib/utils'
+import { avatarTone, cn, formatUZS, initials } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -59,6 +60,10 @@ export default function ChildrenPage() {
   // `null` — yangi bola qo'shilyapti; obyekt — mavjudi tahrirlanyapti.
   const [editing, setEditing] = useState<Child | null>(null)
   const [form, setForm] = useState<ChildInput>(EMPTY_FORM)
+  // Guruh bolaning MAYDONI emas — u alohida biriktirish (`/children/{id}/enroll`),
+  // chunki bola guruhdan guruhga ko'chadi va har ko'chish tarixda qoladi.
+  // Shuning uchun u formada alohida holat sifatida yuriladi.
+  const [formGroupId, setFormGroupId] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
 
@@ -66,6 +71,7 @@ export default function ChildrenPage() {
     setShowForm(false)
     setEditing(null)
     setForm(EMPTY_FORM)
+    setFormGroupId('')
     setFieldErrors({})
     setError(null)
   }
@@ -74,6 +80,7 @@ export default function ChildrenPage() {
     if (showForm && !editing) return closeForm()
     setEditing(null)
     setForm(EMPTY_FORM)
+    setFormGroupId('')
     setFieldErrors({})
     setError(null)
     setShowForm(true)
@@ -87,7 +94,9 @@ export default function ChildrenPage() {
       middle_name: child.middle_name ?? '',
       date_of_birth: child.date_of_birth,
       gender: child.gender,
+      tariff_id: child.tariff ?? null,
     })
+    setFormGroupId(child.current_group?.id ?? '')
     setFieldErrors({})
     setError(null)
     setShowForm(true)
@@ -119,6 +128,14 @@ export default function ChildrenPage() {
     queryFn: groupsApi.list,
   })
 
+  // Tarif bolani qo'shayotganda darhol biriktiriladi: tarifsiz bolaga
+  // hisob-faktura chiqarib bo'lmaydi (docs/03 §13.3), ya'ni uni keyinroq
+  // qo'shish — oy oxirida "nega bu bola hisobga tushmadi?" degan savol.
+  const tariffsQuery = useQuery({
+    queryKey: queryKeys.tariffs(organizationId),
+    queryFn: tariffsApi.list,
+  })
+
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'children'] })
 
@@ -131,8 +148,29 @@ export default function ChildrenPage() {
     }
   }
 
+  /**
+   * Guruh bolaning maydoni emas, alohida biriktirish — shuning uchun
+   * saqlash IKKI chaqiruvdan iborat. Biriktirish alohida `try` ichida:
+   * guruh to'lgan bo'lsa (sig'im chegarasi) bola baribir saqlanib qolsin
+   * va foydalanuvchi "bola yo'qoldi" deb o'ylamasin — xabar ko'rsatiladi,
+   * guruhni keyin tanlaydi.
+   */
+  const enrollIfChosen = async (childId: string, groupId: string) => {
+    if (!groupId) return
+    try {
+      await childrenApi.enroll(childId, groupId)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t('Xatolik.'))
+    }
+  }
+
   const createMutation = useMutation({
-    mutationFn: childrenApi.create,
+    mutationFn: async (payload: ChildInput & { groupId: string }) => {
+      const { groupId, ...childPayload } = payload
+      const child = await childrenApi.create(childPayload)
+      await enrollIfChosen(child.id, groupId)
+      return child
+    },
     onSuccess: () => {
       closeForm()
       void invalidate()
@@ -141,8 +179,19 @@ export default function ChildrenPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: Partial<ChildInput> }) =>
-      childrenApi.update(id, payload),
+    mutationFn: async ({
+      id,
+      payload,
+      groupId,
+    }: {
+      id: string
+      payload: Partial<ChildInput>
+      groupId: string
+    }) => {
+      const child = await childrenApi.update(id, payload)
+      if (groupId !== (editing?.current_group?.id ?? '')) await enrollIfChosen(id, groupId)
+      return child
+    },
     onSuccess: () => {
       closeForm()
       void invalidate()
@@ -154,9 +203,9 @@ export default function ChildrenPage() {
 
   const submitForm = () => {
     if (editing) {
-      updateMutation.mutate({ id: editing.id, payload: form })
+      updateMutation.mutate({ id: editing.id, payload: form, groupId: formGroupId })
     } else {
-      createMutation.mutate({ ...form, branch_id: selectedBranchId })
+      createMutation.mutate({ ...form, branch_id: selectedBranchId, groupId: formGroupId })
     }
   }
 
@@ -365,6 +414,59 @@ export default function ChildrenPage() {
               <option value="male">{t("O'g'il bola")}</option>
               <option value="female">{t('Qiz bola')}</option>
             </select>
+          </div>
+
+          {/* Guruh va tarif — AYNAN shu yerda, qo'shish paytida.
+              Ilgari ular ro'yxatdan va bola kartasidan alohida
+              qo'yilardi: 40 ta bola kiritgan odam har biri uchun yana
+              ikki joyga qaytishi kerak edi, tarifsiz qolgan bola esa
+              oy oxirida hisob-fakturasiz qolardi. */}
+          <div>
+            <label htmlFor="form-group" className="mb-1 block text-xs font-medium text-slate-600">
+              {t('Guruh')}
+            </label>
+            <select
+              id="form-group"
+              value={formGroupId}
+              onChange={(e) => setFormGroupId(e.target.value)}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            >
+              <option value="">{t('— guruhsiz —')}</option>
+              {groupsQuery.data?.items.map((group) => {
+                const full = group.capacity > 0 && group.enrolled_count >= group.capacity
+                return (
+                  <option key={group.id} value={group.id} disabled={full}>
+                    {group.name}
+                    {group.capacity ? ` (${group.enrolled_count}/${group.capacity})` : ''}
+                    {full ? ` — ${t("Guruh to'lgan")}` : ''}
+                  </option>
+                )
+              })}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="form-tariff" className="mb-1 block text-xs font-medium text-slate-600">
+              {t('Tarif')}
+            </label>
+            <select
+              id="form-tariff"
+              value={form.tariff_id ?? ''}
+              onChange={(e) => setForm((p) => ({ ...p, tariff_id: e.target.value || null }))}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            >
+              <option value="">{t('— tarifsiz —')}</option>
+              {tariffsQuery.data?.items.map((tariff) => (
+                <option key={tariff.id} value={tariff.id}>
+                  {tariff.name} — {formatUZS(Number(tariff.amount))}
+                </option>
+              ))}
+            </select>
+            {(tariffsQuery.data?.items.length ?? 0) === 0 && (
+              <p className="mt-1 text-xs text-slate-400">
+                {t('Tarifsiz bolaga hisob-faktura chiqarilmaydi.')}
+              </p>
+            )}
           </div>
 
           <div className="flex gap-2 sm:col-span-2">

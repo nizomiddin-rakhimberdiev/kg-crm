@@ -17,6 +17,7 @@ import { attendanceApi } from '@/features/attendance/api'
 import { groupsApi } from '@/features/children/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type AttendanceStatus } from '@/lib/api/types'
+import { Modal } from '@/components/ui/Modal'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -42,6 +43,12 @@ export default function AttendancePage() {
   const [groupId, setGroupId] = useState('')
   const [date, setDate] = useState(today())
   const [draft, setDraft] = useState<Record<string, AttendanceStatus>>({})
+  // Sabab har bola uchun alohida saqlanadi va davomat bilan BIRGA yuboriladi
+  // (`reason` maydoni bazada boshidan bor edi, faqat so'ralmasdi).
+  const [reasons, setReasons] = useState<Record<string, string>>({})
+  // Ochiq modal: qaysi bolaning sababi kiritilyapti.
+  const [reasonFor, setReasonFor] = useState<{ childId: string; name: string } | null>(null)
+  const [reasonDraft, setReasonDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
 
@@ -70,10 +77,13 @@ export default function AttendancePage() {
   useEffect(() => {
     if (registerQuery.data) {
       const initial: Record<string, AttendanceStatus> = {}
+      const initialReasons: Record<string, string> = {}
       for (const row of registerQuery.data.rows) {
         if (row.status) initial[row.child_id] = row.status
+        if (row.reason) initialReasons[row.child_id] = row.reason
       }
       setDraft(initial)
+      setReasons(initialReasons)
       setSaved(false)
     }
   }, [registerQuery.data])
@@ -83,7 +93,11 @@ export default function AttendancePage() {
       attendanceApi.markBulk(
         groupId,
         date,
-        Object.entries(draft).map(([child_id, status]) => ({ child_id, status })),
+        Object.entries(draft).map(([child_id, status]) => ({
+          child_id,
+          status,
+          reason: reasons[child_id] ?? '',
+        })),
       ),
     onSuccess: () => {
       setSaved(true)
@@ -113,10 +127,72 @@ export default function AttendancePage() {
   }
 
   const editable = can('attendance.create')
-  const dirty = rows.some((row) => (draft[row.child_id] ?? null) !== row.status)
+  // "O'zgardimi?" — holat VA sabab bo'yicha. Faqat holatga qarasak, allaqachon
+  // "Sababli" deb belgilangan bolaga sabab yozish tugmani faolsiz qoldirardi
+  // va yozuv jimgina yo'qolardi.
+  const dirty = rows.some(
+    (row) =>
+      (draft[row.child_id] ?? null) !== row.status ||
+      (reasons[row.child_id] ?? '') !== (row.reason ?? ''),
+  )
+
+  const closeReason = () => setReasonFor(null)
+
+  const saveReason = () => {
+    if (!reasonFor) return
+    const value = reasonDraft.trim()
+    setReasons((prev) => {
+      const next = { ...prev }
+      if (value) next[reasonFor.childId] = value
+      else delete next[reasonFor.childId]
+      return next
+    })
+    setSaved(false)
+    closeReason()
+  }
 
   return (
     <div className="space-y-6">
+      {/* Sabab oynasi — "Sababli" bosilganda darhol chiqadi. Sabab
+          davomat bilan BIRGA saqlanadi: alohida so'rov yuborilsa,
+          tarbiyachi "Saqlash" ni bosmasdan chiqib ketganda yarim
+          yozilgan holat qolardi. */}
+      <Modal open={Boolean(reasonFor)} onClose={closeReason} className="max-w-md">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            saveReason()
+          }}
+          className="p-5"
+        >
+          <h2 className="text-base font-semibold text-slate-900">{t('Kelmagani haqida')}</h2>
+          <p className="mt-1 text-sm text-slate-500">{reasonFor?.name}</p>
+          <input
+            autoFocus
+            value={reasonDraft}
+            onChange={(e) => setReasonDraft(e.target.value)}
+            maxLength={255}
+            placeholder={t('Masalan: kasal, shifokorda, oilaviy sabab')}
+            className="mt-4 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+          />
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={closeReason}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            >
+              {t('Bekor qilish')}
+            </button>
+            <button
+              type="submit"
+              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
+            >
+              {t('Saqlash')}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Davomat')}</h1>
         <p className="mt-1 text-sm text-slate-500">
@@ -234,13 +310,32 @@ export default function AttendancePage() {
                 key={row.child_id}
                 className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
               >
-                <span
-                  className={cn(
-                    'text-sm font-medium',
-                    current ? 'text-slate-800' : 'text-slate-400',
+                <span className="min-w-0">
+                  <span
+                    className={cn(
+                      'block text-sm font-medium',
+                      current ? 'text-slate-800' : 'text-slate-400',
+                    )}
+                  >
+                    {row.full_name}
+                  </span>
+                  {editable && (current === 'excused' || current === 'absent') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReasonDraft(reasons[row.child_id] ?? '')
+                        setReasonFor({ childId: row.child_id, name: row.full_name })
+                      }}
+                      className="mt-0.5 block max-w-[240px] truncate text-left text-xs text-slate-500 underline decoration-dotted underline-offset-2 hover:text-brand-700"
+                    >
+                      {reasons[row.child_id] || t('Sababini yozish')}
+                    </button>
                   )}
-                >
-                  {row.full_name}
+                  {!editable && reasons[row.child_id] && (
+                    <span className="mt-0.5 block text-xs text-slate-500">
+                      {reasons[row.child_id]}
+                    </span>
+                  )}
                 </span>
 
                 <div className="flex gap-1">
@@ -253,6 +348,15 @@ export default function AttendancePage() {
                       onClick={() => {
                         setDraft((prev) => ({ ...prev, [row.child_id]: value }))
                         setSaved(false)
+                        // "Sababli" — sababning O'ZI ma'no beradi, shuning
+                        // uchun darhol so'raymiz. "Kelmagan" uchun izoh
+                        // ixtiyoriy: uni ism ostidagi havoladan qo'shish
+                        // mumkin, har bosishda modal ochilsa 20 bolani
+                        // belgilash azobga aylanardi.
+                        if (value === 'excused') {
+                          setReasonDraft(reasons[row.child_id] ?? '')
+                          setReasonFor({ childId: row.child_id, name: row.full_name })
+                        }
                       }}
                       className={cn(
                         'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition',

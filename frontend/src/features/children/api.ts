@@ -1,6 +1,14 @@
 import { api, httpClient } from '@/lib/api/client'
 import type { Child, Envelope, Group, ImportReport } from '@/lib/api/types'
 
+/** Guruh maydonlari — yosh oralig'i ixtiyoriy (`null` = cheklanmagan). */
+export interface GroupInput {
+  name: string
+  capacity?: number
+  age_min?: number | null
+  age_max?: number | null
+}
+
 export interface ChildInput {
   first_name: string
   last_name: string
@@ -41,7 +49,13 @@ export const childrenApi = {
 
   addGuardian: (
     childId: string,
-    payload: { first_name: string; last_name: string; phone: string; relation: string; is_primary?: boolean },
+    payload: {
+      first_name: string
+      last_name: string
+      phone: string
+      relation: string
+      is_primary?: boolean
+    },
   ) => api.post(`/children/${childId}/guardians`, payload),
 
   /**
@@ -64,9 +78,8 @@ export const childrenApi = {
 
 export const groupsApi = {
   list: () => api.list<Group>('/groups'),
-  create: (payload: { name: string; capacity?: number }) => api.post<Group>('/groups', payload),
-  update: (id: string, payload: { name?: string; capacity?: number }) =>
-    api.patch<Group>(`/groups/${id}`, payload),
+  create: (payload: GroupInput) => api.post<Group>('/groups', payload),
+  update: (id: string, payload: Partial<GroupInput>) => api.patch<Group>(`/groups/${id}`, payload),
   remove: (id: string) => api.delete(`/groups/${id}`),
 
   /** Guruh tarkibi — hozirgi bolalar va bo'sh joylar (docs/04 §7.3). */
