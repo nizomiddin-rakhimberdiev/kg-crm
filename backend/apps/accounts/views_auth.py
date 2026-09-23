@@ -59,6 +59,20 @@ class LoginThrottle(AnonRateThrottle):
     scope = "login"
 
 
+class RefreshThrottle(AnonRateThrottle):
+    """
+    Token yangilash uchun alohida, keng chegara.
+
+    `RefreshView` anonim (`AllowAny`) — access token muddati tugagani uchun
+    aynan shu so'rov yuboriladi. Alohida scope bo'lmasa u umumiy `anon`
+    (120/soat, IP bo'yicha) chegarasiga tushadi, bog'chada esa hamma bitta
+    IP ortida: ish kuni o'rtasida yangilash 429 bilan qaytadi va xodimlar
+    sessiyasi uziladi. Sozlamalardagi izohga qarang.
+    """
+
+    scope = "refresh"
+
+
 def _org_summary(user: User) -> dict[str, str]:
     # Bu funksiya faqat login nomzodlari uchun chaqiriladi — ular ta'rifiga
     # ko'ra tashkilotga tegishli (platforma xodimlari bu yo'ldan kelmaydi).
@@ -177,6 +191,7 @@ class RefreshView(APIView):
     """`POST /auth/refresh` — access tokenni yangilaydi (rotatsiya bilan)."""
 
     permission_classes = [AllowAny]
+    throttle_classes = [RefreshThrottle]
 
     def post(self, request: Request) -> Response:
         raw = request.data.get("refresh")

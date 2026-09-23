@@ -1,17 +1,25 @@
 """
-Login throttling testi (docs/02 §20.2).
+Throttling testlari (docs/02 §20.2) — login brute-force VA jamoaviy ish.
 
 Throttling umumiy test sozlamalarida o'chirilgan, chunki u kesh orqali
 testlar orasida "oqib" ketadi va aloqasiz testlarni yiqitadi. Shuning uchun
 u aynan shu yerda, ataylab qayta yoqib sinaladi — brute-force himoyasi
 jimgina yo'qolib qolmasin.
+
+Ikkinchi qism — CHEGARA QIYMATLARI: bog'chada hamma bitta Wi-Fi ortida,
+ya'ni IP bo'yicha chegara amalda butun jamoa uchun umumiy.
 """
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 import pytest
 from django.core.cache import cache
+from django.test import override_settings
 from django.urls import reverse
+
+from config.settings.base import REST_FRAMEWORK as BASE_REST_FRAMEWORK
 
 pytestmark = pytest.mark.django_db
 
@@ -62,3 +70,47 @@ def test_successful_login_is_also_counted(api_client, tenant_a, monkeypatch):
 
     assert statuses[0] == 200
     assert statuses[-1] == 429
+
+
+# --- Chegara qiymatlari: umumiy IP ortidagi jamoa ---
+#
+# Chegaralar testlarda o'chirilgan (yuqoridagi izoh), shuning uchun qiymatlar
+# BAZAVIY sozlamadan o'qiladi.
+
+BASE_RATES = cast("dict[str, str]", BASE_REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"])
+
+
+def test_refresh_has_its_own_scope():
+    """
+    Access token faqat XOTIRADA yashaydi, ya'ni har sahifa yuklanishi va har
+    15 daqiqada bitta `POST /auth/refresh` bo'ladi. So'rov anonim (token
+    tanada), shuning uchun alohida scope bo'lmasa u `anon` = 120/soat ga
+    tushardi — bitta IP ortidagi BUTUN bog'cha uchun. Natijada xodimlar ish
+    kuni o'rtasida tizimdan chiqib ketardi.
+    """
+    assert "refresh" in BASE_RATES, "yangilash umumiy `anon` chegarasiga tushib qoladi"
+    count, _, period = BASE_RATES["refresh"].partition("/")
+    assert period == "min"
+    assert int(count) >= 30, "umumiy IP ortidagi jamoa uchun juda tor"
+
+
+def test_login_rate_fits_a_shared_office_ip():
+    """O'nlab xodim smena boshida birga kirsa, oxirgilari bloklanmasin."""
+    count = int(BASE_RATES["login"].split("/")[0])
+    assert count >= 20
+
+
+@override_settings(REST_FRAMEWORK={**BASE_REST_FRAMEWORK, "DEFAULT_THROTTLE_RATES": {**BASE_RATES}})
+def test_many_refreshes_from_one_ip_are_not_blocked(tenant_a: Any, api_client: Any):
+    """Bitta IP dan 40 ta yangilash — bitta bog'chaning yarim kunlik ishi."""
+    login = api_client.post(
+        reverse("v1:auth-login"),
+        {"email": tenant_a.owner.email, "password": tenant_a.password},
+        format="json",
+    )
+    refresh = login.json()["data"]["refresh"]
+
+    for index in range(40):
+        response = api_client.post(reverse("v1:auth-refresh"), {"refresh": refresh}, format="json")
+        assert response.status_code == 200, f"{index}-urinishda {response.status_code}"
+        refresh = response.json()["data"]["refresh"]

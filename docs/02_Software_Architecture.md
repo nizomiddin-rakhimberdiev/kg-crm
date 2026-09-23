@@ -682,6 +682,10 @@ Legend: **F** = Full (CRUD), **W** = Create/Update, **R** = Read-only, **—** =
 | Users & Roles | F | R (branch) | — | — | — |
 | Audit Log | F | R | — | — | — |
 
+> **The Reports row is enforced per report, not per module.** `reports.read` alone opens nothing: each endpoint additionally requires the permission of the subject it reports on — `revenue` → `payments.read`, `expenses` → `expenses.read`, `payroll` and `profit-loss` → `payroll.read` (P&L contains payroll), `debtors` → `debtors.read`, `attendance` → `attendance.read` (`apps/reports/views.py` `REPORT_SCOPE`). A finished CSV export is guarded the same way, so exporting cannot walk around the matrix. Without this, one flat `reports.read` handed an Attendance Manager the kindergarten's revenue and profit — contradicting their own row ("No finance, payroll, or settings").
+>
+> **`GET /dashboard` follows the same rule.** Money fields (`month_revenue`, `outstanding_debt`, `debtor_count`, `recent_payments`, `revenue_trend`) are **left out of the response** for a role without `payments.read`/`debtors.read`; the cache key carries that flag so a full payload cached for the owner is never served to a teacher. The frontend hides the tiles to match, and the finance **Reports page** (revenue, expenses, payroll, P&L) is navigated and routed by finance permissions rather than `reports.read`.
+
 > **Billing is Org Owner only.** A Director who can see the subscription invoice can infer the vendor's pricing for every branch; more importantly, changing the payment term is a commercial commitment for the legal entity, not a branch operation.
 
 **This matrix is the seeded starting point, not a permanent constraint.** It is written to each organization's `role`/`role_permission` rows at signup (`seed_system_roles`, which runs once per organization and is never re-applied). From there the **Org Owner may re-assign any permission to any role — system roles included — and may create additional roles**, because kindergartens divide work differently: in one, the cashier also marks attendance; in another, they must not.
@@ -1197,6 +1201,18 @@ Security is layered — no single control is trusted alone.
 - Throttled login endpoint + progressive delays / temporary lockout on repeated failures (counters in Redis).
 - Generic auth error messages (never reveal whether email exists).
 - Password policy enforced server-side; password change invalidates other sessions (rotate/blacklist refresh tokens).
+
+**Throttle rates are set for a shared office IP, not for a single user.** Everyone in a kindergarten sits behind one NAT address, so every per-IP limit is in practice a limit for the whole staff:
+
+| Scope | Rate | Why this number |
+|-------|------|-----------------|
+| `login` | `20/min` | Ten people signing in at the start of a shift — several of them mistyping on day one — must not lock the rest out. At 20/min an online password search is still hopeless, and every failure lands in the audit log. |
+| `refresh` | `60/min` | The access token lives **in memory only**, so every page load and every 15-minute expiry issues one `POST /auth/refresh`. That request is anonymous (the token travels in the body), so without its own scope it fell under `anon` = 120/hour **for the entire kindergarten** — staff were logged out mid-shift. The limit here is not the security control: a refresh token is a 100+ character random secret. |
+| `anon` | `120/hour` | Public endpoints (pricing, leads) only. |
+| `user` | `2000/hour` | Per authenticated user; contains one tenant's runaway script without touching the others. |
+| `export` | `20/hour` | The most expensive endpoint — it reads a whole period and writes a file. |
+
+Each is overridable per deployment (`LOGIN_THROTTLE_RATE`, `REFRESH_THROTTLE_RATE`, …).
 
 ### 20.3 Audit log (P7)
 - Written from the **service layer** (and select signals) so it can't be bypassed by a view.

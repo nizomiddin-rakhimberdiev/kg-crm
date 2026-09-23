@@ -52,6 +52,7 @@
 | **Tenant scope** | Applied automatically from the JWT's `organization_id`. Clients **never** send it and **cannot** override it. A request referencing another organization's resource returns `404`, never `403` (P10, [02 §11.3](./02_Software_Architecture.md)). |
 | **Branch scope** | Applied automatically from the JWT. Org Owner may pass `branch_id` to filter across their own organization's branches; other roles are bound to their branch and the parameter is ignored. |
 | **Idempotency** | Mutating money endpoints accept optional `Idempotency-Key` header to safely retry. |
+| **Response shape by role** | A few endpoints return **fewer fields** rather than `403` when the caller may see the page but not all of it — notably `GET /dashboard`, whose money fields are omitted for roles without `payments.read`/`debtors.read` ([02 §11.2](./02_Software_Architecture.md)). Clients must treat those fields as optional. |
 | **Language** | `Accept-Language: uz \| ru \| en` selects the language of `error.message`, field validation messages and choice labels (Django `LocaleMiddleware`, [02 ADR-16](./02_Software_Architecture.md)). Missing or unknown → `uz`. Codes (`error.code`) and payload keys never change with the language. |
 | **Subscription gate** | If the caller's organization is `suspended`, all write verbs return `402 SUBSCRIPTION_INACTIVE`; reads continue to work ([03 §20.6](./03_Database_Design.md)). |
 

@@ -423,11 +423,25 @@ export interface PayrollRun {
 
 // --- Ombor va chiqimlar ---
 
-export interface Warehouse { id: string; name: string; is_active: boolean; created_at: string }
-export interface ProductCategory { id: string; name: string; is_active: boolean; created_at: string }
+export interface Warehouse {
+  id: string
+  name: string
+  is_active: boolean
+  created_at: string
+}
+export interface ProductCategory {
+  id: string
+  name: string
+  is_active: boolean
+  created_at: string
+}
 export interface Supplier {
-  id: string; name: string; phone: string; contact_person: string
-  is_active: boolean; created_at: string
+  id: string
+  name: string
+  phone: string
+  contact_person: string
+  is_active: boolean
+  created_at: string
 }
 
 export interface Product {
@@ -462,7 +476,12 @@ export interface StockMovement {
   created_at: string
 }
 
-export interface ExpenseCategory { id: string; name: string; is_active: boolean; created_at: string }
+export interface ExpenseCategory {
+  id: string
+  name: string
+  is_active: boolean
+  created_at: string
+}
 
 export interface Expense {
   id: string
@@ -514,20 +533,26 @@ export interface Notification {
 }
 
 /** Sozlama qiymati skalyar, ro'yxat yoki obyekt bo'lishi mumkin (docs/03 §18.1). */
-export type SettingValue = string | number | boolean | null | SettingValue[] | { [k: string]: SettingValue }
+export type SettingValue =
+  string | number | boolean | null | SettingValue[] | { [k: string]: SettingValue }
 export type EffectiveSettings = Record<string, SettingValue>
 
 export interface DashboardKpis {
   date: string
   active_children: number
-  month_revenue: string
-  outstanding_debt: string
-  debtor_count: number
   attendance_month_pct: number
   low_stock_count: number
-  recent_payments: Array<{ child: string; amount: string; paid_at: string }>
-  revenue_trend: Array<{ month: string; total: string }>
   cached: boolean
+  /**
+   * Pul ko'rsatkichlari — faqat moliyani ko'rishga haqli rollarga keladi
+   * (docs/02 §11.2; Davomat menejeri uchun javobda umuman yo'q). Ixtiyoriy
+   * ekani ATAYLAB: TypeScript ularni tekshirmasdan chizishga yo'l qo'ymaydi.
+   */
+  month_revenue?: string
+  outstanding_debt?: string
+  debtor_count?: number
+  recent_payments?: Array<{ child: string; amount: string; paid_at: string }>
+  revenue_trend?: Array<{ month: string; total: string }>
 }
 
 /** Hisobot kesimi (docs/04 §14.2 `group_by`). */

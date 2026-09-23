@@ -22,8 +22,9 @@ from apps.core import exceptions as core_exceptions
 
 pytestmark = pytest.mark.django_db
 
-APPS_DIR = Path(settings.BASE_DIR) / "apps"
-LOCALE_DIR = Path(settings.BASE_DIR) / "locale"
+BASE_DIR = Path(settings.BASE_DIR)
+APPS_DIR = BASE_DIR / "apps"
+LOCALE_DIR = BASE_DIR / "locale"
 SKIP = ("/tests/", "/migrations/", "/platform/", "/management/", "intelligence/content")
 CALL = re.compile(r"\bgettext(?:_lazy)?\(\s*((?:\"(?:[^\"\\]|\\.)*\"\s*)+)\)", re.S)
 
@@ -95,3 +96,48 @@ def test_accept_language_switches_error_message(api_client):
     assert uz.json()["error"]["message"] == "Email yoki parol noto'g'ri."
     assert ru.json()["error"]["message"] == "Неверный email или пароль."
     assert en.json()["error"]["message"] == "Incorrect email or password."
+
+
+# --- Uchinchi tomon xabarlari (DRF, Django auth) ---
+#
+# DRF'da o'zbek tili yo'q, Django'da qisman. Ularsiz ilovaning ASOSIY tili
+# o'zbekcha bo'la turib, maydon xatolari inglizcha chiqardi — bog'cha xodimi
+# sanani xato kiritsa javobni tushunmasdi. Tarjima `vendor_i18n/locale/uz` da.
+
+VENDOR_UZ = [
+    "This field may not be blank.",
+    "This field must be unique.",
+    "A valid integer is required.",
+    "A valid number is required.",
+    "Date has wrong format. Use one of these formats instead: {format}.",
+    '"{input}" is not a valid choice.',
+    "Ensure this field has no more than {max_length} characters.",
+    "Ensure this value is less than or equal to {max_value}.",
+    "Not found.",
+    "You do not have permission to perform this action.",
+    "Authentication credentials were not provided.",
+    "Request was throttled.",
+    "This password is too common.",
+    "This password is entirely numeric.",
+]
+
+
+@pytest.mark.parametrize("message", VENDOR_UZ)
+def test_thirdparty_messages_are_uzbek(message: str):
+    if not (BASE_DIR / "vendor_i18n" / "locale" / "uz" / "LC_MESSAGES" / "django.mo").exists():
+        pytest.skip("compilemessages bajarilmagan")
+    with translation.override("uz"):
+        assert translation.gettext(message) != message, message
+
+
+def test_password_length_message_is_uzbek():
+    """Ko'plik shakli: msgid Django versiyasiga bog'liq (`%d` va nomlangan)."""
+    if not (BASE_DIR / "vendor_i18n" / "locale" / "uz" / "LC_MESSAGES" / "django.mo").exists():
+        pytest.skip("compilemessages bajarilmagan")
+    with translation.override("uz"):
+        text = translation.ngettext(
+            "This password is too short. It must contain at least %d character.",
+            "This password is too short. It must contain at least %d characters.",
+            8,
+        )
+    assert "qisqa" in text, text

@@ -10,6 +10,7 @@ from pathlib import Path
 
 import environ
 from celery.schedules import crontab
+from corsheaders.defaults import default_headers as cors_default_headers
 from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -160,7 +161,15 @@ AUTH_PASSWORD_VALIDATORS = [
 # Docker tasviri `compilemessages` ni build paytida bajaradi.
 LANGUAGE_CODE = env("LANGUAGE_CODE", default="uz")
 LANGUAGES = [("uz", "O‘zbekcha"), ("ru", "Русский"), ("en", "English")]
-LOCALE_PATHS = [BASE_DIR / "locale"]
+# Ikkita katalog:
+#   `locale/`             — o'zimizning xabarlar, `makemessages` yuritadi (ru, en).
+#   `vendor_i18n/locale/` — DRF va Django'ning O'Z xabarlari o'zbekchada, QO'LDA.
+#     DRF'da uz tili umuman yo'q, Django'da qisman: ularsiz ilovaning asosiy
+#     tili o'zbekcha bo'la turib "This field may not be blank." chiqardi.
+#     Papka ataylab `locale` deb nomlangan — `compilemessages` uni sozlamasiz
+#     ham topadi (Docker build), `makemessages` esa faqat LOCALE_PATHS[0] ga
+#     yozadi, ya'ni bu faylni hech qachon ustidan yozmaydi.
+LOCALE_PATHS = [BASE_DIR / "locale", BASE_DIR / "vendor_i18n" / "locale"]
 TIME_ZONE = env("TIME_ZONE", default="Asia/Tashkent")
 USE_I18N = True
 USE_TZ = True  # D7: har doim timestamptz (UTC)
@@ -341,8 +350,27 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "120/hour",
         "user": env("USER_THROTTLE_RATE", default="2000/hour"),
-        # Login alohida va qattiqroq — brute-force'ga qarshi (docs/02 §20.2).
-        "login": env("LOGIN_THROTTLE_RATE", default="10/min"),
+        # Login alohida — brute-force'ga qarshi (docs/02 §20.2).
+        #
+        # Chegara IP bo'yicha, bog'chada esa HAMMA bitta Wi-Fi ortida: 10/min
+        # da o'nta xodim birga kirishga urinsa (yoki bir nechtasi parolni
+        # xato tersa — birinchi kuni odatiy hol) oxirgilari "so'rovlar soni
+        # chegaradan oshdi" olardi va bu tizim buzuq degan taassurot berardi.
+        # 20/min onlayn brute-force uchun baribir foydasiz, lekin jamoaviy
+        # ishga xalaqit bermaydi; muvaffaqiyatsiz urinishlar auditga tushadi.
+        "login": env("LOGIN_THROTTLE_RATE", default="20/min"),
+        # Token yangilash — ALOHIDA va keng.
+        #
+        # Access token faqat xotirada yashaydi (XSS uchun), ya'ni HAR sahifa
+        # yuklanishi va har 15 daqiqada bitta `POST /auth/refresh` bo'ladi.
+        # So'rov anonim (token sarlavhada emas, tanada), shuning uchun u
+        # `anon` = 120/soat chegarasiga tushardi — bitta IP ortidagi butun
+        # bog'cha uchun. Natija: ish o'rtasida 429 → mijoz sessiyani
+        # tugagan deb hisoblaydi → xodimlar tizimdan chiqib ketadi.
+        # Bu yerda chegara xavfsizlik vositasi emas (refresh token —
+        # 100+ belgili tasodifiy sir, uni topish imkonsiz); u faqat
+        # suiiste'molni cheklaydi.
+        "refresh": env("REFRESH_THROTTLE_RATE", default="60/min"),
         # Eksport — eng qimmat endpoint: u butun davrni o'qiydi va fayl
         # yozadi. Cheklovsiz bo'lsa, tugmani qayta-qayta bosish bitta
         # mijozning ishchilarini band qilib, QOLGAN mijozlarning
@@ -375,6 +403,15 @@ SIMPLE_JWT = {
 # --- CORS ---
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:5173"])
 CORS_ALLOW_CREDENTIALS = True
+
+# `Idempotency-Key` standart ro'yxatda YO'Q, uni ochiq qo'shish kerak.
+#
+# Productionda SPA va API bitta origin'da (nginx `/` va `/api/`), ya'ni
+# preflight umuman bo'lmaydi va kamchilik ko'rinmaydi. Ammo lokal ishlab
+# chiqishda (`:5173` → `:8001`) va API alohida domenga chiqarilganda
+# (`app.` / `api.`) brauzer to'lov so'rovini BUTUNLAY bloklaydi — ya'ni
+# ikki marta yozishdan himoya (docs/04 §1) jimgina yo'qoladi.
+CORS_ALLOW_HEADERS = (*cors_default_headers, "idempotency-key")
 
 # --- Mijoz manzili (apps/core/tenant_address.py) ---
 #

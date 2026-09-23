@@ -13,15 +13,15 @@ from typing import Any
 from django.db import transaction
 from django.http import FileResponse, Http404
 from django.utils import timezone
-from django.utils.translation import gettext
-from rest_framework import status, viewsets
+from django.utils.translation import gettext, gettext_lazy
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
 from apps.core.exceptions import BusinessRuleViolation
-from apps.core.permissions import HasModulePermission
+from apps.core.permissions import HasModulePermission, has_permission_code
 from apps.core.typing import request_user
 from apps.reports import selectors, services
 from apps.reports.models import REPORT_TYPES, ExportStatus, ReportExport
@@ -106,15 +106,73 @@ class DashboardViewSet(_ScopeMixin, viewsets.ViewSet):
         branch_id = request.query_params.get("branch") or (
             user.branch_id if not user.is_org_owner else None
         )
-        return Response(
-            services.dashboard_kpis(organization_id=user.organization_id, branch_id=branch_id)
+        # Pul ko'rsatkichlari — faqat moliyani ko'rishga haqli rollarga
+        # (docs/02 §11.2). Davomat menejeri uchun ular javobga umuman
+        # qo'shilmaydi, frontendda yashirilmaydi.
+        include_finance = has_permission_code(user, "payments.read") or has_permission_code(
+            user, "debtors.read"
         )
+        return Response(
+            services.dashboard_kpis(
+                organization_id=user.organization_id,
+                branch_id=branch_id,
+                include_finance=include_finance,
+            )
+        )
+
+
+# Har bir hisobot O'ZI HISOBOT BERADIGAN modul ruxsatini ham talab qiladi.
+#
+# `reports.read` ning o'zi yetarli emas edi: docs/02 §11.2 jadvalida Kassir
+# uchun "R (finance only)", Davomat menejeri uchun "R (attendance only)" deb
+# yozilgan, kodda esa bitta `reports.read` HAMMASINI ochib yuborardi — ya'ni
+# tarbiyachi bog'chaning tushumini va foyda-zararini (ichida oylik maosh)
+# o'qiy olardi. Bu jadvalga ham, "No finance, payroll, or settings" degan
+# rol ta'rifiga ham zid.
+#
+# `profit-loss` oylik maoshni o'z ichiga oladi, shuning uchun u eng qattiq
+# komponent — `payroll.read` — bilan qo'riqlanadi.
+REPORT_SCOPE: dict[str, str] = {
+    "revenue": "payments.read",
+    "debtors": "debtors.read",
+    "expenses": "expenses.read",
+    "payroll": "payroll.read",
+    "profit-loss": "payroll.read",
+    "attendance": "attendance.read",
+}
+
+# View action nomi → hisobot turi (`REPORT_SCOPE` kaliti).
+_ACTION_REPORT: dict[str, str] = {
+    "revenue": "revenue",
+    "debtors": "debtors",
+    "expenses": "expenses",
+    "payroll": "payroll",
+    "profit_loss": "profit-loss",
+    "attendance": "attendance",
+}
+
+
+class HasReportScope(permissions.BasePermission):
+    """`reports.read` ustiga hisobot mavzusining ruxsatini tekshiradi."""
+
+    message = gettext_lazy("Bu amalga ruxsat yo'q.")
+
+    def has_permission(self, request: Request, view: Any) -> bool:
+        action = getattr(view, "action", None)
+        report = _ACTION_REPORT.get(action or "")
+        if report is None and action == "export":
+            # `POST /reports/{type}/export` — tur manzilda.
+            report = view.kwargs.get("pk")
+        if report is None:
+            return True
+        required = REPORT_SCOPE.get(report)
+        return required is None or has_permission_code(request_user(request), required)
 
 
 class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
     """`/reports/*` — agregatsiyalar va eksport."""
 
-    permission_classes = [HasModulePermission, SubscriptionWriteGate]
+    permission_classes = [HasModulePermission, HasReportScope, SubscriptionWriteGate]
     permission_module = "reports"
     permission_action_map = {
         "export": "export",
@@ -212,12 +270,22 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
 
     @action(detail=False, methods=["get"])
     def exports(self, request: Request) -> Response:
-        queryset = ReportExport.objects.select_related("requested_by").order_by("-created_at")[:50]
+        """Faqat foydalanuvchi ko'rishga haqli mavzudagi eksportlar."""
+        allowed = [
+            report
+            for report, code in REPORT_SCOPE.items()
+            if has_permission_code(request_user(request), code)
+        ]
+        queryset = (
+            ReportExport.objects.filter(report_type__in=allowed)
+            .select_related("requested_by")
+            .order_by("-created_at")[:50]
+        )
         return Response(ReportExportSerializer(queryset, many=True).data)
 
     @action(detail=False, methods=["get"], url_path=r"exports/(?P<job_id>[0-9a-f-]{36})")
     def export_detail(self, request: Request, job_id: str = "") -> Response:
-        return Response(ReportExportSerializer(self._get_export(job_id)).data)
+        return Response(ReportExportSerializer(self._checked_export(request, job_id)).data)
 
     @action(
         detail=False,
@@ -233,7 +301,7 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
         hisobotini yuklab olardi. Bu yerda esa `ReportExport.objects`
         tenant bilan cheklangan, ya'ni begona ish oddiygina `404`.
         """
-        export = self._get_export(job_id)
+        export = self._checked_export(request, job_id)
         if export.status != ExportStatus.READY or not export.file:
             raise BusinessRuleViolation(gettext("Eksport hali tayyor emas."))
         return FileResponse(
@@ -246,5 +314,21 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
     def _get_export(self, job_id: str) -> ReportExport:
         export = ReportExport.objects.filter(pk=job_id).first()
         if export is None:
+            raise Http404
+        return export
+
+    def _checked_export(self, request: Request, job_id: str) -> ReportExport:
+        """
+        Tayyor eksport ham O'Z MAVZUSI bo'yicha qo'riqlanadi.
+
+        Aks holda `reports.read` ga ega har kim boshqa rol yaratgan oylik
+        maosh faylini yuklab olardi — ya'ni eksport ruxsat matritsasidan
+        chetlab o'tadigan yo'l bo'lib qolardi. Begona mavzu `404`:
+        "bunday fayl yo'q" javobi kimningdir nimadir eksport qilganini ham
+        oshkor qilmaydi.
+        """
+        export = self._get_export(job_id)
+        required = REPORT_SCOPE.get(export.report_type)
+        if required and not has_permission_code(request_user(request), required):
             raise Http404
         return export

@@ -6,8 +6,7 @@ from typing import Any
 
 TITLES = {
     "payment_delay": (
-        "Payments for {children_count} children are more than "
-        "{overdue_days_threshold} days overdue"
+        "Payments for {children_count} children are more than {overdue_days_threshold} days overdue"
     ),
     "attendance_drop": "Group attendance dropped {drop_points} points below its baseline",
 }

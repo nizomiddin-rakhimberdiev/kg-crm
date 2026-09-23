@@ -9,11 +9,30 @@ import { AlertTriangle, Clock, CreditCard } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { t } from '@/lib/i18n'
+import { useCan } from '@/lib/rbac/useCan'
 
 /** Sinov tugashiga necha kun qolgani — soatlarni tepaga yaxlitlaydi. */
 const daysLeft = (iso: string | null | undefined) => {
   if (!iso) return null
   return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000))
+}
+
+/**
+ * Obuna havolasi — faqat uni ocha oladiganga.
+ *
+ * `/billing` tashkilot egasiga tegishli (docs/02 §11.2), boshqa rol uni
+ * bossa boshqaruv paneliga qaytariladi. Ya'ni havola tarbiyachi uchun
+ * "bosaman — hech narsa bo'lmaydi" degan o'lik tugma edi. Banner matni
+ * hammaga qoladi: sinov muddati butun jamoa bilishi kerak bo'lgan fakt.
+ */
+function BillingLink({ label }: { label: string }) {
+  const { can } = useCan()
+  if (!can('billing.read')) return null
+  return (
+    <Link to="/billing" className="ml-auto shrink-0 font-semibold underline">
+      {label}
+    </Link>
+  )
 }
 
 export function SubscriptionBanner() {
@@ -28,9 +47,7 @@ export function SubscriptionBanner() {
           {t("Obuna to'xtatilgan — ma'lumotlarni")} <strong>{t("ko'rish")}</strong>{' '}
           {t("mumkin, o'zgartirish mumkin emas. Hisobingiz va tariximiz saqlanib turibdi.")}
         </span>
-        <Link to="/billing" className="ml-auto shrink-0 font-semibold underline">
-          {t("Hisobni ko'rish")}
-        </Link>
+        <BillingLink label={t("Hisobni ko'rish")} />
       </div>
     )
   }
@@ -45,9 +62,7 @@ export function SubscriptionBanner() {
           {remaining !== null && t(' — {remaining} kun qoldi', { remaining })}
           {t(". Yoqmasa, hech qanday to'lov olinmaydi.")}
         </span>
-        <Link to="/billing" className="ml-auto shrink-0 font-semibold underline">
-          {t('Rejani tanlash')}
-        </Link>
+        <BillingLink label={t('Rejani tanlash')} />
       </div>
     )
   }
@@ -65,9 +80,7 @@ export function SubscriptionBanner() {
             ? t("Hisob yozildi — to'lov kutilmoqda. Kirish to'liq ochiq.")
             : t("Hisob muddati o'tdi. Kirish hozircha to'liq ochiq.")}
         </span>
-        <Link to="/billing" className="ml-auto shrink-0 font-semibold underline">
-          {t("Hisobni ko'rish")}
-        </Link>
+        <BillingLink label={t("Hisobni ko'rish")} />
       </div>
     )
   }

@@ -15,7 +15,8 @@ import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { dashboardApi } from '@/features/dashboard/api'
 import { BriefingSection } from '@/features/intelligence/components/BriefingSection'
 import { queryKeys } from '@/lib/api/queryKeys'
-import { formatDateLong, formatUZS } from '@/lib/utils'
+import { useCan } from '@/lib/rbac/useCan'
+import { cn, formatDateLong, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
 const MONTHS = [
@@ -63,6 +64,11 @@ function Tile({ label, value, hint, icon: Icon, tone, to }: TileProps) {
 
 export default function DashboardPage() {
   const organizationId = useOrganizationId()
+  const { can } = useCan()
+  // Backend pul ko'rsatkichlarini moliyaga haqli bo'lmagan rolga UMUMAN
+  // yubormaydi (docs/02 §11.2). Shu yerda ham o'sha qoida: bo'sh "0 so'm"
+  // kartochka ko'rsatish o'rniga blok butunlay chizilmaydi.
+  const showFinance = can('payments.read') || can('debtors.read')
 
   const { data, isLoading, isError } = useQuery({
     queryKey: queryKeys.dashboard(organizationId),
@@ -98,7 +104,12 @@ export default function DashboardPage() {
           "nimaga e'tibor berish kerak" umumiy raqamlardan muhimroq. */}
       <BriefingSection />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div
+        className={cn(
+          'grid gap-4 sm:grid-cols-2',
+          showFinance ? 'xl:grid-cols-4' : 'xl:grid-cols-2',
+        )}
+      >
         <Tile
           label={t('Faol bolalar')}
           value={isLoading ? '…' : t('{v} nafar', { v: data?.active_children ?? 0 })}
@@ -107,22 +118,26 @@ export default function DashboardPage() {
           tone="bg-sky-50 text-sky-600"
           to="/children"
         />
-        <Tile
-          label={t('Shu oy tushum')}
-          value={isLoading ? '…' : formatUZS(Number(data?.month_revenue ?? 0))}
-          hint={t("Qabul qilingan to'lovlar")}
-          icon={Wallet}
-          tone="bg-emerald-50 text-emerald-600"
-          to="/payments"
-        />
-        <Tile
-          label={t('Qarzdorlik')}
-          value={isLoading ? '…' : formatUZS(Number(data?.outstanding_debt ?? 0))}
-          hint={t("{v} nafar bola bo'yicha", { v: data?.debtor_count ?? 0 })}
-          icon={AlertTriangle}
-          tone="bg-red-50 text-red-600"
-          to="/debtors"
-        />
+        {showFinance && (
+          <>
+            <Tile
+              label={t('Shu oy tushum')}
+              value={isLoading ? '…' : formatUZS(Number(data?.month_revenue ?? 0))}
+              hint={t("Qabul qilingan to'lovlar")}
+              icon={Wallet}
+              tone="bg-emerald-50 text-emerald-600"
+              to="/payments"
+            />
+            <Tile
+              label={t('Qarzdorlik')}
+              value={isLoading ? '…' : formatUZS(Number(data?.outstanding_debt ?? 0))}
+              hint={t("{v} nafar bola bo'yicha", { v: data?.debtor_count ?? 0 })}
+              icon={AlertTriangle}
+              tone="bg-red-50 text-red-600"
+              to="/debtors"
+            />
+          </>
+        )}
         <Tile
           label={t('Davomat (shu oy)')}
           value={isLoading ? '…' : `${data?.attendance_month_pct ?? 0}%`}
@@ -133,67 +148,86 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
-          <h2 className="text-sm font-semibold text-slate-900">{t('Tushum dinamikasi')}</h2>
-          <p className="mt-0.5 text-xs text-slate-500">
-            {t("Oxirgi 6 oy, qabul qilingan to'lovlar")}
-          </p>
-          <div className="mt-4 h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={trend}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  fontSize={12}
-                  tickFormatter={(v: number) => t('{v} mln', { v: Math.round(v / 1_000_000) })}
-                />
-                <Tooltip
-                  formatter={(v: number) => formatUZS(v)}
-                  contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 13 }}
-                />
-                <Bar dataKey="daromad" fill="#6366f1" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
+      {showFinance && (
+        <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+            <h2 className="text-sm font-semibold text-slate-900">{t('Tushum dinamikasi')}</h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              {t("Oxirgi 6 oy, qabul qilingan to'lovlar")}
+            </p>
+            <div className="mt-4 h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={trend}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    fontSize={12}
+                    tickFormatter={(v: number) => t('{v} mln', { v: Math.round(v / 1_000_000) })}
+                  />
+                  <Tooltip
+                    formatter={(v: number) => formatUZS(v)}
+                    contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 13 }}
+                  />
+                  <Bar dataKey="daromad" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
-          <h2 className="text-sm font-semibold text-slate-900">{t("Oxirgi to'lovlar")}</h2>
-          <ul className="mt-4 space-y-3">
-            {(data?.recent_payments ?? []).map((payment, index) => (
-              <li key={`${payment.paid_at}-${index}`} className="flex items-center justify-between">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-slate-900">{payment.child}</p>
-                  <p className="text-xs text-slate-400">{when(payment.paid_at)}</p>
-                </div>
-                <span className="shrink-0 text-sm font-semibold text-emerald-600">
-                  {formatUZS(Number(payment.amount))}
-                </span>
-              </li>
-            ))}
-            {!isLoading && (data?.recent_payments ?? []).length === 0 && (
-              <li className="py-6 text-center text-sm text-slate-400">
-                {t("Hozircha to'lov qabul qilinmagan.")}
-              </li>
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+            <h2 className="text-sm font-semibold text-slate-900">{t("Oxirgi to'lovlar")}</h2>
+            <ul className="mt-4 space-y-3">
+              {(data?.recent_payments ?? []).map((payment, index) => (
+                <li
+                  key={`${payment.paid_at}-${index}`}
+                  className="flex items-center justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-slate-900">{payment.child}</p>
+                    <p className="text-xs text-slate-400">{when(payment.paid_at)}</p>
+                  </div>
+                  <span className="shrink-0 text-sm font-semibold text-emerald-600">
+                    {formatUZS(Number(payment.amount))}
+                  </span>
+                </li>
+              ))}
+              {!isLoading && (data?.recent_payments ?? []).length === 0 && (
+                <li className="py-6 text-center text-sm text-slate-400">
+                  {t("Hozircha to'lov qabul qilinmagan.")}
+                </li>
+              )}
+            </ul>
+
+            {(data?.low_stock_count ?? 0) > 0 && (
+              <Link
+                to="/inventory"
+                className="mt-5 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 hover:bg-amber-100"
+              >
+                <Package className="h-4 w-4 shrink-0" />
+                {t('{low_stock_count} ta mahsulot minimumdan kam', {
+                  low_stock_count: data?.low_stock_count,
+                })}
+              </Link>
             )}
-          </ul>
+          </section>
+        </div>
+      )}
 
-          {(data?.low_stock_count ?? 0) > 0 && (
-            <Link
-              to="/inventory"
-              className="mt-5 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 hover:bg-amber-100"
-            >
-              <Package className="h-4 w-4 shrink-0" />
-              {t('{low_stock_count} ta mahsulot minimumdan kam', {
-                low_stock_count: data?.low_stock_count,
-              })}
-            </Link>
-          )}
-        </section>
-      </div>
+      {/* Moliyasiz rol (masalan Davomat menejeri) uchun ombor ogohlantirishi
+          alohida turadi — u yuqoridagi to'lovlar kartochkasi ichida edi. */}
+      {!showFinance && (data?.low_stock_count ?? 0) > 0 && (
+        <Link
+          to="/inventory"
+          className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 hover:bg-amber-100"
+        >
+          <Package className="h-4 w-4 shrink-0" />
+          {t('{low_stock_count} ta mahsulot minimumdan kam', {
+            low_stock_count: data?.low_stock_count,
+          })}
+        </Link>
+      )}
     </div>
   )
 }

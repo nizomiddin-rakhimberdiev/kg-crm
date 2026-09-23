@@ -1,0 +1,182 @@
+# Radix CRM — UCHINCHI TOMON xabarlarining o'zbekcha tarjimasi.
+#
+# Django REST Framework va Django'ning O'ZINING xabarlari (maydon
+# validatsiyasi, parol qoidalari, ruxsat xatolari). Ular bizning
+# kodimizda yozilmagan, shuning uchun `makemessages` ularni ko'rmaydi
+# va `locale/` katalogiga tushmaydi — aks holda har `makemessages`
+# ularni "eskirgan" deb belgilardi.
+#
+# Nega kerak: DRF'da o'zbek tili YO'Q, Django'da esa qisman. Natijada
+# ilovaning asosiy tili o'zbekcha bo'la turib, "This field may not be
+# blank." kabi xabarlar inglizcha chiqardi — ya'ni bog'cha xodimi sanani
+# xato kiritsa, javobni tushunmasdi. Ruscha uchun DRF'ning o'z katalogi
+# bor, inglizcha — manba tili.
+#
+# Bu faylni QO'LDA yuritamiz. Yangi xabar kerak bo'lsa: msgid'ni DRF/Django
+# manbasidan AYNAN ko'chiring (bitta harf farqi — tarjima jimgina ishlamaydi),
+# keyin `compilemessages`.
+msgid ""
+msgstr ""
+"Project-Id-Version: Radix CRM\n"
+"Report-Msgid-Bugs-To: \n"
+"Language: uz\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+# --- Maydon validatsiyasi (DRF) ---
+
+msgid "This field may not be blank."
+msgstr "Ushbu maydon bo'sh bo'lishi mumkin emas."
+
+msgid "This field may not be null."
+msgstr "Ushbu maydon bo'sh bo'lishi mumkin emas."
+
+msgid "This field must be unique."
+msgstr "Bu qiymat allaqachon mavjud."
+
+msgid "A valid integer is required."
+msgstr "Butun son kiriting."
+
+msgid "A valid number is required."
+msgstr "To'g'ri son kiriting."
+
+msgid "Date has wrong format. Use one of these formats instead: {format}."
+msgstr "Sana formati noto'g'ri. To'g'ri format: {format}."
+
+msgid "Datetime has wrong format. Use one of these formats instead: {format}."
+msgstr "Sana va vaqt formati noto'g'ri. To'g'ri format: {format}."
+
+msgid "Time has wrong format. Use one of these formats instead: {format}."
+msgstr "Vaqt formati noto'g'ri. To'g'ri format: {format}."
+
+msgid "\"{input}\" is not a valid choice."
+msgstr "«{input}» — mumkin bo'lgan variantlardan emas."
+
+msgid "Must be a valid boolean."
+msgstr "Faqat «ha» yoki «yo'q» qiymati bo'lishi mumkin."
+
+msgid "Must be a valid UUID."
+msgstr "Identifikator noto'g'ri."
+
+msgid "Ensure this field has no more than {max_length} characters."
+msgstr "Bu maydon {max_length} belgidan oshmasin."
+
+msgid "Ensure this field has at least {min_length} characters."
+msgstr "Bu maydonda kamida {min_length} ta belgi bo'lsin."
+
+msgid "Ensure this value is less than or equal to {max_value}."
+msgstr "Qiymat {max_value} dan oshmasin."
+
+msgid "Ensure this value is greater than or equal to {min_value}."
+msgstr "Qiymat {min_value} dan kam bo'lmasin."
+
+msgid "Ensure that there are no more than {max_digits} digits in total."
+msgstr "Jami {max_digits} ta raqamdan oshmasin."
+
+msgid "Ensure that there are no more than {max_decimal_places} decimal places."
+msgstr "Kasr qismida {max_decimal_places} ta raqamdan oshmasin."
+
+msgid "Ensure that there are no more than {max_whole_digits} digits before the decimal point."
+msgstr "Butun qismida {max_whole_digits} ta raqamdan oshmasin."
+
+msgid "This value does not match the required pattern."
+msgstr "Qiymat talab qilingan shaklga mos emas."
+
+msgid "String value too large."
+msgstr "Matn juda uzun."
+
+msgid "This list may not be empty."
+msgstr "Ro'yxat bo'sh bo'lmasin."
+
+msgid "This selection may not be empty."
+msgstr "Kamida bittasini tanlang."
+
+msgid "The fields {field_names} must make a unique set."
+msgstr "{field_names} maydonlari birgalikda takrorlanmasligi kerak."
+
+msgid "Invalid value."
+msgstr "Qiymat noto'g'ri."
+
+msgid "Invalid page."
+msgstr "Bunday sahifa yo'q."
+
+# --- Fayl va rasm ---
+
+msgid "The submitted data was not a file. Check the encoding type on the form."
+msgstr "Yuborilgan ma'lumot fayl emas. Formani qaytadan yuboring."
+
+msgid "Ensure this filename has at most {max_length} characters (it has {length})."
+msgstr "Fayl nomi {max_length} belgidan oshmasin (hozir {length} ta)."
+
+# --- Tuzilma xatolari ---
+
+msgid "Invalid data. Expected a dictionary, but got {datatype}."
+msgstr "Ma'lumot noto'g'ri: obyekt kutilgan edi, {datatype} keldi."
+
+msgid "Expected a list of items but got type \"{input_type}\"."
+msgstr "Ro'yxat kutilgan edi, «{input_type}» keldi."
+
+msgid "Invalid pk \"{pk_value}\" - object does not exist."
+msgstr "«{pk_value}» — bunday yozuv topilmadi."
+
+msgid "Incorrect type. Expected pk value, received {data_type}."
+msgstr "Tur noto'g'ri: identifikator kutilgan edi, {data_type} keldi."
+
+# --- Kirish va ruxsat ---
+
+msgid "Not found."
+msgstr "Topilmadi."
+
+msgid "You do not have permission to perform this action."
+msgstr "Bu amalga ruxsatingiz yo'q."
+
+msgid "Authentication credentials were not provided."
+msgstr "Tizimga kirish talab qilinadi."
+
+msgid "Incorrect authentication credentials."
+msgstr "Kirish ma'lumotlari noto'g'ri."
+
+msgid "Unable to log in with provided credentials."
+msgstr "Kiritilgan ma'lumotlar bilan kirib bo'lmadi."
+
+msgid "User inactive or deleted."
+msgstr "Foydalanuvchi faol emas yoki o'chirilgan."
+
+msgid "Request was throttled."
+msgstr "So'rovlar soni chegaradan oshdi. Birozdan keyin urinib ko'ring."
+
+# --- So'rov darajasidagi xatolar ---
+
+msgid "Method \"{method}\" not allowed."
+msgstr "«{method}» usuli bu manzilda ishlamaydi."
+
+msgid "Malformed request."
+msgstr "So'rov noto'g'ri tuzilgan."
+
+msgid "Unsupported media type \"{media_type}\" in request."
+msgstr "So'rovdagi «{media_type}» turi qo'llab-quvvatlanmaydi."
+
+msgid "A server error occurred."
+msgstr "Serverda xatolik yuz berdi."
+
+# --- Parol qoidalari (Django auth) ---
+
+msgid "This password is too common."
+msgstr "Bu parol juda ommabop — boshqasini tanlang."
+
+msgid "This password is entirely numeric."
+msgstr "Parol faqat raqamlardan iborat bo'lmasin."
+
+msgid "The password is too similar to the %(verbose_name)s."
+msgstr "Parol «%(verbose_name)s» ga juda o'xshash."
+
+# Django 5.x `%d` ishlatadi; nomlangan shakl eski versiyalar uchun qoldirildi.
+msgid "This password is too short. It must contain at least %d character."
+msgid_plural "This password is too short. It must contain at least %d characters."
+msgstr[0] "Parol juda qisqa — kamida %d ta belgi bo'lsin."
+
+msgid "This password is too short. It must contain at least %(min_length)d character."
+msgid_plural "This password is too short. It must contain at least %(min_length)d characters."
+msgstr[0] "Parol juda qisqa — kamida %(min_length)d ta belgi bo'lsin."

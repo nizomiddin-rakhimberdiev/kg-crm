@@ -52,7 +52,16 @@ const allNavItems: NavItem[] = [
   { label: t('Oylik maosh'), to: '/payroll', icon: Wallet, permission: 'payroll.read' },
   { label: t('Ombor'), to: '/inventory', icon: Package, permission: 'inventory.read' },
   { label: t('Chiqimlar'), to: '/expenses', icon: Receipt, permission: 'expenses.read' },
-  { label: t('Hisobotlar'), to: '/reports', icon: BarChart3, permission: 'reports.read' },
+  // Hisobotlar sahifasi MOLIYAVIY (tushum, chiqim, oylik maosh, foyda-zarar),
+  // shuning uchun `reports.read` ning o'zi yetarli emas: Davomat menejerida
+  // u bor, lekin har bir bo'lim `403` qaytarardi va ekran yarim bo'sh
+  // xatolarga to'lardi (docs/02 §11.2 — "R (attendance only)").
+  {
+    label: t('Hisobotlar'),
+    to: '/reports',
+    icon: BarChart3,
+    permission: ['payments.read', 'expenses.read', 'payroll.read'],
+  },
   {
     label: t('Bildirishnomalar'),
     to: '/notifications',
