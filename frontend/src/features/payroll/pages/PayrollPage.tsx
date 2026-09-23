@@ -12,14 +12,24 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowUpRight, CheckCircle2, Lock, Plus, Wallet } from 'lucide-react'
+import {
+  ArrowUpRight,
+  Banknote,
+  CheckCircle2,
+  Lock,
+  Plus,
+  RefreshCw,
+  Trash2,
+  Wallet,
+} from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { EmptyRow } from '@/components/ui/EmptyState'
+import { employeesApi } from '@/features/staff/api'
 import { payrollApi } from '@/features/payroll/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type PayrollRun } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
-import { cn } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
 const money = (v: string) => new Intl.NumberFormat('uz-UZ').format(Number(v))
@@ -37,6 +47,12 @@ export default function PayrollPage() {
 
   const now = new Date()
   const [openRun, setOpenRun] = useState<string | null>(null)
+  const [advanceForm, setAdvanceForm] = useState({
+    employee_id: '',
+    amount: '',
+    paid_on: new Date().toISOString().slice(0, 10),
+    note: '',
+  })
   const [error, setError] = useState<string | null>(null)
 
   const runsQuery = useQuery({
@@ -72,6 +88,48 @@ export default function PayrollPage() {
     },
     onError: fail,
   })
+  // Avanslar — oy davomida berib yuborilgan pul. Ular oylik hisoblashga
+  // sana bo'yicha tushadi (docs/03), shuning uchun ro'yxat shu sahifada:
+  // "qancha berdim?" va "oy oxirida qancha qoldi?" bitta ekranda.
+  const employeesQuery = useQuery({
+    queryKey: queryKeys.employees(organizationId, { page_size: 200 }),
+    queryFn: () => employeesApi.list({ page_size: 200 }),
+    enabled: can('payroll.read'),
+  })
+
+  const advancesQuery = useQuery({
+    queryKey: queryKeys.payrollAdvances(organizationId),
+    queryFn: () => payrollApi.listAdvances({ page_size: 50 }),
+    enabled: can('payroll.read'),
+  })
+
+  const addAdvance = useMutation({
+    mutationFn: () =>
+      payrollApi.createAdvance({
+        employee_id: advanceForm.employee_id,
+        amount: advanceForm.amount,
+        paid_on: advanceForm.paid_on,
+        note: advanceForm.note,
+      }),
+    onSuccess: () => {
+      setAdvanceForm((prev) => ({ ...prev, amount: '', note: '' }))
+      invalidate()
+    },
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
+  })
+
+  const removeAdvance = useMutation({
+    mutationFn: (id: string) => payrollApi.removeAdvance(id),
+    onSuccess: invalidate,
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
+  })
+
+  const recalculate = useMutation({
+    mutationFn: (id: string) => payrollApi.recalculate(id),
+    onSuccess: invalidate,
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
+  })
+
   const markPaid = useMutation({
     mutationFn: (id: string) => payrollApi.markPaid(id),
     onSuccess: () => {
@@ -92,6 +150,8 @@ export default function PayrollPage() {
 
   const run: PayrollRun | undefined = runQuery.data
   const periodLabel = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  // Ochiq hisoblashdagi avanslar yig'indisi — sarlavhadagi tenglama uchun.
+  const advanceTotal = (run?.items ?? []).reduce((sum, item) => sum + Number(item.advance), 0)
 
   return (
     <div className="space-y-6">
@@ -125,6 +185,158 @@ export default function PayrollPage() {
           )}
         </div>
       </div>
+
+      {/* Avanslar — oy davomida berilgan pul. Hisoblash oy oxirida
+          yaratiladi, avans esa undan oldin beriladi: shuning uchun u
+          alohida yoziladi va sana bo'yicha o'sha oyning hisoblashiga
+          o'zi tushadi. */}
+      {can('payroll.read') && (
+        <details className="rounded-2xl border border-slate-200 bg-white" open={false}>
+          <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-800">
+            <Banknote className="h-4 w-4 text-slate-400" />
+            {t('Avanslar')}
+            {(advancesQuery.data?.items.length ?? 0) > 0 && (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+                {advancesQuery.data?.items.length}
+              </span>
+            )}
+          </summary>
+
+          <div className="border-t border-slate-100 p-4">
+            {can('payroll.create') && (
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  addAdvance.mutate()
+                }}
+                className="grid gap-3 sm:grid-cols-[1.4fr_1fr_1fr_1.4fr_auto]"
+              >
+                <div>
+                  <label
+                    htmlFor="adv-emp"
+                    className="mb-1 block text-xs font-medium text-slate-600"
+                  >
+                    {t('Xodim')}
+                  </label>
+                  <select
+                    id="adv-emp"
+                    required
+                    value={advanceForm.employee_id}
+                    onChange={(e) =>
+                      setAdvanceForm((prev) => ({ ...prev, employee_id: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                  >
+                    <option value="">{t('Tanlang…')}</option>
+                    {employeesQuery.data?.items.map((employee) => (
+                      <option key={employee.id} value={employee.id}>
+                        {employee.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label
+                    htmlFor="adv-amt"
+                    className="mb-1 block text-xs font-medium text-slate-600"
+                  >
+                    {t('Summa')}
+                  </label>
+                  <input
+                    id="adv-amt"
+                    type="number"
+                    required
+                    min="1"
+                    value={advanceForm.amount}
+                    onChange={(e) =>
+                      setAdvanceForm((prev) => ({ ...prev, amount: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="adv-date"
+                    className="mb-1 block text-xs font-medium text-slate-600"
+                  >
+                    {t('Sana')}
+                  </label>
+                  <input
+                    id="adv-date"
+                    type="date"
+                    required
+                    value={advanceForm.paid_on}
+                    onChange={(e) =>
+                      setAdvanceForm((prev) => ({ ...prev, paid_on: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="adv-note"
+                    className="mb-1 block text-xs font-medium text-slate-600"
+                  >
+                    {t('Izoh')}
+                  </label>
+                  <input
+                    id="adv-note"
+                    maxLength={255}
+                    value={advanceForm.note}
+                    onChange={(e) => setAdvanceForm((prev) => ({ ...prev, note: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    type="submit"
+                    disabled={addAdvance.isPending}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+                  >
+                    <Plus className="h-4 w-4" /> {t("Qo'shish")}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            <ul className="mt-4 divide-y divide-slate-100">
+              {advancesQuery.data?.items.map((advance) => (
+                <li key={advance.id} className="flex items-center justify-between gap-3 py-2">
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium text-slate-800">
+                      {advance.employee_name}
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      {formatDate(advance.paid_on)}
+                      {advance.note ? ` · ${advance.note}` : ''}
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <span className="text-sm font-semibold tabular-nums text-slate-700">
+                      {money(advance.amount)}
+                    </span>
+                    {can('payroll.delete') && (
+                      <button
+                        type="button"
+                        onClick={() => removeAdvance.mutate(advance.id)}
+                        title={t("O'chirish")}
+                        className="rounded-lg p-1.5 text-slate-300 transition hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </span>
+                </li>
+              ))}
+              {advancesQuery.data?.items.length === 0 && (
+                <li className="py-4 text-center text-sm text-slate-400">
+                  {t('Hozircha avans berilmagan.')}
+                </li>
+              )}
+            </ul>
+          </div>
+        </details>
+      )}
 
       {error && (
         <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -192,10 +404,28 @@ export default function PayrollPage() {
                   money2: money(run.total_deductions),
                 })}{' '}
                 <strong>{money(run.total_net)}</strong>
+                {/* Avans jami — aks holda "yalpi − ushlab qolindi = sof"
+                    tenglamasi to'g'ri kelmasdi va raqamlar xato ko'rinardi. */}
+                {advanceTotal > 0 && (
+                  <span className="ml-1 text-slate-400">
+                    {t('(shundan avans {money})', { money: money(String(advanceTotal)) })}
+                  </span>
+                )}
               </p>
             </div>
             {can('payroll.update') && (
               <div className="flex gap-2">
+                {run.status === 'draft' && (
+                  <button
+                    type="button"
+                    onClick={() => recalculate.mutate(run.id)}
+                    disabled={recalculate.isPending}
+                    title={t('Yangi xodimlar va avanslarni tortib oladi')}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 sm:flex-none"
+                  >
+                    <RefreshCw className="h-4 w-4" /> {t('Qayta hisoblash')}
+                  </button>
+                )}
                 {run.status === 'draft' && (
                   <button
                     type="button"
@@ -227,6 +457,7 @@ export default function PayrollPage() {
                   <th className="px-4 py-3 font-medium">{t('Xodim')}</th>
                   <th className="px-4 py-3 text-right font-medium">{t('Baza')}</th>
                   <th className="px-4 py-3 text-right font-medium">{t('Bonus')}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t('Avans')}</th>
                   <th className="px-4 py-3 text-right font-medium">{t('Ushlab qolish')}</th>
                   <th className="px-4 py-3 text-right font-medium">{t('Sof')}</th>
                 </tr>
@@ -238,7 +469,37 @@ export default function PayrollPage() {
                     <td className="px-4 py-2 text-right text-slate-600 tabular-nums">
                       {money(item.base_amount)}
                     </td>
-                    {(['bonus', 'deduction'] as const).map((field) => (
+                    {/* Avans qo'lda tahrirlanmaydi: u «Avanslar» ro'yxatidan
+                        yig'iladi (sana bo'yicha), ya'ni raqam ortida har doim
+                        aniq yozuv turadi. */}
+                    {(['bonus'] as const).map((field) => (
+                      <td key={field} className="px-4 py-2 text-right">
+                        {run.is_editable && can('payroll.update') ? (
+                          <input
+                            type="number"
+                            min={0}
+                            inputMode="numeric"
+                            defaultValue={item[field]}
+                            aria-label={field}
+                            onBlur={(e) => {
+                              if (e.target.value !== item[field]) {
+                                updateItem.mutate({ itemId: item.id, field, value: e.target.value })
+                              }
+                            }}
+                            className="w-28 rounded border border-slate-200 px-2 py-1 text-right text-sm outline-none focus:border-brand-500"
+                          />
+                        ) : (
+                          <span className="text-slate-600 tabular-nums">{money(item[field])}</span>
+                        )}
+                      </td>
+                    ))}
+                    {/* Avans qo'lda tahrirlanmaydi: u «Avanslar» ro'yxatidan
+                        sana bo'yicha yig'iladi, ya'ni raqam ortida har doim
+                        aniq yozuv turadi. */}
+                    <td className="px-4 py-2 text-right tabular-nums text-slate-600">
+                      {Number(item.advance) > 0 ? `−${money(item.advance)}` : '—'}
+                    </td>
+                    {(['deduction'] as const).map((field) => (
                       <td key={field} className="px-4 py-2 text-right">
                         {run.is_editable && can('payroll.update') ? (
                           <input
@@ -266,7 +527,7 @@ export default function PayrollPage() {
                 ))}
                 {run.items.length === 0 && (
                   <EmptyRow
-                    colSpan={5}
+                    colSpan={6}
                     icon={Wallet}
                     title={t("Bu davrda xodim yo'q")}
                     hint={t(

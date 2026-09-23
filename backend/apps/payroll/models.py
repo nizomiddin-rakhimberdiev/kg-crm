@@ -101,6 +101,11 @@ class PayrollItem(BranchScopedModel):
     base_amount = models.DecimalField(max_digits=12, decimal_places=2)
     bonus = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
     deduction = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
+    # Oy davomida BERIB YUBORILGAN pul. `deduction` dan alohida: ushlab
+    # qolish — jarima yoki hisob-kitob, avans esa xodim allaqachon olgan
+    # maoshning bir qismi. Ularni bitta ustunga qo'shish payslipni
+    # tushunarsiz qilardi ("nega 3 mln ushlab qolindi?").
+    advance = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
     gross = models.DecimalField(max_digits=12, decimal_places=2)
     net = models.DecimalField(max_digits=12, decimal_places=2)
     note = models.CharField(max_length=255, blank=True)
@@ -127,3 +132,46 @@ class PayrollItem(BranchScopedModel):
 
     def __str__(self) -> str:
         return f"{self.employee_id}: {self.net}"
+
+
+class EmployeeAdvance(BranchScopedModel):
+    """
+    Oy davomida xodimga berilgan avans.
+
+    Nega alohida jadval, `PayrollItem.advance` maydonining o'zi emas: avans
+    oylik hisoblashdan OLDIN beriladi (masalan 15-kuni), hisoblash esa oy
+    oxirida yaratiladi. Har bir berilgan pul o'z sanasi va izohi bilan
+    yozilib turishi kerak — "kim, qachon, qancha oldi" degan savol oy
+    oxirida emas, o'sha kuni javob topadi.
+
+    Davr bo'yicha bog'lanadi (`paid_on` oyi), maxsus bog'lovchi ustun
+    orqali emas: shunda qayta hisoblash idempotent bo'ladi va hisoblash
+    o'chirib qayta yaratilsa ham avanslar joyida qoladi.
+    """
+
+    employee = models.ForeignKey("hr.Employee", on_delete=models.RESTRICT, related_name="advances")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    paid_on = models.DateField()
+    note = models.CharField(max_length=255, blank=True)
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="created_advances",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "employee_advance"
+        ordering = ["-paid_on"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=Decimal("0")), name="ck_advance_amount_positive"
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["employee", "paid_on"], name="ix_advance_employee_date"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.employee_id} — {self.amount} ({self.paid_on})"

@@ -692,12 +692,28 @@ Per-employee line within a run.
 | `base_amount` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (base_amount >= 0)` | Snapshot of salary |
 | `bonus` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0`, `CHECK (bonus >= 0)` | |
 | `deduction` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0`, `CHECK (deduction >= 0)` | |
+| `advance` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0` | Snapshot of `employee_advance` for the period (§14.5) |
 | `gross` | `NUMERIC(12,2)` | `NOT NULL` | `= base + bonus` |
-| `net` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (net >= 0)` | `= gross − deduction` |
+| `net` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (net >= 0)` | `= gross − deduction − advance` |
 | `note` | `VARCHAR(255)` | `NULL` | |
 
 **Constraint:** `uq_payroll_item UNIQUE (payroll_run_id, employee_id)` — one line per employee per run.
 **Future-proofing:** detailed bonus/deduction breakdown → `payroll_item_component` child table.
+
+### 14.5 `employee_advance`
+Money handed to an employee **during** the month, before payroll is calculated — the normal case in a kindergarten (someone takes part of their salary on the 15th).
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `employee_id` | `UUID` | `NOT NULL` FK → employee `ON DELETE RESTRICT` | |
+| `amount` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (amount > 0)` | |
+| `paid_on` | `DATE` | `NOT NULL` | The month of this date decides which run it belongs to |
+| `note` | `VARCHAR(255)` | `NULL` | |
+| `created_by_id` | `UUID` | `NULL` FK → user `ON DELETE SET NULL` | |
+
+**Kept separate from `deduction` on purpose.** A deduction is a penalty or a settlement; an advance is salary the employee already received. Merging them made the payslip unreadable ("why was 3 M withheld?").
+
+**Linked by period, not by a foreign key to the run.** A run is created at month end, advances are paid before that — and either can come first. Summing by `paid_on` month makes recalculation idempotent: `sync_advances()` can run any number of times, and deleting and re-creating a draft run never loses an advance. A **finalized** run is never touched (`_assert_editable`); a late advance belongs to the next month's correction.
 
 ---
 
@@ -1051,7 +1067,7 @@ A **derived, tenant-scoped snapshot**: the ledger, invoices and attendance rows 
 
 Indexes: `ix_insight_open (branch_id, status) WHERE status IN ('new','seen')` — the dashboard query; `ix_insight_history (branch_id, type, generated_at DESC)`; `ix_insight_suppression (branch_id, dismissed_until) WHERE status = 'dismissed'`.
 
-The RLS policy is applied by the app's own migration (`intelligence.0001`) through the same `apps/core/rls.py` helpers as `core.0002`; `check_rls` now expects **39** tables. The purge job ([02 §11.0](./02_Software_Architecture.md)) deletes `insight` before `attendance_record` — it references `user` through `acted_by`.
+The RLS policy is applied by the app's own migration (`intelligence.0001`) through the same `apps/core/rls.py` helpers as `core.0002`; `check_rls` now expects **40** tables (`employee_advance` joined in §14.5, with the same helpers). The purge job ([02 §11.0](./02_Software_Architecture.md)) deletes `insight` before `attendance_record` — it references `user` through `acted_by`.
 
 ---
 

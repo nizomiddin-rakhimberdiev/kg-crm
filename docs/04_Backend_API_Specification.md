@@ -436,6 +436,7 @@ Modules: `hr` (employees, positions) and `payroll`.
 | GET | `/payroll/runs/{id}` | `payroll.read` | Detail (+ items, totals) |
 | GET | `/payroll/runs/{id}/items` | `payroll.read` | Line items |
 | PATCH | `/payroll/runs/{id}/items/{itemId}` | `payroll.update` | Edit bonus/deduction on a draft item |
+| POST | `/payroll/runs/{id}/recalculate` | `payroll.update` | Re-sync a **draft** run: newly hired employees are added, advances re-summed |
 | POST | `/payroll/runs/{id}/finalize` | `payroll.update` | Lock the run (immutable) |
 | POST | `/payroll/runs/{id}/mark-paid` | `payroll.update` | Mark finalized run as paid |
 | GET | `/payroll/runs/{id}/payslips/{employeeId}` | `payroll.read` | Payslip PDF |
@@ -445,6 +446,24 @@ Modules: `hr` (employees, positions) and `payroll`.
 { "period_year": 2026, "period_month": 7 }
 ```
 **Errors:** `409 CONFLICT` (run already exists for period — unique `(branch, period)`), `422` (finalize/mark-paid out of allowed state order).
+
+### 11.3 Advances
+Money handed to an employee during the month, before payroll is calculated ([03 §14.5](./03_Database_Design.md)).
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/payroll/advances` | `payroll.read` | List (filter: `employee`) |
+| POST | `/payroll/advances` | `payroll.create` | Record an advance |
+| DELETE | `/payroll/advances/{id}` | `payroll.delete` | Remove it |
+
+**`POST /payroll/advances` — request**
+```json
+{ "employee_id": "…", "amount": "1000000.00", "paid_on": "2026-09-15", "note": "oyning yarmida" }
+```
+
+An advance belongs to a run by the **month of `paid_on`**, not by a foreign key, so writing one immediately updates that month's draft run and recalculation stays idempotent. A **finalized** run is never changed — a late advance is corrected in the next month. `payroll_item.net = gross − deduction − advance`.
+
+**Errors:** `422` (non-positive amount; advance exceeds the employee's gross for that period).
 
 ---
 

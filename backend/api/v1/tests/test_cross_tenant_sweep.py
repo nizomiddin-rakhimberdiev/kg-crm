@@ -96,7 +96,7 @@ def _create_row(tenant: Any, basename: str) -> Any:
     from apps.inventory.services import record_movement
     from apps.notifications.models import NotificationTemplate
     from apps.notifications.services import queue_notification
-    from apps.payroll.services import create_run
+    from apps.payroll.services import create_run, record_advance
 
     with organization_context(tenant.organization.id):
         if basename == "user":
@@ -248,7 +248,7 @@ def _create_row(tenant: Any, basename: str) -> Any:
             return Position.objects.create(
                 organization=tenant.organization, branch=tenant.branch, title="Tarbiyachi"
             )
-        if basename in {"employee", "payroll-run"}:
+        if basename in {"employee", "payroll-run", "payroll-advance"}:
             employee = Employee.objects.create(
                 organization=tenant.organization,
                 branch=tenant.branch,
@@ -259,6 +259,10 @@ def _create_row(tenant: Any, basename: str) -> Any:
             )
             if basename == "employee":
                 return employee
+            if basename == "payroll-advance":
+                return record_advance(
+                    employee=employee, amount=Decimal("300000"), paid_on=date(2026, 7, 15)
+                )
             return create_run(
                 organization=tenant.organization,
                 branch=tenant.branch,

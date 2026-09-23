@@ -1,5 +1,5 @@
 import { api } from '@/lib/api/client'
-import type { PayrollItem, PayrollRun } from '@/lib/api/types'
+import type { EmployeeAdvance, PayrollItem, PayrollRun } from '@/lib/api/types'
 
 // Xodimlar va lavozimlar API'si `features/staff/api.ts` da — ular
 // "Xodimlar" sahifasiga tegishli; oylik faqat hisoblashlar bilan ishlaydi.
@@ -22,4 +22,20 @@ export const payrollApi = {
 
   finalize: (id: string) => api.post<PayrollRun>(`/payroll/runs/${id}/finalize`),
   markPaid: (id: string) => api.post<PayrollRun>(`/payroll/runs/${id}/mark-paid`),
+
+  /**
+   * Qoralamani qayta hisoblash: yangi xodimlar va avanslar.
+   * Yakunlangan hisoblashga ta'sir qilmaydi (backend rad etadi).
+   */
+  recalculate: (id: string) => api.post<PayrollRun>(`/payroll/runs/${id}/recalculate`),
+
+  listAdvances: (params?: Record<string, unknown>) =>
+    api.list<EmployeeAdvance>('/payroll/advances', params),
+  createAdvance: (payload: {
+    employee_id: string
+    amount: string
+    paid_on: string
+    note?: string
+  }) => api.post<EmployeeAdvance>('/payroll/advances', payload),
+  removeAdvance: (id: string) => api.delete(`/payroll/advances/${id}`),
 }

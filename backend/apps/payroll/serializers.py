@@ -6,12 +6,16 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
-from apps.payroll.models import PayrollItem, PayrollRun
+from apps.core.fields import TenantPrimaryKeyRelatedField
+from apps.hr.models import Employee
+from apps.payroll.models import EmployeeAdvance, PayrollItem, PayrollRun
 
 __all__ = [
-    "PayrollRunSerializer",
-    "PayrollItemSerializer",
     "CreateRunSerializer",
+    "EmployeeAdvanceSerializer",
+    "EmployeeAdvanceWriteSerializer",
+    "PayrollItemSerializer",
+    "PayrollRunSerializer",
     "UpdateItemSerializer",
 ]
 
@@ -28,6 +32,7 @@ class PayrollItemSerializer(serializers.ModelSerializer):
             "base_amount",
             "bonus",
             "deduction",
+            "advance",
             "gross",
             "net",
             "note",
@@ -83,3 +88,26 @@ class UpdateItemSerializer(serializers.Serializer):
         max_digits=12, decimal_places=2, required=False, min_value=Decimal("0")
     )
     note = serializers.CharField(required=False, allow_blank=True, max_length=255)
+
+
+class EmployeeAdvanceSerializer(serializers.ModelSerializer):
+    employee_name = serializers.CharField(source="employee.full_name", read_only=True)
+
+    class Meta:
+        model = EmployeeAdvance
+        fields = ["id", "employee", "employee_name", "amount", "paid_on", "note", "created_at"]
+        read_only_fields = ["id", "created_at"]
+
+
+class EmployeeAdvanceWriteSerializer(serializers.Serializer):
+    """
+    Avans yozish.
+
+    `.save()` YO'Q: avans yozilgach o'sha davrning qoralama hisoblashi
+    ham yangilanishi kerak, ya'ni bu servis ishi (docs/02 §5).
+    """
+
+    employee_id = TenantPrimaryKeyRelatedField(model=Employee, source="employee")
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
+    paid_on = serializers.DateField()
+    note = serializers.CharField(max_length=255, required=False, allow_blank=True)

@@ -16,9 +16,11 @@ from apps.core.exceptions import BusinessRuleViolation
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchScopedMixin, TenantViewSet
 from apps.payroll import services
-from apps.payroll.models import PayrollItem, PayrollRun
+from apps.payroll.models import EmployeeAdvance, PayrollItem, PayrollRun
 from apps.payroll.serializers import (
     CreateRunSerializer,
+    EmployeeAdvanceSerializer,
+    EmployeeAdvanceWriteSerializer,
     PayrollItemSerializer,
     PayrollRunSerializer,
     UpdateItemSerializer,
@@ -129,6 +131,28 @@ class PayrollRunViewSet(BranchScopedMixin, TenantViewSet):
         run.refresh_from_db()
         return Response(PayrollRunSerializer(run).data)
 
+    @action(detail=True, methods=["post"])
+    def recalculate(self, request: Request, pk: str | None = None) -> Response:
+        """
+        Qoralamani qayta hisoblaydi: yangi xodimlar, avanslar.
+
+        Hisoblash oy oxirida yaratiladi, lekin xodim oyning o'rtasida
+        ishga kirishi yoki avans keyinroq berilishi mumkin. Usiz yagona
+        yo'l hisoblashni o'chirib qaytadan yaratish bo'lardi.
+        """
+        run = self.get_object()
+        services.recalculate_run(run)
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="payroll_run",
+            entity_id=run.id,
+            changes={"recalculated": True},
+        )
+        run.refresh_from_db()
+        return Response(PayrollRunSerializer(run).data)
+
     @action(detail=True, methods=["post"], url_path="mark-paid")
     def mark_paid(self, request: Request, pk: str | None = None) -> Response:
         run = self.get_object()
@@ -154,3 +178,55 @@ class PayrollRunViewSet(BranchScopedMixin, TenantViewSet):
         if item is None:
             raise BusinessRuleViolation(gettext("Bu xodim uchun satr topilmadi."))
         return Response(services.payslip(item=item))
+
+
+class EmployeeAdvanceViewSet(BranchScopedMixin, TenantViewSet):
+    """
+    Oy davomida berilgan avanslar (`/payroll/advances`).
+
+    Yozilgan avans o'sha davrning QORALAMA hisoblashiga darhol tushadi.
+    Yakunlangan davr o'zgarmaydi — servis `_assert_editable` bilan
+    qo'riqlaydi.
+    """
+
+    permission_module = "payroll"
+    model = EmployeeAdvance
+    serializer_class = EmployeeAdvanceSerializer
+    select_related_fields = ("employee",)
+    filterset_fields = ["employee"]
+    ordering_fields = ["paid_on", "amount"]
+    http_method_names = ["get", "post", "delete", "head", "options"]
+
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        serializer = EmployeeAdvanceWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        user = request_user(request)
+
+        advance = services.record_advance(
+            employee=data["employee"],
+            amount=data["amount"],
+            paid_on=data["paid_on"],
+            note=data.get("note", ""),
+            created_by=user,
+        )
+        audit.record(
+            action="create",
+            request=request._request,
+            actor=user,
+            entity_type="employee_advance",
+            entity_id=advance.id,
+            changes={"employee": str(advance.employee_id), "amount": str(advance.amount)},
+        )
+        return Response(EmployeeAdvanceSerializer(advance).data, status=status.HTTP_201_CREATED)
+
+    def perform_destroy(self, instance: Any) -> None:
+        audit.record(
+            action="delete",
+            request=self.request._request,
+            actor=request_user(self.request),
+            entity_type="employee_advance",
+            entity_id=instance.id,
+            changes={"amount": str(instance.amount)},
+        )
+        services.delete_advance(advance=instance)

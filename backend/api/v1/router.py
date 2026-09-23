@@ -31,7 +31,7 @@ from apps.inventory.views import (
     WarehouseViewSet,
 )
 from apps.notifications.views import NotificationTemplateViewSet, NotificationViewSet
-from apps.payroll.views import PayrollRunViewSet
+from apps.payroll.views import EmployeeAdvanceViewSet, PayrollRunViewSet
 from apps.platform.views import PlatformConsoleViewSet
 from apps.reports.views import DashboardViewSet, ReportViewSet
 from apps.settings_app.views import SettingsViewSet
@@ -56,6 +56,7 @@ router.register("debtors", DebtorViewSet, basename="debtor")
 router.register("employees", EmployeeViewSet, basename="employee")
 router.register("positions", PositionViewSet, basename="position")
 router.register("payroll/runs", PayrollRunViewSet, basename="payroll-run")
+router.register("payroll/advances", EmployeeAdvanceViewSet, basename="payroll-advance")
 router.register("warehouses", WarehouseViewSet, basename="warehouse")
 router.register("product-categories", ProductCategoryViewSet, basename="product-category")
 router.register("products", ProductViewSet, basename="product")

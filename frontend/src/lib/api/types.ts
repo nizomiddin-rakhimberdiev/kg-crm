@@ -401,6 +401,8 @@ export interface PayrollItem {
   base_amount: string
   bonus: string
   deduction: string
+  /** Oy davomida berib yuborilgan pul — ushlab qolishdan alohida. */
+  advance: string
   gross: string
   net: string
   note: string
@@ -760,4 +762,14 @@ export interface Briefing {
     /** Egasi, filial tanlanmagan — har bir filial alohida. */
     attendance_by_branch?: Record<string, AttendanceCheck | null>
   }
+}
+
+export interface EmployeeAdvance {
+  id: string
+  employee: string
+  employee_name: string
+  amount: string
+  paid_on: string
+  note: string
+  created_at: string
 }

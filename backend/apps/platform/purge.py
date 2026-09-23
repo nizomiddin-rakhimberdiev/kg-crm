@@ -62,6 +62,8 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.attendance.AttendanceRecord",
     "apps.payroll.PayrollItem",
     "apps.payroll.PayrollRun",
+    # Avans xodimga `RESTRICT` bilan bog'langan — u xodimdan OLDIN o'chadi.
+    "apps.payroll.EmployeeAdvance",
     "apps.hr.Employee",
     "apps.hr.Position",
     "apps.inventory.StockMovement",

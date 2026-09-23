@@ -114,6 +114,7 @@ def COLUMNS(report_type: str) -> list[Column]:  # noqa: N802 — jadval nomi kab
             ("position", gettext("Lavozim"), "text"),
             ("base", gettext("Bazaviy"), "money"),
             ("bonus", gettext("Bonus"), "money"),
+            ("advance", gettext("Avans"), "money"),
             ("deduction", gettext("Ushlab qolindi"), "money"),
             ("gross", gettext("Yalpi"), "money"),
             ("net", gettext("Sof"), "money"),

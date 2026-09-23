@@ -29,6 +29,7 @@ CUSTOM_CREATE = {
     "payment": "record_payment() servisi filialni bolasidan oladi",
     "stock-movement": "record_movement() servisi filialni mahsulotdan oladi",
     "payroll-run": "create_run() servisi filialni argument sifatida oladi",
+    "payroll-advance": "record_advance() servisi filialni xodimdan oladi",
     "attendance": "mark_bulk() servisi filialni guruhdan oladi",
 }
 

@@ -40,13 +40,15 @@ export const queryKeys = {
     ['org', orgId, 'debtors', params ?? {}] as const,
   statement: (orgId: string, childId: string) =>
     ['org', orgId, 'debtors', 'statement', childId] as const,
-  dailyCash: (orgId: string, date: string) =>
-    ['org', orgId, 'payments', 'daily', date] as const,
+  dailyCash: (orgId: string, date: string) => ['org', orgId, 'payments', 'daily', date] as const,
 
   employees: (orgId: string, params?: Record<string, unknown>) =>
     ['org', orgId, 'employees', params ?? {}] as const,
   positions: (orgId: string) => ['org', orgId, 'positions'] as const,
   payrollRuns: (orgId: string) => ['org', orgId, 'payroll'] as const,
+  // Avanslar ham `payroll` ostida: bitta `invalidate` ikkalasini yangilaydi
+  // (avans yozilsa, qoralama hisoblash ham o'zgaradi).
+  payrollAdvances: (orgId: string) => ['org', orgId, 'payroll', 'advances'] as const,
   payrollRun: (orgId: string, id: string) => ['org', orgId, 'payroll', id] as const,
 
   products: (orgId: string, params?: Record<string, unknown>) =>

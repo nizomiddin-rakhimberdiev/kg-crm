@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Radix CRM\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-23 11:22+0500\n"
+"POT-Creation-Date: 2026-09-23 11:42+0500\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -629,19 +629,22 @@ msgid ""
 "mavjud."
 msgstr "Расчёт за {period_year}-{period_month:02d} в этом филиале уже есть."
 
+msgid "{employee}: avans ({advance}) yalpi maoshdan ({gross}) oshib ketdi."
+msgstr "{employee}: аванс ({advance}) превышает начисленную зарплату ({gross})."
+
+msgid "Avans summasi musbat bo'lishi kerak."
+msgstr "Сумма аванса должна быть положительной."
+
 msgid "Bonus manfiy bo'lolmaydi."
 msgstr "Бонус не может быть отрицательным."
 
 msgid "Ushlab qolish manfiy bo'lolmaydi."
 msgstr "Удержание не может быть отрицательным."
 
-#, python-brace-format
 msgid ""
-"Ushlab qolish yalpi maoshdan oshib ketdi ({deduction} > {gross}). Sof maosh "
-"manfiy bo'lolmaydi."
-msgstr ""
-"Удержание превышает начисление ({deduction} > {gross}). Сумма к выплате не "
-"может быть отрицательной."
+"Ushlab qolish va avans yalpi maoshdan oshib ketdi ({deduction} > {gross}). "
+"Sof maosh manfiy bo'lolmaydi."
+msgstr "Удержание и аванс превышают начисление ({deduction} > {gross}). Сумма к выплате не может быть отрицательной."
 
 msgid "Faqat qoralama hisoblashni yakunlash mumkin."
 msgstr "Завершить можно только черновик расчёта."
@@ -712,6 +715,9 @@ msgstr "Оклад"
 
 msgid "Bonus"
 msgstr "Бонус"
+
+msgid "Avans"
+msgstr "Аванс"
 
 msgid "Ushlab qolindi"
 msgstr "Удержано"

@@ -614,6 +614,7 @@ def payroll_rows(
             "position": item.employee.position.title if item.employee.position_id else "",
             "base": item.base_amount,
             "bonus": item.bonus,
+            "advance": item.advance,
             "deduction": item.deduction,
             "gross": item.gross,
             "net": item.net,
