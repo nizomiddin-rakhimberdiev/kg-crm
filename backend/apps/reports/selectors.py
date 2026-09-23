@@ -28,6 +28,7 @@ from django.db.models.functions import (
     TruncWeek,
     TruncYear,
 )
+from django.utils import timezone
 from django.utils.translation import gettext
 
 from apps.attendance.models import AttendanceRecord, AttendanceStatus
@@ -526,3 +527,163 @@ def active_children_count(*, organization_id: Any, branch_id: Any = None) -> int
     if branch_id:
         queryset = queryset.filter(branch_id=branch_id)
     return queryset.count()
+
+
+# --- Eksport uchun BATAFSIL qatorlar ---
+#
+# Ekrandagi hisobot — yig'ma (davr bo'yicha jami). Eksport esa boshqa ish
+# uchun: buxgalter uni ochib, har bir yozuvni ko'rishi, filtrlashi va
+# jamlashi kerak. Avval eksport ham yig'ma edi (`period,total,count`) —
+# ya'ni fayl ekrandagidan ko'proq hech narsa bermasdi.
+
+
+def revenue_rows(
+    *, organization_id: Any, date_from: date, date_to: date, branch_id: Any = None, **_: Any
+) -> list[dict[str, Any]]:
+    """Har bir to'lov — alohida qator."""
+
+    queryset = Payment.objects.filter(
+        organization_id=organization_id,
+        paid_at__date__gte=date_from,
+        paid_at__date__lte=date_to,
+    ).select_related("child", "invoice", "received_by")
+    if branch_id:
+        queryset = queryset.filter(branch_id=branch_id)
+
+    return [
+        {
+            "date": timezone.localtime(payment.paid_at).date().isoformat(),
+            "child": payment.child.full_name if payment.child else "—",
+            "invoice": payment.invoice.number if payment.invoice_id else "",
+            # `get_method_display()` — noma'lum qiymat kelsa ham yiqilmaydi
+            # (enum konstruktori esa `ValueError` berardi va butun eksport
+            # yo'q bo'lardi). Eski ma'lumotda buzuq kod uchrashi mumkin.
+            "method": payment.get_method_display(),
+            "amount": payment.amount,
+            "reference": payment.reference,
+            "received_by": payment.received_by.full_name if payment.received_by_id else "",
+            "reversed": gettext("ha") if payment.reversed_at else "",
+        }
+        for payment in queryset.order_by("paid_at")
+    ]
+
+
+def expense_rows(
+    *, organization_id: Any, date_from: date, date_to: date, branch_id: Any = None, **_: Any
+) -> list[dict[str, Any]]:
+    """Har bir chiqim — kategoriya va TAVSIF bilan."""
+
+    queryset = Expense.objects.filter(
+        organization_id=organization_id,
+        expense_date__gte=date_from,
+        expense_date__lte=date_to,
+    ).select_related("category", "approved_by")
+    if branch_id:
+        queryset = queryset.filter(branch_id=branch_id)
+
+    return [
+        {
+            "date": expense.expense_date.isoformat(),
+            "category": expense.category.name if expense.category_id else "—",
+            "description": expense.description,
+            "amount": expense.amount,
+            "status": str(ExpenseStatus(expense.status).label),
+            "approved_by": expense.approved_by.full_name if expense.approved_by_id else "",
+        }
+        for expense in queryset.order_by("expense_date")
+    ]
+
+
+def payroll_rows(
+    *, organization_id: Any, year: int, branch_id: Any = None, **_: Any
+) -> list[dict[str, Any]]:
+    """Har bir xodim, har bir oy — alohida qator."""
+    from apps.payroll.models import PayrollItem
+
+    queryset = PayrollItem.objects.filter(
+        organization_id=organization_id,
+        payroll_run__period_year=year,
+    ).select_related("payroll_run", "employee", "employee__position")
+    if branch_id:
+        queryset = queryset.filter(payroll_run__branch_id=branch_id)
+
+    return [
+        {
+            "period": f"{item.payroll_run.period_year}-{item.payroll_run.period_month:02d}",
+            "employee": item.employee.full_name,
+            "position": item.employee.position.title if item.employee.position_id else "",
+            "base": item.base_amount,
+            "bonus": item.bonus,
+            "deduction": item.deduction,
+            "gross": item.gross,
+            "net": item.net,
+            "status": str(PayrollStatus(item.payroll_run.status).label),
+            "note": item.note,
+        }
+        for item in queryset.order_by("payroll_run__period_month", "employee__last_name")
+    ]
+
+
+def debtor_rows(*, organization_id: Any, branch_id: Any = None, **_: Any) -> list[dict[str, Any]]:
+    """Qarzdorlar — vasiy va telefon bilan (eslatma yuborish uchun kerak)."""
+
+    queryset = debtor_queryset().filter(organization_id=organization_id)
+    if branch_id:
+        queryset = queryset.filter(branch_id=branch_id)
+
+    today = timezone.localdate()
+    rows: list[dict[str, Any]] = []
+    # Guruh — bolaning maydoni emas, FAOL biriktirish (serializer ham
+    # shunday o'qiydi). `prefetch` bo'lmasa har bola uchun alohida so'rov
+    # ketardi va 500 qatorli eksport 500 ta so'rovga aylanardi.
+    for child in queryset.prefetch_related("guardian_links__guardian", "enrollments__group")[:2000]:
+        link = next(
+            (link for link in child.guardian_links.all() if link.is_primary),
+            next(iter(child.guardian_links.all()), None),
+        )
+        enrollment = next(
+            (
+                item
+                for item in child.enrollments.all()
+                if item.end_date is None and item.status == "active"
+            ),
+            None,
+        )
+        oldest = getattr(child, "oldest_overdue_date", None)
+        rows.append(
+            {
+                "child": child.full_name,
+                "group": enrollment.group.name if enrollment and enrollment.group_id else "",
+                "guardian": link.guardian.full_name if link else "",
+                "phone": link.guardian.phone if link else "",
+                "oldest_due": oldest.isoformat() if oldest else "",
+                "days_overdue": (today - oldest).days if oldest else "",
+                "debt": child.ledger_balance,
+            }
+        )
+    return rows
+
+
+def attendance_rows(
+    *, organization_id: Any, year: int, month: int, group_id: Any = None, **_: Any
+) -> list[dict[str, Any]]:
+    """Har bir bola, har bir kun — holat va SABAB bilan."""
+
+    queryset = AttendanceRecord.objects.filter(
+        organization_id=organization_id,
+        attendance_date__year=year,
+        attendance_date__month=month,
+    ).select_related("child", "group")
+    if group_id:
+        queryset = queryset.filter(group_id=group_id)
+
+    return [
+        {
+            "date": record.attendance_date.isoformat(),
+            "child": record.child.full_name,
+            "group": record.group.name if record.group_id else "",
+            "status": str(AttendanceStatus(record.status).label),
+            "reason": record.reason,
+        }
+        for record in queryset.order_by("attendance_date", "child__last_name")
+    ]

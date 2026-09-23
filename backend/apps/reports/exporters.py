@@ -1,24 +1,34 @@
 """
-Hisobotni CSV'ga aylantirish.
+Hisobotni faylga aylantirish — `.xlsx` (asosiy) va `.csv` (eski fayllar).
 
-CSV — Excel emas. Bu ongli qaror: CSV'ni Excel ham, Google Sheets ham,
-1C ham ochadi, va u qo'shimcha kutubxona talab qilmaydi. `.xlsx`
-formatlash (rang, birlashtirilgan katak, formula) kerak bo'lganda
-qo'shiladi; hozircha "ma'lumotni chiqarib olish" ehtiyoji shu bilan
-qoplanadi.
+Nega XLSX: mijoz faylni Excel'da ochadi va u yerda ishlaydi — filtr,
+jami, saralash. CSV'da har safar "ustunlarga ajratish" sehrgari, sana
+matnga aylanib qolishi va pul ustuni yig'ilmasligi muammosi chiqardi.
+XLSX'da sana sana, pul son bo'lib keladi, sarlavha qatori muzlatilgan
+va ustunlar avtofiltrga ulangan.
 
-BOM (`utf-8-sig`) ataylab: Excel'ning Windows versiyasi BOMsiz UTF-8 ni
-kirill/lotin diakritikasi bilan buzib ochadi va foydalanuvchi buni
-"tizim krakozyabra chiqardi" deb ko'radi.
+`openpyxl` allaqachon bog'liqlikda (bolalar importi uni ishlatadi), ya'ni
+yangi kutubxona qo'shilmadi.
+
+CSV yozuvchisi qoldi: bazada eski `.csv` fayllar bor va ularni yuklab
+olish ishlashda davom etishi kerak.
+
+BOM (`utf-8-sig`) CSV uchun ataylab: Excel'ning Windows versiyasi BOMsiz
+UTF-8 ni kirill/lotin diakritikasi bilan buzib ochadi.
 """
 
 from __future__ import annotations
 
+import contextlib
 import csv
 import io
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
 
-__all__ = ["to_csv", "rows_for"]
+from django.utils.translation import gettext
+
+__all__ = ["COLUMNS", "rows_for", "to_csv", "to_xlsx"]
 
 Row = dict[str, Any]
 
@@ -65,3 +75,129 @@ def to_csv(headers: list[str], rows: list[Row]) -> bytes:
     for row in rows:
         writer.writerow(row)
     return buffer.getvalue().encode("utf-8-sig")
+
+
+# --- Batafsil eksport ---
+#
+# Ustunlar: (kalit, sarlavha, tur). Tur faqat XLSX formatlash uchun:
+# "money" — son + mingliklar ajratkichi, "date" — sana. Sarlavhalar
+# `gettext` orqali: eksport so'ralgan tilda keladi (ADR-16).
+
+Column = tuple[str, str, str]
+
+
+def COLUMNS(report_type: str) -> list[Column]:  # noqa: N802 — jadval nomi kabi o'qiladi
+    if report_type == "revenue":
+        return [
+            ("date", gettext("Sana"), "date"),
+            ("child", gettext("Bola"), "text"),
+            ("invoice", gettext("Hisob-faktura"), "text"),
+            ("method", gettext("To'lov usuli"), "text"),
+            ("amount", gettext("Summa"), "money"),
+            ("reference", gettext("Ma'lumotnoma"), "text"),
+            ("received_by", gettext("Qabul qildi"), "text"),
+            ("reversed", gettext("Qaytarilgan"), "text"),
+        ]
+    if report_type == "expenses":
+        return [
+            ("date", gettext("Sana"), "date"),
+            ("category", gettext("Kategoriya"), "text"),
+            ("description", gettext("Tavsif"), "text"),
+            ("amount", gettext("Summa"), "money"),
+            ("status", gettext("Holat"), "text"),
+            ("approved_by", gettext("Tasdiqladi"), "text"),
+        ]
+    if report_type == "payroll":
+        return [
+            ("period", gettext("Davr"), "text"),
+            ("employee", gettext("Xodim"), "text"),
+            ("position", gettext("Lavozim"), "text"),
+            ("base", gettext("Bazaviy"), "money"),
+            ("bonus", gettext("Bonus"), "money"),
+            ("deduction", gettext("Ushlab qolindi"), "money"),
+            ("gross", gettext("Yalpi"), "money"),
+            ("net", gettext("Sof"), "money"),
+            ("status", gettext("Holat"), "text"),
+            ("note", gettext("Izoh"), "text"),
+        ]
+    if report_type == "debtors":
+        return [
+            ("child", gettext("Bola"), "text"),
+            ("group", gettext("Guruh"), "text"),
+            ("guardian", gettext("Vasiy"), "text"),
+            ("phone", gettext("Telefon"), "text"),
+            ("oldest_due", gettext("Eng eski muddat"), "date"),
+            ("days_overdue", gettext("Kechikish (kun)"), "number"),
+            ("debt", gettext("Qarz"), "money"),
+        ]
+    if report_type == "attendance":
+        return [
+            ("date", gettext("Sana"), "date"),
+            ("child", gettext("Bola"), "text"),
+            ("group", gettext("Guruh"), "text"),
+            ("status", gettext("Holat"), "text"),
+            ("reason", gettext("Sabab"), "text"),
+        ]
+    if report_type == "profit-loss":
+        return [
+            ("period", gettext("Davr"), "text"),
+            ("revenue", gettext("Tushum"), "money"),
+            ("expenses", gettext("Chiqimlar"), "money"),
+            ("payroll", gettext("Oylik maosh"), "money"),
+            ("net", gettext("Sof natija"), "money"),
+        ]
+    raise ValueError(f"Noma'lum hisobot turi: {report_type}")
+
+
+def to_xlsx(report_type: str, rows: list[Row], *, title: str = "") -> bytes:
+    """
+    Qatorlarni `.xlsx` ga yozadi: muzlatilgan sarlavha, avtofiltr,
+    pul va sana uchun to'g'ri katak turi, ustun kengligi mazmunga qarab.
+
+    Pul MATN emas, SON bo'lib yoziladi — aks holda Excel'da ustunni
+    yig'ib bo'lmasdi va aynan shu narsa uchun fayl ochiladi.
+    """
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
+
+    columns = COLUMNS(report_type)
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = (title or report_type)[:31]
+
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill("solid", fgColor="334155")
+    for index, (_, label, _kind) in enumerate(columns, start=1):
+        cell = sheet.cell(row=1, column=index, value=label)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(vertical="center")
+
+    for row_index, row in enumerate(rows, start=2):
+        for col_index, (key, _label, kind) in enumerate(columns, start=1):
+            value = row.get(key, "")
+            if kind == "money" and value not in ("", None):
+                value = float(Decimal(str(value)))
+            elif kind == "date" and isinstance(value, str) and value:
+                with contextlib.suppress(ValueError):
+                    value = date.fromisoformat(value)
+            elif kind == "number" and value not in ("", None):
+                value = int(value)
+            cell = sheet.cell(row=row_index, column=col_index, value=value)
+            if kind == "money":
+                cell.number_format = "#,##0"
+            elif kind == "date" and isinstance(value, date | datetime):
+                cell.number_format = "DD.MM.YYYY"
+
+    sheet.freeze_panes = "A2"
+    sheet.auto_filter.ref = f"A1:{get_column_letter(len(columns))}{max(len(rows) + 1, 1)}"
+    for index, (key, label, _kind) in enumerate(columns, start=1):
+        longest = max((len(str(row.get(key, ""))) for row in rows), default=0)
+        sheet.column_dimensions[get_column_letter(index)].width = min(
+            max(len(label) + 4, longest + 2), 46
+        )
+
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    return buffer.getvalue()

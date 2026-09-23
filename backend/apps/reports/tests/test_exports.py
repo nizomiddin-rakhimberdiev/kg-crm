@@ -8,6 +8,7 @@ qimmat turdagi ma'lumot.
 
 from __future__ import annotations
 
+import io
 from datetime import date
 from decimal import Decimal
 
@@ -53,16 +54,19 @@ class TestExportJob:
         with organization_context(tenant_a.organization.id):
             export = ReportExport.objects.get(pk=job_id)
         assert export.status == ExportStatus.READY
-        assert export.file.name.endswith(".csv")
+        assert export.file.name.endswith(".xlsx")
         assert export.row_count >= 1
 
-    def test_csv_has_a_bom_so_excel_opens_it_correctly(self, tenant_a, paid_child):
+    def test_file_is_a_real_workbook_with_detail_rows(self, tenant_a, paid_child):
         """
-        BOMsiz UTF-8 ni Windows Excel buzib ochadi.
+        Fayl — haqiqiy `.xlsx`, ichida HAR BIR to'lov alohida qator.
 
-        Foydalanuvchi buni "tizim krakozyabra chiqardi" deb ko'radi va
-        aybni hisobotga qo'yadi.
+        Ilgari eksport ekrandagi yig'ma jadvalning nusxasi edi
+        (`period,total,count`) — ya'ni fayl ochilganda unda hisobotdan
+        ortiq hech narsa yo'q edi va buxgalter uni ishlata olmasdi.
         """
+        from openpyxl import load_workbook
+
         with organization_context(tenant_a.organization.id):
             export = ReportExport.objects.create(
                 organization=tenant_a.organization, report_type="revenue"
@@ -71,8 +75,29 @@ class TestExportJob:
             export.refresh_from_db()
             content = export.file.read()
 
-        assert content.startswith(b"\xef\xbb\xbf")
-        assert b"period,total,count" in content
+        assert content.startswith(b"PK"), "xlsx — zip konteyner"
+        sheet = load_workbook(io.BytesIO(content)).active
+        headers = [cell.value for cell in sheet[1]]
+        assert "Bola" in headers and "Summa" in headers
+        # To'lov qatori: bola nomi va summa SON bo'lib yozilgan.
+        values = [cell.value for cell in sheet[2]]
+        assert any(isinstance(value, int | float) and value == 640000 for value in values)
+        assert sheet.freeze_panes == "A2"
+
+    def test_headers_follow_the_request_language(self, tenant_a, paid_child):
+        """Ustun sarlavhalari — so'rov tilida (ADR-16), Celery'da ham."""
+        from openpyxl import load_workbook
+
+        client = tenant_a.client()
+        job_id = client.post(
+            "/api/v1/reports/revenue/export", {}, format="json", HTTP_ACCEPT_LANGUAGE="ru"
+        ).json()["data"]["id"]
+        generate_export(job_id, str(tenant_a.organization.id))
+
+        with organization_context(tenant_a.organization.id):
+            content = ReportExport.objects.get(pk=job_id).file.read()
+        headers = [cell.value for cell in load_workbook(io.BytesIO(content)).active[1]]
+        assert "Ребёнок" in headers, headers
 
     def test_failure_is_recorded_not_silent(self, tenant_a):
         """
@@ -102,8 +127,11 @@ class TestExportJob:
 
         response = client.get(f"/api/v1/reports/exports/{job_id}/download")
         assert response.status_code == 200
-        assert response["Content-Type"] == "text/csv"
-        assert b"period,total,count" in b"".join(response.streaming_content)
+        assert (
+            response["Content-Type"]
+            == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        assert b"".join(response.streaming_content).startswith(b"PK")
 
     def test_download_before_ready_is_a_clear_error(self, tenant_a):
         client = tenant_a.client()

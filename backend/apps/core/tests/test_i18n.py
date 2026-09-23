@@ -141,3 +141,19 @@ def test_password_length_message_is_uzbek():
             8,
         )
     assert "qisqa" in text, text
+
+
+@pytest.mark.parametrize("lang", ["ru", "en"])
+def test_no_fuzzy_entries(lang: str):
+    """
+    `#, fuzzy` — `msgmerge` ning TAXMINI, tarjima emas.
+
+    Yangi matn eskisiga o'xshasa, gettext eski tarjimani nusxalab, uni
+    fuzzy deb belgilaydi. Belgini shunchaki olib tashlash noto'g'ri
+    tarjimani qotirib qo'yadi — aynan shunday bo'lgan: "Yangi parol
+    ko'rsatilmagan." xabari ruschada "В токене не указана организация"
+    bo'lib chiqardi. Har fuzzy yozuv QO'LDA tekshirilishi kerak.
+    """
+    text = (LOCALE_DIR / lang / "LC_MESSAGES" / "django.po").read_text()
+    fuzzy = [line for line in text.splitlines() if line.startswith("#, fuzzy")]
+    assert fuzzy == [], f"{lang}: {len(fuzzy)} ta tekshirilmagan tarjima"

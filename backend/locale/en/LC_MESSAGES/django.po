@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Radix CRM\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-22 15:03+0500\n"
+"POT-Creation-Date: 2026-09-23 11:22+0500\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -57,13 +57,11 @@ msgstr "The branch belongs to another organization."
 msgid "Org Owner'dan boshqa barcha rollar uchun filial ko'rsatilishi shart."
 msgstr "A branch must be set for every role except Org Owner."
 
-#| msgid "Tokenda tashkilot ko'rsatilmagan."
 msgid "Yangi parol ko'rsatilmagan."
-msgstr "The token has no organization."
+msgstr "No new password provided."
 
-#| msgid "Parol majburiy."
 msgid "Bu maydon majburiy."
-msgstr "Password is required."
+msgstr "This field is required."
 
 msgid "Tizim rolini o'chirib bo'lmaydi."
 msgstr "A system role can’t be deleted."
@@ -72,7 +70,9 @@ msgstr "A system role can’t be deleted."
 msgid ""
 "Tashkilot egasi rolidan quyidagi ruxsatlarni olib tashlab bo'lmaydi (aks "
 "holda rollarni hech kim sozlay olmay qoladi): {join}."
-msgstr "These permissions can’t be removed from the owner role (otherwise nobody could manage roles): {join}."
+msgstr ""
+"These permissions can’t be removed from the owner role (otherwise nobody "
+"could manage roles): {join}."
 
 msgid "Email yoki parol noto'g'ri."
 msgstr "Incorrect email or password."
@@ -83,16 +83,14 @@ msgstr "The selection window has expired. Sign in again."
 msgid "Tanlangan tashkilot mavjud emas."
 msgstr "The selected organization doesn’t exist."
 
-#| msgid "Tokenda tashkilot ko'rsatilmagan."
 msgid "Refresh token ko'rsatilmagan."
-msgstr "The token has no organization."
+msgstr "No refresh token provided."
 
 msgid "Refresh token yaroqsiz."
 msgstr "The refresh token is invalid."
 
-#| msgid "Yuborilgan ma'lumot noto'g'ri."
 msgid "Joriy parol noto'g'ri."
-msgstr "The submitted data is invalid."
+msgstr "The current password is incorrect."
 
 msgid "Keldi"
 msgstr "Present"
@@ -152,7 +150,9 @@ msgstr "The branch has active staff — move or remove them first."
 msgid ""
 "Excel faylini o'qib bo'lmadi. Fayl to'liq yuklanganini va parol bilan "
 "himoyalanmaganini tekshiring."
-msgstr "Couldn’t read the Excel file. Check that it uploaded fully and isn’t password-protected."
+msgstr ""
+"Couldn’t read the Excel file. Check that it uploaded fully and isn’t "
+"password-protected."
 
 msgid "Faylni o'qib bo'lmadi (kodlash noma'lum)."
 msgstr "Couldn’t read the file (unknown encoding)."
@@ -260,7 +260,9 @@ msgstr "The grant belongs to another organization."
 msgid ""
 "Qo'llab-quvvatlash sessiyasi faqat o'qish uchun. O'zgartirishni bog'chaning "
 "o'zi bajarishi kerak."
-msgstr "The support session is read-only. Changes must be made by the kindergarten itself."
+msgstr ""
+"The support session is read-only. Changes must be made by the kindergarten "
+"itself."
 
 msgid "Tokenda foydalanuvchi identifikatori yo'q."
 msgstr "The token has no user identifier."
@@ -306,6 +308,13 @@ msgstr "Too many requests."
 
 msgid "Kutilmagan xatolik yuz berdi."
 msgstr "An unexpected error occurred."
+
+#, python-format
+msgid "This password is too short. It must contain at least %d character."
+msgid_plural ""
+"This password is too short. It must contain at least %d characters."
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "Kutilmoqda"
 msgstr "Pending"
@@ -440,7 +449,9 @@ msgstr "Payments aren’t accepted for a cancelled invoice."
 msgid ""
 "Ortiqcha to'lov: qoldiq {outstanding}, kiritilgan {amount}. Ortiqcha summani "
 "hisob-fakturasiz avans sifatida kiriting."
-msgstr "Overpayment: outstanding {outstanding}, entered {amount}. Enter the excess as an advance without an invoice."
+msgstr ""
+"Overpayment: outstanding {outstanding}, entered {amount}. Enter the excess "
+"as an advance without an invoice."
 
 msgid "Bu to'lov allaqachon qaytarilgan."
 msgstr "This payment has already been refunded."
@@ -544,7 +555,9 @@ msgstr "The warehouse and the product are in different branches."
 msgid ""
 "'{name}' uchun qoldiq yetarli emas: mavjud {available} {unit}, so'ralgan "
 "{quantity} {unit2}."
-msgstr "Not enough stock of ‘{name}’: available {available} {unit}, requested {quantity} {unit2}."
+msgstr ""
+"Not enough stock of ‘{name}’: available {available} {unit}, requested "
+"{quantity} {unit2}."
 
 msgid "SMS"
 msgstr "SMS"
@@ -603,13 +616,17 @@ msgstr "Finalised"
 msgid ""
 "Hisoblash '{status}' holatida — o'zgartirib bo'lmaydi. Tuzatishni keyingi "
 "oyda bonus yoki ushlab qolish bilan kiriting."
-msgstr "The run is ‘{status}’ and can’t be changed. Enter the correction next month as a bonus or deduction."
+msgstr ""
+"The run is ‘{status}’ and can’t be changed. Enter the correction next month "
+"as a bonus or deduction."
 
 #, python-brace-format
 msgid ""
 "{period_year}-{period_month:02d} uchun bu filialda hisoblash allaqachon "
 "mavjud."
-msgstr "A payroll run for {period_year}-{period_month:02d} already exists in this branch."
+msgstr ""
+"A payroll run for {period_year}-{period_month:02d} already exists in this "
+"branch."
 
 msgid "Bonus manfiy bo'lolmaydi."
 msgstr "A bonus can’t be negative."
@@ -621,7 +638,9 @@ msgstr "A deduction can’t be negative."
 msgid ""
 "Ushlab qolish yalpi maoshdan oshib ketdi ({deduction} > {gross}). Sof maosh "
 "manfiy bo'lolmaydi."
-msgstr "The deduction exceeds gross pay ({deduction} > {gross}). Net pay can’t be negative."
+msgstr ""
+"The deduction exceeds gross pay ({deduction} > {gross}). Net pay can’t be "
+"negative."
 
 msgid "Faqat qoralama hisoblashni yakunlash mumkin."
 msgstr "Only a draft run can be finalised."
@@ -635,13 +654,104 @@ msgstr "Only a finalised run can be marked as paid."
 msgid ""
 "Hisoblash to'g'ridan-to'g'ri tahrirlanmaydi — `finalize` yoki `mark-paid` "
 "amallaridan foydalaning."
-msgstr "A run isn’t edited directly — use the `finalize` or `mark-paid` actions."
+msgstr ""
+"A run isn’t edited directly — use the `finalize` or `mark-paid` actions."
 
 msgid "Satr topilmadi."
 msgstr "Row not found."
 
 msgid "Bu xodim uchun satr topilmadi."
 msgstr "No row found for this employee."
+
+msgid "Sana"
+msgstr "Date"
+
+msgid "Bola"
+msgstr "Child"
+
+msgid "To'lov usuli"
+msgstr "Payment method"
+
+msgid "Summa"
+msgstr "Amount"
+
+msgid "Ma'lumotnoma"
+msgstr "Reference"
+
+msgid "Qabul qildi"
+msgstr "Received by"
+
+msgid "Qaytarilgan"
+msgstr "Refunded"
+
+msgid "Kategoriya"
+msgstr "Category"
+
+msgid "Tavsif"
+msgstr "Description"
+
+msgid "Holat"
+msgstr "Status"
+
+msgid "Tasdiqladi"
+msgstr "Approved by"
+
+msgid "Davr"
+msgstr "Period"
+
+msgid "Xodim"
+msgstr "Employee"
+
+msgid "Lavozim"
+msgstr "Position"
+
+msgid "Bazaviy"
+msgstr "Base"
+
+msgid "Bonus"
+msgstr "Bonus"
+
+msgid "Ushlab qolindi"
+msgstr "Deducted"
+
+msgid "Yalpi"
+msgstr "Gross"
+
+msgid "Sof"
+msgstr "Net"
+
+msgid "Izoh"
+msgstr "Note"
+
+msgid "Vasiy"
+msgstr "Guardian"
+
+msgid "Telefon"
+msgstr "Phone"
+
+msgid "Eng eski muddat"
+msgstr "Oldest due date"
+
+msgid "Kechikish (kun)"
+msgstr "Days overdue"
+
+msgid "Qarz"
+msgstr "Debt"
+
+msgid "Sabab"
+msgstr "Reason"
+
+msgid "Tushum"
+msgstr "Revenue"
+
+msgid "Chiqimlar"
+msgstr "Expenses"
+
+msgid "Oylik maosh"
+msgstr "Payroll"
+
+msgid "Sof natija"
+msgstr "Net result"
 
 msgid "Bajarilmoqda"
 msgstr "In progress"
@@ -661,7 +771,12 @@ msgstr "The period start can’t be after its end."
 msgid ""
 "Bu davr {group_by!r} kesimida {MAX_BUCKETS} dan ortiq qator beradi — "
 "yirikroq kesim tanlang."
-msgstr "This period yields more than {MAX_BUCKETS} rows at the {group_by!r} breakdown — choose a coarser one."
+msgstr ""
+"This period yields more than {MAX_BUCKETS} rows at the {group_by!r} "
+"breakdown — choose a coarser one."
+
+msgid "ha"
+msgstr "yes"
 
 #, python-brace-format
 msgid "Sana formati noto'g'ri: {value}"

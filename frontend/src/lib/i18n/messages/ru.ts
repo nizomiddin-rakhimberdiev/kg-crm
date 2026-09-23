@@ -152,8 +152,6 @@ export const messages: Record<string, string> = {
   Chiqimlar: 'Расходы',
   Chiqish: 'Выйти',
   Chorak: 'Квартал',
-  'CSV — Excel ham, Google Sheets ham ochadi. Tanlangan davr va kesim bilan, fayl fonda tayyorlanadi.':
-    'CSV открывается и в Excel, и в Google Sheets. За выбранный период и разрез; файл готовится в фоне.',
   Dan: 'С',
   dan: 'от',
   Dashboard: 'Дашборд',
@@ -177,6 +175,8 @@ export const messages: Record<string, string> = {
   'eng yuqori {peak_children} → hisoblangan': 'пик {peak_children} → начислено',
   'Eslatma kuni': 'День напоминания',
   'Excel fayli': 'Файл Excel',
+  "Excel fayli (.xlsx) — har bir yozuv alohida qator bo'lib tushadi. Tanlangan davr bilan, fayl fonda tayyorlanadi.":
+    'Файл Excel (.xlsx) — каждая запись отдельной строкой. За выбранный период; файл готовится в фоне.',
   'Excel shablonni yuklab olish': 'Скачать шаблон Excel',
   'Excel/CSV dan import qilish': 'Импорт из Excel/CSV',
   Familiya: 'Фамилия',

@@ -425,7 +425,7 @@ export default function ReportsPage() {
           <h2 className="text-sm font-semibold text-slate-900">{t('Eksport')}</h2>
           <p className="mt-0.5 text-xs text-slate-500">
             {t(
-              'CSV — Excel ham, Google Sheets ham ochadi. Tanlangan davr va kesim bilan, fayl fonda tayyorlanadi.',
+              "Excel fayli (.xlsx) — har bir yozuv alohida qator bo'lib tushadi. Tanlangan davr bilan, fayl fonda tayyorlanadi.",
             )}
           </p>
 
@@ -472,7 +472,7 @@ export default function ReportsPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            void reportsApi.downloadExport(job.id, `${job.report_type}.csv`)
+                            void reportsApi.downloadExport(job.id, `${job.report_type}.xlsx`)
                           }
                           className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-brand-700"
                         >

@@ -13,7 +13,7 @@ from typing import Any
 from django.db import transaction
 from django.http import FileResponse, Http404
 from django.utils import timezone
-from django.utils.translation import gettext, gettext_lazy
+from django.utils.translation import get_language, gettext, gettext_lazy
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -246,10 +246,14 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
         serializer.is_valid(raise_exception=True)
         user = request_user(request)
 
+        # So'rov tilini parametrlarga yozamiz: fayl keyinroq, Celery
+        # ishchisida yig'iladi va u yerda `Accept-Language` yo'q — ustun
+        # sarlavhalari foydalanuvchi ko'rgan tilda bo'lishi kerak.
+        params = {**serializer.validated_data.get("params", {}), "language": get_language()}
         export = ReportExport.objects.create(
             organization=user.organization,
             report_type=pk,
-            params=serializer.validated_data.get("params", {}),
+            params=params,
             requested_by=user,
         )
         # `on_commit` — `delay()` EMAS, to'g'ridan-to'g'ri emas.
@@ -304,11 +308,18 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
         export = self._checked_export(request, job_id)
         if export.status != ExportStatus.READY or not export.file:
             raise BusinessRuleViolation(gettext("Eksport hali tayyor emas."))
+        filename = export.file.name.rsplit("/", 1)[-1]
         return FileResponse(
             export.file.open("rb"),
             as_attachment=True,
-            filename=export.file.name.rsplit("/", 1)[-1],
-            content_type="text/csv",
+            filename=filename,
+            # Eski eksportlar `.csv` bo'lib qolgan — turni kengaytmadan
+            # aniqlaymiz, aks holda Excel faylni CSV deb ochib buzardi.
+            content_type=(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                if filename.endswith(".xlsx")
+                else "text/csv"
+            ),
         )
 
     def _get_export(self, job_id: str) -> ReportExport:

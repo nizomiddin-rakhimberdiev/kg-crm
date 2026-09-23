@@ -11,11 +11,13 @@ olib keladi. Fail-closed shu ma'noda ishlaydi.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from datetime import date
 from typing import Any
 
+from django.conf import settings
 from django.core.files.base import ContentFile
-from django.utils import timezone
+from django.utils import timezone, translation
 
 from apps.core.tasks import reliable_task
 from apps.core.tenancy import organization_context, platform_context
@@ -82,6 +84,43 @@ def _run_report(report_type: str, organization_id: Any, params: dict[str, Any]) 
     raise ValueError(f"Noma'lum hisobot turi: {report_type}")
 
 
+def _detail_rows(report_type: str, organization_id: Any, params: dict[str, Any]) -> list[Any]:
+    """
+    Eksport uchun BATAFSIL qatorlar.
+
+    `profit-loss` — tabiatan yig'ma hisobot (davr bo'yicha), shuning uchun
+    u eski yo'ldan boradi. Qolganlari yozuv darajasida chiqadi: buxgalter
+    faylni ochib har bir to'lovni, chiqimni, xodimni ko'radi.
+    """
+    today = timezone.localdate()
+    date_from = (
+        date.fromisoformat(params["date_from"]) if params.get("date_from") else today.replace(day=1)
+    )
+    date_to = date.fromisoformat(params["date_to"]) if params.get("date_to") else today
+    common = {
+        "organization_id": organization_id,
+        "branch_id": params.get("branch_id"),
+        "date_from": date_from,
+        "date_to": date_to,
+        "year": int(params.get("year") or today.year),
+        "month": int(params.get("month") or today.month),
+        "group_id": params.get("group_id"),
+    }
+    builders: dict[str, Callable[..., list[dict[str, Any]]]] = {
+        "revenue": selectors.revenue_rows,
+        "expenses": selectors.expense_rows,
+        "payroll": selectors.payroll_rows,
+        "debtors": selectors.debtor_rows,
+        "attendance": selectors.attendance_rows,
+    }
+    builder = builders.get(report_type)
+    if builder is None:
+        payload = _run_report(report_type, organization_id, params)
+        _, rows = exporters.rows_for(report_type, payload)
+        return rows
+    return builder(**common)
+
+
 @reliable_task(name="reports.generate_export")
 def generate_export(export_id: str, organization_id: str | None = None) -> str:
     """
@@ -112,12 +151,16 @@ def generate_export(export_id: str, organization_id: str | None = None) -> str:
         export.status = ExportStatus.RUNNING
         export.save(update_fields=["status", "updated_at"])
         try:
-            payload = _run_report(export.report_type, export.organization_id, export.params or {})
-            headers, rows = exporters.rows_for(export.report_type, payload)
-            content = exporters.to_csv(headers, rows)
+            params = export.params or {}
+            # Til so'rov paytida saqlanadi: vazifa keyinroq, boshqa
+            # jarayonda ishlaydi va `Accept-Language` u yerga yetib
+            # bormaydi — sarlavhalar o'zbekcha bo'lib qolardi (ADR-16).
+            with translation.override(params.get("language") or settings.LANGUAGE_CODE):
+                rows = _detail_rows(export.report_type, export.organization_id, params)
+                content = exporters.to_xlsx(export.report_type, rows, title=export.report_type)
 
             stamp = timezone.localtime().strftime("%Y%m%d-%H%M")
-            export.file.save(f"{export.report_type}-{stamp}.csv", ContentFile(content), save=False)
+            export.file.save(f"{export.report_type}-{stamp}.xlsx", ContentFile(content), save=False)
             export.row_count = len(rows)
             export.status = ExportStatus.READY
             export.error = ""

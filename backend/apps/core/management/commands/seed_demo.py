@@ -430,6 +430,7 @@ class Command(BaseCommand):
         ogohlantirilgan yoki chiqib ketgan bo'lardi, ya'ni raqam
         ishonchsiz ko'rinardi.
         """
+        from apps.finance.models import PaymentMethod
         from apps.finance.services import issue_invoice, record_payment
 
         today = timezone.localdate()
@@ -500,7 +501,14 @@ class Command(BaseCommand):
                 record_payment(
                     child=child,
                     amount=amount,
-                    method=random.choices(["cash", "card", "transfer"], weights=[45, 40, 15])[0],
+                    # `bank_transfer` — `PaymentMethod` dagi AYNAN shu kod. Ilgari
+                    # bu yerda "transfer" yozilardi: `TextChoices` bazada
+                    # tekshirilmaydi, shuning uchun noto'g'ri qiymat jimgina
+                    # yozilib, ro'yxatda yorliqsiz "transfer" bo'lib ko'rinardi.
+                    method=random.choices(
+                        [PaymentMethod.CASH, PaymentMethod.CARD, PaymentMethod.BANK_TRANSFER],
+                        weights=[45, 40, 15],
+                    )[0],
                     invoice=invoice,
                     paid_at=paid_at,
                     received_by=owner,

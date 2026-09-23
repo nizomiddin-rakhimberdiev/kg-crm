@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Radix CRM\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-22 15:03+0500\n"
+"POT-Creation-Date: 2026-09-23 11:22+0500\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -59,13 +59,11 @@ msgstr "Филиал принадлежит другой организации.
 msgid "Org Owner'dan boshqa barcha rollar uchun filial ko'rsatilishi shart."
 msgstr "Для всех ролей, кроме владельца, нужно указать филиал."
 
-#| msgid "Tokenda tashkilot ko'rsatilmagan."
 msgid "Yangi parol ko'rsatilmagan."
-msgstr "В токене не указана организация."
+msgstr "Новый пароль не указан."
 
-#| msgid "Parol majburiy."
 msgid "Bu maydon majburiy."
-msgstr "Пароль обязателен."
+msgstr "Это поле обязательно."
 
 msgid "Tizim rolini o'chirib bo'lmaydi."
 msgstr "Системную роль удалить нельзя."
@@ -74,7 +72,9 @@ msgstr "Системную роль удалить нельзя."
 msgid ""
 "Tashkilot egasi rolidan quyidagi ruxsatlarni olib tashlab bo'lmaydi (aks "
 "holda rollarni hech kim sozlay olmay qoladi): {join}."
-msgstr "У роли владельца нельзя отнять эти права (иначе роли никто не сможет настраивать): {join}."
+msgstr ""
+"У роли владельца нельзя отнять эти права (иначе роли никто не сможет "
+"настраивать): {join}."
 
 msgid "Email yoki parol noto'g'ri."
 msgstr "Неверный email или пароль."
@@ -85,16 +85,14 @@ msgstr "Время выбора истекло. Войдите снова."
 msgid "Tanlangan tashkilot mavjud emas."
 msgstr "Выбранная организация не существует."
 
-#| msgid "Tokenda tashkilot ko'rsatilmagan."
 msgid "Refresh token ko'rsatilmagan."
-msgstr "В токене не указана организация."
+msgstr "Refresh-токен не указан."
 
 msgid "Refresh token yaroqsiz."
 msgstr "Refresh-токен недействителен."
 
-#| msgid "Yuborilgan ma'lumot noto'g'ri."
 msgid "Joriy parol noto'g'ri."
-msgstr "Отправленные данные некорректны."
+msgstr "Неверный текущий пароль."
 
 msgid "Keldi"
 msgstr "Пришёл"
@@ -149,12 +147,15 @@ msgid "Tashkilotda bir nechta filial bor — `branch_id` ko'rsatilishi shart."
 msgstr "В организации несколько филиалов — нужно указать `branch_id`."
 
 msgid "Filialda faol xodimlar bor — avval ularni ko'chiring yoki o'chiring."
-msgstr "В филиале есть работающие сотрудники — сначала переведите или удалите их."
+msgstr ""
+"В филиале есть работающие сотрудники — сначала переведите или удалите их."
 
 msgid ""
 "Excel faylini o'qib bo'lmadi. Fayl to'liq yuklanganini va parol bilan "
 "himoyalanmaganini tekshiring."
-msgstr "Не удалось прочитать файл Excel. Проверьте, что файл загружен полностью и не защищён паролем."
+msgstr ""
+"Не удалось прочитать файл Excel. Проверьте, что файл загружен полностью и не "
+"защищён паролем."
 
 msgid "Faylni o'qib bo'lmadi (kodlash noma'lum)."
 msgstr "Не удалось прочитать файл (неизвестная кодировка)."
@@ -309,6 +310,15 @@ msgstr "Превышен лимит запросов."
 msgid "Kutilmagan xatolik yuz berdi."
 msgstr "Произошла непредвиденная ошибка."
 
+#, python-format
+msgid "This password is too short. It must contain at least %d character."
+msgid_plural ""
+"This password is too short. It must contain at least %d characters."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+msgstr[3] ""
+
 msgid "Kutilmoqda"
 msgstr "Ожидает"
 
@@ -442,7 +452,9 @@ msgstr "Платёж по отменённому счёту не принима�
 msgid ""
 "Ortiqcha to'lov: qoldiq {outstanding}, kiritilgan {amount}. Ortiqcha summani "
 "hisob-fakturasiz avans sifatida kiriting."
-msgstr "Переплата: остаток {outstanding}, внесено {amount}. Лишнюю сумму внесите как аванс без счёта."
+msgstr ""
+"Переплата: остаток {outstanding}, внесено {amount}. Лишнюю сумму внесите как "
+"аванс без счёта."
 
 msgid "Bu to'lov allaqachon qaytarilgan."
 msgstr "Этот платёж уже возвращён."
@@ -546,7 +558,9 @@ msgstr "Склад и товар в разных филиалах."
 msgid ""
 "'{name}' uchun qoldiq yetarli emas: mavjud {available} {unit}, so'ralgan "
 "{quantity} {unit2}."
-msgstr "Недостаточно остатка «{name}»: есть {available} {unit}, запрошено {quantity} {unit2}."
+msgstr ""
+"Недостаточно остатка «{name}»: есть {available} {unit}, запрошено {quantity} "
+"{unit2}."
 
 msgid "SMS"
 msgstr "SMS"
@@ -605,7 +619,9 @@ msgstr "Завершён"
 msgid ""
 "Hisoblash '{status}' holatida — o'zgartirib bo'lmaydi. Tuzatishni keyingi "
 "oyda bonus yoki ushlab qolish bilan kiriting."
-msgstr "Расчёт в статусе «{status}» — изменить нельзя. Корректировку внесите в следующем месяце бонусом или удержанием."
+msgstr ""
+"Расчёт в статусе «{status}» — изменить нельзя. Корректировку внесите в "
+"следующем месяце бонусом или удержанием."
 
 #, python-brace-format
 msgid ""
@@ -623,7 +639,9 @@ msgstr "Удержание не может быть отрицательным."
 msgid ""
 "Ushlab qolish yalpi maoshdan oshib ketdi ({deduction} > {gross}). Sof maosh "
 "manfiy bo'lolmaydi."
-msgstr "Удержание превышает начисление ({deduction} > {gross}). Сумма к выплате не может быть отрицательной."
+msgstr ""
+"Удержание превышает начисление ({deduction} > {gross}). Сумма к выплате не "
+"может быть отрицательной."
 
 msgid "Faqat qoralama hisoblashni yakunlash mumkin."
 msgstr "Завершить можно только черновик расчёта."
@@ -637,13 +655,105 @@ msgstr "Оплаченным можно отметить только завер
 msgid ""
 "Hisoblash to'g'ridan-to'g'ri tahrirlanmaydi — `finalize` yoki `mark-paid` "
 "amallaridan foydalaning."
-msgstr "Расчёт не редактируется напрямую — используйте действия `finalize` или `mark-paid`."
+msgstr ""
+"Расчёт не редактируется напрямую — используйте действия `finalize` или `mark-"
+"paid`."
 
 msgid "Satr topilmadi."
 msgstr "Строка не найдена."
 
 msgid "Bu xodim uchun satr topilmadi."
 msgstr "Строка для этого сотрудника не найдена."
+
+msgid "Sana"
+msgstr "Дата"
+
+msgid "Bola"
+msgstr "Ребёнок"
+
+msgid "To'lov usuli"
+msgstr "Способ оплаты"
+
+msgid "Summa"
+msgstr "Сумма"
+
+msgid "Ma'lumotnoma"
+msgstr "Примечание"
+
+msgid "Qabul qildi"
+msgstr "Кто принял"
+
+msgid "Qaytarilgan"
+msgstr "Возвращён"
+
+msgid "Kategoriya"
+msgstr "Категория"
+
+msgid "Tavsif"
+msgstr "Описание"
+
+msgid "Holat"
+msgstr "Статус"
+
+msgid "Tasdiqladi"
+msgstr "Кто подтвердил"
+
+msgid "Davr"
+msgstr "Период"
+
+msgid "Xodim"
+msgstr "Сотрудник"
+
+msgid "Lavozim"
+msgstr "Должность"
+
+msgid "Bazaviy"
+msgstr "Оклад"
+
+msgid "Bonus"
+msgstr "Бонус"
+
+msgid "Ushlab qolindi"
+msgstr "Удержано"
+
+msgid "Yalpi"
+msgstr "Начислено"
+
+msgid "Sof"
+msgstr "К выплате"
+
+msgid "Izoh"
+msgstr "Комментарий"
+
+msgid "Vasiy"
+msgstr "Опекун"
+
+msgid "Telefon"
+msgstr "Телефон"
+
+msgid "Eng eski muddat"
+msgstr "Самый старый срок"
+
+msgid "Kechikish (kun)"
+msgstr "Просрочка (дней)"
+
+msgid "Qarz"
+msgstr "Долг"
+
+msgid "Sabab"
+msgstr "Причина"
+
+msgid "Tushum"
+msgstr "Доход"
+
+msgid "Chiqimlar"
+msgstr "Расходы"
+
+msgid "Oylik maosh"
+msgstr "Зарплата"
+
+msgid "Sof natija"
+msgstr "Чистый результат"
 
 msgid "Bajarilmoqda"
 msgstr "Выполняется"
@@ -663,7 +773,12 @@ msgstr "Начало периода не может быть позже его �
 msgid ""
 "Bu davr {group_by!r} kesimida {MAX_BUCKETS} dan ortiq qator beradi — "
 "yirikroq kesim tanlang."
-msgstr "В разрезе {group_by!r} этот период даёт больше {MAX_BUCKETS} строк — выберите более крупный разрез."
+msgstr ""
+"В разрезе {group_by!r} этот период даёт больше {MAX_BUCKETS} строк — "
+"выберите более крупный разрез."
+
+msgid "ha"
+msgstr "да"
 
 #, python-brace-format
 msgid "Sana formati noto'g'ri: {value}"
