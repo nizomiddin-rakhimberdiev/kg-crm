@@ -16,6 +16,11 @@ __all__ = ["get_setting", "set_setting", "effective_settings", "DEFAULTS"]
 # Ular ataylab shu yerda: yangi sozlama qo'shish migratsiya ham,
 # har bir tashkilotga qator yozishni ham talab qilmaydi.
 DEFAULTS: dict[str, Any] = {
+    # Bog'chaning SUKUT tili. Xodim brauzerida o'z tanlovi bo'lmasa, ilova
+    # shu tilda ochiladi (ADR-16). Til baribir har bir odam uchun alohida
+    # almashtiriladi — bu faqat "biz asosan ruscha ishlaymiz" degan holatda
+    # har safar qo'lda o'zgartirishni yo'q qiladi.
+    "general.default_language": "uz",
     "finance.reminder_day": 5,
     "finance.due_day": 10,
     "notifications.sms_enabled": True,

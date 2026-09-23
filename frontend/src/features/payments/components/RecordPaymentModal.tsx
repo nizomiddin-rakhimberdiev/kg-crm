@@ -1,18 +1,25 @@
 /**
- * To'lov qabul qilish oynasi.
+ * To'lov qabul qilish oynasi — IKKI rejimda.
  *
- * Qoldiqdan ortiq summa kiritishga ruxsat berilmaydi — backend ham rad
- * etadi (docs/03 §13.5), lekin uni bu yerda ham to'sish kassirni keraksiz
- * xatodan saqlaydi. Ortiqcha pul kelsa, u hisob-fakturasiz avans sifatida
- * kiritiladi.
+ * `invoice` berilsa: aniq hisob-fakturaga to'lov. Qoldiqdan ortiq summa
+ * kiritishga ruxsat berilmaydi — backend ham rad etadi (docs/03 §13.5),
+ * lekin uni bu yerda ham to'sish kassirni keraksiz xatodan saqlaydi.
+ *
+ * `invoice` berilmasa: FAKTURASIZ to'lov (avans, oldindan to'lov). Bu
+ * backendda boshidan bor edi (`child_id` yetarli), UI'da esa yo'l yo'q
+ * edi — ya'ni ota-ona oldindan pul bergan holatni yozib bo'lmasdi.
+ * Bunday pul bolaning balansiga tushadi va keyingi hisob-fakturani
+ * o'zi yopadi.
  */
 
 import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Banknote } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { Modal } from '@/components/ui/Modal'
+import { childrenApi } from '@/features/children/api'
 import { paymentsApi } from '@/features/payments/api'
+import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Invoice } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -29,14 +36,25 @@ export function RecordPaymentModal({
   invoice,
   onClose,
 }: {
-  invoice: Invoice
+  /** Berilmasa — fakturasiz to'lov (avans). */
+  invoice?: Invoice
   onClose: () => void
 }) {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
 
-  const outstanding = Number(invoice.amount_outstanding)
-  const [amount, setAmount] = useState(invoice.amount_outstanding)
+  // Fakturasiz rejimda bolani tanlash kerak. Ro'yxat bir marta yuklanadi:
+  // bog'chada bolalar soni yuzlab emas, qidiruvli murakkab tanlagich
+  // ortiqcha bo'lardi.
+  const childrenQuery = useQuery({
+    queryKey: queryKeys.children(organizationId, { page_size: 500 }),
+    queryFn: () => childrenApi.list({ page_size: 500 }),
+    enabled: !invoice,
+  })
+  const [childId, setChildId] = useState('')
+
+  const outstanding = invoice ? Number(invoice.amount_outstanding) : null
+  const [amount, setAmount] = useState(invoice?.amount_outstanding ?? '')
   const [method, setMethod] = useState('cash')
   const [reference, setReference] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -54,8 +72,8 @@ export function RecordPaymentModal({
     mutationFn: () =>
       paymentsApi.record(
         {
-          child_id: invoice.child,
-          invoice_id: invoice.id,
+          child_id: invoice ? invoice.child : childId,
+          ...(invoice ? { invoice_id: invoice.id } : {}),
           amount,
           method,
           reference,
@@ -72,7 +90,7 @@ export function RecordPaymentModal({
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
-  const tooMuch = Number(amount) > outstanding
+  const tooMuch = outstanding !== null && Number(amount) > outstanding
 
   return (
     <Modal open onClose={onClose} className="max-w-md">
@@ -80,16 +98,20 @@ export function RecordPaymentModal({
         <div className="mb-4 pr-10">
           <h2 className="text-lg font-bold text-slate-900">{t("To'lov qabul qilish")}</h2>
           <p className="mt-1 text-sm text-slate-500">
-            {invoice.child_name} · {invoice.number}
+            {invoice
+              ? `${invoice.child_name} · ${invoice.number}`
+              : t('Hisob-fakturasiz — pul bolaning balansiga tushadi')}
           </p>
         </div>
 
-        <div className="mb-4 rounded-lg bg-slate-50 px-3 py-2 text-sm">
-          <span className="text-slate-500">{t("To'lanishi kerak:")} </span>
-          <span className="font-semibold text-slate-900">
-            {t("{money} so'm", { money: money(invoice.amount_outstanding) })}
-          </span>
-        </div>
+        {invoice && (
+          <div className="mb-4 rounded-lg bg-slate-50 px-3 py-2 text-sm">
+            <span className="text-slate-500">{t("To'lanishi kerak:")} </span>
+            <span className="font-semibold text-slate-900">
+              {t("{money} so'm", { money: money(invoice.amount_outstanding) })}
+            </span>
+          </div>
+        )}
 
         {error && (
           <div role="alert" className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -104,6 +126,28 @@ export function RecordPaymentModal({
           }}
           className="space-y-3"
         >
+          {!invoice && (
+            <div>
+              <label htmlFor="pay-child" className="mb-1 block text-xs font-medium text-slate-600">
+                {t('Bola')}
+              </label>
+              <select
+                id="pay-child"
+                required
+                value={childId}
+                onChange={(e) => setChildId(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              >
+                <option value="">{t('Tanlang…')}</option>
+                {childrenQuery.data?.items.map((child) => (
+                  <option key={child.id} value={child.id}>
+                    {child.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <label htmlFor="amount" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Summa')}
@@ -114,7 +158,7 @@ export function RecordPaymentModal({
               required
               min="0.01"
               step="0.01"
-              max={outstanding}
+              {...(outstanding !== null ? { max: outstanding } : {})}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className={cn(

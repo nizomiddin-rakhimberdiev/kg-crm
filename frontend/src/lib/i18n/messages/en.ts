@@ -5,6 +5,7 @@ export const messages: Record<string, string> = {
   ' · {row_count} qator': ' · {row_count} rows',
   ' ({remaining} kun)': ' ({remaining} days)',
   " so'm": ' UZS',
+  '— avans —': '— advance —',
   '— guruhsiz —': '— no group —',
   '— tanlanmagan —': '— not selected —',
   '— tarifsiz —': '— no plan —',
@@ -109,6 +110,7 @@ export const messages: Record<string, string> = {
   "Bog'cha boshqaruv tizimi": 'Kindergarten management system',
   "Bog'cha nomi": 'Kindergarten name',
   "Bog'cha profili": 'Kindergarten profile',
+  'Bog‘cha tili': 'Kindergarten language',
   "Bog'cha xarajatlari shu yerda qayd etiladi — oziq-ovqat, kommunal, ta'mir.":
     'Kindergarten expenses are recorded here — food, utilities, repairs.',
   "Bog'chaning birinchi filiali ro'yxatdan o'tishda yaratiladi. Yangi bino ochsangiz shu yerdan qo'shasiz.":
@@ -239,6 +241,8 @@ export const messages: Record<string, string> = {
   'Hisob-fakturalar': 'Invoices',
   "Hisob-fakturalar ledger'ga yoziladi va tahrirlanmaydi — xato bo'lsa bekor qilinadi.":
     'Invoices are written to the ledger and can’t be edited — if wrong, they are cancelled.',
+  'Hisob-fakturasiz — pul bolaning balansiga tushadi':
+    'Without an invoice — the money goes to the child’s balance',
   "Hisobingiz ma'lumotlari va xavfsizlik.": 'Your account details and security.',
   "Hisobingiz yo'qmi? Bog'changiz uchun akkaunt ochish uchun biz bilan bog'laning.":
     'No account? Contact us to open one for your kindergarten.',
@@ -341,6 +345,7 @@ export const messages: Record<string, string> = {
   Mar: 'Mar',
   'Masalan: kasal, shifokorda, oilaviy sabab': 'For example: ill, at the doctor, family reasons',
   'Masalan: kraska, konditsioner ta’miri': 'For example: paint, air-conditioner repair',
+  'Masalan: xato summa kiritilgan': 'For example: the wrong amount was entered',
   Matn: 'Text',
   "Maxsus rol — ruxsatlari ham, o'zi ham to'liq sizning ixtiyoringizda.":
     'Custom role — both its permissions and the role itself are entirely yours to manage.',
@@ -431,6 +436,8 @@ export const messages: Record<string, string> = {
   Qayta: 'Retry',
   'Qayta faollashtirish': 'Reactivate',
   'Qayta urinish': 'Try again',
+  Qaytarilgan: 'Refunded',
+  Qaytarish: 'Refund',
   'Qidirish...': 'Search…',
   "Qisman to'langan": 'Partially paid',
   'Qiz bola': 'Girl',
@@ -473,6 +480,7 @@ export const messages: Record<string, string> = {
   'Rol:': 'Role:',
   'Rollar va ruxsatlar': 'Roles and permissions',
   "Rolni o'chirish": 'Delete role',
+  Sabab: 'Reason',
   'Sabab: {reason}': 'Reason: {reason}',
   'Sababini yozish': 'Add a reason',
   Sababli: 'Excused',
@@ -564,6 +572,8 @@ export const messages: Record<string, string> = {
   "To'lov kutilmoqda": 'Awaiting payment',
   "To'lov muddati": 'Due date',
   "To'lov muddati (oy kuni)": 'Due date (day of month)',
+  "To'lov o'chirilmaydi — ustiga qarshi yozuv qo'shiladi va jurnalda ikkalasi ham ko'rinadi.":
+    'The payment isn’t deleted — a counter-entry is added and the journal shows both.',
   "To'lov qabul qilindi": 'Payment received',
   "To'lov qabul qilinganda ota-onaga xabar ketadi.":
     'When a payment is received, the parent gets a message.',
@@ -572,6 +582,7 @@ export const messages: Record<string, string> = {
   "To'lov usullari": 'Payment methods',
   "To'lovlar": 'Payments',
   "To'lovli rejimga o'tish": 'Switch to a paid plan',
+  "To'lovni qaytarish": 'Refund payment',
   "To'xtatilgan": 'Paused',
   'Tranzaksiya raqami': 'Transaction number',
   "Tug'ilgan sana": 'Date of birth',
@@ -581,6 +592,7 @@ export const messages: Record<string, string> = {
   'Tushum dinamikasi': 'Revenue trend',
   'Tushum va chiqim': 'Revenue and expenses',
   Tuzatish: 'Adjustment',
+  Umumiy: 'General',
   'Ushlab qolish': 'Deduction',
   Valyuta: 'Currency',
   Vaqt: 'Time',
@@ -597,6 +609,8 @@ export const messages: Record<string, string> = {
   'Xatolik yuz berdi.': 'Something went wrong.',
   'Xatolik.': 'Error.',
   Xodim: 'Employee',
+  'Xodim o‘zi til tanlamagan bo‘lsa, tizim shu tilda ochiladi.':
+    'If a staff member hasn’t chosen a language, the system opens in this one.',
   "Xodim qo'shish": 'Add employee',
   Xodimlar: 'Staff',
   "Xodimlar ro'yxati": 'Staff list',

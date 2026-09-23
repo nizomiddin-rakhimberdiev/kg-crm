@@ -11,8 +11,7 @@ import type {
 
 export const tariffsApi = {
   list: () => api.list<TariffPlan>('/tariffs'),
-  create: (payload: { name: string; amount: string }) =>
-    api.post<TariffPlan>('/tariffs', payload),
+  create: (payload: { name: string; amount: string }) => api.post<TariffPlan>('/tariffs', payload),
   remove: (id: string) => api.delete(`/tariffs/${id}`),
 }
 
@@ -25,8 +24,7 @@ export const invoicesApi = {
       period_month: periodMonth,
     }),
 
-  cancel: (id: string, reason: string) =>
-    api.post<Invoice>(`/invoices/${id}/cancel`, { reason }),
+  cancel: (id: string, reason: string) => api.post<Invoice>(`/invoices/${id}/cancel`, { reason }),
 }
 
 export const discountsApi = {
@@ -70,8 +68,7 @@ export const paymentsApi = {
       idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
     ),
 
-  reverse: (id: string, reason: string) =>
-    api.post<Payment>(`/payments/${id}/reverse`, { reason }),
+  reverse: (id: string, reason: string) => api.post<Payment>(`/payments/${id}/reverse`, { reason }),
 
   dailySummary: (date?: string) =>
     api.get<DailyCashSummary>('/payments/daily-summary', date ? { date } : undefined),

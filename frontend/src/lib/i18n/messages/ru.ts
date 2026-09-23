@@ -5,6 +5,7 @@ export const messages: Record<string, string> = {
   ' · {row_count} qator': ' · строк: {row_count}',
   ' ({remaining} kun)': ' ({remaining} дн.)',
   " so'm": ' сум',
+  '— avans —': '— аванс —',
   '— guruhsiz —': '— без группы —',
   '— tanlanmagan —': '— не выбрано —',
   '— tarifsiz —': '— без тарифа —',
@@ -108,6 +109,7 @@ export const messages: Record<string, string> = {
   "Bog'cha boshqaruv tizimi": 'Система управления детским садом',
   "Bog'cha nomi": 'Название сада',
   "Bog'cha profili": 'Профиль сада',
+  'Bog‘cha tili': 'Язык сада',
   "Bog'cha xarajatlari shu yerda qayd etiladi — oziq-ovqat, kommunal, ta'mir.":
     'Здесь фиксируются расходы сада — продукты, коммунальные, ремонт.',
   "Bog'chaning birinchi filiali ro'yxatdan o'tishda yaratiladi. Yangi bino ochsangiz shu yerdan qo'shasiz.":
@@ -236,6 +238,8 @@ export const messages: Record<string, string> = {
   'Hisob-fakturalar': 'Счета',
   "Hisob-fakturalar ledger'ga yoziladi va tahrirlanmaydi — xato bo'lsa bekor qilinadi.":
     'Счета записываются в леджер и не редактируются — при ошибке счёт отменяется.',
+  'Hisob-fakturasiz — pul bolaning balansiga tushadi':
+    'Без счёта — деньги пойдут на баланс ребёнка',
   "Hisobingiz ma'lumotlari va xavfsizlik.": 'Данные вашей учётной записи и безопасность.',
   "Hisobingiz yo'qmi? Bog'changiz uchun akkaunt ochish uchun biz bilan bog'laning.":
     'Нет учётной записи? Свяжитесь с нами, чтобы открыть аккаунт для вашего сада.',
@@ -338,6 +342,7 @@ export const messages: Record<string, string> = {
   Mar: 'Мар',
   'Masalan: kasal, shifokorda, oilaviy sabab': 'Например: болеет, у врача, семейные обстоятельства',
   'Masalan: kraska, konditsioner ta’miri': 'Например: краска, ремонт кондиционера',
+  'Masalan: xato summa kiritilgan': 'Например: введена неверная сумма',
   Matn: 'Текст',
   "Maxsus rol — ruxsatlari ham, o'zi ham to'liq sizning ixtiyoringizda.":
     'Пользовательская роль — и права, и сама роль полностью в вашем распоряжении.',
@@ -428,6 +433,8 @@ export const messages: Record<string, string> = {
   Qayta: 'Повторить',
   'Qayta faollashtirish': 'Активировать снова',
   'Qayta urinish': 'Попробовать снова',
+  Qaytarilgan: 'Возвращён',
+  Qaytarish: 'Вернуть',
   'Qidirish...': 'Поиск…',
   "Qisman to'langan": 'Частично оплачен',
   'Qiz bola': 'Девочка',
@@ -470,6 +477,7 @@ export const messages: Record<string, string> = {
   'Rol:': 'Роль:',
   'Rollar va ruxsatlar': 'Роли и права',
   "Rolni o'chirish": 'Удалить роль',
+  Sabab: 'Причина',
   'Sabab: {reason}': 'Причина: {reason}',
   'Sababini yozish': 'Указать причину',
   Sababli: 'По уважительной причине',
@@ -561,6 +569,8 @@ export const messages: Record<string, string> = {
   "To'lov kutilmoqda": 'Ожидает оплаты',
   "To'lov muddati": 'Срок оплаты',
   "To'lov muddati (oy kuni)": 'Срок оплаты (день месяца)',
+  "To'lov o'chirilmaydi — ustiga qarshi yozuv qo'shiladi va jurnalda ikkalasi ham ko'rinadi.":
+    'Платёж не удаляется — поверх добавляется обратная запись, и в журнале видны обе.',
   "To'lov qabul qilindi": 'Платёж принят',
   "To'lov qabul qilinganda ota-onaga xabar ketadi.":
     'Когда платёж принят, родителю уходит сообщение.',
@@ -569,6 +579,7 @@ export const messages: Record<string, string> = {
   "To'lov usullari": 'Способы оплаты',
   "To'lovlar": 'Платежи',
   "To'lovli rejimga o'tish": 'Перейти на платный тариф',
+  "To'lovni qaytarish": 'Возврат платежа',
   "To'xtatilgan": 'Приостановлен',
   'Tranzaksiya raqami': 'Номер транзакции',
   "Tug'ilgan sana": 'Дата рождения',
@@ -578,6 +589,7 @@ export const messages: Record<string, string> = {
   'Tushum dinamikasi': 'Динамика дохода',
   'Tushum va chiqim': 'Доходы и расходы',
   Tuzatish: 'Корректировка',
+  Umumiy: 'Общие',
   'Ushlab qolish': 'Удержание',
   Valyuta: 'Валюта',
   Vaqt: 'Время',
@@ -594,6 +606,8 @@ export const messages: Record<string, string> = {
   'Xatolik yuz berdi.': 'Произошла ошибка.',
   'Xatolik.': 'Ошибка.',
   Xodim: 'Сотрудник',
+  'Xodim o‘zi til tanlamagan bo‘lsa, tizim shu tilda ochiladi.':
+    'Если сотрудник не выбрал язык сам, система откроется на этом языке.',
   "Xodim qo'shish": 'Добавить сотрудника',
   Xodimlar: 'Сотрудники',
   "Xodimlar ro'yxati": 'Список сотрудников',

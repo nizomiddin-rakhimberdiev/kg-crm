@@ -27,6 +27,15 @@ export const APP_LOCALES: { code: AppLocale; label: string; short: string }[] = 
 ]
 
 export const LOCALE_STORAGE_KEY = 'kg-crm.locale'
+/**
+ * Bog'cha sozlamasidan MEROS qilib olingan til.
+ *
+ * Saqlangan til shu qiymatga teng bo'lsa — uni odam tanlamagan, tashkilot
+ * sozlamasidan kelgan. Shunda sozlama o'zgarganda til ham yangilanadi.
+ * Odam tanlagan til esa (`setLocale`) bu belgini o'chiradi va sozlama uni
+ * hech qachon bosmaydi.
+ */
+const INHERITED_KEY = 'kg-crm.locale.inherited'
 
 const isLocale = (value: unknown): value is AppLocale =>
   value === 'uz' || value === 'ru' || value === 'en'
@@ -50,6 +59,8 @@ export function setLocale(next: AppLocale) {
   if (next === locale) return
   try {
     window.localStorage.setItem(LOCALE_STORAGE_KEY, next)
+    // Bu — ODAMNING tanlovi: bundan keyin tashkilot sozlamasi uni bosmaydi.
+    window.localStorage.removeItem(INHERITED_KEY)
   } catch {
     // Storage yo'q bo'lsa ham reload qilamiz — bu safar uchun `?lang` yo'q,
     // shunchaki sukut tili qoladi; foydalanuvchi buni ko'radi.
@@ -94,4 +105,27 @@ export const INTL_LOCALE: Record<AppLocale, string> = {
   uz: 'uz-UZ',
   ru: 'ru-RU',
   en: 'en-GB',
+}
+
+/**
+ * Bog'chaning sukut tilini qo'llaydi (`/auth/me` dan keladi).
+ *
+ * Faqat xodim O'ZI til tanlamagan bo'lsa ishlaydi. Til o'zgarsa sahifa
+ * qayta yuklanadi — lug'at boot paytida bir marta olinadi (yuqoridagi
+ * izoh). Qayta yuklash FAQAT haqiqatan boshqa til bo'lganda bo'ladi,
+ * ya'ni tsikl yuzaga kelmaydi.
+ */
+export function applyOrganizationLocale(next: string | null | undefined): void {
+  if (!isLocale(next) || typeof window === 'undefined') return
+  try {
+    const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY)
+    const inherited = window.localStorage.getItem(INHERITED_KEY)
+    const chosenByPerson = stored !== null && stored !== inherited
+    if (chosenByPerson || next === locale) return
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, next)
+    window.localStorage.setItem(INHERITED_KEY, next)
+    window.location.reload()
+  } catch {
+    // Storage yo'q — sukut tilida qolamiz.
+  }
 }

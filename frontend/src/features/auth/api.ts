@@ -19,7 +19,13 @@ export const authApi = {
       organization_id: organizationId,
     }),
 
-  me: () => api.get<{ user: CurrentUser; subscription: SubscriptionState }>('/auth/me'),
+  me: () =>
+    api.get<{
+      user: CurrentUser
+      subscription: SubscriptionState
+      /** Bog'chaning sukut tili (ADR-16) — xodim o'zi tanlamagan bo'lsa qo'llanadi. */
+      organization_settings?: { default_language?: string }
+    }>('/auth/me'),
 
   /**
    * O'z profilini tahrirlash. Faqat ism va telefon — rol, filial va email
@@ -42,9 +48,10 @@ export const authApi = {
   },
 
   async removePhoto() {
-    const response = await httpClient.delete<
-      Envelope<{ user: CurrentUser; subscription: SubscriptionState }>
-    >('/auth/me/photo')
+    const response =
+      await httpClient.delete<Envelope<{ user: CurrentUser; subscription: SubscriptionState }>>(
+        '/auth/me/photo',
+      )
     return response.data.data
   },
 

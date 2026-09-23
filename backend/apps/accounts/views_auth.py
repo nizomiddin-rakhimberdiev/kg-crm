@@ -296,10 +296,18 @@ class MeView(APIView):
 
     def get(self, request: Request) -> Response:
         user = request_user(request)
+        # Bog'chaning sukut tili shu yerda qaytadi: frontend uni boot
+        # paytida (foydalanuvchining o'z tanlovi bo'lmasa) qo'llaydi.
+        # Alohida so'rov qilmaymiz — bu javob har yuklanishda baribir olinadi.
+        from apps.settings_app.services import get_setting
+
         return Response(
             {
                 "user": services.user_payload(user),
                 "subscription": services.subscription_payload(user.organization),
+                "organization_settings": {
+                    "default_language": get_setting(key="general.default_language"),
+                },
             }
         )
 

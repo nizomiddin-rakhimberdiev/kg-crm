@@ -15,7 +15,7 @@ import { settingsApi } from '@/features/notifications/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type SettingValue } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
-import { t } from '@/lib/i18n'
+import { APP_LOCALES, t } from '@/lib/i18n'
 
 interface SettingMeta {
   label: string
@@ -28,6 +28,10 @@ interface SettingMeta {
  * tarjimasiz, kalitning o'zi bilan.
  */
 const META: Record<string, SettingMeta> = {
+  'general.default_language': {
+    label: t('Bog‘cha tili'),
+    help: t('Xodim o‘zi til tanlamagan bo‘lsa, tizim shu tilda ochiladi.'),
+  },
   'finance.due_day': {
     label: t("To'lov muddati (oy kuni)"),
     help: t("Hisob-faktura shu kungacha to'lanishi kutiladi."),
@@ -51,6 +55,7 @@ const META: Record<string, SettingMeta> = {
 }
 
 const GROUPS: Array<[string, string]> = [
+  ['general', t('Umumiy')],
   ['finance', t('Moliya')],
   ['notifications', t('Bildirishnomalar')],
   ['attendance', t('Davomat')],
@@ -86,6 +91,26 @@ export default function SettingsPage() {
   const keys = Object.keys(settings).sort()
 
   const renderControl = (key: string, value: SettingValue) => {
+    // Til — ro'yxatdan tanlanadi. Erkin matn maydoni bo'lsa, xato yozilgan
+    // kod ("рус") jimgina ishlamay qo'yardi.
+    if (key === 'general.default_language') {
+      return (
+        <select
+          value={String(value ?? 'uz')}
+          disabled={!editable}
+          aria-label={META[key]?.label ?? key}
+          onChange={(e) => save.mutate({ key, value: e.target.value })}
+          className="w-44 rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500 disabled:bg-slate-50"
+        >
+          {APP_LOCALES.map((locale) => (
+            <option key={locale.code} value={locale.code}>
+              {locale.label}
+            </option>
+          ))}
+        </select>
+      )
+    }
+
     if (typeof value === 'boolean') {
       return (
         <Switch

@@ -18,6 +18,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import { authApi } from '@/features/auth/api'
 import { setSessionExpiredHandler } from '@/lib/api/client'
+import { applyOrganizationLocale } from '@/lib/i18n'
 import { tokenStorage } from '@/lib/auth/tokenStorage'
 import { supportSession } from '@/lib/auth/supportSession'
 import { shouldLandOnTenantAddress, tenantPath } from '@/lib/tenantAddress'
@@ -94,18 +95,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tokenStorage.setAccess(access)
       queryClient.clear()
 
-      const { user: me, subscription: sub } = await authApi.me()
+      const { user: me, subscription: sub, organization_settings } = await authApi.me()
       setUser(me)
       setSubscription(sub)
       setIsLoading(false)
+      applyOrganizationLocale(organization_settings?.default_language)
     },
     [queryClient],
   )
 
   const refreshUser = useCallback(async () => {
-    const { user: me, subscription: sub } = await authApi.me()
+    const { user: me, subscription: sub, organization_settings } = await authApi.me()
     setUser(me)
     setSubscription(sub)
+    applyOrganizationLocale(organization_settings?.default_language)
   }, [])
 
   const logout = useCallback(async () => {
@@ -132,10 +135,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
       try {
-        const { user: me, subscription: sub } = await authApi.me()
+        const { user: me, subscription: sub, organization_settings } = await authApi.me()
         if (!cancelled) {
           setUser(me)
           setSubscription(sub)
+          applyOrganizationLocale(organization_settings?.default_language)
         }
       } catch {
         if (!cancelled) clearSession()
