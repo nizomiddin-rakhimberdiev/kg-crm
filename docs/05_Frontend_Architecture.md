@@ -203,8 +203,15 @@ graph TD
 | Guard | Behavior |
 |-------|----------|
 | `ProtectedRoute` | No valid session → redirect `/login` (remember intended URL). |
-| `RoleRoute permission="x.read"` | Session valid but permission missing → redirect `/not-authorized`. |
-| `PublicOnlyRoute` | Already authenticated → redirect `/dashboard` (used on `/login`). |
+| `PermissionRoute permission="x.read"` | Session valid but permission missing → redirect to the first section the role **may** open. |
+| `PublicOnlyRoute` | Already authenticated → same computed landing path (used on `/login`). |
+| `HomeRedirect` | Renders at `/` and `/home` and at any unknown path: resolves the landing path and redirects. |
+
+**The landing path is computed, never hard-coded.** `landingPathFor(allows)` (`config/navigation.ts`) walks `navItems` in order and returns the first one the person may open, falling back to `/profile`, which needs no permission. Every guard, the index route, the catch-all and the post-login navigation use it.
+
+Why it matters: the safe destination used to be a literal `/dashboard` in six places. That worked only because every *system* role has `dashboard.read`. The first customer created a custom "Tarbiyachi" role (children, groups, attendance) and the account landed on `/dashboard`, which the API refused — an error box on an otherwise empty screen, on a role that had three perfectly good sections available.
+
+**Post-login goes to `/home`, not `/`.** On the SaaS deployment the marketing site owns the root (`routes.test.ts` pins this), so navigating to `/` after login would show the product website instead of the app. `/home` sits inside the protected tree in both deployment modes and renders `HomeRedirect`.
 
 ---
 
@@ -264,7 +271,7 @@ Follows the JWT flow in [02 §10](./02_Software_Architecture.md).
 
 - **Access token** kept in memory (module variable), never in `localStorage` (XSS safety). **Refresh token** in an httpOnly Secure cookie (preferred) or secure storage.
 - On app boot: if a session may exist, call `GET /auth/me` → hydrate `AuthProvider` with `{ user, role, permissions, branch }`. This drives routing and UI gating.
-- On login: store tokens, hydrate auth context, redirect to intended URL or `/dashboard`.
+- On login: store tokens, hydrate auth context, redirect to the intended URL or `/home` (which resolves to the first section the role may open).
 - On logout: call `/auth/logout`, clear in-memory token + context, redirect `/login`.
 
 ---

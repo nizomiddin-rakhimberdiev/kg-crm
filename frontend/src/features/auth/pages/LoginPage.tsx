@@ -50,7 +50,7 @@ export default function LoginPage() {
         })
       } else {
         applySession(result)
-        navigate('/dashboard', { replace: true })
+        navigate('/home', { replace: true })
       }
     } catch (err) {
       handleError(err)
@@ -66,7 +66,7 @@ export default function LoginPage() {
     try {
       const session = await authApi.selectOrganization(stage.pendingToken, organizationId)
       applySession(session)
-      navigate('/dashboard', { replace: true })
+      navigate('/home', { replace: true })
     } catch (err) {
       handleError(err)
       // Pending token 5 daqiqada tugaydi — muddati o'tsa boshidan boshlaymiz.

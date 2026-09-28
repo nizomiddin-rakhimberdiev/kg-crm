@@ -34,7 +34,7 @@ export default function SupportEntryPage() {
     )
   }, [applySupportSession])
 
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />
+  if (isAuthenticated) return <Navigate to="/home" replace />
 
   return (
     <div className="grid min-h-screen place-items-center bg-slate-50 px-4">

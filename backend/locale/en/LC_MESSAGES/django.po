@@ -655,10 +655,11 @@ msgid "Faqat yakunlangan hisoblashni to'langan deb belgilash mumkin."
 msgstr "Only a finalised run can be marked as paid."
 
 msgid ""
-"Hisoblash to'g'ridan-to'g'ri tahrirlanmaydi — `finalize` yoki `mark-paid` "
-"amallaridan foydalaning."
+"Hisoblash to'g'ridan-to'g'ri tahrirlanmaydi — `finalize`, `mark-paid` yoki "
+"`reopen` amallaridan foydalaning."
 msgstr ""
-"A run isn’t edited directly — use the `finalize` or `mark-paid` actions."
+"A run isn’t edited directly — use the `finalize`, `mark-paid` or `reopen` "
+"actions."
 
 msgid "Satr topilmadi."
 msgstr "Row not found."
@@ -862,3 +863,9 @@ msgstr "Overpayment: outstanding {v}, entered {amount}."
 
 msgid "Bu tashkilotda faol obuna yo'q."
 msgstr "This organization has no active subscription."
+
+msgid "Hisoblash allaqachon qoralama."
+msgstr "The run is already a draft."
+
+msgid "Qayta ochish sababini ko'rsating."
+msgstr "State the reason for reopening."

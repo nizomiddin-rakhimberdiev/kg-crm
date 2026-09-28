@@ -684,7 +684,9 @@ Legend: **F** = Full (CRUD), **W** = Create/Update, **R** = Read-only, **—** =
 
 > **The Reports row is enforced per report, not per module.** `reports.read` alone opens nothing: each endpoint additionally requires the permission of the subject it reports on — `revenue` → `payments.read`, `expenses` → `expenses.read`, `payroll` and `profit-loss` → `payroll.read` (P&L contains payroll), `debtors` → `debtors.read`, `attendance` → `attendance.read` (`apps/reports/views.py` `REPORT_SCOPE`). A finished CSV export is guarded the same way, so exporting cannot walk around the matrix. Without this, one flat `reports.read` handed an Attendance Manager the kindergarten's revenue and profit — contradicting their own row ("No finance, payroll, or settings").
 >
-> **`GET /dashboard` follows the same rule.** Money fields (`month_revenue`, `outstanding_debt`, `debtor_count`, `recent_payments`, `revenue_trend`) are **left out of the response** for a role without `payments.read`/`debtors.read`; the cache key carries that flag so a full payload cached for the owner is never served to a teacher. The frontend hides the tiles to match, and the finance **Reports page** (revenue, expenses, payroll, P&L) is navigated and routed by finance permissions rather than `reports.read`.
+> **`GET /dashboard` follows the same rule, block by block.** The dashboard is a shortcut to data the caller can already reach elsewhere, never a second way in, so **each block carries its own permission** and a block the role may not read is left out of the response rather than hidden by the client (`DASHBOARD_SECTIONS`, [04 §14.1](./04_Backend_API_Specification.md)): children → `children.read`, attendance → `attendance.read`, low stock → `inventory.read`, money → `payments.read`/`debtors.read`, and **cash balance → all of `payments.read`, `expenses.read`, `payroll.read`** (one number combines all three; given any two the third follows). The cache key carries the set of blocks, so a full payload cached for the owner is never served to a teacher. The frontend hides the tiles to match, and the finance **Reports page** (revenue, expenses, payroll, P&L) is navigated and routed by finance permissions rather than `reports.read`.
+>
+> **No role may land on a page it cannot open.** Every "safe destination" in the SPA used to be a hard-coded `/dashboard`. That held only because every *system* role has `dashboard.read` — the first customer built a custom "Tarbiyachi" role (children, groups, attendance) and the account opened on an error box instead of the app. The destination is now computed from the person's permissions (`landingPathFor()`, first open item in the sidebar, `/profile` as the floor) and `/home` is the post-login entry point; `/` cannot be used because on the SaaS deployment the marketing site owns the root ([05 §9](./05_Frontend_Architecture.md)).
 
 > **Billing is Org Owner only.** A Director who can see the subscription invoice can infer the vendor's pricing for every branch; more importantly, changing the payment term is a commercial commitment for the legal entity, not a branch operation.
 
@@ -976,9 +978,9 @@ graph TD
 
 | Category | Wrapper | Behavior |
 |----------|---------|----------|
-| **Public routes** | `PublicLayout` | `/login`, `/forgot-password`. Accessible without auth. If already authenticated → redirect to `/dashboard`. |
+| **Public routes** | `PublicLayout` | `/login`, `/forgot-password`. Accessible without auth. If already authenticated → redirect to the first section the role may open (`landingPathFor()`), not a fixed `/dashboard`. |
 | **Protected routes** | `ProtectedRoute` | Require a valid session; unauthenticated → redirect to `/login` (preserving intended URL). |
-| **Role-based routes** | `RoleRoute permission="module.read"` | Wrap protected routes; if the user's role lacks the permission → redirect to `/not-authorized`. Drives the sidebar too (hide links the user can't access). |
+| **Role-based routes** | `PermissionRoute permission="module.read"` | Wrap protected routes; if the user's role lacks the permission → redirect to the first section it *may* open. Drives the sidebar too (hide links the user can't access). `/dashboard` is wrapped like every other page — it is not a universal fallback. |
 
 ### 14.3 Layouts
 - **PublicLayout** — centered card, branding, no nav (auth screens).

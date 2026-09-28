@@ -106,17 +106,20 @@ class DashboardViewSet(_ScopeMixin, viewsets.ViewSet):
         branch_id = request.query_params.get("branch") or (
             user.branch_id if not user.is_org_owner else None
         )
-        # Pul ko'rsatkichlari — faqat moliyani ko'rishga haqli rollarga
-        # (docs/02 §11.2). Davomat menejeri uchun ular javobga umuman
-        # qo'shilmaydi, frontendda yashirilmaydi.
-        include_finance = has_permission_code(user, "payments.read") or has_permission_code(
-            user, "debtors.read"
+        # Har bir bo'lak o'z ruxsatini talab qiladi (docs/02 §11.2).
+        # Ro'yxatdagi bittasi yetarli bo'lgan bo'laklar ham bor
+        # ("finance": to'lov YOKI qarzdorlik), `cash` esa uchalasini
+        # ham talab qiladi — u uchtasini bitta raqamga yig'adi.
+        sections = frozenset(
+            name
+            for name, codes in services.DASHBOARD_SECTIONS.items()
+            if (all if name == "cash" else any)(has_permission_code(user, code) for code in codes)
         )
         return Response(
             services.dashboard_kpis(
                 organization_id=user.organization_id,
                 branch_id=branch_id,
-                include_finance=include_finance,
+                sections=sections,
             )
         )
 

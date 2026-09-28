@@ -20,10 +20,12 @@ import {
   Plus,
   RefreshCw,
   Trash2,
+  Unlock,
   Wallet,
 } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { EmptyRow } from '@/components/ui/EmptyState'
+import { Modal } from '@/components/ui/Modal'
 import { employeesApi } from '@/features/staff/api'
 import { payrollApi } from '@/features/payroll/api'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -54,6 +56,9 @@ export default function PayrollPage() {
     note: '',
   })
   const [error, setError] = useState<string | null>(null)
+  // Qayta ochish oynasi: qaysi hisoblash va nima sababdan.
+  const [reopening, setReopening] = useState<PayrollRun | null>(null)
+  const [reopenReason, setReopenReason] = useState('')
 
   const runsQuery = useQuery({
     queryKey: queryKeys.payrollRuns(organizationId),
@@ -130,6 +135,19 @@ export default function PayrollPage() {
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
+  // Qayta ochish — yakunlangan hisoblashdagi xatoni tuzatishning YAGONA
+  // yo'li. Sabab majburiy: yakunlangan hujjatni ochish izsiz qolmasin.
+  const reopen = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => payrollApi.reopen(id, reason),
+    onSuccess: () => {
+      setError(null)
+      setReopening(null)
+      setReopenReason('')
+      invalidate()
+    },
+    onError: fail,
+  })
+
   const markPaid = useMutation({
     mutationFn: (id: string) => payrollApi.markPaid(id),
     onSuccess: () => {
@@ -155,11 +173,67 @@ export default function PayrollPage() {
 
   return (
     <div className="space-y-6">
+      {/* Qayta ochish — sabab MAJBURIY: yakunlangan hujjat jimgina
+          ochilmasin, audit jurnalida "nega ochildi?" javobsiz qolmasin. */}
+      <Modal open={Boolean(reopening)} onClose={() => setReopening(null)} className="max-w-md">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (reopening) reopen.mutate({ id: reopening.id, reason: reopenReason })
+          }}
+        >
+          <h2 className="text-lg font-semibold text-slate-900">{t('Hisoblashni qayta ochish')}</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {reopening &&
+              t('{period} — qoralamaga qaytariladi va yana tahrirlanadi.', {
+                period: `${reopening.period_year}-${String(reopening.period_month).padStart(2, '0')}`,
+              })}
+          </p>
+          {reopening?.status === 'paid' && (
+            <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              {t(
+                "Bu hisoblash to'langan deb belgilangan. Pul allaqachon berilgan bo'lsa, o'zgartirish kiritishdan oldin xodim bilan kelishing.",
+              )}
+            </p>
+          )}
+          <label htmlFor="reopen-reason" className="mt-4 block text-xs font-medium text-slate-600">
+            {t('Sabab')}
+          </label>
+          <input
+            id="reopen-reason"
+            required
+            autoFocus
+            value={reopenReason}
+            onChange={(event) => setReopenReason(event.target.value)}
+            placeholder={t('Masalan: bonus kiritilmay qolgan')}
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-400 focus:outline-none"
+          />
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setReopening(null)}
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+            >
+              {t('Bekor qilish')}
+            </button>
+            <button
+              type="submit"
+              disabled={reopen.isPending || !reopenReason.trim()}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+            >
+              {t('Qayta ochish')}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Oylik maosh')}</h1>
           <p className="mt-1 text-sm text-slate-500">
-            {t("Yakunlangan hisoblash o'zgarmaydi — tuzatish keyingi oyda kiritiladi.")}
+            {t(
+              "Yakunlangan hisoblashni tahrirlash uchun avval qoralamaga qaytaring — sabab so'raladi.",
+            )}
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -444,6 +518,22 @@ export default function PayrollPage() {
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 sm:flex-none"
                   >
                     <CheckCircle2 className="h-4 w-4" /> {t("To'langan")}
+                  </button>
+                )}
+                {/* Yakunlangan yoki to'langan hisoblashni tahrirlashning
+                    yagona yo'li. `approve` talab qilinadi: yakunlashni
+                    bajara olgan rol uni bekor ham qila olishi shart emas. */}
+                {run.status !== 'draft' && can('payroll.approve') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReopenReason('')
+                      setReopening(run)
+                    }}
+                    title={t('Tahrirlash uchun qoralamaga qaytarish')}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:flex-none"
+                  >
+                    <Unlock className="h-4 w-4" /> {t('Qayta ochish')}
                   </button>
                 )}
               </div>

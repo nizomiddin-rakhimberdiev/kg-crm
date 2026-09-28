@@ -29,6 +29,13 @@ export const payrollApi = {
    */
   recalculate: (id: string) => api.post<PayrollRun>(`/payroll/runs/${id}/recalculate`),
 
+  /**
+   * Yakunlangan (yoki to'langan) hisoblashni qoralamaga qaytaradi.
+   * Sabab majburiy va audit jurnaliga tushadi; `payroll.approve` kerak.
+   */
+  reopen: (id: string, reason: string) =>
+    api.post<PayrollRun>(`/payroll/runs/${id}/reopen`, { reason }),
+
   listAdvances: (params?: Record<string, unknown>) =>
     api.list<EmployeeAdvance>('/payroll/advances', params),
   createAdvance: (payload: {

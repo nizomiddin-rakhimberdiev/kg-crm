@@ -50,7 +50,7 @@ export function basenameFor(slug: string | null): string {
 }
 
 /** Boshqa bog'cha manziliga to'liq yo'l. */
-export function tenantPath(slug: string, path = '/dashboard'): string {
+export function tenantPath(slug: string, path = '/home'): string {
   return `/${TENANT_PREFIX}/${slug}${path}`
 }
 

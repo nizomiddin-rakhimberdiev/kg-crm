@@ -51,3 +51,18 @@ describe('CRM marshrutlari', () => {
     expect(leafIdFor('/dashboard')).not.toBe('marketing-root')
   })
 })
+
+/**
+ * Kirishdan keyingi manzil.
+ *
+ * Bu ham brauzerdan boshqa hech narsa ushlay olmaydigan xatolar
+ * turkumidan: ildiz SaaS nusxasida sotuv saytiga tegishli, shuning
+ * uchun kirgan xodimni `/` ga yuborish uni CRM emas, reklama
+ * sahifasiga olib borardi.
+ */
+describe('kirish nuqtasi', () => {
+  it('`/home` himoyalangan daraxtga tushadi, sotuv saytiga emas', () => {
+    expect(leafIdFor('/home')).not.toBe('marketing-root')
+    expect(matchRoutes(routes, '/home')).not.toBeNull()
+  })
+})

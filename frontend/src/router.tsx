@@ -3,7 +3,12 @@ import { createBrowserRouter, Navigate, Outlet, type RouteObject } from 'react-r
 import { PlatformAuthProvider } from './features/platform/PlatformAuthProvider'
 import { PlatformLayout } from './features/platform/components/PlatformLayout'
 import { AppLayout } from './components/layout/AppLayout'
-import { PermissionRoute, ProtectedRoute, PublicOnlyRoute } from './app/routes/ProtectedRoute'
+import {
+  HomeRedirect,
+  PermissionRoute,
+  ProtectedRoute,
+  PublicOnlyRoute,
+} from './app/routes/ProtectedRoute'
 import LoginPage from './features/auth/pages/LoginPage'
 import { basenameFor, currentSlug } from './lib/tenantAddress'
 import { env } from './config/env'
@@ -204,8 +209,21 @@ export const routes: RouteObject[] = [
         path: '/',
         element: <AppLayout />,
         children: [
-          { index: true, element: <Navigate to="/dashboard" replace /> },
-          { path: 'dashboard', element: <DashboardPage /> },
+          // Bosh sahifa RUXSATDAN hisoblanadi (config/navigation.ts
+          // `landingPathFor`) — qotib yozilgan `/dashboard` emas.
+          { index: true, element: <HomeRedirect /> },
+          // `/home` — kirishdan keyingi ISHONCHLI kirish nuqtasi.
+          //
+          // `/` ga yubora olmaymiz: SaaS nusxasida ildizni sotuv sayti
+          // egallaydi (routes.test.ts), ya'ni kirgan xodim CRM emas,
+          // reklama sahifasini ko'rardi. `/home` esa har ikki rejimda
+          // ham himoyalangan daraxt ichida va ruxsatga qarab
+          // yo'naltiradi.
+          { path: 'home', element: <HomeRedirect /> },
+          {
+            element: <PermissionRoute permission="dashboard.read" />,
+            children: [{ path: 'dashboard', element: <DashboardPage /> }],
+          },
           // Profil — ruxsat talab qilmaydi: har kim faqat o'zini ko'radi.
           { path: 'profile', element: <ProfilePage /> },
           {
@@ -283,7 +301,7 @@ export const routes: RouteObject[] = [
               { path: 'organization', element: <OrganizationPage /> },
             ],
           },
-          { path: '*', element: <Navigate to="/dashboard" replace /> },
+          { path: '*', element: <HomeRedirect /> },
         ],
       },
     ],

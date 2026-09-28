@@ -22,7 +22,7 @@ from apps.finance.models import Payment
 from apps.inventory.services import low_stock_products
 from apps.reports import selectors
 
-__all__ = ["dashboard_kpis", "invalidate_dashboard", "DASHBOARD_TTL"]
+__all__ = ["dashboard_kpis", "invalidate_dashboard", "DASHBOARD_SECTIONS", "DASHBOARD_TTL"]
 
 # Qisqa TTL ataylab: dashboard "hozir nima bo'lyapti" degan savolga javob
 # beradi, va bir soatlik eski raqam bu savolga javob emas. Uzun TTL
@@ -30,36 +30,80 @@ __all__ = ["dashboard_kpis", "invalidate_dashboard", "DASHBOARD_TTL"]
 # ekranda ko'rmasa — keshga emas, tizimga ishonchi yo'qoladi.
 DASHBOARD_TTL = 120
 
+# Dashboard bo'laklari va ularning ruxsatlari (docs/02 §11.2).
+#
+# Har bir bo'lak O'Z ruxsatini talab qiladi, chunki dashboard —
+# boshqa joyda ko'rsa bo'ladigan ma'lumotning qisqartmasi, yangi
+# kirish yo'li emas. Ruxsati yo'q bo'lakni frontendda yashirish
+# yetarli emasdi: javobda u baribir ko'rinib turardi.
+DASHBOARD_SECTIONS: dict[str, tuple[str, ...]] = {
+    "children": ("children.read",),
+    "attendance": ("attendance.read",),
+    "inventory": ("inventory.read",),
+    # Pul ko'rsatkichlari — to'lov yoki qarzdorlikni ko'rishga haqli rollarga.
+    "finance": ("payments.read", "debtors.read"),
+    # Kassa qoldig'i uchastalarning HAMMASI kerak: u tushum, chiqim va
+    # oylik maoshni bitta raqamga yig'adi, ya'ni uchtasidan birortasiga
+    # ruxsati yo'q odam undan qolganini chiqarib olardi.
+    "cash": ("payments.read", "expenses.read", "payroll.read"),
+}
 
-def _cache_key(*, organization_id: Any, branch_id: Any, finance: bool = True) -> str:
-    # Moliya bayrog'i kalitning BIR QISMI: aks holda egasi uchun hisoblangan
-    # to'liq javob keshdan tarbiyachiga ham berilardi (va aksincha).
-    return f"dashboard:v2:{organization_id}:{branch_id or 'all'}:{'fin' if finance else 'nofin'}"
+
+def _version(organization_id: Any) -> int:
+    """
+    Kesh kalitidagi avlod raqami.
+
+    Bo'laklar to'plami ruxsatga qarab o'zgargani uchun bitta tashkilotda
+    o'nlab kalit bo'lishi mumkin — hammasini nomma-nom o'chirib
+    bo'lmaydi. Raqamni oshirish esa eskilarini bir zarbada yaroqsiz
+    qiladi va ular TTL bilan o'z-o'zidan yo'qoladi.
+    """
+    key = f"dashboard:ver:{organization_id}"
+    version = cache.get(key)
+    if version is None:
+        version = 1
+        cache.set(key, version, None)
+    return int(version)
+
+
+def _cache_key(*, organization_id: Any, branch_id: Any, sections: frozenset[str]) -> str:
+    # Kalit tashkilot bilan BOSHLANADI: umumiy kalit boshqa bog'chaning
+    # daromadini ko'rsatib qo'yardi — so'rov to'g'ri bo'lsa ham.
+    parts = "+".join(sorted(sections)) or "none"
+    return (
+        f"dashboard:v3:{organization_id}:{_version(organization_id)}:{branch_id or 'all'}:{parts}"
+    )
 
 
 def invalidate_dashboard(*, organization_id: Any, branch_id: Any = None) -> None:
-    """To'lov yoki chiqim yozilganda keshni bekor qiladi."""
-    for finance in (True, False):
-        cache.delete(
-            _cache_key(organization_id=organization_id, branch_id=branch_id, finance=finance)
-        )
-        if branch_id is not None:
-            cache.delete(
-                _cache_key(organization_id=organization_id, branch_id=None, finance=finance)
-            )
+    """To'lov, chiqim yoki oylik yozilganda keshni bekor qiladi."""
+    # `branch_id` ATAYLAB e'tiborga olinmaydi: filial ichidagi o'zgarish
+    # tashkilot bo'yicha yig'indini ham o'zgartiradi, ya'ni ikkalasi ham
+    # eskiradi. Avlod raqami ikkalasini ham bir yo'la yopadi.
+    key = f"dashboard:ver:{organization_id}"
+    try:
+        cache.incr(key)
+    except ValueError:
+        # Kalit hali yo'q (yoki kesh tozalangan) — birinchi avloddan boshlaymiz.
+        cache.set(key, 1, None)
 
 
 def dashboard_kpis(
-    *, organization_id: Any, branch_id: Any = None, include_finance: bool = True
+    *,
+    organization_id: Any,
+    branch_id: Any = None,
+    sections: frozenset[str] | None = None,
 ) -> dict[str, Any]:
     """
     Bir ekranga sig'adigan KPI to'plami.
 
-    `include_finance=False` — pul ko'rsatkichlari javobga UMUMAN qo'shilmaydi
-    (docs/02 §11.2: Davomat menejeri "No finance"). Ularni frontendda
-    yashirish yetarli emas: ruxsati yo'q odam javobni baribir ko'ra olardi.
+    `sections` — foydalanuvchi ko'rishga haqli bo'laklar
+    (`DASHBOARD_SECTIONS` kalitlari). `None` = hammasi. Ruxsati yo'q
+    bo'lak javobga UMUMAN qo'shilmaydi, frontendda yashirilmaydi:
+    yashirish faqat ekranni tozalaydi, javobni emas.
     """
-    key = _cache_key(organization_id=organization_id, branch_id=branch_id, finance=include_finance)
+    allowed = frozenset(DASHBOARD_SECTIONS) if sections is None else frozenset(sections)
+    key = _cache_key(organization_id=organization_id, branch_id=branch_id, sections=allowed)
     cached = cache.get(key)
     if cached is not None:
         return dict(cached, cached=True)
@@ -67,27 +111,31 @@ def dashboard_kpis(
     today = timezone.localdate()
     month_start = today.replace(day=1)
 
-    attendance = selectors.attendance_report(
-        organization_id=organization_id, year=today.year, month=today.month
-    )
+    result: dict[str, Any] = {"date": today.isoformat(), "cached": False}
 
-    result: dict[str, Any] = {
-        "date": today.isoformat(),
-        "active_children": selectors.active_children_count(
+    if "children" in allowed:
+        result["active_children"] = selectors.active_children_count(
             organization_id=organization_id, branch_id=branch_id
-        ),
-        "attendance_month_pct": attendance["attendance_rate"],
-        "low_stock_count": len(
-            low_stock_products(organization_id=organization_id, branch_id=branch_id)
-        ),
-        "cached": False,
-    }
+        )
 
-    if include_finance:
+    if "attendance" in allowed:
+        attendance = selectors.attendance_report(
+            organization_id=organization_id, year=today.year, month=today.month
+        )
+        result["attendance_month_pct"] = attendance["attendance_rate"]
+
+    if "inventory" in allowed:
+        result["low_stock_count"] = len(
+            low_stock_products(organization_id=organization_id, branch_id=branch_id)
+        )
+
+    if "finance" in allowed:
+        # Qaytarilgan to'lov tushum emas (`revenue_report` dagi izoh).
         payments = Payment.objects.filter(
             organization_id=organization_id,
             paid_at__date__gte=month_start,
             paid_at__date__lte=today,
+            reversed_at__isnull=True,
         )
         if branch_id:
             payments = payments.filter(branch_id=branch_id)
@@ -95,7 +143,7 @@ def dashboard_kpis(
 
         debtors = selectors.debtor_report(organization_id=organization_id, branch_id=branch_id)
         recent = (
-            Payment.objects.filter(organization_id=organization_id)
+            Payment.objects.filter(organization_id=organization_id, reversed_at__isnull=True)
             .select_related("child")
             .order_by("-paid_at")[:5]
         )
@@ -113,6 +161,13 @@ def dashboard_kpis(
             ],
             "revenue_trend": _revenue_trend(organization_id=organization_id, branch_id=branch_id),
         }
+
+    if "cash" in allowed:
+        # "Ayni paytda qo'limizda qancha pul bor" — mijozning birinchi
+        # savoli, va u dashboardda hech qayerda yo'q edi.
+        result["cash"] = selectors.cash_position(
+            organization_id=organization_id, branch_id=branch_id
+        )
 
     cache.set(key, result, DASHBOARD_TTL)
     return result

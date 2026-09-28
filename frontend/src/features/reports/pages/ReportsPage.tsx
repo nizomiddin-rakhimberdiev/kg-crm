@@ -42,19 +42,17 @@ import {
   periodFor,
   type Period,
 } from '@/features/reports/period'
+import { PAYMENT_METHOD_COLORS, paymentMethodLabel } from '@/features/payments/methods'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatMoney, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
-const METHOD_LABEL: Record<string, string> = {
-  cash: t('Naqd pul'),
-  card: t('Plastik karta'),
-  transfer: t("Bank o'tkazmasi"),
-  online: t('Onlayn'),
-}
-const PIE_COLORS = ['#6366f1', '#14b8a6', '#f59e0b', '#ef4444']
+// Usul nomlari `features/payments/methods.ts` da — bu yerda o'z nusxasi
+// bor edi va u eskirgan `transfer` kalitini tutardi, shuning uchun
+// diagrammada tarjima o'rniga xom `bank_transfer` chiqardi.
+const PIE_FALLBACK = ['#6366f1', '#14b8a6', '#f59e0b', '#ef4444']
 const COLORS = { revenue: '#6366f1', expenses: '#f59e0b', payroll: '#94a3b8' }
 
 const EXPORTABLE: Array<[string, string]> = [
@@ -143,10 +141,15 @@ export default function ReportsPage() {
     'Oylik maosh': Number(row.payroll),
     net: Number(row.net),
   }))
-  const methods = (revenueQuery.data?.by_method ?? []).map((row) => ({
-    name: METHOD_LABEL[row.method] ?? row.method,
+  const methodRows = revenueQuery.data?.by_method ?? []
+  const methodTotal = methodRows.reduce((sum, row) => sum + Number(row.total), 0)
+  const methods = methodRows.map((row, index) => ({
+    method: row.method,
+    name: paymentMethodLabel(row.method),
     value: Number(row.total),
     count: row.count,
+    color: PAYMENT_METHOD_COLORS[row.method] ?? PIE_FALLBACK[index % PIE_FALLBACK.length],
+    share: methodTotal > 0 ? (Number(row.total) / methodTotal) * 100 : 0,
   }))
   const loadError =
     (plQuery.error ?? revenueQuery.error) instanceof ApiError
@@ -293,39 +296,79 @@ export default function ReportsPage() {
           <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
             <h2 className="text-sm font-semibold text-slate-900">{t("To'lov usullari")}</h2>
             <p className="mt-0.5 text-xs text-slate-500">{t('Davr ichida qabul qilingan pul')}</p>
-            <div className="mt-4 h-64 sm:h-72">
-              {methods.length === 0 ? (
-                <p className="grid h-full place-items-center text-sm text-slate-400">
-                  {t("Bu davrda to'lov yo'q.")}
-                </p>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={methods}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius="52%"
-                      outerRadius="82%"
-                    >
-                      {methods.map((entry, index) => (
-                        <Cell key={entry.name} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(v: number, _name, item) =>
-                        t('{formatUZS} · {v} ta', {
-                          formatUZS: formatUZS(v),
-                          v: (item?.payload as { count?: number })?.count ?? 0,
-                        })
-                      }
-                      contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 13 }}
-                    />
-                    <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-            </div>
+            {methods.length === 0 ? (
+              <p className="mt-4 grid h-40 place-items-center text-sm text-slate-400">
+                {t("Bu davrda to'lov yo'q.")}
+              </p>
+            ) : (
+              <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="h-44 w-full shrink-0 sm:h-48 sm:w-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={methods}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius="52%"
+                        outerRadius="82%"
+                      >
+                        {methods.map((entry) => (
+                          <Cell key={entry.method} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(v: number, _name, item) =>
+                          t('{formatUZS} · {v} ta', {
+                            formatUZS: formatUZS(v),
+                            v: (item?.payload as { count?: number })?.count ?? 0,
+                          })
+                        }
+                        contentStyle={{
+                          borderRadius: 12,
+                          border: '1px solid #e2e8f0',
+                          fontSize: 13,
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Legend O'RNIGA aniq raqamlar.
+                    Diagramma ulushni ko'rsatadi, summani esa faqat sichqoncha
+                    ustiga kelganda aytardi — ya'ni telefonda umuman aytmasdi.
+                    Mijoz "nimadan qancha tushgani ko'rinib tursin" dedi. */}
+                <ul className="min-w-0 flex-1 space-y-2">
+                  {methods.map((entry) => (
+                    <li key={entry.method} className="flex items-center gap-3">
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: entry.color }}
+                      />
+                      <span className="min-w-0 flex-1 text-sm text-slate-600">
+                        {entry.name}
+                        <span className="ml-1.5 text-xs text-slate-400">
+                          {t('{v} ta', { v: entry.count })}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-right">
+                        <span className="block text-sm font-semibold tabular-nums text-slate-900">
+                          {formatUZS(entry.value)}
+                        </span>
+                        <span className="block text-xs tabular-nums text-slate-400">
+                          {entry.share.toFixed(1)}%
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                  <li className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2">
+                    <span className="text-sm font-medium text-slate-600">{t('Jami')}</span>
+                    <span className="text-sm font-semibold tabular-nums text-slate-900">
+                      {formatUZS(methodTotal)}
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            )}
           </section>
         </div>
 

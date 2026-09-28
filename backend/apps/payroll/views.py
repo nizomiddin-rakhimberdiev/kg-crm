@@ -34,8 +34,9 @@ class PayrollRunViewSet(BranchScopedMixin, TenantViewSet):
     Oylik hisoblashlar.
 
     `PATCH`/`DELETE` yo'q: hisoblash holat mashinasi orqali boshqariladi
-    (`create → finalize → mark-paid`). To'g'ridan-to'g'ri tahrirlash
-    yakunlangan hisoblashni ham o'zgartirishga yo'l ochardi.
+    (`create → finalize → mark-paid`, orqaga `reopen`). To'g'ridan-to'g'ri
+    tahrirlash yakunlangan hisoblashni jimgina o'zgartirishga yo'l
+    ochardi — `reopen` esa sabab so'raydi va audit jurnaliga tushadi.
     """
 
     permission_module = "payroll"
@@ -47,6 +48,10 @@ class PayrollRunViewSet(BranchScopedMixin, TenantViewSet):
         "update_item": "update",
         "finalize": "update",
         "mark_paid": "update",
+        # Qayta ochish yakunlangan hujjatni ORTGA qaytaradi, shuning uchun
+        # u yakunlashdan qattiqroq qo'riqlanadi: `approve` — tizim
+        # rollaridan faqat egasi va direktorda bor (docs/02 §11.2).
+        "reopen": "approve",
         "payslip": "read",
     }
     model = PayrollRun
@@ -60,8 +65,9 @@ class PayrollRunViewSet(BranchScopedMixin, TenantViewSet):
         """
         Hisoblashni to'g'ridan-to'g'ri tahrirlash yo'q.
 
-        Holatni `finalize`/`mark-paid` boshqaradi; `PATCH` orqali `status`
-        ni qo'lda o'zgartirish yakunlangan hisoblashni ochib yuborardi.
+        Holatni `finalize`/`mark-paid`/`reopen` boshqaradi; `PATCH` orqali
+        `status` ni qo'lda o'zgartirish yakunlangan hisoblashni SABABSIZ va
+        izsiz ochib yuborardi.
         """
         # Avval tenant tekshiruvi (`get_object()` → begona qator uchun 404),
         # keyin biznes qoidasi. Teskari tartibda begona tashkilot 422 olardi
@@ -70,8 +76,8 @@ class PayrollRunViewSet(BranchScopedMixin, TenantViewSet):
         self.get_object()
         raise BusinessRuleViolation(
             gettext(
-                "Hisoblash to'g'ridan-to'g'ri tahrirlanmaydi — `finalize` yoki "
-                "`mark-paid` amallaridan foydalaning."
+                "Hisoblash to'g'ridan-to'g'ri tahrirlanmaydi — `finalize`, "
+                "`mark-paid` yoki `reopen` amallaridan foydalaning."
             )
         )
 
@@ -149,6 +155,29 @@ class PayrollRunViewSet(BranchScopedMixin, TenantViewSet):
             entity_type="payroll_run",
             entity_id=run.id,
             changes={"recalculated": True},
+        )
+        run.refresh_from_db()
+        return Response(PayrollRunSerializer(run).data)
+
+    @action(detail=True, methods=["post"])
+    def reopen(self, request: Request, pk: str | None = None) -> Response:
+        """
+        `POST /payroll/runs/{id}/reopen` — hisoblashni qoralamaga qaytaradi.
+
+        Sabab majburiy: yakunlangan hujjatni ochish audit jurnalida
+        izsiz qolmasligi kerak.
+        """
+        run = self.get_object()
+        previous = run.status
+        reason = str(request.data.get("reason", "")).strip()
+        services.reopen_run(run=run, reason=reason)
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="payroll_run",
+            entity_id=run.id,
+            changes={"status": "draft", "reopened_from": previous, "reason": reason[:255]},
         )
         run.refresh_from_db()
         return Response(PayrollRunSerializer(run).data)

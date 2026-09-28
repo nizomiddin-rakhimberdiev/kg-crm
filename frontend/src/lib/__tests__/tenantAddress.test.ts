@@ -48,7 +48,7 @@ describe('basenameFor', () => {
 
 describe('tenantPath', () => {
   it('boshqa bog\'chaga to\'liq yo\'l quradi', () => {
-    expect(tenantPath('bahor')).toBe('/t/bahor/dashboard')
+    expect(tenantPath('bahor')).toBe('/t/bahor/home')
     expect(tenantPath('bahor', '/payments')).toBe('/t/bahor/payments')
   })
 

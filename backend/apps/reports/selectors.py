@@ -37,7 +37,7 @@ from apps.core.exceptions import BusinessRuleViolation
 from apps.expenses.models import Expense, ExpenseStatus
 from apps.finance.models import Payment
 from apps.finance.selectors import debtor_queryset
-from apps.payroll.models import PayrollRun, PayrollStatus
+from apps.payroll.models import EmployeeAdvance, PayrollRun, PayrollStatus
 
 __all__ = [
     "GROUP_BY_CHOICES",
@@ -48,6 +48,7 @@ __all__ = [
     "attendance_report",
     "debtor_report",
     "profit_loss",
+    "cash_position",
 ]
 
 ZERO = Value(Decimal("0"), output_field=DecimalField(max_digits=14, decimal_places=2))
@@ -180,10 +181,18 @@ def revenue_report(
 ) -> dict[str, Any]:
     """Davr kesimida (`group_by`) qabul qilingan to'lovlar."""
     buckets = period_buckets(date_from, date_to, group_by)
+    # Qaytarilgan to'lov daromad EMAS.
+    #
+    # Qaytarish qo'shilganda (`reverse_payment`) ledger to'g'ri yuritildi —
+    # qarshi debet yozildi — lekin hisobot to'lov QATORLARINI sanaydi va
+    # qaytarilgan qatorni ham qo'shib yuborardi. Natijada kunlik kassa
+    # hisoboti (`daily_cash_summary`, u qaytarilganni chiqarib tashlaydi)
+    # bilan oylik tushum bir-biriga to'g'ri kelmasdi.
     queryset = Payment.objects.filter(
         organization_id=organization_id,
         paid_at__date__gte=date_from,
         paid_at__date__lte=date_to,
+        reversed_at__isnull=True,
     )
     if branch_id:
         queryset = queryset.filter(branch_id=branch_id)
@@ -688,3 +697,63 @@ def attendance_rows(
         }
         for record in queryset.order_by("attendance_date", "child__last_name")
     ]
+
+
+def cash_position(*, organization_id: Any, branch_id: Any = None) -> dict[str, Any]:
+    """
+    "Hozir qo'limizda qancha pul bor" — butun tarix bo'yicha qoldiq.
+
+    Davr filtri ATAYLAB yo'q: bu savol bir oyning natijasi haqida emas,
+    bog'cha ochilganidan beri yig'ilgan qoldiq haqida.
+
+    Qoldiq = qabul qilingan to'lov − tasdiqlangan chiqim − hisoblangan
+    oylik. Uchala qism ham **hisobotlar bilan bir xil qoidada** sanaladi
+    (`expense_report`, `payroll_report`), aks holda ikki ekran bir xil
+    savolga ikki xil javob berardi va qaysi biri to'g'riligini hech kim
+    bilmasdi.
+
+    Oylikda `gross − deductions` olinadi, `net` emas: avans ham xodimga
+    berilgan pul, u esa `net` dan ayrilgan. Avansi bor, lekin hali
+    yakunlanmagan davrlar alohida qo'shiladi — o'sha pul kassadan
+    allaqachon chiqib ketgan.
+    """
+    payments = Payment.objects.filter(organization_id=organization_id, reversed_at__isnull=True)
+    expenses = Expense.objects.filter(
+        organization_id=organization_id,
+        status__in=[ExpenseStatus.APPROVED, ExpenseStatus.PAID],
+    )
+    runs = PayrollRun.objects.filter(
+        organization_id=organization_id,
+        status__in=[PayrollStatus.FINALIZED, PayrollStatus.PAID],
+    )
+    advances = EmployeeAdvance.objects.filter(organization_id=organization_id)
+
+    if branch_id:
+        payments = payments.filter(branch_id=branch_id)
+        expenses = expenses.filter(branch_id=branch_id)
+        runs = runs.filter(branch_id=branch_id)
+        advances = advances.filter(branch_id=branch_id)
+
+    income = payments.aggregate(t=Coalesce(Sum("amount"), ZERO))["t"]
+    spent = expenses.aggregate(t=Coalesce(Sum("amount"), ZERO))["t"]
+    accounted = runs.aggregate(
+        t=Coalesce(Sum("total_gross"), ZERO) - Coalesce(Sum("total_deductions"), ZERO)
+    )["t"]
+
+    # Yakunlangan davrlar avansni allaqachon o'z ichiga oldi; qolganlari
+    # esa yo'q. Ikki marta sanamaslik uchun faqat "hisobsiz" davrlarniki.
+    accounted_periods = set(runs.values_list("period_year", "period_month"))
+    unaccounted = Decimal("0")
+    for row in advances.values("paid_on__year", "paid_on__month").annotate(
+        total=Coalesce(Sum("amount"), ZERO)
+    ):
+        if (row["paid_on__year"], row["paid_on__month"]) not in accounted_periods:
+            unaccounted += row["total"]
+
+    payroll = accounted + unaccounted
+    return {
+        "income": _money(income),
+        "expenses": _money(spent),
+        "payroll": _money(payroll),
+        "balance": _money(income - spent - payroll),
+    }

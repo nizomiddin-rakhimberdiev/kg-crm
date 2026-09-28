@@ -140,3 +140,47 @@ def test_dashboard_cache_does_not_leak_between_roles(tenant_a: Any):
     assert MONEY_KEYS.issubset(tenant_a.client().get("/api/v1/dashboard").json()["data"].keys())
     teacher = _client_for(tenant_a, "attendance_manager", "att-cache@alfa.uz")
     assert MONEY_KEYS.isdisjoint(teacher.get("/api/v1/dashboard").json()["data"].keys())
+
+
+def test_every_dashboard_block_has_its_own_permission(tenant_a: Any):
+    """
+    Boshqaruv paneli — boshqa joyda ko'rsa bo'ladigan ma'lumotning
+    qisqartmasi, YANGI kirish yo'li emas.
+
+    Kassirda `attendance` ruxsati yo'q, shuning uchun davomat foizi ham
+    javobda bo'lmasligi kerak — ilgari u har kimga ketardi.
+    """
+    cashier = (
+        _client_for(tenant_a, "cashier", "cashier-blocks@alfa.uz")
+        .get("/api/v1/dashboard")
+        .json()["data"]
+    )
+    assert "attendance_month_pct" not in cashier
+    assert "low_stock_count" not in cashier
+    assert "active_children" in cashier  # `children: R` — matritsada bor
+
+    teacher = (
+        _client_for(tenant_a, "attendance_manager", "att-blocks@alfa.uz")
+        .get("/api/v1/dashboard")
+        .json()["data"]
+    )
+    assert "attendance_month_pct" in teacher
+
+
+def test_cash_balance_needs_all_three_permissions(tenant_a: Any):
+    """
+    Kassa qoldig'i tushum, chiqim va oylikni BITTA raqamga yig'adi.
+
+    Ya'ni uchtasidan biriga ruxsati yo'q odam qolganini undan chiqarib
+    olardi: masalan kassir tushum va chiqimni biladi, qoldiqdan esa
+    bog'chaning butun oylik fondi kelib chiqardi.
+    """
+    assert "cash" in tenant_a.client().get("/api/v1/dashboard").json()["data"]
+
+    for role_code in ("cashier", "manager", "attendance_manager"):
+        data = (
+            _client_for(tenant_a, role_code, f"{role_code}-cash@alfa.uz")
+            .get("/api/v1/dashboard")
+            .json()["data"]
+        )
+        assert "cash" not in data, role_code

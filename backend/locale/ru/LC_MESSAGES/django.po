@@ -656,11 +656,11 @@ msgid "Faqat yakunlangan hisoblashni to'langan deb belgilash mumkin."
 msgstr "Оплаченным можно отметить только завершённый расчёт."
 
 msgid ""
-"Hisoblash to'g'ridan-to'g'ri tahrirlanmaydi — `finalize` yoki `mark-paid` "
-"amallaridan foydalaning."
+"Hisoblash to'g'ridan-to'g'ri tahrirlanmaydi — `finalize`, `mark-paid` yoki "
+"`reopen` amallaridan foydalaning."
 msgstr ""
-"Расчёт не редактируется напрямую — используйте действия `finalize` или `mark-"
-"paid`."
+"Расчёт не редактируется напрямую — используйте действия `finalize`, `mark-"
+"paid` или `reopen`."
 
 msgid "Satr topilmadi."
 msgstr "Строка не найдена."
@@ -864,3 +864,9 @@ msgstr "Переплата: остаток {v}, внесено {amount}."
 
 msgid "Bu tashkilotda faol obuna yo'q."
 msgstr "У этой организации нет активной подписки."
+
+msgid "Hisoblash allaqachon qoralama."
+msgstr "Расчёт уже в статусе черновика."
+
+msgid "Qayta ochish sababini ko'rsating."
+msgstr "Укажите причину повторного открытия."

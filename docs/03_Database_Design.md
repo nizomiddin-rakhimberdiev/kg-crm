@@ -680,7 +680,8 @@ A payroll cycle for a period.
 
 **Business rules:**
 - **One run per branch per period** → `uq_payroll_run_branch_period UNIQUE (branch_id, period_year, period_month)`.
-- A `finalized` run is immutable (items locked); only status → `paid` afterward.
+- A `finalized` run is immutable (items locked); forward it goes only to `paid`.
+- **Backwards it goes only through `reopen_run()`**, which returns a `finalized` *or* `paid` run to `draft`, clears `finalized_at`/`finalized_by`/`paid_at`, re-syncs advances and recomputes the totals. It demands a reason and writes it to the audit log, and the API guards it with `payroll.approve` ([04 §11.2](./04_Backend_API_Specification.md)). The one-way rule was the original design — "fix it next month with a bonus or deduction" — and it is right for a run whose money has gone out; it left the first customer unable to correct a run they had not paid yet. A run is a computed *document*, so this does not touch the append-only money records (`child_ledger_entry`, `stock_movement`, `employee_advance`), which is where D3 actually binds.
 
 ### 14.4 `payroll_item`
 Per-employee line within a run.
@@ -713,7 +714,7 @@ Money handed to an employee **during** the month, before payroll is calculated �
 
 **Kept separate from `deduction` on purpose.** A deduction is a penalty or a settlement; an advance is salary the employee already received. Merging them made the payslip unreadable ("why was 3 M withheld?").
 
-**Linked by period, not by a foreign key to the run.** A run is created at month end, advances are paid before that — and either can come first. Summing by `paid_on` month makes recalculation idempotent: `sync_advances()` can run any number of times, and deleting and re-creating a draft run never loses an advance. A **finalized** run is never touched (`_assert_editable`); a late advance belongs to the next month's correction.
+**Linked by period, not by a foreign key to the run.** A run is created at month end, advances are paid before that — and either can come first. Summing by `paid_on` month makes recalculation idempotent: `sync_advances()` can run any number of times, and deleting and re-creating a draft run never loses an advance. A **finalized** run is never touched (`_assert_editable`) — an advance recorded after finalization lands in the run only if it is reopened, which re-syncs advances as part of reopening.
 
 ---
 

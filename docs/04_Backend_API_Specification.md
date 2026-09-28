@@ -52,7 +52,7 @@
 | **Tenant scope** | Applied automatically from the JWT's `organization_id`. Clients **never** send it and **cannot** override it. A request referencing another organization's resource returns `404`, never `403` (P10, [02 §11.3](./02_Software_Architecture.md)). |
 | **Branch scope** | Applied automatically from the JWT. Org Owner may pass `branch_id` to filter across their own organization's branches; other roles are bound to their branch and the parameter is ignored. |
 | **Idempotency** | Mutating money endpoints accept optional `Idempotency-Key` header to safely retry. |
-| **Response shape by role** | A few endpoints return **fewer fields** rather than `403` when the caller may see the page but not all of it — notably `GET /dashboard`, whose money fields are omitted for roles without `payments.read`/`debtors.read` ([02 §11.2](./02_Software_Architecture.md)). Clients must treat those fields as optional. |
+| **Response shape by role** | A few endpoints return **fewer fields** rather than `403` when the caller may see the page but not all of it — notably `GET /dashboard`, where **every block** is gated by its own permission ([§14.1](#141-dashboard), [02 §11.2](./02_Software_Architecture.md)). Clients must treat those fields as optional. |
 | **Language** | `Accept-Language: uz \| ru \| en` selects the language of `error.message`, field validation messages and choice labels (Django `LocaleMiddleware`, [02 ADR-16](./02_Software_Architecture.md)). Missing or unknown → `uz`. Codes (`error.code`) and payload keys never change with the language. |
 | **Subscription gate** | If the caller's organization is `suspended`, all write verbs return `402 SUBSCRIPTION_INACTIVE`; reads continue to work ([03 §20.6](./03_Database_Design.md)). |
 
@@ -439,13 +439,16 @@ Modules: `hr` (employees, positions) and `payroll`.
 | POST | `/payroll/runs/{id}/recalculate` | `payroll.update` | Re-sync a **draft** run: newly hired employees are added, advances re-summed |
 | POST | `/payroll/runs/{id}/finalize` | `payroll.update` | Lock the run (immutable) |
 | POST | `/payroll/runs/{id}/mark-paid` | `payroll.update` | Mark finalized run as paid |
+| POST | `/payroll/runs/{id}/reopen` | `payroll.**approve**` | Return a finalized **or paid** run to `draft` so it can be corrected. Body `{ "reason": "…" }` is **required**; the reason and the previous status are written to the audit log |
 | GET | `/payroll/runs/{id}/payslips/{employeeId}` | `payroll.read` | Payslip PDF |
 
 **`POST /payroll/runs` — request**
 ```json
 { "period_year": 2026, "period_month": 7 }
 ```
-**Errors:** `409 CONFLICT` (run already exists for period — unique `(branch, period)`), `422` (finalize/mark-paid out of allowed state order).
+**Errors:** `409 CONFLICT` (run already exists for period — unique `(branch, period)`), `422` (finalize/mark-paid out of allowed state order; `reopen` on a run that is already a draft, or with an empty reason).
+
+> **Why `reopen` exists and why it is guarded harder than `finalize`.** The state machine used to run one way only, on the reasoning that a correction belongs in the next month's bonus/deduction. That is sound bookkeeping and wrong for a kindergarten that has not handed the salaries out yet — the first customer hit exactly that and had no way back. Reopening only touches the run's own status and dates; the append-only money records (`child_ledger_entry`, `stock_movement`, `employee_advance`) are never rewritten, so D3 still holds. Because it undoes an approval, it asks for `payroll.approve` rather than `payroll.update`: the person who may finalize is not automatically the person who may unwind it.
 
 ### 11.3 Advances
 Money handed to an employee during the month, before payroll is calculated ([03 §14.5](./03_Database_Design.md)).
@@ -531,7 +534,21 @@ Modules: `reports` + Dashboard (aggregation). **Read-only.** Exports are async.
 ### 14.1 Dashboard
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/dashboard` | `dashboard.read` | KPI bundle (cached): active children, month revenue, outstanding debt, today's attendance %, recent payments, low-stock count |
+| GET | `/dashboard` | `dashboard.read` **+ per-block permissions** | KPI bundle (cached). Every block carries its own permission and is **omitted entirely** when the caller lacks it |
+
+**Blocks and the permission each one needs** (`DASHBOARD_SECTIONS` in `apps/reports/services.py`):
+
+| Block | Fields | Needs |
+|-------|--------|-------|
+| children | `active_children` | `children.read` |
+| attendance | `attendance_month_pct` | `attendance.read` |
+| inventory | `low_stock_count` | `inventory.read` |
+| finance | `month_revenue`, `outstanding_debt`, `debtor_count`, `recent_payments`, `revenue_trend` | `payments.read` **or** `debtors.read` |
+| cash | `cash` | `payments.read` **and** `expenses.read` **and** `payroll.read` |
+
+The dashboard is a shortcut to data the caller can already reach elsewhere, never a second way in — so a block the role may not read is left out of the payload rather than hidden by the client. `cash` needs all three because one number combines all three: given any two, the third follows.
+
+The cache key therefore includes the **set of blocks**, plus a per-organization generation counter that `invalidate_dashboard()` bumps (there are too many block combinations to delete by name).
 
 **Response**
 ```json
@@ -543,10 +560,24 @@ Modules: `reports` + Dashboard (aggregation). **Read-only.** Exports are async.
     "outstanding_debt": "23400000.00",
     "attendance_today_pct": 91.5,
     "recent_payments": [ { "child": "Ali K.", "amount": "1500000.00", "paid_at": "2026-07-24T08:12:00Z" } ],
-    "low_stock_count": 3
+    "low_stock_count": 3,
+    "cash": {
+      "income": "860000000.00",
+      "expenses": "210000000.00",
+      "payroll": "525500000.00",
+      "balance": "124500000.00"
+    }
   }
 }
 ```
+
+**`cash` — how the balance is derived.** Over the whole history, not a period: the question is "how much do we have right now", which no single screen answered before.
+
+- `income` — payments that were **not reversed**.
+- `expenses` — expenses in status `approved` or `paid` (the same rule as `/reports/expenses`, so the two screens agree).
+- `payroll` — for finalized/paid runs, `total_gross − total_deductions`; **plus** advances from periods that have no finalized run yet. Gross-minus-deductions is used rather than net because an advance is money already handed over and is subtracted from net — counting the advance again would overstate the spend.
+
+A reversed payment is also excluded from `/reports/revenue` and its `by_method` split. It had been counted there while `/payments/daily-summary` excluded it, so the daily till and the monthly revenue disagreed.
 
 ### 14.2 Reports
 | Method | Path | Auth | Description |

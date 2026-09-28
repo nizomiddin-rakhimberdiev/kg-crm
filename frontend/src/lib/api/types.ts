@@ -541,20 +541,29 @@ export type EffectiveSettings = Record<string, SettingValue>
 
 export interface DashboardKpis {
   date: string
-  active_children: number
-  attendance_month_pct: number
-  low_stock_count: number
   cached: boolean
   /**
-   * Pul ko'rsatkichlari — faqat moliyani ko'rishga haqli rollarga keladi
-   * (docs/02 §11.2; Davomat menejeri uchun javobda umuman yo'q). Ixtiyoriy
-   * ekani ATAYLAB: TypeScript ularni tekshirmasdan chizishga yo'l qo'ymaydi.
+   * HAR BIR bo'lak o'z ruxsatini talab qiladi (docs/02 §11.2), shuning
+   * uchun hammasi ixtiyoriy: rolida `children.read` yo'q odam javobda
+   * `active_children` ni umuman olmaydi — u frontendda yashirilmaydi.
+   *
+   * Ixtiyoriy ekani ATAYLAB: TypeScript ularni tekshirmasdan chizishga
+   * yo'l qo'ymaydi.
    */
+  active_children?: number
+  attendance_month_pct?: number
+  low_stock_count?: number
   month_revenue?: string
   outstanding_debt?: string
   debtor_count?: number
   recent_payments?: Array<{ child: string; amount: string; paid_at: string }>
   revenue_trend?: Array<{ month: string; total: string }>
+  /**
+   * Kassa qoldig'i — butun tarix bo'yicha (`to'lov − chiqim − oylik`).
+   * To'lov, chiqim va oylikning UCHALASINI ham ko'rishga haqli rolga
+   * keladi, chunki bitta raqam uchalasini birlashtiradi.
+   */
+  cash?: { income: string; expenses: string; payroll: string; balance: string }
 }
 
 /** Hisobot kesimi (docs/04 §14.2 `group_by`). */

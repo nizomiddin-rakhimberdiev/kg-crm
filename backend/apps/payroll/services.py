@@ -343,6 +343,45 @@ def mark_run_paid(*, run: PayrollRun) -> PayrollRun:
     return run
 
 
+@transaction.atomic
+def reopen_run(*, run: PayrollRun, reason: str) -> PayrollRun:
+    """
+    Yakunlangan yoki to'langan hisoblashni QORALAMAGA qaytaradi.
+
+    Nega qo'shildi: birinchi mijozda hisoblash yakunlanib qolgan va
+    undagi xatoni — kiritilmagan bonus, noto'g'ri ushlab qolish —
+    tuzatishning hech qanday yo'li qolmagan edi. "Keyingi oyda tuzatuv
+    kiriting" degan maslahat buxgalteriyada to'g'ri, lekin oyning
+    o'zida xato raqam bilan oylik bergan bog'cha uchun javob emas.
+
+    Bu ledger qoidasini (D3) buzmaydi: `payroll_run` — hisoblangan
+    hujjat, o'zgarmas pul yozuvi emas. Pul yozuvi bo'lgan avans
+    (`employee_advance`) va chiqim o'z joyida qoladi; qayta ochish
+    faqat hisoblashning holatini va sanalarini tiklaydi.
+
+    Sabab MAJBURIY va audit jurnaliga tushadi: yakunlangan hujjatni
+    ochish izsiz bo'lmasligi kerak.
+    """
+    if run.status == PayrollStatus.DRAFT:
+        raise BusinessRuleViolation(gettext("Hisoblash allaqachon qoralama."))
+
+    cleaned = (reason or "").strip()
+    if not cleaned:
+        raise BusinessRuleViolation(gettext("Qayta ochish sababini ko'rsating."))
+
+    run.status = PayrollStatus.DRAFT
+    run.finalized_at = None
+    run.finalized_by = None
+    run.paid_at = None
+    run.save(update_fields=["status", "finalized_at", "finalized_by", "paid_at", "updated_at"])
+
+    # Qayta ochilgan davrda avans keyinroq yozilgan bo'lishi mumkin —
+    # endi u satrlarga tushadi va sof maosh to'g'rilanadi.
+    sync_advances(run)
+    recompute_run_totals(run)
+    return run
+
+
 def payslip(*, item: PayrollItem) -> dict[str, Any]:
     """
     Oylik varaqasi ma'lumoti (PDF Sprint 9 da, storage bilan birga).

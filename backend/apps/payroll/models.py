@@ -29,10 +29,17 @@ class PayrollRun(BranchScopedModel):
     """
     Bir davr uchun oylik hisoblash sikli.
 
-    Holatlar bir tomonlama: `draft → finalized → paid`. Orqaga qaytish
-    yo'q — yakunlangandan keyin xato topilsa, keyingi oyda tuzatuvchi
-    bonus/ushlab qolish bilan hal qilinadi. Bu ledger'dagi qarshi yozuv
-    bilan bir xil mantiq (D3).
+    Holatlar: `draft → finalized → paid`. Odatdagi yo'l oldinga, lekin
+    ORQAGA qaytish ham bor — `reopen_run()` hisoblashni qoralamaga
+    qaytaradi, sabab so'raydi va audit jurnaliga yozadi.
+
+    Nega bir tomonlama emas: hisoblash — HUJJAT, o'zgarmas pul yozuvi
+    emas. "Xatoni keyingi oyda tuzating" degan qoida buxgalteriyada
+    to'g'ri, lekin oylikni hali bermagan bog'cha uchun javob emas —
+    birinchi mijozda aynan shu holat chiqdi. O'zgarmaslik qoidasi (D3)
+    o'z kuchida qoladigan joy — pul yozuvlari: `child_ledger_entry`,
+    `stock_movement`, `employee_advance`. Ular qayta ochishda
+    TEGILMAYDI.
     """
 
     period_year = models.SmallIntegerField()

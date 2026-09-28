@@ -8,13 +8,15 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, CalendarCheck, Package, Users, Wallet } from 'lucide-react'
+import { AlertTriangle, CalendarCheck, Package, PiggyBank, Users, Wallet } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Link } from 'react-router-dom'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { dashboardApi } from '@/features/dashboard/api'
 import { BriefingSection } from '@/features/intelligence/components/BriefingSection'
+import { navItems } from '@/config/navigation'
 import { queryKeys } from '@/lib/api/queryKeys'
+import type { DashboardKpis } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDateLong, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -62,13 +64,132 @@ function Tile({ label, value, hint, icon: Icon, tone, to }: TileProps) {
   return to ? <Link to={to}>{body}</Link> : body
 }
 
+/**
+ * "Hozirda qancha pulimiz bor" — bog'cha egasining birinchi savoli.
+ *
+ * Raqamning o'zi yetarli emas: uning ostida qanday hisoblangani ham
+ * turadi. Aks holda u kutganidan farq qilsa (masalan yakunlangan, lekin
+ * hali berilmagan oylik ham ayrilgan), raqam tushuntirib bo'lmaydigan
+ * bo'lib qolardi va ishonchni yo'qotardi.
+ */
+function CashPanel({ cash, isLoading }: { cash: DashboardKpis['cash']; isLoading: boolean }) {
+  const balance = Number(cash?.balance ?? 0)
+  const parts: Array<{ label: string; value: number; sign: string; tone: string }> = [
+    {
+      label: t('Jami tushum'),
+      value: Number(cash?.income ?? 0),
+      sign: '+',
+      tone: 'text-emerald-600',
+    },
+    {
+      label: t('Chiqimlar'),
+      value: Number(cash?.expenses ?? 0),
+      sign: '−',
+      tone: 'text-slate-600',
+    },
+    {
+      label: t('Oylik maosh'),
+      value: Number(cash?.payroll ?? 0),
+      sign: '−',
+      tone: 'text-slate-600',
+    },
+  ]
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+              <PiggyBank className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-600">{t('Kassadagi qoldiq')}</p>
+              <p className="text-xs text-slate-400">{t("Bog'cha ochilganidan beri")}</p>
+            </div>
+          </div>
+          <p
+            className={cn(
+              'mt-3 text-3xl font-bold tracking-tight',
+              balance < 0 ? 'text-red-600' : 'text-slate-900',
+            )}
+          >
+            {isLoading ? '…' : formatUZS(balance)}
+          </p>
+        </div>
+
+        <dl className="grid flex-1 gap-2 sm:min-w-[16rem] sm:max-w-sm">
+          {parts.map((part) => (
+            <div key={part.label} className="flex items-baseline justify-between gap-3">
+              <dt className="text-sm text-slate-500">{part.label}</dt>
+              <dd className={cn('text-sm font-semibold tabular-nums', part.tone)}>
+                {isLoading ? '…' : `${part.sign} ${formatUZS(part.value)}`}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+      <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">
+        {t(
+          "Tushum — qaytarilmagan to'lovlar; chiqim — tasdiqlangan va to'langanlar; oylik — yakunlangan davrlar va berilgan avanslar.",
+        )}
+      </p>
+    </section>
+  )
+}
+
+/**
+ * Ruxsati tor rol uchun — ochiq bo'limlarga havolalar.
+ *
+ * Boshqaruv paneli ko'rsatkichlarning qisqartmasi: rolida ularning
+ * birortasi bo'lmasa, ekran butunlay bo'sh qolardi. Bunday odam ham
+ * kirishi bilan O'ZIGA ochiq ishni ko'rishi kerak.
+ */
+function QuickLinks() {
+  const { can } = useCan()
+  const open = navItems.filter((item) =>
+    (Array.isArray(item.permission) ? item.permission : [item.permission]).some((code) =>
+      can(code),
+    ),
+  )
+  if (open.length === 0) return null
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+      <h2 className="text-sm font-semibold text-slate-900">{t("Sizga ochiq bo'limlar")}</h2>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {open.map((item) => (
+          <Link
+            key={item.to}
+            to={item.to}
+            className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md"
+          >
+            <item.icon className="h-4 w-4 shrink-0 text-slate-400" />
+            {item.label}
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export default function DashboardPage() {
   const organizationId = useOrganizationId()
   const { can } = useCan()
-  // Backend pul ko'rsatkichlarini moliyaga haqli bo'lmagan rolga UMUMAN
-  // yubormaydi (docs/02 §11.2). Shu yerda ham o'sha qoida: bo'sh "0 so'm"
-  // kartochka ko'rsatish o'rniga blok butunlay chizilmaydi.
+  // Backend har bir bo'lakni o'z ruxsati bilan qo'riqlaydi va ruxsatsizini
+  // javobga UMUMAN qo'shmaydi (docs/02 §11.2). Shu yerda ham o'sha qoida:
+  // bo'sh "0 so'm" kartochka ko'rsatish o'rniga blok butunlay chizilmaydi.
+  //
+  // Nega muhim: bog'cha egasi qo'lda rol yasaganda (masalan "Tarbiyachi" —
+  // faqat bolalar, guruhlar, davomat) ekran avval yarim bo'sh, yarmi
+  // xato bo'lib ko'rinardi.
+  const showChildren = can('children.read')
+  const showAttendance = can('attendance.read')
   const showFinance = can('payments.read') || can('debtors.read')
+  const showCash = can('payments.read') && can('expenses.read') && can('payroll.read')
+  // Moliya IKKITA kartochka beradi (tushum va qarzdorlik) — to'r ustunlari
+  // shuning uchun bayroqlar soniga emas, kartochkalar soniga qarab.
+  const tileCount = (showChildren ? 1 : 0) + (showFinance ? 2 : 0) + (showAttendance ? 1 : 0)
 
   const { data, isLoading, isError } = useQuery({
     queryKey: queryKeys.dashboard(organizationId),
@@ -104,20 +225,24 @@ export default function DashboardPage() {
           "nimaga e'tibor berish kerak" umumiy raqamlardan muhimroq. */}
       <BriefingSection />
 
+      {showCash && <CashPanel cash={data?.cash} isLoading={isLoading} />}
+
       <div
         className={cn(
           'grid gap-4 sm:grid-cols-2',
-          showFinance ? 'xl:grid-cols-4' : 'xl:grid-cols-2',
+          tileCount >= 4 ? 'xl:grid-cols-4' : tileCount === 3 ? 'xl:grid-cols-3' : 'xl:grid-cols-2',
         )}
       >
-        <Tile
-          label={t('Faol bolalar')}
-          value={isLoading ? '…' : t('{v} nafar', { v: data?.active_children ?? 0 })}
-          hint={t("Ro'yxatdagi bolalar")}
-          icon={Users}
-          tone="bg-sky-50 text-sky-600"
-          to="/children"
-        />
+        {showChildren && (
+          <Tile
+            label={t('Faol bolalar')}
+            value={isLoading ? '…' : t('{v} nafar', { v: data?.active_children ?? 0 })}
+            hint={t("Ro'yxatdagi bolalar")}
+            icon={Users}
+            tone="bg-sky-50 text-sky-600"
+            to="/children"
+          />
+        )}
         {showFinance && (
           <>
             <Tile
@@ -138,15 +263,19 @@ export default function DashboardPage() {
             />
           </>
         )}
-        <Tile
-          label={t('Davomat (shu oy)')}
-          value={isLoading ? '…' : `${data?.attendance_month_pct ?? 0}%`}
-          hint={t('Kelgan / belgilangan')}
-          icon={CalendarCheck}
-          tone="bg-teal-50 text-teal-600"
-          to="/attendance"
-        />
+        {showAttendance && (
+          <Tile
+            label={t('Davomat (shu oy)')}
+            value={isLoading ? '…' : `${data?.attendance_month_pct ?? 0}%`}
+            hint={t('Kelgan / belgilangan')}
+            icon={CalendarCheck}
+            tone="bg-teal-50 text-teal-600"
+            to="/attendance"
+          />
+        )}
       </div>
+
+      {tileCount === 0 && <QuickLinks />}
 
       {showFinance && (
         <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">

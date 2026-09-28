@@ -86,3 +86,23 @@ const SAAS_ONLY_ROUTES = new Set(['/billing'])
 export const navItems: NavItem[] = env.isStandalone
   ? allNavItems.filter((item) => !SAAS_ONLY_ROUTES.has(item.to))
   : allNavItems
+
+/**
+ * Kirgandan keyin ochiladigan sahifa — foydalanuvchining RUXSATIGA qarab.
+ *
+ * Ilgari hamma joyda `/dashboard` qotib yozilgan edi. Tizim rollarining
+ * hammasida `dashboard.read` bor, shuning uchun bu hech qachon sezilmadi —
+ * lekin bog'cha egasi QO'LDA rol yasab (masalan "Tarbiyachi": bolalar,
+ * guruhlar, davomat) boshqaruv panelini belgilamasa, o'sha xodim kirishi
+ * bilan ruxsati yo'q sahifaga tushardi va ekranda ma'lumot emas,
+ * "Ko'rsatkichlarni yuklab bo'lmadi" degan xato ko'rinardi.
+ *
+ * Endi kirish nuqtasi menyudagi BIRINCHI ochiq bo'limga olib boradi:
+ * qanday rol yasalsa ham, odam o'ziga ruxsat berilgan ishni ko'radi.
+ * Hech qanday ruxsati yo'q bo'lsa — profil, u har kimga ochiq.
+ */
+export function landingPathFor(
+  allowed: (permission: PermissionCode | PermissionCode[]) => boolean,
+): string {
+  return navItems.find((item) => allowed(item.permission))?.to ?? '/profile'
+}

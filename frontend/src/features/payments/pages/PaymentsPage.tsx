@@ -11,7 +11,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ban, Banknote, FileText, Plus, Trash2, Wallet } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { invoicesApi, paymentsApi, tariffsApi } from '@/features/payments/api'
+import { InvoicePaymentsModal } from '@/features/payments/components/InvoicePaymentsModal'
 import { RecordPaymentModal } from '@/features/payments/components/RecordPaymentModal'
+import { paymentMethodLabel } from '@/features/payments/methods'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type BillingRunResult, type Invoice, type Payment } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
@@ -40,13 +42,6 @@ const STATUS_LABELS: Record<string, string> = {
 
 const money = (value: string) => new Intl.NumberFormat('uz-UZ').format(Number(value)) + t(" so'm")
 
-const METHOD_LABELS: Record<string, string> = {
-  cash: t('Naqd'),
-  card: t('Karta'),
-  bank_transfer: t("Bank o'tkazmasi"),
-  online: t('Onlayn'),
-}
-
 export default function PaymentsPage() {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
@@ -57,6 +52,8 @@ export default function PaymentsPage() {
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [tariffForm, setTariffForm] = useState({ name: '', amount: '' })
+  // Hisob-faktura bo'yicha to'lovlar taqsimoti (nimadan qancha kelgan).
+  const [breakdownInvoice, setBreakdownInvoice] = useState<Invoice | null>(null)
   const [runResult, setRunResult] = useState<BillingRunResult | null>(null)
   const [payingInvoice, setPayingInvoice] = useState<Invoice | null>(null)
   // Fakturasiz to'lov oynasi (avans): `invoice` berilmaydi.
@@ -145,6 +142,13 @@ export default function PaymentsPage() {
     <div className="space-y-6">
       {payingInvoice && (
         <RecordPaymentModal invoice={payingInvoice} onClose={() => setPayingInvoice(null)} />
+      )}
+
+      {breakdownInvoice && (
+        <InvoicePaymentsModal
+          invoice={breakdownInvoice}
+          onClose={() => setBreakdownInvoice(null)}
+        />
       )}
 
       {advanceOpen && <RecordPaymentModal onClose={() => setAdvanceOpen(false)} />}
@@ -345,11 +349,27 @@ export default function PaymentsPage() {
                         <td className="px-4 py-3 font-mono text-xs text-slate-500">
                           {invoice.number}
                         </td>
+                        {/* Ism ham, summa ham taqsimotni ochadi — mijoz
+                            ikkalasini ham bosib ko'rishini aytdi. */}
                         <td className="px-4 py-3 font-medium text-slate-800">
-                          {invoice.child_name}
+                          <button
+                            type="button"
+                            onClick={() => setBreakdownInvoice(invoice)}
+                            className="rounded text-left underline-offset-2 hover:underline"
+                            title={t("To'lovlar tafsiloti")}
+                          >
+                            {invoice.child_name}
+                          </button>
                         </td>
                         <td className="px-4 py-3 text-right text-slate-700">
-                          {money(invoice.amount_due)}
+                          <button
+                            type="button"
+                            onClick={() => setBreakdownInvoice(invoice)}
+                            className="rounded tabular-nums underline-offset-2 hover:underline"
+                            title={t("To'lovlar tafsiloti")}
+                          >
+                            {money(invoice.amount_due)}
+                          </button>
                         </td>
                         <td className="px-4 py-3 text-right text-slate-500">
                           {money(invoice.amount_outstanding)}
@@ -452,9 +472,7 @@ export default function PaymentsPage() {
                       <td className="px-4 py-3 font-mono text-xs text-slate-500">
                         {payment.invoice_number ?? t('— avans —')}
                       </td>
-                      <td className="px-4 py-3">
-                        {METHOD_LABELS[payment.method] ?? payment.method}
-                      </td>
+                      <td className="px-4 py-3">{paymentMethodLabel(payment.method)}</td>
                       <td
                         className={cn(
                           'px-4 py-3 text-right font-semibold',
