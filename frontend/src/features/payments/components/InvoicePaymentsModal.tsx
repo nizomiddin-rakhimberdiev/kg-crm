@@ -1,5 +1,5 @@
 /**
- * Bitta hisob-faktura bo'yicha to'lovlar taqsimoti.
+ * Bitta hisob-faktura bo'yicha to'lovlar tafsiloti.
  *
  * Nega kerak bo'ldi: bir bolaga 1 400 000 naqd va 100 000 karta bilan
  * to'langanda jadvalda faqat "1 500 000 — to'langan" ko'rinardi. Pul
@@ -11,7 +11,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { paymentsApi } from '@/features/payments/api'
-import { paymentMethodLabel } from '@/features/payments/methods'
+import {
+  paymentMethodColor,
+  paymentMethodIcon,
+  paymentMethodLabel,
+} from '@/features/payments/methods'
 import { queryKeys } from '@/lib/api/queryKeys'
 import type { Invoice } from '@/lib/api/types'
 import { cn, formatDate } from '@/lib/utils'
@@ -19,6 +23,20 @@ import { Modal } from '@/components/ui/Modal'
 import { t } from '@/lib/i18n'
 
 const money = (value: number) => new Intl.NumberFormat('uz-UZ').format(value) + t(" so'm")
+
+/** Rangli nishon — diagramma va jurnal bir xil rang tilida gapirsin. */
+function MethodMark({ method }: { method: string }) {
+  const Icon = paymentMethodIcon(method)
+  const color = paymentMethodColor(method)
+  return (
+    <span
+      className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
+      style={{ backgroundColor: `${color}1a`, color }}
+    >
+      <Icon className="h-4 w-4" />
+    </span>
+  )
+}
 
 export function InvoicePaymentsModal({
   invoice,
@@ -48,97 +66,145 @@ export function InvoicePaymentsModal({
     byMethod.set(payment.method, row)
   }
   const breakdown = [...byMethod.entries()].sort((a, b) => b[1].total - a[1].total)
+
   const paid = live.reduce((sum, payment) => sum + Number(payment.amount), 0)
+  const due = Number(invoice?.amount_due ?? 0)
+  const outstanding = Number(invoice?.amount_outstanding ?? 0)
+  const pct = due > 0 ? Math.min(100, Math.round((paid / due) * 100)) : paid > 0 ? 100 : 0
 
   return (
     <Modal open={Boolean(invoice)} onClose={onClose} className="max-w-lg">
-      <h2 className="text-lg font-semibold text-slate-900">{t("To'lovlar tafsiloti")}</h2>
-      <p className="mt-1 text-sm text-slate-500">
-        {invoice?.child_name} · {invoice?.number}
-      </p>
+      <div className="p-6">
+        {/* `pr-10` — sarlavha yopish tugmasining ostiga kirib ketmasin. */}
+        <div className="pr-10">
+          <h2 className="text-lg font-bold text-slate-900">{t("To'lovlar tafsiloti")}</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {invoice?.child_name}
+            <span className="text-slate-300"> · </span>
+            <span className="font-mono text-xs">{invoice?.number}</span>
+          </p>
+        </div>
 
-      <dl className="mt-4 grid grid-cols-3 gap-3 rounded-xl bg-slate-50 p-3 text-center">
-        <div>
-          <dt className="text-xs text-slate-500">{t('Hisoblangan')}</dt>
-          <dd className="mt-0.5 text-sm font-semibold tabular-nums text-slate-900">
-            {money(Number(invoice?.amount_due ?? 0))}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs text-slate-500">{t("To'langan")}</dt>
-          <dd className="mt-0.5 text-sm font-semibold tabular-nums text-emerald-700">
-            {money(paid)}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs text-slate-500">{t('Qoldiq')}</dt>
-          <dd className="mt-0.5 text-sm font-semibold tabular-nums text-slate-900">
-            {money(Number(invoice?.amount_outstanding ?? 0))}
-          </dd>
-        </div>
-      </dl>
+        {/* Holat: qancha to'langan, qanchadan va qancha qolgan. */}
+        <div className="mt-5 rounded-xl border border-slate-200 p-4">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                {t("To'langan")}
+              </p>
+              <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{money(paid)}</p>
+            </div>
+            <p
+              className={cn(
+                'text-sm font-semibold tabular-nums',
+                outstanding > 0 ? 'text-amber-600' : 'text-emerald-600',
+              )}
+            >
+              {pct}%
+            </p>
+          </div>
 
-      {breakdown.length > 0 && (
-        <>
-          <h3 className="mt-5 text-sm font-semibold text-slate-900">{t("Usul bo'yicha")}</h3>
-          <ul className="mt-2 space-y-2">
-            {breakdown.map(([method, row]) => (
-              <li
-                key={method}
-                className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2"
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className={cn(
+                'h-full rounded-full',
+                outstanding > 0 ? 'bg-amber-400' : 'bg-emerald-500',
+              )}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+
+          <dl className="mt-3 flex items-baseline justify-between gap-3 text-xs">
+            <div className="flex gap-1.5">
+              <dt className="text-slate-500">{t('Hisoblangan')}</dt>
+              <dd className="font-semibold tabular-nums text-slate-700">{money(due)}</dd>
+            </div>
+            <div className="flex gap-1.5">
+              <dt className="text-slate-500">{t('Qoldiq')}</dt>
+              <dd
+                className={cn(
+                  'font-semibold tabular-nums',
+                  outstanding > 0 ? 'text-amber-700' : 'text-slate-700',
+                )}
               >
-                <span className="text-sm text-slate-700">
-                  {paymentMethodLabel(method)}
+                {money(outstanding)}
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        {/* Usul kesimi FAQAT bir nechta to'lov bo'lganda.
+            Bitta to'lovda u quyidagi ro'yxatning aynan nusxasi bo'lardi —
+            bir xil qatorni ikki marta ko'rsatish odamni chalg'itadi. */}
+        {live.length > 1 && (
+          <>
+            <h3 className="mt-6 text-xs font-medium uppercase tracking-wide text-slate-500">
+              {t("Usul bo'yicha")}
+            </h3>
+            <ul className="mt-2 space-y-2">
+              {breakdown.map(([method, row]) => (
+                <li
+                  key={method}
+                  className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2.5"
+                >
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: paymentMethodColor(method) }}
+                  />
+                  <span className="min-w-0 flex-1 text-sm font-medium text-slate-700">
+                    {paymentMethodLabel(method)}
+                  </span>
                   {row.count > 1 && (
-                    <span className="ml-2 text-xs text-slate-400">
+                    <span className="shrink-0 text-xs tabular-nums text-slate-400">
                       {t('{v} ta', { v: row.count })}
                     </span>
                   )}
-                </span>
-                <span className="text-sm font-semibold tabular-nums text-slate-900">
-                  {money(row.total)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+                  <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-900">
+                    {money(row.total)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
 
-      <h3 className="mt-5 text-sm font-semibold text-slate-900">{t("Har bir to'lov")}</h3>
-      <ul className="mt-2 divide-y divide-slate-100">
-        {payments.map((payment) => (
-          <li key={payment.id} className="flex items-center justify-between gap-3 py-2">
-            <div className="min-w-0">
-              <p className="text-sm text-slate-700">
-                {paymentMethodLabel(payment.method)}
-                {payment.reference && (
-                  <span className="ml-2 text-xs text-slate-400">{payment.reference}</span>
+        <h3 className="mt-6 text-xs font-medium uppercase tracking-wide text-slate-500">
+          {t("To'lovlar")}
+        </h3>
+        <ul className="mt-1 divide-y divide-slate-100">
+          {payments.map((payment) => (
+            <li key={payment.id} className="flex items-center gap-3 py-3">
+              <MethodMark method={payment.method} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-slate-800">
+                  {paymentMethodLabel(payment.method)}
+                </p>
+                <p className="truncate text-xs text-slate-400">
+                  {formatDate(payment.paid_at)}
+                  {payment.reference && ` · ${payment.reference}`}
+                  {payment.is_reversed && ` · ${t('qaytarilgan')}`}
+                </p>
+              </div>
+              <span
+                className={cn(
+                  'shrink-0 text-sm font-semibold tabular-nums',
+                  payment.is_reversed ? 'text-slate-400 line-through' : 'text-slate-900',
                 )}
-              </p>
-              <p className="text-xs text-slate-400">
-                {formatDate(payment.paid_at)}
-                {payment.is_reversed && ` · ${t('qaytarilgan')}`}
-              </p>
-            </div>
-            <span
-              className={cn(
-                'shrink-0 text-sm font-semibold tabular-nums',
-                payment.is_reversed ? 'text-slate-400 line-through' : 'text-emerald-700',
-              )}
-            >
-              {money(Number(payment.amount))}
-            </span>
-          </li>
-        ))}
-        {!isPending && payments.length === 0 && (
-          <li className="py-6 text-center text-sm text-slate-400">
-            {t("Bu hisob-faktura bo'yicha to'lov yo'q.")}
-          </li>
-        )}
-        {isPending && (
-          <li className="py-6 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</li>
-        )}
-      </ul>
+              >
+                {money(Number(payment.amount))}
+              </span>
+            </li>
+          ))}
+          {!isPending && payments.length === 0 && (
+            <li className="py-8 text-center text-sm text-slate-400">
+              {t("Bu hisob-faktura bo'yicha to'lov yo'q.")}
+            </li>
+          )}
+          {isPending && (
+            <li className="py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</li>
+          )}
+        </ul>
+      </div>
     </Modal>
   )
 }

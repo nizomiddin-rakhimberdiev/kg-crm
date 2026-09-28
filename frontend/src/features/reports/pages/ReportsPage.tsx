@@ -301,16 +301,24 @@ export default function ReportsPage() {
                 {t("Bu davrda to'lov yo'q.")}
               </p>
             ) : (
-              <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
-                <div className="h-44 w-full shrink-0 sm:h-48 sm:w-48">
+              <div className="mt-4 flex flex-col items-center gap-5">
+                {/* Halqa USTDA, ro'yxat ostida — yonma-yon EMAS.
+                    Bu panel hisobot to'rining tor ustunida (≈430px)
+                    yashaydi: halqa yonida ro'yxatga atigi 200px qolib,
+                    "Bank o'tkazmasi" ikki qatorga bo'linardi. Ustma-ust
+                    joylashganda har bir qatorga butun kenglik tegadi,
+                    panelning pastidagi bo'sh joy esa ishga tushadi. */}
+                <div className="relative h-44 w-44 shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={methods}
                         dataKey="value"
                         nameKey="name"
-                        innerRadius="52%"
-                        outerRadius="82%"
+                        innerRadius="64%"
+                        outerRadius="92%"
+                        paddingAngle={methods.length > 1 ? 2 : 0}
+                        stroke="none"
                       >
                         {methods.map((entry) => (
                           <Cell key={entry.method} fill={entry.color} />
@@ -331,43 +339,56 @@ export default function ReportsPage() {
                       />
                     </PieChart>
                   </ResponsiveContainer>
+
+                  {/* Halqaning o'rtasi bo'sh turmasin — jami shu yerda.
+                      `pointer-events-none`: aks holda matn diagramma
+                      ustidagi sichqonchani to'sib qo'yardi. */}
+                  <div className="pointer-events-none absolute inset-0 grid place-items-center">
+                    <div className="text-center">
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                        {t('Jami')}
+                      </p>
+                      <p className="text-base font-bold tabular-nums text-slate-900">
+                        {formatMoney(methodTotal)}
+                      </p>
+                      <p className="text-[11px] text-slate-400">UZS</p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Legend O'RNIGA aniq raqamlar.
                     Diagramma ulushni ko'rsatadi, summani esa faqat sichqoncha
                     ustiga kelganda aytardi — ya'ni telefonda umuman aytmasdi.
-                    Mijoz "nimadan qancha tushgani ko'rinib tursin" dedi. */}
-                <ul className="min-w-0 flex-1 space-y-2">
+
+                    Qatorning tuzilishi ham muhim: nom CHAPDA o'z joyida
+                    o'raladi, summa esa O'NGDA birinchi qatorga bog'langan
+                    (`items-start` + bir xil `leading-6`). Ilgari soni nom
+                    bilan bitta oqimda turgani uchun uzun nom ("Bank
+                    o'tkazmasi") qatorni uchga bo'lib, summani ro'yxatdan
+                    surib yuborardi. */}
+                <ul className="w-full space-y-3">
                   {methods.map((entry) => (
-                    <li key={entry.method} className="flex items-center gap-3">
+                    <li key={entry.method} className="flex items-start gap-2.5">
                       <span
-                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        className="mt-[9px] h-2 w-2 shrink-0 rounded-full"
                         style={{ backgroundColor: entry.color }}
                       />
-                      <span className="min-w-0 flex-1 text-sm text-slate-600">
-                        {entry.name}{' '}
-                        {/* Soni nomdan AJRALIB qator boshiga tushmasin:
-                            "Naqd 35" / "ta" bo'lib bo'linib ketardi. */}
-                        <span className="whitespace-nowrap text-xs text-slate-400">
-                          {t('{v} ta', { v: entry.count })}
-                        </span>
+                      <span className="min-w-0 flex-1 text-sm font-medium leading-6 text-slate-700">
+                        {entry.name}
                       </span>
                       <span className="shrink-0 text-right">
-                        <span className="block text-sm font-semibold tabular-nums text-slate-900">
+                        <span className="block text-sm font-semibold leading-6 tabular-nums text-slate-900">
                           {formatUZS(entry.value)}
                         </span>
-                        <span className="block text-xs tabular-nums text-slate-400">
-                          {entry.share.toFixed(1)}%
+                        <span className="block text-xs leading-4 tabular-nums text-slate-400">
+                          {t('{share}% · {v} ta', {
+                            share: entry.share.toFixed(1),
+                            v: entry.count,
+                          })}
                         </span>
                       </span>
                     </li>
                   ))}
-                  <li className="flex items-center justify-between gap-3 border-t border-slate-100 pt-2">
-                    <span className="text-sm font-medium text-slate-600">{t('Jami')}</span>
-                    <span className="text-sm font-semibold tabular-nums text-slate-900">
-                      {formatUZS(methodTotal)}
-                    </span>
-                  </li>
                 </ul>
               </div>
             )}

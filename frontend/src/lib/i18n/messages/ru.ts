@@ -175,7 +175,6 @@ export const messages: Record<string, string> = {
   'Hammasi keldi': 'Все пришли',
   "Har bir hisob ortidagi asos — o'zgartirilmaydigan yozuv.":
     'Основание каждого счёта — неизменяемая запись.',
-  "Har bir to'lov": 'Каждый платёж',
   "Har qo'shimcha 10 bola": 'Каждые дополнительные 10 детей',
   "Harakat yo'q.": 'Движений нет.',
   'Harakat yozish uchun avval ombor kerak.': 'Чтобы записать движение, сначала нужен склад.',
@@ -667,6 +666,7 @@ export const messages: Record<string, string> = {
   '{roman} ch. {year}': '{roman} кв. {year}',
   '{roman} chorak {year}': '{roman} квартал {year}',
   '{row}-qator': 'строка {row}',
+  '{share}% · {v} ta': '{share}% · {v} шт.',
   '{size} tadan': 'по {size}',
   '{skipped_existing} ta allaqachon mavjud edi — qayta hisoblanmadi.':
     'Уже существовало: {skipped_existing} — повторно не выставлены.',

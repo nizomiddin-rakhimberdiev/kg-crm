@@ -1,5 +1,5 @@
 /**
- * To'lov usullarining nomlari — BITTA joyda.
+ * To'lov usullari — nom, rang va nishon BITTA joyda.
  *
  * Ilgari har bir ekran o'z ro'yxatini tutardi va ular ajralib ketgan
  * edi: hisobotlar sahifasida `bank_transfer` tarjimasiz, xom kod
@@ -8,6 +8,7 @@
  * faylda yashaydi.
  */
 
+import { Banknote, Building2, CreditCard, Globe, type LucideIcon } from 'lucide-react'
 import { t } from '@/lib/i18n'
 
 export const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -28,3 +29,15 @@ export const PAYMENT_METHOD_COLORS: Record<string, string> = {
   bank_transfer: '#f59e0b',
   online: '#06b6d4',
 }
+
+export const paymentMethodColor = (method: string): string =>
+  PAYMENT_METHOD_COLORS[method] ?? '#94a3b8'
+
+const ICONS: Record<string, LucideIcon> = {
+  cash: Banknote,
+  card: CreditCard,
+  bank_transfer: Building2,
+  online: Globe,
+}
+
+export const paymentMethodIcon = (method: string): LucideIcon => ICONS[method] ?? Banknote

@@ -177,12 +177,16 @@ export default function PayrollPage() {
           ochilmasin, audit jurnalida "nega ochildi?" javobsiz qolmasin. */}
       <Modal open={Boolean(reopening)} onClose={() => setReopening(null)} className="max-w-md">
         <form
+          className="p-6"
           onSubmit={(event) => {
             event.preventDefault()
             if (reopening) reopen.mutate({ id: reopening.id, reason: reopenReason })
           }}
         >
-          <h2 className="text-lg font-semibold text-slate-900">{t('Hisoblashni qayta ochish')}</h2>
+          {/* `pr-10` — sarlavha yopish tugmasining ostiga kirmasin. */}
+          <h2 className="pr-10 text-lg font-bold text-slate-900">
+            {t('Hisoblashni qayta ochish')}
+          </h2>
           <p className="mt-1 text-sm text-slate-500">
             {reopening &&
               t('{period} — qoralamaga qaytariladi va yana tahrirlanadi.', {

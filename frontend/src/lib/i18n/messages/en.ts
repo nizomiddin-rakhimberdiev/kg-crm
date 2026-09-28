@@ -177,7 +177,6 @@ export const messages: Record<string, string> = {
   'Hammasi keldi': 'All present',
   "Har bir hisob ortidagi asos — o'zgartirilmaydigan yozuv.":
     'The basis behind every invoice — an immutable record.',
-  "Har bir to'lov": 'Every payment',
   "Har qo'shimcha 10 bola": 'Each additional 10 children',
   "Harakat yo'q.": 'No movements.',
   'Harakat yozish uchun avval ombor kerak.': 'You need a warehouse before recording movements.',
@@ -669,6 +668,7 @@ export const messages: Record<string, string> = {
   '{roman} ch. {year}': 'Q{roman} {year}',
   '{roman} chorak {year}': 'Q{roman} {year}',
   '{row}-qator': 'row {row}',
+  '{share}% · {v} ta': '{share}% · {v}',
   '{size} tadan': '{size} per page',
   '{skipped_existing} ta allaqachon mavjud edi — qayta hisoblanmadi.':
     '{skipped_existing} already existed — not re-issued.',
