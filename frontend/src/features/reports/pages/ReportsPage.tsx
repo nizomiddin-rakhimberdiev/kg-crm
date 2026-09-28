@@ -345,8 +345,10 @@ export default function ReportsPage() {
                         style={{ backgroundColor: entry.color }}
                       />
                       <span className="min-w-0 flex-1 text-sm text-slate-600">
-                        {entry.name}
-                        <span className="ml-1.5 text-xs text-slate-400">
+                        {entry.name}{' '}
+                        {/* Soni nomdan AJRALIB qator boshiga tushmasin:
+                            "Naqd 35" / "ta" bo'lib bo'linib ketardi. */}
+                        <span className="whitespace-nowrap text-xs text-slate-400">
                           {t('{v} ta', { v: entry.count })}
                         </span>
                       </span>
