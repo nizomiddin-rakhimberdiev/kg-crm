@@ -8,7 +8,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, CalendarCheck, Package, PiggyBank, Users, Wallet } from 'lucide-react'
+import { AlertTriangle, CalendarCheck, Coins, Package, Users, Wallet } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Link } from 'react-router-dom'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
@@ -101,7 +101,7 @@ function CashPanel({ cash, isLoading }: { cash: DashboardKpis['cash']; isLoading
         <div>
           <div className="flex items-center gap-2">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
-              <PiggyBank className="h-5 w-5" />
+              <Coins className="h-5 w-5" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-600">{t('Kassadagi qoldiq')}</p>
