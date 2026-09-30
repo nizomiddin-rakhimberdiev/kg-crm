@@ -92,7 +92,12 @@ ok "baza: $(du -h "$DUMP" | cut -f1) · $TOTAL qator"
 
 # --- 2. Media ---
 step "Media fayllar olinmoqda"
-$COMPOSE run --rm --no-deps -T -v "$(cd "$OUT_DIR" && pwd):/backup" web \
+# `--user root` SHART: `web` konteyneri `app` foydalanuvchisi bilan
+# ishlaydi, zaxira papkasi esa root'niki — tar faylni ocholmasdi va
+# skript "media arxivlanmadi" deb, TEKSHIRUV bosqichiga yetmasdan
+# to'xtardi. Ya'ni media hech qachon olinmagan va buni hech kim
+# sezmagan, chunki xato oxirgi qatorda emas, o'rtada chiqardi.
+$COMPOSE run --rm --no-deps -T --user root -v "$(cd "$OUT_DIR" && pwd):/backup" web \
     tar czf "/backup/$(basename "$MEDIA")" -C /app/mediafiles . 2>/dev/null \
     || die "media arxivlanmadi"
 ok "media: $(du -h "$MEDIA" | cut -f1)"
