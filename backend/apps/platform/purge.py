@@ -56,6 +56,9 @@ PURGE_ORDER: tuple[str, ...] = (
     # `source_id` bilan (FK'siz) bog'langan, qopga esa `RESTRICT` bilan.
     # Shuning uchun ular hammasidan OLDIN, qop esa eng oxirida ketadi.
     "apps.cash.CashMovement",
+    # Taqsimot to'lovga ham, hisob-fakturaga ham `RESTRICT` bilan
+    # bog'langan — u ikkalasidan ham OLDIN o'chadi.
+    "apps.finance.PaymentAllocation",
     "apps.finance.Payment",
     "apps.finance.ChildLedgerEntry",
     "apps.finance.Invoice",

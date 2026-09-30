@@ -26,6 +26,7 @@ __all__ = [
     "Invoice",
     "InvoiceLine",
     "Payment",
+    "PaymentAllocation",
     "ChildLedgerEntry",
 ]
 
@@ -342,6 +343,81 @@ class Payment(BranchScopedModel):
     @property
     def is_reversed(self) -> bool:
         return self.reversed_at is not None
+
+
+class PaymentAllocation(BranchScopedModel):
+    """
+    Qaysi pul qaysi hisob-fakturani yopgani (PLAN 1.2, Q1).
+
+    **Nega bu jadval kerak bo'ldi.** Ilgari bog'lanish `payment.invoice`
+    ustunida edi, ya'ni bitta to'lov faqat BITTA hisob-fakturaga tegishli
+    bo'la olardi. Haqiqatda esa ota-ona bir marta 3 000 000 keltiradi va
+    u ikki oyni yopadi; yoki fakturadan oldin avans to'laydi va pul
+    keyinchalik yozilgan hujjatga tegishli bo'lib qoladi.
+    Bog'lanish yo'qligi sabab avans hech qaysi fakturaning
+    `amount_paid` iga tushmasdi — va shu sababli To'lovlar doskasi bilan
+    Qarzdorlar ro'yxati bitta bola uchun ikki xil raqam ko'rsatardi
+    (`docs/big-update/PLAN.md` §2).
+
+    **O'zgarmas emas, lekin o'chirilmaydi ham.** Ledger pul HARAKATINI
+    yozadi va u haqiqatan o'zgarmas. Taqsimot esa *bog'lanish*: to'lov
+    qaytarilsa yoki hisob-faktura bekor qilinsa, pul o'sha hujjatni
+    yopmay qo'yadi va yana avansga aylanadi. Shuning uchun qator
+    `released_at` bilan bo'shatiladi — tarix qoladi, hisobdan chiqadi.
+
+    `invoice.amount_paid` — shu yerdagi faol qatorlar yig'indisi. U kesh,
+    haqiqat esa shu jadval (`_refresh_invoice_payment_state`).
+    """
+
+    payment = models.ForeignKey(
+        "finance.Payment", on_delete=models.RESTRICT, related_name="allocations"
+    )
+    invoice = models.ForeignKey(
+        "finance.Invoice", on_delete=models.RESTRICT, related_name="allocations"
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    allocated_at = models.DateTimeField()
+
+    # Bo'shatilgan taqsimot: to'lov qaytarildi yoki hisob-faktura bekor
+    # qilindi. Qator qoladi — "bu pul bir vaqtlar shu fakturani yopgan
+    # edi" degan fakt hisobotda kerak bo'ladi.
+    released_at = models.DateTimeField(null=True, blank=True)
+    release_reason = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = "payment_allocation"
+        ordering = ["allocated_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0), name="ck_allocation_amount_positive"
+            ),
+            # Bitta to'lov bitta fakturaga BIR marta taqsimlanadi. Qisman
+            # indeks: bo'shatilgan qator yangisiga to'sqinlik qilmaydi.
+            models.UniqueConstraint(
+                fields=["payment", "invoice"],
+                condition=models.Q(released_at__isnull=True),
+                name="uq_allocation_payment_invoice",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["invoice"],
+                condition=models.Q(released_at__isnull=True),
+                name="ix_allocation_invoice",
+            ),
+            models.Index(
+                fields=["payment"],
+                condition=models.Q(released_at__isnull=True),
+                name="ix_allocation_payment",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.amount} → {self.invoice_id}"
+
+    @property
+    def is_released(self) -> bool:
+        return self.released_at is not None
 
 
 class EntryType(models.TextChoices):

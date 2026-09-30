@@ -36,6 +36,7 @@ from apps.finance.models import (
     InvoiceLine,
     InvoiceStatus,
     Payment,
+    PaymentAllocation,
     SourceType,
 )
 
@@ -51,6 +52,13 @@ __all__ = [
     "record_payment_batch",
     "reverse_payment",
     "daily_cash_summary",
+    "open_invoices",
+    "invoice_allocated",
+    "payment_unallocated",
+    "child_advance",
+    "allocate_payment",
+    "release_allocations",
+    "apply_advance_to_invoice",
 ]
 
 CENT = Decimal("0.01")
@@ -351,6 +359,15 @@ def issue_invoice(
         invoice.status = InvoiceStatus.PAID
         invoice.save(update_fields=["status", "updated_at"])
 
+    # Mavjud avansni darhol qo'llash (Q1).
+    #
+    # Audit ssenariysi: bola yaratildi → 200 000 naqd qabul qilindi →
+    # "Hisob-faktura chiqarish". Ilgari hujjat "To'lanmagan" bo'lib
+    # tug'ilardi va kassirga bolaning puli kassada turgani ko'rinmasdi.
+    if invoice.status != InvoiceStatus.PAID:
+        apply_advance_to_invoice(invoice=invoice, created_by=created_by)
+        invoice.refresh_from_db()
+
     recompute_child_balance(child)
     return invoice
 
@@ -543,16 +560,7 @@ def record_payment(
             raise BusinessRuleViolation(
                 gettext("Bekor qilingan hisob-fakturaga to'lov qabul qilinmaydi.")
             )
-
         locked = Invoice.objects.select_for_update().get(pk=invoice.pk)
-        outstanding = locked.amount_due - locked.amount_paid
-        if amount > outstanding:
-            raise BusinessRuleViolation(
-                gettext(
-                    "Ortiqcha to'lov: qoldiq {outstanding}, kiritilgan {amount}. "
-                    "Ortiqcha summani hisob-fakturasiz avans sifatida kiriting."
-                ).format(outstanding=outstanding, amount=amount)
-            )
     else:
         locked = None
 
@@ -612,8 +620,11 @@ def record_payment(
         created_by=received_by,
     )
 
-    if locked is not None:
-        _refresh_invoice_payment_state(locked)
+    # Taqsimot (Q1): tanlangan hujjat → FIFO → qoldiq avans. Bu ATAYLAB
+    # ledger yozuvidan keyin: ledger pulning KELGANINI yozadi va u
+    # taqsimotdan mustaqil, taqsimot esa o'sha pul qaysi hujjatni
+    # yopganini aytadi. Ikkisi bitta tranzaksiyada.
+    allocate_payment(payment=payment, prefer_invoice=locked)
 
     recompute_child_balance(child)
 
@@ -626,18 +637,210 @@ def record_payment(
     return payment
 
 
+# --- Taqsimot: qaysi pul qaysi hisob-fakturani yopadi (PLAN 1.2, Q1) ---
+
+#: Ochiq hisob-faktura — pul hali to'liq qoplamagan hujjat.
+OPEN_INVOICE_STATUSES = (
+    InvoiceStatus.ISSUED,
+    InvoiceStatus.PARTIALLY_PAID,
+    InvoiceStatus.OVERDUE,
+)
+
+
+def open_invoices(child: Child) -> Any:
+    """
+    Bolaning ochiq hisob-fakturalari — ENG ESKISIDAN (FIFO, Q1).
+
+    Tartib `due_date` bo'yicha: ota-ona uchun "eng eski qarz" degani
+    muddati birinchi kelgan hujjat, u qaysi oyda yozilganidan qat'i
+    nazar. Teng muddatlarda davr, keyin raqam — natija BARQAROR
+    bo'lishi kerak, aks holda bir xil to'lov ikki marta ishga
+    tushirilganda boshqacha taqsimlanardi.
+    """
+    return Invoice.objects.filter(child=child, status__in=OPEN_INVOICE_STATUSES).order_by(
+        "due_date", "period_year", "period_month", "number"
+    )
+
+
+def invoice_allocated(invoice: Invoice) -> Decimal:
+    """Hisob-fakturaga taqsimlangan pul — faol qatorlar yig'indisi."""
+    total = PaymentAllocation.objects.filter(invoice=invoice, released_at__isnull=True).aggregate(
+        total=Sum("amount")
+    )["total"]
+    return _money(total or Decimal("0"))
+
+
+def payment_unallocated(payment: Payment) -> Decimal:
+    """To'lovning hali hech qaysi hujjatga biriktirilmagan qismi (avans)."""
+    if payment.is_reversed:
+        return Decimal("0.00")
+    allocated = PaymentAllocation.objects.filter(
+        payment=payment, released_at__isnull=True
+    ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+    return _money(payment.amount - allocated)
+
+
+def child_advance(child: Child) -> Decimal:
+    """
+    Bolaning avans qoldig'i — taqsimlanmagan pul.
+
+    Ledger balansidan ALOHIDA hisoblanadi va shunday bo'lishi kerak:
+    balans "oila qancha qarz" degan savolga javob beradi, avans esa
+    "qo'limizda uning qancha puli bor" degan savolga. Ikkisi bir xil
+    raqam emas — bolada bir vaqtning o'zida yopilmagan faktura ham,
+    taqsimlanmagan pul ham bo'lishi mumkin.
+    """
+    payments = Payment.objects.filter(child=child, reversed_at__isnull=True)
+    paid = payments.aggregate(total=Sum("amount"))["total"] or Decimal("0")
+    allocated = PaymentAllocation.objects.filter(
+        payment__child=child, released_at__isnull=True
+    ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+    return _money(paid - allocated)
+
+
+def allocate_payment(
+    *, payment: Payment, prefer_invoice: Invoice | None = None
+) -> list[PaymentAllocation]:
+    """
+    To'lovning taqsimlanmagan qismini ochiq hujjatlarga tarqatadi (Q1).
+
+    Tartib: kassir tanlagan hisob-faktura (bo'lsa) → qolganlari FIFO →
+    qoldiq avans bo'lib qoladi.
+
+    **Ortiqcha to'lov endi XATO emas.** Ilgari kassir 3 000 000 keltirgan
+    ota-onaga sentabr fakturasini tanlasa, tizim "Ortiqcha to'lov" deb
+    rad etardi va kassir summani ikkiga bo'lib, ikki marta kiritishga
+    majbur bo'lardi. Endi tanlangan hujjat birinchi yopiladi, ortig'i
+    keyingisiga o'tadi, oxirgi qoldiq esa avans bo'lib turadi — Q1
+    aynan shuni talab qiladi.
+
+    Har bir hujjat qatori QULFLANADI: ikki kassir bir vaqtda to'lov
+    kiritsa, qulfsiz ikkalasi ham "qoldiq yetarli" deb ko'rardi va
+    `amount_paid <= amount_due` invarianti buzilardi.
+    """
+    remaining = payment_unallocated(payment)
+    if remaining <= 0:
+        return []
+
+    queue: list[Invoice] = []
+    if prefer_invoice is not None and prefer_invoice.status in OPEN_INVOICE_STATUSES:
+        queue.append(prefer_invoice)
+    queue.extend(
+        invoice
+        for invoice in open_invoices(payment.child)
+        if prefer_invoice is None or invoice.pk != prefer_invoice.pk
+    )
+
+    created: list[PaymentAllocation] = []
+    for invoice in queue:
+        if remaining <= 0:
+            break
+        locked = Invoice.objects.select_for_update().get(pk=invoice.pk)
+        outstanding = _money(locked.amount_due - invoice_allocated(locked))
+        if outstanding <= 0:
+            continue
+
+        share = min(remaining, outstanding)
+        created.append(
+            PaymentAllocation.objects.create(
+                organization=payment.organization,
+                branch=payment.branch,
+                payment=payment,
+                invoice=locked,
+                amount=share,
+                allocated_at=payment.paid_at,
+            )
+        )
+        remaining -= share
+        _refresh_invoice_payment_state(locked)
+
+    return created
+
+
+def release_allocations(
+    *, payment: Payment | None = None, invoice: Invoice | None = None, reason: str = ""
+) -> list[Invoice]:
+    """
+    Taqsimotni bo'shatadi — pul yana avansga aylanadi.
+
+    Ikki holatda chaqiriladi: to'lov qaytarilganda va hisob-faktura
+    bekor qilinganda. Qator o'chirilmaydi, `released_at` bilan
+    belgilanadi: "bu pul bir vaqtlar shu hujjatni yopgan edi" degan
+    fakt hisobotda va nizoda kerak bo'ladi.
+
+    Qaytaradi: `amount_paid` i qayta hisoblangan hujjatlar.
+    """
+    queryset = PaymentAllocation.objects.filter(released_at__isnull=True)
+    if payment is not None:
+        queryset = queryset.filter(payment=payment)
+    if invoice is not None:
+        queryset = queryset.filter(invoice=invoice)
+
+    touched = {
+        allocation.invoice_id: allocation.invoice
+        for allocation in queryset.select_related("invoice")
+    }
+    queryset.update(
+        released_at=timezone.now(), release_reason=reason[:255], updated_at=timezone.now()
+    )
+
+    for affected in touched.values():
+        _refresh_invoice_payment_state(affected)
+    return list(touched.values())
+
+
+def apply_advance_to_invoice(*, invoice: Invoice, created_by: Any = None) -> Decimal:
+    """
+    Yangi hisob-fakturaga bolaning mavjud avansini qo'llaydi (Q1).
+
+    Audit ssenariysi: bola yaratildi → 200 000 naqd qabul qilindi →
+    hisob-faktura chiqarildi. Ilgari faktura "To'lanmagan" bo'lib
+    tug'ilardi, holbuki pul allaqachon kassada edi.
+
+    Qaytaradi: qo'llangan summa.
+    """
+    applied = Decimal("0.00")
+    payments = (
+        Payment.objects.filter(child=invoice.child, reversed_at__isnull=True)
+        .order_by("paid_at", "created_at")
+        .select_for_update()
+    )
+    for payment in payments:
+        outstanding = _money(invoice.amount_due - invoice_allocated(invoice))
+        if outstanding <= 0:
+            break
+        spare = payment_unallocated(payment)
+        if spare <= 0:
+            continue
+        share = min(spare, outstanding)
+        PaymentAllocation.objects.create(
+            organization=invoice.organization,
+            branch=invoice.branch,
+            payment=payment,
+            invoice=invoice,
+            amount=share,
+            allocated_at=timezone.now(),
+        )
+        applied += share
+
+    if applied > 0:
+        _refresh_invoice_payment_state(invoice)
+    return applied
+
+
 def _refresh_invoice_payment_state(invoice: Invoice) -> Invoice:
     """
-    `amount_paid` va statusni to'lovlardan qayta hisoblaydi.
+    `amount_paid` va statusni TAQSIMOTDAN qayta hisoblaydi.
 
     Kesh qo'shish/ayirish bilan emas, QAYTA HISOBLASH bilan yangilanadi:
     inkremental yangilash bitta o'tkazib yuborilgan hodisada jimgina
     siljiydi va siljish qachon boshlanganini hech kim ayta olmaydi.
     """
-    paid = Payment.objects.filter(invoice=invoice, reversed_at__isnull=True).aggregate(
-        total=Sum("amount")
-    )["total"] or Decimal("0")
-    paid = _money(paid)
+    # Manba — taqsimot jadvali, `payment.invoice` ustuni emas. Farq shu
+    # yerda: avans ham taqsimlanadi, ya'ni hisob-faktura "to'landi" deb
+    # belgilanishi uchun pul aynan SHU hujjatga kelgan bo'lishi shart
+    # emas — u bolaning kassadagi puli bo'lsa ham yetadi.
+    paid = _money(invoice_allocated(invoice))
 
     if paid <= 0:
         status = InvoiceStatus.ISSUED
@@ -804,8 +1007,9 @@ def reverse_payment(*, payment: Payment, reason: str = "", created_by: Any = Non
         created_by=created_by,
     )
 
-    if payment.invoice is not None:
-        _refresh_invoice_payment_state(payment.invoice)
+    # Taqsimot bo'shaydi: pul endi hech qaysi hujjatni yopmaydi va
+    # yopilgan deb belgilangan hisob-fakturalar yana ochiladi.
+    release_allocations(payment=payment, reason=reason or gettext("to'lov qaytarildi"))
 
     recompute_child_balance(payment.child)
     return payment

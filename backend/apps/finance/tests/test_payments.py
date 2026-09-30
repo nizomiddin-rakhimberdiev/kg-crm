@@ -117,22 +117,31 @@ class TestRecordPayment:
         assert entry.entry_type == EntryType.PAYMENT
         assert entry.amount == AMOUNT
 
-    def test_overpayment_is_rejected(self, tenant_a, child, invoice):
+    def test_overpayment_becomes_an_advance(self, tenant_a, child, invoice):
         """
-        Hisob-fakturadan ortiq to'lov rad etiladi.
+        Ortiqcha to'lov RAD ETILMAYDI — ortig'i avans bo'lib qoladi (Q1).
 
-        Ortiqcha summa hisob-fakturaga emas, avans sifatida kiritilishi
-        kerak — aks holda `amount_paid <= amount_due` invarianti buzilardi
-        va hisob-faktura "qancha to'lanishi kerak" degan savolga javob
-        bera olmay qolardi.
+        Ilgari bu `BusinessRuleViolation` edi. Sabab tushunarli:
+        `amount_paid <= amount_due` invariantini saqlash kerak edi. Lekin
+        natijada ota-ona ikki oylik pulni bir marta keltirganda kassir
+        summani qo'lda bo'lib, ikki marta kiritishga majbur bo'lardi —
+        va bu xatoga eng qulay joy.
+
+        Endi invariantni TAQSIMOT saqlaydi: hujjatga faqat qoldig'icha
+        biriktiriladi, ortig'i esa hech qaysi hujjatga tegishli bo'lmagan
+        pul — ya'ni avans — bo'lib turadi.
         """
-        with (
-            organization_context(tenant_a.organization.id),
-            pytest.raises(BusinessRuleViolation, match="Ortiqcha"),
-        ):
+        with organization_context(tenant_a.organization.id):
             services.record_payment(
-                child=child, amount=AMOUNT + Decimal("1"), method="cash", invoice=invoice
+                child=child, amount=AMOUNT + Decimal("200000"), method="cash", invoice=invoice
             )
+            invoice.refresh_from_db()
+
+            assert invoice.amount_paid == AMOUNT, "hisob-faktura ortiqcha to'lanmaydi"
+            assert invoice.status == InvoiceStatus.PAID
+            assert services.child_advance(child) == Decimal("200000.00")
+            # Balans manfiy — bog'cha oilaga qarzdor.
+            assert services.child_balance(child.id) == Decimal("-200000.00")
 
     def test_unlinked_advance_payment_creates_credit_balance(self, tenant_a, child):
         """Hisob-fakturasiz to'lov — avans, balans manfiy bo'ladi."""

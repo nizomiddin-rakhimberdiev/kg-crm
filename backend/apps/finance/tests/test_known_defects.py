@@ -84,10 +84,6 @@ class TestBalanceIsOneNumber:
     tushadi, shuning uchun ikki ekran ikki xil raqam ko'rsatadi.
     """
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="PLAN 1.1: doska fakturaning keshidan, Qarzdorlar ledger'dan o'qiydi",
-    )
     def test_advance_payments_show_the_same_debt_on_every_screen(self, tenant_a, tariff):
         # Ibragimov Robiya: 1 500 000 faktura, 830 000 + 540 000 avans.
         child = _child(tenant_a, tariff, first="Robiya", last="Ibragimova")
@@ -106,7 +102,6 @@ class TestBalanceIsOneNumber:
         # Doska esa 1 500 000 ko'rsatadi — bir ekranda ikki haqiqat.
         assert Decimal(board["outstanding"]) == Decimal("130000.00")
 
-    @pytest.mark.xfail(strict=True, reason="PLAN 1.1: oy yakuni ham faktura keshidan")
     def test_month_summary_counts_advances(self, tenant_a, tariff):
         child = _child(tenant_a, tariff, first="Robiya", last="Ibragimova")
         with organization_context(tenant_a.organization.id):
@@ -124,7 +119,6 @@ class TestBalanceIsOneNumber:
 class TestAdvanceAllocation:
     """PLAN 1.2 — Q1: to'lov eng eski ochiq fakturaga (FIFO), qoldiq avans."""
 
-    @pytest.mark.xfail(strict=True, reason="PLAN 1.2: taqsimot yo'q — to'lov avans bo'lib qoladi")
     def test_payment_is_allocated_to_the_oldest_open_invoice(self, tenant_a, tariff):
         child = _child(tenant_a, tariff, first="Robiya", last="Ibragimova")
         with organization_context(tenant_a.organization.id):
@@ -142,7 +136,6 @@ class TestAdvanceAllocation:
         assert august.amount_paid == TARIFF
         assert september.amount_paid == Decimal("0.00")
 
-    @pytest.mark.xfail(strict=True, reason="PLAN 1.2: ortiqcha qism keyingi fakturaga o'tmaydi")
     def test_overpayment_flows_to_the_next_invoice_then_stays_as_advance(self, tenant_a, tariff):
         child = _child(tenant_a, tariff, first="Robiya", last="Ibragimova")
         with organization_context(tenant_a.organization.id):
@@ -163,7 +156,6 @@ class TestAdvanceAllocation:
         # Manfiy balans = bog'cha oilaga qarzdor, ya'ni avans.
         assert balance == Decimal("-200000.00")
 
-    @pytest.mark.xfail(strict=True, reason="PLAN 1.2: yangi faktura mavjud avansni ko'rmaydi")
     def test_new_invoice_consumes_an_existing_advance(self, tenant_a, tariff):
         child = _child(tenant_a, tariff, first="Sinov", last="Claude")
         with organization_context(tenant_a.organization.id):
@@ -173,9 +165,8 @@ class TestAdvanceAllocation:
             invoice.refresh_from_db()
 
         assert invoice.amount_paid == Decimal("200000.00")
-        assert invoice.status == InvoiceStatus.PARTIALLY_PAID
+        assert invoice.amount_outstanding == TARIFF - Decimal("200000.00")
 
-    @pytest.mark.xfail(strict=True, reason="PLAN 1.2: qaytarish taqsimotni ham bekor qilishi kerak")
     def test_reversal_undoes_the_allocation(self, tenant_a, tariff):
         child = _child(tenant_a, tariff, first="Robiya", last="Ibragimova")
         with organization_context(tenant_a.organization.id):
@@ -187,10 +178,11 @@ class TestAdvanceAllocation:
 
             services.reverse_payment(payment=payment, reason="Kassir xato kiritdi")
             invoice.refresh_from_db()
+            balance = services.child_balance(child.id)
 
         assert invoice.amount_paid == Decimal("0.00")
         assert invoice.status != InvoiceStatus.PAID
-        assert services.child_balance(child.id) == TARIFF
+        assert balance == TARIFF
 
 
 class TestFirstInvoice:

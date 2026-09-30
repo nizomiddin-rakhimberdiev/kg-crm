@@ -113,11 +113,18 @@ class ConcurrencyCase(TransactionTestCase):
 
     def test_two_cashiers_cannot_overpay_one_invoice(self) -> None:
         """
-        Ikki kassir bir vaqtda to'liq summani kiritsa, BITTASI o'tadi.
+        Ikki kassir bir vaqtda to'liq summani kiritsa, hisob-faktura
+        ORTIQCHA TO'LANMAYDI — lekin ikkala pul ham yo'qolmaydi.
 
-        Qulfsiz ikkalasi ham "qoldiq yetarli" deb ko'radi va
-        hisob-faktura ikki barobar to'langan bo'lib qolardi. `CHECK`
-        cheklovi buni ushlay olmaydi — u boshqa tranzaksiyani ko'rmaydi.
+        Ilgari ikkinchi to'lov rad etilardi. Endi (Q1) u qabul qilinadi
+        va ortig'i avansga aylanadi: kassaga haqiqatan ikki marta pul
+        kelgan bo'lsa, tizim buni inkor eta olmaydi — inkor qilish
+        kassani kamomadga solardi.
+
+        Qulf esa o'z ishini qilishda davom etadi: taqsimot paytida
+        hujjat qatori `SELECT ... FOR UPDATE` bilan qulflanadi, shuning
+        uchun `amount_paid` hech qachon `amount_due` dan oshmaydi.
+        `CHECK` buni ushlay olmaydi — u boshqa tranzaksiyani ko'rmaydi.
         """
         with organization_context(self.org.id):
             invoice = finance.issue_invoice(child=self.child, period_year=2026, period_month=3)
@@ -134,16 +141,18 @@ class ConcurrencyCase(TransactionTestCase):
 
         results = _run_together(pay, count=2)
         succeeded = [r for r in results if isinstance(r, Payment)]
-        rejected = [r for r in results if isinstance(r, Exception)]
+        failed = [r for r in results if isinstance(r, Exception)]
 
-        assert len(succeeded) == 1, f"kutilgan 1 ta muvaffaqiyat, bo'ldi {len(succeeded)}"
-        assert len(rejected) == 1
+        assert not failed, f"kutilmagan xato: {failed}"
+        assert len(succeeded) == 2
 
         with organization_context(self.org.id):
             invoice.refresh_from_db()
+            # Asosiy invariant: hujjat ortiqcha to'lanmaydi.
             assert invoice.amount_paid == due, "hisob-faktura ortiqcha to'langan"
             assert invoice.status == InvoiceStatus.PAID
-            assert Payment.objects.filter(invoice=invoice).count() == 1
+            # Ikkinchi to'lov yo'qolmaydi — u avans bo'lib turadi.
+            assert finance.child_advance(Child.objects.get(pk=self.child.pk)) == due
 
     # --- To'lov: idempotentlik kaliti ---
 
