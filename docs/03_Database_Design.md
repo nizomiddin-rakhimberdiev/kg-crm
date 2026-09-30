@@ -529,6 +529,55 @@ Authentication identity.
 
 ---
 
+### 12.2 `absence_claim` (ADR-19)
+A documented absence that earns a fee credit. **Not derived from `attendance_record`** — see ADR-19 for why that separation is the whole point.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `child_id` | `UUID` | `NOT NULL` FK → child `ON DELETE RESTRICT` | |
+| `kind` | `VARCHAR(10)` | `NOT NULL`, `CHECK (kind IN ('medical','parental'))` | Doctor's certificate / parent's written application |
+| `date_from` | `DATE` | `NOT NULL` | |
+| `date_to` | `DATE` | `NOT NULL`, `CHECK (date_to >= date_from)` | Inclusive |
+| `document_no` | `VARCHAR(60)` | `NULL` | Certificate number, if any |
+| `note` | `VARCHAR(255)` | `NULL` | |
+| `status` | `VARCHAR(10)` | `NOT NULL DEFAULT 'pending'`, `CHECK (... IN ('pending','approved','rejected','applied'))` | |
+| `billable_days` | `SMALLINT` | `NOT NULL DEFAULT 0`, `CHECK (billable_days >= 0)` | Working days in the range, holidays removed — **computed at approval** |
+| `daily_rate` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0`, `CHECK (daily_rate >= 0)` | Snapshot at approval |
+| `credit_amount` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0`, `CHECK (credit_amount >= 0)` | `= billable_days × daily_rate` |
+| `approved_by_id` | `UUID` | `NULL` FK → user `ON DELETE SET NULL` | |
+| `decided_at` | `TIMESTAMPTZ` | `NULL` | |
+| `decision_note` | `VARCHAR(255)` | `NULL` | |
+| `applied_invoice_id` | `UUID` | `NULL` FK → invoice `ON DELETE RESTRICT` | The invoice that consumed it |
+| `created_by_id` | `UUID` | `NULL` FK → user `ON DELETE SET NULL` | |
+
+**Business rules:**
+- **No two claims may cover the same day for the same child.** Enforced by the database, not the service:
+  `EXCLUDE USING gist (child_id WITH =, daterange(date_from, date_to, '[]') WITH &&) WHERE (status <> 'rejected')` — requires `btree_gist` (verified available on the production cluster, PostgreSQL 17). An application-level check loses this race; the constraint cannot.
+- **There is no minimum length** (owner's decision, 2026-09-30): three days and fifteen days are equally valid if the document supports them. No setting exists for a threshold, deliberately — an unused knob is a future misconfiguration.
+- The numbers are frozen at **approval**, not at creation and not at application: a tariff that changes next month must not move a credit already granted.
+- `billable_days` counts only days the kindergarten was open: the branch's working weekdays (`attendance.working_weekdays`) minus `holiday` (§12.3). A day the kindergarten was closed anyway is not a day the parent missed.
+- `daily_rate` = the charged amount of the invoice covering the absence month ÷ the working days of **that** month. Falls back to `tariff ÷ working days` when no invoice exists yet. Using the charged amount rather than the raw tariff keeps a discounted child from being credited more than they were billed.
+- `credit_amount` is capped at the covering invoice's `amount_due`.
+- Status flow: `pending → approved → applied`, or `pending → rejected`. `applied` is set by invoice generation when the credit becomes a line, and `applied_invoice_id` makes double-application impossible.
+
+**Indexes:** `(organization_id, child_id, date_from)`; partial `(organization_id, status) WHERE status = 'approved'` — the hot path is "which credits are waiting to be applied".
+
+### 12.3 `holiday`
+Days the kindergarten is closed. **Organization-scoped, not branch-scoped**: a public holiday is national, and asking a three-branch organization to type Navro'z three times invites three different answers.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `holiday_date` | `DATE` | `NOT NULL` | |
+| `name` | `VARCHAR(80)` | `NOT NULL` | "Navro'z", "Mustaqillik kuni" |
+
+**Constraint:** `uq_holiday_org_date UNIQUE (organization_id, holiday_date)`.
+
+**Not pre-seeded with a fixed list.** Religious holidays move every year and government decrees shift working days around them; a list shipped in code would be wrong by the following spring and nobody would notice until a parent was credited for a day they were never owed. The kindergarten enters its own calendar, which is also the only source that knows about a local closure.
+
+**Working weekdays** live in `system_setting` as `attendance.working_weekdays` (default `1,2,3,4,5` — Monday to Friday, ISO numbering), because a kindergarten that opens on Saturday is a setting, not a schema change.
+
+---
+
 ## 13. Schema Domain: Finance
 
 > The **`child_ledger_entry`** table is the single source of financial truth. Invoices and payments are *documents* that generate ledger entries. Balances and the entire **Debtors** module are derived from this ledger (D3, ADR-7).
@@ -600,16 +649,29 @@ A money-received event.
 | `invoice_id` | `UUID` | `NULL` FK → invoice `ON DELETE RESTRICT` | Direct link (MVP); NULL = unapplied credit |
 | `child_id` | `UUID` | `NOT NULL` FK → child `ON DELETE RESTRICT` | Denormalized for fast child statements |
 | `amount` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (amount > 0)` | |
-| `method` | `VARCHAR(20)` | `NOT NULL`, `CHECK (... IN ('cash','card','bank_transfer','online'))` | `online` reserved for future gateway |
+| `method` | `VARCHAR(20)` | `NOT NULL`, `CHECK (... IN ('cash','terminal','bank_transfer','online'))` | The four ways a kindergarten here is actually paid |
 | `reference` | `VARCHAR(100)` | `NULL` | External txn ref |
 | `paid_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | |
 | `received_by` | `UUID` | `NULL` FK → user `ON DELETE SET NULL` | Cashier |
 | `receipt_path` | `VARCHAR(255)` | `NULL` | Generated receipt PDF |
+| `batch_id` | `UUID` | `NULL` | Rows entered in **one cashier action** share it (§13.5a) |
 
 **Business rules:**
 - A payment is **immutable**; corrections are made via a **reversal payment** (`amount` reversal recorded as a credit-reversing ledger entry) or a `refund` ledger entry — never an UPDATE/DELETE (D3).
 - Recording a payment, in one transaction: inserts the payment, inserts a **credit** `child_ledger_entry`, updates `invoice.amount_paid`/`status`, updates `child.balance`.
-- **Future-proofing (multi-invoice settlement / overpayment):** introduce `payment_allocation (payment_id, invoice_id, amount)` to split one payment across invoices; MVP uses the direct `invoice_id`.
+- **Future-proofing (multi-invoice settlement):** introduce `payment_allocation (payment_id, invoice_id, amount)` to split one payment across invoices; MVP uses the direct `invoice_id`.
+
+### 13.5a One counter action, several methods
+A parent pays 1 000 000 in cash and 2 500 000 on the terminal for the same invoice. That is **one thing that happened** and four things that must stay true: the till is up by 1 000 000, the terminal by 2 500 000, the invoice by 3 500 000, and the family's ledger by 3 500 000.
+
+**It is stored as several `payment` rows sharing a `batch_id`, not as one row with a split table.** A `payment` is defined as *"a money-received event"*, and a method is part of that event — two methods are two events. Keeping them as rows means `daily_cash_summary`, the method chart, the per-method cash accounts and the existing breakdown modal all keep working without learning a new shape; a split child table would have forced every one of them to join. The batch is what the **UI** needs ("show me that one action"), not what the ledger needs.
+
+Rules for a batch:
+- All rows are written in **one transaction**, with one `Idempotency-Key`: a double-click cannot produce half a batch.
+- Allocation is ordered and capped: the batch fills the invoice up to its outstanding amount, and **any remainder is written as an invoice-less advance** (`invoice_id IS NULL`) instead of being refused. Refusing was the old behaviour and it was wrong at the counter — the money is already in the cashier's hand.
+- `uq_payment_idempotency` still applies to the batch as a whole; individual rows keep their own ids so a single mistaken line can be reversed without touching the rest.
+
+**Method rename (2026-09-30).** `card` → `terminal`, in one migration that rewrites existing rows and the `CHECK`. The customer's vocabulary is *naqd / terminal / o'tkazma / Payme-Click*, and a value named `card` displayed as "Terminal" is the kind of small lie that eventually reaches a report. `bank_transfer` and `online` keep their values; only their labels changed.
 
 ### 13.6 `child_ledger_entry` (append-only — THE source of truth)
 
@@ -633,6 +695,52 @@ A money-received event.
 
 ### 13.7 Debtors — **derived, not stored**
 There is **no `debtor` table.** A debtor is any child whose ledger balance is positive (optionally: with an overdue invoice). Served by a SQL view (§25) and the Debtors module reads it. This is the whole point of the ledger design: the debtor list can never drift out of sync with reality.
+
+---
+
+## 13a. Schema Domain: Money Accounts (ADR-17)
+
+> **The third append-only ledger.** `child_ledger_entry` answers *"what does this family owe?"*, `stock_movement` answers *"what is left in the store?"*, and `cash_movement` answers *"how much money is in which pot, right now?"* — the question the first customer asked that the system could not answer. A balance is always `Σ in − Σ out`; it is never stored, so it cannot drift.
+
+### 13a.1 `cash_account`
+A pot of money the kindergarten actually holds. Seeded per branch, editable by the organization.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `name` | `VARCHAR(80)` | `NOT NULL` | "Naqd kassa", "Terminal", "Bank hisobi", "Payme/Click" |
+| `kind` | `VARCHAR(12)` | `NOT NULL`, `CHECK (... IN ('cash','terminal','bank','ewallet'))` | Drives the default icon and the method mapping |
+| `handles_method` | `VARCHAR(20)` | `NULL`, `CHECK (... IN ('cash','terminal','bank_transfer','online'))` | The payment method that lands here by default. `NULL` = never auto-selected |
+
+**Constraints:**
+- `uq_cash_account_branch_name UNIQUE (branch_id, name) WHERE is_active`.
+- `uq_cash_account_method UNIQUE (branch_id, handles_method) WHERE is_active AND handles_method IS NOT NULL` — **one destination per method per branch.** Two accounts claiming `cash` would make "where did this payment land" a coin toss.
+
+**Seeding.** Creating a branch creates its four accounts (one per method). A branch with no account for a method still accepts the payment — it lands in the branch's `cash` account and the response says so, because refusing money at the counter over a configuration gap is the wrong failure.
+
+### 13a.2 `cash_movement` (append-only — THE source of truth for cash)
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `cash_account_id` | `UUID` | `NOT NULL` FK → cash_account `ON DELETE RESTRICT` | |
+| `direction` | `VARCHAR(3)` | `NOT NULL`, `CHECK (direction IN ('in','out'))` | |
+| `amount` | `NUMERIC(14,2)` | `NOT NULL`, `CHECK (amount > 0)` | Always positive; the sign is `direction` |
+| `source_type` | `VARCHAR(20)` | `NOT NULL`, `CHECK (... IN ('payment','payment_reversal','expense','payroll','advance','transfer','opening','manual'))` | What moved the money |
+| `source_id` | `UUID` | `NULL` | The payment / expense / payout row (soft polymorphic, as `child_ledger_entry.source_id`) |
+| `transfer_group` | `UUID` | `NULL` | The two legs of one transfer share it |
+| `occurred_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | When the money actually moved, not when it was typed |
+| `description` | `VARCHAR(255)` | `NULL` | |
+| `created_by_id` | `UUID` | `NULL` FK → user `ON DELETE SET NULL` | |
+
+**Business rules (the cash contract):**
+- **Balance of an account** = `Σ in.amount − Σ out.amount`. Cash on hand for the organization is the sum over its accounts.
+- Rows are **never updated or deleted**. A mistake is corrected by a counter-movement, exactly as in `child_ledger_entry` (D3).
+- Every write is posted **inside the same transaction** as the document that caused it. A payment with no movement, or a movement with no payment, is a silently wrong balance — the transaction makes both impossible.
+- A **transfer** (cash banked at the end of the day, a terminal settling) is two rows sharing `transfer_group`: `out` of one account, `in` to the other, equal amounts. It moves money between pots and must never change the total.
+- `source_type = 'opening'` exists for one purpose: the migration that backfills history (below). Nothing else may write it.
+
+**Backfill.** Introducing this table on a live database is a data migration, not just a schema change: every non-reversed `payment`, every `approved`/`paid` `expense`, every `paid` payroll payout and every `employee_advance` that already exists gets its movement, mapped by the same rules the services use. Without it the first screen a customer sees after the upgrade reads zero, and they would be right to distrust every number after that.
+
+**Indexes:** `(organization_id, cash_account_id, occurred_at)` for balances and statements; `(source_type, source_id)` for "show me the movement behind this document".
 
 ---
 
@@ -660,9 +768,12 @@ Distinct from `user` — not every employee logs in; not every user is paid.
 | `employment_status` | `VARCHAR(15)` | `NOT NULL DEFAULT 'active'`, `CHECK (... IN ('active','on_leave','terminated'))` | |
 | `hire_date` | `DATE` | `NOT NULL` | |
 | `termination_date` | `DATE` | `NULL` | |
-| `base_salary` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0`, `CHECK (base_salary >= 0)` | Monthly base |
+| `base_salary` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0`, `CHECK (base_salary >= 0)` | Monthly base — **the total the employee receives** |
+| `official_salary` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0`, `CHECK (official_salary >= 0)`, `CHECK (official_salary <= base_salary)` | The on-the-books part (ADR-18). The remainder, `base_salary − official_salary`, is the cash part |
 
-**Constraints:** `uq_employee_user UNIQUE (user_id)` (a user maps to at most one employee); `ck_employee_termination CHECK (termination_date IS NULL OR termination_date >= hire_date)`.
+**Constraints:** `uq_employee_user UNIQUE (user_id)` (a user maps to at most one employee); `ck_employee_termination CHECK (termination_date IS NULL OR termination_date >= hire_date)`; `ck_employee_official_within_base CHECK (official_salary <= base_salary)`.
+
+**Why one total and one split, not two independent numbers** (ADR-18). `base_salary` stays the single answer to "what does this person earn", so nothing that already reads it changes meaning, and `official_salary` carves a part out of it. Two free-standing columns would have made the total a sum nobody owns — and the first time they disagreed, the payslip and the employment contract would disagree with them. Existing rows default to `official_salary = 0`, so **every historical payroll figure stays exactly what it was**; moving someone onto the books is a deliberate edit.
 
 ### 14.3 `payroll_run`
 A payroll cycle for a period.
@@ -694,12 +805,46 @@ Per-employee line within a run.
 | `bonus` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0`, `CHECK (bonus >= 0)` | |
 | `deduction` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0`, `CHECK (deduction >= 0)` | |
 | `advance` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0` | Snapshot of `employee_advance` for the period (§14.5) |
-| `gross` | `NUMERIC(12,2)` | `NOT NULL` | `= base + bonus` |
-| `net` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (net >= 0)` | `= gross − deduction − advance` |
+| `official_base` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0`, `CHECK (official_base >= 0)` | Snapshot of `employee.official_salary` (ADR-18) |
+| `tax_income` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0`, `CHECK (tax_income >= 0)` | Withheld income tax (JShDS) |
+| `tax_pension` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0`, `CHECK (tax_pension >= 0)` | Withheld pension contribution (INPS) |
+| `official_net` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0`, `CHECK (official_net >= 0)` | `= official_base − tax_income − tax_pension` → paid **by transfer** |
+| `cash_net` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0`, `CHECK (cash_net >= 0)` | `= (base_amount − official_base) + bonus − deduction − advance` → paid **in cash** |
+| `gross` | `NUMERIC(12,2)` | `NOT NULL` | `= base_amount + bonus` |
+| `net` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (net >= 0)` | `= official_net + cash_net` |
 | `note` | `VARCHAR(255)` | `NULL` | |
 
 **Constraint:** `uq_payroll_item UNIQUE (payroll_run_id, employee_id)` — one line per employee per run.
-**Future-proofing:** detailed bonus/deduction breakdown → `payroll_item_component` child table.
+
+**The two blocks of a payslip** (ADR-18). Withholdings are computed on `official_base` alone, at the rates in `system_setting` (`payroll.income_tax_rate`, `payroll.pension_rate`) **snapshotted into the row** — a rate that changes in March must not silently rewrite February's payslip. Bonuses, penalties and advances all land on the cash side, because that is where they physically happen. The two nets are kept apart rather than summed early for one reason: they leave **different pots** (§13a), and a single `net` cannot tell the bank account from the till.
+
+`net = official_net + cash_net` stays the number everything outside payroll already reads, so reports and the P&L keep working unchanged.
+
+**Taxes are withheld, not spent.** `tax_income + tax_pension` never becomes a `cash_movement` at payout time — that money stays in the bank account until the kindergarten pays the state, which it records as an ordinary expense (owner's decision, ADR-18). The payroll report shows the withheld total so the accountant knows what is owed.
+
+**Future-proofing:** several distinct bonuses or penalties on one line → `payroll_item_component` child table. One `bonus` and one `deduction` cover what the first customer needs; itemisation is a display feature, not a correctness one.
+
+### 14.4a `payroll_payout`
+What actually left, from which pot, on which day. A run can be paid in several instalments and from several accounts.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `payroll_run_id` | `UUID` | `NOT NULL` FK → payroll_run `ON DELETE RESTRICT` | |
+| `payroll_item_id` | `UUID` | `NULL` FK → payroll_item `ON DELETE RESTRICT` | `NULL` = a lump payment for the whole run |
+| `cash_account_id` | `UUID` | `NOT NULL` FK → cash_account `ON DELETE RESTRICT` | |
+| `part` | `VARCHAR(10)` | `NOT NULL`, `CHECK (part IN ('official','cash'))` | Which block of the payslip this settles |
+| `amount` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (amount > 0)` | |
+| `paid_on` | `DATE` | `NOT NULL` | |
+| `note` | `VARCHAR(255)` | `NULL` | |
+| `created_by_id` | `UUID` | `NULL` FK → user `ON DELETE SET NULL` | |
+
+**Business rules:**
+- A payout is **immutable** and posts an `out` `cash_movement` in the same transaction (`source_type = 'payroll'`).
+- `Σ payouts(item, part)` may not exceed that part's net → checked in the service against a locked row, as payments are against an invoice.
+- Marking a run `paid` **proposes** one payout per item per non-zero part — official → the branch's `bank` account, cash → its `cash` account — and the user may change the account before confirming. The proposal is a convenience; the rows are the record.
+- `ON DELETE RESTRICT` on the run: a paid run can be reopened (§14.3) but its payouts are money that already left and are never cascaded away. Reopening a run that has payouts requires reversing them first — the service says so by name.
+
+**Why payroll does not become `expense` rows.** The customer asked to see salaries "in expenses too". Writing them into the `expense` table would double-count them against the P&L (which already takes payroll from `payroll_run`) and drag them through an approval workflow they do not belong in. Instead both feed **one outflow view** over `cash_movement`: the Expenses screen shows payroll outflows as a distinct, read-only source alongside ordinary expenses. One truth, one screen, no duplication.
 
 ### 14.5 `employee_advance`
 Money handed to an employee **during** the month, before payroll is calculated — the normal case in a kindergarten (someone takes part of their salary on the 15th).
@@ -809,8 +954,13 @@ A storage location (a branch may have kitchen store, dry store, etc.).
 | `status` | `VARCHAR(12)` | `NOT NULL DEFAULT 'pending'`, `CHECK (... IN ('pending','approved','rejected','paid'))` | Approval workflow |
 | `approved_by` | `UUID` | `NULL` FK → user `ON DELETE SET NULL` | |
 | `receipt_path` | `VARCHAR(255)` | `NULL` | Scanned receipt |
+| `cash_account_id` | `UUID` | `NULL` FK → cash_account `ON DELETE RESTRICT` | **Which pot the money left** (ADR-17) |
 
-**Business rules:** `ck_expense_not_future CHECK (expense_date <= CURRENT_DATE)`; only `approved` expenses count in P&L reports; `rejected` requires no further action.
+**Business rules:** `ck_expense_not_future CHECK (expense_date <= CURRENT_DATE)`; only `approved` and `paid` expenses count in P&L reports; `rejected` requires no further action.
+
+**`cash_account_id` is nullable in the schema and required by the service at the moment it matters.** An expense sitting in `pending` has not moved any money and may legitimately not know yet where it will be paid from; the moment it becomes `paid` the account is mandatory, because that is when a `cash_movement` must be written. Making the column `NOT NULL` would have forced the answer at request time — when the person filing the request is often not the person who pays it — and forced a lie into every historical row during the migration. Existing rows are backfilled from the branch's cash account, which is what a kindergarten almost always used.
+
+**The movement, not the row, is the outflow.** A `paid` expense writes one `out` `cash_movement` inside the same transaction. Reversing a mistaken expense is a counter-movement plus a status change, never a delete.
 
 ---
 
@@ -1095,6 +1245,13 @@ The RLS policy is applied by the app's own migration (`intelligence.0001`) throu
 | `*.created_by / approved_by / *_by → user` | **SET NULL** | Keep the record; forget the actor reference. |
 | `* → branch` | **RESTRICT** | A branch with data cannot be deleted. |
 | **`* → organization`** | **RESTRICT** | **Never `CASCADE`.** A single accidental `DELETE FROM organization` must not be able to erase a customer's entire history. Offboarding is an explicit, audited purge job that deletes in a known order — not a cascade. |
+| `cash_movement → cash_account` | **RESTRICT** | Immutable cash history (ADR-17) — an account with movements is deactivated, never deleted. |
+| `expense → cash_account` | **RESTRICT** | The pot an expense was paid from must stay identifiable. |
+| `payroll_payout → cash_account` | **RESTRICT** | Same reason: money that left has an address. |
+| `payroll_payout → payroll_run` | **RESTRICT** | **Not CASCADE.** A run can be reopened; the money it already paid out cannot be un-paid by deleting rows. |
+| `payroll_payout → payroll_item` | **RESTRICT** | A reopened run may drop an item; its payout stays as evidence. |
+| `absence_claim → child` | **RESTRICT** | It produced a financial credit. |
+| `absence_claim → invoice` | **RESTRICT** | The invoice that consumed the credit must remain traceable. |
 | `usage_snapshot → subscription` | **RESTRICT** | Metering evidence outlives any plan change. |
 | `subscription_invoice → usage_snapshot` | **RESTRICT** | An invoice must always be able to show what it was based on. |
 | `subscription_payment → subscription_invoice` | **RESTRICT** | Permanent financial record. |
