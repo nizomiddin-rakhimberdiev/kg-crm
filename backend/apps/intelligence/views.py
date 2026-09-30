@@ -13,9 +13,11 @@ o'zgartirish uchun `dashboard.update`. Yangi permission kodi YO'Q.
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any
 
-from django.db.models import Case, IntegerField, Value, When
+from django.db.models import Case, DecimalField, IntegerField, Sum, Value, When
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
@@ -27,6 +29,9 @@ from apps.core.viewsets import BranchScopedMixin, TenantReadOnlyViewSet
 from apps.intelligence import selectors, services
 from apps.intelligence.models import OPEN_STATUSES, Insight
 from apps.intelligence.serializers import InsightSerializer
+from apps.intelligence.thresholds import OVERDUE_DAYS
+
+MONEY: DecimalField = DecimalField(max_digits=14, decimal_places=2)
 
 
 def _ranked(queryset: Any) -> Any:
@@ -88,12 +93,38 @@ class InsightViewSet(BranchScopedMixin, TenantReadOnlyViewSet):
                 for b in selectors.branch_ids_for(user.organization_id)
             }
 
+        # Insight'lar kechasi 03:30 da hisoblanadi, dashboard esa jonli
+        # raqam ko'rsatadi — auditda bitta ekranda ikkita raqam turgan
+        # edi (27,9 mln va 26,5 mln) va qaysi biri to'g'riligi
+        # ko'rinmasdi. Endi ikkalasi ham beriladi va HAR BIRI qachongi
+        # holat ekani aytiladi.
+        from apps.finance.selectors import debtor_queryset
+
+        debtors = debtor_queryset()
+        if branch_id:
+            debtors = debtors.filter(branch_id=branch_id)
+        live = debtors.aggregate(
+            total=Coalesce(Sum("ledger_balance"), Value(Decimal("0"), output_field=MONEY)),
+            overdue=Coalesce(Sum("overdue_amount"), Value(Decimal("0"), output_field=MONEY)),
+        )
+
+        newest = open_rows.values_list("generated_at", flat=True).first()
+
         return Response(
             {
                 "date": today.isoformat(),
                 "open_count": open_rows.count(),
                 "insights": InsightSerializer(open_rows[:20], many=True).data,
                 "checks": checks,
+                # Insight'lar qachon hisoblangani — kartada "holat: HH:MM".
+                "generated_at": newest.isoformat() if newest else None,
+                # Jonli raqamlar — dashboard bilan BIR XIL manbadan
+                # (`finance/balance.py`).
+                "totals": {
+                    "total_debt": f"{live['total']:.2f}",
+                    "overdue_debt": f"{live['overdue']:.2f}",
+                    "overdue_days": OVERDUE_DAYS,
+                },
             }
         )
 

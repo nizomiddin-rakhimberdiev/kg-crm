@@ -350,8 +350,6 @@ export const messages: Record<string, string> = {
   'Min. qoldiq': 'Мин. остаток',
   Miqdor: 'Количество',
   Moliya: 'Финансы',
-  "Moliyaviy ko'chirma — har bir harakat ledger'dan":
-    'Финансовая выписка — каждое движение из леджера',
   Muddat: 'Срок',
   "Muddati o'tgan": 'Просрочен',
   Naqd: 'Наличные',
@@ -421,7 +419,6 @@ export const messages: Record<string, string> = {
   'Qabul qiluvchi': 'Получатель',
   Qarz: 'Долг',
   'Qarz yo‘q': 'Долга нет',
-  Qarzdor: 'Должники',
   'Qarzdor topilmadi — hech kimga eslatma yuborilmadi.':
     'Должников не найдено — напоминания никому не отправлены.',
   "Qarzdor yo'q": 'Должников нет',
@@ -430,7 +427,6 @@ export const messages: Record<string, string> = {
   'Qarzdorlarga eslatma': 'Напоминание должникам',
   'Qarzdorlarga eslatma shu kundan boshlab yuboriladi.':
     'Напоминания должникам отправляются начиная с этого дня.',
-  Qarzdorlik: 'Задолженность',
   'Qarzdorlik eslatmasi': 'Напоминание о долге',
   "Qatorni o'chirish": 'Удалить строку',
   'Qaysi puldan': 'С каких денег',
@@ -471,8 +467,6 @@ export const messages: Record<string, string> = {
   Reja: 'Тариф',
   'Rejani tanlash': 'Выбрать тариф',
   "Ro'yxat bo'sh": 'Список пуст',
-  "Ro'yxat ledger'dan hisoblanadi — u hech qachon haqiqatdan ajralmaydi.":
-    'Список считается по леджеру — он никогда не расходится с реальностью.',
   "Ro'yxatdagi bolalar": 'Дети в списке',
   "Ro'yxatdan o'tish": 'Регистрация',
   "Ro'yxatga qaytish": 'Назад к списку',
@@ -775,4 +769,10 @@ export const messages: Record<string, string> = {
   'Chiqarilmoqda…': 'Выставляем…',
   'Jami summa': 'Общая сумма',
   "O'tkazib yuboriladi": 'Будут пропущены',
+  'holat {time}': 'на {time}',
+  'Moliyaviy koʻchirma — har bir hisob-faktura va toʻlov':
+    'Финансовая выписка — каждый счёт и платёж',
+  'Qarz barcha hisob-faktura va toʻlovlardan avtomatik hisoblanadi.':
+    'Долг рассчитывается автоматически по всем счетам и платежам.',
+  'Shu oy toʻlanmagan': 'Не оплачен в этом месяце',
 }

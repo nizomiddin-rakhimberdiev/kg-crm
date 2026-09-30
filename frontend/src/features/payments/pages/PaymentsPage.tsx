@@ -337,7 +337,7 @@ export default function PaymentsPage() {
             {(
               [
                 ['', t('Hammasi'), summary?.children],
-                ['debtor', t('Qarzdor'), summary?.debtors],
+                ['debtor', t('Shu oy toʻlanmagan'), summary?.debtors],
                 ['paid', t("To'langan"), (summary?.with_invoice ?? 0) - (summary?.debtors ?? 0)],
                 ['no_invoice', t('Fakturasiz'), summary?.without_invoice],
               ] as const

@@ -15,6 +15,7 @@ import { getCopy } from '@/features/intelligence/content'
 import { BriefingChecks } from '@/features/intelligence/components/BriefingChecks'
 import { InsightCard } from '@/features/intelligence/components/InsightCard'
 import { queryKeys } from '@/lib/api/queryKeys'
+import { t } from '@/lib/i18n'
 
 export function BriefingSection() {
   const copy = getCopy()
@@ -58,6 +59,19 @@ export function BriefingSection() {
         {data && data.open_count > 0 && (
           <span className="rounded-full bg-slate-900 px-2 py-0.5 text-xs font-semibold text-white">
             {data.open_count}
+          </span>
+        )}
+        {/* Signallar kechasi hisoblanadi, dashboard esa jonli raqam
+            ko'rsatadi. Auditda bitta ekranda ikkita raqam turgan va
+            qaysi biri qachongi holat ekani ko'rinmasdi. */}
+        {data?.generated_at && (
+          <span className="num ml-auto text-[11px] text-slate-400">
+            {t('holat {time}', {
+              time: new Date(data.generated_at).toLocaleTimeString('uz-UZ', {
+                hour: '2-digit',
+                minute: '2-digit',
+              }),
+            })}
           </span>
         )}
       </div>

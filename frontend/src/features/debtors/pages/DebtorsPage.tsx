@@ -38,7 +38,7 @@ function StatementDrawer({ childId, onClose }: { childId: string; onClose: () =>
             {query.data?.child.full_name ?? t("Ko'chirma")}
           </h2>
           <p className="mt-1 text-sm text-slate-500">
-            {t("Moliyaviy ko'chirma — har bir harakat ledger'dan")}
+            {t('Moliyaviy koʻchirma — har bir hisob-faktura va toʻlov')}
           </p>
         </div>
 
@@ -156,7 +156,7 @@ export default function DebtorsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Qarzdorlar')}</h1>
           <p className="mt-1 text-sm text-slate-500">
-            {t("Ro'yxat ledger'dan hisoblanadi — u hech qachon haqiqatdan ajralmaydi.")}
+            {t('Qarz barcha hisob-faktura va toʻlovlardan avtomatik hisoblanadi.')}
           </p>
         </div>
         {debtorsQuery.data && debtorsQuery.data.count > 0 && (

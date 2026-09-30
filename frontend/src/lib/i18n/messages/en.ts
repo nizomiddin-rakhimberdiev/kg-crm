@@ -353,8 +353,6 @@ export const messages: Record<string, string> = {
   'Min. qoldiq': 'Min. stock',
   Miqdor: 'Quantity',
   Moliya: 'Finance',
-  "Moliyaviy ko'chirma — har bir harakat ledger'dan":
-    'Financial statement — every movement from the ledger',
   Muddat: 'Due date',
   "Muddati o'tgan": 'Overdue',
   Naqd: 'Cash',
@@ -424,7 +422,6 @@ export const messages: Record<string, string> = {
   'Qabul qiluvchi': 'Recipient',
   Qarz: 'Debt',
   'Qarz yo‘q': 'Nothing owed',
-  Qarzdor: 'Owing',
   'Qarzdor topilmadi — hech kimga eslatma yuborilmadi.':
     'No debtors found — no reminders were sent.',
   "Qarzdor yo'q": 'No debtors',
@@ -433,7 +430,6 @@ export const messages: Record<string, string> = {
   'Qarzdorlarga eslatma': 'Debtor reminders',
   'Qarzdorlarga eslatma shu kundan boshlab yuboriladi.':
     'Debtor reminders are sent starting from this day.',
-  Qarzdorlik: 'Debt',
   'Qarzdorlik eslatmasi': 'Debt reminder',
   "Qatorni o'chirish": 'Remove line',
   'Qaysi puldan': 'Paid from',
@@ -474,8 +470,6 @@ export const messages: Record<string, string> = {
   Reja: 'Plan',
   'Rejani tanlash': 'Choose a plan',
   "Ro'yxat bo'sh": 'The list is empty',
-  "Ro'yxat ledger'dan hisoblanadi — u hech qachon haqiqatdan ajralmaydi.":
-    'The list is computed from the ledger — it never drifts from the truth.',
   "Ro'yxatdagi bolalar": 'Children on the list',
   "Ro'yxatdan o'tish": 'Registration',
   "Ro'yxatga qaytish": 'Back to the list',
@@ -778,4 +772,9 @@ export const messages: Record<string, string> = {
   'Chiqarilmoqda…': 'Issuing…',
   'Jami summa': 'Total amount',
   "O'tkazib yuboriladi": 'Will be skipped',
+  'holat {time}': 'as of {time}',
+  'Moliyaviy koʻchirma — har bir hisob-faktura va toʻlov': 'Statement — every invoice and payment',
+  'Qarz barcha hisob-faktura va toʻlovlardan avtomatik hisoblanadi.':
+    'The balance is computed automatically from all invoices and payments.',
+  'Shu oy toʻlanmagan': 'Unpaid this month',
 }

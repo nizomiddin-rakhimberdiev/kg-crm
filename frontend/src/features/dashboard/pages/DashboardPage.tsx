@@ -308,7 +308,7 @@ export default function DashboardPage() {
               to="/payments"
             />
             <Tile
-              label={t('Qarzdorlik')}
+              label={t('Jami qarz')}
               value={isLoading ? '…' : formatUZS(Number(data?.outstanding_debt ?? 0))}
               hint={t("{v} nafar bola bo'yicha", { v: data?.debtor_count ?? 0 })}
               icon={AlertTriangle}

@@ -12,6 +12,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.attendance import services as attendance
@@ -232,3 +233,27 @@ class TestTask:
         for tenant in (tenant_a, tenant_b):
             with organization_context(tenant.organization.id):
                 assert Insight.objects.filter(status=InsightStatus.NEW).count() == 1
+
+
+class TestBriefingFreshness:
+    """
+    PLAN 1.6 — brifing qachongi holat ekani ko'rinishi kerak.
+
+    Auditda bosh sahifada ikkita raqam turgan edi: brifing 27,9 mln
+    (kechagi 03:30 holati), "Qarzdorlik" kartochkasi 26,5 mln (jonli).
+    Qaysi biri to'g'riligi ko'rinmasdi va ikkalasi ham to'g'ri edi.
+    """
+
+    def test_briefing_reports_when_it_was_computed(self, tenant_a):
+        response = tenant_a.client().get(reverse("v1:insight-briefing"))
+        assert response.status_code == 200
+        assert "generated_at" in response.data
+
+    def test_briefing_carries_live_totals(self, tenant_a):
+        """Jonli raqam brifing bilan BITTA javobda keladi — solishtirish uchun."""
+        response = tenant_a.client().get(reverse("v1:insight-briefing"))
+        totals = response.data["totals"]
+
+        assert set(totals) == {"total_debt", "overdue_debt", "overdue_days"}
+        assert Decimal(totals["total_debt"]) >= 0
+        assert totals["overdue_days"] > 0

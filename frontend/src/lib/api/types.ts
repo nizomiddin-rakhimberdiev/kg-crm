@@ -855,6 +855,20 @@ export interface Briefing {
     /** Egasi, filial tanlanmagan — har bir filial alohida. */
     attendance_by_branch?: Record<string, AttendanceCheck | null>
   }
+  /**
+   * Signallar QACHON hisoblangani (kechasi 03:30).
+   *
+   * Bu raqam bilan jonli `totals` bir xil bo'lmasligi mumkin va bu
+   * normal — shuning uchun ikkalasi ham beriladi va ekranda qaysi
+   * biri qachongi holat ekani yoziladi.
+   */
+  generated_at: string | null
+  /** Jonli raqamlar — bosh sahifadagi kartochkalar bilan bitta manbadan. */
+  totals: {
+    total_debt: string
+    overdue_debt: string
+    overdue_days: number
+  }
 }
 
 export interface EmployeeAdvance {
