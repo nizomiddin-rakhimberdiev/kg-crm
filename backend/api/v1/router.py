@@ -7,7 +7,7 @@ Har bir yangi app o'z ViewSet'ini shu yerga ro'yxatdan o'tkazadi (docs/02 §5).
 from rest_framework.routers import DefaultRouter
 
 from apps.accounts.views import PermissionViewSet, RoleViewSet, UserViewSet
-from apps.attendance.views import AttendanceViewSet
+from apps.attendance.views import AbsenceClaimViewSet, AttendanceViewSet, HolidayViewSet
 from apps.audit.views import AuditLogViewSet
 from apps.branches.views import BranchViewSet
 from apps.children.views import ChildViewSet, GroupViewSet, GuardianViewSet
@@ -47,6 +47,9 @@ router.register("children", ChildViewSet, basename="child")
 router.register("guardians", GuardianViewSet, basename="guardian")
 router.register("groups", GroupViewSet, basename="group")
 router.register("attendance", AttendanceViewSet, basename="attendance")
+# Kelmagan kunlar uchun qaytarish va bayram kalendari (ADR-19).
+router.register("absence-claims", AbsenceClaimViewSet, basename="absence-claim")
+router.register("holidays", HolidayViewSet, basename="holiday")
 router.register("tariffs", TariffPlanViewSet, basename="tariff")
 router.register("discounts", DiscountViewSet, basename="discount")
 router.register("invoices", InvoiceViewSet, basename="invoice")

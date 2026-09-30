@@ -31,6 +31,7 @@ CUSTOM_CREATE = {
     "payroll-run": "create_run() servisi filialni argument sifatida oladi",
     "payroll-advance": "record_advance() servisi filialni xodimdan oladi",
     "attendance": "mark_bulk() servisi filialni guruhdan oladi",
+    "absence-claim": "create_claim() servisi filialni bolasidan oladi",
 }
 
 

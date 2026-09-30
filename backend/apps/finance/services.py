@@ -176,6 +176,59 @@ def _next_invoice_number(branch: Any, year: int, month: int) -> str:
     return f"{prefix}-{sequence:04d}"
 
 
+def _apply_absence_credits(
+    *, invoice: Invoice, amount_due: Decimal, created_by: Any = None
+) -> Decimal:
+    """
+    Tasdiqlangan da'volarni hisob-fakturaga minus qator qilib qo'shadi.
+
+    Da'vo `applied_invoice` bilan belgilanadi, shuning uchun ikkinchi
+    marta qo'llanishi mumkin emas — bu kafolat servisda emas, ma'lumot
+    modelida.
+
+    Chegirma hisob-fakturani MANFIY qilmaydi: bog'cha ota-onaga pul
+    qarzdor bo'lib qolishi kerak bo'lsa, bu ledger orqali balansda
+    ko'rinadi, hisob-faktura esa hujjat bo'lib qoladi.
+    """
+    from apps.attendance.models_absence import AbsenceClaim, ClaimStatus
+
+    claims = list(
+        AbsenceClaim.objects.filter(child=invoice.child, status=ClaimStatus.APPROVED).order_by(
+            "date_from"
+        )
+    )
+    if not claims:
+        return amount_due
+
+    remaining = amount_due
+    for claim in claims:
+        if remaining <= 0:
+            break
+        credit = min(claim.credit_amount, remaining)
+        if credit <= 0:
+            continue
+
+        InvoiceLine.objects.create(
+            invoice=invoice,
+            description=gettext("Kelmagan kunlar uchun qayta hisob: {days} kun × {rate}").format(
+                days=claim.billable_days, rate=claim.daily_rate
+            )[:255],
+            quantity=Decimal("1"),
+            unit_amount=-credit,
+            line_total=-credit,
+        )
+        remaining = _money(remaining - credit)
+
+        claim.status = ClaimStatus.APPLIED
+        claim.applied_invoice = invoice
+        claim.save(update_fields=["status", "applied_invoice", "updated_at"])
+
+    if remaining != amount_due:
+        Invoice.objects.filter(pk=invoice.pk).update(amount_due=remaining)
+        invoice.amount_due = remaining
+    return remaining
+
+
 @transaction.atomic
 def issue_invoice(
     *,
@@ -262,6 +315,17 @@ def issue_invoice(
             unit_amount=-discount_amount,
             line_total=-discount_amount,
         )
+
+    # Kelmagan kunlar uchun qaytarish — MINUS QATOR (ADR-19).
+    #
+    # Nega o'tgan oyning hisob-fakturasini qayta hisoblash emas:
+    # chiqarilgan hujjat ledger yozuvini yaratgan, uni tahrirlash
+    # hujjat bilan ledgerni ajratib yuborardi (D3). Minus qator esa
+    # ota-ona qo'lidagi qog'oz bilan balansni bir xil raqamda
+    # ushlab turadi.
+    amount_due = _apply_absence_credits(
+        invoice=invoice, amount_due=amount_due, created_by=created_by
+    )
 
     if amount_due > 0:
         # Ledger — hujjatdan KEYIN, lekin bitta tranzaksiyada.

@@ -63,6 +63,9 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.finance.TariffPlan",
     # Operatsion yozuvlar
     "apps.intelligence.Insight",  # acted_by → User; hosila, avval ketadi
+    # Da'vo bolaga va hisob-fakturaga `RESTRICT` bilan bog'langan —
+    # u ikkalasidan ham OLDIN o'chadi.
+    "apps.attendance.AbsenceClaim",
     "apps.attendance.AttendanceRecord",
     # To'lov qatori hisoblash va satrga `RESTRICT` bilan bog'langan —
     # u ikkalasidan ham OLDIN o'chadi.
@@ -85,6 +88,7 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.notifications.Notification",
     "apps.notifications.NotificationTemplate",
     "apps.reports.ReportExport",
+    "apps.attendance.Holiday",
     "apps.settings_app.SystemSetting",
     # CRM
     "apps.children.Enrollment",

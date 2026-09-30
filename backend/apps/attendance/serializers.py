@@ -8,6 +8,7 @@ from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.attendance.models import AttendanceRecord, AttendanceStatus
+from apps.attendance.models_absence import AbsenceClaim, ClaimKind, Holiday
 from apps.children.models import Child, Group
 from apps.core.fields import TenantPrimaryKeyRelatedField
 
@@ -90,3 +91,54 @@ class BulkAttendanceSerializer(serializers.Serializer):
                 gettext("Bitta so'rovda bir bola bir marta bo'lishi kerak.")
             )
         return value
+
+
+# --- Kelmagan kunlar uchun qaytarish (ADR-19) ---
+
+
+class HolidaySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Holiday
+        fields = ["id", "holiday_date", "name", "created_at"]
+        read_only_fields = ["id", "created_at"]
+
+
+class AbsenceClaimSerializer(serializers.ModelSerializer):
+    child_name = serializers.CharField(source="child.full_name", read_only=True)
+    approved_by_name = serializers.CharField(
+        source="approved_by.full_name", read_only=True, default=None
+    )
+
+    class Meta:
+        model = AbsenceClaim
+        fields = [
+            "id",
+            "child",
+            "child_name",
+            "kind",
+            "date_from",
+            "date_to",
+            "document_no",
+            "note",
+            "status",
+            "billable_days",
+            "daily_rate",
+            "credit_amount",
+            "approved_by_name",
+            "decided_at",
+            "decision_note",
+            "applied_invoice",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class AbsenceClaimWriteSerializer(serializers.Serializer):
+    """Da'vo yozish — servis orqali, chunki kesishma tekshiriladi."""
+
+    child_id = TenantPrimaryKeyRelatedField(model=Child, source="child")
+    kind = serializers.ChoiceField(choices=ClaimKind.choices)
+    date_from = serializers.DateField()
+    date_to = serializers.DateField()
+    document_no = serializers.CharField(required=False, allow_blank=True, max_length=60)
+    note = serializers.CharField(required=False, allow_blank=True, max_length=255)

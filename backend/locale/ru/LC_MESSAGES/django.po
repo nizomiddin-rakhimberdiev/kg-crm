@@ -948,3 +948,36 @@ msgstr "{employee}: сумма выплаты превысила начисле�
 
 msgid "{employee}: ushlab qolish va avans ({taken}) naqd qismdan ({cash}) oshib ketdi. Rasmiy maoshni yoki avansni to'g'rilang."
 msgstr "{employee}: удержания и аванс ({taken}) превысили наличную часть ({cash}). Исправьте официальную зарплату или аванс."
+
+msgid "Bu kunlar uchun da'vo allaqachon bor: {date_from} — {date_to}."
+msgstr "На эти дни заявка уже есть: {date_from} — {date_to}."
+
+msgid "Bu oraliqda bog'cha ishlamagan (dam olish yoki bayram) — qaytariladigan kun yo'q."
+msgstr "В этот период сад не работал (выходные или праздник) — возвращать нечего."
+
+msgid "Da'vo '{status}' holatida — rad etib bo'lmaydi."
+msgstr "Заявка в статусе «{status}» — отклонить нельзя."
+
+msgid "Da'vo '{status}' holatida — tasdiqlab bo'lmaydi."
+msgstr "Заявка в статусе «{status}» — подтвердить нельзя."
+
+msgid "Hisob-fakturaga tushdi"
+msgstr "Учтено в счёте"
+
+msgid "Kelmagan kunlar uchun qayta hisob: {days} kun × {rate}"
+msgstr "Перерасчёт за пропущенные дни: {days} дн. × {rate}"
+
+msgid "Ota-ona arizasi"
+msgstr "Заявление родителя"
+
+msgid "Shifokor ma'lumotnomasi"
+msgstr "Справка от врача"
+
+msgid "Tugash sanasi boshlanishdan oldin bo'lolmaydi."
+msgstr "Дата окончания не может быть раньше начала."
+
+msgid "{full_name}: tarif ham, hisob-faktura ham yo'q."
+msgstr "{full_name}: нет ни тарифа, ни счёта."
+
+msgid "{year}-{month:02d} oyida ish kuni yo'q — kalendarni tekshiring."
+msgstr "В {year}-{month:02d} нет рабочих дней — проверьте календарь."

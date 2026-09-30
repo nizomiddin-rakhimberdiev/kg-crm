@@ -244,6 +244,31 @@ def _create_row(tenant: Any, basename: str) -> Any:
                 deep_link="/debtors?overdue_days=15",
                 generated_at=timezone.now(),
             )
+        if basename in {"absence-claim", "holiday"}:
+            from apps.attendance.models_absence import AbsenceClaim, ClaimKind, Holiday
+
+            if basename == "holiday":
+                return Holiday.objects.create(
+                    organization=tenant.organization,
+                    holiday_date=date(2026, 3, 21),
+                    name="Navro'z",
+                )
+            child = Child.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                first_name="Da'vo",
+                last_name="Bolasi",
+                date_of_birth=date(2021, 3, 14),
+                gender="female",
+            )
+            return AbsenceClaim.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                child=child,
+                kind=ClaimKind.MEDICAL,
+                date_from=date(2026, 9, 7),
+                date_to=date(2026, 9, 11),
+            )
         if basename == "position":
             return Position.objects.create(
                 organization=tenant.organization, branch=tenant.branch, title="Tarbiyachi"

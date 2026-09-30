@@ -12,18 +12,24 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.attendance import services
+from apps.attendance import services_absence as absence
 from apps.attendance.models import AttendanceRecord
+from apps.attendance.models_absence import AbsenceClaim, Holiday
 from apps.attendance.serializers import (
+    AbsenceClaimSerializer,
+    AbsenceClaimWriteSerializer,
     AttendanceRecordSerializer,
     AttendanceWriteSerializer,
     BulkAttendanceSerializer,
+    HolidaySerializer,
 )
+from apps.audit import services as audit
 from apps.children.models import Group
 from apps.core.exceptions import BusinessRuleViolation
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchScopedMixin, TenantViewSet
 
-__all__ = ["AttendanceViewSet"]
+__all__ = ["AttendanceViewSet", "AbsenceClaimViewSet", "HolidayViewSet"]
 
 
 def _parse_date(raw: str | None, field: str) -> Any:
@@ -141,3 +147,100 @@ class AttendanceViewSet(BranchScopedMixin, TenantViewSet):
                 ),
             }
         )
+
+
+class HolidayViewSet(TenantViewSet):
+    """
+    Bayram kalendari (ADR-19).
+
+    Tashkilot darajasida: bayram milliy, va uch filialli tashkilotga
+    uni uch marta yozdirish uchta har xil javob olish demak.
+    """
+
+    permission_module = "attendance"
+    model = Holiday
+    serializer_class = HolidaySerializer
+    search_fields = ["name"]
+    ordering_fields = ["holiday_date"]
+
+
+class AbsenceClaimViewSet(BranchScopedMixin, TenantViewSet):
+    """
+    Hujjat bilan tasdiqlangan kelmaslik (docs/03 §12.2, ADR-19).
+
+    `PATCH`/`DELETE` yo'q: da'vo tasdiqlangandan keyin u bergan raqam
+    hisob-fakturaga tushadi, shuning uchun uni tahrirlash pul
+    harakatini orqadan o'zgartirardi. Xato bo'lsa — rad etish yoki
+    yangi da'vo.
+    """
+
+    permission_module = "attendance"
+    permission_action_map = {"approve": "approve", "reject": "approve"}
+    model = AbsenceClaim
+    serializer_class = AbsenceClaimSerializer
+    select_related_fields = ("child", "approved_by")
+    filterset_fields = ["status", "kind", "child"]
+    ordering_fields = ["date_from", "created_at"]
+    http_method_names = ["get", "post", "head", "options"]
+
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        payload = AbsenceClaimWriteSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        data = payload.validated_data
+        user = request_user(request)
+
+        claim = absence.create_claim(
+            child=data["child"],
+            kind=data["kind"],
+            date_from=data["date_from"],
+            date_to=data["date_to"],
+            document_no=data.get("document_no", ""),
+            note=data.get("note", ""),
+            created_by=user,
+        )
+        audit.record(
+            action="create",
+            request=request._request,
+            actor=user,
+            entity_type="absence_claim",
+            entity_id=claim.id,
+            changes={"from": str(claim.date_from), "to": str(claim.date_to), "kind": claim.kind},
+        )
+        return Response(AbsenceClaimSerializer(claim).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def approve(self, request: Request, pk: str | None = None) -> Response:
+        """Tasdiqlaydi va qaytariladigan summani MUZLATADI."""
+        claim = self.get_object()
+        user = request_user(request)
+        absence.approve_claim(claim=claim, approved_by=user, note=request.data.get("note", ""))
+        claim.refresh_from_db()
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="absence_claim",
+            entity_id=claim.id,
+            changes={
+                "status": "approved",
+                "days": claim.billable_days,
+                "credit": str(claim.credit_amount),
+            },
+        )
+        return Response(AbsenceClaimSerializer(claim).data)
+
+    @action(detail=True, methods=["post"])
+    def reject(self, request: Request, pk: str | None = None) -> Response:
+        claim = self.get_object()
+        user = request_user(request)
+        absence.reject_claim(claim=claim, approved_by=user, note=request.data.get("note", ""))
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="absence_claim",
+            entity_id=claim.id,
+            changes={"status": "rejected"},
+        )
+        claim.refresh_from_db()
+        return Response(AbsenceClaimSerializer(claim).data)

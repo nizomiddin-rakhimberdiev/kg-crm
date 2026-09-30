@@ -114,3 +114,16 @@ class AttendanceRecord(BranchScopedModel):
 
     def __str__(self) -> str:
         return f"{self.child_id} · {self.attendance_date} · {self.status}"
+
+
+# Kelmagan kunlar uchun qaytarish va bayram kalendari alohida faylda
+# (ADR-19) — ular davomat bilan BIR MODULDA yashaydi, lekin bir-biridan
+# hech narsa o'qimaydi, va shu ajratish aynan shuni ko'rsatib turadi.
+from apps.attendance.models_absence import (  # noqa: E402
+    AbsenceClaim,
+    ClaimKind,
+    ClaimStatus,
+    Holiday,
+)
+
+__all__ = [*__all__, "AbsenceClaim", "ClaimKind", "ClaimStatus", "Holiday"]
