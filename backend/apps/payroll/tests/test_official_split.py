@@ -21,6 +21,7 @@ import pytest
 from django.utils import timezone
 
 from apps.cash import selectors as cash_selectors
+from apps.cash.models import CashMovement
 from apps.core.exceptions import BusinessRuleViolation
 from apps.core.tenancy import organization_context
 from apps.hr.models import Employee
@@ -241,3 +242,31 @@ def test_recalculating_picks_up_a_newly_official_employee(tenant_a: Any):
     assert item.tax_income == Decimal("360000.00")
     assert item.official_net == Decimal("2637000.00")
     assert item.cash_net == Decimal("2000000.00")
+
+
+def test_a_paid_run_reaches_the_cash_ledger(tenant_a: Any):
+    """
+    To'langan oylik kassa jurnalida BO'LISHI shart.
+
+    Yangilanishda aynan shu qolib ketgan edi: to'lov, chiqim va avans
+    ko'chirilgan, oylik esa yo'q — natijada kassa qoldig'i to'langan
+    oylik summasiga yuqori ko'rinardi (mijozda 118,5 mln).
+    `payroll.0005_backfill_payouts` uni tuzatadi; bu test esa YANGI
+    to'lovlar uchun o'sha bog'lanishni qotirib qo'yadi.
+    """
+    _employee(tenant_a, base="4000000")
+    with organization_context(tenant_a.organization.id):
+        run = _run(tenant_a)
+        services.finalize_run(run=run)
+
+        before = cash_selectors.total_balance(organization_id=tenant_a.organization.id)
+        services.pay_run(run=run)
+        after = cash_selectors.total_balance(organization_id=tenant_a.organization.id)
+
+        moved = list(
+            CashMovement.objects.filter(source_type="payroll", organization=tenant_a.organization)
+        )
+
+    assert before - after == Decimal("4000000.00")
+    assert len(moved) == 1
+    assert moved[0].direction == "out"

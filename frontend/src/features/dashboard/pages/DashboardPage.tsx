@@ -130,7 +130,14 @@ function CashPanel({ cash, isLoading }: { cash: DashboardKpis['cash']; isLoading
             <div key={part.label} className="flex items-baseline justify-between gap-3">
               <dt className="text-sm text-slate-500">{part.label}</dt>
               <dd className={cn('text-sm font-semibold tabular-nums', part.tone)}>
-                {isLoading ? '…' : `${part.sign} ${formatUZS(part.value)}`}
+                {/* Nol oldidan ishora qo'yilmaydi: "− 0 UZS" degan yozuv
+                    pul chiqqandek ko'rinardi, aslida esa hech narsa
+                    bo'lmagan. */}
+                {isLoading
+                  ? '…'
+                  : part.value === 0
+                    ? formatUZS(0)
+                    : `${part.sign} ${formatUZS(part.value)}`}
               </dd>
             </div>
           ))}
