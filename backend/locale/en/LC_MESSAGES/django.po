@@ -980,3 +980,6 @@ msgstr "{full_name}: there is neither a tariff nor an invoice."
 
 msgid "{year}-{month:02d} oyida ish kuni yo'q — kalendarni tekshiring."
 msgstr "{year}-{month:02d} has no working days — check the calendar."
+
+msgid "`period_year` va `period_month` butun son bo'lishi kerak."
+msgstr "`period_year` and `period_month` must be whole numbers."

@@ -43,6 +43,8 @@ export const queryKeys = {
   absenceClaims: (orgId: string, params?: Record<string, unknown>) =>
     ['org', orgId, 'absence-claims', params ?? {}] as const,
   holidays: (orgId: string) => ['org', orgId, 'holidays'] as const,
+  paymentBoard: (orgId: string, params?: Record<string, unknown>) =>
+    ['org', orgId, 'payments', 'board', params ?? {}] as const,
   cashAccounts: (orgId: string) => ['org', orgId, 'cash', 'accounts'] as const,
   dailyCash: (orgId: string, date: string) => ['org', orgId, 'payments', 'daily', date] as const,
 

@@ -13,14 +13,38 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 
-from django.db.models import Case, DecimalField, F, OuterRef, Subquery, Sum, Value, When
+from django.db.models import (
+    Case,
+    DecimalField,
+    F,
+    OuterRef,
+    Q,
+    Subquery,
+    Sum,
+    Value,
+    When,
+)
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
-from apps.children.models import Child
-from apps.finance.models import Direction, Invoice, InvoiceStatus
+from apps.children.models import (
+    Child,
+    Enrollment,
+    EnrollmentState,
+    EnrollmentStatus,
+)
+from apps.finance.models import ChildLedgerEntry, Direction, Invoice, InvoiceStatus
 
-__all__ = ["debtor_queryset", "debtor_rows", "child_statement"]
+__all__ = [
+    "debtor_queryset",
+    "debtor_rows",
+    "child_statement",
+    "board_children",
+    "month_board_queryset",
+    "month_board_summary",
+    "board_row",
+    "BOARD_STATUSES",
+]
 
 
 def debtor_queryset(*, min_amount: Decimal | None = None, overdue_only: bool = False) -> Any:
@@ -184,4 +208,186 @@ def child_statement(*, child: Child, limit: int = 100) -> dict[str, Any]:
             }
             for row in open_invoices
         ],
+    }
+
+
+# --- To'lov qabul qilish ekrani (docs/04 §9.7) ---
+#
+# Kassirning bitta ekrani: "shu oyda qaysi bola qancha to'lashi kerak".
+#
+# Nega alohida selektor kerak bo'ldi: ekran hisob-fakturalar ro'yxatiga
+# tayanardi va u ikki sababdan noto'g'ri ishlardi. Birinchidan, faqat
+# hisob-faktura CHIQARILGAN bolalar ko'rinardi. Ikkinchidan — va bu
+# jiddiyroq — ro'yxat `page_size` siz so'ralar, ya'ni serverdan atigi
+# 25 qator kelardi va sahifalash tugmasi ham yo'q edi: 41 bolali
+# bog'chada 16 bola ekranda UMUMAN ko'rinmasdi va ulardan pul qabul
+# qilib bo'lmasdi.
+#
+# Shuning uchun manba — BOLALAR ro'yxati, hisob-faktura esa unga
+# chap tomondan qo'shiladi. Qidiruv, filtr va sahifalash serverda,
+# ya'ni ekran bog'chaning kattaligiga bog'liq emas.
+
+BOARD_STATUSES = ("debtor", "paid", "no_invoice")
+
+
+def board_children(*, organization_id: Any, branch_id: Any = None) -> Any:
+    """
+    Ekranda ko'rinadigan bolalar — ro'yxat va yig'indi uchun BIR MANBA.
+
+    Chiqib ketgan va bitirganlar chiqarib tashlanadi: ular endi pul
+    to'lamaydi va kassirning ro'yxatini shovqinga to'ldirardi.
+    """
+    queryset = Child.objects.filter(organization_id=organization_id, is_active=True).exclude(
+        enrollment_status__in=[EnrollmentStatus.WITHDRAWN, EnrollmentStatus.GRADUATED]
+    )
+    if branch_id:
+        queryset = queryset.filter(branch_id=branch_id)
+    return queryset
+
+
+def month_board_queryset(
+    *,
+    organization_id: Any,
+    period_year: int,
+    period_month: int,
+    branch_id: Any = None,
+    search: str = "",
+    status: str = "",
+) -> Any:
+    """Bolalar + o'sha oyning hisob-fakturasi, bitta so'rovda."""
+    money: DecimalField = DecimalField(max_digits=12, decimal_places=2)
+
+    # ⚠️ Hammasi `Subquery` — `annotate()` ichida ikkita KO'P QIYMATLI
+    # bog'lanish bo'yicha agregat yozilsa, SQL ularni bir-biriga
+    # ko'paytiradi (`debtor_queryset` dagi izoh: qarz to'rt barobar
+    # ko'rinib ketgan edi).
+    invoices = (
+        Invoice.objects.filter(
+            child=OuterRef("pk"), period_year=period_year, period_month=period_month
+        )
+        .exclude(status=InvoiceStatus.CANCELLED)
+        .order_by("-issued_date")
+    )
+    groups = Enrollment.objects.filter(
+        child=OuterRef("pk"), status=EnrollmentState.ACTIVE
+    ).order_by("-start_date")
+    ledger = (
+        ChildLedgerEntry.objects.filter(child=OuterRef("pk"))
+        .values("child")
+        .annotate(
+            total=Sum(
+                Case(
+                    When(direction=Direction.DEBIT, then=F("amount")),
+                    default=-F("amount"),
+                    output_field=money,
+                )
+            )
+        )
+        .values("total")
+    )
+
+    zero = Value(Decimal("0"), output_field=money)
+    queryset = (
+        board_children(organization_id=organization_id, branch_id=branch_id)
+        .annotate(
+            invoice_id=Subquery(invoices.values("id")[:1]),
+            invoice_number=Subquery(invoices.values("number")[:1]),
+            invoice_status=Subquery(invoices.values("status")[:1]),
+            charged=Coalesce(Subquery(invoices.values("amount_due")[:1], output_field=money), zero),
+            paid=Coalesce(Subquery(invoices.values("amount_paid")[:1], output_field=money), zero),
+            group_name=Subquery(groups.values("group__name")[:1]),
+            ledger_balance=Coalesce(Subquery(ledger, output_field=money), zero),
+        )
+        .annotate(outstanding=F("charged") - F("paid"))
+    )
+
+    if search:
+        # Ism va familiya bo'yicha — kassir bolaning ismini yozadi,
+        # hisob-faktura raqamini emas.
+        queryset = queryset.filter(Q(first_name__icontains=search) | Q(last_name__icontains=search))
+
+    if status == "debtor":
+        queryset = queryset.filter(outstanding__gt=0)
+    elif status == "paid":
+        queryset = queryset.filter(invoice_id__isnull=False, outstanding__lte=0)
+    elif status == "no_invoice":
+        queryset = queryset.filter(invoice_id__isnull=True)
+
+    return queryset.order_by("last_name", "first_name")
+
+
+def board_row(child: Any) -> dict[str, Any]:
+    """Annotatsiyalangan bolani ekran kutadigan shaklga o'giradi."""
+    outstanding = child.outstanding
+    if child.invoice_id is None:
+        state = "no_invoice"
+    elif outstanding <= 0:
+        state = "paid"
+    elif child.paid > 0:
+        state = "partial"
+    else:
+        state = "unpaid"
+
+    return {
+        "child_id": str(child.id),
+        "child_name": child.full_name,
+        "group_name": child.group_name or "",
+        "invoice_id": str(child.invoice_id) if child.invoice_id else None,
+        "invoice_number": child.invoice_number or "",
+        "charged": f"{child.charged:.2f}",
+        "paid": f"{child.paid:.2f}",
+        "outstanding": f"{max(outstanding, Decimal('0')):.2f}",
+        "state": state,
+        # Manfiy balans — bog'cha oilaga qarzdor, ya'ni avans bor.
+        # Kassir buni to'lov qabul qilishdan OLDIN ko'rishi kerak.
+        "balance": f"{child.ledger_balance:.2f}",
+    }
+
+
+def month_board_summary(
+    *,
+    organization_id: Any,
+    period_year: int,
+    period_month: int,
+    branch_id: Any = None,
+) -> dict[str, Any]:
+    """
+    Oyning yakuni — SAHIFADAN qat'i nazar.
+
+    Ilgari yuqoridagi "jami" faqat yuklangan 25 qatordan hisoblanardi,
+    ya'ni har doim kam ko'rsatardi.
+
+    **Yig'indi annotatsiya ustidan emas, hisob-fakturalardan olinadi.**
+    `Sum("charged")` — bu `Subquery` annotatsiyasi ustidan agregat, va
+    Django uni SQL ga tushira olmaydi ("column charged does not
+    exist"). Bevosita `Invoice` ustidan yig'ish soddaroq ham, tezroq ham.
+    """
+    children_queryset = board_children(organization_id=organization_id, branch_id=branch_id)
+    invoices = Invoice.objects.filter(
+        child__in=children_queryset, period_year=period_year, period_month=period_month
+    ).exclude(status=InvoiceStatus.CANCELLED)
+
+    money: DecimalField = DecimalField(max_digits=14, decimal_places=2)
+    zero = Value(Decimal("0"), output_field=money)
+    totals = invoices.aggregate(
+        charged=Coalesce(Sum("amount_due"), zero),
+        paid=Coalesce(Sum("amount_paid"), zero),
+    )
+    charged = totals["charged"]
+    paid = totals["paid"]
+
+    children = children_queryset.count()
+    with_invoice = invoices.values("child").distinct().count()
+    debtors = invoices.filter(amount_paid__lt=F("amount_due")).values("child").distinct().count()
+
+    return {
+        "period_year": period_year,
+        "period_month": period_month,
+        "charged": f"{charged:.2f}",
+        "paid": f"{paid:.2f}",
+        "outstanding": f"{max(charged - paid, Decimal('0')):.2f}",
+        "children": children,
+        "with_invoice": with_invoice,
+        "without_invoice": children - with_invoice,
+        "debtors": debtors,
     }

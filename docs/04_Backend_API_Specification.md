@@ -411,46 +411,6 @@ Module: `finance` (Payments module UI). The **ledger** is the source of truth ([
 
 ---
 
-## 10. Debtors
-
-Module: `debtors` — **derived view over the finance ledger** ([03 §13.7](./03_Database_Design.md)). Read-only + reminder action.
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/debtors` | `debtors.read` | List children with outstanding balance (filters: `overdue=true`, `group`, `min_amount`; `ordering=-balance`) |
-| GET | `/debtors/{childId}` | `debtors.read` | Debtor detail + ledger statement |
-| POST | `/debtors/{childId}/remind` | `debtors.update` + `notifications.create` | Send an SMS debt reminder to the primary guardian |
-| POST | `/debtors/remind-all` | `debtors.update` + `notifications.create` | Queue reminders to all current debtors (async) |
-
-> `?overdue_days=N` is a **frontend** deep-link parameter ([07 §8](./07_Radix_Intelligence.md)): the page turns on `overdue=true` and narrows the list to `oldest_overdue_date < today − N` client-side. The API itself does not know it.
-
-**`GET /debtors` — response item**
-```json
-{
-  "child": { "id": "…", "full_name": "Ali Karimov", "group": "Sunflowers" },
-  "balance": "3000000.00",
-  "oldest_overdue_date": "2026-06-05",
-  "primary_guardian": { "full_name": "Nodira K.", "phone": "+998901234567" }
-}
-```
-
----
-
-## 11. HR & Payroll
-
-Modules: `hr` (employees, positions) and `payroll`.
-
-### 11.1 Employees & Positions
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/employees` | `payroll.read` | List employees |
-| POST | `/employees` | `payroll.create` | Create employee |
-| GET | `/employees/{id}` | `payroll.read` | Detail |
-| PATCH | `/employees/{id}` | `payroll.update` | Update (incl. base_salary, status) |
-| DELETE | `/employees/{id}` | `payroll.delete` | Soft delete (terminate) |
-| GET | `/positions` | `payroll.read` | List positions |
-| POST | `/positions` | `payroll.create` | Create position |
-
 ### 9.5 Cash accounts (ADR-17)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -520,6 +480,62 @@ An advance belongs to a run by the **month of `paid_on`**, not by a foreign key,
 **Errors:** `422` (non-positive amount; advance exceeds the employee's gross for that period).
 
 ---
+
+### 9.7 The cashier's screen — `GET /payments/board`
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/payments/board` | `payments.read` | One row per **child** for a month, with that month's invoice joined on. Params: `period_year`, `period_month` (default: today), `search`, `status`, `branch`, standard pagination |
+| GET | `/payments/board-summary` | `payments.read` | The month's totals **across every child**, independent of the page |
+
+Row: `{child_id, child_name, group_name, invoice_id, invoice_number, charged, paid, outstanding, state, balance}` where `state` is `unpaid | partial | paid | no_invoice` and `balance` is the child's ledger balance (**negative = an advance already on account**, which the cashier must see before taking more money). `status` filters on `debtor | paid | no_invoice`.
+
+**Why this is a purpose-built endpoint and not the invoice list.** The screen used to read `GET /invoices`, and that was wrong twice over. A child whose invoice had not been generated did not appear at all, so there was no way to take money from them. And the list was requested **without `page_size`**, so the server returned 25 rows and the page had no pagination control: in a kindergarten with 41 children, 16 of them were invisible and unreachable, and the "total due" figure printed above the list summed only what happened to be loaded. Driving the board from **children**, with search, filtering and paging on the server, makes the screen independent of how large the kindergarten is.
+
+**Why a second endpoint for the totals.** They belong to the whole month, not to the visible rows. Keeping them in the paginated response would have meant recomputing them per page and re-introducing the same class of bug.
+
+**The aggregates deliberately do not read the board's annotations.** `Sum("charged")` over a `Subquery` annotation is not something Django can push into SQL (it fails with `column "charged" does not exist`), so the summary aggregates `invoice` directly — simpler and faster besides.
+
+---
+
+## 10. Debtors
+
+Module: `debtors` — **derived view over the finance ledger** ([03 §13.7](./03_Database_Design.md)). Read-only + reminder action.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/debtors` | `debtors.read` | List children with outstanding balance (filters: `overdue=true`, `group`, `min_amount`; `ordering=-balance`) |
+| GET | `/debtors/{childId}` | `debtors.read` | Debtor detail + ledger statement |
+| POST | `/debtors/{childId}/remind` | `debtors.update` + `notifications.create` | Send an SMS debt reminder to the primary guardian |
+| POST | `/debtors/remind-all` | `debtors.update` + `notifications.create` | Queue reminders to all current debtors (async) |
+
+> `?overdue_days=N` is a **frontend** deep-link parameter ([07 §8](./07_Radix_Intelligence.md)): the page turns on `overdue=true` and narrows the list to `oldest_overdue_date < today − N` client-side. The API itself does not know it.
+
+**`GET /debtors` — response item**
+```json
+{
+  "child": { "id": "…", "full_name": "Ali Karimov", "group": "Sunflowers" },
+  "balance": "3000000.00",
+  "oldest_overdue_date": "2026-06-05",
+  "primary_guardian": { "full_name": "Nodira K.", "phone": "+998901234567" }
+}
+```
+
+---
+
+## 11. HR & Payroll
+
+Modules: `hr` (employees, positions) and `payroll`.
+
+### 11.1 Employees & Positions
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/employees` | `payroll.read` | List employees |
+| POST | `/employees` | `payroll.create` | Create employee |
+| GET | `/employees/{id}` | `payroll.read` | Detail |
+| PATCH | `/employees/{id}` | `payroll.update` | Update (incl. base_salary, status) |
+| DELETE | `/employees/{id}` | `payroll.delete` | Soft delete (terminate) |
+| GET | `/positions` | `payroll.read` | List positions |
+| POST | `/positions` | `payroll.create` | Create position |
 
 ## 12. Inventory
 

@@ -981,3 +981,6 @@ msgstr "{full_name}: нет ни тарифа, ни счёта."
 
 msgid "{year}-{month:02d} oyida ish kuni yo'q — kalendarni tekshiring."
 msgstr "В {year}-{month:02d} нет рабочих дней — проверьте календарь."
+
+msgid "`period_year` va `period_month` butun son bo'lishi kerak."
+msgstr "`period_year` и `period_month` должны быть целыми числами."

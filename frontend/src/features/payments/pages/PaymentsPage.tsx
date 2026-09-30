@@ -6,41 +6,47 @@
  * yangisi chiqariladi.
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Ban, Banknote, FileText, Plus, Trash2, Wallet } from 'lucide-react'
+import { Ban, FileText, Plus, Search, Trash2, Users, Wallet } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
-import { invoicesApi, paymentsApi, tariffsApi } from '@/features/payments/api'
-import { InvoicePaymentsModal } from '@/features/payments/components/InvoicePaymentsModal'
-import { RecordPaymentModal } from '@/features/payments/components/RecordPaymentModal'
+import { invoicesApi, paymentsApi, tariffsApi, type BoardRow } from '@/features/payments/api'
+import { TakePaymentModal } from '@/features/payments/components/TakePaymentModal'
 import { paymentMethodLabel } from '@/features/payments/methods'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { queryKeys } from '@/lib/api/queryKeys'
-import { ApiError, type BillingRunResult, type Invoice, type Payment } from '@/lib/api/types'
+import { ApiError, type BillingRunResult, type Payment } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate } from '@/lib/utils'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
 import { t } from '@/lib/i18n'
 
-const STATUS_STYLES: Record<string, string> = {
-  issued: 'bg-sky-50 text-sky-700',
-  partially_paid: 'bg-amber-50 text-amber-700',
-  paid: 'bg-emerald-50 text-emerald-700',
-  overdue: 'bg-red-50 text-red-700',
-  cancelled: 'bg-slate-100 text-slate-400 line-through',
-  draft: 'bg-slate-100 text-slate-500',
-}
+const money = (value: string | number) =>
+  new Intl.NumberFormat('uz-UZ').format(Math.round(Number(value))) + t(" so'm")
 
-const STATUS_LABELS: Record<string, string> = {
-  issued: t('Chiqarilgan'),
-  partially_paid: t("Qisman to'langan"),
-  paid: t("To'langan"),
-  overdue: t("Muddati o'tgan"),
-  cancelled: t('Bekor qilingan'),
-  draft: t('Qoralama'),
-}
+const MONTHS = [
+  t('Yanvar'),
+  t('Fevral'),
+  t('Mart'),
+  t('Aprel'),
+  t('May'),
+  t('Iyun'),
+  t('Iyul'),
+  t('Avgust'),
+  t('Sentabr'),
+  t('Oktabr'),
+  t('Noyabr'),
+  t('Dekabr'),
+]
 
-const money = (value: string) => new Intl.NumberFormat('uz-UZ').format(Number(value)) + t(" so'm")
+/** Qatordagi holat belgisi — rangi bir qarashda o'qiladi. */
+const BOARD_STATE: Record<BoardRow['state'], [string, string]> = {
+  unpaid: [t("To'lanmagan"), 'bg-red-50 text-red-700'],
+  partial: [t("Qisman to'langan"), 'bg-amber-50 text-amber-700'],
+  paid: [t("To'langan"), 'bg-emerald-50 text-emerald-700'],
+  no_invoice: [t('Fakturasiz'), 'bg-slate-100 text-slate-500'],
+}
 
 export default function PaymentsPage() {
   const organizationId = useOrganizationId()
@@ -48,24 +54,48 @@ export default function PaymentsPage() {
   const { can } = useCan()
 
   const now = new Date()
-  const [tab, setTab] = useState<'invoices' | 'payments' | 'tariffs'>('invoices')
+  const [tab, setTab] = useState<'board' | 'payments' | 'tariffs'>('board')
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [tariffForm, setTariffForm] = useState({ name: '', amount: '' })
-  // Hisob-faktura bo'yicha to'lovlar taqsimoti (nimadan qancha kelgan).
-  const [breakdownInvoice, setBreakdownInvoice] = useState<Invoice | null>(null)
+  // Qidiruv SERVERDA bajariladi, lekin har harfda so'rov yubormaymiz:
+  // `debounced` 250 ms kutadi. Kassir tez yozadi, tarmoq esa sekin.
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 250)
+  const [status, setStatus] = useState<'' | 'debtor' | 'paid' | 'no_invoice'>('')
+  const [page, setPage] = useState(1)
+  // Bosilgan bola — to'lov oynasi shu qator bilan ochiladi.
+  const [paying, setPaying] = useState<BoardRow | null>(null)
   const [runResult, setRunResult] = useState<BillingRunResult | null>(null)
-  const [payingInvoice, setPayingInvoice] = useState<Invoice | null>(null)
-  // Fakturasiz to'lov oynasi (avans): `invoice` berilmaydi.
-  const [advanceOpen, setAdvanceOpen] = useState(false)
   // Qaytarish sababi so'raladigan to'lov.
   const [reversing, setReversing] = useState<Payment | null>(null)
   const [reverseReason, setReverseReason] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  const invoicesQuery = useQuery({
-    queryKey: queryKeys.invoices(organizationId, { year, month }),
-    queryFn: () => invoicesApi.list({ period_year: year, period_month: month }),
+  // Filtr yoki qidiruv o'zgarsa birinchi sahifaga qaytamiz — aks holda
+  // "3-sahifa" da turgan holda qidirilsa, bo'sh ro'yxat chiqardi.
+  useEffect(() => {
+    setPage(1)
+  }, [debouncedSearch, status, year, month])
+
+  const boardParams = {
+    period_year: year,
+    period_month: month,
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    ...(status ? { status } : {}),
+    page,
+  }
+  const boardQuery = useQuery({
+    queryKey: queryKeys.paymentBoard(organizationId, boardParams),
+    queryFn: () => paymentsApi.board(boardParams),
+    placeholderData: (previous) => previous,
+  })
+
+  // Yakuniy raqamlar ALOHIDA so'rovda va sahifasiz: ular butun oyga
+  // tegishli, ko'rinib turgan qatorlarga emas.
+  const summaryQuery = useQuery({
+    queryKey: ['org', organizationId, 'payments', 'board-summary', year, month],
+    queryFn: () => paymentsApi.boardSummary(year, month),
   })
 
   const tariffsQuery = useQuery({
@@ -111,12 +141,6 @@ export default function PaymentsPage() {
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
-  const cancelInvoice = useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) => invoicesApi.cancel(id, reason),
-    onSuccess: invalidate,
-    onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
-  })
-
   const createTariff = useMutation({
     mutationFn: () => tariffsApi.create(tariffForm),
     onSuccess: () => {
@@ -133,25 +157,26 @@ export default function PaymentsPage() {
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
-  const invoices = invoicesQuery.data?.items ?? []
-  const totalDue = invoices
-    .filter((i) => i.status !== 'cancelled')
-    .reduce((sum, i) => sum + Number(i.amount_due), 0)
+  // Sahifalar ustma-ust qo'shiladi: "Yana ko'rsatish" ro'yxatni
+  // almashtirmaydi, davom ettiradi.
+  const [accumulated, setAccumulated] = useState<BoardRow[]>([])
+  useEffect(() => {
+    const items = boardQuery.data?.items
+    if (!items) return
+    setAccumulated((previous) => (page === 1 ? items : [...previous, ...items]))
+  }, [boardQuery.data, page])
+
+  const rows = page === 1 ? (boardQuery.data?.items ?? []) : accumulated
+  const summary = summaryQuery.data
+  const pagination = boardQuery.data?.pagination
+  const hasMore = Boolean(pagination && pagination.page < pagination.total_pages)
 
   return (
     <div className="space-y-6">
-      {payingInvoice && (
-        <RecordPaymentModal invoice={payingInvoice} onClose={() => setPayingInvoice(null)} />
-      )}
-
-      {breakdownInvoice && (
-        <InvoicePaymentsModal
-          invoice={breakdownInvoice}
-          onClose={() => setBreakdownInvoice(null)}
-        />
-      )}
-
-      {advanceOpen && <RecordPaymentModal onClose={() => setAdvanceOpen(false)} />}
+      {/* To'lov oynasi — bolaning qatori bosilganda. Alohida "yangi
+          to'lov" tugmasi YO'Q: kassir bolani qidiradi, ustiga bosadi
+          va pulni qabul qiladi. */}
+      {paying && <TakePaymentModal row={paying} onClose={() => setPaying(null)} />}
 
       {/* Qaytarish — sabab MAJBURIY: kassa jurnalida "nega qaytarildi?"
           degan savol javobsiz qolmasin (to'lovning o'zi o'chirilmaydi,
@@ -208,15 +233,15 @@ export default function PaymentsPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t("To'lovlar")}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          {t("Hisob-fakturalar ledger'ga yoziladi va tahrirlanmaydi — xato bo'lsa bekor qilinadi.")}
+          {t('Bolani qidiring, ustiga bosing va pulni qabul qiling.')}
         </p>
       </div>
 
       <div className="flex gap-1 border-b border-slate-200">
         {(
           [
-            ['invoices', t('Hisob-fakturalar')],
-            ['payments', t("To'lovlar")],
+            ['board', t("To'lov qabul qilish")],
+            ['payments', t('Jurnal')],
             ['tariffs', t('Tariflar')],
           ] as const
         ).map(([key, label]) => (
@@ -242,8 +267,10 @@ export default function PaymentsPage() {
         </div>
       )}
 
-      {tab === 'invoices' && (
+      {tab === 'board' && (
         <>
+          {/* Davr, qidiruv va filtr — bitta qatorda. Kassirning ishi
+              shu yerdan boshlanadi: bolani topish. */}
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <label htmlFor="year" className="mb-1 block text-xs font-medium text-slate-600">
@@ -265,189 +292,220 @@ export default function PaymentsPage() {
                 id="month"
                 value={month}
                 onChange={(e) => setMonth(Number(e.target.value))}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
               >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                  <option key={m} value={m}>
-                    {String(m).padStart(2, '0')}
+                {MONTHS.map((label, index) => (
+                  <option key={label} value={index + 1}>
+                    {label}
                   </option>
                 ))}
               </select>
             </div>
 
+            <div className="min-w-[14rem] flex-1">
+              <label
+                htmlFor="board-search"
+                className="mb-1 block text-xs font-medium text-slate-600"
+              >
+                {t('Bolani qidirish')}
+              </label>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  id="board-search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={t('Ism yoki familiya…')}
+                  className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+                />
+              </div>
+            </div>
+
             {can('payments.create') && (
               <button
                 type="button"
-                disabled={generate.isPending}
                 onClick={() => generate.mutate()}
+                disabled={generate.isPending}
                 className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
               >
                 <FileText className="h-4 w-4" />
-                {generate.isPending ? t('Chiqarilmoqda…') : t('Hisob-faktura chiqarish')}
+                {generate.isPending ? t('Hisoblanmoqda…') : t('Hisob-faktura chiqarish')}
               </button>
-            )}
-
-            {invoices.length > 0 && (
-              <div className="ml-auto text-right">
-                <p className="text-xs text-slate-500">{t("Davr bo'yicha jami")}</p>
-                <p className="text-lg font-bold text-slate-900">{money(String(totalDue))}</p>
-              </div>
             )}
           </div>
 
+          {/* Holat bo'yicha filtr — serverda, ya'ni sonlar sahifaga
+              bog'liq emas. */}
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ['', t('Hammasi'), summary?.children],
+                ['debtor', t('Qarzdor'), summary?.debtors],
+                ['paid', t("To'langan"), (summary?.with_invoice ?? 0) - (summary?.debtors ?? 0)],
+                ['no_invoice', t('Fakturasiz'), summary?.without_invoice],
+              ] as const
+            ).map(([value, label, count]) => (
+              <button
+                key={value || 'all'}
+                type="button"
+                onClick={() => setStatus(value)}
+                className={cn(
+                  'rounded-full border px-3 py-1.5 text-sm font-medium transition',
+                  status === value
+                    ? 'border-brand-300 bg-brand-50 text-brand-700'
+                    : 'border-slate-200 text-slate-600 hover:bg-slate-50',
+                )}
+              >
+                {label}
+                {count !== undefined && (
+                  <span className="ml-1.5 text-xs tabular-nums opacity-70">{count}</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Oyning yakuni — SERVERDAN, ya'ni sahifadan qat'i nazar
+              to'g'ri. Ilgari u yuklangan 25 qatordan hisoblanar va
+              har doim kam ko'rsatardi. */}
+          <div className="grid gap-3 sm:grid-cols-3">
+            {(
+              [
+                [t('Hisoblangan'), summary?.charged, 'text-slate-900'],
+                [t("To'langan"), summary?.paid, 'text-emerald-600'],
+                [t('Qolgan'), summary?.outstanding, 'text-amber-600'],
+              ] as const
+            ).map(([label, value, tone]) => (
+              <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  {label}
+                </p>
+                <p className={cn('mt-1 text-xl font-bold tabular-nums', tone)}>
+                  {value === undefined ? '…' : money(value)}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {(summary?.without_invoice ?? 0) > 0 && (
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              {t(
+                "{v} ta bolaga bu oy uchun hisob-faktura chiqarilmagan — tarifi yo'q bo'lishi mumkin.",
+                { v: summary?.without_invoice },
+              )}
+            </p>
+          )}
+
           {runResult && (
-            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm">
-              <p className="font-semibold text-slate-900">
-                {t('{period}: {created} ta yangi hisob-faktura', {
-                  period: runResult.period,
-                  created: runResult.created,
-                })}
-              </p>
-              {runResult.skipped_existing > 0 && (
-                <p className="mt-1 text-slate-500">
-                  {t('{skipped_existing} ta allaqachon mavjud edi — qayta hisoblanmadi.', {
-                    skipped_existing: runResult.skipped_existing,
-                  })}
-                </p>
-              )}
-              {runResult.skipped_no_tariff.length > 0 && (
-                <p className="mt-1 text-amber-700">
-                  {t("Tarifsiz bolalar o'tkazib yuborildi:")}{' '}
-                  {runResult.skipped_no_tariff.join(', ')}
-                </p>
-              )}
+            <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+              {t('{created} ta chiqarildi · {skipped} ta o‘tkazib yuborildi', {
+                created: runResult.created,
+                skipped: runResult.skipped_existing,
+              })}
             </div>
           )}
 
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-            {invoicesQuery.isPending && (
-              <p className="px-4 py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
-            )}
-            {invoices.length === 0 && !invoicesQuery.isPending && (
-              <div className="px-4 py-12 text-center">
-                <Wallet className="mx-auto mb-3 h-10 w-10 text-slate-200" />
-                <p className="text-sm text-slate-500">{t("Bu davr uchun hisob-faktura yo'q.")}</p>
-              </div>
-            )}
-
-            {invoices.length > 0 && (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[560px] text-sm">
-                  <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">{t('Raqam')}</th>
-                      <th className="px-4 py-3 font-medium">{t('Bola')}</th>
-                      <th className="px-4 py-3 text-right font-medium">{t('Summa')}</th>
-                      <th className="px-4 py-3 text-right font-medium">{t('Qoldiq')}</th>
-                      <th className="px-4 py-3 font-medium">{t('Holat')}</th>
-                      <th className="px-4 py-3" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {invoices.map((invoice) => (
-                      <tr key={invoice.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 font-mono text-xs text-slate-500">
-                          {invoice.number}
-                        </td>
-                        {/* Ism ham, summa ham taqsimotni ochadi — mijoz
-                            ikkalasini ham bosib ko'rishini aytdi. */}
-                        <td className="px-4 py-3 font-medium text-slate-800">
-                          <button
-                            type="button"
-                            onClick={() => setBreakdownInvoice(invoice)}
-                            className="rounded text-left underline-offset-2 hover:underline"
-                            title={t("To'lovlar tafsiloti")}
-                          >
-                            {invoice.child_name}
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 text-right text-slate-700">
-                          <button
-                            type="button"
-                            onClick={() => setBreakdownInvoice(invoice)}
-                            className="rounded tabular-nums underline-offset-2 hover:underline"
-                            title={t("To'lovlar tafsiloti")}
-                          >
-                            {money(invoice.amount_due)}
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 text-right text-slate-500">
-                          {money(invoice.amount_outstanding)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={cn(
-                              'rounded-full px-2 py-0.5 text-xs font-medium',
-                              STATUS_STYLES[invoice.status],
-                            )}
-                          >
-                            {STATUS_LABELS[invoice.status] ?? invoice.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          {can('payments.create') &&
-                            Number(invoice.amount_outstanding) > 0 &&
-                            invoice.status !== 'cancelled' && (
-                              <button
-                                type="button"
-                                title={t("To'lov qabul qilish")}
-                                onClick={() => setPayingInvoice(invoice)}
-                                className="mr-1 rounded-lg p-2 text-emerald-600 transition hover:bg-emerald-50"
-                              >
-                                <Banknote className="h-4 w-4" />
-                              </button>
-                            )}
-                          {can('payments.update') && invoice.status !== 'cancelled' && (
-                            <button
-                              type="button"
-                              title={t('Bekor qilish')}
-                              onClick={() => {
-                                const reason = window.prompt(t('Bekor qilish sababi:'))
-                                if (reason !== null) {
-                                  cancelInvoice.mutate({ id: invoice.id, reason })
-                                }
-                              }}
-                              className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                            >
-                              <Ban className="h-4 w-4" />
-                            </button>
+            <ul className="divide-y divide-slate-100">
+              {rows.map((row) => {
+                const [label, tone] = BOARD_STATE[row.state]
+                const credit = Math.max(0, -Number(row.balance))
+                const clickable = can('payments.create')
+                return (
+                  <li key={row.child_id}>
+                    <button
+                      type="button"
+                      disabled={!clickable}
+                      onClick={() => setPaying(row)}
+                      className={cn(
+                        'flex w-full items-center gap-3 px-4 py-3 text-left transition',
+                        clickable ? 'hover:bg-slate-50' : 'cursor-default',
+                      )}
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium text-slate-900">
+                          {row.child_name}
+                        </span>
+                        <span className="block truncate text-xs text-slate-400">
+                          {row.group_name || t('Guruhsiz')}
+                          {credit > 0 && (
+                            <span className="ml-1.5 text-emerald-600">
+                              {t('avans {money}', { money: money(String(credit)) })}
+                            </span>
                           )}
-                        </td>
-                      </tr>
-                    ))}
-                    {invoices.length === 0 && (
-                      <EmptyRow
-                        colSpan={7}
-                        icon={FileText}
-                        title={t("Hisob-faktura yo'q")}
-                        hint={t(
-                          "Bolalarga tarif belgilangach, oylik hisob-fakturalar shu yerda paydo bo'ladi.",
+                        </span>
+                      </span>
+
+                      <span className="hidden shrink-0 text-right sm:block">
+                        <span className="block text-xs text-slate-400">{t('Hisoblangan')}</span>
+                        <span className="block text-sm tabular-nums text-slate-600">
+                          {money(row.charged)}
+                        </span>
+                      </span>
+
+                      <span className="w-28 shrink-0 text-right">
+                        <span className="block text-xs text-slate-400">{t('Qolgan')}</span>
+                        <span
+                          className={cn(
+                            'block text-sm font-semibold tabular-nums',
+                            Number(row.outstanding) > 0 ? 'text-amber-600' : 'text-slate-400',
+                          )}
+                        >
+                          {money(row.outstanding)}
+                        </span>
+                      </span>
+
+                      <span
+                        className={cn(
+                          'shrink-0 rounded-full px-2 py-0.5 text-xs font-medium',
+                          tone,
                         )}
-                      />
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      >
+                        {label}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+
+              {rows.length === 0 && !boardQuery.isPending && (
+                <li className="px-4 py-12 text-center">
+                  <Users className="mx-auto h-8 w-8 text-slate-300" />
+                  <p className="mt-2 text-sm font-medium text-slate-600">
+                    {search ? t('Hech kim topilmadi') : t("Bola yo'q")}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    {search
+                      ? t('Boshqa ism bilan qidirib ko‘ring.')
+                      : t("Avval bolalarni ro'yxatga oling.")}
+                  </p>
+                </li>
+              )}
+
+              {boardQuery.isPending && (
+                <li className="px-4 py-12 text-center text-sm text-slate-400">
+                  {t('Yuklanmoqda…')}
+                </li>
+              )}
+            </ul>
+
+            {hasMore && (
+              <button
+                type="button"
+                onClick={() => setPage((p) => p + 1)}
+                className="w-full border-t border-slate-100 px-4 py-3 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
+              >
+                {t('Yana ko‘rsatish')}
+              </button>
             )}
           </div>
         </>
       )}
-
       {tab === 'payments' && (
         <>
-          {can('payments.create') && (
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => setAdvanceOpen(true)}
-                className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
-              >
-                <Banknote className="h-4 w-4" />
-                {t("To'lov qabul qilish")}
-              </button>
-            </div>
-          )}
-
+          {/* Bu yerda "to'lov qabul qilish" tugmasi ATAYLAB yo'q:
+              pul faqat bolaning qatoridan qabul qilinadi, ya'ni har
+              doim kimga tegishli ekani ma'lum. Jurnal esa o'qish
+              uchun — nima bo'lgani va kim qabul qilgani. */}
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-sm">

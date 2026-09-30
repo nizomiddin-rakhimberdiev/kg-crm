@@ -37,7 +37,56 @@ export const discountsApi = {
   }) => api.post('/discounts', payload),
 }
 
+/** To'lov qabul qilish ekranining bitta qatori (docs/04 §9.7). */
+export interface BoardRow {
+  child_id: string
+  child_name: string
+  group_name: string
+  invoice_id: string | null
+  invoice_number: string
+  charged: string
+  paid: string
+  outstanding: string
+  state: 'unpaid' | 'partial' | 'paid' | 'no_invoice'
+  /** Manfiy = avans bor: kassir buni to'lovdan OLDIN ko'rishi kerak. */
+  balance: string
+}
+
+export interface BoardSummary {
+  period_year: number
+  period_month: number
+  charged: string
+  paid: string
+  outstanding: string
+  children: number
+  with_invoice: number
+  without_invoice: number
+  debtors: number
+}
+
 export const paymentsApi = {
+  /**
+   * Kassirning ekrani: shu oyda qaysi bola qancha to'lashi kerak.
+   *
+   * Qidiruv, filtr va sahifalash SERVERDA — ekran bog'chaning
+   * kattaligiga bog'liq emas. Ilgari bu ro'yxat hisob-fakturalardan
+   * `page_size` siz olinar, ya'ni 25 tadan keyingi bolalar umuman
+   * ko'rinmasdi.
+   */
+  board: (params: {
+    period_year: number
+    period_month: number
+    search?: string
+    status?: string
+    page?: number
+  }) => api.list<BoardRow>('/payments/board', { page_size: 100, ...params }),
+
+  boardSummary: (periodYear: number, periodMonth: number) =>
+    api.get<BoardSummary>('/payments/board-summary', {
+      period_year: periodYear,
+      period_month: periodMonth,
+    }),
+
   list: (params?: Record<string, unknown>) => api.list<Payment>('/payments', params),
 
   /**

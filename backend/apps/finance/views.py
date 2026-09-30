@@ -212,7 +212,13 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
     """
 
     permission_module = "payments"
-    permission_action_map = {"reverse": "update", "daily_summary": "read", "batch": "create"}
+    permission_action_map = {
+        "reverse": "update",
+        "daily_summary": "read",
+        "batch": "create",
+        "board": "read",
+        "board_summary": "read",
+    }
     model = Payment
     select_related_fields = ("child", "invoice")
     filterset_fields = ["child", "invoice", "method"]
@@ -256,6 +262,80 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
             changes={"amount": str(payment.amount), "method": payment.method},
         )
         return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+
+    @staticmethod
+    def _period(request: Request) -> tuple[int, int]:
+        """`?period_year=&period_month=` — berilmasa joriy oy."""
+        today = timezone.localdate()
+        try:
+            year = int(request.query_params.get("period_year") or today.year)
+            month = int(request.query_params.get("period_month") or today.month)
+        except ValueError as exc:
+            raise BusinessRuleViolation(
+                gettext("`period_year` va `period_month` butun son bo'lishi kerak.")
+            ) from exc
+        if not 1 <= month <= 12:
+            raise BusinessRuleViolation(gettext("Oy 1–12 oralig'ida bo'lishi kerak."))
+        return year, month
+
+    @staticmethod
+    def _branch_scope(request: Request, user: Any) -> Any:
+        """
+        Filial doirasi ROLGA bog'liq (docs/02 §11.3).
+
+        Org Owner butun tashkilotni ko'radi, qolganlar o'z filialini.
+        Begona filial ID'si bo'sh natija beradi — tashkilot chegarasi
+        allaqachon so'rovda.
+        """
+        return request.query_params.get("branch") or (None if user.is_org_owner else user.branch_id)
+
+    @action(detail=False, methods=["get"])
+    def board(self, request: Request) -> Response:
+        """
+        `GET /payments/board?period_year=&period_month=&search=&status=`
+
+        Kassirning ekrani: shu oyda qaysi bola qancha to'lashi kerak.
+
+        Manba — BOLALAR ro'yxati, hisob-faktura unga chap tomondan
+        qo'shiladi (docs/04 §9.7). Hisob-fakturalar ro'yxatiga tayanish
+        ikki sababdan noto'g'ri edi: faktura chiqarilmagan bola umuman
+        ko'rinmasdi, va ro'yxat sahifalanar — 41 bolali bog'chada 16
+        bola ekranga chiqmasdi.
+        """
+        user = request_user(request)
+        year, month = self._period(request)
+        queryset = selectors.month_board_queryset(
+            organization_id=user.organization_id,
+            period_year=year,
+            period_month=month,
+            branch_id=self._branch_scope(request, user),
+            search=(request.query_params.get("search") or "").strip(),
+            status=(request.query_params.get("status") or "").strip(),
+        )
+        page = self.paginate_queryset(queryset)
+        rows = [selectors.board_row(child) for child in (page if page is not None else queryset)]
+        if page is not None:
+            return self.get_paginated_response(rows)
+        return Response(rows)
+
+    @action(detail=False, methods=["get"], url_path="board-summary")
+    def board_summary(self, request: Request) -> Response:
+        """
+        `GET /payments/board-summary` — oyning yakuni, SAHIFADAN qat'i nazar.
+
+        Ilgari yuqoridagi "jami" faqat yuklangan qatorlardan
+        hisoblanardi, ya'ni har doim kam ko'rsatardi.
+        """
+        user = request_user(request)
+        year, month = self._period(request)
+        return Response(
+            selectors.month_board_summary(
+                organization_id=user.organization_id,
+                period_year=year,
+                period_month=month,
+                branch_id=self._branch_scope(request, user),
+            )
+        )
 
     @action(detail=False, methods=["post"])
     def batch(self, request: Request) -> Response:
