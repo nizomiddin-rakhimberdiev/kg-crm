@@ -110,7 +110,7 @@ class TestRecordPayment:
     def test_payment_writes_a_credit_to_the_ledger(self, tenant_a, child, invoice):
         with organization_context(tenant_a.organization.id):
             payment = services.record_payment(
-                child=child, amount=AMOUNT, method="card", invoice=invoice
+                child=child, amount=AMOUNT, method="terminal", invoice=invoice
             )
             entry = ChildLedgerEntry.objects.get(source_id=payment.id)
         assert entry.direction == Direction.CREDIT

@@ -21,14 +21,9 @@ import { childrenApi } from '@/features/children/api'
 import { paymentsApi } from '@/features/payments/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Invoice } from '@/lib/api/types'
+import { PAYMENT_METHODS, paymentMethodLabel } from '@/features/payments/methods'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
-
-const METHODS: Array<[string, string]> = [
-  ['cash', t('Naqd')],
-  ['card', t('Karta')],
-  ['bank_transfer', t("Bank o'tkazmasi")],
-]
 
 const money = (value: string) => new Intl.NumberFormat('uz-UZ').format(Number(value))
 
@@ -179,20 +174,22 @@ export function RecordPaymentModal({
             <span className="mb-1 block text-xs font-medium text-slate-600">
               {t("To'lov usuli")}
             </span>
-            <div className="flex gap-2">
-              {METHODS.map(([value, label]) => (
+            {/* To'rtta usul tor oynaga bitta qatorda sig'maydi — to'rga
+                qo'yamiz, aks holda "Payme / Click" siqilib o'qilmasdi. */}
+            <div className="grid grid-cols-2 gap-2">
+              {PAYMENT_METHODS.map((value) => (
                 <button
                   key={value}
                   type="button"
                   onClick={() => setMethod(value)}
                   className={cn(
-                    'flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition',
+                    'rounded-lg border px-3 py-2 text-sm font-medium transition',
                     method === value
                       ? 'border-brand-300 bg-brand-50 text-brand-700'
                       : 'border-slate-200 text-slate-600 hover:bg-slate-50',
                   )}
                 >
-                  {label}
+                  {paymentMethodLabel(value)}
                 </button>
               ))}
             </div>

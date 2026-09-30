@@ -21,6 +21,8 @@ from django.db.models import Q, Sum
 from django.utils import timezone
 from django.utils.translation import gettext
 
+from apps.cash import services as cash
+from apps.cash.models import MovementDirection, MovementSource
 from apps.children.models import Child, EnrollmentStatus
 from apps.core.exceptions import BusinessRuleViolation
 from apps.finance.models import (
@@ -526,6 +528,22 @@ def record_payment(
         created_by=received_by,
     )
 
+    # Kassa jurnali (ADR-17): pul QAYSI qopga tushgani shu yerda qoladi.
+    # Bu ATAYLAB `post_ledger_entry` bilan bitta tranzaksiyada: ikkalasi
+    # bir savolga emas, ikki savolga javob beradi — "oila qancha qarz?"
+    # va "qaysi qopda qancha pul bor?" — lekin bitta hodisadan keladi va
+    # biri yozilib, ikkinchisi yozilmay qolishi mumkin emas.
+    cash.post_movement(
+        account=cash.account_for_method(branch=payment.branch, method=method),
+        direction=MovementDirection.IN,
+        amount=amount,
+        source_type=MovementSource.PAYMENT,
+        source_id=payment.id,
+        description=(f"{child.full_name} — {locked.number}" if locked else child.full_name)[:255],
+        occurred_at=payment.paid_at,
+        created_by=received_by,
+    )
+
     if locked is not None:
         _refresh_invoice_payment_state(locked)
 
@@ -594,6 +612,14 @@ def reverse_payment(*, payment: Payment, reason: str = "", created_by: Any = Non
         source_type=SourceType.PAYMENT,
         source_id=payment.id,
         description=f"To'lov qaytarildi: {reason}"[:255],
+        created_by=created_by,
+    )
+
+    # Kassadan ham chiqadi — qarshi yozuv bilan, o'chirish bilan emas.
+    cash.reverse_movements_for(
+        source_type=MovementSource.PAYMENT,
+        source_id=payment.id,
+        description=reason or gettext("to'lov qaytarildi"),
         created_by=created_by,
     )
 

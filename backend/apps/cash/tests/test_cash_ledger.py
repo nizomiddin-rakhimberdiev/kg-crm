@@ -1,0 +1,246 @@
+"""
+Kassa jurnali (ADR-17, docs/03 §13a).
+
+Bu jurnal "hozir qo'limizda qancha pul bor?" degan savolga javob beradi,
+va u pul haqidagi savol — shuning uchun testlar ikki narsani qattiq
+ushlaydi: **qoldiq yozuvlardan hisoblanadi** va **hech bir yozuv
+o'zgartirilmaydi**.
+"""
+
+from __future__ import annotations
+
+from datetime import date
+from decimal import Decimal
+from typing import Any
+
+import pytest
+from django.utils import timezone
+
+from apps.cash import selectors
+from apps.cash import services as cash
+from apps.cash.models import CashAccount, CashMovement, MovementDirection, MovementSource
+from apps.children.models import Child
+from apps.core.exceptions import BusinessRuleViolation
+from apps.core.tenancy import organization_context
+from apps.expenses import services as expenses
+from apps.expenses.models import Expense, ExpenseCategory, ExpenseStatus
+from apps.finance import services as finance
+
+pytestmark = pytest.mark.django_db
+
+
+def _child(tenant: Any, name: str = "Ali") -> Child:
+    with organization_context(tenant.organization.id):
+        return Child.objects.create(
+            organization=tenant.organization,
+            branch=tenant.branch,
+            first_name=name,
+            last_name="Valiyev",
+            date_of_birth=date(2021, 3, 14),
+            gender="male",
+        )
+
+
+def _balances(tenant: Any) -> dict[str, Decimal]:
+    rows = selectors.account_balances(organization_id=tenant.organization.id)
+    return {row["kind"]: Decimal(row["balance"]) for row in rows}
+
+
+# --- Qoplar ---
+
+
+def test_branch_is_born_with_four_accounts(tenant_a: Any):
+    """Ro'yxatdan o'tish paytida ochiladi — birinchi to'lovdan oldin."""
+    with organization_context(tenant_a.organization.id):
+        accounts = CashAccount.objects.filter(branch=tenant_a.branch, is_active=True)
+        assert {a.kind for a in accounts} == {"cash", "terminal", "bank", "ewallet"}
+        assert {a.handles_method for a in accounts} == {
+            "cash",
+            "terminal",
+            "bank_transfer",
+            "online",
+        }
+
+
+def test_ensure_accounts_is_idempotent_and_keeps_renames(tenant_a: Any):
+    """
+    Bog'cha qopni qayta nomlagan bo'lsa, u shundayligicha qoladi.
+
+    Funksiya har safar chaqirilishi mumkin (filial yaratish, to'lovda
+    o'zini-o'zi tuzatish), shuning uchun u FAQAT yo'q qopni qo'shadi.
+    """
+    with organization_context(tenant_a.organization.id):
+        account = CashAccount.objects.get(branch=tenant_a.branch, kind="cash")
+        account.name = "Kassa №1"
+        account.save(update_fields=["name"])
+
+        created = cash.ensure_branch_accounts(branch=tenant_a.branch)
+        account.refresh_from_db()
+
+    assert created == []
+    assert account.name == "Kassa №1"
+
+
+def test_one_account_per_method_is_enforced_by_the_database(tenant_a: Any):
+    """Ikkita qop `cash` ni da'vo qilsa, pul qayerga tushgani tanga tashlash bo'lardi."""
+    from django.db import IntegrityError
+
+    with organization_context(tenant_a.organization.id), pytest.raises(IntegrityError):
+        CashAccount.objects.create(
+            organization=tenant_a.organization,
+            branch=tenant_a.branch,
+            name="Ikkinchi kassa",
+            kind="cash",
+            handles_method="cash",
+        )
+
+
+# --- To'lovlar ---
+
+
+def test_payment_lands_in_the_account_for_its_method(tenant_a: Any):
+    child = _child(tenant_a)
+    with organization_context(tenant_a.organization.id):
+        finance.record_payment(child=child, amount=Decimal("1400000"), method="cash")
+        finance.record_payment(child=child, amount=Decimal("100000"), method="terminal")
+
+        balances = _balances(tenant_a)
+
+    assert balances["cash"] == Decimal("1400000.00")
+    assert balances["terminal"] == Decimal("100000.00")
+    assert balances["bank"] == Decimal("0.00")
+
+
+def test_reversal_adds_a_counter_movement_and_keeps_the_original(tenant_a: Any):
+    """
+    Qaytarish — qarshi yozuv, o'chirish EMAS (D3).
+
+    Jurnal "pul kirdi, keyin qaytarildi" deb ko'rsatishi kerak, "hech
+    narsa bo'lmagan" emas.
+    """
+    child = _child(tenant_a)
+    with organization_context(tenant_a.organization.id):
+        payment = finance.record_payment(child=child, amount=Decimal("500000"), method="cash")
+        finance.reverse_payment(payment=payment, reason="Xato summa")
+
+        movements = list(
+            CashMovement.objects.filter(
+                source_type=MovementSource.PAYMENT, source_id=payment.id
+            ).order_by("created_at")
+        )
+        balances = _balances(tenant_a)
+
+    assert [m.direction for m in movements] == [MovementDirection.IN, MovementDirection.OUT]
+    assert balances["cash"] == Decimal("0.00")
+
+
+def test_reversing_twice_does_not_double_the_counter_entry(tenant_a: Any):
+    child = _child(tenant_a)
+    with organization_context(tenant_a.organization.id):
+        payment = finance.record_payment(child=child, amount=Decimal("500000"), method="cash")
+        finance.reverse_payment(payment=payment, reason="Birinchi")
+        # Ikkinchi urinish biznes qoidasi bilan to'xtaydi; kassa ham
+        # ikkinchi qarshi yozuvni olmaydi.
+        with pytest.raises(BusinessRuleViolation):
+            finance.reverse_payment(payment=payment, reason="Ikkinchi")
+
+        assert _balances(tenant_a)["cash"] == Decimal("0.00")
+
+
+# --- Chiqimlar ---
+
+
+def test_paid_expense_leaves_the_till(tenant_a: Any):
+    child = _child(tenant_a)
+    with organization_context(tenant_a.organization.id):
+        finance.record_payment(child=child, amount=Decimal("2000000"), method="cash")
+        category = ExpenseCategory.objects.create(
+            organization=tenant_a.organization, branch=tenant_a.branch, name="Kommunal"
+        )
+        expense = Expense.objects.create(
+            organization=tenant_a.organization,
+            branch=tenant_a.branch,
+            category=category,
+            amount=Decimal("300000"),
+            expense_date=timezone.localdate(),
+            status=ExpenseStatus.APPROVED,
+        )
+        expenses.mark_expense_paid(expense=expense)
+        expense.refresh_from_db()
+
+        assert expense.cash_account is not None
+        assert _balances(tenant_a)["cash"] == Decimal("1700000.00")
+
+
+def test_approved_but_unpaid_expense_does_not_move_money(tenant_a: Any):
+    """Tasdiqlangan so'rov hali pul emas — u kassadan chiqmagan."""
+    child = _child(tenant_a)
+    with organization_context(tenant_a.organization.id):
+        finance.record_payment(child=child, amount=Decimal("2000000"), method="cash")
+        category = ExpenseCategory.objects.create(
+            organization=tenant_a.organization, branch=tenant_a.branch, name="Ta'mirlash"
+        )
+        Expense.objects.create(
+            organization=tenant_a.organization,
+            branch=tenant_a.branch,
+            category=category,
+            amount=Decimal("900000"),
+            expense_date=timezone.localdate(),
+            status=ExpenseStatus.APPROVED,
+        )
+        assert _balances(tenant_a)["cash"] == Decimal("2000000.00")
+
+
+# --- O'tkazma ---
+
+
+def test_transfer_moves_money_between_pots_without_changing_the_total(tenant_a: Any):
+    """Kun oxirida naqdni bankka topshirish — jami o'zgarmasligi SHART."""
+    child = _child(tenant_a)
+    with organization_context(tenant_a.organization.id):
+        finance.record_payment(child=child, amount=Decimal("3000000"), method="cash")
+        before = selectors.total_balance(organization_id=tenant_a.organization.id)
+
+        till = CashAccount.objects.get(branch=tenant_a.branch, kind="cash")
+        bank = CashAccount.objects.get(branch=tenant_a.branch, kind="bank")
+        cash.transfer(source=till, target=bank, amount=Decimal("2500000"))
+
+        after = selectors.total_balance(organization_id=tenant_a.organization.id)
+        balances = _balances(tenant_a)
+
+    assert before == after == Decimal("3000000.00")
+    assert balances["cash"] == Decimal("500000.00")
+    assert balances["bank"] == Decimal("2500000.00")
+
+
+def test_transfer_to_the_same_account_is_refused(tenant_a: Any):
+    with organization_context(tenant_a.organization.id):
+        till = CashAccount.objects.get(branch=tenant_a.branch, kind="cash")
+        with pytest.raises(BusinessRuleViolation):
+            cash.transfer(source=till, target=till, amount=Decimal("100"))
+
+
+# --- Tenant chegarasi ---
+
+
+@pytest.mark.tenancy
+def test_balances_never_mix_organizations(tenant_a: Any, tenant_b: Any):
+    """
+    Ikki bog'chaning pulini qo'shib yuborish — bazadan sizib chiqish
+    emas, lekin ekranda ko'rgan odam uchun farqi yo'q.
+    """
+    child_a = _child(tenant_a, "Alfa")
+    child_b = _child(tenant_b, "Beta")
+    with organization_context(tenant_a.organization.id):
+        finance.record_payment(child=child_a, amount=Decimal("1000000"), method="cash")
+    with organization_context(tenant_b.organization.id):
+        finance.record_payment(child=child_b, amount=Decimal("7000000"), method="cash")
+
+    with organization_context(tenant_a.organization.id):
+        assert selectors.total_balance(organization_id=tenant_a.organization.id) == Decimal(
+            "1000000.00"
+        )
+    with organization_context(tenant_b.organization.id):
+        assert selectors.total_balance(organization_id=tenant_b.organization.id) == Decimal(
+            "7000000.00"
+        )

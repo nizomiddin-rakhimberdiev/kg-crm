@@ -73,6 +73,8 @@ AUTH_TABLES: tuple[str, ...] = ("user", "refresh_token")
 OPERATIONAL_TABLES: tuple[str, ...] = (
     "attendance_record",
     "branch",
+    "cash_account",
+    "cash_movement",
     "child",
     "child_guardian",
     "child_ledger_entry",

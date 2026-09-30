@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from django.http import Http404
 from django.utils.translation import gettext
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -12,6 +13,7 @@ from rest_framework.response import Response
 
 from apps.audit import services as audit
 from apps.branches.selectors import resolve_branch
+from apps.cash.models import CashAccount
 from apps.core.exceptions import BusinessRuleViolation
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchScopedMixin, TenantViewSet
@@ -115,8 +117,34 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
 
     @action(detail=True, methods=["post"], url_path="mark-paid")
     def mark_paid(self, request: Request, pk: str | None = None) -> Response:
+        """
+        `POST /expenses/{id}/mark-paid` — ixtiyoriy `{"cash_account_id": …}`.
+
+        Qop ko'rsatilmasa filialning naqd kassasi olinadi (ADR-17).
+        """
         expense = self.get_object()
-        services.mark_expense_paid(expense=expense)
+        user = request_user(request)
+
+        account = None
+        account_id = request.data.get("cash_account_id")
+        if account_id:
+            # Begona tashkilotning qopi `404` beradi, `403` emas — bu
+            # yerda ham tenant chegarasi bir xil ishlaydi (2-invariant).
+            account = CashAccount.objects.filter(
+                pk=account_id, organization_id=user.organization_id, is_active=True
+            ).first()
+            if account is None:
+                raise Http404
+
+        services.mark_expense_paid(expense=expense, cash_account=account, created_by=user)
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="expense",
+            entity_id=expense.id,
+            changes={"status": "paid", "cash_account": str(account.id) if account else None},
+        )
         expense.refresh_from_db()
         return Response(ExpenseSerializer(expense).data)
 

@@ -258,4 +258,4 @@ class EmployeeAdvanceViewSet(BranchScopedMixin, TenantViewSet):
             entity_id=instance.id,
             changes={"amount": str(instance.amount)},
         )
-        services.delete_advance(advance=instance)
+        services.delete_advance(advance=instance, created_by=request_user(self.request))

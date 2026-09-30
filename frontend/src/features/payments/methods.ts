@@ -11,12 +11,19 @@
 import { Banknote, Building2, CreditCard, Globe, type LucideIcon } from 'lucide-react'
 import { t } from '@/lib/i18n'
 
+/**
+ * To'rtta usul — mijozning o'z lug'ati bilan (docs/03 §13.5).
+ * `card` qiymati 2026-09-30 da `terminal` ga o'zgartirildi.
+ */
 export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   cash: t('Naqd'),
-  card: t('Karta'),
-  bank_transfer: t("Bank o'tkazmasi"),
-  online: t('Onlayn'),
+  terminal: t('Terminal'),
+  bank_transfer: t("O'tkazma"),
+  online: t('Payme / Click'),
 }
+
+/** Tanlash ro'yxatlari uchun — tartibi ekranda ko'rinadigan tartib. */
+export const PAYMENT_METHODS: readonly string[] = ['cash', 'terminal', 'bank_transfer', 'online']
 
 /** Noma'lum kod ham xom ko'rinmasin: baribir o'qiladigan matn qaytadi. */
 export const paymentMethodLabel = (method: string): string =>
@@ -25,7 +32,7 @@ export const paymentMethodLabel = (method: string): string =>
 /** Diagramma va ajratmalar uchun — usul bo'yicha barqaror rang. */
 export const PAYMENT_METHOD_COLORS: Record<string, string> = {
   cash: '#10b981',
-  card: '#6366f1',
+  terminal: '#6366f1',
   bank_transfer: '#f59e0b',
   online: '#06b6d4',
 }
@@ -35,7 +42,7 @@ export const paymentMethodColor = (method: string): string =>
 
 const ICONS: Record<string, LucideIcon> = {
   cash: Banknote,
-  card: CreditCard,
+  terminal: CreditCard,
   bank_transfer: Building2,
   online: Globe,
 }

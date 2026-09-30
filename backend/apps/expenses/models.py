@@ -71,6 +71,20 @@ class Expense(BranchScopedModel):
     decided_at = models.DateTimeField(null=True, blank=True)
     decision_note = models.CharField(max_length=255, blank=True)
 
+    # Pul QAYSI qopdan chiqdi (ADR-17).
+    #
+    # Ataylab `null=True`: `pending` holatdagi so'rov hali hech qanday
+    # pulni qimirlatmagan va uni kim to'lashini ham bilmasligi mumkin.
+    # `paid` bo'lgan lahzada esa servis uni MAJBURIY qiladi — aynan
+    # o'shanda kassa yozuvi yoziladi.
+    cash_account = models.ForeignKey(
+        "cash.CashAccount",
+        on_delete=models.RESTRICT,
+        related_name="expenses",
+        null=True,
+        blank=True,
+    )
+
     class Meta:
         db_table = "expense"
         ordering = ["-expense_date", "-created_at"]

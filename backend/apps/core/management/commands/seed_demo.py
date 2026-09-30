@@ -506,7 +506,7 @@ class Command(BaseCommand):
                     # tekshirilmaydi, shuning uchun noto'g'ri qiymat jimgina
                     # yozilib, ro'yxatda yorliqsiz "transfer" bo'lib ko'rinardi.
                     method=random.choices(
-                        [PaymentMethod.CASH, PaymentMethod.CARD, PaymentMethod.BANK_TRANSFER],
+                        [PaymentMethod.CASH, PaymentMethod.TERMINAL, PaymentMethod.BANK_TRANSFER],
                         weights=[45, 40, 15],
                     )[0],
                     invoice=invoice,

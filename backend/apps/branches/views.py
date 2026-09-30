@@ -7,6 +7,7 @@ from django.utils.translation import gettext
 from apps.accounts.serializers import BranchSerializer
 from apps.audit import services as audit
 from apps.branches.models import Branch
+from apps.cash import services as cash
 from apps.core.exceptions import BusinessRuleViolation
 from apps.core.viewsets import TenantViewSet
 
@@ -27,6 +28,10 @@ class BranchViewSet(TenantViewSet):
 
     def perform_create(self, serializer: object) -> None:
         super().perform_create(serializer)
+        # Filial o'z pul qoplari bilan tug'iladi (ADR-17): naqd,
+        # terminal, bank, Payme/Click. Ularsiz birinchi to'lov qayerga
+        # tushishini tizim bilmasdi.
+        cash.ensure_branch_accounts(branch=serializer.instance)  # type: ignore[attr-defined]
         audit.record(
             action="create",
             request=self.request._request,

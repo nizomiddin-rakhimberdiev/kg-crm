@@ -52,6 +52,10 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.subscriptions.SubscriptionInvoice",
     "apps.subscriptions.UsageSnapshot",
     "apps.subscriptions.Subscription",
+    # Kassa harakatlari eng chekkada: ular to'lov, chiqim va avansga
+    # `source_id` bilan (FK'siz) bog'langan, qopga esa `RESTRICT` bilan.
+    # Shuning uchun ular hammasidan OLDIN, qop esa eng oxirida ketadi.
+    "apps.cash.CashMovement",
     "apps.finance.Payment",
     "apps.finance.ChildLedgerEntry",
     "apps.finance.Invoice",
@@ -73,6 +77,8 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.inventory.Warehouse",
     "apps.expenses.Expense",
     "apps.expenses.ExpenseCategory",
+    # Chiqim qopga `RESTRICT` bilan bog'langan — qop chiqimdan KEYIN.
+    "apps.cash.CashAccount",
     "apps.notifications.Notification",
     "apps.notifications.NotificationTemplate",
     "apps.reports.ReportExport",

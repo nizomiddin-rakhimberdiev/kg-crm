@@ -159,6 +159,13 @@ def register_organization(
             name=branch_name or organization_name.strip(),
             code="MAIN",
         )
+
+        # Birinchi filialning pul qoplari (ADR-17) — ro'yxatdan o'tish
+        # tranzaksiyasi ichida, chunki qopsiz bog'cha birinchi to'lovni
+        # qayerga yozishni bilmaydi.
+        from apps.cash.services import ensure_branch_accounts
+
+        ensure_branch_accounts(branch=branch)
         sync_permission_catalog()
         roles = seed_system_roles(organization)
 

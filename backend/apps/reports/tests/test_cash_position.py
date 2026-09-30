@@ -149,7 +149,7 @@ def test_reversed_payment_is_not_income(tenant_a: Any):
     child = _child(tenant_a)
     with organization_context(tenant_a.organization.id):
         payment = finance.record_payment(child=child, amount=Decimal("1500000"), method="cash")
-        finance.record_payment(child=child, amount=Decimal("500000"), method="card")
+        finance.record_payment(child=child, amount=Decimal("500000"), method="terminal")
         finance.reverse_payment(payment=payment, reason="Xato summa")
 
         position = selectors.cash_position(organization_id=tenant_a.organization.id)
@@ -162,4 +162,4 @@ def test_reversed_payment_is_not_income(tenant_a: Any):
     assert position["income"] == "500000.00"
     # Tushum hisoboti ham, usul kesimi ham qaytarilganni sanamaydi.
     assert revenue["total"] == "500000.00"
-    assert [row["method"] for row in revenue["by_method"]] == ["card"]
+    assert [row["method"] for row in revenue["by_method"]] == ["terminal"]

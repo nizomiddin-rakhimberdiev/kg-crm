@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Any
 
@@ -11,6 +11,8 @@ from django.db.models import Sum
 from django.utils import timezone
 from django.utils.translation import gettext
 
+from apps.cash import services as cash
+from apps.cash.models import MovementDirection, MovementSource
 from apps.core.exceptions import BusinessRuleViolation
 from apps.expenses.models import Expense, ExpenseStatus
 
@@ -59,13 +61,44 @@ def reject_expense(*, expense: Expense, approved_by: Any, note: str = "") -> Exp
 
 
 @transaction.atomic
-def mark_expense_paid(*, expense: Expense) -> Expense:
+def mark_expense_paid(
+    *, expense: Expense, cash_account: Any = None, created_by: Any = None
+) -> Expense:
+    """
+    Chiqimni to'langan deb belgilaydi va pulni kassadan CHIQARADI.
+
+    Qop shu yerda majburiy bo'ladi, `pending` holatda emas: so'rovni
+    yozgan odam ko'pincha uni to'laydigan odam emas, va "qaysi puldan?"
+    degan savolga javob pul chiqqan lahzada ma'lum bo'ladi (ADR-17).
+    """
     if expense.status != ExpenseStatus.APPROVED:
         raise BusinessRuleViolation(
             gettext("Faqat tasdiqlangan chiqimni to'langan deb belgilash mumkin.")
         )
+
+    account = cash_account or expense.cash_account
+    if account is None:
+        # Qop ko'rsatilmasa naqd kassaga yoziladi — bog'chada odatiy hol,
+        # va to'lovni "sozlama to'liq emas" deb rad etish noto'g'ri
+        # nosozlik bo'lardi.
+        account = cash.account_for_method(branch=expense.branch, method="cash")
+    if account.organization_id != expense.organization_id:
+        raise BusinessRuleViolation(gettext("Kassa hisobi boshqa tashkilotga tegishli."))
+
     expense.status = ExpenseStatus.PAID
-    expense.save(update_fields=["status", "updated_at"])
+    expense.cash_account = account
+    expense.save(update_fields=["status", "cash_account", "updated_at"])
+
+    cash.post_movement(
+        account=account,
+        direction=MovementDirection.OUT,
+        amount=expense.amount,
+        source_type=MovementSource.EXPENSE,
+        source_id=expense.id,
+        description=f"{expense.category.name}: {expense.description}"[:255],
+        occurred_at=timezone.make_aware(datetime.combine(expense.expense_date, time.min)),
+        created_by=created_by,
+    )
     return expense
 
 

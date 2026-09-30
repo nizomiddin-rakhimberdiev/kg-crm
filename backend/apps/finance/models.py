@@ -219,10 +219,18 @@ class InvoiceLine(BaseModel):
 
 
 class PaymentMethod(models.TextChoices):
+    """
+    Bog'cha haqiqatan pul oladigan to'rt yo'l (docs/03 §13.5).
+
+    `card` → `terminal` (2026-09-30): mijozning lug'ati *naqd / terminal
+    / o'tkazma / Payme-Click*, va "Terminal" deb ko'rsatiladigan `card`
+    qiymati — ertami-kechmi hisobotga yetib boradigan mayda yolg'on.
+    """
+
     CASH = "cash", gettext_lazy("Naqd")
-    CARD = "card", gettext_lazy("Karta")
-    BANK_TRANSFER = "bank_transfer", gettext_lazy("Bank o'tkazmasi")
-    ONLINE = "online", gettext_lazy("Onlayn")
+    TERMINAL = "terminal", gettext_lazy("Terminal")
+    BANK_TRANSFER = "bank_transfer", gettext_lazy("O'tkazma")
+    ONLINE = "online", gettext_lazy("Payme / Click")
 
 
 class Payment(BranchScopedModel):
@@ -284,6 +292,14 @@ class Payment(BranchScopedModel):
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(amount__gt=0), name="ck_payment_amount_positive"
+            ),
+            # docs/03 §13.5 buni talab qilardi, lekin u hech qachon
+            # bazaga qo'yilmagan edi: `method` faqat serializer
+            # darajasida tekshirilardi, ya'ni servis orqali kelgan
+            # noto'g'ri qiymat jimgina yozilaverardi.
+            models.CheckConstraint(
+                condition=models.Q(method__in=["cash", "terminal", "bank_transfer", "online"]),
+                name="ck_payment_method_known",
             ),
             # Qisman indeks: kalitsiz to'lovlar (import, seed, eski
             # yozuvlar) cheklovga tushmaydi. Poyga holatida ikkinchi

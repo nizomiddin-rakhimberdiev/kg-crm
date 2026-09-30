@@ -869,3 +869,54 @@ msgstr "The run is already a draft."
 
 msgid "Qayta ochish sababini ko'rsating."
 msgstr "State the reason for reopening."
+
+msgid "Avans: {employee}"
+msgstr "Advance: {employee}"
+
+msgid "Bank hisobi"
+msgstr "Bank account"
+
+msgid "Bir qopdan o'ziga o'tkazib bo'lmaydi."
+msgstr "An account cannot be transferred to itself."
+
+msgid "Boshlang'ich qoldiq"
+msgstr "Opening balance"
+
+msgid "Elektron hamyon"
+msgstr "E-wallet"
+
+msgid "Filialda kassa hisobi topilmadi."
+msgstr "No cash account found for this branch."
+
+msgid "Kassa hisobi boshqa tashkilotga tegishli."
+msgstr "That cash account belongs to another organization."
+
+msgid "Naqd kassa"
+msgstr "Cash till"
+
+msgid "O'tkazma"
+msgstr "Bank transfer"
+
+msgid "Payme / Click"
+msgstr "Payme / Click"
+
+msgid "Qoplar boshqa tashkilotga tegishli."
+msgstr "Those accounts belong to another organization."
+
+msgid "Qoplar orasida o'tkazma"
+msgstr "Transfer between accounts"
+
+msgid "Summa musbat bo'lishi kerak."
+msgstr "The amount must be positive."
+
+msgid "Terminal"
+msgstr "Terminal"
+
+msgid "To'lov qaytarildi"
+msgstr "Payment reversed"
+
+msgid "avans bekor qilindi"
+msgstr "advance cancelled"
+
+msgid "to'lov qaytarildi"
+msgstr "payment reversed"

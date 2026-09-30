@@ -13,6 +13,11 @@ from apps.core.rls import policy_sql_for, teardown_sql_for
 class Migration(migrations.Migration):
 
     dependencies = [
+        # RLS funksiyalari (`app_current_org()`) core/0002 da yaratiladi.
+        # Usiz TOZA o'rnatmada bu migratsiya `policy_sql_for()` ustida
+        # yiqilardi — ishlab turgan bazada esa sezilmasdi, chunki u
+        # yerda core/0002 allaqachon qo'llangan edi.
+        ('core', '0002_row_level_security'),
         ('branches', '0002_branch_tenancy_guard'),
         ('hr', '0002_tenancy_guards'),
         ('organizations', '0001_initial'),

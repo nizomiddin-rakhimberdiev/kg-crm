@@ -22,6 +22,10 @@ class ExpenseSerializer(serializers.ModelSerializer):
     approved_by_name = serializers.CharField(
         source="approved_by.full_name", read_only=True, default=None
     )
+    # Qaysi qopdan to'landi (ADR-17) — `NULL` hali to'lanmagani.
+    cash_account_name = serializers.CharField(
+        source="cash_account.name", read_only=True, default=None
+    )
 
     class Meta:
         model = Expense
@@ -36,6 +40,8 @@ class ExpenseSerializer(serializers.ModelSerializer):
             "approved_by_name",
             "decided_at",
             "decision_note",
+            "cash_account",
+            "cash_account_name",
             "created_at",
         ]
         read_only_fields = fields

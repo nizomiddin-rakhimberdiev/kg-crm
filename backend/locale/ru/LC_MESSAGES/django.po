@@ -870,3 +870,54 @@ msgstr "Расчёт уже в статусе черновика."
 
 msgid "Qayta ochish sababini ko'rsating."
 msgstr "Укажите причину повторного открытия."
+
+msgid "Avans: {employee}"
+msgstr "Аванс: {employee}"
+
+msgid "Bank hisobi"
+msgstr "Банковский счёт"
+
+msgid "Bir qopdan o'ziga o'tkazib bo'lmaydi."
+msgstr "Нельзя перевести со счёта на него же."
+
+msgid "Boshlang'ich qoldiq"
+msgstr "Начальный остаток"
+
+msgid "Elektron hamyon"
+msgstr "Электронный кошелёк"
+
+msgid "Filialda kassa hisobi topilmadi."
+msgstr "В филиале не найден кассовый счёт."
+
+msgid "Kassa hisobi boshqa tashkilotga tegishli."
+msgstr "Кассовый счёт принадлежит другой организации."
+
+msgid "Naqd kassa"
+msgstr "Наличная касса"
+
+msgid "O'tkazma"
+msgstr "Перевод"
+
+msgid "Payme / Click"
+msgstr "Payme / Click"
+
+msgid "Qoplar boshqa tashkilotga tegishli."
+msgstr "Счета принадлежат другой организации."
+
+msgid "Qoplar orasida o'tkazma"
+msgstr "Перевод между счетами"
+
+msgid "Summa musbat bo'lishi kerak."
+msgstr "Сумма должна быть положительной."
+
+msgid "Terminal"
+msgstr "Терминал"
+
+msgid "To'lov qaytarildi"
+msgstr "Платёж возвращён"
+
+msgid "avans bekor qilindi"
+msgstr "аванс отменён"
+
+msgid "to'lov qaytarildi"
+msgstr "платёж возвращён"

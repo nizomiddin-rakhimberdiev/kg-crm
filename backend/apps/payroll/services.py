@@ -8,6 +8,7 @@ bonus/ushlab qolish bilan hal qilinadi.
 
 from __future__ import annotations
 
+from datetime import datetime, time
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
@@ -16,6 +17,8 @@ from django.db.models import Sum
 from django.utils import timezone
 from django.utils.translation import gettext
 
+from apps.cash import services as cash
+from apps.cash.models import MovementDirection, MovementSource
 from apps.core.exceptions import BusinessRuleViolation
 from apps.hr.models import Employee, EmploymentStatus
 from apps.payroll.models import EmployeeAdvance, PayrollItem, PayrollRun, PayrollStatus
@@ -216,14 +219,38 @@ def record_advance(
         note=note[:255],
         created_by=created_by,
     )
+
+    # Avans — kassadan ALLAQACHON chiqqan pul (ADR-17). Uni oylik
+    # hisoblanishini kutib turib yozish "hozir qancha pulim bor?"
+    # degan savolga oyning yarmi davomida noto'g'ri javob berardi.
+    cash.post_movement(
+        account=cash.account_for_method(branch=employee.branch, method="cash"),
+        direction=MovementDirection.OUT,
+        amount=advance.amount,
+        source_type=MovementSource.ADVANCE,
+        source_id=advance.id,
+        description=gettext("Avans: {employee}").format(employee=employee.full_name)[:255],
+        occurred_at=timezone.make_aware(datetime.combine(advance.paid_on, time.min)),
+        created_by=created_by,
+    )
+
     _sync_draft_for(advance)
     return advance
 
 
 @transaction.atomic
-def delete_advance(*, advance: EmployeeAdvance) -> None:
+def delete_advance(*, advance: EmployeeAdvance, created_by: Any = None) -> None:
     """Avansni o'chiradi (yakunlangan davrga tegmaydi)."""
     run = _draft_run_for(advance)
+    # Kassa yozuvi O'CHIRILMAYDI — qarshi yozuv qo'shiladi (D3).
+    # Avansning o'zi o'chiriladi, chunki u hali hisoblashga tushmagan
+    # qoralama yozuv; kassadan chiqqan pulning izi esa qoladi.
+    cash.reverse_movements_for(
+        source_type=MovementSource.ADVANCE,
+        source_id=advance.id,
+        description=gettext("avans bekor qilindi"),
+        created_by=created_by,
+    )
     advance.delete()
     if run is not None:
         sync_advances(run)

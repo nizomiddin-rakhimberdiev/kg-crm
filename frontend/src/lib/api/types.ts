@@ -314,7 +314,7 @@ export interface Payment {
   invoice: string | null
   invoice_number: string | null
   amount: string
-  method: 'cash' | 'card' | 'bank_transfer' | 'online'
+  method: 'cash' | 'terminal' | 'bank_transfer' | 'online'
   reference: string
   paid_at: string
   is_reversed: boolean
