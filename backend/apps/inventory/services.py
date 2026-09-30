@@ -147,9 +147,12 @@ def _purchase_expense(
         category=category,
         amount=_money(quantity * unit_cost),
         expense_date=(occurred_at or timezone.now()).date(),
-        description=(note or gettext("{product} — {quantity} {unit}").format(
-            product=product.name, quantity=quantity_text(quantity), unit=product.unit
-        ))[:255],
+        description=(
+            note
+            or gettext("{product} — {quantity} {unit}").format(
+                product=product.name, quantity=quantity_text(quantity), unit=product.unit
+            )
+        )[:255],
     )
     return approve_expense(
         expense=expense,

@@ -53,6 +53,10 @@ class PayrollRun(BranchScopedModel):
     total_gross = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0"))
     total_deductions = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0"))
     total_net = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0"))
+    # Ish beruvchi soliqlari (Q10) — xodim qo'liga tegmaydigan, lekin
+    # bog'cha to'laydigan summa. Foyda-zararda oylik xarajati aynan
+    # `total_gross + total_social_tax` bo'ladi.
+    total_social_tax = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0"))
 
     finalized_at = models.DateTimeField(null=True, blank=True)
     finalized_by = models.ForeignKey(
@@ -113,6 +117,9 @@ class PayrollItem(BranchScopedModel):
     # maoshning bir qismi. Ularni bitta ustunga qo'shish payslipni
     # tushunarsiz qilardi ("nega 3 mln ushlab qolindi?").
     advance = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
+    # Ish beruvchi ijtimoiy solig'i — rasmiy qismdan hisoblanadi va
+    # xodimdan USHLANMAYDI (Q10).
+    tax_social = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
     # --- Rasmiy qism (ADR-18): bankka, soliq ushlab qolingan holda ---
     #
     # Stavkalar Sozlamalardan olinadi, lekin natija SHU YERGA

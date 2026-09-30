@@ -51,10 +51,6 @@ def _hire(tenant_a, position, *, first: str, last: str, hire_date: date) -> Empl
 
 
 class TestEmployeeReachesPayroll:
-    @pytest.mark.xfail(
-        strict=True,
-        reason="PLAN 1.10: yakunlangan hisobdan tushib qolgan xodim haqida hech qanday signal yo'q",
-    )
     def test_a_missing_employee_is_detectable(self, tenant_a, position):
         """
         Maftuna holati: hisob YARATILGANDA u hali tizimda yo'q edi.
@@ -93,9 +89,6 @@ class TestEmployeeReachesPayroll:
 
         assert maftuna in missing
 
-    @pytest.mark.xfail(
-        strict=True, reason="PLAN 1.10: ishga kirishdan OLDINGI oyga ham satr yoziladi"
-    )
     def test_employee_is_absent_from_runs_before_the_hire_date(self, tenant_a, position):
         maftuna = _hire(
             tenant_a, position, first="Maftuna", last="Abdullayeva", hire_date=date(2026, 5, 10)
@@ -112,9 +105,8 @@ class TestEmployeeReachesPayroll:
 
 
 class TestHireMonthIsProrated:
-    @pytest.mark.xfail(strict=True, reason="PLAN 1.10: ishga kirgan oyi to'liq hisoblanadi")
     def test_hire_month_is_prorated_by_working_days(self, tenant_a, position):
-        # 2026-05: 21 ish kuni; 10-may dushanba → 10-maydan 16 ish kuni qoladi.
+        # 2026-05: 21 ish kuni; 10-may yakshanba → 11-maydan 15 ish kuni qoladi.
         maftuna = _hire(
             tenant_a, position, first="Maftuna", last="Abdullayeva", hire_date=date(2026, 5, 10)
         )
@@ -131,7 +123,6 @@ class TestHireMonthIsProrated:
 
 
 class TestWithholding:
-    @pytest.mark.xfail(strict=True, reason="PLAN 1.10 / Q10: ushlanma sukut bo'yicha 0 emas")
     def test_withholding_is_off_by_default(self, tenant_a, position):
         """
         Q10: sukut — 0 (o'chirilgan).
@@ -144,12 +135,113 @@ class TestWithholding:
         with organization_context(tenant_a.organization.id):
             assert Decimal(str(get_setting(key="payroll.income_tax_rate"))) == Decimal("0")
 
-    @pytest.mark.xfail(
-        strict=True, reason="PLAN 1.10 / Q10: ish beruvchi ijtimoiy solig'i sozlamasi yo'q"
-    )
     def test_employer_social_tax_setting_exists(self, tenant_a):
         """Q10 ikkita stavka talab qiladi: xodimdan ushlanadi va ish beruvchi xarajati."""
         from apps.settings_app.services import DEFAULTS
 
         assert "payroll.social_tax_rate" in DEFAULTS
         assert Decimal(str(DEFAULTS["payroll.social_tax_rate"])) == Decimal("0")
+
+
+class TestHireMonthNumbers:
+    """Proporsiya raqamlari — PLAN 1.10."""
+
+    def test_the_share_matches_the_calendar(self, tenant_a, position):
+        # 2026-05: 21 ish kuni. 10-may — yakshanba, ya'ni 11-maydan 15 kun.
+        maftuna = _hire(
+            tenant_a, position, first="Maftuna", last="Abdullayeva", hire_date=date(2026, 5, 10)
+        )
+        with organization_context(tenant_a.organization.id):
+            assert services.period_share(employee=maftuna, period_year=2026, period_month=5) == (
+                15,
+                21,
+            )
+            may = services.create_run(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                period_year=2026,
+                period_month=5,
+            )
+            item = PayrollItem.objects.get(payroll_run=may, employee=maftuna)
+
+        # 7 500 000 ÷ 21 × 15 = 5 357 142,86
+        assert item.base_amount == Decimal("5357142.86")
+
+    def test_a_full_month_is_not_prorated(self, tenant_a, position):
+        maftuna = _hire(
+            tenant_a, position, first="Maftuna", last="Abdullayeva", hire_date=date(2026, 5, 10)
+        )
+        with organization_context(tenant_a.organization.id):
+            june = services.create_run(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                period_year=2026,
+                period_month=6,
+            )
+            item = PayrollItem.objects.get(payroll_run=june, employee=maftuna)
+
+        assert item.base_amount == SALARY
+
+    def test_holidays_shrink_the_month_for_everyone(self, tenant_a, position):
+        """Bayram maxrajni ham, suratni ham kamaytiradi — nisbat adolatli qoladi."""
+        from apps.attendance.models_absence import Holiday
+
+        maftuna = _hire(
+            tenant_a, position, first="Maftuna", last="Abdullayeva", hire_date=date(2026, 5, 18)
+        )
+        with organization_context(tenant_a.organization.id):
+            Holiday.objects.create(
+                organization=tenant_a.organization,
+                holiday_date=date(2026, 5, 20),
+                name="Sinov bayrami",
+            )
+            worked, total = services.period_share(
+                employee=maftuna, period_year=2026, period_month=5
+            )
+
+        assert total == 20, "bayram oyning ish kunini kamaytiradi"
+        assert worked == 9, "bayram xodimning kunini ham kamaytiradi"
+
+
+class TestEmployerSocialTax:
+    """Q10: ish beruvchi solig'i xodimga tegmaydi, xarajatni oshiradi."""
+
+    def test_social_tax_does_not_touch_the_employee(self, tenant_a, position):
+        from apps.settings_app.services import set_setting
+
+        employee = _hire(
+            tenant_a, position, first="Nilufar", last="Sodiqova", hire_date=date(2024, 1, 1)
+        )
+        employee.official_salary = Decimal("3000000")
+        with organization_context(tenant_a.organization.id):
+            employee.save(update_fields=["official_salary"])
+            set_setting(organization=tenant_a.organization, key="payroll.social_tax_rate", value=12)
+            run = services.create_run(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                period_year=2026,
+                period_month=6,
+            )
+            item = PayrollItem.objects.get(payroll_run=run, employee=employee)
+            run.refresh_from_db()
+
+        # 3 000 000 × 12 % = 360 000 — bog'cha ustiga to'laydi.
+        assert item.tax_social == Decimal("360000.00")
+        # Xodim qo'liga tegadigan summa o'zgarmaydi.
+        assert item.net == SALARY
+        assert run.total_social_tax == Decimal("360000.00")
+
+    def test_social_tax_is_off_by_default(self, tenant_a, position):
+        employee = _hire(
+            tenant_a, position, first="Nilufar", last="Sodiqova", hire_date=date(2024, 1, 1)
+        )
+        with organization_context(tenant_a.organization.id):
+            run = services.create_run(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                period_year=2026,
+                period_month=6,
+            )
+            item = PayrollItem.objects.get(payroll_run=run, employee=employee)
+
+        assert item.tax_social == Decimal("0.00")

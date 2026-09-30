@@ -32,6 +32,22 @@ from apps.settings_app.services import set_setting
 pytestmark = pytest.mark.django_db
 
 
+@pytest.fixture(autouse=True)
+def _rates(tenant_a: Any):
+    """
+    Stavkalarni ATAYLAB o'rnatadi.
+
+    Q10 dan keyin sukut qiymatlar 0 — ya'ni sozlamaga tegmagan bog'cha
+    hech narsa ushlab qolmaydi. Bu testlar esa ushlanma MEXANIZMINI
+    sinaydi, shuning uchun ular stavkani o'zlari qo'yadi: default
+    o'zgarsa test yiqilmasligi kerak, u boshqa narsani tekshiryapti.
+    """
+    with organization_context(tenant_a.organization.id):
+        set_setting(organization=tenant_a.organization, key="payroll.income_tax_rate", value=12)
+        set_setting(organization=tenant_a.organization, key="payroll.pension_rate", value=0.1)
+    yield
+
+
 def _employee(tenant: Any, *, base: str, official: str = "0", name: str = "Nilufar") -> Employee:
     with organization_context(tenant.organization.id):
         return Employee.objects.create(

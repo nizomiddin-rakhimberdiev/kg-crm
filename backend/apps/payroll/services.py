@@ -8,7 +8,8 @@ bonus/ushlab qolish bilan hal qilinadi.
 
 from __future__ import annotations
 
-from datetime import datetime, time
+import calendar
+from datetime import date, datetime, time
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
@@ -32,6 +33,9 @@ from apps.payroll.models import (
 
 __all__ = [
     "create_run",
+    "eligible_employees",
+    "missing_employees",
+    "period_share",
     "update_item",
     "finalize_run",
     "mark_run_paid",
@@ -46,23 +50,28 @@ def _money(value: Decimal) -> Decimal:
     return value.quantize(CENT, rounding=ROUND_HALF_UP)
 
 
-def _rates() -> tuple[Decimal, Decimal]:
+def _rates() -> tuple[Decimal, Decimal, Decimal]:
     """
-    Ushlanma stavkalari — Sozlamalardan (ADR-18).
+    Stavkalar — Sozlamalardan (ADR-18, Q10).
 
     Kodda emas: ular qaror bilan, ba'zan yil o'rtasida o'zgaradi, va
     stavkani servisga yozib qo'yish qonunga bo'ysunish uchun reliz
     talab qilardi.
+
+    Uchtasi ikki xil tabiatga ega: birinchi ikkitasi xodimdan
+    USHLANADI (uning qo'liga kam tegadi), uchinchisi esa bog'cha
+    USTIGA to'laydi (xodimga ta'sir qilmaydi, xarajatni oshiradi).
     """
     from apps.settings_app.services import get_setting
 
     income = Decimal(str(get_setting(key="payroll.income_tax_rate")))
     pension = Decimal(str(get_setting(key="payroll.pension_rate")))
-    return income, pension
+    social = Decimal(str(get_setting(key="payroll.social_tax_rate")))
+    return income, pension, social
 
 
 def recompute_item(
-    item: PayrollItem, *, rates: tuple[Decimal, Decimal] | None = None
+    item: PayrollItem, *, rates: tuple[Decimal, Decimal, Decimal] | None = None
 ) -> PayrollItem:
     """
     Satrning BARCHA hosila qiymatlarini qayta hisoblaydi (ADR-18).
@@ -78,13 +87,16 @@ def recompute_item(
     Ikki sof summa alohida saqlanadi, chunki ular BOSHQA qoplardan
     chiqadi (docs/03 §13a).
     """
-    income_rate, pension_rate = rates if rates is not None else _rates()
+    income_rate, pension_rate, social_rate = rates if rates is not None else _rates()
 
     official = _money(min(item.official_base, item.base_amount))
     item.official_base = official
     item.tax_income = _money(official * income_rate / Decimal("100"))
     item.tax_pension = _money(official * pension_rate / Decimal("100"))
     item.official_net = _money(official - item.tax_income - item.tax_pension)
+    # Ish beruvchi solig'i sof maoshga TEGMAYDI — u bog'chaning ustiga
+    # qo'shiladigan xarajat (Q10).
+    item.tax_social = _money(official * social_rate / Decimal("100"))
 
     cash_gross = (item.base_amount - official) + item.bonus
     cash_net = cash_gross - item.deduction - item.advance
@@ -113,12 +125,102 @@ ITEM_FIELDS = [
     "official_base",
     "tax_income",
     "tax_pension",
+    "tax_social",
     "official_net",
     "cash_net",
     "gross",
     "net",
     "updated_at",
 ]
+
+
+# --- Xodim oylikka qanday tushadi (PLAN 1.10) ---
+
+
+def eligible_employees(*, branch: Any, period_year: int, period_month: int) -> Any:
+    """
+    Davr uchun oylik oladigan xodimlar.
+
+    Ikki shart: faol va shu davr TUGAGUNCHA ishga kirgan. Ikkinchisi
+    ilgari yo'q edi — 10-mayda kelgan xodim aprel hisobiga ham tushib
+    ketardi, agar o'sha hisob keyinroq yaratilgan bo'lsa.
+    """
+    last_day = calendar.monthrange(period_year, period_month)[1]
+    return Employee.objects.filter(
+        branch=branch,
+        is_active=True,
+        employment_status=EmploymentStatus.ACTIVE,
+        hire_date__lte=date(period_year, period_month, last_day),
+    )
+
+
+def missing_employees(*, run: PayrollRun) -> list[Employee]:
+    """
+    Hisobda BO'LISHI KERAK, lekin yo'q xodimlar.
+
+    `create_run()` xodimlarni o'sha ondagi ro'yxatdan suratga oladi.
+    Keyin qo'shilgan xodim qoralamaga `recalculate_run()` bilan tushadi,
+    lekin hisob YAKUNLANGAN bo'lsa hech narsa qilib bo'lmaydi — va, eng
+    yomoni, tushib qolgani hech qayerda ko'rinmaydi. Auditda aynan
+    shunday bo'lgan: xodim bor, oyligi yo'q, xato yo'q.
+
+    Bu funksiya jimlikni buzadi. Ekran uni ogohlantirish sifatida
+    ko'rsatadi: "2 xodim bu hisobda yo'q".
+    """
+    present = set(run.items.values_list("employee_id", flat=True))
+    return [
+        employee
+        for employee in eligible_employees(
+            branch=run.branch, period_year=run.period_year, period_month=run.period_month
+        )
+        if employee.id not in present
+    ]
+
+
+def period_share(*, employee: Employee, period_year: int, period_month: int) -> tuple[int, int]:
+    """
+    Xodimning shu oydagi ish kunlari va oyning jami ish kunlari.
+
+    Ishga kirgan oyi to'liq hisoblangani — bog'cha uchun ortiqcha
+    xarajat, xodim uchun esa keyingi oy "nega kam?" degan savol. Bitta
+    kalendar (`attendance`) ikkala tomonda ham ishlatiladi: bolaning
+    proporsional fakturasi ham shundan chiqadi.
+    """
+    from apps.attendance.services_absence import billable_days, working_days_in_month
+
+    total = working_days_in_month(
+        organization_id=employee.organization_id,
+        year=period_year,
+        month=period_month,
+        branch=employee.branch,
+    )
+    last_day = calendar.monthrange(period_year, period_month)[1]
+    month_start = date(period_year, period_month, 1)
+    month_end = date(period_year, period_month, last_day)
+
+    start = max(month_start, employee.hire_date) if employee.hire_date else month_start
+    if start <= month_start:
+        return total, total
+
+    worked = billable_days(
+        organization_id=employee.organization_id,
+        date_from=start,
+        date_to=month_end,
+        branch=employee.branch,
+    )
+    return worked, total
+
+
+def _prorated_salary(
+    *, employee: Employee, amount: Decimal, period_year: int, period_month: int
+) -> Decimal:
+    """Ishga kirgan oyi uchun proporsional maosh."""
+    worked, total = period_share(
+        employee=employee, period_year=period_year, period_month=period_month
+    )
+    if total <= 0 or worked >= total:
+        return amount
+    return _money(amount * worked / total)
 
 
 def _assert_editable(run: PayrollRun) -> None:
@@ -159,8 +261,8 @@ def create_run(
             ).format(period_year=period_year, period_month=period_month)
         ) from exc
 
-    employees = Employee.objects.filter(
-        branch=branch, is_active=True, employment_status=EmploymentStatus.ACTIVE
+    employees = eligible_employees(
+        branch=branch, period_year=period_year, period_month=period_month
     )
 
     PayrollItem.objects.bulk_create(
@@ -171,9 +273,20 @@ def create_run(
                 payroll_run=run,
                 employee=employee,
                 # Maosh SNAPSHOT sifatida ko'chiriladi: keyin oshsa ham
-                # bu hisoblash o'zgarmasligi kerak.
-                base_amount=employee.base_salary,
-                official_base=employee.official_salary,
+                # bu hisoblash o'zgarmasligi kerak. Ishga kirgan oyi
+                # esa proporsional (PLAN 1.10).
+                base_amount=_prorated_salary(
+                    employee=employee,
+                    amount=employee.base_salary,
+                    period_year=period_year,
+                    period_month=period_month,
+                ),
+                official_base=_prorated_salary(
+                    employee=employee,
+                    amount=employee.official_salary,
+                    period_year=period_year,
+                    period_month=period_month,
+                ),
                 gross=employee.base_salary,
                 net=employee.base_salary,
             )
@@ -245,8 +358,8 @@ def recalculate_run(run: PayrollRun) -> PayrollRun:
     _assert_editable(run)
 
     active = list(
-        Employee.objects.filter(
-            branch=run.branch, is_active=True, employment_status=EmploymentStatus.ACTIVE
+        eligible_employees(
+            branch=run.branch, period_year=run.period_year, period_month=run.period_month
         )
     )
     existing = {item.employee_id: item for item in run.items.all()}
@@ -258,8 +371,18 @@ def recalculate_run(run: PayrollRun) -> PayrollRun:
                 branch=run.branch,
                 payroll_run=run,
                 employee=employee,
-                base_amount=employee.base_salary,
-                official_base=employee.official_salary,
+                base_amount=_prorated_salary(
+                    employee=employee,
+                    amount=employee.base_salary,
+                    period_year=run.period_year,
+                    period_month=run.period_month,
+                ),
+                official_base=_prorated_salary(
+                    employee=employee,
+                    amount=employee.official_salary,
+                    period_year=run.period_year,
+                    period_month=run.period_month,
+                ),
                 gross=employee.base_salary,
                 net=employee.base_salary,
             )
@@ -412,12 +535,16 @@ def recompute_run_totals(run: PayrollRun) -> PayrollRun:
     siljiydi — moliyaviy keshlar bilan bir xil qoida (D3).
     """
     totals = PayrollItem.objects.filter(payroll_run=run).aggregate(
-        gross=Sum("gross"), deductions=Sum("deduction"), net=Sum("net")
+        gross=Sum("gross"),
+        deductions=Sum("deduction"),
+        net=Sum("net"),
+        social=Sum("tax_social"),
     )
     PayrollRun.objects.filter(pk=run.pk).update(
         total_gross=_money(totals["gross"] or Decimal("0")),
         total_deductions=_money(totals["deductions"] or Decimal("0")),
         total_net=_money(totals["net"] or Decimal("0")),
+        total_social_tax=_money(totals["social"] or Decimal("0")),
     )
     run.refresh_from_db()
     return run

@@ -47,8 +47,18 @@ DEFAULTS: dict[str, Any] = {
     #
     # Foizda saqlanadi (12 = 12%), chunki buxgalter hujjatda aynan
     # shu ko'rinishda ko'radi.
-    "payroll.income_tax_rate": 12,
-    "payroll.pension_rate": 0.1,
+    # SUKUT — 0, ya'ni O'CHIRILGAN (Q10).
+    #
+    # Ilgari bu yerda 12 % turardi va sozlamaga umuman tegmagan bog'cha
+    # ham xodimdan pul ushlab qolardi — hech kim tanlamagan qaror
+    # bo'yicha. Soliq ushlash qonuniy majburiyat va uni bog'cha ongli
+    # ravishda yoqishi kerak, tizim taxmin qilib emas.
+    "payroll.income_tax_rate": 0,
+    "payroll.pension_rate": 0,
+    # Ish beruvchi xarajati — xodimdan USHLANMAYDI, bog'cha ustiga
+    # to'laydi. Shuning uchun u sof maoshga emas, hisoblashning
+    # UMUMIY QIYMATIGA qo'shiladi.
+    "payroll.social_tax_rate": 0,
     # --- Ish kalendari (ADR-19) ---
     #
     # ISO raqamlash: 1 = dushanba … 7 = yakshanba. Shanba ishlaydigan
