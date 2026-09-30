@@ -31,6 +31,7 @@ from apps.children.models import (
     EnrollmentStatus,
 )
 from apps.core.exceptions import BusinessRuleViolation
+from apps.finance import balance
 from apps.finance.models import (
     ChildLedgerEntry,
     Direction,
@@ -42,6 +43,7 @@ from apps.finance.models import (
     InvoiceStatus,
     Payment,
     PaymentAllocation,
+    PaymentMethod,
     SourceType,
 )
 
@@ -60,6 +62,8 @@ __all__ = [
     "record_payment_batch",
     "reverse_payment",
     "daily_cash_summary",
+    "receipt_for",
+    "receipt_number",
     "open_invoices",
     "invoice_allocated",
     "payment_unallocated",
@@ -1307,6 +1311,89 @@ def reverse_payment(*, payment: Payment, reason: str = "", created_by: Any = Non
 
     recompute_child_balance(payment.child)
     return payment
+
+
+def receipt_number(payment: Payment) -> str:
+    """
+    Kvitansiya raqami — `KVT-YYYYMMDD-NNNN`.
+
+    Alohida ketma-ketlik jadvali YO'Q va bu ataylab: raqam to'lovning
+    o'z sanasi va o'sha kundagi tartibidan chiqadi, ya'ni qayta chop
+    etilganda AYNAN o'sha raqam qaytadi. Saqlanadigan hisoblagich esa
+    migratsiya, qulf va "raqam berildi, lekin to'lov yozilmadi" degan
+    uchinchi holatni olib kelardi.
+
+    To'lovlar append-only va `paid_at` o'zgarmaydi, shuning uchun
+    tartib barqaror. Qaytarilgan to'lov ham sanaladi — u bo'lgan
+    hodisa va uning kvitansiyasi ham bo'lgan.
+    """
+    day = timezone.localtime(payment.paid_at).date()
+    order = (
+        Payment.objects.filter(
+            branch_id=payment.branch_id,
+            paid_at__date=day,
+        )
+        .filter(Q(paid_at__lt=payment.paid_at) | Q(paid_at=payment.paid_at, id__lte=payment.id))
+        .count()
+    )
+    return f"KVT-{day:%Y%m%d}-{order:04d}"
+
+
+def receipt_for(payment: Payment) -> dict[str, Any]:
+    """
+    Kvitansiya ma'lumoti — bitta KASSIR HARAKATI bo'yicha (PLAN 1.7).
+
+    Ota-ona 1 400 000 ni naqd, 100 000 ni terminalda to'lasa, bu bitta
+    hodisa va ikkita to'lov qatori (`batch_id` ularni bog'laydi).
+    Kvitansiya ham bitta bo'lishi kerak — ikkita qog'oz berish ota-onani
+    "men ikki marta to'ladimmi?" degan savolga olib boradi.
+
+    Qarz va avans kvitansiya ustida turadi, chunki ota-onaning keyingi
+    savoli aynan shu: "yana qancha qoldi?".
+    """
+    lines = (
+        Payment.objects.filter(batch_id=payment.batch_id).order_by("paid_at", "created_at")
+        if payment.batch_id
+        else Payment.objects.filter(pk=payment.pk)
+    )
+    lines = list(lines.select_related("child", "invoice", "received_by", "branch"))
+    first = lines[0]
+
+    allocations = (
+        PaymentAllocation.objects.filter(payment__in=lines, released_at__isnull=True)
+        .select_related("invoice")
+        .order_by("allocated_at")
+    )
+    detail = balance.child_balance(first.child)
+
+    return {
+        "number": receipt_number(first),
+        "paid_at": first.paid_at.isoformat(),
+        "child": first.child.full_name,
+        "branch": first.branch.name,
+        "cashier": first.received_by.full_name if first.received_by_id else "",
+        "reversed": any(line.reversed_at for line in lines),
+        "lines": [
+            {
+                "method": str(PaymentMethod(line.method).label),
+                "amount": f"{line.amount:.2f}",
+                "reference": line.reference,
+            }
+            for line in lines
+        ],
+        "total": f"{sum((line.amount for line in lines), Decimal('0')):.2f}",
+        # Pul qaysi hujjatlarni yopgani — nizoda eng kerakli qator.
+        "allocations": [
+            {
+                "invoice": allocation.invoice.number,
+                "period": f"{allocation.invoice.period_year}-{allocation.invoice.period_month:02d}",
+                "amount": f"{allocation.amount:.2f}",
+            }
+            for allocation in allocations
+        ],
+        "balance_after": f"{detail.outstanding:.2f}",
+        "advance_after": f"{detail.advance:.2f}",
+    }
 
 
 def daily_cash_summary(

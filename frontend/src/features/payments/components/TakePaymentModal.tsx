@@ -79,7 +79,16 @@ function planAllocation(
   return { rows, leftover: left }
 }
 
-export function TakePaymentModal({ row, onClose }: { row: BoardRow; onClose: () => void }) {
+export function TakePaymentModal({
+  row,
+  onClose,
+  onPaid,
+}: {
+  row: BoardRow
+  onClose: () => void
+  /** To'lov yozilgach chaqiriladi — kvitansiyani ochish uchun. */
+  onPaid?: (paymentId: string) => void
+}) {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
   const { can } = useCan()
@@ -182,9 +191,12 @@ export function TakePaymentModal({ row, onClose }: { row: BoardRow; onClose: () 
         },
         idempotencyKey,
       ),
-    onSuccess: () => {
+    onSuccess: (payments) => {
       invalidateMoney(queryClient, organizationId)
       onClose()
+      // Kvitansiya DARHOL taklif qilinadi: kassir uni ota-ona hali
+      // kassada turganda beradi, keyin emas.
+      if (payments[0]) onPaid?.(payments[0].id)
     },
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })

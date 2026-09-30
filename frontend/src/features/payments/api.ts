@@ -141,6 +141,21 @@ export interface JournalSummary {
   by_method: Array<{ method: string; total: string; count: number }>
 }
 
+/** Kvitansiya (`GET /payments/{id}/receipt`, PLAN 1.7). */
+export interface Receipt {
+  number: string
+  paid_at: string
+  child: string
+  branch: string
+  cashier: string
+  reversed: boolean
+  lines: Array<{ method: string; amount: string; reference: string }>
+  total: string
+  allocations: Array<{ invoice: string; period: string; amount: string }>
+  balance_after: string
+  advance_after: string
+}
+
 export interface BoardSummary {
   period_year: number
   period_month: number
@@ -232,6 +247,8 @@ export const paymentsApi = {
       payload,
       idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
     ),
+
+  receipt: (id: string) => api.get<Receipt>(`/payments/${id}/receipt`),
 
   reverse: (id: string, reason: string) => api.post<Payment>(`/payments/${id}/reverse`, { reason }),
 

@@ -8,10 +8,11 @@
 
 import { useState } from 'react'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Ban, FileText, Plus, Search, Trash2, Users, Wallet } from 'lucide-react'
+import { Ban, FileText, Plus, Printer, Search, Trash2, Users, Wallet } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { paymentsApi, tariffsApi, type BoardRow } from '@/features/payments/api'
 import { GenerateInvoicesDialog } from '@/features/payments/components/GenerateInvoicesDialog'
+import { ReceiptModal } from '@/features/payments/components/ReceiptModal'
 import { TakePaymentModal } from '@/features/payments/components/TakePaymentModal'
 import { PAYMENT_METHODS, paymentMethodLabel } from '@/features/payments/methods'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
@@ -69,6 +70,7 @@ export default function PaymentsPage() {
   const [paying, setPaying] = useState<BoardRow | null>(null)
   const [runResult, setRunResult] = useState<BillingRunResult | null>(null)
   const [generating, setGenerating] = useState(false)
+  const [receiptFor, setReceiptFor] = useState<string | null>(null)
 
   // Jurnal filtri (PLAN 1.8). Sukut — shu oy: kassir odatda "bugun va
   // kecha nima bo'ldi" degan savol bilan keladi.
@@ -188,7 +190,9 @@ export default function PaymentsPage() {
       {/* To'lov oynasi — bolaning qatori bosilganda. Alohida "yangi
           to'lov" tugmasi YO'Q: kassir bolani qidiradi, ustiga bosadi
           va pulni qabul qiladi. */}
-      {paying && <TakePaymentModal row={paying} onClose={() => setPaying(null)} />}
+      {paying && (
+        <TakePaymentModal row={paying} onClose={() => setPaying(null)} onPaid={setReceiptFor} />
+      )}
 
       {/* Qaytarish — sabab MAJBURIY: kassa jurnalida "nega qaytarildi?"
           degan savol javobsiz qolmasin (to'lovning o'zi o'chirilmaydi,
@@ -241,6 +245,8 @@ export default function PaymentsPage() {
           </div>
         </form>
       </Modal>
+
+      {receiptFor && <ReceiptModal paymentId={receiptFor} onClose={() => setReceiptFor(null)} />}
 
       {generating && (
         <GenerateInvoicesDialog
@@ -636,6 +642,17 @@ export default function PaymentsPage() {
                         {money(payment.amount)}
                       </td>
                       <td className="px-4 py-3 text-right">
+                        {/* Kvitansiyani qayta chop etish — qaytarilgan
+                            to'lov uchun ham: o'sha qog'oz ota-onada
+                            qolgan va u nima bo'lganini so'raydi. */}
+                        <button
+                          type="button"
+                          onClick={() => setReceiptFor(payment.id)}
+                          title={t('Kvitansiya')}
+                          className="mr-1 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                        >
+                          <Printer className="h-4 w-4" />
+                        </button>
                         {payment.is_reversed ? (
                           <span
                             title={payment.reversal_reason || undefined}

@@ -780,4 +780,12 @@ export const messages: Record<string, string> = {
   'Jami qabul qilingan': 'Всего принято',
   Sanadan: 'С даты',
   Sanagacha: 'По дату',
+  '80 mm': '80 мм',
+  Avansda: 'В авансе',
+  'Chop etish': 'Печать',
+  'Hisob-fakturalarga': 'На счета',
+  Kvitansiya: 'Квитанция',
+  'Qabul qildi': 'Принял',
+  QAYTARILGAN: 'ВОЗВРАЩЁН',
+  'Qolgan qarz': 'Остаток долга',
 }

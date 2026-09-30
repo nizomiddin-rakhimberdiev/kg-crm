@@ -825,7 +825,6 @@ def cash_position(*, organization_id: Any, branch_id: Any = None) -> dict[str, A
     }
 
 
-
 def payment_journal_summary(
     *,
     organization_id: Any,

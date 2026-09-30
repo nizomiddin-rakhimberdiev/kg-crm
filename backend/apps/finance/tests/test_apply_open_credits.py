@@ -112,9 +112,7 @@ class TestApply:
             invoice = Invoice.objects.get(child=child)
             assert invoice.amount_paid == Decimal("830000.00")
             assert (
-                PaymentAllocation.objects.filter(
-                    invoice=invoice, released_at__isnull=True
-                ).count()
+                PaymentAllocation.objects.filter(invoice=invoice, released_at__isnull=True).count()
                 == 1
             )
 

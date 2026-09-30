@@ -275,6 +275,7 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
         "board": "read",
         "board_summary": "read",
         "journal_summary": "read",
+        "receipt": "read",
     }
     model = Payment
     select_related_fields = ("child", "invoice")
@@ -436,6 +437,18 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
                 },
             )
         return Response(PaymentSerializer(payments, many=True).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["get"])
+    def receipt(self, request: Request, pk: str | None = None) -> Response:
+        """
+        `GET /payments/{id}/receipt` — kvitansiya ma'lumoti (PLAN 1.7).
+
+        Bitta KASSIR HARAKATI bo'yicha: bir necha usul bilan to'langan
+        pul bitta kvitansiyaga tushadi, chunki ota-ona uchun bu bitta
+        hodisa. Jurnaldan qayta chop etilganda raqam ham, mazmun ham
+        o'sha bo'ladi.
+        """
+        return Response(services.receipt_for(self.get_object()))
 
     @action(detail=True, methods=["post"])
     def reverse(self, request: Request, pk: str | None = None) -> Response:
