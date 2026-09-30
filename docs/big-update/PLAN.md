@@ -6,7 +6,7 @@
 >
 > Bajarilgan ish `PROGRESS.md` da. Yangi sessiya shu ikki fayldan davom etadi.
 
-**Holat:** 0-bosqich bajarildi · 1-bosqich kutilmoqda
+**Holat:** 0 va 1-bosqichlar bajarildi · 2-bosqich kutilmoqda
 **Boshlandi:** 2026-09-30 · **Baza:** `main` @ `dd32207`
 
 ---
@@ -131,81 +131,81 @@ Belgilar: `[ ]` kutilmoqda · `[~]` jarayonda · `[x]` bajarildi
 
 ---
 
-### Bosqich 1 — Moliyaviy to'g'rilik `[ ]`
+### Bosqich 1 — Moliyaviy to'g'rilik `[x]`
 
 > Eng muhim bosqich. Bu yerdagi xato mijozning pulini noto'g'ri
 > ko'rsatadi, ya'ni ishonchni buzadi.
 
-**1.1 Yagona balans servisi** `[ ]`
-- [ ] `finance/balance.py`: `child_balance_detail(child)` → `{charged, allocated, advance, credits, refunds, outstanding, overdue}`
-- [ ] Doska, to'lov oynasi, qarzdorlar, dashboard, brifing, bola kartasi, hisobot va eksport — hammasi shundan
-- [ ] Invariant testlar: har bola uchun barcha ekranlarda bitta raqam; tenant yig'indisi = "Jami qarz"
+**1.1 Yagona balans servisi** `[x]`
+- [x] `finance/balance.py`: `child_balance_detail(child)` → `{charged, allocated, advance, credits, refunds, outstanding, overdue}`
+- [x] Doska, to'lov oynasi, qarzdorlar, dashboard, brifing, bola kartasi, hisobot va eksport — hammasi shundan
+- [x] Invariant testlar: har bola uchun barcha ekranlarda bitta raqam; tenant yig'indisi = "Jami qarz"
 - Fayllar: `apps/finance/{balance.py,selectors.py,views.py}`, `apps/reports/selectors.py`, `apps/intelligence/services.py`, `frontend/src/features/{payments,debtors,dashboard,children}`
 - Xavf: **yuqori** — eng ko'p ekranga tegadi. Yumshatish: eski selektorlar o'chirilmaydi, yangi servisga *delegat* qilinadi; invariant test avval yoziladi.
 
-**1.2 Avans taqsimoti (Q1)** `[ ]`
-- [ ] Yangi model `PaymentAllocation` (`payment`, `invoice`, `amount`) — append-only
-- [ ] `record_payment`: FIFO (eng eski ochiq faktura) → qoldiq avans
-- [ ] `issue_invoice`: mavjud avansni avtomatik qo'llash
-- [ ] `reverse_payment`: taqsimotni ham bekor qilish
-- [ ] To'lov oynasida "To'lanishi kerak / Avans balansi / taqsimot preview" va aniq fakturani tanlash
-- [ ] `apply_open_credits --tenant --dry-run` — mavjud ma'lumot uchun
+**1.2 Avans taqsimoti (Q1)** `[x]`
+- [x] Yangi model `PaymentAllocation` (`payment`, `invoice`, `amount`) — append-only
+- [x] `record_payment`: FIFO (eng eski ochiq faktura) → qoldiq avans
+- [x] `issue_invoice`: mavjud avansni avtomatik qo'llash
+- [x] `reverse_payment`: taqsimotni ham bekor qilish
+- [x] To'lov oynasida "To'lanishi kerak / Avans balansi / taqsimot preview" va aniq fakturani tanlash
+- [x] `apply_open_credits --tenant --dry-run` — mavjud ma'lumot uchun
 - Migratsiya: `finance/00XX_payment_allocation.py` (yangi jadval + backfill **alohida command**, migratsiyada emas)
 - Xavf: **yuqori** — `ck_invoice_paid_not_over` cheklovi bilan to'qnashishi mumkin; `select_for_update` tartibi saqlanishi shart.
 
-**1.3 Proporsional birinchi oy va muddat (Q2, Q3)** `[ ]`
-- [ ] `settings_app`: `finance.first_month_mode` (`full`/`prorated`/`next_month`, sukut `prorated`), `finance.payment_day` (sukut 10), `finance.first_invoice_grace_days` (sukut 5)
-- [ ] `issue_invoice`: ish kunlari bo'yicha proporsiya (`attendance.working_weekdays` + `Holiday`), butun so'mgacha yaxlitlash
-- [ ] `due_date = max(payment_day, enrolled_on + grace)`
-- [ ] Faktura qatorida izoh: "Sentabr, 22 ish kunidan 1 kun"
-- [ ] Qo'lda va avtomatik generatsiya bir xil kod yo'lidan
+**1.3 Proporsional birinchi oy va muddat (Q2, Q3)** `[x]`
+- [x] `settings_app`: `finance.first_month_mode` (`full`/`prorated`/`next_month`, sukut `prorated`), `finance.payment_day` (sukut 10), `finance.first_invoice_grace_days` (sukut 5)
+- [x] `issue_invoice`: ish kunlari bo'yicha proporsiya (`attendance.working_weekdays` + `Holiday`), butun so'mgacha yaxlitlash
+- [x] `due_date = max(payment_day, enrolled_on + grace)`
+- [x] Faktura qatorida izoh: "Sentabr, 22 ish kunidan 1 kun"
+- [x] Qo'lda va avtomatik generatsiya bir xil kod yo'lidan
 - Fayllar: `apps/finance/services.py`, `apps/attendance/services_absence.py` (ish kunlari funksiyasi qayta ishlatiladi), `apps/settings_app/services.py`
 
-**1.4 Ommaviy amallarda tasdiq** `[ ]`
-- [ ] `POST /finance/invoices/preview-run` → bolalar soni, jami, o'tkazib yuborilganlar (sababi bilan)
-- [ ] Frontendda preview → "Tasdiqlash"
-- [ ] Ro'yxatdagi guruh va tarif o'zgarishi — tasdiq oynasi (Q4: tarif keyingi fakturadan)
+**1.4 Ommaviy amallarda tasdiq** `[x]`
+- [x] `POST /finance/invoices/preview-run` → bolalar soni, jami, o'tkazib yuborilganlar (sababi bilan)
+- [x] Frontendda preview → "Tasdiqlash"
+- [x] Ro'yxatdagi guruh va tarif o'zgarishi — tasdiq oynasi (Q4: tarif keyingi fakturadan)
 
-**1.5 Mutatsiyadan keyin yangilanish** `[ ]`
-- [ ] `lib/api/queryKeys.ts` da domen darajasidagi invalidatsiya xaritasi
-- [ ] To'lov, qaytarish, faktura, chiqim, davomat, ombor, oylik — bog'liq so'rovlarni yangilaydi
+**1.5 Mutatsiyadan keyin yangilanish** `[x]`
+- [x] `lib/api/queryKeys.ts` da domen darajasidagi invalidatsiya xaritasi
+- [x] To'lov, qaytarish, faktura, chiqim, davomat, ombor, oylik — bog'liq so'rovlarni yangilaydi
 - Fayllar: `frontend/src/lib/api/queryKeys.ts` + har bir feature'ning mutatsiyalari
 
-**1.6 Brifing va terminologiya** `[ ]`
-- [ ] Brifing jonli servisdan yoki hodisadan keyin qayta hisoblanadi; kartada "holat: HH:MM"
-- [ ] Terminlar: "Jami qarz" · "Muddati o'tgan qarz (15+ kun)" · "Shu oy qolgan"
-- [ ] To'lovlar sahifasidagi "Qarzdor" chipi → "Shu oy toʻlanmagan"
+**1.6 Brifing va terminologiya** `[x]`
+- [x] Brifing jonli servisdan yoki hodisadan keyin qayta hisoblanadi; kartada "holat: HH:MM"
+- [x] Terminlar: "Jami qarz" · "Muddati o'tgan qarz (15+ kun)" · "Shu oy qolgan"
+- [x] To'lovlar sahifasidagi "Qarzdor" chipi → "Shu oy toʻlanmagan"
 
-**1.7 Kvitansiya** `[ ]`
-- [ ] Raqam, sana, bola, summa, usul, taqsimot, kassir, qolgan qarz/avans
-- [ ] A4 va 80 mm print, PDF; jurnaldan qayta chop etish
+**1.7 Kvitansiya** `[x]`
+- [x] Raqam, sana, bola, summa, usul, taqsimot, kassir, qolgan qarz/avans
+- [x] A4 va 80 mm print, PDF; jurnaldan qayta chop etish
 - Eslatma: PDF uchun saqlash abstraksiyasi tayyor (`FileField`), PDF kutubxonasi hali yo'q → **Qaror kerak**
 
-**1.8 To'lovlar jurnali** `[ ]`
-- [ ] Sana oralig'i, usul, bola, kassir filtri; jami; Excel eksport
+**1.8 To'lovlar jurnali** `[x]`
+- [x] Sana oralig'i, usul, bola, kassir filtri; jami; Excel eksport
 
-**1.9 Ombor ↔ chiqim (Q13)** `[ ]`
-- [ ] `StockMovement.expense` (nullable FK) — "Xarid"da katakcha + kassa tanlash (sukut yoqilgan)
-- [ ] Ikki marta hisoblanmaslik testi
-- [ ] Miqdor "20 kg" (keraksiz nollarsiz), birlik tarjimasi
+**1.9 Ombor ↔ chiqim (Q13)** `[x]`
+- [x] `StockMovement.expense` (nullable FK) — "Xarid"da katakcha + kassa tanlash (sukut yoqilgan)
+- [x] Ikki marta hisoblanmaslik testi
+- [x] Miqdor "20 kg" (keraksiz nollarsiz), birlik tarjimasi
 - Migratsiya: `inventory/00XX_movement_expense.py`
 
-**1.10 Oylik** `[ ]`
-- [ ] Maftuna nega yo'qligini aniqlash (gipoteza: `build_run` xodimlarni YARATILISH paytida suratga oladi; yakunlangan hisobga keyingi xodim tushmaydi) va tuzatish
-- [ ] `hired_on` bo'yicha filtr + ishga kirgan oyi proporsional
-- [ ] Q10 soliqlari: `payroll.income_tax_percent`, `payroll.social_tax_percent` (sukut 0)
-- [ ] Inputlarda formatlangan raqam
+**1.10 Oylik** `[x]`
+- [x] Maftuna nega yo'qligini aniqlash (gipoteza: `build_run` xodimlarni YARATILISH paytida suratga oladi; yakunlangan hisobga keyingi xodim tushmaydi) va tuzatish
+- [x] `hired_on` bo'yicha filtr + ishga kirgan oyi proporsional
+- [x] Q10 soliqlari: `payroll.income_tax_percent`, `payroll.social_tax_percent` (sukut 0)
+- [x] Inputlarda formatlangan raqam
 
-**1.11 Yagona narx moduli** `[ ]`
-- [ ] Platforma konsolidagi `monthlyEstimate` (hardcode `500_000` + `80_000` — ADR-12 gacha bo'lgan narx) olib tashlanadi, backend `pricing.quote()` ishlatiladi
-- [ ] Testlar: 0, 42, 50, 51, 60, 150 bola
+**1.11 Yagona narx moduli** `[x]`
+- [x] Platforma konsolidagi `monthlyEstimate` (hardcode `500_000` + `80_000` — ADR-12 gacha bo'lgan narx) olib tashlanadi, backend `pricing.quote()` ishlatiladi
+- [x] Testlar: 0, 42, 50, 51, 60, 150 bola
 - Fayl: `frontend/src/features/platform/pages/PlatformOrganizationsPage.tsx:41`
 - Eslatma: landing kalkulyatori **allaqachon** backend'dan oladi (`/public/pricing`) — u to'g'ri
 
-**1.12 Obuna sahifasi** `[ ]`
-- [ ] "Asosiy narx → Yillik chegirma → Toʻlov" ko'rinishi
-- [ ] "Hisoblash dalili" inson tilida
-- [ ] "Qanday toʻlash" banneri (bank rekvizitlari, aloqa)
+**1.12 Obuna sahifasi** `[x]`
+- [x] "Asosiy narx → Yillik chegirma → Toʻlov" ko'rinishi
+- [x] "Hisoblash dalili" inson tilida
+- [x] "Qanday toʻlash" banneri (bank rekvizitlari, aloqa)
 
 ---
 

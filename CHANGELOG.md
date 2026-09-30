@@ -11,6 +11,19 @@ Bajarilgani: [`docs/big-update/PROGRESS.md`](./docs/big-update/PROGRESS.md)
 ### Qo'shildi
 - 0-bosqich: 40 ta qizil test (`pytest -m big_update`, frontendda `it.fails`)
   2026-09-30 production auditidagi kamchiliklarni takrorlaydi.
+- **1-bosqich — moliyaviy to'g'rilik (ADR-20).** `payment_allocation`:
+  qaysi pul qaysi hisob-fakturani yopgani. Balans formulasi bitta
+  faylda (`finance/balance.py`). Birinchi oy proporsional, muddat
+  qabul sanasidan. Generatsiya oldidan preview. Kvitansiya (A4 va
+  80 mm). To'lovlar jurnali filtr va yig'indi bilan. Ombor xaridi
+  chiqim va kassaga tushadi. Oylikda tushib qolgan xodim signali va
+  ishga kirgan oyi proporsional. Narx yagona modulda.
+
+### O'zgardi
+- Ortiqcha to'lov endi rad etilmaydi — ortig'i avansga aylanadi (Q1).
+- `payroll.income_tax_rate` va `payroll.pension_rate` sukut qiymati
+  0 ga tushdi (Q10). Yakunlangan hisoblar o'zgarmaydi.
+- Narxi ko'rsatilgan ombor xaridi chiqim yozuvini yaratadi (Q13).
 
 ---
 

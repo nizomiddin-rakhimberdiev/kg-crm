@@ -76,3 +76,83 @@ tegilmadi — 0-bosqich shartiga ko'ra.
 
 1-bosqich, **1.1 dan boshlanadi** (yagona balans servisi): u 1.2 (avans
 taqsimoti) uchun poydevor. Egasining "davom et" signali kutilmoqda.
+
+
+---
+
+## 2026-10-01 — Bosqich 1 bajarildi (moliyaviy to'g'rilik)
+
+**Branch:** `big-update/phase-1` · commitlar `d7341d0` … `2b48fdd`
+
+### Ikki ildiz sabab yopildi
+
+**① Qarz ikki xil hisoblanardi.** Endi `payment_allocation` qaysi pul
+qaysi hisob-fakturani yopganini yozadi, `invoice.amount_paid` esa shu
+qatorlar ustidagi kesh. Formula `apps/finance/balance.py` da va faqat
+o'sha yerda — doska, qarzdorlar, bola kartasi, bosh sahifa, brifing va
+hisobotlar hammasi shundan o'qiydi (ADR-20).
+
+**② `issue_invoice()` qabul sanasini ko'rmasdi.** Endi birinchi oy ish
+kunlari bo'yicha proporsional, muddat esa `max(to'lov kuni, qabul + 5
+kun)`. `finance.due_day` sozlamasi e'lon qilingan-u, hech qayerda
+o'qilmasdi — endi o'qiladi.
+
+### Bandlar
+
+| Band | Holat | Natija |
+|---|---|---|
+| 1.1 Yagona balans servisi | ✅ | `balance.py`; `balance`/`advance`/`outstanding` alohida nomlangan; invariant testlar |
+| 1.2 Avans taqsimoti (Q1) | ✅ | `payment_allocation`, FIFO, auto-apply, qaytarishda bo'shatish, `apply_open_credits` |
+| 1.3 Proporsional oy va muddat (Q2,Q3) | ✅ | Ish kunlari, bayramlar, 3 ta sozlama, satr izohi |
+| 1.4 Ommaviy amallarda tasdiq | ✅ | `preview-run` + dialog; guruh/tarif uchun `ConfirmDialog` |
+| 1.5 Mutatsiyadan keyin yangilanish | ✅ | `lib/api/invalidate.ts` |
+| 1.6 Brifing va atamalar | ✅ | `generated_at` + jonli `totals`; "Jami qarz", "Shu oy toʻlanmagan" |
+| 1.7 Kvitansiya | ✅ | A4 va 80 mm, taqsimot bilan, qayta chop etish |
+| 1.8 To'lovlar jurnali | ✅ | Sana/usul/bola/kassir filtri, sahifasiz yig'indi, eksport bir xil filtrda |
+| 1.9 Ombor ↔ chiqim (Q13) | ✅ | `stock_movement.expense`, kassa tanlash, `quantity_text` |
+| 1.10 Oylik | ✅ | `missing_employees`, `eligible_employees`, proporsiya, Q10 soliqlari |
+| 1.11 Yagona narx moduli | ✅ | `lib/pricing.ts`; backend testi ikkalasini bog'laydi |
+| 1.12 Obuna sahifasi | ✅ | Uch qatorli hisob, inson tilidagi dalil, "Qanday toʻlash" |
+
+### Maftuna holati — sabab
+
+`create_run()` xodimlarni hisob YARATILGAN ondagi ro'yxatdan suratga
+oladi. Keyin qo'shilgan xodim qoralamaga `recalculate_run()` bilan
+tushadi, lekin hisob yakunlangan bo'lsa hech narsa qilib bo'lmaydi —
+va, eng yomoni, tushib qolgani hech qayerda ko'rinmaydi. Endi
+`missing_employees(run)` buni aytadi.
+
+### Sifat darvozalari
+
+| Tekshiruv | Natija |
+|---|---|
+| `pytest` | 975 o'tdi · 19 xfailed (2–5 bosqichlar) · 0 xato |
+| `ruff` / `ruff format` / `mypy` | toza |
+| `makemigrations --check` | o'zgarish yo'q |
+| `tsc` / `eslint` / `vitest` / `build` | toza · 111 test |
+| `check_rls` | 46 jadval |
+
+### Migratsiya repetitsiyasi
+
+Seed ma'lumotli bazada (30 bola, 4 oy, 120 faktura, 112 to'lov):
+- backfill 112 ta taqsimot yaratdi — bog'langan to'lovlar soniga teng;
+- 120 fakturaning hammasida kesh ↔ taqsimot mos;
+- **jami qarz 13 461 000 — backfilldan oldin ham, keyin ham bir xil**;
+- ikkinchi marta ishga tushirish dublikat yaratmadi;
+- to'liq orqaga qaytarish va qayta oldinga yurish ishladi, `check_rls` toza.
+
+### Xatti-harakat o'zgarishlari (deployda e'tibor bering)
+
+1. **Ortiqcha to'lov endi rad etilmaydi** — ortig'i avansga aylanadi (Q1).
+2. **`payroll.income_tax_rate` va `payroll.pension_rate` sukut qiymati
+   12 % va 0.1 % dan 0 ga tushdi** (Q10). Sozlamani ATAYLAB
+   o'rnatgan bog'chalarga ta'sir qilmaydi; yakunlangan hisoblar
+   suratda saqlanadi. Sozlamaga hech qachon tegmagan bog'cha bor
+   bo'lsa, deploydan oldin qiymatni ochiq o'rnatish kerak.
+3. **Narxi ko'rsatilgan ombor xaridi endi chiqim yaratadi** (Q13,
+   sukut yoqilgan). Eski harakatlarga teginilmaydi.
+
+### Keyingi qadam
+
+2-bosqich: bola kartasi, validatsiya, rollar. Egasining "davom et"
+signali kutilmoqda.

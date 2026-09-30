@@ -411,6 +411,17 @@ Module: `finance` (Payments module UI). The **ledger** is the source of truth ([
 
 ---
 
+### 9.4a Allocation, receipts and the journal (ADR-20, PLAN 1.2/1.4/1.7/1.8)
+
+| Method & path | Purpose |
+|---|---|
+| `GET /ledger/balance?child=<uuid>` | The child's whole financial picture: `balance`, `advance`, `outstanding`, `overdue_amount`, `overdue_days`, and `open_invoices[]` **in FIFO order**. The cashier screen draws its allocation preview from exactly this list, so what the screen shows is what the server will do. |
+| `POST /invoices/preview-run` | What the monthly run *would* create — writes nothing. Returns `will_create`, `total_amount`, per-child `rows[]` (amount, prorated `note`, `advance` that will be consumed) and every skip with its reason (`skipped_existing`, `skipped_no_tariff`, `skipped_next_month`). The candidate list comes from the same function the run itself uses, so preview and result cannot disagree. |
+| `GET /payments/{id}/receipt` | Receipt for **one cashier action**: a multi-method payment is one `batch_id` and therefore one receipt. Carries the allocation (which invoice took what) and the resulting `balance_after` / `advance_after`. The number `KVT-YYYYMMDD-NNNN` is derived, not stored, so a reprint returns the same number. |
+| `GET /payments/journal-summary` | Totals for the journal **regardless of paging**, with a `by_method` breakdown. Takes the same filters as the list (`paid_from`, `paid_to`, `method`, `child`, `received_by`). Reversed payments are counted but not totalled. |
+
+`POST /payments` and `POST /payments/batch` no longer reject an overpayment: the excess flows to the next open invoice and whatever is left becomes the advance. `invoice_id` means *"start allocating here"*, not *"allocate only here"*.
+
 ### 9.5 Cash accounts (ADR-17)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|

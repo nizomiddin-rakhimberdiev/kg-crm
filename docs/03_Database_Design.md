@@ -673,6 +673,31 @@ Rules for a batch:
 
 **Method rename (2026-09-30).** `card` → `terminal`, in one migration that rewrites existing rows and the `CHECK`. The customer's vocabulary is *naqd / terminal / o'tkazma / Payme-Click*, and a value named `card` displayed as "Terminal" is the kind of small lie that eventually reaches a report. `bank_transfer` and `online` keep their values; only their labels changed.
 
+### 13.5b `payment_allocation` — which money settled which invoice (ADR-20)
+
+The system had **two independent answers** to "what does this child owe": the ledger (`Σ debit − Σ credit`) and the invoice cache (`amount_due − amount_paid`). A payment taken without an invoice — an advance, which is how a kindergarten actually receives money — credited the ledger and touched no invoice. Debtors said 130 000 and the payments board said 1 500 000 for the same child, and both were correctly computed. `payment_allocation` is the missing link between them.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `payment_id` | `UUID` | `NOT NULL` FK → payment `ON DELETE RESTRICT` | |
+| `invoice_id` | `UUID` | `NOT NULL` FK → invoice `ON DELETE RESTRICT` | |
+| `amount` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (amount > 0)` | Part of the payment that settles this invoice |
+| `allocated_at` | `TIMESTAMPTZ` | `NOT NULL` | |
+| `released_at` | `TIMESTAMPTZ` | `NULL` | Set when the payment is reversed or the invoice cancelled |
+| `release_reason` | `VARCHAR(255)` | `NULL` | |
+
+- `uq_allocation_payment_invoice` — partial `UNIQUE (payment_id, invoice_id) WHERE released_at IS NULL`; a released row never blocks a new one.
+- Partial indexes on `invoice_id` and `payment_id` where `released_at IS NULL` — every read is of live rows only.
+
+**Rules:**
+- `invoice.amount_paid` is a **cache over the live allocations**, recomputed (never incremented) by `_refresh_invoice_payment_state`.
+- **Allocation is FIFO by `due_date`**; the cashier may name a starting invoice and the remainder still flows on. Whatever is left unallocated **is** the advance — there is no separate advance balance to keep in sync.
+- `advance = Σ payments − Σ live allocations`. Three numbers are named separately because they answer different questions and need not be equal: `balance` (what the family owes), `advance` (what we hold of theirs), `outstanding` (what open documents still carry).
+- Rows are **released, not deleted**: "this money once settled that document" is a fact a dispute needs.
+- Overpayment is **not an error**. The `amount_paid ≤ amount_due` invariant is held by the allocation itself under `SELECT … FOR UPDATE`; refusing the money forced the cashier to split the sum by hand, which is the likeliest place to fumble a number.
+
+**Backfill.** `finance.0009` copies the existing `payment.invoice` links into allocations — a *schema* move that changes no displayed number. Applying historical **advances** to open invoices changes numbers and is therefore a separate, owner-run command: `apply_open_credits --tenant <slug> [--dry-run]`.
+
 ### 13.6 `child_ledger_entry` (append-only — THE source of truth)
 
 | Column | Type | Constraints | Notes |
@@ -930,6 +955,12 @@ A storage location (a branch may have kitchen store, dry store, etc.).
 - `purchase`/`transfer-in` ⇒ `direction='in'`; `consumption`/`waste` ⇒ `direction='out'`.
 
 **Scaling note:** partition by month like attendance if volume grows (§27).
+
+---
+
+### 15a. Purchases are also spending (Q13)
+
+`stock_movement.expense_id` (`NULL`, FK → expense `ON DELETE RESTRICT`). A `purchase` with a `unit_cost` creates an **already-approved** `expense`, which in turn writes the `cash_movement` (ADR-17) — the goods are in the warehouse, so the money has already left. The link is one-directional and only on purchases: consumption, adjustment, waste and transfer move stock, not money, so nothing is counted twice. It is optional (a donation, or a purchase whose expense was entered separately) and the paying pot can be chosen.
 
 ---
 
