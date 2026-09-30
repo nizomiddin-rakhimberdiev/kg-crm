@@ -109,8 +109,6 @@ export const messages: Record<string, string> = {
     'This run is marked as paid. If the money has already been handed out, agree any change with the employee first.',
   "Bu ko'rsatkich real vaqt rejimida yangilanib turadi. To'liq ma'lumot uchun tegishli bo'limga o'ting.":
     'This figure updates in real time. Open the relevant section for details.',
-  "Bu oy uchun hisob-faktura yo'q — pul avansga tushadi.":
-    'No invoice for this month — the money becomes an advance.',
   "Bu telefon bilan vasiy allaqachon mavjud bo'lsa, yangi yozuv yaratilmaydi — mavjudi biriktiriladi.":
     'If a guardian with this phone already exists, no new record is created — the existing one is linked.',
   "Bu yerdagi yig'indi yuqoridagi sof natijadan farq qilishi mumkin: hisobot yakunlangan oylikni xarajat deb sanaydi, bu esa faqat kassadan haqiqatan chiqqan pulni.":
@@ -761,4 +759,23 @@ export const messages: Record<string, string> = {
   '— tanlanmagan —': '— not selected —',
   '— tarifsiz —': '— no plan —',
   '−{formatUZS} chegirma': '−{formatUZS} discount',
+  '{n} ta ochiq hisob-faktura': '{n} open invoices',
+  'Avansda qoladi': 'Stays as advance',
+  'Avval tanlangan hujjat yopiladi, ortigʻi keyingisiga oʻtadi.':
+    'The chosen invoice is settled first; the rest moves to the next one.',
+  'Muddati oʻtgan': 'Overdue',
+  "Ochiq hisob-faktura yo'q — pul avansga tushadi.":
+    'No open invoices — the money becomes an advance.',
+  'Qaysi hisob-fakturaga tushadi': 'Which invoice it settles',
+  yopiladi: 'settled',
+  '{n} ta — allaqachon chiqarilgan': '{n} — already issued',
+  '{n} ta — sozlamaga koʻra keyingi oydan': '{n} — next month, per the settings',
+  '{n} ta — tarif biriktirilmagan: {names}': '{n} — no tariff: {names}',
+  '{n} ta chiqarish': 'Issue {n}',
+  '{period} davri uchun': 'For {period}',
+  Chiqariladi: 'Will be issued',
+  'Chiqariladigan hisob-faktura yoʻq.': 'Nothing to issue.',
+  'Chiqarilmoqda…': 'Issuing…',
+  'Jami summa': 'Total amount',
+  "O'tkazib yuboriladi": 'Will be skipped',
 }

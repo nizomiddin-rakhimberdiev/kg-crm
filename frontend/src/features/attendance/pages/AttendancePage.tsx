@@ -15,6 +15,7 @@ import { CalendarCheck, Check, Save, X } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { attendanceApi } from '@/features/attendance/api'
 import { groupsApi } from '@/features/children/api'
+import { invalidateAttendance } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type AttendanceStatus } from '@/lib/api/types'
 import { AbsenceClaimsPanel } from '@/features/attendance/components/AbsenceClaimsPanel'
@@ -107,6 +108,7 @@ export default function AttendancePage() {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.attendanceDaily(organizationId, groupId, date),
       })
+      invalidateAttendance(queryClient, organizationId)
     },
     onError: (err) => setError(err instanceof ApiError ? err.message : t("Saqlab bo'lmadi.")),
   })

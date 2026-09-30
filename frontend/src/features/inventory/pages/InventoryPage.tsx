@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, Package, Plus } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { inventoryApi } from '@/features/inventory/api'
+import { invalidateMoney } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Product } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
@@ -54,9 +55,7 @@ export default function InventoryPage() {
   })
 
   const invalidate = () => {
-    for (const key of ['products', 'movements', 'warehouses']) {
-      void queryClient.invalidateQueries({ queryKey: ['org', organizationId, key] })
-    }
+    invalidateMoney(queryClient, organizationId)
   }
   const fail = (err: unknown) =>
     setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.'))

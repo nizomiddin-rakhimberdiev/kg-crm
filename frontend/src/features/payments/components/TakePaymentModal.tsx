@@ -16,17 +16,18 @@
  */
 
 import { useMemo, useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ban, Banknote, X } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { Modal } from '@/components/ui/Modal'
-import { invoicesApi, paymentsApi, type BoardRow } from '@/features/payments/api'
+import { invoicesApi, paymentsApi, type BoardRow, type OpenInvoice } from '@/features/payments/api'
 import {
   PAYMENT_METHODS,
   paymentMethodColor,
   paymentMethodIcon,
   paymentMethodLabel,
 } from '@/features/payments/methods'
+import { invalidateMoney } from '@/lib/api/invalidate'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
@@ -40,20 +41,78 @@ interface Tender {
   amount: number
 }
 
+interface Allocation {
+  invoice: OpenInvoice
+  amount: number
+}
+
+/**
+ * Pul qaysi hujjatlarga tushishini oldindan hisoblaydi (Q1).
+ *
+ * Tartib serverdagi bilan BIR XIL: ro'yxat backenddan allaqachon FIFO
+ * (`due_date`) bo'yicha keladi va bu yerda faqat ustidan yuriladi.
+ * Shuning uchun ekranda ko'rsatilgan taqsimot — aynan bajariladigan
+ * taqsimot, taxmin emas.
+ */
+function planAllocation(
+  invoices: OpenInvoice[],
+  money: number,
+  preferred: string | null,
+): { rows: Allocation[]; leftover: number } {
+  const queue = preferred
+    ? [
+        ...invoices.filter((invoice) => invoice.id === preferred),
+        ...invoices.filter((invoice) => invoice.id !== preferred),
+      ]
+    : invoices
+
+  const rows: Allocation[] = []
+  let left = money
+  for (const invoice of queue) {
+    if (left <= 0) break
+    const outstanding = Number(invoice.outstanding)
+    if (outstanding <= 0) continue
+    const share = Math.min(left, outstanding)
+    rows.push({ invoice, amount: share })
+    left -= share
+  }
+  return { rows, leftover: left }
+}
+
 export function TakePaymentModal({ row, onClose }: { row: BoardRow; onClose: () => void }) {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
   const { can } = useCan()
 
-  const due = Number(row.outstanding)
-  const credit = Math.max(0, -Number(row.balance))
+  // Bolaning TO'LIQ manzarasi — doskadagi qator faqat shu oyni biladi,
+  // pul esa eng eski ochiq hujjatdan boshlab yopiladi (FIFO, Q1).
+  const balanceQuery = useQuery({
+    queryKey: ['org', organizationId, 'payments', 'child-balance', row.child_id],
+    queryFn: () => paymentsApi.childBalance(row.child_id),
+  })
+  const detail = balanceQuery.data
+  // `useMemo` shart: `?? []` har renderda yangi massiv yaratadi va
+  // quyidagi `planAllocation` har safar qayta hisoblanardi.
+  const openInvoices = useMemo(() => detail?.open_invoices ?? [], [detail])
+
+  // Qancha to'lashi kerak — BARCHA ochiq hujjatlar bo'yicha, faqat shu
+  // oy emas: kassirning savoli "bu bola hozir qancha qarz?" degani.
+  const due = openInvoices.reduce((sum, invoice) => sum + Number(invoice.outstanding), 0)
+  const credit = Number(detail?.advance ?? 0)
 
   const [tenders, setTenders] = useState<Tender[]>([])
+  const [preferred, setPreferred] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const taken = tenders.reduce((sum, tender) => sum + tender.amount, 0)
   const left = Math.max(0, due - taken)
   const advance = Math.max(0, taken - due)
+
+  // Avans ham taqsimlanadi: u allaqachon kassada turgan pul.
+  const plan = useMemo(
+    () => planAllocation(openInvoices, taken + credit, preferred),
+    [openInvoices, taken, credit, preferred],
+  )
 
   // Kiritish maydoni qoldiq bilan to'ldirilib turadi: odatiy holatda
   // kassir hech narsa yozmasdan usul tugmasini bosadi.
@@ -64,8 +123,16 @@ export function TakePaymentModal({ row, onClose }: { row: BoardRow; onClose: () 
   // bu xato pul bilan bog'liq.
   //
   // Tiyinlar ataylab yo'q: bog'cha to'lovlari butun summada bo'ladi.
-  const [amount, setAmount] = useState(() => (due > 0 ? String(Math.round(due)) : ''))
+  const [amount, setAmount] = useState('')
   const entered = Number(amount) || 0
+
+  // Qoldiq so'rov kelgach BIR marta kiritib qo'yiladi: odatiy holatda
+  // kassir hech narsa yozmasdan usul tugmasini bosadi.
+  const [prefilled, setPrefilled] = useState(false)
+  if (!prefilled && detail) {
+    setPrefilled(true)
+    if (due > 0) setAmount(String(Math.round(due)))
+  }
 
   // Kalit modal ochilganda BIR marta yaratiladi — qayta urinishda
   // o'zgarmasligi uni ishlatadigan qiladi (P1-003).
@@ -94,9 +161,7 @@ export function TakePaymentModal({ row, onClose }: { row: BoardRow; onClose: () 
   const cancel = useMutation({
     mutationFn: (reason: string) => invoicesApi.cancel(row.invoice_id!, reason),
     onSuccess: () => {
-      for (const key of ['payments', 'invoices', 'children', 'debtors']) {
-        void queryClient.invalidateQueries({ queryKey: ['org', organizationId, key] })
-      }
+      invalidateMoney(queryClient, organizationId)
       onClose()
     },
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
@@ -107,7 +172,9 @@ export function TakePaymentModal({ row, onClose }: { row: BoardRow; onClose: () 
       paymentsApi.recordBatch(
         {
           child_id: row.child_id,
-          ...(row.invoice_id ? { invoice_id: row.invoice_id } : {}),
+          // Kassir aniq hujjatni tanlagan bo'lsa, taqsimot o'shandan
+          // boshlanadi; aks holda server FIFO qiladi.
+          ...(preferred ? { invoice_id: preferred } : {}),
           lines: tenders.map((tender) => ({
             method: tender.method,
             amount: String(tender.amount),
@@ -116,9 +183,7 @@ export function TakePaymentModal({ row, onClose }: { row: BoardRow; onClose: () 
         idempotencyKey,
       ),
     onSuccess: () => {
-      for (const key of ['payments', 'invoices', 'children', 'debtors', 'cash', 'dashboard']) {
-        void queryClient.invalidateQueries({ queryKey: ['org', organizationId, key] })
-      }
+      invalidateMoney(queryClient, organizationId)
       onClose()
     },
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
@@ -154,12 +219,63 @@ export function TakePaymentModal({ row, onClose }: { row: BoardRow; onClose: () 
               {t("Avansda {money} so'm bor", { money: money(credit) })}
             </p>
           )}
-          {!row.invoice_id && (
-            <p className="mt-1 text-xs text-amber-700">
-              {t("Bu oy uchun hisob-faktura yo'q — pul avansga tushadi.")}
+          {openInvoices.length > 1 && (
+            <p className="mt-1 text-xs text-slate-500">
+              {t('{n} ta ochiq hisob-faktura', { n: openInvoices.length })}
+            </p>
+          )}
+          {detail && openInvoices.length === 0 && (
+            <p className="mt-1 text-xs text-orik-700">
+              {t("Ochiq hisob-faktura yo'q — pul avansga tushadi.")}
             </p>
           )}
         </div>
+
+        {/* Ochiq hujjatlar — FIFO tartibida. Kassir odatda hech narsa
+            tanlamaydi (pul o'zi eng eskisidan boshlab yopadi), lekin
+            ota-ona "aynan sentabr uchun" desa, tanlay oladi (Q1). */}
+        {openInvoices.length > 1 && (
+          <div className="mt-3 space-y-1">
+            {openInvoices.map((invoice) => {
+              const chosen = preferred === invoice.id
+              return (
+                <button
+                  key={invoice.id}
+                  type="button"
+                  onClick={() => setPreferred(chosen ? null : invoice.id)}
+                  className={cn(
+                    'flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left transition',
+                    chosen
+                      ? 'border-brand-400 bg-brand-50'
+                      : 'border-slate-200 hover:border-slate-300',
+                  )}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-medium text-slate-700">
+                      {invoice.period}
+                      <span className="ml-1.5 font-mono text-[11px] text-slate-400">
+                        {invoice.number}
+                      </span>
+                    </span>
+                    {invoice.is_overdue && (
+                      <span className="text-[11px] font-medium text-orik-700">
+                        {t('Muddati oʻtgan')}
+                      </span>
+                    )}
+                  </span>
+                  <span className="num shrink-0 text-sm font-semibold text-slate-900">
+                    {money(Number(invoice.outstanding))}
+                  </span>
+                </button>
+              )
+            })}
+            {preferred && (
+              <p className="pt-0.5 text-[11px] text-slate-500">
+                {t('Avval tanlangan hujjat yopiladi, ortigʻi keyingisiga oʻtadi.')}
+              </p>
+            )}
+          </div>
+        )}
 
         {error && (
           <div role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -286,11 +402,51 @@ export function TakePaymentModal({ row, onClose }: { row: BoardRow; onClose: () 
           </dl>
         )}
 
+        {/* Bu pul qaysi hujjatlarni yopadi.
+            Auditda kassir buni umuman ko'rmasdi: to'lov "avans" bo'lib
+            yozilar, hisob-faktura esa "To'lanmagan" bo'lib turaverardi.
+            Endi taqsimot tasdiqlashdan OLDIN ko'rinadi. */}
+        {plan.rows.length > 0 && (
+          <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              {t('Qaysi hisob-fakturaga tushadi')}
+            </p>
+            <ul className="mt-1.5 space-y-1">
+              {plan.rows.map((allocation) => (
+                <li
+                  key={allocation.invoice.id}
+                  className="flex items-center justify-between gap-2 text-sm"
+                >
+                  <span className="min-w-0 truncate text-slate-600">
+                    {allocation.invoice.period}
+                    {allocation.amount >= Number(allocation.invoice.outstanding) && (
+                      <span className="ml-1.5 text-[11px] font-medium text-emerald-700">
+                        {t('yopiladi')}
+                      </span>
+                    )}
+                  </span>
+                  <span className="num shrink-0 font-semibold text-slate-900">
+                    {money(allocation.amount)}
+                  </span>
+                </li>
+              ))}
+              {plan.leftover > 0 && (
+                <li className="flex items-center justify-between gap-2 border-t border-slate-100 pt-1 text-sm">
+                  <span className="text-emerald-700">{t('Avansda qoladi')}</span>
+                  <span className="num shrink-0 font-semibold text-emerald-700">
+                    {money(plan.leftover)}
+                  </span>
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
+
         {/* Hisob-fakturani bekor qilish — shu oynada, chunki faktura
             aynan bu yerda ko'rinadi. Ataylab asosiy oqimdan tashqarida
             va so'nik: u pul qabul qilish tugmasi bilan adashtirilmasin.
             Hujjat tahrirlanmaydi — bekor qilinadi (D3). */}
-        {row.invoice_id && can('payments.update') && (
+        {row.invoice_id && can('payments.update') && tenders.length === 0 && (
           <button
             type="button"
             onClick={() => {

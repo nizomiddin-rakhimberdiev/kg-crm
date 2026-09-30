@@ -10,10 +10,12 @@ import { useState } from 'react'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ban, FileText, Plus, Search, Trash2, Users, Wallet } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
-import { invoicesApi, paymentsApi, tariffsApi, type BoardRow } from '@/features/payments/api'
+import { paymentsApi, tariffsApi, type BoardRow } from '@/features/payments/api'
+import { GenerateInvoicesDialog } from '@/features/payments/components/GenerateInvoicesDialog'
 import { TakePaymentModal } from '@/features/payments/components/TakePaymentModal'
 import { paymentMethodLabel } from '@/features/payments/methods'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { invalidateMoney } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type BillingRunResult, type Payment } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
@@ -66,6 +68,7 @@ export default function PaymentsPage() {
   // Bosilgan bola — to'lov oynasi shu qator bilan ochiladi.
   const [paying, setPaying] = useState<BoardRow | null>(null)
   const [runResult, setRunResult] = useState<BillingRunResult | null>(null)
+  const [generating, setGenerating] = useState(false)
   // Qaytarish sababi so'raladigan to'lov.
   const [reversing, setReversing] = useState<Payment | null>(null)
   const [reverseReason, setReverseReason] = useState('')
@@ -123,27 +126,15 @@ export default function PaymentsPage() {
       setReversing(null)
       setReverseReason('')
       setError(null)
-      for (const key of ['invoices', 'payments', 'debtors', 'children']) {
-        void queryClient.invalidateQueries({ queryKey: ['org', organizationId, key] })
-      }
+      invalidateMoney(queryClient, organizationId)
     },
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
   const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'invoices'] })
+    invalidateMoney(queryClient, organizationId)
     void queryClient.invalidateQueries({ queryKey: queryKeys.tariffs(organizationId) })
   }
-
-  const generate = useMutation({
-    mutationFn: () => invoicesApi.generate(year, month),
-    onSuccess: (result) => {
-      setRunResult(result)
-      setError(null)
-      invalidate()
-    },
-    onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
-  })
 
   const createTariff = useMutation({
     mutationFn: () => tariffsApi.create(tariffForm),
@@ -222,6 +213,20 @@ export default function PaymentsPage() {
           </div>
         </form>
       </Modal>
+
+      {generating && (
+        <GenerateInvoicesDialog
+          year={year}
+          month={month}
+          onClose={() => setGenerating(false)}
+          onDone={(result) => {
+            setRunResult(result)
+            setError(null)
+            setGenerating(false)
+            invalidate()
+          }}
+        />
+      )}
 
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t("To'lovlar")}</h1>
@@ -317,12 +322,11 @@ export default function PaymentsPage() {
             {can('payments.create') && (
               <button
                 type="button"
-                onClick={() => generate.mutate()}
-                disabled={generate.isPending}
-                className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
+                onClick={() => setGenerating(true)}
+                className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
               >
                 <FileText className="h-4 w-4" />
-                {generate.isPending ? t('Hisoblanmoqda…') : t('Hisob-faktura chiqarish')}
+                {t('Hisob-faktura chiqarish')}
               </button>
             )}
           </div>

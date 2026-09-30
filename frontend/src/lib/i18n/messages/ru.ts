@@ -108,8 +108,6 @@ export const messages: Record<string, string> = {
     'Этот расчёт отмечен как выплаченный. Если деньги уже выданы, согласуйте изменения с сотрудником.',
   "Bu ko'rsatkich real vaqt rejimida yangilanib turadi. To'liq ma'lumot uchun tegishli bo'limga o'ting.":
     'Показатель обновляется в реальном времени. Подробности — в соответствующем разделе.',
-  "Bu oy uchun hisob-faktura yo'q — pul avansga tushadi.":
-    'За этот месяц счёта нет — деньги пойдут в аванс.',
   "Bu telefon bilan vasiy allaqachon mavjud bo'lsa, yangi yozuv yaratilmaydi — mavjudi biriktiriladi.":
     'Если опекун с этим телефоном уже есть, новая запись не создаётся — привязывается существующая.',
   "Bu yerdagi yig'indi yuqoridagi sof natijadan farq qilishi mumkin: hisobot yakunlangan oylikni xarajat deb sanaydi, bu esa faqat kassadan haqiqatan chiqqan pulni.":
@@ -759,4 +757,22 @@ export const messages: Record<string, string> = {
   '— tanlanmagan —': '— не выбрано —',
   '— tarifsiz —': '— без тарифа —',
   '−{formatUZS} chegirma': '−{formatUZS} скидка',
+  '{n} ta ochiq hisob-faktura': '{n} открытых счетов',
+  'Avansda qoladi': 'Останется в авансе',
+  'Avval tanlangan hujjat yopiladi, ortigʻi keyingisiga oʻtadi.':
+    'Сначала закрывается выбранный счёт, остаток переходит на следующий.',
+  'Muddati oʻtgan': 'Просрочен',
+  "Ochiq hisob-faktura yo'q — pul avansga tushadi.": 'Открытых счетов нет — деньги пойдут в аванс.',
+  'Qaysi hisob-fakturaga tushadi': 'На какой счёт пойдёт',
+  yopiladi: 'закроется',
+  '{n} ta — allaqachon chiqarilgan': '{n} — уже выставлены',
+  '{n} ta — sozlamaga koʻra keyingi oydan': '{n} — по настройке со следующего месяца',
+  '{n} ta — tarif biriktirilmagan: {names}': '{n} — без тарифа: {names}',
+  '{n} ta chiqarish': 'Выставить {n}',
+  '{period} davri uchun': 'За период {period}',
+  Chiqariladi: 'Будет выставлено',
+  'Chiqariladigan hisob-faktura yoʻq.': 'Нет счетов к выставлению.',
+  'Chiqarilmoqda…': 'Выставляем…',
+  'Jami summa': 'Общая сумма',
+  "O'tkazib yuboriladi": 'Будут пропущены',
 }

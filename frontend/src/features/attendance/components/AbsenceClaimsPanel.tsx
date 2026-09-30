@@ -18,6 +18,7 @@ import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { absenceApi } from '@/features/attendance/api'
 import { childrenApi } from '@/features/children/api'
+import { invalidateAttendance } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type AbsenceClaim } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
@@ -73,9 +74,7 @@ export function AbsenceClaimsPanel() {
 
   const invalidate = () => {
     // Qaytarish hisob-fakturaga, balansga va qarzdorlarga ta'sir qiladi.
-    for (const key of ['absence-claims', 'invoices', 'children', 'debtors']) {
-      void queryClient.invalidateQueries({ queryKey: ['org', organizationId, key] })
-    }
+    invalidateAttendance(queryClient, organizationId)
   }
   const fail = (err: unknown) =>
     setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.'))

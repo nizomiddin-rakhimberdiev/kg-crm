@@ -29,6 +29,7 @@ import { Modal } from '@/components/ui/Modal'
 import { employeesApi } from '@/features/staff/api'
 import { payrollApi } from '@/features/payroll/api'
 import { PayslipModal } from '@/features/payroll/components/PayslipModal'
+import { invalidateMoney } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type PayrollItem, type PayrollRun } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
@@ -73,9 +74,8 @@ export default function PayrollPage() {
     enabled: Boolean(openRun),
   })
 
-  const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'payroll'] })
-  }
+  // Oylik to'lash kassadan pul chiqaradi va foyda-zararga tushadi.
+  const invalidate = () => invalidateMoney(queryClient, organizationId)
   const fail = (err: unknown) =>
     setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.'))
 

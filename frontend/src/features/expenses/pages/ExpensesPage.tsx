@@ -12,6 +12,7 @@ import { Check, Pencil, Plus, Receipt, Trash2, X } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { expensesApi } from '@/features/expenses/api'
 import { cashApi } from '@/features/cash/api'
+import { invalidateMoney } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
@@ -72,8 +73,10 @@ export default function ExpensesPage() {
     queryFn: () => expensesApi.summary(from, to),
   })
 
-  const invalidate = () =>
-    void queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'expenses'] })
+  // Chiqim tasdiqlanganda pul kassadan chiqadi (ADR-17) — ya'ni
+  // kassa, hisobot, bosh sahifa va brifing ham o'zgaradi. Auditda
+  // "Shu oy (tasdiqlangan) 0 so'm" aynan shu sababdan qolib ketgan edi.
+  const invalidate = () => invalidateMoney(queryClient, organizationId)
   const fail = (err: unknown) =>
     setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.'))
 

@@ -24,7 +24,40 @@ export const invoicesApi = {
       period_month: periodMonth,
     }),
 
+  /**
+   * Generatsiya nima qilishini OLDINDAN aytadi — hech narsa yozmaydi.
+   *
+   * 200 bolali bog'chada "Hisob-faktura chiqarish" bitta bosishda 200 ta
+   * moliyaviy hujjat yaratadi va ularni qaytarish uchun har birini
+   * alohida bekor qilish kerak.
+   */
+  previewRun: (periodYear: number, periodMonth: number) =>
+    api.post<BillingPreview>('/invoices/preview-run', {
+      period_year: periodYear,
+      period_month: periodMonth,
+    }),
+
   cancel: (id: string, reason: string) => api.post<Invoice>(`/invoices/${id}/cancel`, { reason }),
+}
+
+/** Generatsiya preview'i (`POST /invoices/preview-run`). */
+export interface BillingPreviewRow {
+  child_id: string
+  full_name: string
+  group_name: string
+  amount: string
+  note: string
+  advance: string
+}
+
+export interface BillingPreview {
+  period: string
+  will_create: number
+  skipped_existing: number
+  skipped_no_tariff: string[]
+  skipped_next_month: string[]
+  total_amount: string
+  rows: BillingPreviewRow[]
 }
 
 export const discountsApi = {
@@ -50,6 +83,44 @@ export interface BoardRow {
   state: 'unpaid' | 'partial' | 'paid' | 'no_invoice'
   /** Manfiy = avans bor: kassir buni to'lovdan OLDIN ko'rishi kerak. */
   balance: string
+  /** Taqsimlanmagan pul — "bu bolaning kassamizda qancha puli bor". */
+  advance: string
+}
+
+/** Ochiq hisob-faktura — to'lov oynasidagi taqsimot ko'rinishi uchun. */
+export interface OpenInvoice {
+  id: string
+  number: string
+  period: string
+  due_date: string
+  amount_due: string
+  amount_paid: string
+  outstanding: string
+  is_overdue: boolean
+}
+
+/**
+ * Bolaning to'liq moliyaviy manzarasi (`GET /ledger/balance?child=`).
+ *
+ * Uchta raqam ataylab alohida: ular boshqa savollarga javob beradi va
+ * teng bo'lishi shart emas. `balance` — oila qancha qarz, `advance` —
+ * qo'limizda uning qancha puli bor, `overdue_amount` — shundan qanchasi
+ * muddati o'tgan.
+ */
+export interface ChildBalance {
+  child_id: string
+  full_name: string
+  charged: string
+  credited: string
+  paid: string
+  allocated: string
+  advance: string
+  balance: string
+  outstanding: string
+  overdue_amount: string
+  overdue_days: number
+  oldest_overdue_date: string | null
+  open_invoices: OpenInvoice[]
 }
 
 export interface BoardSummary {
@@ -136,6 +207,15 @@ export const paymentsApi = {
     ),
 
   reverse: (id: string, reason: string) => api.post<Payment>(`/payments/${id}/reverse`, { reason }),
+
+  /**
+   * Bolaning balansi va ochiq hujjatlari — FIFO tartibida.
+   *
+   * Kassir oynasidagi taqsimot ko'rinishi aynan shu ro'yxat bo'yicha
+   * chiziladi, ya'ni ekranda ko'rsatilgan taqsimot server qiladigan
+   * taqsimot bilan bir xil bo'ladi.
+   */
+  childBalance: (childId: string) => api.get<ChildBalance>('/ledger/balance', { child: childId }),
 
   dailySummary: (date?: string) =>
     api.get<DailyCashSummary>('/payments/daily-summary', date ? { date } : undefined),

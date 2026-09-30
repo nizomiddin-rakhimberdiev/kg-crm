@@ -15,6 +15,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarDays, Plus, Trash2 } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { holidaysApi } from '@/features/attendance/api'
+import { invalidateAttendance } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
@@ -34,8 +35,9 @@ export function HolidaysPanel() {
     queryFn: holidaysApi.list,
   })
 
-  const invalidate = () =>
-    void queryClient.invalidateQueries({ queryKey: queryKeys.holidays(organizationId) })
+  // Bayram qayta hisobning MAXRAJINI o'zgartiradi (ADR-19), ya'ni
+  // kelmagan kunlar uchun qaytariladigan summa ham o'zgaradi.
+  const invalidate = () => invalidateAttendance(queryClient, organizationId)
   const fail = (err: unknown) =>
     setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.'))
 
