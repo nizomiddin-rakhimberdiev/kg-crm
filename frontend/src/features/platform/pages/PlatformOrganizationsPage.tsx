@@ -11,6 +11,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Building2, Search } from 'lucide-react'
+import { monthlyEstimate } from '@/lib/pricing'
 import { cn, formatUZS } from '@/lib/utils'
 import { platform } from '../api'
 import { usePlatformAuth } from '../PlatformAuthProvider'
@@ -38,13 +39,6 @@ const FILTERS: Array<[string, string]> = [
  * Bu **taxminiy** ko'rsatkich: haqiqiy hisob yopilgan `usage_snapshot`
  * dan chiqadi. Shuning uchun ustun nomi ham "taxminiy".
  */
-const monthlyEstimate = (children: number): number => {
-  const base = 500_000
-  const included = 50
-  const steps = Math.ceil(Math.max(0, children - included) / 10)
-  return base + steps * 80_000
-}
-
 export default function PlatformOrganizationsPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')

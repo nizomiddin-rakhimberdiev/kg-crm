@@ -302,3 +302,41 @@ class TestPrepaidCoverage:
         with_arg = pricing.quote(plan=PLAN, peak_children=80, covered_children=50)
         without = pricing.quote(plan=PLAN, peak_children=80)
         assert with_arg.total_amount == without.total_amount == Decimal("740000.00")
+
+
+class TestFrontendAgrees:
+    """
+    Konsol taxmini backenddagi plan bilan bir xil raqamlarda turishi kerak.
+
+    Vendor konsoli ro'yxatdagi o'nlab bog'chaning har biri uchun server
+    so'rovini kutolmaydi, shuning uchun u formulani frontendda takrorlaydi
+    (`frontend/src/lib/pricing.ts`). Takror bor joyda ajralish ham bor —
+    auditda aynan shu bo'lgan: konsol ADR-12 dan oldingi 500 000 / +80 000
+    ni ko'rsatib turgan edi. Bu test ikkalasini bog'lab qo'yadi.
+    """
+
+    def test_the_console_constants_match_the_seeded_plan(self, db):
+        import re
+        from pathlib import Path
+
+        from django.conf import settings
+
+        from apps.core.tenancy import platform_context
+        from apps.subscriptions.services import current_plan
+
+        source = (
+            Path(settings.BASE_DIR).parent / "frontend" / "src" / "lib" / "pricing.ts"
+        ).read_text()
+        found = {
+            key: int(value.replace("_", ""))
+            for key, value in re.findall(r"(\w+):\s*([\d_]+),", source)
+        }
+
+        # AMALDAGI plan — eskisi tarixiy hisoblar uchun bazada qoladi
+        # (ADR-12: 500 000 / +80 000 faqat 2026-09-14 gacha to'g'ri).
+        with platform_context():
+            plan = current_plan()
+        assert found["basePrice"] == int(plan.base_price)
+        assert found["includedChildren"] == plan.included_children
+        assert found["overageStepChildren"] == plan.overage_step_children
+        assert found["overageStepPrice"] == int(plan.overage_step_price)
