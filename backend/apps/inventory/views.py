@@ -125,6 +125,10 @@ class StockMovementViewSet(BranchScopedMixin, TenantViewSet):
             occurred_at=data.get("occurred_at"),
             reference=data.get("reference", ""),
             note=data.get("note", ""),
+            create_expense=data.get("create_expense", True),
+            cash_account=data.get("cash_account"),
+            expense_category=data.get("expense_category"),
+            created_by=request_user(request),
         )
         # Stok harakati — mulk harakati. `adjustment` esa qoldiqni
         # hujjatsiz o'zgartirishning yagona yo'li, ya'ni aynan shu yerda

@@ -17,6 +17,7 @@ from django.utils import timezone
 from django.utils.translation import gettext
 
 from apps.core.exceptions import BusinessRuleViolation
+from apps.expenses.models import Expense
 from apps.inventory.models import (
     MovementDirection,
     MovementType,
@@ -31,7 +32,31 @@ __all__ = [
     "recompute_product_stock",
     "low_stock_products",
     "stock_valuation",
+    "quantity_text",
+    "PURCHASE_CATEGORY",
 ]
+
+CENT = Decimal("0.01")
+
+
+def _money(value: Decimal) -> Decimal:
+    """Pulni ikki xonagacha yaxlitlaydi (HALF_UP)."""
+    return value.quantize(CENT, rounding=ROUND_HALF_UP)
+
+
+def quantity_text(value: Decimal, unit: str = "") -> str:
+    """
+    Miqdorni odam o'qiydigan shaklda: "20 kg", "2,5 kg", "3 dona".
+
+    Baza `Decimal(10,3)` saqlaydi, ya'ni ekranda "20.000 kg" chiqardi —
+    va bu hech kim yozmaydigan, hech kim aytmaydigan shakl.
+    """
+    quantised = value.normalize()
+    if quantised == quantised.to_integral_value():
+        quantised = quantised.to_integral_value()
+    text = f"{quantised:f}".replace(".", ",")
+    return f"{text} {unit}".strip()
+
 
 # Kirim beradigan harakat turlari — mijozdan `direction` so'ralmaydi,
 # u turdan kelib chiqadi. Aks holda "xarid, lekin chiqim" kabi mantiqan
@@ -74,6 +99,66 @@ def recompute_product_stock(product: Product) -> Decimal:
     return stock
 
 
+#: Xarid chiqimi tushadigan kategoriya nomi — bo'lmasa yaratiladi.
+PURCHASE_CATEGORY = "Ombor xaridi"
+
+
+def _purchase_expense(
+    *,
+    movement_type: str,
+    quantity: Decimal,
+    unit_cost: Decimal | None,
+    product: Product,
+    expense_category: Any,
+    cash_account: Any,
+    occurred_at: Any,
+    created_by: Any,
+    note: str,
+) -> Any:
+    """
+    Xariddan chiqim yozuvini tug'diradi (Q13).
+
+    Auditda omborga 20 kg × 15 000 = 300 000 lik guruch kiritildi va u
+    na chiqimlarga, na kassaga tushdi: bog'cha pulni sarfladi, tizim
+    esa buni ko'rmadi va foyda-zarar shu summaga xato bo'ldi.
+
+    Chiqim DARHOL tasdiqlangan holda yaratiladi: mahsulot omborga
+    kelgan bo'lsa, pul allaqachon chiqib bo'lgan — uni "kutilmoqda"
+    holatida ushlab turish kassani haqiqatdan uzib qo'yardi.
+    Tasdiqlash esa kassa yozuvini o'zi yozadi (`approve_expense`).
+    """
+    from apps.expenses.models import ExpenseCategory
+    from apps.expenses.services import approve_expense
+
+    if movement_type != MovementType.PURCHASE or not unit_cost or unit_cost <= 0:
+        return None
+
+    category = expense_category
+    if category is None:
+        category, _created = ExpenseCategory.objects.get_or_create(
+            branch=product.branch,
+            name=PURCHASE_CATEGORY,
+            defaults={"organization": product.organization},
+        )
+
+    expense = Expense.objects.create(
+        organization=product.organization,
+        branch=product.branch,
+        category=category,
+        amount=_money(quantity * unit_cost),
+        expense_date=(occurred_at or timezone.now()).date(),
+        description=(note or gettext("{product} — {quantity} {unit}").format(
+            product=product.name, quantity=quantity_text(quantity), unit=product.unit
+        ))[:255],
+    )
+    return approve_expense(
+        expense=expense,
+        approved_by=created_by,
+        note=gettext("Ombor xaridi"),
+        cash_account=cash_account,
+    )
+
+
 @transaction.atomic
 def record_movement(
     *,
@@ -87,6 +172,10 @@ def record_movement(
     occurred_at: Any = None,
     reference: str = "",
     note: str = "",
+    create_expense: bool = True,
+    expense_category: Any = None,
+    cash_account: Any = None,
+    created_by: Any = None,
 ) -> StockMovement:
     """
     Stok harakatini yozadi.
@@ -123,6 +212,22 @@ def record_movement(
             )
         product = locked
 
+    expense = (
+        _purchase_expense(
+            movement_type=movement_type,
+            quantity=quantity,
+            unit_cost=unit_cost,
+            product=product,
+            expense_category=expense_category,
+            cash_account=cash_account,
+            occurred_at=occurred_at,
+            created_by=created_by,
+            note=note,
+        )
+        if create_expense
+        else None
+    )
+
     movement = StockMovement.objects.create(
         organization=product.organization,
         branch=product.branch,
@@ -136,6 +241,7 @@ def record_movement(
         occurred_at=occurred_at or timezone.now(),
         reference=reference[:100],
         note=note[:255],
+        expense=expense,
     )
     recompute_product_stock(product)
     return movement

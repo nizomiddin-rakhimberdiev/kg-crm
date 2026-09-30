@@ -990,3 +990,9 @@ msgstr "{full_name}: согласно настройке первый счёт �
 
 msgid "{month}, {total} ish kunidan {attended} kun"
 msgstr "{month}, {attended} дн. из {total} рабочих"
+
+msgid "Ombor xaridi"
+msgstr "Закупка на склад"
+
+msgid "{product} — {quantity} {unit}"
+msgstr "{product} — {quantity} {unit}"

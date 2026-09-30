@@ -989,3 +989,9 @@ msgstr "{full_name}: per the settings, the first invoice starts from next month.
 
 msgid "{month}, {total} ish kunidan {attended} kun"
 msgstr "{month}, {attended} of {total} working days"
+
+msgid "Ombor xaridi"
+msgstr "Stock purchase"
+
+msgid "{product} — {quantity} {unit}"
+msgstr "{product} — {quantity} {unit}"

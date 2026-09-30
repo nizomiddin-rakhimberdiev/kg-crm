@@ -6,7 +6,9 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
+from apps.cash.models import CashAccount
 from apps.core.fields import TenantPrimaryKeyRelatedField
+from apps.expenses.models import ExpenseCategory
 from apps.inventory.models import (
     MovementDirection,
     MovementType,
@@ -80,6 +82,9 @@ class StockMovementSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
     supplier_name = serializers.CharField(source="supplier.name", read_only=True, default=None)
+    expense_amount = serializers.DecimalField(
+        source="expense.amount", max_digits=12, decimal_places=2, read_only=True, default=None
+    )
 
     class Meta:
         model = StockMovement
@@ -98,6 +103,8 @@ class StockMovementSerializer(serializers.ModelSerializer):
             "occurred_at",
             "reference",
             "note",
+            "expense",
+            "expense_amount",
             "created_at",
         ]
         read_only_fields = fields
@@ -125,3 +132,16 @@ class MovementWriteSerializer(serializers.Serializer):
     occurred_at = serializers.DateTimeField(required=False)
     reference = serializers.CharField(required=False, allow_blank=True, max_length=100)
     note = serializers.CharField(required=False, allow_blank=True, max_length=255)
+
+    # --- Xarid chiqimi (Q13) ---
+    #
+    # Sukut YOQILGAN: omborga narxi bilan kelgan mahsulot deyarli har
+    # doim sotib olingan, ya'ni pul chiqqan. Katakchani o'chirish —
+    # istisno (homiy sovg'asi, chiqimi alohida yozilgan xarid).
+    create_expense = serializers.BooleanField(required=False, default=True)
+    cash_account_id = TenantPrimaryKeyRelatedField(
+        model=CashAccount, source="cash_account", required=False, allow_null=True
+    )
+    expense_category_id = TenantPrimaryKeyRelatedField(
+        model=ExpenseCategory, source="expense_category", required=False, allow_null=True
+    )

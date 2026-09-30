@@ -191,6 +191,20 @@ class StockMovement(BranchScopedModel):
     reference = models.CharField(max_length=100, blank=True)
     note = models.CharField(max_length=255, blank=True)
 
+    # Xarid chiqim sifatida ham yozilgan bo'lsa (ADR-17, Q13).
+    #
+    # Ataylab `null=True`: iste'mol, tuzatish va ko'chirish pul
+    # harakati emas, va xaridning o'zi ham narxsiz kiritilishi mumkin
+    # (masalan homiy sovg'asi). Bog'lanish bor bo'lsa, u BIR TOMONLAMA
+    # haqiqat: chiqim shu harakatdan tug'ilgan, aksincha emas.
+    expense = models.ForeignKey(
+        "expenses.Expense",
+        on_delete=models.RESTRICT,
+        related_name="stock_movements",
+        null=True,
+        blank=True,
+    )
+
     class Meta:
         db_table = "stock_movement"
         ordering = ["-occurred_at", "-created_at"]
