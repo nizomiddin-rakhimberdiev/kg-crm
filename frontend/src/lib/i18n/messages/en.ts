@@ -676,7 +676,6 @@ export const messages: Record<string, string> = {
   bosing: 'tap',
   cheksiz: 'unlimited',
   dan: 'from',
-  'eng yuqori {peak_children} → hisoblangan': 'peak {peak_children} → billed',
   gacha: 'to',
   "hisoblanadi — ya'ni sinov kunlari shu oyning ichiga kiradi. Sinov yoqmasa, hech qanday to'lov olinmaydi.":
     '— so the trial days fall inside that month. If the trial isn’t for you, nothing is charged.',
@@ -790,4 +789,17 @@ export const messages: Record<string, string> = {
   'Qabul qildi': 'Received by',
   QAYTARILGAN: 'REVERSED',
   'Qolgan qarz': 'Remaining debt',
+  'Asosiy narx': 'Base price',
+  'Oydagi eng koʻp faol bola: {peak}': 'Peak active children this month: {peak}',
+  'pogʻona: {billable} tagacha': 'tier: up to {billable}',
+  'Qanday toʻlash': 'How to pay',
+  'Qoʻshimcha bolalar uchun': 'For additional children',
+  'Savol boʻlsa: {contact}': 'Questions: {contact}',
+  Toʻlov: 'Amount due',
+  'Guruhni oʻzgartirish': 'Change group',
+  guruhsiz: 'no group',
+  'Tarifni oʻzgartirish': 'Change tariff',
+  'Yangi tarif KEYINGI hisob-fakturadan kuchga kiradi. Joriy hujjat oʻzgarmaydi.':
+    'The new tariff applies from the NEXT invoice. The current one is unchanged.',
+  '{name}: {from} guruhidan {to} guruhiga': '{name}: from {from} to {to}',
 }

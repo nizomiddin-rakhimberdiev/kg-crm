@@ -15,6 +15,7 @@ import { childrenApi, groupsApi } from '@/features/children/api'
 import { tariffsApi } from '@/features/payments/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -44,6 +45,12 @@ export default function ChildDetailPage() {
   const [guardianForm, setGuardianForm] = useState(EMPTY_GUARDIAN)
   const [showGuardianForm, setShowGuardianForm] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Guruh va tarif TASDIQ bilan o'zgaradi (PLAN 1.4): sichqoncha
+  // g'ildiragining bitta aylanishi bolani boshqa guruhga ko'chirib
+  // yuborardi, tarif esa keyingi hisob-fakturaning summasini
+  // o'zgartiradi (Q4).
+  const [pendingGroup, setPendingGroup] = useState<string | null>(null)
+  const [pendingTariff, setPendingTariff] = useState<string | null>(null)
 
   const childQuery = useQuery({
     queryKey: queryKeys.child(organizationId, childId),
@@ -110,6 +117,34 @@ export default function ChildDetailPage() {
 
   return (
     <div className="space-y-6">
+      {/* Guruh va tarif TASDIQ bilan o'zgaradi (PLAN 1.4, Q4). */}
+      <ConfirmDialog
+        open={pendingGroup !== null}
+        title={t('Guruhni oʻzgartirish')}
+        body={t('{name}: {from} guruhidan {to} guruhiga', {
+          name: child.full_name,
+          from: child.current_group?.name ?? t('guruhsiz'),
+          to: groupsQuery.data?.items.find((g) => g.id === pendingGroup)?.name ?? t('guruhsiz'),
+        })}
+        busy={enroll.isPending}
+        onCancel={() => setPendingGroup(null)}
+        onConfirm={() => {
+          if (pendingGroup) enroll.mutate(pendingGroup)
+          setPendingGroup(null)
+        }}
+      />
+      <ConfirmDialog
+        open={pendingTariff !== null}
+        title={t('Tarifni oʻzgartirish')}
+        body={t('Yangi tarif KEYINGI hisob-fakturadan kuchga kiradi. Joriy hujjat oʻzgarmaydi.')}
+        busy={setTariff.isPending}
+        onCancel={() => setPendingTariff(null)}
+        onConfirm={() => {
+          if (pendingTariff !== null) setTariff.mutate(pendingTariff)
+          setPendingTariff(null)
+        }}
+      />
+
       <Link
         to="/children"
         className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800"
@@ -143,7 +178,7 @@ export default function ChildDetailPage() {
             <select
               aria-label={t('Guruh')}
               value={child.current_group?.id ?? ''}
-              onChange={(e) => e.target.value && enroll.mutate(e.target.value)}
+              onChange={(e) => e.target.value && setPendingGroup(e.target.value)}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             >
               <option value="">{t('— guruhsiz —')}</option>
@@ -166,7 +201,7 @@ export default function ChildDetailPage() {
             <select
               aria-label={t('Tarif')}
               value={child.tariff ?? ''}
-              onChange={(e) => setTariff.mutate(e.target.value)}
+              onChange={(e) => setPendingTariff(e.target.value)}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             >
               <option value="">{t('— tarifsiz —')}</option>

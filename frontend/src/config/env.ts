@@ -23,8 +23,7 @@ const required = (key: string, value: string | undefined, fallback?: string): st
  * Build VAQTIDA yoziladi (Vite `import.meta.env`), runtime'da emas —
  * shuning uchun rejim o'zgarsa SPA qayta yig'ilishi kerak.
  */
-const deploymentMode =
-  import.meta.env.VITE_DEPLOYMENT_MODE === 'standalone' ? 'standalone' : 'saas'
+const deploymentMode = import.meta.env.VITE_DEPLOYMENT_MODE === 'standalone' ? 'standalone' : 'saas'
 
 export const env = {
   apiBaseUrl: required(
@@ -60,5 +59,17 @@ export const env = {
   },
   publicHost: import.meta.env.VITE_PUBLIC_HOST ?? 'radix-crm.uz',
   legalEntityName: import.meta.env.VITE_LEGAL_ENTITY_NAME ?? '',
+  /**
+   * Obuna to'lovi rekvizitlari (PLAN 1.12).
+   *
+   * Auditda obuna sahifasida to'lash yo'li umuman yo'q edi: mijoz
+   * "to'lang" degan bannerni ko'rar, lekin qayerga to'lashni
+   * bilmasdi. Bo'sh bo'lsa blok ko'rsatilmaydi — noto'g'ri rekvizit
+   * ko'rsatishdan ko'ra hech narsa ko'rsatmagan yaxshi.
+   */
+  payment: {
+    bankDetails: import.meta.env.VITE_PAYMENT_BANK_DETAILS ?? '',
+    contact: import.meta.env.VITE_PAYMENT_CONTACT ?? '',
+  },
   isDev: import.meta.env.DEV,
 } as const

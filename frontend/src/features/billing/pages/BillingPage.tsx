@@ -14,6 +14,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, FileText, TrendingUp, Users } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { env } from '@/config/env'
 import { billingApi } from '@/features/billing/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
@@ -183,11 +184,45 @@ export default function BillingPage() {
 
           {usage ? (
             <>
-              <p className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+              <p className="num mt-3 text-3xl font-bold tracking-tight text-slate-900">
                 {formatUZS(Number(usage.projected.total_amount))}
               </p>
               {/* Bu raqam hali OLINMAGAN — haqiqiy hisob yopilgan dalildan chiqadi. */}
               <p className="text-xs text-amber-700">{t('Prognoz — hali hisoblanmagan')}</p>
+
+              {/* Summa QANDAY chiqqani. Auditda "3 600 000 / −1 200 000
+                  chegirma" yonma-yon turardi va qaysi biri to'lanishi
+                  kerakligi ko'rinmasdi. Endi uch qator, tartib bilan. */}
+              <dl className="mt-3 space-y-1 rounded-xl bg-slate-50 px-3 py-2.5 text-sm">
+                <div className="flex justify-between gap-3">
+                  <dt className="text-slate-500">{t('Asosiy narx')}</dt>
+                  <dd className="num text-slate-800">
+                    {formatUZS(Number(usage.projected.base_amount))}
+                  </dd>
+                </div>
+                {Number(usage.projected.overage_amount) > 0 && (
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-slate-500">{t('Qoʻshimcha bolalar uchun')}</dt>
+                    <dd className="num text-slate-800">
+                      +{formatUZS(Number(usage.projected.overage_amount))}
+                    </dd>
+                  </div>
+                )}
+                {Number(usage.projected.discount_amount) > 0 && (
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-nihol-700">{t('Chegirma')}</dt>
+                    <dd className="num text-nihol-700">
+                      −{formatUZS(Number(usage.projected.discount_amount))}
+                    </dd>
+                  </div>
+                )}
+                <div className="flex justify-between gap-3 border-t border-slate-200 pt-1">
+                  <dt className="font-semibold text-slate-900">{t('Toʻlov')}</dt>
+                  <dd className="num font-bold text-slate-900">
+                    {formatUZS(Number(usage.projected.total_amount))}
+                  </dd>
+                </div>
+              </dl>
 
               <dl className="mt-4 space-y-1.5 text-sm">
                 <div className="flex justify-between">
@@ -329,6 +364,24 @@ export default function BillingPage() {
         </div>
       </section>
 
+      {/* Qanday to'lash — auditda bu yo'q edi: mijoz "to'lang" degan
+          bannerni ko'rar, lekin qayerga to'lashni bilmasdi. */}
+      {(env.payment.bankDetails || env.payment.contact) && (
+        <section className="rounded-2xl border border-ildiz-200 bg-ildiz-50 p-5">
+          <h2 className="text-sm font-semibold text-ildiz-900">{t('Qanday toʻlash')}</h2>
+          {env.payment.bankDetails && (
+            <pre className="mt-2 whitespace-pre-wrap font-sans text-sm leading-6 text-ildiz-900">
+              {env.payment.bankDetails}
+            </pre>
+          )}
+          {env.payment.contact && (
+            <p className="mt-2 text-sm text-ildiz-800">
+              {t('Savol boʻlsa: {contact}', { contact: env.payment.contact })}
+            </p>
+          )}
+        </section>
+      )}
+
       {(historyQuery.data ?? []).length > 0 && (
         <section className="rounded-xl border border-slate-200 bg-white p-4">
           <h2 className="text-sm font-semibold text-slate-900">{t('Hisoblash dalili')}</h2>
@@ -347,11 +400,14 @@ export default function BillingPage() {
                   )}
                   {row.note && <span className="ml-2 text-xs text-slate-400">{row.note}</span>}
                 </span>
-                <span className="text-slate-900">
-                  {t('eng yuqori {peak_children} → hisoblangan', {
-                    peak_children: row.peak_children,
-                  })}{' '}
-                  <strong>{row.billable_children}</strong>
+                {/* "eng yuqori 40 → hisoblangan 50" degan qator
+                    buxgalterga hech narsa demaydi: nega 50? Endi
+                    pog'ona ochiq aytiladi. */}
+                <span className="text-right text-slate-900">
+                  {t('Oydagi eng koʻp faol bola: {peak}', { peak: row.peak_children })}
+                  <span className="block text-xs text-slate-500">
+                    {t('pogʻona: {billable} tagacha', { billable: row.billable_children })}
+                  </span>
                 </span>
               </li>
             ))}

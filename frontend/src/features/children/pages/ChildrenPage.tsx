@@ -25,6 +25,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { usePageState } from '@/hooks/usePageState'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Child } from '@/lib/api/types'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useCan } from '@/lib/rbac/useCan'
 import { avatarTone, cn, formatUZS, initials } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -52,6 +53,10 @@ export default function ChildrenPage() {
   const { can } = useCan()
 
   const [search, setSearch] = useState('')
+  // Guruhni ro'yxatdan o'zgartirish TASDIQ bilan (PLAN 1.4): ilgari
+  // sichqoncha g'ildiragining bitta aylanishi bolani boshqa guruhga
+  // ko'chirib yuborardi va bu hech qayerda so'ralmasdi.
+  const [pendingGroup, setPendingGroup] = useState<{ child: Child; groupId: string } | null>(null)
   const debouncedSearch = useDebouncedValue(search.trim())
   const [statusFilter, setStatusFilter] = useState('')
   const [pageSize, setPageSize] = useState(25)
@@ -273,9 +278,7 @@ export default function ChildrenPage() {
       <select
         aria-label={t('Guruh')}
         value={child.current_group?.id ?? ''}
-        onChange={(e) =>
-          e.target.value && enrollMutation.mutate({ childId: child.id, groupId: e.target.value })
-        }
+        onChange={(e) => e.target.value && setPendingGroup({ child, groupId: e.target.value })}
         className="max-w-[180px] rounded-lg border border-slate-200 px-2 py-1 text-xs outline-none focus:border-brand-500"
       >
         <option value="">{t('— guruhsiz —')}</option>
@@ -317,6 +320,29 @@ export default function ChildrenPage() {
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={pendingGroup !== null}
+        title={t('Guruhni oʻzgartirish')}
+        body={t('{name}: {from} guruhidan {to} guruhiga', {
+          name: pendingGroup?.child.full_name ?? '',
+          from: pendingGroup?.child.current_group?.name ?? t('guruhsiz'),
+          to:
+            groupsQuery.data?.items.find((g) => g.id === pendingGroup?.groupId)?.name ??
+            t('guruhsiz'),
+        })}
+        busy={enrollMutation.isPending}
+        onCancel={() => setPendingGroup(null)}
+        onConfirm={() => {
+          if (pendingGroup) {
+            enrollMutation.mutate({
+              childId: pendingGroup.child.id,
+              groupId: pendingGroup.groupId,
+            })
+          }
+          setPendingGroup(null)
+        }}
+      />
+
       {showImport && <ImportWizard onClose={() => setShowImport(false)} />}
 
       <div className="flex flex-wrap items-start justify-between gap-3">
