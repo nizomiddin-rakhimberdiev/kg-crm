@@ -21,6 +21,7 @@ from apps.payroll.serializers import (
     CreateRunSerializer,
     EmployeeAdvanceSerializer,
     EmployeeAdvanceWriteSerializer,
+    PayoutRequestSerializer,
     PayrollItemSerializer,
     PayrollRunSerializer,
     UpdateItemSerializer,
@@ -52,6 +53,7 @@ class PayrollRunViewSet(BranchScopedMixin, TenantViewSet):
         # u yakunlashdan qattiqroq qo'riqlanadi: `approve` — tizim
         # rollaridan faqat egasi va direktorda bor (docs/02 §11.2).
         "reopen": "approve",
+        "planned_payouts": "read",
         "payslip": "read",
     }
     model = PayrollRun
@@ -184,18 +186,51 @@ class PayrollRunViewSet(BranchScopedMixin, TenantViewSet):
 
     @action(detail=True, methods=["post"], url_path="mark-paid")
     def mark_paid(self, request: Request, pk: str | None = None) -> Response:
+        """
+        `POST /payroll/runs/{id}/mark-paid` — ixtiyoriy `{"payouts": [...]}`.
+
+        Berilmasa taklif qabul qilinadi: rasmiy sof maosh bank
+        hisobiga, naqd qism kassaga (docs/03 §14.4a).
+        """
         run = self.get_object()
-        services.mark_run_paid(run=run)
+        user = request_user(request)
+        payload = PayoutRequestSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        rows = payload.validated_data.get("payouts") or None
+
+        services.pay_run(
+            run=run,
+            payouts=[dict(row) for row in rows] if rows else None,
+            paid_on=payload.validated_data.get("paid_on"),
+            created_by=user,
+        )
         audit.record(
             action="update",
             request=request._request,
-            actor=request_user(request),
+            actor=user,
             entity_type="payroll_run",
             entity_id=run.id,
-            changes={"status": "paid"},
+            changes={"status": "paid", "payouts": len(rows) if rows else "auto"},
         )
         run.refresh_from_db()
         return Response(PayrollRunSerializer(run).data)
+
+    @action(detail=True, methods=["get"], url_path="planned-payouts")
+    def planned_payouts(self, request: Request, pk: str | None = None) -> Response:
+        """`GET /payroll/runs/{id}/planned-payouts` — to'lov taklifi."""
+        run = self.get_object()
+        rows = services.planned_payouts(run)
+        return Response(
+            [
+                {
+                    **row,
+                    "payroll_item_id": str(row["payroll_item_id"]),
+                    "cash_account_id": str(row["cash_account_id"]),
+                    "amount": f"{row['amount']:.2f}",
+                }
+                for row in rows
+            ]
+        )
 
     @action(detail=True, methods=["get"], url_path=r"payslips/(?P<employee_id>[^/.]+)")
     def payslip(

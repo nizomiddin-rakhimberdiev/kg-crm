@@ -8,7 +8,7 @@ from rest_framework import serializers
 
 from apps.core.fields import TenantPrimaryKeyRelatedField
 from apps.hr.models import Employee
-from apps.payroll.models import EmployeeAdvance, PayrollItem, PayrollRun
+from apps.payroll.models import EmployeeAdvance, PayoutPart, PayrollItem, PayrollRun
 
 __all__ = [
     "CreateRunSerializer",
@@ -33,6 +33,11 @@ class PayrollItemSerializer(serializers.ModelSerializer):
             "bonus",
             "deduction",
             "advance",
+            "official_base",
+            "tax_income",
+            "tax_pension",
+            "official_net",
+            "cash_net",
             "gross",
             "net",
             "note",
@@ -111,3 +116,23 @@ class EmployeeAdvanceWriteSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
     paid_on = serializers.DateField()
     note = serializers.CharField(max_length=255, required=False, allow_blank=True)
+
+
+class PayoutLineSerializer(serializers.Serializer):
+    """Bitta to'lov qatori: kim, qaysi qismi, qaysi qopdan (docs/03 §14.4a)."""
+
+    payroll_item_id = serializers.UUIDField(required=False, allow_null=True)
+    part = serializers.ChoiceField(choices=PayoutPart.choices)
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
+    cash_account_id = serializers.UUIDField()
+    note = serializers.CharField(required=False, allow_blank=True, max_length=255)
+
+
+class PayoutRequestSerializer(serializers.Serializer):
+    """
+    `mark-paid` tanasi. Bo'sh bo'lsa taklif qabul qilinadi — eski
+    mijozlar va skriptlar o'zgarishsiz ishlayveradi.
+    """
+
+    payouts = PayoutLineSerializer(many=True, required=False)
+    paid_on = serializers.DateField(required=False)

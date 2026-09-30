@@ -926,3 +926,24 @@ msgstr "At least one payment line is required."
 
 msgid "qop o'zgartirildi"
 msgstr "account changed"
+
+msgid "Kassa hisobi topilmadi."
+msgstr "Cash account not found."
+
+msgid "Oylik {period}: {employee}"
+msgstr "Payroll {period}: {employee}"
+
+msgid "Rasmiy (bank)"
+msgstr "Official (bank)"
+
+msgid "To'lanadigan summa yo'q."
+msgstr "There is nothing to pay out."
+
+msgid "oylik qayta ochildi"
+msgstr "payroll run reopened"
+
+msgid "{employee}: to'lov summasi hisoblangandan oshib ketdi ({total} > {allowed})."
+msgstr "{employee}: the payout exceeds what was calculated ({total} > {allowed})."
+
+msgid "{employee}: ushlab qolish va avans ({taken}) naqd qismdan ({cash}) oshib ketdi. Rasmiy maoshni yoki avansni to'g'rilang."
+msgstr "{employee}: deductions and the advance ({taken}) exceed the cash part ({cash}). Adjust the official salary or the advance."

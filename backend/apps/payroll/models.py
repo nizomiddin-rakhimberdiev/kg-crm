@@ -16,7 +16,7 @@ from django.utils.translation import gettext_lazy
 
 from apps.core.models import BranchScopedModel
 
-__all__ = ["PayrollRun", "PayrollItem", "PayrollStatus"]
+__all__ = ["PayrollPayout", "PayoutPart", "PayrollRun", "PayrollItem", "PayrollStatus"]
 
 
 class PayrollStatus(models.TextChoices):
@@ -113,6 +113,23 @@ class PayrollItem(BranchScopedModel):
     # maoshning bir qismi. Ularni bitta ustunga qo'shish payslipni
     # tushunarsiz qilardi ("nega 3 mln ushlab qolindi?").
     advance = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
+    # --- Rasmiy qism (ADR-18): bankka, soliq ushlab qolingan holda ---
+    #
+    # Stavkalar Sozlamalardan olinadi, lekin natija SHU YERGA
+    # suratga olinadi: martda o'zgargan stavka fevralning payslipini
+    # jimgina qayta yozmasligi kerak.
+    official_base = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
+    tax_income = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
+    tax_pension = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
+    official_net = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
+
+    # --- Naqd qism: qolgan maosh + bonus − ushlab qolish − avans ---
+    #
+    # Ikkita sof summa ATAYLAB alohida turadi, erta qo'shilmaydi:
+    # ular BOSHQA qoplardan chiqadi (docs/03 §13a), va bitta `net`
+    # bank hisobini kassadan ajrata olmaydi.
+    cash_net = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
+
     gross = models.DecimalField(max_digits=12, decimal_places=2)
     net = models.DecimalField(max_digits=12, decimal_places=2)
     note = models.CharField(max_length=255, blank=True)
@@ -139,6 +156,65 @@ class PayrollItem(BranchScopedModel):
 
     def __str__(self) -> str:
         return f"{self.employee_id}: {self.net}"
+
+
+class PayoutPart(models.TextChoices):
+    OFFICIAL = "official", gettext_lazy("Rasmiy (bank)")
+    CASH = "cash", gettext_lazy("Naqd")
+
+
+class PayrollPayout(BranchScopedModel):
+    """
+    Oylikdan HAQIQATAN chiqqan pul (docs/03 §14.4a, ADR-17).
+
+    `payroll_item` — hisoblangan hujjat; bu esa pulning o'zi. Bittasi
+    ikkinchisining o'rnini bosa olmaydi: hisoblash qayta ochilishi
+    mumkin, chiqib ketgan pul esa qayta ochilmaydi.
+
+    Shuning uchun `payroll_run` ga `RESTRICT` bilan bog'langan —
+    `CASCADE` bo'lsa, qayta ochish paytida chiqib ketgan pulning izi
+    jimgina o'chib ketardi.
+    """
+
+    payroll_run = models.ForeignKey(
+        "payroll.PayrollRun", on_delete=models.RESTRICT, related_name="payouts"
+    )
+    payroll_item = models.ForeignKey(
+        "payroll.PayrollItem",
+        on_delete=models.RESTRICT,
+        related_name="payouts",
+        null=True,
+        blank=True,
+    )
+    cash_account = models.ForeignKey(
+        "cash.CashAccount", on_delete=models.RESTRICT, related_name="payroll_payouts"
+    )
+    part = models.CharField(max_length=10, choices=PayoutPart.choices)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    paid_on = models.DateField()
+    note = models.CharField(max_length=255, blank=True)
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="payroll_payouts",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "payroll_payout"
+        ordering = ["-paid_on", "-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0), name="ck_payroll_payout_amount_positive"
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["organization", "paid_on"], name="ix_payroll_payout_org_date"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.amount} ({self.part})"
 
 
 class EmployeeAdvance(BranchScopedModel):

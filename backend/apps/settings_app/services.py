@@ -26,6 +26,21 @@ DEFAULTS: dict[str, Any] = {
     "notifications.sms_enabled": True,
     "notifications.payment_receipt": True,
     "attendance.auto_absent": False,
+    # --- Oylik maosh ushlanmalari (ADR-18) ---
+    #
+    # Stavkalar KODDA emas, sozlamada: ular qaror bilan, ba'zan yil
+    # o'rtasida o'zgaradi, va stavkani servisga yozib qo'yish qonunga
+    # bo'ysunish uchun reliz va deploy talab qilardi.
+    #
+    # Foizda saqlanadi (12 = 12%), chunki buxgalter hujjatda aynan
+    # shu ko'rinishda ko'radi.
+    "payroll.income_tax_rate": 12,
+    "payroll.pension_rate": 0.1,
+    # --- Ish kalendari (ADR-19) ---
+    #
+    # ISO raqamlash: 1 = dushanba … 7 = yakshanba. Shanba ishlaydigan
+    # bog'cha — sozlama, sxema o'zgarishi emas.
+    "attendance.working_weekdays": "1,2,3,4,5",
 }
 
 

@@ -35,6 +35,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "hire_date",
             "termination_date",
             "base_salary",
+            "official_salary",
             "is_active",
             "created_at",
         ]
@@ -58,5 +59,6 @@ class EmployeeWriteSerializer(serializers.ModelSerializer):
             "hire_date",
             "termination_date",
             "base_salary",
+            "official_salary",
         ]
         read_only_fields = ["id"]

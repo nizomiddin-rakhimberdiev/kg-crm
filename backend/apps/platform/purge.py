@@ -64,6 +64,9 @@ PURGE_ORDER: tuple[str, ...] = (
     # Operatsion yozuvlar
     "apps.intelligence.Insight",  # acted_by → User; hosila, avval ketadi
     "apps.attendance.AttendanceRecord",
+    # To'lov qatori hisoblash va satrga `RESTRICT` bilan bog'langan —
+    # u ikkalasidan ham OLDIN o'chadi.
+    "apps.payroll.PayrollPayout",
     "apps.payroll.PayrollItem",
     "apps.payroll.PayrollRun",
     # Avans xodimga `RESTRICT` bilan bog'langan — u xodimdan OLDIN o'chadi.

@@ -927,3 +927,24 @@ msgstr "Нужна хотя бы одна строка платежа."
 
 msgid "qop o'zgartirildi"
 msgstr "счёт изменён"
+
+msgid "Kassa hisobi topilmadi."
+msgstr "Кассовый счёт не найден."
+
+msgid "Oylik {period}: {employee}"
+msgstr "Зарплата {period}: {employee}"
+
+msgid "Rasmiy (bank)"
+msgstr "Официально (банк)"
+
+msgid "To'lanadigan summa yo'q."
+msgstr "Нет суммы к выплате."
+
+msgid "oylik qayta ochildi"
+msgstr "расчёт открыт заново"
+
+msgid "{employee}: to'lov summasi hisoblangandan oshib ketdi ({total} > {allowed})."
+msgstr "{employee}: сумма выплаты превысила начисленную ({total} > {allowed})."
+
+msgid "{employee}: ushlab qolish va avans ({taken}) naqd qismdan ({cash}) oshib ketdi. Rasmiy maoshni yoki avansni to'g'rilang."
+msgstr "{employee}: удержания и аванс ({taken}) превысили наличную часть ({cash}). Исправьте официальную зарплату или аванс."

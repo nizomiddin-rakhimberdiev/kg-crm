@@ -92,6 +92,7 @@ OPERATIONAL_TABLES: tuple[str, ...] = (
     "payment",
     "employee_advance",
     "payroll_item",
+    "payroll_payout",
     "payroll_run",
     "position",
     "product",

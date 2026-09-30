@@ -78,12 +78,30 @@ class Employee(BranchScopedModel):
     # NUSXALANADI — keyin maosh o'zgarsa, o'tgan oylar o'zgarmasligi kerak.
     base_salary = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
 
+    # Maoshning RASMIY qismi — bankka, kartaga, soliq ushlab qolingan
+    # holda (ADR-18). Qolgani (`base_salary − official_salary`) naqd.
+    #
+    # Nega bitta jami va bitta bo'linish, ikkita mustaqil ustun emas:
+    # `base_salary` "bu odam qancha oladi?" degan savolning yagona
+    # javobi bo'lib qoladi, ya'ni uni o'qiydigan hech narsa ma'nosini
+    # o'zgartirmaydi. Ikkita erkin ustun esa jamini hech kim egalik
+    # qilmaydigan yig'indiga aylantirardi — va ular birinchi marta
+    # farq qilgan kunda payslip mehnat shartnomasiga zid bo'lardi.
+    official_salary = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
+
     class Meta:
         db_table = "employee"
         ordering = ["last_name", "first_name"]
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(base_salary__gte=0), name="ck_employee_salary_positive"
+            ),
+            # Rasmiy qism jamidan oshib ketolmaydi — aks holda naqd qism
+            # manfiy bo'lib, payslip ma'nosiz raqam ko'rsatardi.
+            models.CheckConstraint(
+                condition=models.Q(official_salary__gte=0)
+                & models.Q(official_salary__lte=models.F("base_salary")),
+                name="ck_employee_official_within_base",
             ),
             models.CheckConstraint(
                 condition=(

@@ -18,10 +18,17 @@ from django.utils import timezone
 from django.utils.translation import gettext
 
 from apps.cash import services as cash
-from apps.cash.models import MovementDirection, MovementSource
+from apps.cash.models import CashAccount, MovementDirection, MovementSource
 from apps.core.exceptions import BusinessRuleViolation
 from apps.hr.models import Employee, EmploymentStatus
-from apps.payroll.models import EmployeeAdvance, PayrollItem, PayrollRun, PayrollStatus
+from apps.payroll.models import (
+    EmployeeAdvance,
+    PayoutPart,
+    PayrollItem,
+    PayrollPayout,
+    PayrollRun,
+    PayrollStatus,
+)
 
 __all__ = [
     "create_run",
@@ -37,6 +44,81 @@ CENT = Decimal("0.01")
 
 def _money(value: Decimal) -> Decimal:
     return value.quantize(CENT, rounding=ROUND_HALF_UP)
+
+
+def _rates() -> tuple[Decimal, Decimal]:
+    """
+    Ushlanma stavkalari — Sozlamalardan (ADR-18).
+
+    Kodda emas: ular qaror bilan, ba'zan yil o'rtasida o'zgaradi, va
+    stavkani servisga yozib qo'yish qonunga bo'ysunish uchun reliz
+    talab qilardi.
+    """
+    from apps.settings_app.services import get_setting
+
+    income = Decimal(str(get_setting(key="payroll.income_tax_rate")))
+    pension = Decimal(str(get_setting(key="payroll.pension_rate")))
+    return income, pension
+
+
+def recompute_item(
+    item: PayrollItem, *, rates: tuple[Decimal, Decimal] | None = None
+) -> PayrollItem:
+    """
+    Satrning BARCHA hosila qiymatlarini qayta hisoblaydi (ADR-18).
+
+    Hisoblash bitta joyda: ilgari `net` to'rt joyda alohida
+    hisoblanardi va rasmiy/naqd bo'linishi qo'shilganda ularning biri
+    ertami-kechmi qolib ketardi.
+
+        rasmiy:  official_base − soliqlar        → bankka
+        naqd:    (baza − rasmiy) + bonus
+                 − ushlab qolish − avans         → kassadan
+
+    Ikki sof summa alohida saqlanadi, chunki ular BOSHQA qoplardan
+    chiqadi (docs/03 §13a).
+    """
+    income_rate, pension_rate = rates if rates is not None else _rates()
+
+    official = _money(min(item.official_base, item.base_amount))
+    item.official_base = official
+    item.tax_income = _money(official * income_rate / Decimal("100"))
+    item.tax_pension = _money(official * pension_rate / Decimal("100"))
+    item.official_net = _money(official - item.tax_income - item.tax_pension)
+
+    cash_gross = (item.base_amount - official) + item.bonus
+    cash_net = cash_gross - item.deduction - item.advance
+    if cash_net < 0:
+        # Ataylab xato: naqd qism ushlab qolish va avansni ko'tara
+        # olmasa, payslip ma'nosiz raqam beradi. Buxgalter qaror
+        # qabul qilishi kerak — tizim taxmin qilmaydi.
+        raise BusinessRuleViolation(
+            gettext(
+                "{employee}: ushlab qolish va avans ({taken}) naqd qismdan ({cash}) oshib "
+                "ketdi. Rasmiy maoshni yoki avansni to'g'rilang."
+            ).format(
+                employee=item.employee.full_name,
+                taken=_money(item.deduction + item.advance),
+                cash=_money(cash_gross),
+            )
+        )
+
+    item.cash_net = _money(cash_net)
+    item.gross = _money(item.base_amount + item.bonus)
+    item.net = _money(item.official_net + item.cash_net)
+    return item
+
+
+ITEM_FIELDS = [
+    "official_base",
+    "tax_income",
+    "tax_pension",
+    "official_net",
+    "cash_net",
+    "gross",
+    "net",
+    "updated_at",
+]
 
 
 def _assert_editable(run: PayrollRun) -> None:
@@ -91,12 +173,14 @@ def create_run(
                 # Maosh SNAPSHOT sifatida ko'chiriladi: keyin oshsa ham
                 # bu hisoblash o'zgarmasligi kerak.
                 base_amount=employee.base_salary,
+                official_base=employee.official_salary,
                 gross=employee.base_salary,
                 net=employee.base_salary,
             )
             for employee in employees
         ]
     )
+    _recompute_all(run)
     sync_advances(run)
     recompute_run_totals(run)
     return run
@@ -127,22 +211,23 @@ def sync_advances(run: PayrollRun) -> PayrollRun:
     """
     _assert_editable(run)
     totals = _advance_totals(run)
+    rates = _rates()
     for item in run.items.select_related("employee"):
         advance = _money(totals.get(item.employee_id, Decimal("0")))
         if advance == item.advance:
             continue
         item.advance = advance
-        item.gross = _money(item.base_amount + item.bonus)
-        net = item.gross - item.deduction - item.advance
-        if net < 0:
-            raise BusinessRuleViolation(
-                gettext(
-                    "{employee}: avans ({advance}) yalpi maoshdan ({gross}) oshib ketdi."
-                ).format(employee=item.employee.full_name, advance=advance, gross=item.gross)
-            )
-        item.net = _money(net)
-        item.save(update_fields=["advance", "gross", "net", "updated_at"])
+        recompute_item(item, rates=rates)
+        item.save(update_fields=["advance", *ITEM_FIELDS])
     return run
+
+
+def _recompute_all(run: PayrollRun) -> None:
+    """Barcha satrlarni qayta hisoblaydi — stavka yoki maosh o'zgarganda."""
+    rates = _rates()
+    for item in run.items.select_related("employee"):
+        recompute_item(item, rates=rates)
+        item.save(update_fields=ITEM_FIELDS)
 
 
 @transaction.atomic
@@ -295,20 +380,10 @@ def update_item(
     if note is not None:
         item.note = note[:255]
 
-    item.gross = _money(item.base_amount + item.bonus)
     # Avans — xodim oy davomida ALLAQACHON olgan pul, shuning uchun u ham
-    # sof maoshdan chiqadi (ushlab qolishdan alohida ustunda turadi).
-    net = item.gross - item.deduction - item.advance
-    if net < 0:
-        raise BusinessRuleViolation(
-            gettext(
-                "Ushlab qolish va avans yalpi maoshdan oshib ketdi "
-                "({deduction} > {gross}). Sof maosh manfiy bo'lolmaydi."
-            ).format(deduction=item.deduction + item.advance, gross=item.gross)
-        )
-    item.net = _money(net)
-    item.save(update_fields=["bonus", "deduction", "note", "gross", "net", "updated_at"])
-
+    # naqd qismdan chiqadi (ushlab qolishdan alohida ustunda turadi).
+    recompute_item(item)
+    item.save(update_fields=["bonus", "deduction", "note", *ITEM_FIELDS])
     recompute_run_totals(item.payroll_run)
     return item
 
@@ -358,16 +433,141 @@ def finalize_run(*, run: PayrollRun, finalized_by: Any = None) -> PayrollRun:
 
 
 @transaction.atomic
-def mark_run_paid(*, run: PayrollRun) -> PayrollRun:
-    """Yakunlangan hisoblashni to'langan deb belgilaydi."""
+def planned_payouts(run: PayrollRun) -> list[dict[str, Any]]:
+    """
+    Hisoblashdan kelib chiqadigan to'lovlar TAKLIFI (docs/03 §14.4a).
+
+    Rasmiy sof maosh bank hisobiga, naqd qism kassaga. Bu faqat
+    taklif — foydalanuvchi qopni o'zgartira oladi; yozuv esa
+    `pay_run()` yaratgan qatorlar.
+    """
+    bank = cash.account_for_method(branch=run.branch, method="bank_transfer")
+    till = cash.account_for_method(branch=run.branch, method="cash")
+
+    rows: list[dict[str, Any]] = []
+    for item in run.items.select_related("employee"):
+        for part, amount, account in (
+            (PayoutPart.OFFICIAL, item.official_net, bank),
+            (PayoutPart.CASH, item.cash_net, till),
+        ):
+            if amount <= 0:
+                continue
+            rows.append(
+                {
+                    "payroll_item_id": item.id,
+                    "employee": item.employee.full_name,
+                    "part": part,
+                    "amount": amount,
+                    "cash_account_id": account.id,
+                    "cash_account_name": account.name,
+                }
+            )
+    return rows
+
+
+@transaction.atomic
+def pay_run(
+    *,
+    run: PayrollRun,
+    payouts: list[dict[str, Any]] | None = None,
+    paid_on: Any = None,
+    created_by: Any = None,
+) -> PayrollRun:
+    """
+    Hisoblashni to'laydi: pulni kassadan chiqaradi va holatni yopadi.
+
+    `payouts` berilmasa taklif qabul qilinadi (`planned_payouts`).
+    Har bir qator o'z `cash_movement` ini yozadi — hisoblash bilan
+    BITTA tranzaksiyada, chunki "to'langan" deb belgilangan, lekin
+    kassadan chiqmagan oylik jimgina noto'g'ri qoldiq degani.
+
+    **Soliqlar bu yerda chiqmaydi.** Ushlab qolingan summa bank
+    hisobida qoladi va davlatga to'langanda oddiy chiqim bo'lib
+    yoziladi (ADR-18) — aks holda pul ikki marta chiqib ketardi.
+    """
     if run.status != PayrollStatus.FINALIZED:
         raise BusinessRuleViolation(
             gettext("Faqat yakunlangan hisoblashni to'langan deb belgilash mumkin.")
         )
+
+    rows = payouts if payouts is not None else planned_payouts(run)
+    if not rows:
+        raise BusinessRuleViolation(gettext("To'lanadigan summa yo'q."))
+
+    when = paid_on or timezone.localdate()
+    items = {item.id: item for item in run.items.select_related("employee")}
+    # Har bir satr-qism bo'yicha allaqachon to'langan summa: qisman
+    # to'lovdan keyin qayta chaqirilsa, ikki marta to'lamaslik uchun.
+    already: dict[tuple[Any, str], Decimal] = {}
+    for payout in PayrollPayout.objects.filter(payroll_run=run):
+        key = (payout.payroll_item_id, payout.part)
+        already[key] = already.get(key, Decimal("0")) + payout.amount
+
+    for row in rows:
+        amount = _money(Decimal(row["amount"]))
+        if amount <= 0:
+            continue
+        item_id = row.get("payroll_item_id")
+        item = items.get(item_id) if item_id else None
+        part = row["part"]
+
+        if item is not None:
+            allowed = item.official_net if part == PayoutPart.OFFICIAL else item.cash_net
+            paid_before = already.get((item.id, part), Decimal("0"))
+            if paid_before + amount > allowed:
+                raise BusinessRuleViolation(
+                    gettext(
+                        "{employee}: to'lov summasi hisoblangandan oshib ketdi "
+                        "({total} > {allowed})."
+                    ).format(
+                        employee=item.employee.full_name,
+                        total=_money(paid_before + amount),
+                        allowed=_money(allowed),
+                    )
+                )
+            already[(item.id, part)] = paid_before + amount
+
+        account = CashAccount.objects.filter(
+            pk=row["cash_account_id"], organization_id=run.organization_id, is_active=True
+        ).first()
+        if account is None:
+            raise BusinessRuleViolation(gettext("Kassa hisobi topilmadi."))
+
+        payout = PayrollPayout.objects.create(
+            organization=run.organization,
+            branch=run.branch,
+            payroll_run=run,
+            payroll_item=item,
+            cash_account=account,
+            part=part,
+            amount=amount,
+            paid_on=when,
+            note=str(row.get("note", ""))[:255],
+            created_by=created_by,
+        )
+        cash.post_movement(
+            account=account,
+            direction=MovementDirection.OUT,
+            amount=amount,
+            source_type=MovementSource.PAYROLL,
+            source_id=payout.id,
+            description=gettext("Oylik {period}: {employee}").format(
+                period=f"{run.period_year}-{run.period_month:02d}",
+                employee=item.employee.full_name if item else "—",
+            )[:255],
+            occurred_at=timezone.make_aware(datetime.combine(when, time.min)),
+            created_by=created_by,
+        )
+
     run.status = PayrollStatus.PAID
     run.paid_at = timezone.now()
     run.save(update_fields=["status", "paid_at", "updated_at"])
     return run
+
+
+def mark_run_paid(*, run: PayrollRun) -> PayrollRun:
+    """Eski nom — `pay_run()` ning taklifni qabul qiladigan ko'rinishi."""
+    return pay_run(run=run)
 
 
 @transaction.atomic
@@ -395,6 +595,20 @@ def reopen_run(*, run: PayrollRun, reason: str) -> PayrollRun:
     cleaned = (reason or "").strip()
     if not cleaned:
         raise BusinessRuleViolation(gettext("Qayta ochish sababini ko'rsating."))
+
+    # To'langan hisoblashni ochish — pulni KASSAGA QAYTARISH demak.
+    #
+    # To'lov qatorlari o'chiriladi (ular hujjat, hisoblashning o'zi
+    # kabi), lekin kassa yozuvlari O'CHIRILMAYDI: asl chiqim ham,
+    # qarshi kirim ham jurnalda qoladi. D3 aynan shu yerda bog'laydi —
+    # pul izi hech qachon yo'qolmaydi, hujjat esa qayta ochiladi.
+    for payout in PayrollPayout.objects.filter(payroll_run=run):
+        cash.reverse_movements_for(
+            source_type=MovementSource.PAYROLL,
+            source_id=payout.id,
+            description=gettext("oylik qayta ochildi"),
+        )
+        payout.delete()
 
     run.status = PayrollStatus.DRAFT
     run.finalized_at = None
