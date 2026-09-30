@@ -308,7 +308,7 @@ export function InventoryUi({ local, locale, compact = false }: UiProps) {
               style={{
                 opacity: i <= phase ? 1 : 0,
                 transform: i <= phase ? 'none' : 'translateY(6px)',
-                background: i === phase ? 'rgb(248 250 252)' : 'transparent',
+                background: i === phase ? 'rgb(246 247 244)' : 'transparent',
               }}
             >
               <span className="text-slate-700">{name}</span>
@@ -392,7 +392,7 @@ export function Modules({ locale }: { locale: Locale }) {
             <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
               {t.modules.eyebrow}
             </p>
-            <h2 className="mt-3 text-balance text-3xl font-extrabold !leading-[1.08] tracking-[-0.03em] text-slate-950 sm:text-4xl">
+            <h2 className="mt-3 text-balance text-[1.75rem] font-bold !leading-[1.16] tracking-[-0.02em] text-tosh-900 sm:text-[2rem]">
               {t.modules.title}
             </h2>
           </Reveal>
@@ -436,7 +436,7 @@ export function Modules({ locale }: { locale: Locale }) {
             <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
               {t.modules.eyebrow}
             </p>
-            <h2 className="mt-1.5 text-balance text-[1.6rem] font-extrabold !leading-[1.08] tracking-[-0.03em] text-slate-950">
+            <h2 className="mt-1.5 text-balance text-[1.6rem] font-bold !leading-[1.08] tracking-[-0.03em] text-slate-950">
               {t.modules.title}
             </h2>
           </div>
@@ -486,7 +486,7 @@ export function Modules({ locale }: { locale: Locale }) {
             <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
               {t.modules.eyebrow}
             </p>
-            <h2 className="mt-3 text-balance text-4xl font-extrabold !leading-[1.08] tracking-[-0.03em] text-slate-950">
+            <h2 className="mt-3 text-balance text-[2rem] font-bold !leading-[1.16] tracking-[-0.02em] text-tosh-900">
               {t.modules.title}
             </h2>
             <ol className="mt-8 space-y-1">

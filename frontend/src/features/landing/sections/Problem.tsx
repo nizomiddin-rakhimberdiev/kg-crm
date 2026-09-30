@@ -46,14 +46,14 @@ const ICONS = {
 } as const
 
 const SKIN: Record<keyof typeof ICONS, string> = {
-  chat: 'bg-sky-50 border-sky-200 text-sky-900',
+  chat: 'bg-ildiz-50 border-ildiz-200 text-ildiz-900',
   sheet:
-    'bg-emerald-50 border-emerald-200 text-emerald-900 [background-image:linear-gradient(rgba(5,150,105,0.08)_1px,transparent_1px)] [background-size:100%_18px]',
+    'bg-emerald-50 border-emerald-200 text-emerald-900 [background-image:linear-gradient(rgba(46,158,107,0.08)_1px,transparent_1px)] [background-size:100%_18px]',
   note: 'bg-amber-50 border-amber-200 text-amber-900',
   receipt:
-    'bg-white border-slate-200 text-slate-800 [background-image:radial-gradient(rgba(15,23,42,0.12)_1px,transparent_1px)] [background-size:8px_8px]',
+    'bg-white border-slate-200 text-slate-800 [background-image:radial-gradient(rgba(27,36,33,0.12)_1px,transparent_1px)] [background-size:8px_8px]',
   attendance: 'bg-white border-slate-200 text-slate-800',
-  staff: 'bg-violet-50 border-violet-200 text-violet-900',
+  staff: 'bg-tosh-200 border-tosh-300 text-tosh-800',
   expense: 'bg-rose-50 border-rose-200 text-rose-900',
 }
 
@@ -70,7 +70,7 @@ function Paper({
   const Icon = ICONS[kind] ?? StickyNote
   return (
     <div
-      className={`rounded-lg border p-3 text-left shadow-[0_18px_40px_-18px_rgba(11,23,48,0.35)] ${compact ? 'w-40' : 'w-56'} ${SKIN[kind] ?? SKIN.note} ${className}`}
+      className={`rounded-lg border p-3 text-left shadow-[0_18px_40px_-18px_rgba(18,53,47,0.35)] ${compact ? 'w-40' : 'w-56'} ${SKIN[kind] ?? SKIN.note} ${className}`}
     >
       <div className="flex items-center gap-1.5 text-[12px] lg:text-[11px] font-semibold">
         <Icon className="h-3.5 w-3.5 opacity-70" />
@@ -271,7 +271,7 @@ function Heading({ t }: { t: Copy['problem'] }) {
       <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
         {t.eyebrow}
       </p>
-      <h2 className="mt-3 text-balance text-[1.75rem] font-extrabold !leading-[1.08] tracking-[-0.03em] text-slate-950 sm:text-4xl lg:text-[2.75rem]">
+      <h2 className="mt-3 text-balance text-[1.75rem] font-bold !leading-[1.16] tracking-[-0.02em] text-tosh-900 sm:text-[2rem]">
         {t.title}
       </h2>
       <p className="mx-auto mt-4 hidden max-w-2xl text-base leading-7 text-slate-600 sm:block lg:text-lg">

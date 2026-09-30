@@ -20,18 +20,21 @@ import {
   Users,
   Wallet,
 } from 'lucide-react'
+import { RadixMark } from '@/components/brand/Logo'
+import { BRAND } from '@/lib/brand'
 import { copy, type Locale } from '../content'
 import { useCompact, useScene, useStatic } from '../motion'
 
 const ICONS = [UserRound, Wallet, CalendarCheck, Users, Boxes, Receipt, BarChart3]
+// Yetti modul — besh brend rangining tiniqlik darajalarida.
 const TONES = [
-  'bg-sky-50 text-sky-600',
-  'bg-emerald-50 text-emerald-600',
-  'bg-teal-50 text-teal-600',
-  'bg-violet-50 text-violet-600',
-  'bg-amber-50 text-amber-600',
-  'bg-rose-50 text-rose-600',
-  'bg-brand-50 text-brand-600',
+  'bg-nihol-50 text-nihol-600',
+  'bg-ildiz-50 text-ildiz-700',
+  'bg-orik-50 text-orik-700',
+  'bg-tosh-100 text-tosh-600',
+  'bg-nihol-100 text-nihol-700',
+  'bg-ildiz-100 text-ildiz-800',
+  'bg-orik-100 text-orik-800',
 ]
 
 // Yakuniy katak (panel ichida): 4 + 3.
@@ -66,7 +69,7 @@ function Tile({
   const Icon = ICONS[index]
   return (
     <div
-      className={`flex items-center gap-2 rounded-xl border border-slate-200 bg-white shadow-[0_16px_40px_-20px_rgba(11,23,48,0.35)] ${
+      className={`flex items-center gap-2 rounded-xl border border-slate-200 bg-white shadow-[0_16px_40px_-20px_rgba(18,53,47,0.35)] ${
         compact ? 'w-[6.5rem] px-2 py-1.5' : 'w-[9.5rem] px-3 py-2.5'
       } ${className}`}
     >
@@ -134,7 +137,7 @@ function Connector({
       y1={0}
       x2={ring.x}
       y2={ring.y}
-      stroke="#2563eb"
+      stroke={BRAND.nihol}
       strokeOpacity={0.55}
       strokeWidth={1.5}
       strokeLinecap="round"
@@ -148,14 +151,12 @@ function Panel({ locale, factor }: { locale: Locale; factor: number }) {
   const t = copy[locale]
   return (
     <div
-      className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_30px_80px_-30px_rgba(11,23,48,0.25)]"
+      className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_30px_80px_-30px_rgba(18,53,47,0.25)]"
       style={{ width: factor < 1 ? 320 : 720 }}
     >
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2">
-          <span className="grid h-6 w-6 place-items-center rounded-md bg-slate-950 text-[11px] lg:text-[10px] font-bold text-white">
-            R
-          </span>
+          <RadixMark size={24} />
           <span className="text-[12px] font-semibold text-slate-800">{t.demo.org}</span>
         </div>
         <span className="text-[12px] lg:text-[11px] text-slate-400">{t.demo.today}</span>
@@ -268,7 +269,7 @@ function Heading({ locale }: { locale: Locale }) {
       <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
         {t.eyebrow}
       </p>
-      <h2 className="mt-3 text-balance text-[1.75rem] font-extrabold !leading-[1.08] tracking-[-0.03em] text-slate-950 sm:text-4xl lg:text-[2.75rem]">
+      <h2 className="mt-3 text-balance text-[1.75rem] font-bold !leading-[1.16] tracking-[-0.02em] text-tosh-900 sm:text-[2rem]">
         {t.title}
       </h2>
       <p className="mx-auto mt-4 hidden max-w-2xl text-base leading-7 text-slate-600 sm:block lg:text-lg">

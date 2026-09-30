@@ -17,7 +17,7 @@ import { usePlatformAuth } from '../PlatformAuthProvider'
 import { NewOrganizationDialog } from '../components/NewOrganizationDialog'
 
 export const STATUS_LABEL: Record<string, [string, string]> = {
-  trialing: ['Sinov davri', 'bg-sky-500/10 text-sky-400'],
+  trialing: ['Sinov davri', 'border border-tosh-500/40 text-tosh-200'],
   pending_payment: ["To'lov kutilmoqda", 'bg-amber-500/10 text-amber-400'],
   active: ['Faol', 'bg-emerald-500/10 text-emerald-400'],
   past_due: ["Muddati o'tgan", 'bg-amber-500/10 text-amber-300'],

@@ -39,7 +39,7 @@ const money = (v: string) => new Intl.NumberFormat('uz-UZ').format(Number(v))
 
 const STATUS = {
   draft: [t('Qoralama'), 'bg-slate-100 text-slate-600'],
-  finalized: [t('Yakunlangan'), 'bg-sky-50 text-sky-700'],
+  finalized: [t('Yakunlangan'), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
   paid: [t("To'langan"), 'bg-emerald-50 text-emerald-700'],
 } as const
 
@@ -514,7 +514,7 @@ export default function PayrollPage() {
                     type="button"
                     onClick={() => finalize.mutate(run.id)}
                     disabled={finalize.isPending}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60 sm:flex-none"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-ildiz-700 px-3 py-2 text-sm font-semibold text-white hover:bg-ildiz-800 disabled:opacity-60 sm:flex-none"
                   >
                     <Lock className="h-4 w-4" /> {t('Yakunlash')}
                   </button>
@@ -576,7 +576,7 @@ export default function PayrollPage() {
                       >
                         {item.employee_name}
                         {Number(item.official_base) > 0 && (
-                          <span className="ml-1.5 rounded-full bg-sky-50 px-1.5 py-0.5 text-[11px] font-medium text-sky-700">
+                          <span className="ml-1.5 rounded-full bg-ildiz-100 px-1.5 py-0.5 text-[11px] font-medium text-ildiz-800">
                             {t('rasmiy')}
                           </span>
                         )}

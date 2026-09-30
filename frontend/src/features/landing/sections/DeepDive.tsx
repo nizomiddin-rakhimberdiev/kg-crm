@@ -217,7 +217,7 @@ export function DeepDive({ locale }: { locale: Locale }) {
       <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
         {t.deepDive.eyebrow}
       </p>
-      <h2 className="mt-3 text-balance text-[1.75rem] font-extrabold !leading-[1.08] tracking-[-0.03em] text-slate-950 sm:text-4xl lg:text-[2.75rem]">
+      <h2 className="mt-3 text-balance text-[1.75rem] font-bold !leading-[1.16] tracking-[-0.02em] text-tosh-900 sm:text-[2rem]">
         {t.deepDive.title}
       </h2>
       <p className="mx-auto mt-3 hidden max-w-2xl text-base leading-7 text-slate-600 sm:block lg:text-lg">

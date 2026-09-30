@@ -51,12 +51,12 @@ export function initials(name: string): string {
  * shuning uchun holat rangi (yashil/sariq) hech qachon bu yerdan olinmaydi.
  */
 const AVATAR_TONES = [
-  'bg-brand-100 text-brand-700',
-  'bg-emerald-100 text-emerald-700',
-  'bg-amber-100 text-amber-700',
-  'bg-violet-100 text-violet-700',
-  'bg-rose-100 text-rose-700',
-  'bg-cyan-100 text-cyan-700',
+  'bg-nihol-100 text-nihol-800',
+  'bg-orik-100 text-orik-800',
+  'bg-ildiz-100 text-ildiz-800',
+  'bg-tosh-200 text-tosh-700',
+  'bg-nihol-200 text-nihol-900',
+  'bg-orik-200 text-orik-900',
 ] as const
 
 export function avatarTone(seed: string): string {

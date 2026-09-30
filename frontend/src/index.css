@@ -7,19 +7,44 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+  /* Sut fon, Tosh matn — brendbuk 04. */
   body {
-    @apply bg-slate-50 text-slate-900 font-sans;
+    @apply bg-sut text-tosh-900 font-sans;
+  }
+  /*
+   * Sarlavhalar Onest'da — brendbuk 05. Har bir `<h1>` ga `font-display`
+   * yozib chiqish o'rniga shu yerda bir marta: ekranlar ko'p, va yangi
+   * sahifa qo'shilganda sarlavha o'zidan brend shriftida chiqadi.
+   */
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display;
   }
 }
 
 @layer utilities {
+  /*
+   * Raqam uslubi — brendbuk 05 (JetBrains Mono).
+   *
+   * Har bir jadval katagiga emas, KO'RSATKICH raqamlariga qo'yiladi:
+   * KPI, kassa qoldig'i, to'lov summasi, sana-vaqt. Jadvalning o'zi
+   * `tabular-nums` bilan qoladi — mono ustun kengliklarini kengaytirib
+   * yuboradi va 30 dan ortiq ekranda satr sig'masligiga olib keladi.
+   */
+  .num {
+    font-family: theme('fontFamily.mono');
+    font-variant-numeric: tabular-nums;
+  }
+
   /* Thin, subtle scrollbar used across scrollable panels */
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-slate-300 rounded-full;
+    @apply bg-tosh-300 rounded-full;
   }
   .scrollbar-thin::-webkit-scrollbar-track {
     background: transparent;
@@ -40,7 +65,7 @@
   }
 
   .section-title {
-    @apply text-3xl font-bold tracking-[-0.035em] text-slate-950 sm:text-4xl;
+    @apply font-display text-3xl font-bold tracking-[-0.035em] text-ildiz-900 sm:text-4xl;
   }
 
   /*
@@ -84,18 +109,18 @@
     height: 20px;
     width: 20px;
     border-radius: 9999px;
-    background: #2563eb;
+    background: theme('colors.nihol.500');
     border: 3px solid #fff;
-    box-shadow: 0 1px 3px rgb(15 23 42 / 0.25);
+    box-shadow: 0 1px 3px rgb(27 36 33 / 0.25);
     cursor: pointer;
   }
   .marketing input[type='range']::-moz-range-thumb {
     height: 20px;
     width: 20px;
     border-radius: 9999px;
-    background: #2563eb;
+    background: theme('colors.nihol.500');
     border: 3px solid #fff;
-    box-shadow: 0 1px 3px rgb(15 23 42 / 0.25);
+    box-shadow: 0 1px 3px rgb(27 36 33 / 0.25);
     cursor: pointer;
   }
   @media (pointer: coarse) {

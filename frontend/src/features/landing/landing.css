@@ -6,14 +6,12 @@
  * to'liq ko'rinish. `prefers-reduced-motion` — hech qanday harakat.
  */
 
+/*
+ * Brendbuk 05: sarlavhalar Onest, MATN esa Golos Text. Ilgari bu yerda
+ * butun sahifaga Onest majburlangan edi — endi sarlavhalar Onest'ni
+ * `index.css` dagi h1–h4 qoidasidan oladi, matn esa o'z shriftida qoladi.
+ */
 .rx {
-  font-family:
-    'Onest',
-    'Inter',
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    sans-serif;
   font-feature-settings: 'ss01', 'cv01';
 }
 

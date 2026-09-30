@@ -172,7 +172,7 @@ export function Roles({ locale }: { locale: Locale }) {
       <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
         {t.roles.eyebrow}
       </p>
-      <h2 className="mt-2 text-balance text-[1.75rem] font-extrabold !leading-[1.08] tracking-[-0.03em] text-slate-950 sm:text-4xl lg:mt-3 lg:text-[2.75rem]">
+      <h2 className="mt-2 text-balance text-[1.75rem] font-bold !leading-[1.16] tracking-[-0.02em] text-tosh-900 sm:text-[2rem] lg:mt-3">
         {t.roles.title}
       </h2>
       <p className="mt-3 hidden text-base leading-7 text-slate-600 sm:block lg:text-lg">
@@ -217,7 +217,7 @@ export function Roles({ locale }: { locale: Locale }) {
             ref={(el) => compact && on && centerInStrip(el)}
             className={`min-w-[200px] shrink-0 snap-start rounded-2xl border p-3 text-left transition-all duration-300 lg:min-w-0 lg:p-5 ${
               on
-                ? 'border-slate-950 bg-white shadow-[0_20px_50px_-30px_rgba(11,23,48,0.35)]'
+                ? 'border-slate-950 bg-white shadow-[0_20px_50px_-30px_rgba(18,53,47,0.35)]'
                 : 'border-slate-200 bg-white/60 hover:border-slate-300'
             }`}
           >

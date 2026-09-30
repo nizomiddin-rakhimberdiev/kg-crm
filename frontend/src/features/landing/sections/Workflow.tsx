@@ -84,7 +84,7 @@ export function Workflow({ locale }: { locale: Locale }) {
       <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
         {t.workflow.eyebrow}
       </p>
-      <h2 className="mt-3 text-balance text-3xl font-extrabold !leading-[1.08] tracking-[-0.03em] text-slate-950 sm:text-4xl lg:text-[3.4rem]">
+      <h2 className="mt-3 text-balance text-[1.75rem] font-bold !leading-[1.16] tracking-[-0.02em] text-tosh-900 sm:text-[2rem]">
         {t.workflow.title}
       </h2>
       <p className="mt-4 text-base leading-7 text-slate-600 lg:text-lg">{t.workflow.text}</p>
@@ -132,11 +132,11 @@ export function Workflow({ locale }: { locale: Locale }) {
             <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
               {t.workflow.eyebrow}
             </p>
-            <h2 className="mt-1.5 text-balance text-[1.6rem] font-extrabold !leading-[1.08] tracking-[-0.03em] text-slate-950">
+            <h2 className="mt-1.5 text-balance text-[1.6rem] font-bold !leading-[1.08] tracking-[-0.03em] text-slate-950">
               {t.workflow.title}
             </h2>
             <div className="mt-3 flex items-baseline gap-2">
-              <motion.span className="text-4xl font-extrabold tabular-nums tracking-tight text-slate-950">
+              <motion.span className="num text-4xl font-bold tracking-tight text-tosh-900">
                 {label}
               </motion.span>
               <span className="text-[12px] text-slate-400">{t.demo.today}</span>
@@ -187,7 +187,7 @@ export function Workflow({ locale }: { locale: Locale }) {
           <div>
             {heading}
             <div className="mt-8 flex items-baseline gap-3">
-              <motion.span className="text-5xl font-extrabold tabular-nums tracking-tight text-slate-950">
+              <motion.span className="num text-5xl font-bold tracking-tight text-tosh-900">
                 {label}
               </motion.span>
               <span className="text-sm font-medium text-slate-400">{t.demo.today}</span>

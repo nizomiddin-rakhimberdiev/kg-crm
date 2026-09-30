@@ -28,6 +28,8 @@
 14. [Loading / Error / Empty States](#14-loading--error--empty-states)
 15. [Performance](#15-performance)
 16. [Conventions](#16-conventions)
+17. [Internationalization (uz / ru / en)](#17-internationalization-uz--ru--en)
+18. [Brand System (Radix Brendbuk 1.1)](#18-brand-system-radix-brendbuk-11)
 
 ---
 
@@ -383,7 +385,7 @@ type PaymentCreateInput = z.infer<typeof paymentCreateSchema>;
 ## 13. UI System (Tailwind + Shadcn)
 
 - **Shadcn/UI** primitives are copied into `components/ui/` — we own and theme them (no black-box dependency).
-- **Tailwind** utility-first; design tokens (colors, spacing, radius) defined once in `tailwind.config.ts` + `styles/globals.css`. Light/dark via `ThemeProvider`.
+- **Tailwind** utility-first; design tokens (colours, fonts, radius) are defined **once** in `tailwind.config.js`, with the few JS-side values in `lib/brand.ts` — see [§18](#18-brand-system-radix-brendbuk-11). No dark mode: the product is used in daylight offices and a second theme would double the surface the brand has to hold.
 - **Recharts** for dashboards/reports, wrapped in `components/data-display/ChartCard` for consistent styling. (See the `dataviz` guidance when building charts.)
 - **Framer Motion** for page/section transitions and subtle interactions — never blocking or gratuitous.
 - **Localization-ready:** all UI strings via a central dictionary (Uzbek/Russian), dates/currency via `lib/utils` formatters honoring branch locale ([01 §7](./01_Project_Vision.md)).
@@ -457,10 +459,77 @@ The CRM shell is trilingual ([02 ADR-16](./02_Software_Architecture.md)). The me
 
 ---
 
+## 18. Brand System (Radix Brendbuk 1.1)
+
+The visual identity is **not** re-decided per screen. Everything comes from the brand book (September 2026) through two files:
+
+| File | Holds | Used by |
+|------|-------|---------|
+| `tailwind.config.js` | The whole palette, the three typefaces, the radius scale, the shadows | Every class in the app |
+| `lib/brand.ts` | The same colours as hex, plus a chart sequence | Recharts, inline `style`, canvas — places Tailwind cannot reach |
+| `components/brand/Logo.tsx` | The logo itself (`Logo`, `RadixMark`) | Sidebar, login, public nav/footer, platform console, demo mock-ups |
+
+### The palette
+
+| Name | Hex | Role |
+|------|-----|------|
+| Ildiz | `#12352F` | Mark, headings, dark surfaces (`ildiz-900`) |
+| Nihol | `#2E9E6B` | Buttons, links, "paid" (`nihol-500`; `nihol-600` is the button fill — see below) |
+| O'rik | `#F29B55` | Seed dot, small accent (`orik-400`) |
+| Sut | `#F6F7F4` | The page ground (`bg-sut`, also `tosh-50`) |
+| Tosh | `#1B2421` | Text, pictograms (`tosh-900`) |
+| — | `#B45F1E` | Debt warning (`orik-700`). **Not a brand colour** — system use only. |
+
+Per page: Sut 60 · Ildiz 25 · Nihol 10 · Tosh 4 · O'rik 1.
+
+**Blue and purple are forbidden** — the brand book's reasoning is that nearly every competing CRM is blue. Two layers enforce it:
+
+1. `tailwind.config.js` **re-points** Tailwind's `blue`, `sky`, `indigo`, `cyan`, `violet`, `purple` and `fuchsia` scales at the brand ramps. Even a screen nobody has reviewed cannot render blue.
+2. `src/__tests__/brand.test.ts` fails the build on any `-sky-500`-style class or hardcoded `#rrggbb` outside the two brand files, and tells the author which brand name to use instead.
+
+`slate`, `emerald`, `teal`, `amber` and `red` are re-pointed the same way, so the screens written before the rebrand inherit the brand without being edited one by one.
+
+### Status colours
+
+The status chips of a finance screen must be distinguishable at a glance, and after the rebrand "paid" and "issued" would both have been green. So an in-progress state is **outlined**, not just differently coloured — form carries the difference, not hue alone:
+
+| State | Class | Example |
+|-------|-------|---------|
+| Done / paid | `bg-nihol-50 text-nihol-700` | `paid`, `ready`, `approved` (absence claim) |
+| In progress / recorded | `border border-ildiz-300 bg-ildiz-50 text-ildiz-800` | `issued`, `finalized`, `running`, `applied` |
+| Waiting / attention | `bg-orik-50 text-orik-700` | `pending`, overdue amounts |
+| Neutral / draft | `bg-tosh-100 text-tosh-600` | `draft`, `queued`, `cancelled` |
+| Error / destructive | `bg-red-50 text-red-700` | `failed`, `rejected` |
+
+On the dark vendor console the outline becomes `border border-tosh-500/40 text-tosh-200` — a dark-green outline would disappear there.
+
+### Typography
+
+Headings **Onest** 600/700, body **Golos Text** 400/500, numbers **JetBrains Mono** — all three loaded once in `index.html`. `index.css` puts Onest on `h1`–`h4` globally, so a new page gets it without anyone remembering.
+
+`.num` (`index.css`) is the number style. It goes on **indicator** figures — KPI values, cash balances, payment totals — and **not** on table cells: monospace widens columns and 30-plus screens would start wrapping. It also never goes on a value that contains a word (`42 nafar` in mono reads as code), which is why `Tile` takes a `mono` prop.
+
+### The logo
+
+`components/brand/Logo.tsx` carries the brand book's rules so callers do not have to:
+
+- Mark left, lowercase wordmark right, **always together**. There is no wordmark-only export.
+- Below 96 px wide the full logo would break the brand book's minimum, so `Logo` drops the wordmark and renders the mark alone.
+- `variant="light"` is the A variant (Ildiz plate, Tosh wordmark) for white and Sut grounds; `variant="dark"` is B (Nihol plate, white wordmark) for Ildiz grounds. **The colours are never overridden in CSS** — the public nav passes a variant instead.
+- `safeArea` adds the required 2x clearance (x = the apricot dot's diameter).
+
+Assets live in `public/brand/`; the favicon, the PWA manifest icons and the share images all come from the same mark.
+
+### Share images
+
+`public/og-{uz,ru,en}.png` are generated, not drawn: `node scripts/og.mjs` renders the Ildiz cover from the site's own copy (`features/landing/content.ts`) and screenshots it headless. Re-run it whenever the hero copy or the brand changes — the previous set was hand-made and survived a rebrand looking wrong.
+
+---
+
 ## Cross-References
 - What the UI is for: [01_Project_Vision](./01_Project_Vision.md); commercial model the `billing` feature surfaces: [01 §4](./01_Project_Vision.md).
 - System-level frontend decisions: [02_Software_Architecture](./02_Software_Architecture.md) §14–15; the two access planes: [02 §11.0](./02_Software_Architecture.md).
 - Endpoints, permissions, and payloads consumed here: [04_Backend_API_Specification](./04_Backend_API_Specification.md).
 - Build order: [06_Development_Roadmap](./06_Development_Roadmap.md).
 
-*End of Frontend Architecture v1.3 — organization-scoped query cache, read-only mode, `billing`/`branches`/`onboarding` features; responsive shell (mobile drawer), server pagination, `/staff` tabs, report period picker; trilingual shell (§17) and public site (`/uz` `/ru` `/en`).*
+*End of Frontend Architecture v1.4 — organization-scoped query cache, read-only mode, `billing`/`branches`/`onboarding` features; responsive shell (mobile drawer), server pagination, `/staff` tabs, report period picker; trilingual shell (§17) and public site (`/uz` `/ru` `/en`); Radix brand system (§18).*

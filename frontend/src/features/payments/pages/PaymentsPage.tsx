@@ -372,7 +372,7 @@ export default function PaymentsPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                   {label}
                 </p>
-                <p className={cn('mt-1 text-xl font-bold tabular-nums', tone)}>
+                <p className={cn('num mt-1 text-xl font-bold', tone)}>
                   {value === undefined ? '…' : money(value)}
                 </p>
               </div>

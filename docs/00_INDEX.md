@@ -17,7 +17,7 @@ This folder is the **single source of truth** for the project. Read the document
 | 02 | **[02_Software_Architecture](./02_Software_Architecture.md)** | *How* is the system structured? (modules, layers, security, scalability) | Before touching structure, apps, or infra. |
 | 03 | **[03_Database_Design](./03_Database_Design.md)** | *What* is the data model? (entities, relationships, constraints, indexes) | Before creating models/migrations or writing queries. |
 | 04 | **[04_Backend_API_Specification](./04_Backend_API_Specification.md)** | *What* are the endpoints and contracts? | Before building/consuming any API. |
-| 05 | **[05_Frontend_Architecture](./05_Frontend_Architecture.md)** | *How* is the React app structured and routed? | Before building any frontend feature. |
+| 05 | **[05_Frontend_Architecture](./05_Frontend_Architecture.md)** | *How* is the React app structured and routed — and what does the brand look like (§18)? | Before building any frontend feature, or touching colour, type or the logo. |
 | 06 | **[06_Development_Roadmap](./06_Development_Roadmap.md)** | *In what order* do we build it? | Before planning a sprint or picking up work. |
 | 07 | **[07_Radix_Intelligence](./07_Radix_Intelligence.md)** | *What* does Radix AI compute, from which rows, with what evidence — and what it deliberately is not? | Before touching insights, the nightly engine, or any "AI" claim in marketing. |
 

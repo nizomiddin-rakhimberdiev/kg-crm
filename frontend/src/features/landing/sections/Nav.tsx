@@ -84,9 +84,9 @@ export function Nav({ locale }: { locale: Locale }) {
       data-dark={dark || undefined}
       className={`group/nav fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow,backdrop-filter] duration-300 ${
         dark
-          ? 'bg-[#0B1730]/85 text-white backdrop-blur-md'
+          ? 'bg-ildiz-900/90 text-white backdrop-blur-md'
           : scrolled
-            ? 'bg-white/85 shadow-[0_1px_0_0_rgba(15,23,42,0.06)] backdrop-blur-md'
+            ? 'bg-white/85 shadow-[0_1px_0_0_rgba(27,36,33,0.06)] backdrop-blur-md'
             : 'bg-transparent'
       }`}
     >
@@ -95,12 +95,12 @@ export function Nav({ locale }: { locale: Locale }) {
           scrolled ? 'h-[60px]' : 'h-[76px]'
         }`}
       >
-        <Link
-          to={basePath(locale)}
-          aria-label="Radix CRM"
-          className="shrink-0 group-data-[dark]/nav:[&>span]:text-white group-data-[dark]/nav:[&>span>span:first-child]:bg-white group-data-[dark]/nav:[&>span>span:first-child]:text-slate-950"
-        >
-          <Brand />
+        {/*
+          Logotipning rangi CSS bilan bo'yalmaydi — brendbuk buni taqiqlaydi.
+          To'q bo'lim ustida B varianti (Nihol kvadrat, oq yozuv) chiziladi.
+        */}
+        <Link to={basePath(locale)} aria-label="Radix CRM" className="shrink-0">
+          <Brand variant={dark ? 'dark' : 'light'} height={scrolled ? 34 : 38} />
         </Link>
 
         <nav aria-label={t.menu} className="hidden items-center gap-1 lg:flex">

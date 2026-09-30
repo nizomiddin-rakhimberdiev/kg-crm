@@ -71,14 +71,14 @@ export function Lead({ locale }: { locale: Locale }) {
     <section id="demo" className="relative scroll-mt-16 overflow-hidden bg-white py-20 lg:py-32">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -left-40 top-1/3 h-[560px] w-[560px] rounded-full bg-[radial-gradient(closest-side,rgba(37,99,235,0.12),transparent)]"
+        className="pointer-events-none absolute -left-40 top-1/3 h-[560px] w-[560px] rounded-full bg-[radial-gradient(closest-side,rgba(46,158,107,0.12),transparent)]"
       />
       <div className="relative mx-auto grid max-w-[1280px] gap-10 px-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16 lg:px-8">
         <Reveal>
           <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
             {t.eyebrow}
           </p>
-          <h2 className="mt-3 text-balance text-3xl font-extrabold !leading-[1.08] tracking-[-0.03em] text-slate-950 sm:text-4xl lg:text-[3.4rem]">
+          <h2 className="mt-3 text-balance text-[1.75rem] font-bold !leading-[1.16] tracking-[-0.02em] text-tosh-900 sm:text-[2rem]">
             {t.title}
           </h2>
           <p className="mt-4 max-w-md text-base leading-7 text-slate-600 lg:text-lg">{t.text}</p>
@@ -91,7 +91,7 @@ export function Lead({ locale }: { locale: Locale }) {
         <Reveal delay={0.08}>
           <form
             onSubmit={onSubmit}
-            className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_30px_80px_-40px_rgba(11,23,48,0.3)] sm:p-8"
+            className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_30px_80px_-40px_rgba(18,53,47,0.3)] sm:p-8"
           >
             {state === 'success' ? (
               <div role="status" className="grid min-h-72 place-items-center text-center">

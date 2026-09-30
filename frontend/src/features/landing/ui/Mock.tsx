@@ -21,6 +21,7 @@ import {
   UserRound,
   Wallet,
 } from 'lucide-react'
+import { RadixMark } from '@/components/brand/Logo'
 import { type Copy, groupThousands } from '../content'
 
 const ICONS = [
@@ -50,15 +51,13 @@ export function Frame({
 }) {
   return (
     <div
-      className={`overflow-hidden rounded-2xl border border-slate-200/80 bg-white text-left shadow-[0_30px_80px_-30px_rgba(11,23,48,0.25)] ${className}`}
+      className={`overflow-hidden rounded-2xl border border-slate-200/80 bg-white text-left shadow-[0_30px_80px_-30px_rgba(18,53,47,0.25)] ${className}`}
     >
       <div className="flex">
         {!compact && (
           <aside className="hidden w-44 shrink-0 border-r border-slate-100 bg-slate-50/70 p-3 sm:block">
             <div className="flex items-center gap-2 px-2 py-1.5">
-              <span className="grid h-6 w-6 place-items-center rounded-md bg-slate-950 text-[11px] lg:text-[10px] font-bold text-white">
-                R
-              </span>
+              <RadixMark size={24} />
               <span className="truncate text-[12px] lg:text-[11px] font-semibold text-slate-800">
                 {demo.org}
               </span>
@@ -101,12 +100,14 @@ export function Frame({
   )
 }
 
+// Ko'rsatkich ikonkalari — ma'nosiga qarab, bezakka qarab emas:
+// bolalar va pul Nihol, davomat Ildiz, qarzdorlik O'rik, xodimlar Tosh.
 const TONES = [
-  'bg-sky-50 text-sky-600',
-  'bg-teal-50 text-teal-600',
-  'bg-red-50 text-red-600',
-  'bg-emerald-50 text-emerald-600',
-  'bg-violet-50 text-violet-600',
+  'bg-nihol-50 text-nihol-600',
+  'bg-ildiz-50 text-ildiz-700',
+  'bg-orik-100 text-orik-700',
+  'bg-nihol-100 text-nihol-700',
+  'bg-tosh-100 text-tosh-600',
 ]
 const KPI_ICONS = [Users, CalendarCheck, AlertTriangle, Wallet, UserRound]
 
@@ -133,7 +134,7 @@ export function Kpi({
       <span className={`grid h-7 w-7 place-items-center rounded-lg ${TONES[index] ?? TONES[0]}`}>
         <Icon className="h-3.5 w-3.5" />
       </span>
-      <p className="mt-2.5 whitespace-nowrap text-[14px] font-bold tabular-nums tracking-tight text-slate-950 sm:text-[15px]">
+      <p className="num mt-2.5 whitespace-nowrap text-[14px] font-bold tracking-tight text-slate-950 sm:text-[15px]">
         {valueNode ?? (money ? groupThousands(kpi.value) : kpi.value)}
         {kpi.suffix ?? ''}
       </p>
@@ -186,10 +187,10 @@ export function Pill({
   children: ReactNode
 }) {
   const cls = {
-    ok: 'bg-emerald-50 text-emerald-700',
-    wait: 'bg-amber-50 text-amber-700',
-    debt: 'bg-red-50 text-red-700',
-    neutral: 'bg-slate-100 text-slate-600',
+    ok: 'bg-nihol-50 text-nihol-700',
+    wait: 'bg-orik-100 text-orik-800',
+    debt: 'bg-orik-50 text-orik-700',
+    neutral: 'bg-tosh-100 text-tosh-600',
   }[tone]
   return (
     <span

@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GraduationCap, LogOut, X } from 'lucide-react'
+import { LogOut, X } from 'lucide-react'
+import { RadixMark } from '@/components/brand/Logo'
 import { Avatar } from '@/components/ui/Avatar'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { navItems, type NavItem } from '@/config/navigation'
@@ -39,14 +40,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         onClick={onNavigate}
         className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-100 px-5 transition-colors hover:bg-slate-50 lg:px-6"
       >
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-600 text-white">
-          <GraduationCap className="h-5 w-5" />
-        </div>
+        {/*
+          Belgi yolg'iz — brendbuk 02 da ruxsat etilgan holat (ikonka
+          o'rni). Yonidagi yozuv bog'chaning o'z nomi, brend yozuvi emas:
+          mudira kun bo'yi o'z bog'chasining nomini ko'rib turadi.
+        */}
+        <RadixMark size={36} className="shrink-0" />
         <div className="min-w-0 leading-tight">
-          <p className="truncate text-sm font-bold text-slate-900">
+          <p className="truncate text-sm font-bold text-tosh-900">
             {user?.organization?.name ?? t('Radix CRM')}
           </p>
-          <p className="text-[11px] font-medium tracking-wide text-slate-400">
+          <p className="text-[11px] font-medium tracking-wide text-tosh-400">
             {t('Boshqaruv Tizimi')}
           </p>
         </div>

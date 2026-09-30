@@ -17,7 +17,7 @@ export function Final({ locale }: { locale: Locale }) {
     <section className="relative overflow-hidden bg-slate-50 pt-20 lg:pt-32">
       <div className="mx-auto max-w-[1280px] px-5 text-center lg:px-8">
         <Reveal>
-          <h2 className="mx-auto max-w-3xl text-balance text-4xl font-extrabold !leading-[1.04] tracking-[-0.04em] text-slate-950 sm:text-5xl lg:text-[4.25rem]">
+          <h2 className="mx-auto max-w-3xl text-balance text-[2rem] font-bold !leading-[1.12] tracking-[-0.02em] text-tosh-900 sm:text-[2.5rem] lg:text-5xl">
             {t.final.title}
           </h2>
           <p className="mt-5 text-lg text-slate-600 lg:text-xl">{t.final.text}</p>

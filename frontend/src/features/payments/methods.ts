@@ -9,6 +9,7 @@
  */
 
 import { Banknote, Building2, CreditCard, Globe, type LucideIcon } from 'lucide-react'
+import { BRAND, CHART } from '@/lib/brand'
 import { t } from '@/lib/i18n'
 
 /**
@@ -31,14 +32,14 @@ export const paymentMethodLabel = (method: string): string =>
 
 /** Diagramma va ajratmalar uchun — usul bo'yicha barqaror rang. */
 export const PAYMENT_METHOD_COLORS: Record<string, string> = {
-  cash: '#10b981',
-  terminal: '#6366f1',
-  bank_transfer: '#f59e0b',
-  online: '#06b6d4',
+  cash: BRAND.nihol,
+  terminal: BRAND.ildiz,
+  bank_transfer: BRAND.orik,
+  online: CHART.niholSoft,
 }
 
 export const paymentMethodColor = (method: string): string =>
-  PAYMENT_METHOD_COLORS[method] ?? '#94a3b8'
+  PAYMENT_METHOD_COLORS[method] ?? CHART.axis
 
 const ICONS: Record<string, LucideIcon> = {
   cash: Banknote,

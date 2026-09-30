@@ -35,24 +35,30 @@ export function Hero({ locale }: { locale: Locale }) {
   const motionStyle = isStatic ? undefined : { scale, y, rotateY, rotateX, opacity }
 
   return (
-    <section ref={ref} id="product" className="relative overflow-hidden bg-white pt-[76px]">
+    <section ref={ref} id="product" className="relative overflow-hidden bg-sut pt-[76px]">
       {/* Fon: juda och ko'k nur va nozik nuqta-to'r — "aniq panjara" hissi. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 [background-image:radial-gradient(circle_at_1px_1px,rgba(15,23,42,0.07)_1px,transparent_0)] [background-size:28px_28px] [mask-image:radial-gradient(ellipse_at_70%_30%,black_10%,transparent_70%)]"
+        className="pointer-events-none absolute inset-0 [background-image:radial-gradient(circle_at_1px_1px,rgba(27,36,33,0.07)_1px,transparent_0)] [background-size:28px_28px] [mask-image:radial-gradient(ellipse_at_70%_30%,black_10%,transparent_70%)]"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -right-40 -top-40 h-[640px] w-[640px] rounded-full bg-[radial-gradient(closest-side,rgba(37,99,235,0.14),transparent)]"
+        className="pointer-events-none absolute -right-40 -top-40 h-[640px] w-[640px] rounded-full bg-[radial-gradient(closest-side,rgba(46,158,107,0.14),transparent)]"
       />
 
-      <div className="relative mx-auto grid min-h-[calc(100svh-76px)] max-w-[1280px] items-center gap-10 px-5 py-12 lg:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] lg:gap-10 lg:px-8 lg:py-16">
+      {/*
+        Keng ekranda balandlik EKRANGA emas, mazmunga o'lchanadi:
+        brendbuk shkalasida sarlavha 48 px va to'liq ekran bo'yi
+        hero tepada bo'sh joy qoldirardi. 720 px da esa keyingi
+        bo'lim chekkadan ko'rinib, pastga tushishga chorlaydi.
+      */}
+      <div className="relative mx-auto grid min-h-[calc(100svh-76px)] max-w-[1280px] items-center gap-10 px-5 py-12 lg:min-h-[720px] lg:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] lg:gap-10 lg:px-8 lg:py-16">
         <motion.div style={isStatic ? undefined : { y: textY, opacity: textOpacity }}>
           <p className="rx-rise inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-[13px] font-semibold text-brand-700">
             <Sparkles className="h-3.5 w-3.5" />
             {t.hero.eyebrow}
           </p>
-          <h1 className="rx-rise [animation-delay:80ms] mt-6 text-balance text-[2.6rem] font-extrabold !leading-[1.02] tracking-[-0.04em] text-slate-950 sm:text-6xl lg:text-[3.9rem] xl:text-[4.5rem]">
+          <h1 className="rx-rise [animation-delay:80ms] mt-6 text-balance text-[2.25rem] font-bold !leading-[1.06] tracking-[-0.03em] text-tosh-900 sm:text-[2.75rem] lg:text-5xl">
             {t.hero.title}
           </h1>
           <p className="rx-rise [animation-delay:160ms] mt-6 max-w-xl text-lg leading-8 text-slate-600 sm:text-xl">
@@ -137,7 +143,7 @@ export function Hero({ locale }: { locale: Locale }) {
             </div>
 
             {/* Chuqurlikdagi qatlamlar — panel tepasida suzadi. */}
-            <div className="rx-rise [animation-delay:420ms] absolute -bottom-10 -left-6 hidden w-64 rounded-xl border border-slate-200 bg-white p-3 shadow-[0_24px_60px_-20px_rgba(11,23,48,0.35)] sm:block lg:-left-10 [transform:translateZ(60px)]">
+            <div className="rx-rise [animation-delay:420ms] absolute -bottom-10 -left-6 hidden w-64 rounded-xl border border-slate-200 bg-white p-3 shadow-[0_24px_60px_-20px_rgba(18,53,47,0.35)] sm:block lg:-left-10 [transform:translateZ(60px)]">
               <div className="flex items-center gap-1.5 text-[11px] lg:text-[10px] font-semibold uppercase tracking-wider text-brand-600">
                 <Sparkles className="h-3 w-3" /> Radix AI
               </div>
@@ -149,7 +155,7 @@ export function Hero({ locale }: { locale: Locale }) {
                 <Pill tone="neutral">12 450 000</Pill>
               </div>
             </div>
-            <div className="rx-rise [animation-delay:520ms] absolute -right-2 -top-5 hidden rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-[0_24px_60px_-20px_rgba(11,23,48,0.3)] sm:block lg:-right-8 [transform:translateZ(90px)]">
+            <div className="rx-rise [animation-delay:520ms] absolute -right-2 -top-5 hidden rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-[0_24px_60px_-20px_rgba(18,53,47,0.3)] sm:block lg:-right-8 [transform:translateZ(90px)]">
               <p className="text-[11px] lg:text-[10px] font-medium text-slate-500">
                 {t.demo.kpis[1].label}
               </p>

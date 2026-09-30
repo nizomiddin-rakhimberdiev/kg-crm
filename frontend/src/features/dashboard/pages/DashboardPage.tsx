@@ -18,6 +18,7 @@ import { navItems } from '@/config/navigation'
 import { queryKeys } from '@/lib/api/queryKeys'
 import type { DashboardKpis } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
+import { BRAND, CHART } from '@/lib/brand'
 import { cn, formatDateLong, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
@@ -48,15 +49,19 @@ interface TileProps {
   icon: typeof Users
   tone: string
   to?: string
+  /** Qiymat sof raqammi? So'z aralashsa (`42 nafar`) mono yaramaydi. */
+  mono?: boolean
 }
 
-function Tile({ label, value, hint, icon: Icon, tone, to }: TileProps) {
+function Tile({ label, value, hint, icon: Icon, tone, to, mono = true }: TileProps) {
   const body = (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md">
       <div className={`grid h-10 w-10 place-items-center rounded-xl ${tone}`}>
         <Icon className="h-5 w-5" />
       </div>
-      <p className="mt-4 text-2xl font-bold tracking-tight text-slate-900">{value}</p>
+      <p className={cn('mt-4 text-2xl font-bold tracking-tight text-slate-900', mono && 'num')}>
+        {value}
+      </p>
       <p className="text-sm font-medium text-slate-600">{label}</p>
       <p className="mt-1 text-xs text-slate-400">{hint}</p>
     </div>
@@ -65,10 +70,10 @@ function Tile({ label, value, hint, icon: Icon, tone, to }: TileProps) {
 }
 
 const ACCOUNT_COLORS: Record<string, string> = {
-  cash: '#10b981',
-  terminal: '#6366f1',
-  bank: '#f59e0b',
-  ewallet: '#06b6d4',
+  cash: BRAND.nihol,
+  terminal: BRAND.ildiz,
+  bank: BRAND.orik,
+  ewallet: CHART.niholSoft,
 }
 
 /**
@@ -107,7 +112,7 @@ function CashPanel({ cash, isLoading }: { cash: DashboardKpis['cash']; isLoading
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-ildiz-50 text-ildiz-700">
               <Coins className="h-5 w-5" />
             </div>
             <div>
@@ -117,7 +122,7 @@ function CashPanel({ cash, isLoading }: { cash: DashboardKpis['cash']; isLoading
           </div>
           <p
             className={cn(
-              'mt-3 text-3xl font-bold tracking-tight',
+              'num mt-3 text-3xl font-bold tracking-tight',
               balance < 0 ? 'text-red-600' : 'text-slate-900',
             )}
           >
@@ -165,7 +170,7 @@ function CashPanel({ cash, isLoading }: { cash: DashboardKpis['cash']; isLoading
                 <span className="block truncate text-xs text-slate-500">{account.name}</span>
                 <span
                   className={cn(
-                    'block text-sm font-semibold tabular-nums',
+                    'num block text-sm font-semibold',
                     Number(account.balance) < 0 ? 'text-red-600' : 'text-slate-900',
                   )}
                 >
@@ -287,7 +292,8 @@ export default function DashboardPage() {
             value={isLoading ? '…' : t('{v} nafar', { v: data?.active_children ?? 0 })}
             hint={t("Ro'yxatdagi bolalar")}
             icon={Users}
-            tone="bg-sky-50 text-sky-600"
+            mono={false}
+            tone="bg-nihol-50 text-nihol-600"
             to="/children"
           />
         )}
@@ -298,7 +304,7 @@ export default function DashboardPage() {
               value={isLoading ? '…' : formatUZS(Number(data?.month_revenue ?? 0))}
               hint={t("Qabul qilingan to'lovlar")}
               icon={Wallet}
-              tone="bg-emerald-50 text-emerald-600"
+              tone="bg-nihol-100 text-nihol-700"
               to="/payments"
             />
             <Tile
@@ -306,7 +312,7 @@ export default function DashboardPage() {
               value={isLoading ? '…' : formatUZS(Number(data?.outstanding_debt ?? 0))}
               hint={t("{v} nafar bola bo'yicha", { v: data?.debtor_count ?? 0 })}
               icon={AlertTriangle}
-              tone="bg-red-50 text-red-600"
+              tone="bg-orik-100 text-orik-700"
               to="/debtors"
             />
           </>
@@ -317,7 +323,7 @@ export default function DashboardPage() {
             value={isLoading ? '…' : `${data?.attendance_month_pct ?? 0}%`}
             hint={t('Kelgan / belgilangan')}
             icon={CalendarCheck}
-            tone="bg-teal-50 text-teal-600"
+            tone="bg-ildiz-50 text-ildiz-700"
             to="/attendance"
           />
         )}
@@ -335,7 +341,7 @@ export default function DashboardPage() {
             <div className="mt-4 h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={trend}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CHART.grid} />
                   <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
                   <YAxis
                     tickLine={false}
@@ -345,9 +351,13 @@ export default function DashboardPage() {
                   />
                   <Tooltip
                     formatter={(v: number) => formatUZS(v)}
-                    contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 13 }}
+                    contentStyle={{
+                      borderRadius: 12,
+                      border: `1px solid ${CHART.grid}`,
+                      fontSize: 13,
+                    }}
                   />
-                  <Bar dataKey="daromad" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="daromad" fill={BRAND.nihol} radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

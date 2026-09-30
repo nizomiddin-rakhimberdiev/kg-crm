@@ -20,10 +20,10 @@ const ACTION: Record<string, [string, string]> = {
   login: [t('Kirish'), 'bg-slate-100 text-slate-600'],
   login_failed: [t('Kirish urinishi'), 'bg-amber-50 text-amber-700'],
   logout: [t('Chiqish'), 'bg-slate-100 text-slate-600'],
-  signup: [t("Ro'yxatdan o'tish"), 'bg-sky-50 text-sky-700'],
+  signup: [t("Ro'yxatdan o'tish"), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
   password_change: [t("Parol o'zgardi"), 'bg-amber-50 text-amber-700'],
   create: [t('Yaratildi'), 'bg-emerald-50 text-emerald-700'],
-  update: [t('Yangilandi'), 'bg-sky-50 text-sky-700'],
+  update: [t('Yangilandi'), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
   delete: [t("O'chirildi"), 'bg-red-50 text-red-700'],
 }
 

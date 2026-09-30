@@ -31,7 +31,7 @@ const STATUS_BUTTONS: Array<{
   active: string
 }> = [
   { value: 'present', label: t('Keldi'), icon: Check, active: 'bg-emerald-600 text-white' },
-  { value: 'excused', label: t('Sababli'), icon: CalendarCheck, active: 'bg-sky-600 text-white' },
+  { value: 'excused', label: t('Sababli'), icon: CalendarCheck, active: 'bg-ildiz-700 text-white' },
   { value: 'absent', label: t('Kelmagan'), icon: X, active: 'bg-red-600 text-white' },
 ]
 
@@ -271,7 +271,7 @@ export default function AttendancePage() {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             [t('Keldi'), counts.present, 'text-emerald-700'],
-            [t('Sababli'), counts.excused, 'text-sky-700'],
+            [t('Sababli'), counts.excused, 'text-ildiz-700'],
             [t('Kelmagan'), counts.absent, 'text-red-700'],
             [t('Belgilanmagan'), counts.unmarked, 'text-slate-500'],
           ].map(([label, value, tone]) => (

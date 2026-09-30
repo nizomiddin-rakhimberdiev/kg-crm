@@ -23,7 +23,7 @@ const day = (iso: string | null) =>
 
 const INVOICE_TONE: Record<string, string> = {
   paid: 'bg-emerald-500/10 text-emerald-400',
-  issued: 'bg-sky-500/10 text-sky-400',
+  issued: 'border border-tosh-500/40 text-tosh-200',
   overdue: 'bg-red-500/10 text-red-400',
   cancelled: 'bg-slate-700/40 text-slate-400',
 }

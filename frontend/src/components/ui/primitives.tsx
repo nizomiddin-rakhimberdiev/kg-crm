@@ -52,9 +52,9 @@ const buttonVariants: Record<ButtonVariant, string> = {
   primary: 'bg-brand-600 text-white hover:bg-brand-700',
   outline: 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
   ghost: 'text-slate-600 hover:bg-slate-100',
-  success: 'bg-emerald-600 text-white hover:bg-emerald-700',
+  success: 'bg-nihol-600 text-white hover:bg-nihol-700',
   danger: 'bg-red-600 text-white hover:bg-red-700',
-  dark: 'bg-slate-900 text-white hover:bg-slate-800',
+  dark: 'bg-ildiz-900 text-white hover:bg-ildiz-800',
 }
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -86,29 +86,24 @@ export function Button({
 
 /* ----------------------------------------------------------------- Badge */
 
-export type BadgeTone =
-  | 'success'
-  | 'danger'
-  | 'warning'
-  | 'info'
-  | 'neutral'
-  | 'rose'
-  | 'amber'
-  | 'sky'
-  | 'violet'
-  | 'teal'
+/**
+ * Nishon ohanglari — brend lug'atida (Brendbuk 04).
+ *
+ * `success` Nihol, `warning` O'rik, `ildiz` esa "qayd etilgan, lekin
+ * hali tugamagan" holat. Oxirgisi KONTURLI: u yashil to'ldirilgan
+ * "to'langan" nishoni bilan yonma-yon turadi va farq faqat rangda
+ * emas, shaklda ham bo'lishi kerak.
+ */
+export type BadgeTone = 'success' | 'danger' | 'warning' | 'info' | 'neutral' | 'ildiz' | 'orik'
 
 const badgeTones: Record<BadgeTone, string> = {
-  success: 'bg-emerald-50 text-emerald-700',
-  danger: 'bg-red-50 text-red-600',
-  warning: 'bg-amber-50 text-amber-700',
-  info: 'bg-brand-50 text-brand-700',
-  neutral: 'bg-slate-100 text-slate-600',
-  rose: 'bg-rose-50 text-rose-600',
-  amber: 'bg-amber-50 text-amber-700',
-  sky: 'bg-sky-50 text-sky-700',
-  violet: 'bg-violet-50 text-violet-700',
-  teal: 'bg-teal-50 text-teal-700',
+  success: 'bg-nihol-50 text-nihol-700',
+  danger: 'bg-red-50 text-red-700',
+  warning: 'bg-orik-50 text-orik-700',
+  info: 'bg-nihol-50 text-nihol-700',
+  neutral: 'bg-tosh-100 text-tosh-600',
+  ildiz: 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800',
+  orik: 'bg-orik-100 text-orik-800',
 }
 
 interface BadgeProps {
@@ -135,14 +130,16 @@ export function Badge({ tone = 'neutral', children, className, dot }: BadgeProps
 
 /* ---------------------------------------------------------------- Avatar */
 
+// Ritm uchun — ma'no uchun emas. Beshta brend rangining tiniqlik
+// darajalari: yonma-yon turgan ikki odam bir xil ko'rinmasin.
 const avatarColors = [
-  'bg-brand-100 text-brand-700',
-  'bg-rose-100 text-rose-700',
-  'bg-amber-100 text-amber-700',
-  'bg-emerald-100 text-emerald-700',
-  'bg-violet-100 text-violet-700',
-  'bg-sky-100 text-sky-700',
-  'bg-teal-100 text-teal-700',
+  'bg-nihol-100 text-nihol-800',
+  'bg-orik-100 text-orik-800',
+  'bg-ildiz-100 text-ildiz-800',
+  'bg-tosh-200 text-tosh-700',
+  'bg-nihol-200 text-nihol-900',
+  'bg-orik-200 text-orik-900',
+  'bg-ildiz-200 text-ildiz-900',
 ]
 
 function initials(name: string): string {
@@ -269,16 +266,13 @@ interface StatCardProps {
 }
 
 const iconToneClasses: Record<BadgeTone, string> = {
-  success: 'bg-emerald-50 text-emerald-600',
-  danger: 'bg-red-50 text-red-500',
-  warning: 'bg-amber-50 text-amber-600',
-  info: 'bg-brand-50 text-brand-600',
-  neutral: 'bg-slate-100 text-slate-500',
-  rose: 'bg-rose-50 text-rose-600',
-  amber: 'bg-amber-50 text-amber-600',
-  sky: 'bg-sky-50 text-sky-600',
-  violet: 'bg-violet-50 text-violet-600',
-  teal: 'bg-teal-50 text-teal-600',
+  success: 'bg-nihol-50 text-nihol-600',
+  danger: 'bg-red-50 text-red-600',
+  warning: 'bg-orik-50 text-orik-700',
+  info: 'bg-nihol-50 text-nihol-600',
+  neutral: 'bg-tosh-100 text-tosh-500',
+  ildiz: 'bg-ildiz-50 text-ildiz-700',
+  orik: 'bg-orik-100 text-orik-700',
 }
 
 export function StatCard({
@@ -326,7 +320,7 @@ export function StatCard({
         <p className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
           {label}
         </p>
-        <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
+        <p className="num mt-1 text-2xl font-bold text-slate-900">{value}</p>
         {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
       </button>
 
@@ -345,7 +339,7 @@ export function StatCard({
               <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                 {label}
               </p>
-              <p className="text-3xl font-bold text-slate-900">{value}</p>
+              <p className="num text-3xl font-bold text-slate-900">{value}</p>
               {(delta || hint) && (
                 <p className="mt-0.5 text-sm">
                   {delta && <span className={cn('font-semibold', deltaClass)}>{delta}</span>}

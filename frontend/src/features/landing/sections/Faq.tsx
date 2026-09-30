@@ -34,7 +34,7 @@ export function Faq({ locale }: { locale: Locale }) {
       <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
         {t.eyebrow}
       </p>
-      <h2 className="mt-2 text-balance text-[1.75rem] font-extrabold !leading-[1.08] tracking-[-0.03em] text-slate-950 sm:text-4xl lg:mt-3 lg:text-[2.75rem]">
+      <h2 className="mt-2 text-balance text-[1.75rem] font-bold !leading-[1.16] tracking-[-0.02em] text-tosh-900 sm:text-[2rem] lg:mt-3">
         {t.title}
       </h2>
     </div>

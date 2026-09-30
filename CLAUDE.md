@@ -85,6 +85,7 @@ Never violate these without a superseding ADR:
 - Database naming, types, and constraints: [03 §2–§5](./docs/03_Database_Design.md).
 - API conventions (versioning, pagination, filtering, envelope, errors): [02 §13](./docs/02_Software_Architecture.md) and [04](./docs/04_Backend_API_Specification.md).
 - Build order and Definition of Done: [06](./docs/06_Development_Roadmap.md).
+- **Brand is a token layer, not a per-screen choice ([05 §18](./docs/05_Frontend_Architecture.md)).** Colours, fonts, radius and the logo come from `frontend/tailwind.config.js`, `src/lib/brand.ts` and `src/components/brand/Logo.tsx` — never a literal in a component. The Radix Brendbuk **forbids blue and purple** (every competing CRM is blue), so those Tailwind scales are re-pointed at the brand ramps and `src/__tests__/brand.test.ts` fails the build on a stray `-sky-500` class or `#rrggbb`.
 - **Three languages (uz/ru/en), ADR-16:** UI text is Uzbek in the source, wrapped in `t('…')` ([05 §17](./docs/05_Frontend_Architecture.md)); backend messages go through `gettext` with `.po` files in `backend/locale/`. Both sides have a catalog-completeness test — add the `ru`/`en` lines it asks for. DRF and Django ship no Uzbek for **their own** messages ("This field may not be blank."), so those live hand-maintained in `backend/vendor_i18n/locale/uz/` — never run `makemessages` for `uz`. The public site has its own content layer (`features/landing/content.ts`, all three locales); the platform console stays Uzbek.
 
 ### Two checks before every backend PR

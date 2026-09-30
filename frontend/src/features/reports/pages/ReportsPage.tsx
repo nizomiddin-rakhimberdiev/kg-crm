@@ -47,14 +47,15 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { Modal } from '@/components/ui/Modal'
+import { BRAND, CHART, CHART_SEQUENCE } from '@/lib/brand'
 import { cn, formatMoney, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
 // Usul nomlari `features/payments/methods.ts` da — bu yerda o'z nusxasi
 // bor edi va u eskirgan `transfer` kalitini tutardi, shuning uchun
 // diagrammada tarjima o'rniga xom `bank_transfer` chiqardi.
-const PIE_FALLBACK = ['#6366f1', '#14b8a6', '#f59e0b', '#ef4444']
-const COLORS = { revenue: '#6366f1', expenses: '#f59e0b', payroll: '#94a3b8' }
+const PIE_FALLBACK = [...CHART_SEQUENCE]
+const COLORS = { revenue: BRAND.nihol, expenses: BRAND.orik, payroll: CHART.ildizMid }
 
 const EXPORTABLE: Array<[string, string]> = [
   ['profit-loss', t('Foyda va zarar')],
@@ -67,7 +68,7 @@ const EXPORTABLE: Array<[string, string]> = [
 
 const EXPORT_STATUS: Record<string, [string, string]> = {
   queued: [t('Navbatda'), 'bg-slate-100 text-slate-600'],
-  running: [t('Tayyorlanmoqda'), 'bg-sky-50 text-sky-700'],
+  running: [t('Tayyorlanmoqda'), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
   ready: [t('Tayyor'), 'bg-emerald-50 text-emerald-700'],
   failed: [t('Xato'), 'bg-red-50 text-red-700'],
 }
@@ -221,7 +222,7 @@ export default function ReportsPage() {
                 </p>
                 <p
                   className={cn(
-                    'mt-1.5 text-xl font-bold tracking-tight tabular-nums sm:text-2xl',
+                    'num mt-1.5 text-xl font-bold tracking-tight sm:text-2xl',
                     tone as string,
                   )}
                 >
@@ -319,7 +320,7 @@ export default function ReportsPage() {
                     barCategoryGap="18%"
                     barGap={1}
                   >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CHART.grid} />
                     <XAxis
                       dataKey="label"
                       tickLine={false}
@@ -338,7 +339,11 @@ export default function ReportsPage() {
                     <Tooltip
                       formatter={(v: number) => formatUZS(v)}
                       labelFormatter={(_, payload) => payload?.[0]?.payload?.title ?? ''}
-                      contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 13 }}
+                      contentStyle={{
+                        borderRadius: 12,
+                        border: `1px solid ${CHART.grid}`,
+                        fontSize: 13,
+                      }}
                     />
                     <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
                     <Bar
@@ -409,7 +414,7 @@ export default function ReportsPage() {
                         }
                         contentStyle={{
                           borderRadius: 12,
-                          border: '1px solid #e2e8f0',
+                          border: `1px solid ${CHART.grid}`,
                           fontSize: 13,
                         }}
                       />

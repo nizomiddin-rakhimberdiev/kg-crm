@@ -9,6 +9,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Building2, LogIn } from 'lucide-react'
+import { Logo } from '@/components/brand/Logo'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { authApi } from '@/features/auth/api'
 import { ApiError, isPendingChoice, type OrganizationSummary } from '@/lib/api/types'
@@ -79,15 +80,13 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 text-white">
-            <Building2 className="h-6 w-6" />
-          </div>
-          {/* Mijozga ko'rinadigan yuza — ommaviy brend nomi. Ichki
-              nomlar (repo, Docker, DB rollari) ataylab `kg-crm` bo'lib
-              qoladi; bu yerda esa mijoz ko'radigan nom turishi kerak. */}
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Radix CRM')}</h1>
-          <p className="mt-1 text-sm text-slate-500">{t("Bog'cha boshqaruv tizimi")}</p>
+        <div className="mb-8 flex flex-col items-center text-center">
+          {/* Mijozga ko'rinadigan yuza — ommaviy brend. Ichki nomlar
+              (repo, Docker, DB rollari) ataylab `kg-crm` bo'lib qoladi.
+              Sarlavha matni yo'q: logotipning o'zida yozuv bor va uni
+              takrorlash brendbuk qoidasiga zid. */}
+          <Logo height={40} />
+          <p className="mt-3 text-sm text-tosh-500">{t("Bog'cha boshqaruv tizimi")}</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">

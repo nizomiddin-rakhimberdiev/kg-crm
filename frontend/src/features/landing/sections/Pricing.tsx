@@ -69,7 +69,7 @@ export function Pricing({ locale }: { locale: Locale }) {
             <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
               {t.eyebrow}
             </p>
-            <h2 className="mt-3 text-balance text-3xl font-extrabold !leading-[1.08] tracking-[-0.03em] text-slate-950 sm:text-4xl lg:text-[3.4rem]">
+            <h2 className="mt-3 text-balance text-[1.75rem] font-bold !leading-[1.16] tracking-[-0.02em] text-tosh-900 sm:text-[2rem]">
               {t.title}
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-600 lg:text-lg">{t.text}</p>
@@ -140,7 +140,7 @@ export function Pricing({ locale }: { locale: Locale }) {
 
               <div className="mt-6 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <p
-                  className="text-4xl font-extrabold tabular-nums tracking-tight text-slate-950 sm:text-5xl"
+                  className="num text-4xl font-bold tracking-tight text-tosh-900 sm:text-5xl"
                   aria-live="polite"
                 >
                   {shown === null ? (
@@ -231,7 +231,7 @@ export function Pricing({ locale }: { locale: Locale }) {
 
           {/* Ikkinchi model — alohida o'rnatma (ADR-13): narx kelishuv asosida. */}
           <Reveal delay={0.12} className="lg:col-span-2">
-            <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-slate-950 p-6 text-white sm:flex-row sm:items-center sm:justify-between sm:p-8">
+            <div className="flex flex-col gap-4 rounded-[28px] border border-ildiz-800 bg-ildiz-900 p-6 text-white sm:flex-row sm:items-center sm:justify-between sm:p-8">
               <div>
                 <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-slate-200">
                   {t.standalone.badge}

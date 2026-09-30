@@ -11,15 +11,8 @@ import { Suspense } from 'react'
 import { NavLink, Navigate, Outlet } from 'react-router-dom'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { useQuery } from '@tanstack/react-query'
-import {
-  Building2,
-  CreditCard,
-  Inbox,
-  KeyRound,
-  LayoutDashboard,
-  LogOut,
-  ShieldCheck,
-} from 'lucide-react'
+import { Building2, CreditCard, Inbox, KeyRound, LayoutDashboard, LogOut } from 'lucide-react'
+import { RadixMark } from '@/components/brand/Logo'
 import { cn } from '@/lib/utils'
 import { platform } from '../api'
 import { usePlatformAuth } from '../PlatformAuthProvider'
@@ -53,9 +46,7 @@ export function PlatformLayout() {
       <header className="border-b border-slate-800 bg-slate-900">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-6 py-3">
           <div className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-brand-600">
-              <ShieldCheck className="h-4 w-4 text-white" />
-            </div>
+            <RadixMark size={32} variant="dark" />
             <span className="text-sm font-semibold">Platforma konsoli</span>
           </div>
 

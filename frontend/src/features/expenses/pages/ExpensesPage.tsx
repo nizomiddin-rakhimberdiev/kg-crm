@@ -23,7 +23,7 @@ const money = (v: string) => new Intl.NumberFormat('uz-UZ').format(Number(v)) + 
 
 const STATUS: Record<string, [string, string]> = {
   pending: [t('Kutilmoqda'), 'bg-amber-50 text-amber-700'],
-  approved: [t('Tasdiqlangan'), 'bg-sky-50 text-sky-700'],
+  approved: [t('Tasdiqlangan'), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
   rejected: [t('Rad etilgan'), 'bg-red-50 text-red-700'],
   paid: [t("To'langan"), 'bg-emerald-50 text-emerald-700'],
 }

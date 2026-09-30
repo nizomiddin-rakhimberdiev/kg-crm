@@ -85,7 +85,7 @@ export default function PlatformDashboardPage() {
           value={isLoading ? '…' : String(counts?.trialing ?? 0)}
           hint={`${trials.length} tasi tugayapti`}
           icon={Clock}
-          tone="bg-sky-500/10 text-sky-400"
+          tone="bg-tosh-500/20 text-tosh-200"
         />
         <Tile
           label="To'lanmagan hisoblar"

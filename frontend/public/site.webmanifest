@@ -1,0 +1,21 @@
+{
+  "name": "Radix CRM",
+  "short_name": "radix",
+  "description": "Xususiy bog'chalarni boshqarish tizimi",
+  "lang": "uz",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6F7F4",
+  "theme_color": "#12352F",
+  "icons": [
+    { "src": "/brand/radix-belgi.svg", "type": "image/svg+xml", "sizes": "any" },
+    { "src": "/brand/radix-belgi-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "/brand/radix-belgi-512.png", "type": "image/png", "sizes": "512x512" },
+    {
+      "src": "/brand/radix-belgi-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ]
+}

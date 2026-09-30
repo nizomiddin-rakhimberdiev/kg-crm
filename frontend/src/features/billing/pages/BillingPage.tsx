@@ -30,7 +30,7 @@ const STATUS: Record<string, [string, string]> = {
 }
 
 const INVOICE_STATUS: Record<string, [string, string]> = {
-  issued: [t('Yozilgan'), 'bg-sky-50 text-sky-700'],
+  issued: [t('Yozilgan'), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
   paid: [t("To'langan"), 'bg-emerald-50 text-emerald-700'],
   overdue: [t("Muddati o'tgan"), 'bg-red-50 text-red-700'],
   cancelled: [t('Bekor qilingan'), 'bg-slate-100 text-slate-600'],

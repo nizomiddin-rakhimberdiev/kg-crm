@@ -113,7 +113,7 @@ export function Finance({ locale }: { locale: Locale }) {
       <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-400">
         {t.eyebrow}
       </p>
-      <h2 className="mt-2 text-balance text-[1.75rem] font-extrabold !leading-[1.08] tracking-[-0.03em] text-white sm:text-4xl lg:mt-3 lg:text-[2.75rem]">
+      <h2 className="mt-2 text-balance text-[1.75rem] font-bold !leading-[1.16] tracking-[-0.02em] text-white sm:text-[2rem] lg:mt-3">
         {t.title}
       </h2>
       <p className="mt-3 hidden text-base leading-7 text-slate-300 sm:block lg:text-lg">{t.text}</p>
@@ -122,7 +122,7 @@ export function Finance({ locale }: { locale: Locale }) {
 
   if (isStatic) {
     return (
-      <section ref={ref} data-nav-dark className="bg-[#0B1730] py-20 text-white lg:py-32">
+      <section ref={ref} data-nav-dark className="bg-ildiz-900 py-20 text-white lg:py-32">
         <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
           <Reveal>{heading}</Reveal>
           <div className="mt-10 grid gap-4 lg:grid-cols-3">
@@ -156,7 +156,7 @@ export function Finance({ locale }: { locale: Locale }) {
     <section
       ref={ref}
       data-nav-dark
-      className="relative bg-[#0B1730] text-white"
+      className="relative bg-ildiz-900 text-white"
       style={{ height: compact ? '300vh' : '280vh' }}
     >
       <div className="sticky top-0 flex h-screen flex-col overflow-hidden pt-[76px]">
@@ -228,7 +228,7 @@ export function Finance({ locale }: { locale: Locale }) {
               <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-300">
                 {byId.balance.label}
               </p>
-              <p className="mt-2 text-3xl font-extrabold tabular-nums tracking-tight text-white lg:mt-4 lg:text-4xl">
+              <p className="mt-2 num text-3xl font-bold tracking-tight text-white lg:mt-4 lg:text-4xl">
                 <Scrub progress={progress} range={[0.62, 0.8]} value={byId.balance.value} />
               </p>
               <p className="mt-0.5 text-[12px] text-slate-400 lg:text-[13px]">{ui.unitMonth}</p>
