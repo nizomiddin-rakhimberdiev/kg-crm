@@ -90,8 +90,12 @@ def overdue_children(*, branch_id: Any, as_of: date, overdue_days: int) -> list[
     result: list[OverdueChild] = []
     for child_id, rows in invoices.items():
         outstanding = sum((r["amount_due"] - r["amount_paid"] for r in rows), Decimal("0"))
-        # Fakturalar "qarz" deganidan ledger kamroq desa — farqi fakturasiz
-        # to'langan pul. Uni eng eski fakturadan boshlab yopamiz.
+        # Fakturalar "qarz" deganidan ledger kamroq desa — farqi
+        # taqsimlanmagan pul, ya'ni avans. PLAN 1.2 dan keyin bu farq
+        # odatda NOL: `record_payment` pulni o'zi FIFO bilan taqsimlaydi.
+        # Hisob esa qoladi — eski, taqsimotgacha yozilgan to'lovlar
+        # uchun (backfill `payment.invoice` bog'lanishini ko'chiradi,
+        # lekin o'sha paytdagi avanslar taqsimlanmagan holda qoladi).
         unallocated = max(outstanding - balances[child_id], Decimal("0"))
         overdue_amount = Decimal("0")
         oldest_due: date | None = None

@@ -19,7 +19,7 @@ from apps.core.exceptions import BusinessRuleViolation
 from apps.core.permissions import HasModulePermission
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchScopedMixin, TenantReadOnlyViewSet, TenantViewSet
-from apps.finance import selectors, services
+from apps.finance import balance, selectors, services
 from apps.finance.models import ChildLedgerEntry, Discount, Invoice, Payment, TariffPlan
 from apps.finance.serializers import (
     DiscountSerializer,
@@ -180,7 +180,14 @@ class LedgerViewSet(BranchScopedMixin, TenantReadOnlyViewSet):
 
     @action(detail=False, methods=["get"], url_path="balance")
     def balance(self, request: Request) -> Response:
-        """`GET /ledger/balance?child=<uuid>` — ledger'dan hisoblangan balans."""
+        """
+        `GET /ledger/balance?child=<uuid>` — bolaning to'liq moliyaviy manzarasi.
+
+        Qaytaradi: balans, avans, muddati o'tgan qarz va ochiq hujjatlar
+        (FIFO tartibida). Kassir oynasi ham, bola kartasi ham shu bitta
+        manbadan o'qiydi — ikki ekran ikki xil raqam ko'rsatmasligi uchun
+        (`docs/big-update/PLAN.md` §2).
+        """
         child_id = request.query_params.get("child")
         if not child_id:
             raise BusinessRuleViolation(gettext("`child` parametri majburiy."))
@@ -192,13 +199,32 @@ class LedgerViewSet(BranchScopedMixin, TenantReadOnlyViewSet):
         if child is None:
             raise BusinessRuleViolation(gettext("Bola topilmadi."))
 
+        detail = balance.child_balance(child)
+        # Ochiq hujjatlar FIFO tartibida — kassir ekranidagi taqsimot
+        # ko'rinishi aynan shu ro'yxat bo'yicha chiziladi, ya'ni ekranda
+        # ko'rsatilgan taqsimot serverdagisi bilan bir xil bo'ladi.
+        open_invoices = [
+            {
+                "id": str(invoice.id),
+                "number": invoice.number,
+                "period": f"{invoice.period_year}-{invoice.period_month:02d}",
+                "due_date": invoice.due_date.isoformat(),
+                "amount_due": f"{invoice.amount_due:.2f}",
+                "amount_paid": f"{invoice.amount_paid:.2f}",
+                "outstanding": f"{invoice.amount_outstanding:.2f}",
+                "is_overdue": invoice.due_date < timezone.localdate(),
+            }
+            for invoice in services.open_invoices(child)
+        ]
+
         return Response(
             {
-                "child_id": str(child.id),
+                **detail.as_dict(),
                 "full_name": child.full_name,
                 # Keshdan EMAS, ledger'dan hisoblangan (D3).
                 "balance": str(services.child_balance(child.id)),
                 "cached_balance": str(child.balance),
+                "open_invoices": open_invoices,
             }
         )
 

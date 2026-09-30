@@ -14,7 +14,6 @@ from decimal import Decimal
 from typing import Any
 
 from django.db.models import (
-    Case,
     DecimalField,
     F,
     OuterRef,
@@ -22,10 +21,8 @@ from django.db.models import (
     Subquery,
     Sum,
     Value,
-    When,
 )
 from django.db.models.functions import Coalesce
-from django.utils import timezone
 
 from apps.children.models import (
     Child,
@@ -33,7 +30,8 @@ from apps.children.models import (
     EnrollmentState,
     EnrollmentStatus,
 )
-from apps.finance.models import ChildLedgerEntry, Direction, Invoice, InvoiceStatus
+from apps.finance import balance
+from apps.finance.models import Invoice, InvoiceStatus
 
 __all__ = [
     "debtor_queryset",
@@ -49,63 +47,19 @@ __all__ = [
 
 def debtor_queryset(*, min_amount: Decimal | None = None, overdue_only: bool = False) -> Any:
     """
-    Balansi musbat bolalar — bitta so'rovda, ledger'dan hisoblangan.
+    Balansi musbat bolalar — bitta so'rovda.
+
+    Formula BU YERDA EMAS: u `apps/finance/balance.py` da va u yerdan
+    doska, bola kartasi, bosh sahifa va hisobotlar ham o'qiydi. Ikkita
+    formula ertami-kechmi ajraladi — auditda aynan shunday bo'lgan
+    (`docs/big-update/PLAN.md` §2).
 
     Balans annotatsiya sifatida hisoblanadi (`child.balance` keshidan
     EMAS): kesh siljigan bo'lsa, qarzdorlar ro'yxati ham noto'g'ri
     bo'lardi va bu eng yomon joyda — pul talab qilishda — chiqardi.
-
-    ⚠️ **`oldest_overdue_date` ataylab `Subquery`, `Min()` emas.**
-
-    Bitta `annotate()` ichida ikkita KO'P QIYMATLI bog'lanish bo'yicha
-    agregat yozilsa (`ledger_entries` va `invoices`), SQL ularni bir-biriga
-    ko'paytiradi: N ta ledger qatori × M ta faktura = N×M qator, va
-    `Sum` M barobar oshib ketadi. Avval shunday edi — 4 oylik tarixi
-    bor bola qarzi TO'RT BAROBAR ko'rinardi, ya'ni ota-onaga to'rt
-    barobar ko'p summa haqida SMS ketardi.
-
-    Testlar buni ko'rmadi, chunki har birida bolaga bitta faktura bor
-    edi va ko'paytuvchi 1 ga teng bo'lgan. Demo ma'lumoti (4 oy tarix)
-    uni birinchi urinishdayoq ochib berdi.
     """
-    money: DecimalField = DecimalField(max_digits=12, decimal_places=2)
-
-    overdue_invoices = (
-        Invoice.objects.filter(
-            child=OuterRef("pk"),
-            status__in=[
-                InvoiceStatus.ISSUED,
-                InvoiceStatus.PARTIALLY_PAID,
-                InvoiceStatus.OVERDUE,
-            ],
-            due_date__lt=timezone.localdate(),
-        )
-        .order_by("due_date")
-        .values("due_date")[:1]
-    )
-
-    queryset = (
-        Child.objects.filter(is_active=True)
-        .annotate(
-            ledger_balance=Coalesce(
-                Sum(
-                    Case(
-                        When(
-                            ledger_entries__direction=Direction.DEBIT,
-                            then=F("ledger_entries__amount"),
-                        ),
-                        When(
-                            ledger_entries__direction=Direction.CREDIT,
-                            then=-1 * F("ledger_entries__amount"),
-                        ),
-                        output_field=money,
-                    )
-                ),
-                Value(Decimal("0"), output_field=money),
-            ),
-            oldest_overdue_date=Subquery(overdue_invoices),
-        )
-        .filter(ledger_balance__gt=Decimal("0"))
+    queryset = balance.with_balance(Child.objects.filter(is_active=True)).filter(
+        ledger_balance__gt=Decimal("0")
     )
 
     if min_amount is not None:
@@ -271,24 +225,11 @@ def month_board_queryset(
     groups = Enrollment.objects.filter(
         child=OuterRef("pk"), status=EnrollmentState.ACTIVE
     ).order_by("-start_date")
-    ledger = (
-        ChildLedgerEntry.objects.filter(child=OuterRef("pk"))
-        .values("child")
-        .annotate(
-            total=Sum(
-                Case(
-                    When(direction=Direction.DEBIT, then=F("amount")),
-                    default=-F("amount"),
-                    output_field=money,
-                )
-            )
-        )
-        .values("total")
-    )
 
     zero = Value(Decimal("0"), output_field=money)
+    # Ledger balansi va avans — `balance.py` dagi YAGONA formuladan.
     queryset = (
-        board_children(organization_id=organization_id, branch_id=branch_id)
+        balance.with_balance(board_children(organization_id=organization_id, branch_id=branch_id))
         .annotate(
             invoice_id=Subquery(invoices.values("id")[:1]),
             invoice_number=Subquery(invoices.values("number")[:1]),
@@ -296,7 +237,6 @@ def month_board_queryset(
             charged=Coalesce(Subquery(invoices.values("amount_due")[:1], output_field=money), zero),
             paid=Coalesce(Subquery(invoices.values("amount_paid")[:1], output_field=money), zero),
             group_name=Subquery(groups.values("group__name")[:1]),
-            ledger_balance=Coalesce(Subquery(ledger, output_field=money), zero),
         )
         .annotate(outstanding=F("charged") - F("paid"))
     )
@@ -341,6 +281,10 @@ def board_row(child: Any) -> dict[str, Any]:
         # Manfiy balans — bog'cha oilaga qarzdor, ya'ni avans bor.
         # Kassir buni to'lov qabul qilishdan OLDIN ko'rishi kerak.
         "balance": f"{child.ledger_balance:.2f}",
+        # Taqsimlanmagan pul — "bu bolaning kassamizda qancha puli bor".
+        # Balansdan ALOHIDA: bolada bir vaqtda yopilmagan faktura ham,
+        # keyingi oy uchun berilgan pul ham bo'lishi mumkin.
+        "advance": f"{max(child.advance, Decimal('0')):.2f}",
     }
 
 
