@@ -1,31 +1,44 @@
 /**
- * To'lov qabul qilish oynasi — IKKI rejimda.
+ * To'lov qabul qilish oynasi — IKKI rejimda, BIR NECHTA usulda.
  *
- * `invoice` berilsa: aniq hisob-fakturaga to'lov. Qoldiqdan ortiq summa
- * kiritishga ruxsat berilmaydi — backend ham rad etadi (docs/03 §13.5),
- * lekin uni bu yerda ham to'sish kassirni keraksiz xatodan saqlaydi.
+ * `invoice` berilsa: aniq hisob-fakturaga to'lov.
+ * `invoice` berilmasa: fakturasiz to'lov (avans) — pul bolaning
+ * balansiga tushadi va keyingi hisob-fakturani o'zi yopadi.
  *
- * `invoice` berilmasa: FAKTURASIZ to'lov (avans, oldindan to'lov). Bu
- * backendda boshidan bor edi (`child_id` yetarli), UI'da esa yo'l yo'q
- * edi — ya'ni ota-ona oldindan pul bergan holatni yozib bo'lmasdi.
- * Bunday pul bolaning balansiga tushadi va keyingi hisob-fakturani
- * o'zi yopadi.
+ * Har ikki rejimda ham bir nechta usul qo'shsa bo'ladi (docs/03 §13.5a):
+ * ota-ona 1 400 000 ni naqd, 100 000 ni terminalda berishi mumkin va bu
+ * BITTA harakat. Ortiqcha summa endi rad etilmaydi — u avansga tushadi
+ * va oynada shu haqda aytiladi.
  */
 
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Banknote } from 'lucide-react'
+import { Banknote, Plus, X } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { Modal } from '@/components/ui/Modal'
 import { childrenApi } from '@/features/children/api'
 import { paymentsApi } from '@/features/payments/api'
+import { PAYMENT_METHODS, paymentMethodLabel } from '@/features/payments/methods'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Invoice } from '@/lib/api/types'
-import { PAYMENT_METHODS, paymentMethodLabel } from '@/features/payments/methods'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
-const money = (value: string) => new Intl.NumberFormat('uz-UZ').format(Number(value))
+const money = (value: number) => new Intl.NumberFormat('uz-UZ').format(value)
+
+interface Line {
+  key: string
+  method: string
+  amount: string
+  reference: string
+}
+
+const newLine = (method: string, amount = ''): Line => ({
+  key: crypto.randomUUID(),
+  method,
+  amount,
+  reference: '',
+})
 
 export function RecordPaymentModal({
   invoice,
@@ -48,36 +61,53 @@ export function RecordPaymentModal({
   })
   const [childId, setChildId] = useState('')
 
-  const outstanding = invoice ? Number(invoice.amount_outstanding) : null
-  const [amount, setAmount] = useState(invoice?.amount_outstanding ?? '')
-  const [method, setMethod] = useState('cash')
-  const [reference, setReference] = useState('')
+  const outstanding = invoice ? Number(invoice.amount_outstanding) : 0
+  const [lines, setLines] = useState<Line[]>(() => [
+    newLine('cash', invoice?.amount_outstanding ?? ''),
+  ])
   const [error, setError] = useState<string | null>(null)
 
   // Kalit MODAL OCHILGANDA bir marta yaratiladi va qayta urinishda
   // o'zgarmaydi — aynan shu narsa uni ishlatadigan qiladi. Har bosishda
   // yangi kalit yaratilsa, server ikkita mustaqil to'lov ko'rardi va
   // himoyaning ma'nosi qolmasdi (P1-003).
-  //
-  // `useState` ning boshlang'ich funksiyasi: `crypto.randomUUID()` har
-  // render'da emas, BIR marta chaqiriladi.
   const [idempotencyKey] = useState(() => crypto.randomUUID())
+
+  const total = lines.reduce((sum, line) => sum + (Number(line.amount) || 0), 0)
+  const advance = invoice ? Math.max(0, total - outstanding) : total
+  const settled = invoice ? Math.min(total, outstanding) : 0
+
+  const update = (key: string, patch: Partial<Line>) =>
+    setLines((prev) => prev.map((line) => (line.key === key ? { ...line, ...patch } : line)))
+
+  const addLine = () => {
+    // Qolgan summani oldindan qo'yamiz — kassir odatda aynan shuni
+    // kiritadi, va allaqachon ishlatilgan usul takrorlanmasin.
+    const used = new Set(lines.map((line) => line.method))
+    const next = PAYMENT_METHODS.find((method) => !used.has(method)) ?? 'cash'
+    const left = invoice ? Math.max(0, outstanding - total) : 0
+    setLines((prev) => [...prev, newLine(next, left > 0 ? String(left) : '')])
+  }
 
   const record = useMutation({
     mutationFn: () =>
-      paymentsApi.record(
+      paymentsApi.recordBatch(
         {
           child_id: invoice ? invoice.child : childId,
           ...(invoice ? { invoice_id: invoice.id } : {}),
-          amount,
-          method,
-          reference,
+          lines: lines
+            .filter((line) => Number(line.amount) > 0)
+            .map((line) => ({
+              method: line.method,
+              amount: line.amount,
+              ...(line.reference ? { reference: line.reference } : {}),
+            })),
         },
         idempotencyKey,
       ),
     onSuccess: () => {
       // Hisob-faktura, to'lov, qarzdorlar va balans — hammasi o'zgardi.
-      for (const key of ['invoices', 'payments', 'debtors', 'children']) {
+      for (const key of ['invoices', 'payments', 'debtors', 'children', 'cash']) {
         void queryClient.invalidateQueries({ queryKey: ['org', organizationId, key] })
       }
       onClose()
@@ -85,7 +115,7 @@ export function RecordPaymentModal({
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
-  const tooMuch = outstanding !== null && Number(amount) > outstanding
+  const ready = total > 0 && (invoice ? true : Boolean(childId))
 
   return (
     <Modal open onClose={onClose} className="max-w-md">
@@ -102,8 +132,8 @@ export function RecordPaymentModal({
         {invoice && (
           <div className="mb-4 rounded-lg bg-slate-50 px-3 py-2 text-sm">
             <span className="text-slate-500">{t("To'lanishi kerak:")} </span>
-            <span className="font-semibold text-slate-900">
-              {t("{money} so'm", { money: money(invoice.amount_outstanding) })}
+            <span className="font-semibold tabular-nums text-slate-900">
+              {t("{money} so'm", { money: money(outstanding) })}
             </span>
           </div>
         )}
@@ -144,84 +174,113 @@ export function RecordPaymentModal({
           )}
 
           <div>
-            <label htmlFor="amount" className="mb-1 block text-xs font-medium text-slate-600">
-              {t('Summa')}
-            </label>
-            <input
-              id="amount"
-              type="number"
-              required
-              min="0.01"
-              step="0.01"
-              {...(outstanding !== null ? { max: outstanding } : {})}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className={cn(
-                'w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2',
-                tooMuch
-                  ? 'border-red-300 focus:ring-red-100'
-                  : 'border-slate-200 focus:border-brand-500 focus:ring-brand-100',
-              )}
-            />
-            {tooMuch && (
-              <p className="mt-1 text-xs text-red-600">
-                {t('Qoldiqdan ortiq. Ortiqcha summani alohida avans sifatida kiriting.')}
-              </p>
+            <span className="mb-1 block text-xs font-medium text-slate-600">
+              {t('Usul va summa')}
+            </span>
+            <div className="space-y-2">
+              {lines.map((line, index) => (
+                <div key={line.key}>
+                  <div className="flex gap-2">
+                    <select
+                      aria-label={t("To'lov usuli")}
+                      value={line.method}
+                      onChange={(e) => update(line.key, { method: e.target.value })}
+                      className="w-[9.5rem] shrink-0 rounded-lg border border-slate-200 px-2 py-2 text-sm outline-none focus:border-brand-500"
+                    >
+                      {PAYMENT_METHODS.map((method) => (
+                        <option key={method} value={method}>
+                          {paymentMethodLabel(method)}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      aria-label={t('Summa')}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      required={index === 0}
+                      value={line.amount}
+                      onChange={(e) => update(line.key, { amount: e.target.value })}
+                      placeholder="0"
+                      className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-right text-sm tabular-nums outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+                    />
+                    {lines.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setLines((prev) => prev.filter((l) => l.key !== line.key))}
+                        title={t("Qatorni o'chirish")}
+                        className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  {line.method !== 'cash' && (
+                    <input
+                      aria-label={t("Ma'lumotnoma (ixtiyoriy)")}
+                      value={line.reference}
+                      onChange={(e) => update(line.key, { reference: e.target.value })}
+                      placeholder={t('Tranzaksiya raqami')}
+                      className="mt-1.5 w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-brand-500"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {lines.length < PAYMENT_METHODS.length && (
+              <button
+                type="button"
+                onClick={addLine}
+                className="mt-2 flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
+              >
+                <Plus className="h-4 w-4" /> {t('Yana usul qo‘shish')}
+              </button>
             )}
           </div>
 
-          <div>
-            <span className="mb-1 block text-xs font-medium text-slate-600">
-              {t("To'lov usuli")}
-            </span>
-            {/* To'rtta usul tor oynaga bitta qatorda sig'maydi — to'rga
-                qo'yamiz, aks holda "Payme / Click" siqilib o'qilmasdi. */}
-            <div className="grid grid-cols-2 gap-2">
-              {PAYMENT_METHODS.map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setMethod(value)}
-                  className={cn(
-                    'rounded-lg border px-3 py-2 text-sm font-medium transition',
-                    method === value
-                      ? 'border-brand-300 bg-brand-50 text-brand-700'
-                      : 'border-slate-200 text-slate-600 hover:bg-slate-50',
-                  )}
-                >
-                  {paymentMethodLabel(value)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {method !== 'cash' && (
-            <div>
-              <label htmlFor="reference" className="mb-1 block text-xs font-medium text-slate-600">
-                {t("Ma'lumotnoma (ixtiyoriy)")}
-              </label>
-              <input
-                id="reference"
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                placeholder={t('Tranzaksiya raqami')}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
-              />
-            </div>
-          )}
+          {/* Taqsimot — kassir tugmani bosishdan OLDIN ko'radi.
+              Ortiqcha summa xato emas: u avansga tushadi va keyingi
+              hisob-fakturani yopadi (docs/03 §13.5a). */}
+          {lines.length > 1 || advance > 0 ? (
+            <dl className="space-y-1 rounded-lg bg-slate-50 px-3 py-2 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-slate-500">{t('Jami')}</dt>
+                <dd className="font-semibold tabular-nums text-slate-900">
+                  {t("{money} so'm", { money: money(total) })}
+                </dd>
+              </div>
+              {invoice && settled > 0 && (
+                <div className="flex justify-between">
+                  <dt className="text-slate-500">{t('Hisob-fakturaga')}</dt>
+                  <dd className="tabular-nums text-slate-700">
+                    {t("{money} so'm", { money: money(settled) })}
+                  </dd>
+                </div>
+              )}
+              {advance > 0 && (
+                <div className="flex justify-between">
+                  <dt className="text-amber-700">{t('Avansga (balansga)')}</dt>
+                  <dd className="font-medium tabular-nums text-amber-700">
+                    {t("{money} so'm", { money: money(advance) })}
+                  </dd>
+                </div>
+              )}
+            </dl>
+          ) : null}
 
           <button
             type="submit"
-            disabled={record.isPending || tooMuch}
+            disabled={record.isPending || !ready}
             className={cn(
               'flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition',
-              record.isPending || tooMuch ? 'bg-slate-300' : 'bg-emerald-600 hover:bg-emerald-700',
+              record.isPending || !ready ? 'bg-slate-300' : 'bg-emerald-600 hover:bg-emerald-700',
             )}
           >
             <Banknote className="h-4 w-4" />
             {record.isPending
               ? t('Saqlanmoqda…')
-              : t("{money} so'm qabul qilish", { money: money(amount || '0') })}
+              : t("{money} so'm qabul qilish", { money: money(total) })}
           </button>
         </form>
       </div>

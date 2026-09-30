@@ -958,9 +958,11 @@ A storage location (a branch may have kitchen store, dry store, etc.).
 
 **Business rules:** `ck_expense_not_future CHECK (expense_date <= CURRENT_DATE)`; only `approved` and `paid` expenses count in P&L reports; `rejected` requires no further action.
 
-**`cash_account_id` is nullable in the schema and required by the service at the moment it matters.** An expense sitting in `pending` has not moved any money and may legitimately not know yet where it will be paid from; the moment it becomes `paid` the account is mandatory, because that is when a `cash_movement` must be written. Making the column `NOT NULL` would have forced the answer at request time — when the person filing the request is often not the person who pays it — and forced a lie into every historical row during the migration. Existing rows are backfilled from the branch's cash account, which is what a kindergarten almost always used.
+**`cash_account_id` is nullable in the schema and settled at approval.** An expense sitting in `pending` has not moved any money and may legitimately not know yet where it will be paid from — the person filing a request is often not the person who pays it. It can be chosen on the request, and if it is still empty at approval the branch's cash account is used, which is what a kindergarten almost always means. Making the column `NOT NULL` would have forced an answer at request time and forced a lie into every historical row during the migration.
 
-**The movement, not the row, is the outflow.** A `paid` expense writes one `out` `cash_movement` inside the same transaction. Reversing a mistaken expense is a counter-movement plus a status change, never a delete.
+**Approval is what moves the money, not `mark-paid`.** This looks like the wrong hook until you line it up with the reports: `expense_summary` and the P&L have counted `approved` as spend since Sprint 7. If cash only fell at `paid`, two screens would answer the same question differently — and in practice most kindergartens approve an expense they have already paid and never touch the "paid" button again. `mark_expense_paid()` therefore only flips the flag; passing a different account there moves the existing movement (counter-entry plus a new one) rather than spending the money twice.
+
+**The movement, not the row, is the outflow.** An approved expense writes one `out` `cash_movement` inside the same transaction. Reversing a mistaken expense is a counter-movement plus a status change, never a delete.
 
 ---
 

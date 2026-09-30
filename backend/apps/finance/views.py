@@ -26,6 +26,7 @@ from apps.finance.serializers import (
     GenerateInvoicesSerializer,
     InvoiceSerializer,
     LedgerEntrySerializer,
+    PaymentBatchSerializer,
     PaymentSerializer,
     PaymentWriteSerializer,
     TariffPlanSerializer,
@@ -211,7 +212,7 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
     """
 
     permission_module = "payments"
-    permission_action_map = {"reverse": "update", "daily_summary": "read"}
+    permission_action_map = {"reverse": "update", "daily_summary": "read", "batch": "create"}
     model = Payment
     select_related_fields = ("child", "invoice")
     filterset_fields = ["child", "invoice", "method"]
@@ -255,6 +256,42 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
             changes={"amount": str(payment.amount), "method": payment.method},
         )
         return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["post"])
+    def batch(self, request: Request) -> Response:
+        """
+        `POST /payments/batch` — bitta harakatda bir nechta usul.
+
+        Ortiqcha summa RAD ETILMAYDI: hisob-faktura to'lgach qolgani
+        avans bo'lib yoziladi (docs/03 §13.5a).
+        """
+        serializer = PaymentBatchSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        user = request_user(request)
+
+        payments = services.record_payment_batch(
+            child=data["child"],
+            lines=data["lines"],
+            invoice=data.get("invoice"),
+            paid_at=data.get("paid_at"),
+            received_by=user,
+            idempotency_key=request.headers.get("Idempotency-Key", "").strip(),
+        )
+        for payment in payments:
+            audit.record(
+                action="create",
+                request=request._request,
+                actor=user,
+                entity_type="payment",
+                entity_id=payment.id,
+                changes={
+                    "amount": str(payment.amount),
+                    "method": payment.method,
+                    "batch": str(payment.batch_id),
+                },
+            )
+        return Response(PaymentSerializer(payments, many=True).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"])
     def reverse(self, request: Request, pk: str | None = None) -> Response:

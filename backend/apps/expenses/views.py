@@ -79,12 +79,40 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
             raise BusinessRuleViolation(gettext("Faqat kutilayotgan chiqimni tahrirlash mumkin."))
         serializer.save()
 
+    @staticmethod
+    def _cash_account(request: Request, user: Any) -> Any:
+        """
+        So'rovdagi `cash_account_id` — yo'q bo'lsa `None`.
+
+        Begona tashkilotning qopi `404` beradi, `403` emas: bu yerda ham
+        tenant chegarasi qolgan hamma joydagi kabi ishlaydi
+        (2-invariant, docs/04 §2).
+        """
+        account_id = request.data.get("cash_account_id")
+        if not account_id:
+            return None
+        account = CashAccount.objects.filter(
+            pk=account_id, organization_id=user.organization_id, is_active=True
+        ).first()
+        if account is None:
+            raise Http404
+        return account
+
     @action(detail=True, methods=["post"])
     def approve(self, request: Request, pk: str | None = None) -> Response:
+        """
+        `POST /expenses/{id}/approve` — ixtiyoriy `{"cash_account_id": …}`.
+
+        Pul aynan shu yerda kassadan chiqadi (ADR-17).
+        """
         expense = self.get_object()
         user = request_user(request)
+        account = self._cash_account(request, user)
         services.approve_expense(
-            expense=expense, approved_by=user, note=request.data.get("note", "")
+            expense=expense,
+            approved_by=user,
+            note=request.data.get("note", ""),
+            cash_account=account,
         )
         audit.record(
             action="update",
@@ -92,7 +120,10 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
             actor=user,
             entity_type="expense",
             entity_id=expense.id,
-            changes={"status": "approved"},
+            changes={
+                "status": "approved",
+                "cash_account": str(account.id) if account else None,
+            },
         )
         expense.refresh_from_db()
         return Response(ExpenseSerializer(expense).data)
@@ -124,18 +155,7 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
         """
         expense = self.get_object()
         user = request_user(request)
-
-        account = None
-        account_id = request.data.get("cash_account_id")
-        if account_id:
-            # Begona tashkilotning qopi `404` beradi, `403` emas — bu
-            # yerda ham tenant chegarasi bir xil ishlaydi (2-invariant).
-            account = CashAccount.objects.filter(
-                pk=account_id, organization_id=user.organization_id, is_active=True
-            ).first()
-            if account is None:
-                raise Http404
-
+        account = self._cash_account(request, user)
         services.mark_expense_paid(expense=expense, cash_account=account, created_by=user)
         audit.record(
             action="update",

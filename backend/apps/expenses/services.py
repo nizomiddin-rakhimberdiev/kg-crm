@@ -29,14 +29,63 @@ def _assert_pending(expense: Expense, action: str) -> None:
 
 
 @transaction.atomic
-def approve_expense(*, expense: Expense, approved_by: Any, note: str = "") -> Expense:
+def approve_expense(
+    *,
+    expense: Expense,
+    approved_by: Any,
+    note: str = "",
+    cash_account: Any = None,
+) -> Expense:
+    """
+    Chiqimni tasdiqlaydi va pulni kassadan CHIQARADI (ADR-17).
+
+    Nega pul aynan shu yerda chiqadi, `mark-paid` da emas: hisobotlar
+    (`expense_summary`, foyda-zarar) boshidan beri `approved` ni ham
+    xarajat deb sanaydi. Kassa esa faqat `paid` da kamaysa, ikkita
+    ekran bir xil savolga ikki xil javob berardi — va ko'p bog'cha
+    "to'landi" tugmasini umuman bosmaydi. Mijozning o'z so'zi ham shu
+    edi: "chiqim kiritayotgan paytda qaysi puldan ketayotgani hisobga
+    olinishi kerak".
+
+    `mark_expense_paid()` shundan keyin faqat bayroqni o'zgartiradi —
+    pul ikkinchi marta chiqmaydi.
+    """
     _assert_pending(expense, "tasdiqlash")
+
+    account = cash_account or expense.cash_account
+    if account is None:
+        # Qop ko'rsatilmasa naqd kassa: bog'chada odatiy hol, va
+        # tasdiqlashni "sozlama to'liq emas" deb to'xtatish noto'g'ri
+        # nosozlik bo'lardi.
+        account = cash.account_for_method(branch=expense.branch, method="cash")
+    if account.organization_id != expense.organization_id:
+        raise BusinessRuleViolation(gettext("Kassa hisobi boshqa tashkilotga tegishli."))
+
     expense.status = ExpenseStatus.APPROVED
     expense.approved_by = approved_by
     expense.decided_at = timezone.now()
     expense.decision_note = note[:255]
+    expense.cash_account = account
     expense.save(
-        update_fields=["status", "approved_by", "decided_at", "decision_note", "updated_at"]
+        update_fields=[
+            "status",
+            "approved_by",
+            "decided_at",
+            "decision_note",
+            "cash_account",
+            "updated_at",
+        ]
+    )
+
+    cash.post_movement(
+        account=account,
+        direction=MovementDirection.OUT,
+        amount=expense.amount,
+        source_type=MovementSource.EXPENSE,
+        source_id=expense.id,
+        description=f"{expense.category.name}: {expense.description}"[:255],
+        occurred_at=timezone.make_aware(datetime.combine(expense.expense_date, time.min)),
+        created_by=approved_by,
     )
     return expense
 
@@ -65,40 +114,45 @@ def mark_expense_paid(
     *, expense: Expense, cash_account: Any = None, created_by: Any = None
 ) -> Expense:
     """
-    Chiqimni to'langan deb belgilaydi va pulni kassadan CHIQARADI.
+    Chiqimni "to'langan" deb belgilaydi — BAYROQ, pul harakati emas.
 
-    Qop shu yerda majburiy bo'ladi, `pending` holatda emas: so'rovni
-    yozgan odam ko'pincha uni to'laydigan odam emas, va "qaysi puldan?"
-    degan savolga javob pul chiqqan lahzada ma'lum bo'ladi (ADR-17).
+    Pul tasdiqlash paytida allaqachon kassadan chiqqan
+    (`approve_expense`). Bu yerda uni ikkinchi marta chiqarish qoldiqni
+    ikki barobar kamaytirardi. Qop ko'rsatilsa — faqat to'g'rilanadi.
     """
     if expense.status != ExpenseStatus.APPROVED:
         raise BusinessRuleViolation(
             gettext("Faqat tasdiqlangan chiqimni to'langan deb belgilash mumkin.")
         )
 
-    account = cash_account or expense.cash_account
-    if account is None:
-        # Qop ko'rsatilmasa naqd kassaga yoziladi — bog'chada odatiy hol,
-        # va to'lovni "sozlama to'liq emas" deb rad etish noto'g'ri
-        # nosozlik bo'lardi.
-        account = cash.account_for_method(branch=expense.branch, method="cash")
-    if account.organization_id != expense.organization_id:
-        raise BusinessRuleViolation(gettext("Kassa hisobi boshqa tashkilotga tegishli."))
-
+    fields = ["status", "updated_at"]
     expense.status = ExpenseStatus.PAID
-    expense.cash_account = account
-    expense.save(update_fields=["status", "cash_account", "updated_at"])
+    if cash_account is not None:
+        if cash_account.organization_id != expense.organization_id:
+            raise BusinessRuleViolation(gettext("Kassa hisobi boshqa tashkilotga tegishli."))
+        # Qop o'zgarsa, pul harakati ham o'sha qopga ko'chiriladi:
+        # eskisiga qarshi yozuv, yangisiga chiqim.
+        if expense.cash_account_id != cash_account.id:
+            cash.reverse_movements_for(
+                source_type=MovementSource.EXPENSE,
+                source_id=expense.id,
+                description=gettext("qop o'zgartirildi"),
+                created_by=created_by,
+            )
+            cash.post_movement(
+                account=cash_account,
+                direction=MovementDirection.OUT,
+                amount=expense.amount,
+                source_type=MovementSource.EXPENSE,
+                source_id=expense.id,
+                description=f"{expense.category.name}: {expense.description}"[:255],
+                occurred_at=timezone.make_aware(datetime.combine(expense.expense_date, time.min)),
+                created_by=created_by,
+            )
+        expense.cash_account = cash_account
+        fields.insert(1, "cash_account")
 
-    cash.post_movement(
-        account=account,
-        direction=MovementDirection.OUT,
-        amount=expense.amount,
-        source_type=MovementSource.EXPENSE,
-        source_id=expense.id,
-        description=f"{expense.category.name}: {expense.description}"[:255],
-        occurred_at=timezone.make_aware(datetime.combine(expense.expense_date, time.min)),
-        created_by=created_by,
-    )
+    expense.save(update_fields=fields)
     return expense
 
 

@@ -920,3 +920,9 @@ msgstr "advance cancelled"
 
 msgid "to'lov qaytarildi"
 msgstr "payment reversed"
+
+msgid "Kamida bitta to'lov qatori kerak."
+msgstr "At least one payment line is required."
+
+msgid "qop o'zgartirildi"
+msgstr "account changed"

@@ -25,6 +25,7 @@ export const messages: Record<string, string> = {
   'Asosiy ombor yaratish': 'Создать основной склад',
   'Audit jurnali': 'Журнал аудита',
   Avans: 'Аванс',
+  'Avansga (balansga)': 'В аванс (на баланс)',
   Avanslar: 'Авансы',
   Avg: 'Авг',
   'Avtomatik "kelmadi"': 'Автоматически «не пришёл»',
@@ -192,6 +193,7 @@ export const messages: Record<string, string> = {
   'Hisob-faktura generatsiyasi': 'Генерация счетов',
   "Hisob-faktura shu kungacha to'lanishi kutiladi.": 'Счёт ожидается к оплате до этого дня.',
   "Hisob-faktura yo'q": 'Счетов нет',
+  'Hisob-fakturaga': 'На счёт',
   'Hisob-fakturalar': 'Счета',
   "Hisob-fakturalar ledger'ga yoziladi va tahrirlanmaydi — xato bo'lsa bekor qilinadi.":
     'Счета записываются в леджер и не редактируются — при ошибке счёт отменяется.',
@@ -381,6 +383,7 @@ export const messages: Record<string, string> = {
     'Напоминания должникам отправляются начиная с этого дня.',
   Qarzdorlik: 'Задолженность',
   'Qarzdorlik eslatmasi': 'Напоминание о долге',
+  "Qatorni o'chirish": 'Удалить строку',
   Qayta: 'Повторить',
   'Qayta faollashtirish': 'Активировать снова',
   'Qayta hisoblash': 'Пересчитать',
@@ -400,8 +403,6 @@ export const messages: Record<string, string> = {
   Qoldiq: 'Остаток',
   "Qoldiq harakatlardan hisoblanadi — to'g'ridan-to'g'ri tahrirlanmaydi.":
     'Остаток считается из движений — напрямую не редактируется.',
-  'Qoldiqdan ortiq. Ortiqcha summani alohida avans sifatida kiriting.':
-    'Больше остатка. Лишнюю сумму внесите отдельным авансом.',
   Qoralama: 'Черновик',
   'Rad etilgan': 'Отклонён',
   'Rad etish': 'Отклонить',
@@ -542,6 +543,7 @@ export const messages: Record<string, string> = {
   Umumiy: 'Общие',
   'Ushlab qolish': 'Удержание',
   "Usul bo'yicha": 'По способу оплаты',
+  'Usul va summa': 'Способ и сумма',
   Valyuta: 'Валюта',
   Vaqt: 'Время',
   Vasiy: 'Опекун',
@@ -570,6 +572,7 @@ export const messages: Record<string, string> = {
   'Yalpi {money} · ushlab qolindi {money2} · sof':
     'Начислено {money} · удержано {money2} · к выплате',
   Yan: 'Янв',
+  'Yana usul qo‘shish': 'Добавить способ',
   'Yangi bola': 'Новый ребёнок',
   'Yangi kategoriya': 'Новая категория',
   'Yangi lavozim': 'Новая должность',

@@ -286,6 +286,16 @@ class Payment(BranchScopedModel):
     # qaytaradi.
     idempotency_key = models.CharField(max_length=64, blank=True, editable=False)
 
+    # Bitta kassir HARAKATIDA yozilgan qatorlar shu kalitni bo'lishadi
+    # (docs/03 §13.5a).
+    #
+    # Ota-ona 1 400 000 ni naqd, 100 000 ni terminalda to'lasa — bu
+    # bitta hodisa va ikkita to'lov. Usulni qatorning bir qismi deb
+    # qoldirish `daily_cash_summary`, usul diagrammasi va kassa
+    # qoplarining hammasini o'zgarishsiz ishlatadi; to'plam esa faqat
+    # EKRANGA kerak: "menga o'sha bitta harakatni ko'rsat".
+    batch_id = models.UUIDField(null=True, blank=True, editable=False)
+
     class Meta:
         db_table = "payment"
         ordering = ["-paid_at"]
@@ -313,6 +323,13 @@ class Payment(BranchScopedModel):
         ]
         indexes = [
             models.Index(fields=["child", "-paid_at"], name="ix_payment_child_paid"),
+            # Qisman indeks: to'plamsiz (eski va yakka) to'lovlar
+            # indeksni shishirmasin — ular ko'pchilikni tashkil qiladi.
+            models.Index(
+                fields=["batch_id"],
+                name="ix_payment_batch",
+                condition=models.Q(batch_id__isnull=False),
+            ),
             models.Index(
                 fields=["organization", "branch", "-paid_at"], name="ix_payment_org_br_paid"
             ),

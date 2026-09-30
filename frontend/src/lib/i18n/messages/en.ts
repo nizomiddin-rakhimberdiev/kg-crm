@@ -26,6 +26,7 @@ export const messages: Record<string, string> = {
   'Asosiy ombor yaratish': 'Create the main warehouse',
   'Audit jurnali': 'Audit log',
   Avans: 'Advance',
+  'Avansga (balansga)': 'To advance (balance)',
   Avanslar: 'Advances',
   Avg: 'Aug',
   'Avtomatik "kelmadi"': 'Automatic “absent”',
@@ -195,6 +196,7 @@ export const messages: Record<string, string> = {
   "Hisob-faktura shu kungacha to'lanishi kutiladi.":
     'Invoices are expected to be paid by this day.',
   "Hisob-faktura yo'q": 'No invoices',
+  'Hisob-fakturaga': 'To the invoice',
   'Hisob-fakturalar': 'Invoices',
   "Hisob-fakturalar ledger'ga yoziladi va tahrirlanmaydi — xato bo'lsa bekor qilinadi.":
     'Invoices are written to the ledger and can’t be edited — if wrong, they are cancelled.',
@@ -384,6 +386,7 @@ export const messages: Record<string, string> = {
     'Debtor reminders are sent starting from this day.',
   Qarzdorlik: 'Debt',
   'Qarzdorlik eslatmasi': 'Debt reminder',
+  "Qatorni o'chirish": 'Remove line',
   Qayta: 'Retry',
   'Qayta faollashtirish': 'Reactivate',
   'Qayta hisoblash': 'Recalculate',
@@ -403,8 +406,6 @@ export const messages: Record<string, string> = {
   Qoldiq: 'Stock',
   "Qoldiq harakatlardan hisoblanadi — to'g'ridan-to'g'ri tahrirlanmaydi.":
     'Stock is computed from movements — it isn’t edited directly.',
-  'Qoldiqdan ortiq. Ortiqcha summani alohida avans sifatida kiriting.':
-    'More than the balance. Enter the extra amount as a separate advance.',
   Qoralama: 'Draft',
   'Rad etilgan': 'Rejected',
   'Rad etish': 'Reject',
@@ -545,6 +546,7 @@ export const messages: Record<string, string> = {
   Umumiy: 'General',
   'Ushlab qolish': 'Deduction',
   "Usul bo'yicha": 'By method',
+  'Usul va summa': 'Method and amount',
   Valyuta: 'Currency',
   Vaqt: 'Time',
   Vasiy: 'Guardian',
@@ -572,6 +574,7 @@ export const messages: Record<string, string> = {
   Yakunlash: 'Finalise',
   'Yalpi {money} · ushlab qolindi {money2} · sof': 'Gross {money} · deducted {money2} · net',
   Yan: 'Jan',
+  'Yana usul qo‘shish': 'Add another method',
   'Yangi bola': 'New child',
   'Yangi kategoriya': 'New category',
   'Yangi lavozim': 'New position',

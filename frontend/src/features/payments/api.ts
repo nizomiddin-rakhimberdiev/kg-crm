@@ -68,6 +68,24 @@ export const paymentsApi = {
       idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
     ),
 
+  /**
+   * Bitta kassir harakati — bir nechta usul (docs/03 §13.5a).
+   * Ortiqcha summa rad etilmaydi: u avans bo'lib yoziladi.
+   */
+  recordBatch: (
+    payload: {
+      child_id: string
+      invoice_id?: string | null
+      lines: Array<{ method: string; amount: string; reference?: string }>
+    },
+    idempotencyKey?: string,
+  ) =>
+    api.post<Payment[]>(
+      '/payments/batch',
+      payload,
+      idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+    ),
+
   reverse: (id: string, reason: string) => api.post<Payment>(`/payments/${id}/reverse`, { reason }),
 
   dailySummary: (date?: string) =>

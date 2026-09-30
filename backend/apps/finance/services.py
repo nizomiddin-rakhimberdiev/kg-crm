@@ -11,6 +11,7 @@ Ledger shartnomasi:
 from __future__ import annotations
 
 import calendar
+import uuid
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
@@ -47,6 +48,7 @@ __all__ = [
     "recompute_child_balance",
     "applicable_discount",
     "record_payment",
+    "record_payment_batch",
     "reverse_payment",
     "daily_cash_summary",
 ]
@@ -438,6 +440,7 @@ def record_payment(
     paid_at: Any = None,
     received_by: Any = None,
     idempotency_key: str = "",
+    batch_id: Any = None,
 ) -> Payment:
     """
     To'lovni qayd etadi — BITTA tranzaksiyada (docs/03 §13.5, §26).
@@ -507,6 +510,7 @@ def record_payment(
                 paid_at=paid_at or timezone.now(),
                 received_by=received_by,
                 idempotency_key=idempotency_key[:64],
+                batch_id=batch_id,
             )
     except IntegrityError:
         if not idempotency_key:
@@ -586,6 +590,119 @@ def _refresh_invoice_payment_state(invoice: Invoice) -> Invoice:
     Invoice.objects.filter(pk=invoice.pk).update(amount_paid=paid, status=status)
     invoice.refresh_from_db()
     return invoice
+
+
+@transaction.atomic
+def record_payment_batch(
+    *,
+    child: Child,
+    lines: list[dict[str, Any]],
+    invoice: Invoice | None = None,
+    paid_at: Any = None,
+    received_by: Any = None,
+    idempotency_key: str = "",
+) -> list[Payment]:
+    """
+    Bitta kassir harakatida bir nechta usulda to'lov (docs/03 §13.5a).
+
+    Ota-ona 1 400 000 ni naqd, 100 000 ni terminalda beradi — bu bitta
+    hodisa. U bir nechta `payment` qatori bo'lib yoziladi (usul qatorning
+    bir qismi), lekin ular bitta `batch_id` bilan bog'lanadi va bitta
+    tranzaksiyada yoziladi: yarim to'plam bo'lishi mumkin emas.
+
+    **Ortiqcha summa rad ETILMAYDI.** Hisob-faktura qoldig'i to'lgach,
+    qolgani hisob-fakturasiz avans bo'lib yoziladi va bolaning
+    balansiga tushadi. Eski xatti-harakat — "ortiqcha to'lov" deb rad
+    etish — kassa oldida noto'g'ri edi: pul allaqachon kassirning
+    qo'lida, va uni qaytarib berish tizimning ishi emas.
+
+    Taqsimlash tartibi qatorlar tartibida: birinchi qator avval
+    hisob-fakturani to'ldiradi, oxirgisi avansga tushadi. Shunday qilib
+    kassir qaysi usul avansga ketganini oldindan ko'radi.
+    """
+    if not lines:
+        raise BusinessRuleViolation(gettext("Kamida bitta to'lov qatori kerak."))
+
+    # Takrorlanish TO'PLAM darajasida tekshiriladi, qator darajasida
+    # emas — va bu farq muhim.
+    #
+    # Qator kaliti yolg'iz yetarli emasdi: qayta yuborishda
+    # hisob-faktura allaqachon to'langan bo'ladi, shuning uchun
+    # taqsimlash BOSHQA yo'ldan ketadi (`0a` o'rniga `0b`) va kalit
+    # mos kelmay, o'sha pul ikkinchi marta avans bo'lib yozilardi.
+    # Prefiks bo'yicha qidirish esa "bu forma allaqachon yuborilgan"
+    # degan savolga yo'ldan qat'i nazar javob beradi.
+    if idempotency_key:
+        existing = list(
+            Payment.objects.filter(idempotency_key__startswith=f"{idempotency_key}:").order_by(
+                "created_at"
+            )
+        )
+        if existing:
+            return existing
+
+    batch_id = uuid.uuid4()
+    payments: list[Payment] = []
+
+    def key(suffix: str) -> str:
+        return f"{idempotency_key}:{suffix}" if idempotency_key else ""
+
+    # Qoldiqni BIR MARTA o'qiymiz va o'zimiz kamaytirib boramiz.
+    # `record_payment` har chaqiruvda qatorni qayta qulflab tekshiradi,
+    # ya'ni baza baribir oxirgi so'zni aytadi — bu hisob esa qaysi
+    # qator avansga tushishini oldindan bilish uchun.
+    outstanding = Decimal("0")
+    if invoice is not None:
+        if invoice.child_id != child.id:
+            raise BusinessRuleViolation(gettext("Hisob-faktura boshqa bolaga tegishli."))
+        locked = Invoice.objects.select_for_update().get(pk=invoice.pk)
+        if locked.status == InvoiceStatus.CANCELLED:
+            raise BusinessRuleViolation(
+                gettext("Bekor qilingan hisob-fakturaga to'lov qabul qilinmaydi.")
+            )
+        outstanding = locked.amount_due - locked.amount_paid
+
+    for index, line in enumerate(lines):
+        amount = _money(Decimal(line["amount"]))
+        if amount <= 0:
+            raise BusinessRuleViolation(gettext("To'lov summasi musbat bo'lishi kerak."))
+        method = line["method"]
+        reference = str(line.get("reference", ""))
+
+        applied = min(amount, outstanding) if invoice is not None else Decimal("0")
+        if applied > 0:
+            payments.append(
+                record_payment(
+                    child=child,
+                    amount=applied,
+                    method=method,
+                    invoice=invoice,
+                    reference=reference,
+                    paid_at=paid_at,
+                    received_by=received_by,
+                    idempotency_key=key(f"{index}a"),
+                    batch_id=batch_id,
+                )
+            )
+            outstanding -= applied
+
+        remainder = amount - applied
+        if remainder > 0:
+            payments.append(
+                record_payment(
+                    child=child,
+                    amount=remainder,
+                    method=method,
+                    invoice=None,
+                    reference=reference,
+                    paid_at=paid_at,
+                    received_by=received_by,
+                    idempotency_key=key(f"{index}b"),
+                    batch_id=batch_id,
+                )
+            )
+
+    return payments
 
 
 @transaction.atomic

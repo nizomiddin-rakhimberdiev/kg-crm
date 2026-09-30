@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
+from apps.cash.models import CashAccount
 from apps.core.fields import TenantPrimaryKeyRelatedField
 from apps.expenses.models import Expense, ExpenseCategory
 
@@ -49,10 +50,22 @@ class ExpenseSerializer(serializers.ModelSerializer):
 
 class ExpenseWriteSerializer(serializers.ModelSerializer):
     category_id = TenantPrimaryKeyRelatedField(model=ExpenseCategory, source="category")
+    # Qaysi puldan to'lanadi — kiritish paytidayoq (ADR-17). Ixtiyoriy:
+    # so'rovni yozgan odam buni bilmasligi mumkin, tasdiqlovchi biladi.
+    cash_account_id = TenantPrimaryKeyRelatedField(
+        model=CashAccount, source="cash_account", required=False, allow_null=True
+    )
 
     class Meta:
         model = Expense
-        fields = ["id", "category_id", "amount", "expense_date", "description"]
+        fields = [
+            "id",
+            "category_id",
+            "amount",
+            "expense_date",
+            "description",
+            "cash_account_id",
+        ]
         read_only_fields = ["id"]
         # `status` mijozdan qabul qilinmaydi: holat faqat tasdiqlash
         # amallari orqali o'zgaradi, aks holda kim xohlasa o'z chiqimini

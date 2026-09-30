@@ -23,7 +23,7 @@ from apps.children.models import Child
 from apps.core.exceptions import BusinessRuleViolation
 from apps.core.tenancy import organization_context
 from apps.expenses import services as expenses
-from apps.expenses.models import Expense, ExpenseCategory, ExpenseStatus
+from apps.expenses.models import Expense, ExpenseCategory
 from apps.finance import services as finance
 
 pytestmark = pytest.mark.django_db
@@ -150,6 +150,35 @@ def test_reversing_twice_does_not_double_the_counter_entry(tenant_a: Any):
 # --- Chiqimlar ---
 
 
+def test_approving_an_expense_is_what_moves_the_money(tenant_a: Any):
+    """
+    Pul TASDIQLASHDA chiqadi, "to'landi" tugmasida emas.
+
+    Hisobotlar boshidan beri `approved` ni xarajat deb sanaydi. Kassa
+    faqat `paid` da kamasa, ikkita ekran bir xil savolga ikki xil javob
+    berardi — ko'p bog'cha esa "to'landi" tugmasini umuman bosmaydi.
+    """
+    child = _child(tenant_a)
+    with organization_context(tenant_a.organization.id):
+        finance.record_payment(child=child, amount=Decimal("2000000"), method="cash")
+        category = ExpenseCategory.objects.create(
+            organization=tenant_a.organization, branch=tenant_a.branch, name="Kommunal"
+        )
+        expense = Expense.objects.create(
+            organization=tenant_a.organization,
+            branch=tenant_a.branch,
+            category=category,
+            amount=Decimal("300000"),
+            expense_date=timezone.localdate(),
+        )
+        expenses.approve_expense(expense=expense, approved_by=None)
+        assert _balances(tenant_a)["cash"] == Decimal("1700000.00")
+
+        # "To'landi" — faqat bayroq. Pul IKKINCHI marta chiqmaydi.
+        expenses.mark_expense_paid(expense=expense)
+        assert _balances(tenant_a)["cash"] == Decimal("1700000.00")
+
+
 def test_paid_expense_leaves_the_till(tenant_a: Any):
     child = _child(tenant_a)
     with organization_context(tenant_a.organization.id):
@@ -163,8 +192,8 @@ def test_paid_expense_leaves_the_till(tenant_a: Any):
             category=category,
             amount=Decimal("300000"),
             expense_date=timezone.localdate(),
-            status=ExpenseStatus.APPROVED,
         )
+        expenses.approve_expense(expense=expense, approved_by=None)
         expenses.mark_expense_paid(expense=expense)
         expense.refresh_from_db()
 
@@ -172,8 +201,8 @@ def test_paid_expense_leaves_the_till(tenant_a: Any):
         assert _balances(tenant_a)["cash"] == Decimal("1700000.00")
 
 
-def test_approved_but_unpaid_expense_does_not_move_money(tenant_a: Any):
-    """Tasdiqlangan so'rov hali pul emas — u kassadan chiqmagan."""
+def test_a_pending_request_does_not_move_money(tenant_a: Any):
+    """Tasdiqlanmagan so'rov hali pul emas — u kassadan chiqmagan."""
     child = _child(tenant_a)
     with organization_context(tenant_a.organization.id):
         finance.record_payment(child=child, amount=Decimal("2000000"), method="cash")
@@ -186,7 +215,6 @@ def test_approved_but_unpaid_expense_does_not_move_money(tenant_a: Any):
             category=category,
             amount=Decimal("900000"),
             expense_date=timezone.localdate(),
-            status=ExpenseStatus.APPROVED,
         )
         assert _balances(tenant_a)["cash"] == Decimal("2000000.00")
 

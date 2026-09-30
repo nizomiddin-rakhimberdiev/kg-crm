@@ -137,12 +137,37 @@ class PaymentSerializer(serializers.ModelSerializer):
             "method",
             "reference",
             "paid_at",
+            "batch_id",
             "is_reversed",
             "reversed_at",
             "reversal_reason",
             "created_at",
         ]
         read_only_fields = fields
+
+
+class PaymentLineSerializer(serializers.Serializer):
+    """Bitta to'lov usuli va undan kelgan summa (docs/03 §13.5a)."""
+
+    method = serializers.ChoiceField(choices=PaymentMethod.choices)
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
+    reference = serializers.CharField(required=False, allow_blank=True, max_length=100)
+
+
+class PaymentBatchSerializer(serializers.Serializer):
+    """
+    Bitta kassir harakati — bir nechta usul.
+
+    Qatorlar tartibi MUHIM: taqsimlash shu tartibda boradi, ya'ni oxirgi
+    qator avansga tushadi (`record_payment_batch`).
+    """
+
+    child_id = TenantPrimaryKeyRelatedField(model=Child, source="child")
+    invoice_id = TenantPrimaryKeyRelatedField(
+        model=Invoice, source="invoice", required=False, allow_null=True
+    )
+    lines = PaymentLineSerializer(many=True, allow_empty=False)
+    paid_at = serializers.DateTimeField(required=False)
 
 
 class PaymentWriteSerializer(serializers.Serializer):
