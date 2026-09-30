@@ -13,13 +13,13 @@ import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { paymentsApi, tariffsApi, type BoardRow } from '@/features/payments/api'
 import { GenerateInvoicesDialog } from '@/features/payments/components/GenerateInvoicesDialog'
 import { TakePaymentModal } from '@/features/payments/components/TakePaymentModal'
-import { paymentMethodLabel } from '@/features/payments/methods'
+import { PAYMENT_METHODS, paymentMethodLabel } from '@/features/payments/methods'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { invalidateMoney } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type BillingRunResult, type Payment } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
-import { cn, formatDate } from '@/lib/utils'
+import { cn, formatDate, formatMoney } from '@/lib/utils'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
 import { t } from '@/lib/i18n'
@@ -69,6 +69,16 @@ export default function PaymentsPage() {
   const [paying, setPaying] = useState<BoardRow | null>(null)
   const [runResult, setRunResult] = useState<BillingRunResult | null>(null)
   const [generating, setGenerating] = useState(false)
+
+  // Jurnal filtri (PLAN 1.8). Sukut — shu oy: kassir odatda "bugun va
+  // kecha nima bo'ldi" degan savol bilan keladi.
+  const monthStart = `${year}-${String(month).padStart(2, '0')}-01`
+  const monthEnd = new Date(year, month, 0).toISOString().slice(0, 10)
+  const [journal, setJournal] = useState({
+    paid_from: monthStart,
+    paid_to: monthEnd,
+    method: '',
+  })
   // Qaytarish sababi so'raladigan to'lov.
   const [reversing, setReversing] = useState<Payment | null>(null)
   const [reverseReason, setReverseReason] = useState('')
@@ -114,9 +124,27 @@ export default function PaymentsPage() {
   // yo'q edi: qabul qilingan to'lovni faqat hisob-faktura qatoridan
   // ko'rish mumkin edi, fakturasiz kelgan pul esa hech qayerda
   // ko'rinmasdi.
+  const journalParams = {
+    page_size: 100,
+    paid_at__date__gte: journal.paid_from,
+    paid_at__date__lte: journal.paid_to,
+    ...(journal.method ? { method: journal.method } : {}),
+  }
   const paymentsQuery = useQuery({
-    queryKey: queryKeys.payments(organizationId, { page_size: 100 }),
-    queryFn: () => paymentsApi.list({ page_size: 100 }),
+    queryKey: queryKeys.payments(organizationId, journalParams),
+    queryFn: () => paymentsApi.list(journalParams),
+    enabled: tab === 'payments',
+  })
+
+  // Yig'indi ALOHIDA so'rovda va sahifasiz — u butun oraliqqa tegishli.
+  const journalSummary = useQuery({
+    queryKey: ['org', organizationId, 'payments', 'journal-summary', journal],
+    queryFn: () =>
+      paymentsApi.journalSummary({
+        paid_from: journal.paid_from,
+        paid_to: journal.paid_to,
+        ...(journal.method ? { method: journal.method } : {}),
+      }),
     enabled: tab === 'payments',
   })
 
@@ -504,6 +532,76 @@ export default function PaymentsPage() {
               pul faqat bolaning qatoridan qabul qilinadi, ya'ni har
               doim kimga tegishli ekani ma'lum. Jurnal esa o'qish
               uchun — nima bo'lgani va kim qabul qilgani. */}
+          <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+            <div>
+              <label
+                htmlFor="journal-from"
+                className="mb-1 block text-xs font-medium text-slate-600"
+              >
+                {t('Sanadan')}
+              </label>
+              <input
+                id="journal-from"
+                type="date"
+                value={journal.paid_from}
+                onChange={(e) => setJournal((p) => ({ ...p, paid_from: e.target.value }))}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="journal-to" className="mb-1 block text-xs font-medium text-slate-600">
+                {t('Sanagacha')}
+              </label>
+              <input
+                id="journal-to"
+                type="date"
+                value={journal.paid_to}
+                onChange={(e) => setJournal((p) => ({ ...p, paid_to: e.target.value }))}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="journal-method"
+                className="mb-1 block text-xs font-medium text-slate-600"
+              >
+                {t("To'lov usuli")}
+              </label>
+              <select
+                id="journal-method"
+                value={journal.method}
+                onChange={(e) => setJournal((p) => ({ ...p, method: e.target.value }))}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+              >
+                <option value="">{t('Hammasi')}</option>
+                {PAYMENT_METHODS.map((value) => (
+                  <option key={value} value={value}>
+                    {paymentMethodLabel(value)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Yig'indi — filtr bilan birga o'zgaradi. */}
+            <div className="ml-auto text-right">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                {t('Jami qabul qilingan')}
+              </p>
+              <p className="num text-xl font-bold text-slate-900">
+                {journalSummary.data
+                  ? t("{money} so'm", { money: formatMoney(Number(journalSummary.data.total)) })
+                  : '—'}
+              </p>
+              {journalSummary.data && (
+                <p className="text-xs text-slate-400">
+                  {t('{n} ta toʻlov', { n: journalSummary.data.count })}
+                  {journalSummary.data.reversed_count > 0 &&
+                    t(' · {n} ta qaytarilgan', { n: journalSummary.data.reversed_count })}
+                </p>
+              )}
+            </div>
+          </div>
+
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-sm">

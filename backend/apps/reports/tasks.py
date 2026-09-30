@@ -105,6 +105,12 @@ def _detail_rows(report_type: str, organization_id: Any, params: dict[str, Any])
         "year": int(params.get("year") or today.year),
         "month": int(params.get("month") or today.month),
         "group_id": params.get("group_id"),
+        # Ekrandagi filtr EKSPORTDA ham saqlanadi: buxgalter "terminal"
+        # ni tanlab "yuklab olish"ni bossa, faylda hamma usul chiqishi
+        # kutilmagan bo'lardi (PLAN 1.8).
+        "method": params.get("method") or "",
+        "child_id": params.get("child_id"),
+        "received_by": params.get("received_by"),
     }
     builders: dict[str, Callable[..., list[dict[str, Any]]]] = {
         "revenue": selectors.revenue_rows,

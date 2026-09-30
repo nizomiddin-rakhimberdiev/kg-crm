@@ -123,6 +123,24 @@ export interface ChildBalance {
   open_invoices: OpenInvoice[]
 }
 
+/** To'lovlar jurnalining filtri (PLAN 1.8). */
+export interface JournalFilters {
+  paid_from?: string
+  paid_to?: string
+  method?: string
+  child?: string
+  received_by?: string
+}
+
+export interface JournalSummary {
+  date_from: string
+  date_to: string
+  count: number
+  total: string
+  reversed_count: number
+  by_method: Array<{ method: string; total: string; count: number }>
+}
+
 export interface BoardSummary {
   period_year: number
   period_month: number
@@ -159,6 +177,15 @@ export const paymentsApi = {
     }),
 
   list: (params?: Record<string, unknown>) => api.list<Payment>('/payments', params),
+
+  /**
+   * Jurnal yig'indisi — SAHIFADAN qat'i nazar.
+   *
+   * "1–25 / 105" ostida turgan "jami" faqat 25 qatordan hisoblansa,
+   * u har doim kam ko'rsatadi.
+   */
+  journalSummary: (params: JournalFilters) =>
+    api.get<JournalSummary>('/payments/journal-summary', params as Record<string, unknown>),
 
   /**
    * To'lovni qayd etadi.

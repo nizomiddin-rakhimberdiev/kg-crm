@@ -775,4 +775,9 @@ export const messages: Record<string, string> = {
   'Qarz barcha hisob-faktura va toʻlovlardan avtomatik hisoblanadi.':
     'Долг рассчитывается автоматически по всем счетам и платежам.',
   'Shu oy toʻlanmagan': 'Не оплачен в этом месяце',
+  ' · {n} ta qaytarilgan': ' · {n} возвращено',
+  '{n} ta toʻlov': '{n} платежей',
+  'Jami qabul qilingan': 'Всего принято',
+  Sanadan: 'С даты',
+  Sanagacha: 'По дату',
 }

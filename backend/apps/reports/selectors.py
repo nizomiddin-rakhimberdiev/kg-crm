@@ -40,6 +40,8 @@ from apps.finance.selectors import debtor_queryset
 from apps.payroll.models import PayrollRun, PayrollStatus
 
 __all__ = [
+    "payment_journal_queryset",
+    "payment_journal_summary",
     "GROUP_BY_CHOICES",
     "period_buckets",
     "revenue_report",
@@ -557,11 +559,23 @@ def active_children_count(*, organization_id: Any, branch_id: Any = None) -> int
 # ya'ni fayl ekrandagidan ko'proq hech narsa bermasdi.
 
 
-def revenue_rows(
-    *, organization_id: Any, date_from: date, date_to: date, branch_id: Any = None, **_: Any
-) -> list[dict[str, Any]]:
-    """Har bir to'lov — alohida qator."""
+def payment_journal_queryset(
+    *,
+    organization_id: Any,
+    date_from: date,
+    date_to: date,
+    branch_id: Any = None,
+    method: str = "",
+    child_id: Any = None,
+    received_by: Any = None,
+) -> Any:
+    """
+    To'lovlar jurnali — ekran va eksport uchun BITTA so'rov (PLAN 1.8).
 
+    Filtrlarni ikki joyda alohida yozish "ekranda 12 qator, faylda 40"
+    degan farqni tug'dirardi — va buxgalter qaysi biriga ishonishni
+    bilmasdi.
+    """
     queryset = Payment.objects.filter(
         organization_id=organization_id,
         paid_at__date__gte=date_from,
@@ -569,6 +583,37 @@ def revenue_rows(
     ).select_related("child", "invoice", "received_by")
     if branch_id:
         queryset = queryset.filter(branch_id=branch_id)
+    if method:
+        queryset = queryset.filter(method=method)
+    if child_id:
+        queryset = queryset.filter(child_id=child_id)
+    if received_by:
+        queryset = queryset.filter(received_by_id=received_by)
+    return queryset
+
+
+def revenue_rows(
+    *,
+    organization_id: Any,
+    date_from: date,
+    date_to: date,
+    branch_id: Any = None,
+    method: str = "",
+    child_id: Any = None,
+    received_by: Any = None,
+    **_: Any,
+) -> list[dict[str, Any]]:
+    """Har bir to'lov — alohida qator."""
+
+    queryset = payment_journal_queryset(
+        organization_id=organization_id,
+        date_from=date_from,
+        date_to=date_to,
+        branch_id=branch_id,
+        method=method,
+        child_id=child_id,
+        received_by=received_by,
+    )
 
     return [
         {
@@ -777,4 +822,48 @@ def cash_position(*, organization_id: Any, branch_id: Any = None) -> dict[str, A
         "accounts": cash_selectors.account_balances(
             organization_id=organization_id, branch_id=branch_id
         ),
+    }
+
+
+
+def payment_journal_summary(
+    *,
+    organization_id: Any,
+    date_from: date,
+    date_to: date,
+    branch_id: Any = None,
+    method: str = "",
+    child_id: Any = None,
+    received_by: Any = None,
+) -> dict[str, Any]:
+    """
+    Jurnal yig'indisi — SAHIFADAN qat'i nazar.
+
+    Qaytarilgan to'lovlar yig'indiga kirmaydi: ular pul emas. Lekin
+    ular sanaladi va ro'yxatda qoladi — "hech narsa bo'lmagan" degan
+    jurnal jurnal emas (D3).
+    """
+    queryset = payment_journal_queryset(
+        organization_id=organization_id,
+        date_from=date_from,
+        date_to=date_to,
+        branch_id=branch_id,
+        method=method,
+        child_id=child_id,
+        received_by=received_by,
+    )
+    live = queryset.filter(reversed_at__isnull=True)
+    by_method = [
+        {"method": row["method"], "total": _money(row["total"]), "count": row["count"]}
+        for row in live.values("method")
+        .annotate(total=Coalesce(Sum("amount"), ZERO), count=Count("id"))
+        .order_by("-total")
+    ]
+    return {
+        "date_from": date_from.isoformat(),
+        "date_to": date_to.isoformat(),
+        "count": live.count(),
+        "total": _money(live.aggregate(t=Coalesce(Sum("amount"), ZERO))["t"]),
+        "reversed_count": queryset.filter(reversed_at__isnull=False).count(),
+        "by_method": by_method,
     }

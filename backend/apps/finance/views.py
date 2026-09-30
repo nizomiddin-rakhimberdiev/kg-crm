@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date
 from typing import Any
 
 from django.http import Http404
@@ -273,10 +274,18 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
         "batch": "create",
         "board": "read",
         "board_summary": "read",
+        "journal_summary": "read",
     }
     model = Payment
     select_related_fields = ("child", "invoice")
-    filterset_fields = ["child", "invoice", "method"]
+    # Jurnal filtri (PLAN 1.8): sana oralig'i, usul, bola, kassir.
+    filterset_fields = {
+        "child": ["exact"],
+        "invoice": ["exact"],
+        "method": ["exact"],
+        "received_by": ["exact"],
+        "paid_at": ["date__gte", "date__lte"],
+    }
     ordering_fields = ["paid_at", "amount"]
     http_method_names = ["get", "post", "head", "options"]
 
@@ -446,6 +455,34 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
         )
         payment.refresh_from_db()
         return Response(PaymentSerializer(payment).data)
+
+    @action(detail=False, methods=["get"], url_path="journal-summary")
+    def journal_summary(self, request: Request) -> Response:
+        """
+        `GET /payments/journal-summary` — jurnalning YIG'INDISI (PLAN 1.8).
+
+        Ro'yxat sahifalanadi, yig'indi esa sahifaga bog'liq bo'lmasligi
+        kerak: "1–25 / 105" ostida turgan "jami" faqat 25 qatordan
+        hisoblansa, u har doim kam ko'rsatadi.
+        """
+        from apps.reports.selectors import payment_journal_summary
+
+        user = request_user(request)
+        today = timezone.localdate()
+        params = request.query_params
+        date_from = params.get("paid_from")
+        date_to = params.get("paid_to")
+
+        summary = payment_journal_summary(
+            organization_id=user.organization_id,
+            date_from=date.fromisoformat(date_from) if date_from else today.replace(day=1),
+            date_to=date.fromisoformat(date_to) if date_to else today,
+            branch_id=self._branch_scope(request, user),
+            method=params.get("method") or "",
+            child_id=params.get("child") or None,
+            received_by=params.get("received_by") or None,
+        )
+        return Response(summary)
 
     @action(detail=False, methods=["get"], url_path="daily-summary")
     def daily_summary(self, request: Request) -> Response:

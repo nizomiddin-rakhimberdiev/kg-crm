@@ -777,4 +777,9 @@ export const messages: Record<string, string> = {
   'Qarz barcha hisob-faktura va toʻlovlardan avtomatik hisoblanadi.':
     'The balance is computed automatically from all invoices and payments.',
   'Shu oy toʻlanmagan': 'Unpaid this month',
+  ' · {n} ta qaytarilgan': ' · {n} reversed',
+  '{n} ta toʻlov': '{n} payments',
+  'Jami qabul qilingan': 'Total received',
+  Sanadan: 'From',
+  Sanagacha: 'To',
 }
