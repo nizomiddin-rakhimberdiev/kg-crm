@@ -39,6 +39,7 @@ export const messages: Record<string, string> = {
   'Barcha holatlar': 'Все статусы',
   Barchasi: 'Все',
   "Batafsil ko'rish": 'Подробнее',
+  'Bayram va yopiq kunlar': 'Праздники и нерабочие дни',
   Baza: 'База',
   "Baza oldindan to'langan — faqat o'sish hisoblanadi.":
     'База оплачена заранее — начисляется только прирост.',
@@ -179,6 +180,8 @@ export const messages: Record<string, string> = {
     'Выберите группу и сохраните весь день одним нажатием.',
   Hafta: 'Неделя',
   'Hafta: {periodLabel}': 'Неделя: {periodLabel}',
+  "Hali bayram kiritilmagan — qayta hisob barcha ish kunlarini to'liq sanaydi.":
+    'Праздники ещё не внесены — перерасчёт считает все рабочие дни полностью.',
   "Hamma to'lagan. Muddati o'tgan hisob-faktura paydo bo'lsa, bola shu ro'yxatga tushadi.":
     'Все оплатили. Как только появится просроченный счёт, ребёнок попадёт в этот список.',
   Hammasi: 'Все',
@@ -319,6 +322,7 @@ export const messages: Record<string, string> = {
   Maosh: 'Оклад',
   'Maosh:': 'Оклад:',
   Mar: 'Мар',
+  "Masalan: Navro'z": 'Например: Навруз',
   'Masalan: bonus kiritilmay qolgan': 'Например: не внесли премию',
   'Masalan: kasal, shifokorda, oilaviy sabab': 'Например: болеет, у врача, семейные обстоятельства',
   'Masalan: kraska, konditsioner ta’miri': 'Например: краска, ремонт кондиционера',
@@ -416,6 +420,7 @@ export const messages: Record<string, string> = {
   'Qaysi puldan': 'С каких денег',
   Qayta: 'Повторить',
   'Qayta faollashtirish': 'Активировать снова',
+  'Qayta hisobda ish kuni sanalmaydi': 'В перерасчёте не считается рабочим днём',
   'Qayta hisoblash': 'Пересчитать',
   'Qayta ochish': 'Открыть заново',
   'Qayta urinish': 'Попробовать снова',

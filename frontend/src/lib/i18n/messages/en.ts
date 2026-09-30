@@ -40,6 +40,7 @@ export const messages: Record<string, string> = {
   'Barcha holatlar': 'All statuses',
   Barchasi: 'All',
   "Batafsil ko'rish": 'View details',
+  'Bayram va yopiq kunlar': 'Holidays and closed days',
   Baza: 'Base',
   "Baza oldindan to'langan — faqat o'sish hisoblanadi.":
     'The base is prepaid — only growth is billed.',
@@ -181,6 +182,8 @@ export const messages: Record<string, string> = {
     'Pick a group and save the whole day in one click.',
   Hafta: 'Week',
   'Hafta: {periodLabel}': 'Week: {periodLabel}',
+  "Hali bayram kiritilmagan — qayta hisob barcha ish kunlarini to'liq sanaydi.":
+    'No holidays entered yet — the credit counts every working day in full.',
   "Hamma to'lagan. Muddati o'tgan hisob-faktura paydo bo'lsa, bola shu ro'yxatga tushadi.":
     'Everyone has paid. When an invoice becomes overdue, the child will appear here.',
   Hammasi: 'All',
@@ -322,6 +325,7 @@ export const messages: Record<string, string> = {
   Maosh: 'Salary',
   'Maosh:': 'Salary:',
   Mar: 'Mar',
+  "Masalan: Navro'z": "For example: Navro'z",
   'Masalan: bonus kiritilmay qolgan': 'For example: a bonus was left out',
   'Masalan: kasal, shifokorda, oilaviy sabab': 'For example: ill, at the doctor, family reasons',
   'Masalan: kraska, konditsioner ta’miri': 'For example: paint, air-conditioner repair',
@@ -419,6 +423,7 @@ export const messages: Record<string, string> = {
   'Qaysi puldan': 'Paid from',
   Qayta: 'Retry',
   'Qayta faollashtirish': 'Reactivate',
+  'Qayta hisobda ish kuni sanalmaydi': 'Not counted as a working day in credits',
   'Qayta hisoblash': 'Recalculate',
   'Qayta ochish': 'Reopen',
   'Qayta urinish': 'Try again',

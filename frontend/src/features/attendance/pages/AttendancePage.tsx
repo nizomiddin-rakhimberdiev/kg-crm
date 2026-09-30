@@ -18,6 +18,7 @@ import { groupsApi } from '@/features/children/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type AttendanceStatus } from '@/lib/api/types'
 import { AbsenceClaimsPanel } from '@/features/attendance/components/AbsenceClaimsPanel'
+import { HolidaysPanel } from '@/features/attendance/components/HolidaysPanel'
 import { Modal } from '@/components/ui/Modal'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
@@ -384,6 +385,11 @@ export default function AttendancePage() {
       <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
         <AbsenceClaimsPanel />
       </section>
+
+      {/* Bayram kalendari qaytarish bloki BILAN YONMA-YON: u bo'sh
+          bo'lsa, qayta hisob bayramni ham ish kuni deb sanaydi va
+          bog'cha ishlamagan kun uchun pul qaytarib yuboradi. */}
+      <HolidaysPanel />
     </div>
   )
 }
