@@ -24,7 +24,12 @@ from django.utils.translation import gettext
 
 from apps.cash import services as cash
 from apps.cash.models import MovementDirection, MovementSource
-from apps.children.models import Child, EnrollmentStatus
+from apps.children.models import (
+    Child,
+    Enrollment,
+    EnrollmentState,
+    EnrollmentStatus,
+)
 from apps.core.exceptions import BusinessRuleViolation
 from apps.finance.models import (
     ChildLedgerEntry,
@@ -46,6 +51,7 @@ __all__ = [
     "issue_invoice",
     "cancel_invoice",
     "generate_monthly_invoices",
+    "preview_monthly_invoices",
     "recompute_child_balance",
     "applicable_discount",
     "first_month_share",
@@ -553,6 +559,7 @@ class BillingRunResult:
     created: int = 0
     skipped_existing: int = 0
     skipped_no_tariff: list[str] = field(default_factory=list)
+    skipped_next_month: list[str] = field(default_factory=list)
     total_amount: Decimal = Decimal("0.00")
 
     def as_dict(self) -> dict[str, Any]:
@@ -561,8 +568,154 @@ class BillingRunResult:
             "created": self.created,
             "skipped_existing": self.skipped_existing,
             "skipped_no_tariff": self.skipped_no_tariff,
+            "skipped_next_month": self.skipped_next_month,
             "total_amount": str(self.total_amount),
         }
+
+
+@dataclass
+class BillingPreviewRow:
+    """Preview'dagi bitta bola."""
+
+    child_id: str
+    full_name: str
+    group_name: str
+    amount: Decimal
+    note: str
+    advance: Decimal
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "child_id": self.child_id,
+            "full_name": self.full_name,
+            "group_name": self.group_name,
+            "amount": f"{self.amount:.2f}",
+            "note": self.note,
+            "advance": f"{self.advance:.2f}",
+        }
+
+
+@dataclass
+class BillingPreview:
+    """
+    Generatsiya nima qilishini OLDINDAN aytadi (PLAN 1.4).
+
+    Auditda "Hisob-faktura chiqarish" tugmasi hech narsa so'ramasdan
+    ishlab ketardi. 200 bolali bog'chada bu 200 ta moliyaviy hujjat —
+    va ularni qaytarish uchun har birini alohida bekor qilish kerak.
+    Shuning uchun endi avval ro'yxat ko'rsatiladi.
+    """
+
+    period: str
+    will_create: int = 0
+    skipped_existing: int = 0
+    skipped_no_tariff: list[str] = field(default_factory=list)
+    skipped_next_month: list[str] = field(default_factory=list)
+    total_amount: Decimal = Decimal("0.00")
+    rows: list[BillingPreviewRow] = field(default_factory=list)
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "period": self.period,
+            "will_create": self.will_create,
+            "skipped_existing": self.skipped_existing,
+            "skipped_no_tariff": self.skipped_no_tariff,
+            "skipped_next_month": self.skipped_next_month,
+            "total_amount": f"{self.total_amount:.2f}",
+            "rows": [row.as_dict() for row in self.rows],
+        }
+
+
+def _billing_candidates(*, branch: Any = None) -> Any:
+    """Generatsiyaga tushadigan bolalar — preview va ishning o'zi uchun BIR XIL."""
+    children = Child.objects.filter(
+        is_active=True, enrollment_status=EnrollmentStatus.ACTIVE
+    ).select_related("tariff", "branch", "organization")
+    if branch is not None:
+        children = children.filter(branch=branch)
+    return children
+
+
+def preview_monthly_invoices(
+    *,
+    organization: Any,
+    branch: Any = None,
+    period_year: int,
+    period_month: int,
+) -> BillingPreview:
+    """
+    Generatsiyani HISOBLAYDI, lekin hech narsa yozmaydi (PLAN 1.4).
+
+    Nomzodlar ro'yxati `generate_monthly_invoices` bilan BITTA
+    funksiyadan keladi (`_billing_candidates`) — aks holda preview
+    "12 ta bola" deb, ish esa 14 tasini yaratib qo'yishi mumkin edi va
+    bunday farq eng yomon turdagi xato bo'lardi: u ishonchni oshirib,
+    keyin sindiradi.
+    """
+    if not 1 <= period_month <= 12:
+        raise BusinessRuleViolation(gettext("Oy 1–12 oralig'ida bo'lishi kerak."))
+
+    preview = BillingPreview(period=f"{period_year}-{period_month:02d}")
+
+    for child in _billing_candidates(branch=branch):
+        if child.tariff_id is None:
+            preview.skipped_no_tariff.append(child.full_name)
+            continue
+
+        already = (
+            Invoice.objects.filter(child=child, period_year=period_year, period_month=period_month)
+            .exclude(status=InvoiceStatus.CANCELLED)
+            .exists()
+        )
+        if already:
+            preview.skipped_existing += 1
+            continue
+
+        if (
+            _is_first_period(child, period_year, period_month)
+            and str(_setting("finance.first_month_mode", child.branch)) == FIRST_MONTH_NEXT
+        ):
+            preview.skipped_next_month.append(child.full_name)
+            continue
+
+        issued = date(period_year, period_month, 1)
+        if child.enrolled_on is not None and _is_first_period(child, period_year, period_month):
+            issued = max(issued, child.enrolled_on)
+        amount, _discount = apply_discount(child.tariff.amount, applicable_discount(child, issued))
+
+        note = ""
+        share = first_month_share(child=child, period_year=period_year, period_month=period_month)
+        if share is not None:
+            attended, total = share
+            if total > 0 and attended < total:
+                amount = _whole_som(amount * attended / total)
+                note = gettext("{month}, {total} ish kunidan {attended} kun").format(
+                    month=f"{period_month:02d}/{period_year}", total=total, attended=attended
+                )
+
+        group = (
+            Enrollment.objects.filter(child=child, status=EnrollmentState.ACTIVE)
+            .order_by("-start_date")
+            .values_list("group__name", flat=True)
+            .first()
+        )
+        preview.rows.append(
+            BillingPreviewRow(
+                child_id=str(child.id),
+                full_name=child.full_name,
+                group_name=group or "",
+                amount=amount,
+                note=note,
+                # Avans bo'lsa, faktura yozilishi bilan yeyiladi —
+                # mudira buni tasdiqlashdan oldin ko'rishi kerak.
+                advance=child_advance(child),
+            )
+        )
+        preview.will_create += 1
+        preview.total_amount += amount
+
+    preview.rows.sort(key=lambda row: row.full_name)
+    return preview
 
 
 def generate_monthly_invoices(
@@ -586,13 +739,7 @@ def generate_monthly_invoices(
 
     result = BillingRunResult(period=f"{period_year}-{period_month:02d}")
 
-    children = Child.objects.filter(
-        is_active=True, enrollment_status=EnrollmentStatus.ACTIVE
-    ).select_related("tariff", "branch", "organization")
-    if branch is not None:
-        children = children.filter(branch=branch)
-
-    for child in children:
+    for child in _billing_candidates(branch=branch):
         if child.tariff_id is None:
             result.skipped_no_tariff.append(child.full_name)
             continue
@@ -617,6 +764,15 @@ def generate_monthly_invoices(
         # tasini hisob-fakturasiz qoldirardi. Holbuki to'qnashuvning
         # ma'nosi "bu bola uchun allaqachon bor" — ya'ni aynan
         # o'tkazib yuborish kerak bo'lgan holat.
+        # Sozlama "keyingi oydan" bo'lsa, bu bola bu oyda o'tkazib
+        # yuboriladi — bitta bolaning qoidasi butun ishni to'xtatmaydi.
+        if (
+            _is_first_period(child, period_year, period_month)
+            and str(_setting("finance.first_month_mode", child.branch)) == FIRST_MONTH_NEXT
+        ):
+            result.skipped_next_month.append(child.full_name)
+            continue
+
         try:
             with transaction.atomic():
                 invoice = issue_invoice(

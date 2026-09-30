@@ -233,17 +233,26 @@ class TestFirstInvoice:
 class TestInvoiceRunPreview:
     """PLAN 1.4 — ommaviy generatsiyadan oldin nima bo'lishini ko'rsatish."""
 
-    @pytest.mark.xfail(strict=True, reason="PLAN 1.4: preview funksiyasi hali yo'q")
     def test_run_can_be_previewed_before_it_is_committed(self, tenant_a, tariff):
-        _child(tenant_a, tariff, first="Bir", last="Bola")
-        _child(tenant_a, tariff, first="Tarifsiz", last="Bola").tariff = None
+        from apps.children.models import Child
 
+        _child(tenant_a, tariff, first="Bir", last="Bola")
         with organization_context(tenant_a.organization.id):
-            preview = services.preview_monthly_invoices(  # type: ignore[attr-defined]
+            Child.objects.create(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                first_name="Tarifsiz",
+                last_name="Bola",
+                date_of_birth=date(2021, 3, 14),
+                gender="male",
+            )
+
+            preview = services.preview_monthly_invoices(
                 organization=tenant_a.organization, period_year=2026, period_month=10
             )
-            # Preview hech narsa yozmasligi kerak.
+            # Preview hech narsa YOZMAYDI.
             assert not Invoice.objects.filter(period_year=2026, period_month=10).exists()
 
-        assert preview.will_create >= 1
-        assert isinstance(preview.skipped_no_tariff, list)
+        assert preview.will_create == 1
+        assert preview.skipped_no_tariff == ["Bola Tarifsiz"]
+        assert preview.total_amount == TARIFF

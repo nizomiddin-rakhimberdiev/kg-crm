@@ -95,7 +95,7 @@ class InvoiceViewSet(BranchScopedMixin, TenantReadOnlyViewSet):
     """
 
     permission_module = "payments"
-    permission_action_map = {"generate": "create", "cancel": "update"}
+    permission_action_map = {"generate": "create", "preview_run": "create", "cancel": "update"}
     model = Invoice
     serializer_class = InvoiceSerializer
     select_related_fields = ("child", "tariff")
@@ -105,6 +105,35 @@ class InvoiceViewSet(BranchScopedMixin, TenantReadOnlyViewSet):
 
     def get_base_queryset(self) -> Any:
         return super().get_base_queryset().prefetch_related("lines")
+
+    @action(detail=False, methods=["post"], url_path="preview-run")
+    def preview_run(self, request: Request) -> Response:
+        """
+        `POST /invoices/preview-run` — generatsiya nima qilishini oldindan aytadi.
+
+        Hech narsa yozmaydi. 200 bolali bog'chada "Hisob-faktura
+        chiqarish" bitta bosishda 200 ta moliyaviy hujjat yaratadi va
+        ularni qaytarish uchun har birini alohida bekor qilish kerak —
+        shuning uchun avval ro'yxat ko'rsatiladi (PLAN 1.4).
+        """
+        serializer = GenerateInvoicesSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        user = request_user(request)
+        branch = None
+        if data.get("branch_id"):
+            branch = resolve_branch(user, data["branch_id"])
+        elif user.branch_id:
+            branch = user.branch
+
+        preview = services.preview_monthly_invoices(
+            organization=user.organization,
+            branch=branch,
+            period_year=data["period_year"],
+            period_month=data["period_month"],
+        )
+        return Response(preview.as_dict(), status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["post"])
     def generate(self, request: Request) -> Response:

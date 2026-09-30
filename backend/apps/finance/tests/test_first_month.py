@@ -192,3 +192,105 @@ class TestDueDate:
             invoice = services.issue_invoice(child=child, period_year=2026, period_month=2)
 
         assert invoice.due_date == date(2026, 2, 28)
+
+
+class TestBillingPreview:
+    """PLAN 1.4 — tasdiqdan oldin nima bo'lishini ko'rsatish."""
+
+    def test_preview_and_run_agree(self, tenant_a, tariff):
+        """
+        Preview aytgan raqam ishning natijasi bilan BIR XIL bo'lishi shart.
+
+        Aks holda preview ishonchni oshirib, keyin sindiradi — bu
+        umuman preview bo'lmaganidan yomon.
+        """
+        for day in (1, 17, 30):
+            _child(tenant_a, tariff, date(2026, 9, day))
+
+        with organization_context(tenant_a.organization.id):
+            preview = services.preview_monthly_invoices(
+                organization=tenant_a.organization, period_year=2026, period_month=9
+            )
+            result = services.generate_monthly_invoices(
+                organization=tenant_a.organization, period_year=2026, period_month=9
+            )
+
+        assert preview.will_create == result.created == 3
+        assert preview.total_amount == result.total_amount
+
+    def test_preview_writes_nothing(self, tenant_a, tariff):
+        from apps.finance.models import Invoice
+
+        _child(tenant_a, tariff, date(2026, 9, 1))
+        with organization_context(tenant_a.organization.id):
+            services.preview_monthly_invoices(
+                organization=tenant_a.organization, period_year=2026, period_month=9
+            )
+            assert not Invoice.objects.exists()
+
+    def test_preview_explains_what_it_skips(self, tenant_a, tariff):
+        from apps.children.models import Child
+
+        _child(tenant_a, tariff, date(2026, 9, 1))
+        with organization_context(tenant_a.organization.id):
+            Child.objects.create(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                first_name="Tarifsiz",
+                last_name="Bola",
+                date_of_birth=date(2021, 3, 14),
+                gender="male",
+            )
+            # Bir bolaga hujjat allaqachon yozilgan.
+            existing = _child(tenant_a, tariff, date(2026, 8, 1))
+            services.issue_invoice(child=existing, period_year=2026, period_month=9)
+
+            preview = services.preview_monthly_invoices(
+                organization=tenant_a.organization, period_year=2026, period_month=9
+            )
+
+        assert preview.will_create == 1
+        assert preview.skipped_existing == 1
+        assert preview.skipped_no_tariff == ["Bola Tarifsiz"]
+
+    def test_preview_shows_the_prorated_reason(self, tenant_a, tariff):
+        _child(tenant_a, tariff, date(2026, 9, 30))
+        with organization_context(tenant_a.organization.id):
+            preview = services.preview_monthly_invoices(
+                organization=tenant_a.organization, period_year=2026, period_month=9
+            )
+
+        assert preview.rows[0].amount == Decimal("68182.00")
+        assert "22" in preview.rows[0].note
+
+    def test_preview_shows_the_advance_that_will_be_consumed(self, tenant_a, tariff):
+        """Mudira avans yeyilishini TASDIQLASHDAN OLDIN ko'rishi kerak."""
+        child = _child(tenant_a, tariff, date(2026, 9, 1))
+        with organization_context(tenant_a.organization.id):
+            services.record_payment(child=child, amount=Decimal("200000"), method="cash")
+            preview = services.preview_monthly_invoices(
+                organization=tenant_a.organization, period_year=2026, period_month=9
+            )
+
+        assert preview.rows[0].advance == Decimal("200000.00")
+
+    def test_next_month_mode_is_listed_not_crashed(self, tenant_a, tariff):
+        """Bitta bolaning qoidasi butun ishni to'xtatmasligi kerak."""
+        _child(tenant_a, tariff, date(2026, 9, 30))
+        with organization_context(tenant_a.organization.id):
+            set_setting(
+                organization=tenant_a.organization,
+                key="finance.first_month_mode",
+                value="next_month",
+            )
+            preview = services.preview_monthly_invoices(
+                organization=tenant_a.organization, period_year=2026, period_month=9
+            )
+            result = services.generate_monthly_invoices(
+                organization=tenant_a.organization, period_year=2026, period_month=9
+            )
+
+        assert preview.will_create == 0
+        assert preview.skipped_next_month == ["Bolasi Sinov"]
+        assert result.created == 0
+        assert result.skipped_next_month == ["Bolasi Sinov"]
