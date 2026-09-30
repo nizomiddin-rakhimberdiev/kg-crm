@@ -22,7 +22,20 @@ DEFAULTS: dict[str, Any] = {
     # har safar qo'lda o'zgartirishni yo'q qiladi.
     "general.default_language": "uz",
     "finance.reminder_day": 5,
+    # Oylik to'lov kuni — hisob-faktura muddati shu kunga qo'yiladi.
     "finance.due_day": 10,
+    # --- Birinchi oy (Q2, Q3) ---
+    #
+    # Oy o'rtasida kelgan bola uchun birinchi hisob-faktura qanday
+    # yoziladi: `full` (to'liq oy), `prorated` (ish kunlari bo'yicha),
+    # `next_month` (bu oy yozilmaydi). Sukut — proporsional: ota-ona
+    # kelmagan kunlari uchun to'lamasligi eng adolatli va eng kam
+    # bahsli variant.
+    "finance.first_month_mode": "prorated",
+    # Birinchi hisob-faktura muddati qabul sanasidan kamida shuncha kun
+    # keyin bo'ladi. Ya'ni oyning 30-kunida kelgan bola fakturasi
+    # yaratilgan kuniyoq kechikkan bo'lib qolmaydi.
+    "finance.first_invoice_grace_days": 5,
     "notifications.sms_enabled": True,
     "notifications.payment_receipt": True,
     "attendance.auto_absent": False,

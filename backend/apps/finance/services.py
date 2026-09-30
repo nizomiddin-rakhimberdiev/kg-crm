@@ -13,7 +13,7 @@ from __future__ import annotations
 import calendar
 import uuid
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
@@ -48,6 +48,8 @@ __all__ = [
     "generate_monthly_invoices",
     "recompute_child_balance",
     "applicable_discount",
+    "first_month_share",
+    "first_invoice_due_date",
     "record_payment",
     "record_payment_batch",
     "reverse_payment",
@@ -237,6 +239,104 @@ def _apply_absence_credits(
     return remaining
 
 
+# --- Birinchi oy: proporsiya va muddat (PLAN 1.3, Q2 va Q3) ---
+
+SOM = Decimal("1")
+
+#: `finance.first_month_mode` qiymatlari.
+FIRST_MONTH_FULL = "full"
+FIRST_MONTH_PRORATED = "prorated"
+FIRST_MONTH_NEXT = "next_month"
+
+
+def _setting(key: str, branch: Any = None) -> Any:
+    from apps.settings_app.services import get_setting
+
+    return get_setting(key=key, branch=branch)
+
+
+def _whole_som(value: Decimal) -> Decimal:
+    """
+    Butun so'mgacha yaxlitlash (Q2).
+
+    Tiyin ishlatilmaydi: kvitansiyada "68 181,82 soʻm" degan raqam
+    ota-onaga hech narsa demaydi va kassada shunday pul yo'q.
+    """
+    return value.quantize(SOM, rounding=ROUND_HALF_UP)
+
+
+def _is_first_period(child: Child, period_year: int, period_month: int) -> bool:
+    """
+    Bu davr bolaning BIRINCHI hisob-faktura oyimi?
+
+    Ikki shart: qabul sanasi shu oyga tushadi va undan oldin hech qanday
+    hisob-faktura yozilmagan. Ikkinchi shart kerak — bola chiqib ketib,
+    keyin qaytib kelgan bo'lishi mumkin, va o'shanda ikkinchi marta
+    proporsional hisoblash noto'g'ri bo'lardi.
+    """
+    enrolled = child.enrolled_on
+    if enrolled is None:
+        return False
+    if (enrolled.year, enrolled.month) != (period_year, period_month):
+        return False
+    return not (
+        Invoice.objects.filter(child=child).exclude(status=InvoiceStatus.CANCELLED).exists()
+    )
+
+
+def first_month_share(
+    *, child: Child, period_year: int, period_month: int
+) -> tuple[int, int] | None:
+    """
+    Birinchi oy uchun (bolaning kunlari, oyning ish kunlari).
+
+    `None` — bu oy proporsional hisoblanmaydi (birinchi oy emas yoki
+    sozlama `full`).
+    """
+    from apps.attendance.services_absence import billable_days, working_days_in_month
+
+    if not _is_first_period(child, period_year, period_month):
+        return None
+    if str(_setting("finance.first_month_mode", child.branch)) != FIRST_MONTH_PRORATED:
+        return None
+
+    last_day = calendar.monthrange(period_year, period_month)[1]
+    assert child.enrolled_on is not None  # `_is_first_period` kafolati
+    attended = billable_days(
+        organization_id=child.organization_id,
+        date_from=child.enrolled_on,
+        date_to=date(period_year, period_month, last_day),
+        branch=child.branch,
+    )
+    total = working_days_in_month(
+        organization_id=child.organization_id,
+        year=period_year,
+        month=period_month,
+        branch=child.branch,
+    )
+    return attended, total
+
+
+def first_invoice_due_date(*, child: Child, period_year: int, period_month: int) -> date:
+    """
+    Hisob-faktura muddati (Q3): `max(to'lov kuni, qabul + imtiyoz kunlari)`.
+
+    Ilgari muddat har doim oyning 10-kuni edi. Natijada 30-sentabrda
+    qabul qilingan bolaning fakturasi yaratilgan kuniyoq 20 kun
+    kechikkan bo'lib chiqardi — va u darhol qarzdorlar ro'yxatiga,
+    eslatma SMS navbatiga va brifingga tushardi.
+    """
+    last_day = calendar.monthrange(period_year, period_month)[1]
+    payment_day = int(_setting("finance.due_day", child.branch) or 10)
+    due = date(period_year, period_month, min(max(payment_day, 1), last_day))
+
+    if _is_first_period(child, period_year, period_month):
+        grace = int(_setting("finance.first_invoice_grace_days", child.branch) or 0)
+        assert child.enrolled_on is not None
+        due = max(due, child.enrolled_on + timedelta(days=grace))
+    return due
+
+
 @transaction.atomic
 def issue_invoice(
     *,
@@ -269,10 +369,29 @@ def issue_invoice(
     if existing:
         return existing
 
+    # Birinchi oy sozlamasi "keyingi oydan" bo'lsa, hujjat yozilmaydi
+    # (Q2). Oy o'rtasida kelgan bola birinchi to'lovini keyingi oy
+    # boshida to'liq qiladi.
+    if (
+        _is_first_period(child, period_year, period_month)
+        and str(_setting("finance.first_month_mode", child.branch)) == FIRST_MONTH_NEXT
+    ):
+        raise BusinessRuleViolation(
+            gettext(
+                "{full_name}: sozlamaga ko'ra birinchi hisob-faktura keyingi oydan yoziladi."
+            ).format(full_name=child.full_name)
+        )
+
+    # Hujjat sanasi qabul sanasidan oldin bo'la olmaydi: 30-sentabrda
+    # kelgan bolaning fakturasi 1-sentabrdan boshlansa, u kelmagan
+    # kunlari uchun ham to'lagan bo'lardi.
     issued = issued_date or date(period_year, period_month, 1)
+    if child.enrolled_on is not None and _is_first_period(child, period_year, period_month):
+        issued = max(issued, child.enrolled_on)
     if due_date is None:
-        last_day = calendar.monthrange(period_year, period_month)[1]
-        due_date = date(period_year, period_month, min(10, last_day))
+        due_date = first_invoice_due_date(
+            child=child, period_year=period_year, period_month=period_month
+        )
     if due_date < issued:
         due_date = issued
 
@@ -280,6 +399,18 @@ def issue_invoice(
     assert tariff is not None  # yuqoridagi `tariff_id is None` tekshiruvi kafolati
     discount = applicable_discount(child, issued)
     amount_due, discount_amount = apply_discount(tariff.amount, discount)
+
+    # Proporsional birinchi oy (Q2): faqat bolaning ish kunlari.
+    share = first_month_share(child=child, period_year=period_year, period_month=period_month)
+    prorated_note = ""
+    if share is not None:
+        attended, total = share
+        if total > 0 and attended < total:
+            full_amount = amount_due
+            amount_due = _whole_som(full_amount * attended / total)
+            prorated_note = gettext("{month}, {total} ish kunidan {attended} kun").format(
+                month=f"{period_month:02d}/{period_year}", total=total, attended=attended
+            )
 
     try:
         invoice = Invoice.objects.create(
@@ -308,12 +439,19 @@ def issue_invoice(
             return existing
         raise BusinessRuleViolation(gettext("Hisob-fakturani yaratib bo'lmadi.")) from exc
 
+    # Satr izohida proporsiya KO'RINADI. "68 182 soʻm" degan raqam
+    # sababsiz tushunarsiz; "22 ish kunidan 1 kun" esa ota-onaga ham,
+    # mudiraga ham bir qarashda hamma narsani aytadi.
     InvoiceLine.objects.create(
         invoice=invoice,
-        description=f"{tariff.name} — {period_month:02d}/{period_year}",
+        description=(
+            f"{tariff.name} — {prorated_note}"
+            if prorated_note
+            else f"{tariff.name} — {period_month:02d}/{period_year}"
+        ),
         quantity=Decimal("1"),
-        unit_amount=tariff.amount,
-        line_total=tariff.amount,
+        unit_amount=amount_due if prorated_note else tariff.amount,
+        line_total=amount_due if prorated_note else tariff.amount,
     )
     if discount_amount > 0 and discount is not None:
         InvoiceLine.objects.create(

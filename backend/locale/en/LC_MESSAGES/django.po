@@ -983,3 +983,9 @@ msgstr "{year}-{month:02d} has no working days — check the calendar."
 
 msgid "`period_year` va `period_month` butun son bo'lishi kerak."
 msgstr "`period_year` and `period_month` must be whole numbers."
+
+msgid "{full_name}: sozlamaga ko'ra birinchi hisob-faktura keyingi oydan yoziladi."
+msgstr "{full_name}: per the settings, the first invoice starts from next month."
+
+msgid "{month}, {total} ish kunidan {attended} kun"
+msgstr "{month}, {attended} of {total} working days"

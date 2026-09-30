@@ -195,9 +195,8 @@ class TestFirstInvoice:
     fakturasi yaratilgan kuniyoq kechikkan bo'ladi.
     """
 
-    @pytest.mark.xfail(strict=True, reason="PLAN 1.3: proporsional hisob yo'q — to'liq oy yoziladi")
     def test_first_invoice_is_prorated_from_the_enrolment_date(self, tenant_a, tariff):
-        # 2026-09-30 — seshanba, sentabrning 22 ish kunidan oxirgisi.
+        # 2026-09-30 — chorshanba, sentabrning 22 ish kunidan oxirgisi.
         child = _child(
             tenant_a, tariff, first="Sinov", last="Claude", enrolled_on=date(2026, 9, 30)
         )
@@ -207,7 +206,6 @@ class TestFirstInvoice:
         # 1 500 000 ÷ 22 × 1 = 68 182 (butun so'mgacha).
         assert invoice.amount_due == Decimal("68182.00")
 
-    @pytest.mark.xfail(strict=True, reason="PLAN 1.3: muddat doim oyning 10-kuni")
     def test_first_invoice_is_not_overdue_on_the_day_it_is_created(self, tenant_a, tariff):
         child = _child(
             tenant_a, tariff, first="Sinov", last="Claude", enrolled_on=date(2026, 9, 30)
@@ -219,7 +217,6 @@ class TestFirstInvoice:
         assert invoice.due_date >= date(2026, 10, 5)
         assert invoice.issued_date >= child.enrolled_on
 
-    @pytest.mark.xfail(strict=True, reason="PLAN 1.3: `finance.due_day` sozlamasi o'qilmaydi")
     def test_due_day_setting_is_honoured(self, tenant_a, tariff):
         from apps.settings_app.services import set_setting
 

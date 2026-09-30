@@ -984,3 +984,9 @@ msgstr "В {year}-{month:02d} нет рабочих дней — проверь�
 
 msgid "`period_year` va `period_month` butun son bo'lishi kerak."
 msgstr "`period_year` и `period_month` должны быть целыми числами."
+
+msgid "{full_name}: sozlamaga ko'ra birinchi hisob-faktura keyingi oydan yoziladi."
+msgstr "{full_name}: согласно настройке первый счёт выставляется со следующего месяца."
+
+msgid "{month}, {total} ish kunidan {attended} kun"
+msgstr "{month}, {attended} дн. из {total} рабочих"
