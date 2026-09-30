@@ -6,8 +6,8 @@
  * yangisi chiqariladi.
  */
 
-import { useEffect, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ban, FileText, Plus, Search, Trash2, Users, Wallet } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { invoicesApi, paymentsApi, tariffsApi, type BoardRow } from '@/features/payments/api'
@@ -63,7 +63,6 @@ export default function PaymentsPage() {
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebouncedValue(search, 250)
   const [status, setStatus] = useState<'' | 'debtor' | 'paid' | 'no_invoice'>('')
-  const [page, setPage] = useState(1)
   // Bosilgan bola — to'lov oynasi shu qator bilan ochiladi.
   const [paying, setPaying] = useState<BoardRow | null>(null)
   const [runResult, setRunResult] = useState<BillingRunResult | null>(null)
@@ -72,23 +71,28 @@ export default function PaymentsPage() {
   const [reverseReason, setReverseReason] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  // Filtr yoki qidiruv o'zgarsa birinchi sahifaga qaytamiz — aks holda
-  // "3-sahifa" da turgan holda qidirilsa, bo'sh ro'yxat chiqardi.
-  useEffect(() => {
-    setPage(1)
-  }, [debouncedSearch, status, year, month])
-
-  const boardParams = {
+  // Sahifalar `useInfiniteQuery` bilan yig'iladi — qo'lda emas.
+  //
+  // Avval sahifalar `useState` + `useEffect` bilan to'planardi va u
+  // JIMGINA noto'g'ri edi: "Yana ko'rsatish" bosilganda effekt avval
+  // ESKI ma'lumot bilan ishga tushib, birinchi sahifani ikkinchi
+  // marta qo'shib yuborardi — jonli sinovda 100 qator 205 ta bo'lib
+  // ko'rindi. Bu vosita aynan shu ish uchun mo'ljallangan va
+  // takrorlanish tuzilishi bo'yicha mumkin emas.
+  const boardFilters = {
     period_year: year,
     period_month: month,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
     ...(status ? { status } : {}),
-    page,
   }
-  const boardQuery = useQuery({
-    queryKey: queryKeys.paymentBoard(organizationId, boardParams),
-    queryFn: () => paymentsApi.board(boardParams),
-    placeholderData: (previous) => previous,
+  const boardQuery = useInfiniteQuery({
+    queryKey: queryKeys.paymentBoard(organizationId, boardFilters),
+    queryFn: ({ pageParam }) => paymentsApi.board({ ...boardFilters, page: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (last) =>
+      last.pagination && last.pagination.page < last.pagination.total_pages
+        ? last.pagination.page + 1
+        : undefined,
   })
 
   // Yakuniy raqamlar ALOHIDA so'rovda va sahifasiz: ular butun oyga
@@ -157,19 +161,8 @@ export default function PaymentsPage() {
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
-  // Sahifalar ustma-ust qo'shiladi: "Yana ko'rsatish" ro'yxatni
-  // almashtirmaydi, davom ettiradi.
-  const [accumulated, setAccumulated] = useState<BoardRow[]>([])
-  useEffect(() => {
-    const items = boardQuery.data?.items
-    if (!items) return
-    setAccumulated((previous) => (page === 1 ? items : [...previous, ...items]))
-  }, [boardQuery.data, page])
-
-  const rows = page === 1 ? (boardQuery.data?.items ?? []) : accumulated
+  const rows = boardQuery.data?.pages.flatMap((chunk) => chunk.items) ?? []
   const summary = summaryQuery.data
-  const pagination = boardQuery.data?.pagination
-  const hasMore = Boolean(pagination && pagination.page < pagination.total_pages)
 
   return (
     <div className="space-y-6">
@@ -488,13 +481,14 @@ export default function PaymentsPage() {
               )}
             </ul>
 
-            {hasMore && (
+            {boardQuery.hasNextPage && (
               <button
                 type="button"
-                onClick={() => setPage((p) => p + 1)}
+                disabled={boardQuery.isFetchingNextPage}
+                onClick={() => void boardQuery.fetchNextPage()}
                 className="w-full border-t border-slate-100 px-4 py-3 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
               >
-                {t('Yana ko‘rsatish')}
+                {boardQuery.isFetchingNextPage ? t('Yuklanmoqda…') : t('Yana ko‘rsatish')}
               </button>
             )}
           </div>
