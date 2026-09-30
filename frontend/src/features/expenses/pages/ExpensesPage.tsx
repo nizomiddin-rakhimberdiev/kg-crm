@@ -11,6 +11,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Pencil, Plus, Receipt, Trash2, X } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { expensesApi } from '@/features/expenses/api'
+import { cashApi } from '@/features/cash/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
@@ -45,6 +46,15 @@ export default function ExpensesPage() {
     amount: '',
     expense_date: '',
     description: '',
+    // Qaysi puldan to'lanadi (ADR-17) — mijozning so'zi: "chiqim
+    // kiritayotgan paytda qaysi puldan ketayotgani hisobga olinishi
+    // kerak". Bo'sh qoldirilsa tasdiqlashda naqd kassa olinadi.
+    cash_account_id: '',
+  })
+  const accountsQuery = useQuery({
+    queryKey: queryKeys.cashAccounts(organizationId),
+    queryFn: cashApi.accounts,
+    enabled: can('expenses.create'),
   })
   const [newCategory, setNewCategory] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -68,9 +78,19 @@ export default function ExpensesPage() {
     setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.'))
 
   const create = useMutation({
-    mutationFn: () => expensesApi.create(form),
+    mutationFn: () =>
+      expensesApi.create({
+        ...form,
+        ...(form.cash_account_id ? {} : { cash_account_id: undefined }),
+      }),
     onSuccess: () => {
-      setForm({ category_id: '', amount: '', expense_date: '', description: '' })
+      setForm({
+        category_id: '',
+        amount: '',
+        expense_date: '',
+        description: '',
+        cash_account_id: '',
+      })
       setError(null)
       invalidate()
     },
@@ -314,6 +334,26 @@ export default function ExpensesPage() {
                   onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
                 />
+              </div>
+              {/* Qaysi puldan to'lanadi (ADR-17). Ixtiyoriy: so'rovni
+                  yozgan odam ko'pincha uni to'laydigan odam emas. */}
+              <div>
+                <label htmlFor="eacct" className="mb-1 block text-xs font-medium text-slate-600">
+                  {t('Qaysi puldan')}
+                </label>
+                <select
+                  id="eacct"
+                  value={form.cash_account_id}
+                  onChange={(e) => setForm((p) => ({ ...p, cash_account_id: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                >
+                  <option value="">{t('Naqd kassa (sukut)')}</option>
+                  {accountsQuery.data?.items.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex items-end">
                 <button

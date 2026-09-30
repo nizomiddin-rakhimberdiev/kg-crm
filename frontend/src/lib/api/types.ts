@@ -390,6 +390,11 @@ export interface Employee {
   hire_date: string
   termination_date: string | null
   base_salary: string
+  /**
+   * Maoshning RASMIY qismi (ADR-18): bankka, soliq ushlab qolingan
+   * holda. Qolgani (`base_salary − official_salary`) naqd.
+   */
+  official_salary: string
   is_active: boolean
   created_at: string
 }
@@ -403,9 +408,28 @@ export interface PayrollItem {
   deduction: string
   /** Oy davomida berib yuborilgan pul — ushlab qolishdan alohida. */
   advance: string
+  /**
+   * Rasmiy qism va undan ushlanmalar (ADR-18). Rasmiy sof maosh
+   * bankka, naqd qism kassadan chiqadi — shuning uchun ular alohida.
+   */
+  official_base: string
+  tax_income: string
+  tax_pension: string
+  official_net: string
+  cash_net: string
   gross: string
   net: string
   note: string
+}
+
+/** Oylikdan haqiqatan chiqqan pul (docs/03 §14.4a). */
+export interface PlannedPayout {
+  payroll_item_id: string
+  employee: string
+  part: 'official' | 'cash'
+  amount: string
+  cash_account_id: string
+  cash_account_name: string
 }
 
 export interface PayrollRun {
@@ -563,7 +587,61 @@ export interface DashboardKpis {
    * To'lov, chiqim va oylikning UCHALASINI ham ko'rishga haqli rolga
    * keladi, chunki bitta raqam uchalasini birlashtiradi.
    */
-  cash?: { income: string; expenses: string; payroll: string; balance: string }
+  cash?: {
+    income: string
+    expenses: string
+    payroll: string
+    balance: string
+    /** Naqd qancha, terminalda qancha, bankda qancha (ADR-17). */
+    accounts: CashAccountBalance[]
+  }
+}
+
+/** Bitta pul qopi va undagi qoldiq (docs/03 §13a). */
+export interface CashAccountBalance {
+  id: string
+  name: string
+  kind: 'cash' | 'terminal' | 'bank' | 'ewallet'
+  branch_id?: string
+  balance: string
+}
+
+/** Davr ichida qopga kirgan va undan chiqqan pul. */
+export interface CashAccountFlow {
+  id: string
+  name: string
+  kind: 'cash' | 'terminal' | 'bank' | 'ewallet'
+  inflow: string
+  outflow: string
+  net: string
+}
+
+/** Hujjat bilan tasdiqlangan kelmaslik (ADR-19). */
+export interface AbsenceClaim {
+  id: string
+  child: string
+  child_name: string
+  kind: 'medical' | 'parental'
+  date_from: string
+  date_to: string
+  document_no: string
+  note: string
+  status: 'pending' | 'approved' | 'rejected' | 'applied'
+  billable_days: number
+  daily_rate: string
+  credit_amount: string
+  approved_by_name: string | null
+  decided_at: string | null
+  decision_note: string
+  applied_invoice: string | null
+  created_at: string
+}
+
+export interface Holiday {
+  id: string
+  holiday_date: string
+  name: string
+  created_at: string
 }
 
 /** Hisobot kesimi (docs/04 §14.2 `group_by`). */
@@ -603,6 +681,12 @@ export interface ProfitLoss {
     payroll: string
     net: string
   }>
+  /**
+   * Davr ichida qoplarga kirgan va ulardan chiqqan pul (ADR-17).
+   * Bu `net` bilan TENG EMAS va bo'lishi ham shart emas: `net`
+   * hisoblash usulida, bu esa kassa usulida.
+   */
+  by_account: CashAccountFlow[]
 }
 
 export interface ReportExport {

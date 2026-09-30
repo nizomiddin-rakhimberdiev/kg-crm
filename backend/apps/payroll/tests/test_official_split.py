@@ -216,3 +216,28 @@ def test_a_payout_cannot_exceed_what_was_calculated(tenant_a: Any):
                 ],
                 paid_on=timezone.localdate(),
             )
+
+
+def test_recalculating_picks_up_a_newly_official_employee(tenant_a: Any):
+    """
+    Buxgalter xodimni oy o'rtasida rasmiylashtirsa, "qayta hisoblash"
+    aynan shu o'zgarishni tortib olishi kerak.
+
+    Ilgari tugma bosilardi, raqam esa o'zgarmasdi: `recalculate_run`
+    faqat yangi xodim va avansni yangilardi.
+    """
+    employee = _employee(tenant_a, base="5000000", official="0")
+    with organization_context(tenant_a.organization.id):
+        run = _run(tenant_a)
+        assert run.items.get(employee=employee).official_base == Decimal("0.00")
+
+        employee.official_salary = Decimal("3000000")
+        employee.save(update_fields=["official_salary"])
+        services.recalculate_run(run)
+
+        item = run.items.get(employee=employee)
+
+    assert item.official_base == Decimal("3000000.00")
+    assert item.tax_income == Decimal("360000.00")
+    assert item.official_net == Decimal("2637000.00")
+    assert item.cash_net == Decimal("2000000.00")

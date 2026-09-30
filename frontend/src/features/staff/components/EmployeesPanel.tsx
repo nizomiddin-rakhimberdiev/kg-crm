@@ -40,6 +40,7 @@ const EMPTY_FORM: EmployeeInput = {
   position_id: '',
   hire_date: '',
   base_salary: '',
+  official_salary: '',
   employment_status: 'active',
   termination_date: '',
 }
@@ -153,6 +154,7 @@ export function EmployeesPanel() {
       position_id: employee.position ?? '',
       hire_date: employee.hire_date,
       base_salary: employee.base_salary,
+      official_salary: employee.official_salary ?? '',
       employment_status: employee.employment_status,
       termination_date: employee.termination_date ?? '',
     })
@@ -210,6 +212,7 @@ export function EmployeesPanel() {
       position_id: form.position_id || null,
       hire_date: form.hire_date,
       base_salary: form.base_salary,
+      official_salary: form.official_salary || '0',
     }
     if (editing) {
       payload.employment_status = form.employment_status
@@ -494,6 +497,10 @@ export function EmployeesPanel() {
                 ['phone', t('Telefon'), 'tel', false],
                 ['hire_date', t('Ishga kirgan sana'), 'date', true],
                 ['base_salary', t("Oylik maosh (so'm)"), 'number', true],
+                // Rasmiy qism (ADR-18): bankka, soliq ushlab qolingan
+                // holda. Bo'sh qoldirilsa 0 — ya'ni hammasi naqd, va
+                // hech bir eski raqam siljimaydi.
+                ['official_salary', t("Shundan rasmiy (so'm)"), 'number', false],
               ] as const
             ).map(([key, label, type, required]) => (
               <div key={key}>

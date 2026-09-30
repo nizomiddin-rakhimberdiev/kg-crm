@@ -66,6 +66,9 @@ Never violate these without a superseding ADR:
 10. **Vendor staff live in `platform_user`, never in `accounts.User`** (ADR-10). They see organization *metadata* only; reading operational data needs a time-boxed, reasoned, **customer-visible** `SupportGrant`, and it happens through the normal customer API — there is no privileged second code path. 2FA is a deployment switch — `PLATFORM_2FA_REQUIRED`, **off by default** by the owner's decision (ADR-15); the TOTP machinery stays in place so it can be turned on with one `.env` line.
 11. **Non-payment stops writes, never access.** `suspended` returns `402` on writes while reads, `/billing/*`, and export keep working; data is never deleted or hidden ([03 §20.6](./docs/03_Database_Design.md)). Every new viewset carries `SubscriptionWriteGate` — `test_write_gate_is_everywhere` fails the build otherwise.
 
+12. **Money has a location** (ADR-17). `cash_account` names the pots a kindergarten actually holds and **`cash_movement` is the third append-only ledger**, beside `child_ledger_entry` and `stock_movement`. A balance is always `Σ in − Σ out`, never stored; a correction is a counter-movement. Every money event — payment, reversal, expense, payroll payout, advance, transfer — writes its movement **inside the same transaction as the document that caused it**.
+13. **A fee credit comes from a document, never from the attendance grid** (ADR-19). Only an approved `absence_claim` moves money; reading `attendance_record.status` would let an overslept morning cut the kindergarten's revenue. The day rate is `invoice.amount_due ÷ working days in that month`, and the database — not the service — forbids two claims covering the same day.
+
 ---
 
 ## Tech Stack (quick reference)

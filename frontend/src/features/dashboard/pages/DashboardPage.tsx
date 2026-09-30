@@ -64,13 +64,20 @@ function Tile({ label, value, hint, icon: Icon, tone, to }: TileProps) {
   return to ? <Link to={to}>{body}</Link> : body
 }
 
+const ACCOUNT_COLORS: Record<string, string> = {
+  cash: '#10b981',
+  terminal: '#6366f1',
+  bank: '#f59e0b',
+  ewallet: '#06b6d4',
+}
+
 /**
  * "Hozirda qancha pulimiz bor" — bog'cha egasining birinchi savoli.
  *
- * Raqamning o'zi yetarli emas: uning ostida qanday hisoblangani ham
- * turadi. Aks holda u kutganidan farq qilsa (masalan yakunlangan, lekin
- * hali berilmagan oylik ham ayrilgan), raqam tushuntirib bo'lmaydigan
- * bo'lib qolardi va ishonchni yo'qotardi.
+ * Raqamning o'zi yetarli emas: uning ostida qanday hisoblangani ham,
+ * qaysi qopda qancha turgani ham ko'rinadi (ADR-17). Aks holda raqam
+ * kutganidan farq qilsa, uni tushuntirib bo'lmasdi va ishonchni
+ * yo'qotardi.
  */
 function CashPanel({ cash, isLoading }: { cash: DashboardKpis['cash']; isLoading: boolean }) {
   const balance = Number(cash?.balance ?? 0)
@@ -129,9 +136,43 @@ function CashPanel({ cash, isLoading }: { cash: DashboardKpis['cash']; isLoading
           ))}
         </dl>
       </div>
-      <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">
+      {/* Qoplar kesimi — mijozning aynan so'ragan savoli: naqd
+          qancha, plastikda qancha, bankda qancha (ADR-17). */}
+      {(cash?.accounts?.length ?? 0) > 0 && (
+        <ul className="mt-4 grid gap-2 border-t border-slate-100 pt-4 sm:grid-cols-2 xl:grid-cols-4">
+          {cash?.accounts.map((account) => (
+            <li
+              key={account.id}
+              className="flex items-center gap-2.5 rounded-xl border border-slate-200 px-3 py-2.5"
+            >
+              <span
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-lg"
+                style={{
+                  backgroundColor: `${ACCOUNT_COLORS[account.kind]}1a`,
+                  color: ACCOUNT_COLORS[account.kind],
+                }}
+              >
+                <Coins className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-xs text-slate-500">{account.name}</span>
+                <span
+                  className={cn(
+                    'block text-sm font-semibold tabular-nums',
+                    Number(account.balance) < 0 ? 'text-red-600' : 'text-slate-900',
+                  )}
+                >
+                  {isLoading ? '…' : formatUZS(Number(account.balance))}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <p className="mt-3 text-xs text-slate-400">
         {t(
-          "Tushum — qaytarilmagan to'lovlar; chiqim — tasdiqlangan va to'langanlar; oylik — yakunlangan davrlar va berilgan avanslar.",
+          'Pul haqiqatan qimirlagan yozuvlardan hisoblanadi. Hisoblangan, lekin hali berilmagan oylik bu yerda hali kassada turgan pul — foyda-zarar hisobotida esa u allaqachon xarajat.',
         )}
       </p>
     </section>

@@ -259,6 +259,7 @@ def recalculate_run(run: PayrollRun) -> PayrollRun:
                 payroll_run=run,
                 employee=employee,
                 base_amount=employee.base_salary,
+                official_base=employee.official_salary,
                 gross=employee.base_salary,
                 net=employee.base_salary,
             )
@@ -266,6 +267,20 @@ def recalculate_run(run: PayrollRun) -> PayrollRun:
             if employee.id not in existing
         ]
     )
+
+    # Rasmiy/naqd BO'LINISHI ham yangilanadi (ADR-18).
+    #
+    # `base_amount` ataylab suratda qoladi — keyin oshgan maosh o'tgan
+    # hisoblashni o'zgartirmasligi kerak. Lekin rasmiy qism summa emas,
+    # TASNIF: buxgalter xodimni oy o'rtasida rasmiylashtirsa, "qayta
+    # hisoblash" aynan shu o'zgarishni tortib olish uchun bosiladi.
+    # Usiz tugma bosilardi, raqam esa o'zgarmasdi.
+    by_employee = {employee.id: employee for employee in active}
+    for employee_id, item in existing.items():
+        employee = by_employee.get(employee_id)
+        if employee is not None and item.official_base != employee.official_salary:
+            item.official_base = employee.official_salary
+            item.save(update_fields=["official_base", "updated_at"])
 
     # Endi ishlamayotgan xodim satri — faqat unga hech narsa yozilmagan
     # bo'lsa olib tashlanadi. Bonus yoki izoh kiritilgan bo'lsa, u ataylab
@@ -276,6 +291,7 @@ def recalculate_run(run: PayrollRun) -> PayrollRun:
         if employee_id not in active_ids and untouched:
             item.delete()
 
+    _recompute_all(run)
     run.refresh_from_db()
     sync_advances(run)
     recompute_run_totals(run)

@@ -22,6 +22,8 @@ export interface EmployeeInput {
   position_id?: string | null
   hire_date: string
   base_salary: string
+  /** Maoshning rasmiy qismi (ADR-18) — qolgani naqd. */
+  official_salary?: string
   employment_status?: Employee['employment_status']
   termination_date?: string | null
   /** Org Owner uchun majburiy (ko'p filialda); qolganlarda backend o'zi aniqlaydi. */

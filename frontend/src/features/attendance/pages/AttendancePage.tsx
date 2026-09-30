@@ -17,6 +17,7 @@ import { attendanceApi } from '@/features/attendance/api'
 import { groupsApi } from '@/features/children/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type AttendanceStatus } from '@/lib/api/types'
+import { AbsenceClaimsPanel } from '@/features/attendance/components/AbsenceClaimsPanel'
 import { Modal } from '@/components/ui/Modal'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
@@ -376,6 +377,13 @@ export default function AttendancePage() {
           })}
         </ul>
       </div>
+
+      {/* Hujjatli kelmaslik — kunlik registrdan ALOHIDA blok (ADR-19).
+          Ular bir-biridan hech narsa o'qimaydi: registr "bugun kim
+          keldi", bu esa "qaysi kunlar uchun pul qaytariladi". */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+        <AbsenceClaimsPanel />
+      </section>
     </div>
   )
 }

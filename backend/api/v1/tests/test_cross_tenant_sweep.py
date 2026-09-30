@@ -244,6 +244,15 @@ def _create_row(tenant: Any, basename: str) -> Any:
                 deep_link="/debtors?overdue_days=15",
                 generated_at=timezone.now(),
             )
+        if basename == "cash-account":
+            from apps.cash.models import CashAccount, CashAccountKind
+
+            return CashAccount.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                name="Direktor seyfi",
+                kind=CashAccountKind.CASH,
+            )
         if basename in {"absence-claim", "holiday"}:
             from apps.attendance.models_absence import AbsenceClaim, ClaimKind, Holiday
 

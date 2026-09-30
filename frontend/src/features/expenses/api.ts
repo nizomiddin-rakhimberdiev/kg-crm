@@ -8,8 +8,15 @@ export const expensesApi = {
     amount: string
     expense_date: string
     description?: string
+    /** Qaysi puldan to'lanadi (ADR-17) — bo'sh bo'lsa naqd kassa. */
+    cash_account_id?: string
   }) => api.post<Expense>('/expenses', payload),
-  approve: (id: string, note = '') => api.post<Expense>(`/expenses/${id}/approve`, { note }),
+  /** Tasdiqlash — pul aynan shu yerda kassadan chiqadi (ADR-17). */
+  approve: (id: string, note = '', cashAccountId?: string) =>
+    api.post<Expense>(`/expenses/${id}/approve`, {
+      note,
+      ...(cashAccountId ? { cash_account_id: cashAccountId } : {}),
+    }),
   reject: (id: string, note = '') => api.post<Expense>(`/expenses/${id}/reject`, { note }),
   markPaid: (id: string) => api.post<Expense>(`/expenses/${id}/mark-paid`),
   summary: (from: string, to: string) => api.get<ExpenseSummary>('/expenses/summary', { from, to }),

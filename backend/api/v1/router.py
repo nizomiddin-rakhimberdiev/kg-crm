@@ -10,6 +10,7 @@ from apps.accounts.views import PermissionViewSet, RoleViewSet, UserViewSet
 from apps.attendance.views import AbsenceClaimViewSet, AttendanceViewSet, HolidayViewSet
 from apps.audit.views import AuditLogViewSet
 from apps.branches.views import BranchViewSet
+from apps.cash.views import CashAccountViewSet
 from apps.children.views import ChildViewSet, GroupViewSet, GuardianViewSet
 from apps.core.deployment import is_saas
 from apps.expenses.views import ExpenseCategoryViewSet, ExpenseViewSet
@@ -46,6 +47,7 @@ router.register("branches", BranchViewSet, basename="branch")
 router.register("children", ChildViewSet, basename="child")
 router.register("guardians", GuardianViewSet, basename="guardian")
 router.register("groups", GroupViewSet, basename="group")
+router.register("cash-accounts", CashAccountViewSet, basename="cash-account")
 router.register("attendance", AttendanceViewSet, basename="attendance")
 # Kelmagan kunlar uchun qaytarish va bayram kalendari (ADR-19).
 router.register("absence-claims", AbsenceClaimViewSet, basename="absence-claim")

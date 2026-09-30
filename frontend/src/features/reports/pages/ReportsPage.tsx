@@ -46,6 +46,7 @@ import { PAYMENT_METHOD_COLORS, paymentMethodLabel } from '@/features/payments/m
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
+import { Modal } from '@/components/ui/Modal'
 import { cn, formatMoney, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
@@ -88,6 +89,8 @@ export default function ReportsPage() {
 
   const [period, setPeriod] = useState<Period>(() => periodFor('month', new Date()))
   const [error, setError] = useState<string | null>(null)
+  // Sof natija bosilganda ochiladigan qoplar kesimi (ADR-17).
+  const [cashOpen, setCashOpen] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
 
   const groupBy = groupByFor(period)
@@ -141,6 +144,7 @@ export default function ReportsPage() {
     'Oylik maosh': Number(row.payroll),
     net: Number(row.net),
   }))
+  const cash = plQuery.data?.by_account
   const methodRows = revenueQuery.data?.by_method ?? []
   const methodTotal = methodRows.reduce((sum, row) => sum + Number(row.total), 0)
   const methods = methodRows.map((row, index) => ({
@@ -201,24 +205,96 @@ export default function ReportsPage() {
               Number(pl?.net ?? 0) < 0 ? 'text-red-600' : 'text-emerald-600',
               t('tushum − chiqim − oylik'),
             ],
-          ].map(([label, value, tone, hint]) => (
-            <div
-              key={label as string}
-              className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"
-            >
-              <p className="text-sm font-medium text-slate-600">{label as string}</p>
-              <p
-                className={cn(
-                  'mt-1.5 text-xl font-bold tracking-tight tabular-nums sm:text-2xl',
-                  tone as string,
-                )}
+          ].map(([label, value, tone, hint]) => {
+            // Sof natija BOSILADI: "bu pul qaysi qopda?" — mijozning
+            // so'ragan kesimi (ADR-17).
+            const isNet = label === t('Sof natija')
+            const body = (
+              <>
+                <p className="text-sm font-medium text-slate-600">
+                  {label as string}
+                  {isNet && (cash?.length ?? 0) > 0 && (
+                    <span className="ml-1.5 text-xs font-normal text-brand-600">
+                      {t('qoplar kesimi')}
+                    </span>
+                  )}
+                </p>
+                <p
+                  className={cn(
+                    'mt-1.5 text-xl font-bold tracking-tight tabular-nums sm:text-2xl',
+                    tone as string,
+                  )}
+                >
+                  {value === undefined ? '…' : formatUZS(Number(value))}
+                </p>
+                <p className="mt-1 text-xs text-slate-400">{hint as string}</p>
+              </>
+            )
+            const shell = 'rounded-2xl border border-slate-200 bg-white p-4 text-left sm:p-5'
+            return isNet && (cash?.length ?? 0) > 0 ? (
+              <button
+                key={label as string}
+                type="button"
+                onClick={() => setCashOpen(true)}
+                className={cn(shell, 'transition hover:border-brand-300 hover:shadow-md')}
               >
-                {value === undefined ? '…' : formatUZS(Number(value))}
-              </p>
-              <p className="mt-1 text-xs text-slate-400">{hint as string}</p>
-            </div>
-          ))}
+                {body}
+              </button>
+            ) : (
+              <div key={label as string} className={shell}>
+                {body}
+              </div>
+            )
+          })}
         </div>
+
+        {/* Sof natija qaysi qoplardan yig'ilgan (ADR-17).
+            Bu `net` bilan TENG EMAS va bo'lishi ham shart emas: `net`
+            hisoblash usulida (yakunlangan oylik — xarajat), bu esa
+            kassa usulida (qopga kirgan va undan chiqqan pul). Oynada
+            shu ayirma ochiq aytiladi. */}
+        <Modal open={cashOpen} onClose={() => setCashOpen(false)} className="max-w-lg">
+          <div className="p-6">
+            <div className="pr-10">
+              <h2 className="text-lg font-bold text-slate-900">{t('Pul qaysi qoplarda')}</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {bucketTitle(period.from, 'day')} — {bucketTitle(period.to, 'day')}
+              </p>
+            </div>
+            <ul className="mt-5 space-y-2">
+              {(cash ?? []).map((account) => (
+                <li key={account.id} className="rounded-xl border border-slate-200 px-3 py-3">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="text-sm font-medium text-slate-700">{account.name}</span>
+                    <span
+                      className={cn(
+                        'text-sm font-semibold tabular-nums',
+                        Number(account.net) < 0 ? 'text-red-600' : 'text-emerald-600',
+                      )}
+                    >
+                      {Number(account.net) >= 0 ? '+' : '−'}{' '}
+                      {formatUZS(Math.abs(Number(account.net)))}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex justify-between gap-3 text-xs tabular-nums text-slate-400">
+                    <span>{t('Kirim {v}', { v: formatUZS(Number(account.inflow)) })}</span>
+                    <span>{t('Chiqim {v}', { v: formatUZS(Number(account.outflow)) })}</span>
+                  </div>
+                </li>
+              ))}
+              {(cash?.length ?? 0) === 0 && (
+                <li className="py-8 text-center text-sm text-slate-400">
+                  {t("Bu davrda pul harakati yo'q.")}
+                </li>
+              )}
+            </ul>
+            <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">
+              {t(
+                "Bu yerdagi yig'indi yuqoridagi sof natijadan farq qilishi mumkin: hisobot yakunlangan oylikni xarajat deb sanaydi, bu esa faqat kassadan haqiqatan chiqqan pulni.",
+              )}
+            </p>
+          </div>
+        </Modal>
 
         {/* Grafiklar */}
         <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr] lg:gap-6">

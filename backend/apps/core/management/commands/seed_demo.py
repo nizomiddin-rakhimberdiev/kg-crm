@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import logging
 import random
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -607,6 +607,8 @@ class Command(BaseCommand):
     def _payroll(
         self, organization: Any, branch: Any, owner: Any, months: int, employees: list[Any]
     ) -> None:
+        from apps.cash.models import CashAccountKind
+        from apps.cash.services import account_for_method, transfer
         from apps.payroll.services import create_run, finalize_run, mark_run_paid
 
         today = timezone.localdate()
@@ -621,6 +623,27 @@ class Command(BaseCommand):
                     period_month=period.month,
                 )
                 finalize_run(run=run, finalized_by=owner)
+
+                # Oylikdan OLDIN terminaldan kassaga pul o'tkaziladi —
+                # haqiqiy bog'cha aynan shunday qiladi (ADR-17).
+                #
+                # Usiz demo ma'lumoti "Naqd kassa: −1 750 500" ko'rsatardi:
+                # tushum asosan terminalga tushadi, naqd maosh esa kassadan
+                # chiqadi. Raqam TO'G'RI edi, lekin bog'chaning haqiqiy
+                # ish tartibini aks ettirmasdi.
+                terminal = account_for_method(branch=branch, method="terminal")
+                till = account_for_method(branch=branch, method="cash")
+                need = run.total_net
+                if need > 0 and terminal.kind == CashAccountKind.TERMINAL:
+                    transfer(
+                        source=terminal,
+                        target=till,
+                        amount=need,
+                        description="Oylik uchun kassaga o'tkazma",
+                        occurred_at=timezone.make_aware(datetime.combine(period, time(hour=9))),
+                        created_by=owner,
+                    )
+
                 mark_run_paid(run=run)
                 runs += 1
             except Exception as exc:

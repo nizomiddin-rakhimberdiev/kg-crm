@@ -37,7 +37,7 @@ from apps.core.exceptions import BusinessRuleViolation
 from apps.expenses.models import Expense, ExpenseStatus
 from apps.finance.models import Payment
 from apps.finance.selectors import debtor_queryset
-from apps.payroll.models import EmployeeAdvance, PayrollRun, PayrollStatus
+from apps.payroll.models import PayrollRun, PayrollStatus
 
 __all__ = [
     "GROUP_BY_CHOICES",
@@ -513,6 +513,17 @@ def profit_loss(
         "payroll": _money(payroll_total),
         "net": _money(net),
         "by_period": rows,
+        # "Sof foyda qaysi puldan yig'ilgan?" — mijozning so'ragan
+        # kesimi (5-vazifa). Bu HISOBLASH usulidagi `net` emas, davr
+        # ichida qoplarga kirgan va ulardan chiqqan pul: ikkalasi ham
+        # o'z savoliga to'g'ri javob, shuning uchun ular alohida
+        # maydonlarda turadi va qo'shilib ketmaydi.
+        "by_account": cash_movement_totals(
+            organization_id=organization_id,
+            date_from=date_from,
+            date_to=date_to,
+            branch_id=branch_id,
+        ),
     }
 
 
@@ -699,61 +710,71 @@ def attendance_rows(
     ]
 
 
+def cash_movement_totals(
+    *, organization_id: Any, date_from: date, date_to: date, branch_id: Any = None
+) -> list[dict[str, Any]]:
+    """Davr ichida har bir qopga qancha kirgan va undan qancha chiqqan."""
+    from apps.cash import selectors as cash_selectors
+
+    return cash_selectors.movement_totals(
+        organization_id=organization_id,
+        date_from=date_from,
+        date_to=date_to,
+        branch_id=branch_id,
+    )
+
+
 def cash_position(*, organization_id: Any, branch_id: Any = None) -> dict[str, Any]:
     """
-    "Hozir qo'limizda qancha pul bor" — butun tarix bo'yicha qoldiq.
+    "Hozir qo'limizda qancha pul bor" — KASSA JURNALIDAN (ADR-17).
 
-    Davr filtri ATAYLAB yo'q: bu savol bir oyning natijasi haqida emas,
+    Davr filtri ataylab yo'q: bu savol bir oyning natijasi haqida emas,
     bog'cha ochilganidan beri yig'ilgan qoldiq haqida.
 
-    Qoldiq = qabul qilingan to'lov − tasdiqlangan chiqim − hisoblangan
-    oylik. Uchala qism ham **hisobotlar bilan bir xil qoidada** sanaladi
-    (`expense_report`, `payroll_report`), aks holda ikki ekran bir xil
-    savolga ikki xil javob berardi va qaysi biri to'g'riligini hech kim
-    bilmasdi.
+    **Manba almashtirildi.** Ilgari bu raqam uchta jadvalni qo'shib
+    ayirish bilan hisoblanardi va shu sababli yakunlangan, lekin hali
+    berilmagan oylikni ham chiqim deb sanardi — ya'ni kassada turgan
+    pulni yo'q deb ko'rsatardi. Endi manba `cash_movement`: pul
+    HAQIQATAN qimirlagan yozuvlar, qop kesimida.
 
-    Oylikda `gross − deductions` olinadi, `net` emas: avans ham xodimga
-    berilgan pul, u esa `net` dan ayrilgan. Avansi bor, lekin hali
-    yakunlanmagan davrlar alohida qo'shiladi — o'sha pul kassadan
-    allaqachon chiqib ketgan.
+    Shuning uchun bu raqam foyda-zarar hisobotidan farq qilishi
+    mumkin va bu TO'G'RI: hisobot hisoblash usulida (yakunlangan
+    oylik — xarajat), bu esa kassa usulida (berilgan oylik — chiqim).
     """
-    payments = Payment.objects.filter(organization_id=organization_id, reversed_at__isnull=True)
-    expenses = Expense.objects.filter(
-        organization_id=organization_id,
-        status__in=[ExpenseStatus.APPROVED, ExpenseStatus.PAID],
-    )
-    runs = PayrollRun.objects.filter(
-        organization_id=organization_id,
-        status__in=[PayrollStatus.FINALIZED, PayrollStatus.PAID],
-    )
-    advances = EmployeeAdvance.objects.filter(organization_id=organization_id)
+    from apps.cash import selectors as cash_selectors
+    from apps.cash.models import CashMovement, MovementDirection, MovementSource
 
+    movements = CashMovement.objects.filter(organization_id=organization_id)
     if branch_id:
-        payments = payments.filter(branch_id=branch_id)
-        expenses = expenses.filter(branch_id=branch_id)
-        runs = runs.filter(branch_id=branch_id)
-        advances = advances.filter(branch_id=branch_id)
+        movements = movements.filter(branch_id=branch_id)
 
-    income = payments.aggregate(t=Coalesce(Sum("amount"), ZERO))["t"]
-    spent = expenses.aggregate(t=Coalesce(Sum("amount"), ZERO))["t"]
-    accounted = runs.aggregate(
-        t=Coalesce(Sum("total_gross"), ZERO) - Coalesce(Sum("total_deductions"), ZERO)
-    )["t"]
+    def total(**filters: Any) -> Decimal:
+        return movements.filter(**filters).aggregate(t=Coalesce(Sum("amount"), ZERO))["t"]
 
-    # Yakunlangan davrlar avansni allaqachon o'z ichiga oldi; qolganlari
-    # esa yo'q. Ikki marta sanamaslik uchun faqat "hisobsiz" davrlarniki.
-    accounted_periods = set(runs.values_list("period_year", "period_month"))
-    unaccounted = Decimal("0")
-    for row in advances.values("paid_on__year", "paid_on__month").annotate(
-        total=Coalesce(Sum("amount"), ZERO)
-    ):
-        if (row["paid_on__year"], row["paid_on__month"]) not in accounted_periods:
-            unaccounted += row["total"]
+    income = total(direction=MovementDirection.IN, source_type=MovementSource.PAYMENT)
+    refunded = total(direction=MovementDirection.OUT, source_type=MovementSource.PAYMENT) + total(
+        direction=MovementDirection.OUT, source_type=MovementSource.PAYMENT_REVERSAL
+    )
+    spent = total(direction=MovementDirection.OUT, source_type=MovementSource.EXPENSE) - total(
+        direction=MovementDirection.IN, source_type=MovementSource.EXPENSE
+    )
+    payroll = (
+        total(direction=MovementDirection.OUT, source_type=MovementSource.PAYROLL)
+        - total(direction=MovementDirection.IN, source_type=MovementSource.PAYROLL)
+        + total(direction=MovementDirection.OUT, source_type=MovementSource.ADVANCE)
+        - total(direction=MovementDirection.IN, source_type=MovementSource.ADVANCE)
+    )
 
-    payroll = accounted + unaccounted
     return {
-        "income": _money(income),
+        "income": _money(income - refunded),
         "expenses": _money(spent),
         "payroll": _money(payroll),
-        "balance": _money(income - spent - payroll),
+        "balance": _money(
+            cash_selectors.total_balance(organization_id=organization_id, branch_id=branch_id)
+        ),
+        # "Naqd qancha, plastikda qancha, bankda qancha" — mijozning
+        # aynan so'ragan kesimi (5-vazifa).
+        "accounts": cash_selectors.account_balances(
+            organization_id=organization_id, branch_id=branch_id
+        ),
     }

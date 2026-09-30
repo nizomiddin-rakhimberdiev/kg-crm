@@ -28,8 +28,9 @@ import { EmptyRow } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
 import { employeesApi } from '@/features/staff/api'
 import { payrollApi } from '@/features/payroll/api'
+import { PayslipModal } from '@/features/payroll/components/PayslipModal'
 import { queryKeys } from '@/lib/api/queryKeys'
-import { ApiError, type PayrollRun } from '@/lib/api/types'
+import { ApiError, type PayrollItem, type PayrollRun } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -59,6 +60,8 @@ export default function PayrollPage() {
   // Qayta ochish oynasi: qaysi hisoblash va nima sababdan.
   const [reopening, setReopening] = useState<PayrollRun | null>(null)
   const [reopenReason, setReopenReason] = useState('')
+  // Oylik varaqasi — rasmiy/naqd bo'linishi (ADR-18).
+  const [payslip, setPayslip] = useState<PayrollItem | null>(null)
 
   const runsQuery = useQuery({
     queryKey: queryKeys.payrollRuns(organizationId),
@@ -230,6 +233,8 @@ export default function PayrollPage() {
           </div>
         </form>
       </Modal>
+
+      <PayslipModal item={payslip} onClose={() => setPayslip(null)} />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -559,7 +564,24 @@ export default function PayrollPage() {
               <tbody className="divide-y divide-slate-100">
                 {run.items.map((item) => (
                   <tr key={item.id}>
-                    <td className="px-4 py-2 font-medium text-slate-800">{item.employee_name}</td>
+                    <td className="px-4 py-2 font-medium text-slate-800">
+                      {/* Ism bosilsa oylik varaqasi ochiladi: rasmiy va
+                          naqd qism, ushlanmalar bilan (ADR-18). Ular
+                          jadvalga sig'masdi. */}
+                      <button
+                        type="button"
+                        onClick={() => setPayslip(item)}
+                        title={t('Oylik varaqasi')}
+                        className="rounded text-left underline-offset-2 hover:underline"
+                      >
+                        {item.employee_name}
+                        {Number(item.official_base) > 0 && (
+                          <span className="ml-1.5 rounded-full bg-sky-50 px-1.5 py-0.5 text-[11px] font-medium text-sky-700">
+                            {t('rasmiy')}
+                          </span>
+                        )}
+                      </button>
+                    </td>
                     <td className="px-4 py-2 text-right text-slate-600 tabular-nums">
                       {money(item.base_amount)}
                     </td>

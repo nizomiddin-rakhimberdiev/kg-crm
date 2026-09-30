@@ -328,6 +328,29 @@ Module: `attendance`.
 
 ---
 
+### 8.3 Absence credits (ADR-19)
+A fee credit comes from an approved **document**, never from the attendance grid — see ADR-19 for why reading the grid would quietly cut the kindergarten's revenue.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/absence-claims` | `attendance.read` | Filters: `status`, `kind`, `child` |
+| POST | `/absence-claims` | `attendance.create` | `{child_id, kind: medical\|parental, date_from, date_to, document_no?, note?}` |
+| POST | `/absence-claims/{id}/approve` | `attendance.**approve**` | Freezes `billable_days`, `daily_rate`, `credit_amount` |
+| POST | `/absence-claims/{id}/reject` | `attendance.approve` | The row stays as a record of what was asked |
+| GET / POST / DELETE | `/holidays` | `attendance.read` / `.create` / `.delete` | The organization's closed days — `{holiday_date, name}` |
+
+There is no `PATCH` and no `DELETE` on a claim: once approved it has produced a number that lands on an invoice, and editing it would move money retroactively. A mistake is rejected, or corrected by a new claim.
+
+**How the number is built.** `billable_days` = the branch's working weekdays (`attendance.working_weekdays`, default Mon–Fri) in the range, minus `holiday` rows. `daily_rate` = the covering month's invoice `amount_due` ÷ that month's working days — not `tariff ÷ 30`, which would credit a parent for days they never paid for, and not the raw tariff, which would over-credit a child on a discount. `credit_amount` = `billable_days × daily_rate`, capped at that invoice.
+
+**There is no minimum length** (owner's decision, 2026-09-30) and no setting for one.
+
+**Where it lands:** the next invoice generated for that child carries a negative `invoice_line` and a reduced `amount_due`; the claim moves to `applied` and records `applied_invoice`, which makes a second application impossible.
+
+**Errors:** `422` (overlapping claim — the database also refuses it with `EXCLUDE USING gist`; a range with no working days in it; `date_to` before `date_from`), `404` (another organization's child).
+
+**Withholding rates and the working calendar live in `system_setting`**: `payroll.income_tax_rate` (12), `payroll.pension_rate` (0.1), `attendance.working_weekdays` (`1,2,3,4,5`). They change by decree, so they are configuration, not code (ADR-18).
+
 ## 9. Finance
 
 Module: `finance` (Payments module UI). The **ledger** is the source of truth ([03 §13](./03_Database_Design.md)).
@@ -428,6 +451,33 @@ Modules: `hr` (employees, positions) and `payroll`.
 | GET | `/positions` | `payroll.read` | List positions |
 | POST | `/positions` | `payroll.create` | Create position |
 
+### 9.5 Cash accounts (ADR-17)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/cash-accounts` | `payments.read` | The branch's pots — naqd, terminal, bank, Payme/Click |
+| POST | `/cash-accounts` | `payments.create` | An extra pot (a safe, a second till) |
+| PATCH | `/cash-accounts/{id}` | `payments.update` | Rename, or clear `handles_method` |
+| GET | `/cash-accounts/balances` | `payments.read` | `[{id, name, kind, balance}]` — `Σ in − Σ out`, never stored |
+
+Movements themselves have **no endpoint**: a movement is a money record, and it is read through the reports that already carry their own permissions ([§14](#14-reports--dashboard)). Deleting an account with movements is refused by the database (`ON DELETE RESTRICT`); deactivate it instead.
+
+### 9.6 `POST /payments/batch` — one counter action, several methods
+```json
+{
+  "child_id": "…",
+  "invoice_id": "…",
+  "lines": [
+    { "method": "cash",     "amount": "1400000.00" },
+    { "method": "terminal", "amount": "100000.00", "reference": "RRN 4471" }
+  ]
+}
+```
+Returns **201** with the array of `payment` rows created, all sharing one `batch_id`.
+
+- Written in **one transaction** under one `Idempotency-Key`; a resend returns the same rows instead of writing a second batch. The key is matched on the **batch** (prefix), not per line — on a replay the invoice is already settled, so the allocation takes a different path and per-line keys would no longer match ([03 §13.5a](./03_Database_Design.md)).
+- **Overpayment is not refused.** Lines fill the invoice in order up to its outstanding amount; whatever is left becomes an invoice-less advance on the child's balance. The old behaviour — a `422` — was wrong at the counter, where the money is already in the cashier's hand.
+- Errors: `422` (empty `lines`, non-positive amount, cancelled invoice, invoice belongs to another child), `404` (another organization's child or invoice).
+
 ### 11.2 Payroll Runs
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -438,7 +488,8 @@ Modules: `hr` (employees, positions) and `payroll`.
 | PATCH | `/payroll/runs/{id}/items/{itemId}` | `payroll.update` | Edit bonus/deduction on a draft item |
 | POST | `/payroll/runs/{id}/recalculate` | `payroll.update` | Re-sync a **draft** run: newly hired employees are added, advances re-summed |
 | POST | `/payroll/runs/{id}/finalize` | `payroll.update` | Lock the run (immutable) |
-| POST | `/payroll/runs/{id}/mark-paid` | `payroll.update` | Mark finalized run as paid |
+| POST | `/payroll/runs/{id}/mark-paid` | `payroll.update` | Pay the run. Optional body `{"payouts": [{payroll_item_id, part, amount, cash_account_id}], "paid_on": "…"}`; with no body the proposal is accepted. Each payout writes an `out` `cash_movement` ([03 §14.4a](./03_Database_Design.md)) |
+| GET | `/payroll/runs/{id}/planned-payouts` | `payroll.read` | What paying would produce: official net → the bank pot, cash net → the till. A proposal, not a record |
 | POST | `/payroll/runs/{id}/reopen` | `payroll.**approve**` | Return a finalized **or paid** run to `draft` so it can be corrected. Body `{ "reason": "…" }` is **required**; the reason and the previous status are written to the audit log |
 | GET | `/payroll/runs/{id}/payslips/{employeeId}` | `payroll.read` | Payslip PDF |
 
