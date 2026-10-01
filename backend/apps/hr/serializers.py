@@ -5,6 +5,7 @@ from __future__ import annotations
 from rest_framework import serializers
 
 from apps.core.fields import TenantPrimaryKeyRelatedField
+from apps.core.serializer_fields import PhoneField
 from apps.hr.models import Employee, Position
 
 __all__ = ["PositionSerializer", "EmployeeSerializer", "EmployeeWriteSerializer"]
@@ -43,6 +44,9 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
 
 class EmployeeWriteSerializer(serializers.ModelSerializer):
+    # Xodim telefoni ham normalizatsiya qilinadi (Q7): oylik to'langanda
+    # va smena almashinuvida unga SMS ketadi.
+    phone = PhoneField(required=False, allow_blank=True)
     position_id = TenantPrimaryKeyRelatedField(
         model=Position, source="position", required=False, allow_null=True
     )

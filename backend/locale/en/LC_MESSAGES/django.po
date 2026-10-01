@@ -995,3 +995,6 @@ msgstr "Stock purchase"
 
 msgid "{product} — {quantity} {unit}"
 msgstr "{product} — {quantity} {unit}"
+
+msgid "Telefon raqamini {hint} formatida kiriting."
+msgstr "Enter the phone number as {hint}."

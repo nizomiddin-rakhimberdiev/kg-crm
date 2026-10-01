@@ -10,6 +10,7 @@ from rest_framework import serializers
 from apps.branches.models import Branch
 from apps.children.models import Child, ChildGuardian, Enrollment, Group, Guardian
 from apps.core.fields import TenantPrimaryKeyRelatedField
+from apps.core.serializer_fields import PhoneField
 from apps.finance.models import TariffPlan
 
 __all__ = [
@@ -24,6 +25,10 @@ __all__ = [
 
 class GuardianSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(read_only=True)
+    # Q7: saqlashda normalizatsiya. Noto'g'ri raqam SMS'ni JIMGINA
+    # yo'qotadi — bildirishnoma "yuborildi" bo'lib turadi, ota-ona esa
+    # hech narsa olmaydi.
+    phone = PhoneField()
 
     class Meta:
         model = Guardian

@@ -24,7 +24,6 @@ pytestmark = [pytest.mark.django_db, pytest.mark.big_update]
 class TestGuardianPhone:
     """Q7: +998 va 9 raqam (E.164); kiritishda niqob, saqlashda normalizatsiya."""
 
-    @pytest.mark.xfail(strict=True, reason="PLAN 2.4 / Q7: telefon formati tekshirilmaydi")
     @pytest.mark.parametrize("phone", ["12345", "45", "+1 555 0100", "998901234567890"])
     def test_invalid_phone_is_rejected(self, tenant_a, phone):
         response = tenant_a.client().post(
@@ -35,7 +34,6 @@ class TestGuardianPhone:
         assert response.status_code == 400, f"{phone!r} qabul qilindi"
         assert "phone" in str(response.data).lower()
 
-    @pytest.mark.xfail(strict=True, reason="PLAN 2.4 / Q7: normalizatsiya yo'q")
     @pytest.mark.parametrize(
         "typed",
         ["+998 90 123 45 67", "998901234567", "90 123 45 67", "(90) 123-45-67"],

@@ -996,3 +996,6 @@ msgstr "Закупка на склад"
 
 msgid "{product} — {quantity} {unit}"
 msgstr "{product} — {quantity} {unit}"
+
+msgid "Telefon raqamini {hint} formatida kiriting."
+msgstr "Введите номер телефона в формате {hint}."

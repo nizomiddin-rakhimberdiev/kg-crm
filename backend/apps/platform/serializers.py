@@ -7,6 +7,7 @@ from decimal import Decimal
 from rest_framework import serializers
 
 from apps.accounts.serializers import validate_password_strength
+from apps.core.serializer_fields import PhoneField
 from apps.platform.models import GRANT_MAX_HOURS, Lead, LeadStatus, SupportGrant
 
 __all__ = [
@@ -85,7 +86,7 @@ class OrganizationCreateSerializer(serializers.Serializer):
 
     organization_name = serializers.CharField(max_length=200)
     contact_email = serializers.EmailField()
-    contact_phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    contact_phone = PhoneField(required=False, allow_blank=True)
     full_name = serializers.CharField(max_length=150)
     password = serializers.CharField(validators=[validate_password_strength])
 
@@ -101,7 +102,9 @@ class LeadCreateSerializer(serializers.Serializer):
     """Internetdan keladigan minimal zayavka; consent frontendda emas, shu yerda majburiy."""
 
     name = serializers.CharField(max_length=150, trim_whitespace=True)
-    phone = serializers.CharField(max_length=32, trim_whitespace=True)
+    # Normalizatsiya umumiy modulda (Q7) — ilgari u faqat shu yerda
+    # bor edi, vasiy va xodim telefonlarida esa yo'q edi.
+    phone = PhoneField(max_length=32)
     kindergarten_name = serializers.CharField(max_length=200, trim_whitespace=True)
     children_count = serializers.IntegerField(min_value=1, max_value=10_000)
     city = serializers.CharField(max_length=120, trim_whitespace=True)
@@ -115,16 +118,6 @@ class LeadCreateSerializer(serializers.Serializer):
     # Ko'rinmas honeypot. To'ldirilsa normal validation xatosi qaytadi;
     # botga endpoint xatti-harakatlari haqida qo'shimcha signal bermaymiz.
     website = serializers.CharField(required=False, allow_blank=True, write_only=True, max_length=0)
-
-    def validate_phone(self, value: str) -> str:
-        digits = "".join(character for character in value if character.isdigit())
-        if len(digits) == 9:
-            digits = f"998{digits}"
-        if len(digits) != 12 or not digits.startswith("998"):
-            raise serializers.ValidationError(
-                "Telefon raqamini +998 XX XXX XX XX formatida kiriting."
-            )
-        return f"+{digits}"
 
     def validate_consent(self, value: bool) -> bool:
         if not value:

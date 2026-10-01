@@ -13,6 +13,7 @@ from rest_framework import serializers
 from apps.accounts.models import Permission, Role, User
 from apps.branches.models import Branch
 from apps.core.fields import TenantPrimaryKeyRelatedField
+from apps.core.serializer_fields import PhoneField
 from apps.core.typing import request_user
 
 __all__ = [
@@ -90,6 +91,7 @@ class ProfilePhotoSerializer(serializers.ModelSerializer):
 
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
+    phone = PhoneField(required=False, allow_blank=True)
     """
     `PATCH /auth/me` — foydalanuvchining O'ZI haqidagi xavfsiz maydonlar.
 
@@ -208,6 +210,8 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserWriteSerializer(serializers.ModelSerializer):
+    # Auditda tizim hisobi telefoni "45" bo'lib qabul qilingan edi.
+    phone = PhoneField(required=False, allow_blank=True)
     password = serializers.CharField(
         write_only=True, required=False, validators=[validate_password_strength]
     )
