@@ -7,6 +7,7 @@ export interface GroupInput {
   capacity?: number
   age_min?: number | null
   age_max?: number | null
+  teacher_id?: string | null
 }
 
 export interface ChildInput {

@@ -836,4 +836,12 @@ export const messages: Record<string, string> = {
   'Vasiy familiyasi': 'Фамилия представителя',
   'Vasiy ismi': 'Имя представителя',
   'Vasiy telefoni': 'Телефон представителя',
+  '— biriktirilmagan —': '— не закреплён —',
+  '— bogʻlanmagan —': '— не связан —',
+  Tarbiyachi: 'Воспитатель',
+  'Tarbiyachi oʻz guruhini koʻrishi uchun hisob bogʻlanishi kerak.':
+    'Чтобы воспитатель видел свою группу, нужно связать учётную запись.',
+  'Tizim hisobi': 'Учётная запись',
+  'Tizim hisobi bogʻlangan tarbiyachi faqat shu guruhni koʻradi.':
+    'Воспитатель со связанной учётной записью видит только эту группу.',
 }

@@ -34,3 +34,25 @@ class TenantPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
 
     def get_queryset(self) -> QuerySet[Any]:
         return self._model.objects.all()  # type: ignore[attr-defined,no-any-return]
+
+
+class TenantUserRelatedField(serializers.PrimaryKeyRelatedField):
+    """
+    Foydalanuvchiga havola — tenant ichida (PLAN 2.8).
+
+    `TenantPrimaryKeyRelatedField` dan alohida, chunki `User` da
+    `all_objects` yo'q: u `AbstractBaseUser` dan keladi va o'z
+    menejeriga ega. `objects.none()` ni init paytida chaqirish esa
+    tenant kontekstini talab qiladi va import vaqtida yiqilardi.
+    """
+
+    def __init__(self, **kwargs: Any) -> None:
+        kwargs.setdefault("queryset", None)
+        kwargs.setdefault("required", False)
+        kwargs.setdefault("allow_null", True)
+        super().__init__(**kwargs)
+
+    def get_queryset(self) -> QuerySet[Any]:
+        from apps.accounts.models import User
+
+        return User.objects.filter(is_active=True)

@@ -12,6 +12,7 @@ import { Check, Pencil, Plus, Trash2, Users2 } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { GroupChildrenModal } from '@/features/children/components/GroupChildrenModal'
 import { groupsApi } from '@/features/children/api'
+import { employeesApi } from '@/features/staff/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Group } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
@@ -23,7 +24,7 @@ export default function GroupsPage() {
   const queryClient = useQueryClient()
   const { can } = useCan()
 
-  const EMPTY = { name: '', capacity: '', age_min: '', age_max: '' }
+  const EMPTY = { name: '', capacity: '', age_min: '', age_max: '', teacher_id: '' }
   const [form, setForm] = useState(EMPTY)
   // `null` — yangi guruh, obyekt — mavjudi tahrirlanyapti. Tahrir AYNI
   // formada ochiladi: guruh kartochkasi kichik, alohida modal ortiqcha.
@@ -39,6 +40,12 @@ export default function GroupsPage() {
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: queryKeys.groups(organizationId) })
 
+  // Tarbiyachi tanlash uchun xodimlar ro'yxati (PLAN 2.6).
+  const employeesQuery = useQuery({
+    queryKey: queryKeys.employees(organizationId),
+    queryFn: () => employeesApi.list({ page_size: 200 }),
+  })
+
   const closeForm = () => {
     setEditing(null)
     setForm(EMPTY)
@@ -52,6 +59,7 @@ export default function GroupsPage() {
       capacity: group.capacity ? String(group.capacity) : '',
       age_min: group.age_min === null ? '' : String(group.age_min),
       age_max: group.age_max === null ? '' : String(group.age_max),
+      teacher_id: group.teacher_id ?? '',
     })
   }
 
@@ -60,6 +68,9 @@ export default function GroupsPage() {
     capacity: form.capacity ? Number(form.capacity) : 0,
     age_min: form.age_min === '' ? null : Number(form.age_min),
     age_max: form.age_max === '' ? null : Number(form.age_max),
+    // Tarbiyachi (PLAN 2.6): biriktirilgandan keyin u FAQAT shu
+    // guruhni ko'radi va faqat uning davomatini belgilaydi.
+    teacher_id: form.teacher_id || null,
   })
 
   const createMutation = useMutation({
@@ -185,6 +196,32 @@ export default function GroupsPage() {
               />
             </div>
           </div>
+          <div>
+            <label
+              htmlFor="group-teacher"
+              className="mb-1 block text-xs font-medium text-slate-600"
+            >
+              {t('Tarbiyachi')}
+            </label>
+            <select
+              id="group-teacher"
+              value={form.teacher_id}
+              onChange={(e) => setForm((p) => ({ ...p, teacher_id: e.target.value }))}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            >
+              <option value="">{t('— biriktirilmagan —')}</option>
+              {(employeesQuery.data?.items ?? []).map((employee) => (
+                <option key={employee.id} value={employee.id}>
+                  {employee.full_name}
+                  {employee.position_title ? ` — ${employee.position_title}` : ''}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-[11px] text-slate-500">
+              {t('Tizim hisobi bogʻlangan tarbiyachi faqat shu guruhni koʻradi.')}
+            </p>
+          </div>
+
           <button
             type="submit"
             disabled={createMutation.isPending || updateMutation.isPending}
@@ -259,6 +296,11 @@ export default function GroupsPage() {
                         {t('{enrolled_count} ta bola', { enrolled_count: group.enrolled_count })}
                         {limited && ` / ${group.capacity}`}
                       </span>
+                      {group.teacher_name && (
+                        <span className="block truncate text-xs text-slate-500">
+                          {group.teacher_name}
+                        </span>
+                      )}
                       {(group.age_min !== null || group.age_max !== null) && (
                         <span className="mt-0.5 block text-xs text-slate-400">
                           {group.age_min ?? '0'}–{group.age_max ?? '∞'} {t('yosh')}

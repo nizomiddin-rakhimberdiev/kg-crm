@@ -838,4 +838,12 @@ export const messages: Record<string, string> = {
   'Vasiy familiyasi': "Guardian's surname",
   'Vasiy ismi': "Guardian's first name",
   'Vasiy telefoni': "Guardian's phone",
+  '— biriktirilmagan —': '— not assigned —',
+  '— bogʻlanmagan —': '— not linked —',
+  Tarbiyachi: 'Teacher',
+  'Tarbiyachi oʻz guruhini koʻrishi uchun hisob bogʻlanishi kerak.':
+    'Link an account so the teacher can see their group.',
+  'Tizim hisobi': 'System account',
+  'Tizim hisobi bogʻlangan tarbiyachi faqat shu guruhni koʻradi.':
+    'A teacher with a linked account sees only this group.',
 }

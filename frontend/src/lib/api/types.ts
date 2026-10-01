@@ -225,6 +225,9 @@ export interface Group {
   enrolled_count: number
   is_active: boolean
   created_at: string
+  /** Guruhning tarbiyachisi (PLAN 2.6) — xodim, tizim hisobi emas. */
+  teacher_id: string | null
+  teacher_name: string | null
 }
 
 export interface ImportRowError {
@@ -393,6 +396,9 @@ export interface Employee {
   phone: string
   position: string | null
   position_title: string | null
+  /** Tizim hisobi (PLAN 2.8) — bo'lmasligi mumkin. */
+  user: string | null
+  user_email: string | null
   employment_status: 'active' | 'on_leave' | 'terminated'
   hire_date: string
   termination_date: string | null

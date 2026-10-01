@@ -28,6 +28,8 @@ export interface EmployeeInput {
   termination_date?: string | null
   /** Org Owner uchun majburiy (ko'p filialda); qolganlarda backend o'zi aniqlaydi. */
   branch_id?: string
+  /** Tizim hisobi (PLAN 2.8) — tarbiyachi o'z guruhini ko'rishi uchun. */
+  user_id?: string | null
 }
 
 export const employeesApi = {

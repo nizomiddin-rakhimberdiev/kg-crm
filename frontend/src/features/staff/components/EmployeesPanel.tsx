@@ -18,7 +18,7 @@ import { useBranchScope } from '@/app/providers/BranchProvider'
 import { Modal } from '@/components/ui/Modal'
 import { Pagination } from '@/components/ui/primitives'
 import { branchesApi } from '@/features/branches/api'
-import { employeesApi, positionsApi, type EmployeeInput } from '@/features/staff/api'
+import { employeesApi, positionsApi, staffApi, type EmployeeInput } from '@/features/staff/api'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { usePageState } from '@/hooks/usePageState'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -99,6 +99,12 @@ export function EmployeesPanel() {
     queryFn: () => employeesApi.list(params),
     placeholderData: keepPreviousData,
   })
+
+  // Bog'lash uchun tizim hisoblari ro'yxati (PLAN 2.8).
+  const usersQuery = useQuery({
+    queryKey: queryKeys.users(organizationId, { page_size: 200 }),
+    queryFn: () => staffApi.list({ page_size: 200 }),
+  })
   const positionsQuery = useQuery({
     queryKey: queryKeys.positions(organizationId),
     queryFn: positionsApi.list,
@@ -155,6 +161,7 @@ export function EmployeesPanel() {
       hire_date: employee.hire_date,
       base_salary: employee.base_salary,
       official_salary: employee.official_salary ?? '',
+      user_id: employee.user ?? null,
       employment_status: employee.employment_status,
       termination_date: employee.termination_date ?? '',
     })
@@ -528,6 +535,31 @@ export function EmployeesPanel() {
                 )}
               </div>
             ))}
+
+            {/* Tizim hisobi (PLAN 2.8) — ixtiyoriy va ataylab shunday:
+                oshpazga hisob kerak emas. Lekin tarbiyachi uchun
+                MAJBURIY: usiz u o'z guruhini ko'ra olmaydi. */}
+            <div>
+              <label htmlFor="emp-user" className="mb-1 block text-xs font-medium text-slate-600">
+                {t('Tizim hisobi')}
+              </label>
+              <select
+                id="emp-user"
+                value={form.user_id ?? ''}
+                onChange={(e) => setForm((prev) => ({ ...prev, user_id: e.target.value || null }))}
+                className={inputClass(false)}
+              >
+                <option value="">{t('— bogʻlanmagan —')}</option>
+                {(usersQuery.data?.items ?? []).map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.full_name} — {user.email}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-[11px] text-slate-500">
+                {t('Tarbiyachi oʻz guruhini koʻrishi uchun hisob bogʻlanishi kerak.')}
+              </p>
+            </div>
 
             {!editing && isOrgOwner && branches.length > 0 && (
               <div>
