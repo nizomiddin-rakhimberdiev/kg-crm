@@ -8,6 +8,8 @@ portali shunga tayanadi. `tariff_id` Sprint 4 da (finance) qo'shiladi;
 
 from __future__ import annotations
 
+from typing import Any
+
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy
@@ -50,6 +52,14 @@ class Child(BranchScopedModel):
         null=True,
         blank=True,
     )
+
+    # Qidiruv kaliti (Q11, PLAN 2.7) — apostrofsiz, faqat lotin.
+    #
+    # "Ulug'bek", "Ulugʻbek" va "Улугбек" bitta kalitga keladi, ya'ni
+    # mudira qaysi birini yozsa ham bolani topadi. Topa olmasa, u
+    # "bu bola tizimda yo'q" deb ikkinchi marta kiritadi — va bitta
+    # bola ikkita balansda qoladi.
+    search_key = models.CharField(max_length=255, blank=True, db_index=True)
 
     photo_path = models.CharField(max_length=255, blank=True)
     notes = models.TextField(blank=True)
@@ -100,6 +110,13 @@ class Child(BranchScopedModel):
             ),
         ]
 
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """Qidiruv kaliti HAR SAQLASHDA qayta hisoblanadi (PLAN 2.7)."""
+        from apps.core.translit import search_key as _key
+
+        self.search_key = _key(f"{self.last_name} {self.first_name} {self.middle_name}")
+        super().save(*args, **kwargs)
+
     def __str__(self) -> str:
         return self.full_name
 
@@ -123,6 +140,10 @@ class Guardian(BranchScopedModel):
     phone = models.CharField(max_length=20)
     email = models.EmailField(blank=True)
 
+    # Ism ham, TELEFON ham shu kalitga tushadi (PLAN 2.7): mudira
+    # ko'pincha ota-onani raqami bo'yicha qidiradi.
+    search_key = models.CharField(max_length=255, blank=True, db_index=True)
+
     class Meta:
         db_table = "guardian"
         ordering = ["last_name", "first_name"]
@@ -135,6 +156,13 @@ class Guardian(BranchScopedModel):
                 name="uq_guardian_branch_phone",
             ),
         ]
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """Qidiruv kaliti HAR SAQLASHDA qayta hisoblanadi (PLAN 2.7)."""
+        from apps.core.translit import search_key as _key
+
+        self.search_key = _key(f"{self.last_name} {self.first_name} {self.phone}")
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f"{self.last_name} {self.first_name}"

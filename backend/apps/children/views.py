@@ -28,6 +28,7 @@ from apps.children.serializers import (
     GroupSerializer,
     GuardianSerializer,
 )
+from apps.core import translit
 from apps.core.exceptions import BusinessRuleViolation
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchCreateMixin, BranchScopedMixin, TenantViewSet
@@ -58,6 +59,9 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
         "hard_delete": "delete",
     }
     model = Child
+    # `search_fields` ataylab qoldirilgan: u DRF ning standart qidiruvi
+    # va `?search=` bilan ishlaydi. Qidiruv kaliti esa ustiga qo'shiladi
+    # (`get_base_queryset`), ya'ni "Улугбек" ham, "Ulug'bek" ham topiladi.
     search_fields = ["first_name", "last_name", "middle_name"]
     ordering_fields = ["last_name", "date_of_birth", "created_at"]
     filterset_fields = ["enrollment_status", "gender"]
@@ -84,6 +88,14 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
         if ids:
             wanted = [value for value in ids.split(",") if value][: self.IDS_CAP]
             queryset = queryset.filter(id__in=_valid_uuids(wanted))
+
+        # Qidiruv kaliti (PLAN 2.7): apostrof va alifbo farqi yo'qoladi.
+        # DRF ning `?search=` filtri `search_fields` bo'yicha alohida
+        # ishlaydi; bu esa uni TO'LDIRADI — "Улугбек" deb yozilgan
+        # so'rov "Ulug'bek" ni ham topadi.
+        term = self.request.query_params.get("q")
+        if term:
+            queryset = queryset.filter(search_key__contains=translit.search_key(term))
 
         # Qator darajasidagi doira (PLAN 2.6): guruhga biriktirilgan
         # tarbiyachi faqat o'z guruhining bolalarini ko'radi. Boshqa

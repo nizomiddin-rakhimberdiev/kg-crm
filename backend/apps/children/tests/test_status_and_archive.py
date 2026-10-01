@@ -220,3 +220,62 @@ class TestEndpoints:
             format="json",
         )
         assert response.status_code == 404
+
+
+class TestSearchKey:
+    """
+    Qidiruv kaliti — Q11, PLAN 2.7.
+
+    Mudira bolani qaysi alifboda yozsa ham topishi kerak. Topa olmasa,
+    u "bu bola tizimda yo'q" deb ikkinchi marta kiritadi — va bitta
+    bola ikkita balansda qoladi.
+    """
+
+    @pytest.fixture
+    def ulugbek(self, tenant_a, tariff) -> Child:
+        with organization_context(tenant_a.organization.id):
+            return Child.objects.create(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                first_name="Ulug'bek",
+                last_name="Choriyev",
+                date_of_birth=date(2021, 3, 14),
+                gender="male",
+                tariff=tariff,
+            )
+
+    def test_the_key_is_filled_on_save(self, tenant_a, ulugbek):
+        with organization_context(tenant_a.organization.id):
+            ulugbek.refresh_from_db()
+        assert ulugbek.search_key == "choriyevulugbek"
+
+    @pytest.mark.parametrize("term", ["Ulug'bek", "Ulugʻbek", "Улугбек", "ulugbek", "CHORIYEV"])
+    def test_every_spelling_finds_the_child(self, tenant_a, ulugbek, term):
+        response = tenant_a.client().get(reverse("v1:child-list"), {"q": term})
+        assert response.status_code == 200
+        names = [row["first_name"] for row in response.json()["data"]]
+        assert "Ulug'bek" in names, f"{term!r} bo'yicha topilmadi"
+
+    def test_a_guardian_is_found_by_phone(self, tenant_a):
+        from apps.children.models import Guardian
+
+        with organization_context(tenant_a.organization.id):
+            guardian = Guardian.objects.create(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                first_name="Dilnoza",
+                last_name="Choriyeva",
+                phone="+998901234567",
+            )
+            guardian.refresh_from_db()
+
+        # Mudira ko'pincha ota-onani RAQAMI bo'yicha qidiradi.
+        assert "998901234567" in guardian.search_key
+
+    def test_the_key_follows_a_rename(self, tenant_a, ulugbek):
+        with organization_context(tenant_a.organization.id):
+            ulugbek.first_name = "Bekzod"
+            ulugbek.save()
+            ulugbek.refresh_from_db()
+
+        assert ulugbek.search_key == "choriyevbekzod"

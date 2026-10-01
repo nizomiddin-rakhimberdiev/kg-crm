@@ -10,6 +10,7 @@ modelini oylik ma'lumotlari bilan ifloslantirardi.
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Any
 
 from django.db import models
 from django.utils.translation import gettext_lazy
@@ -94,6 +95,9 @@ class Employee(BranchScopedModel):
     # farq qilgan kunda payslip mehnat shartnomasiga zid bo'lardi.
     official_salary = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
 
+    # Qidiruv kaliti (PLAN 2.7) — bola va vasiy bilan bir xil qoida.
+    search_key = models.CharField(max_length=255, blank=True, db_index=True)
+
     class Meta:
         db_table = "employee"
         ordering = ["last_name", "first_name"]
@@ -122,6 +126,13 @@ class Employee(BranchScopedModel):
                 name="ix_employee_org_br_status",
             ),
         ]
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """Qidiruv kaliti HAR SAQLASHDA qayta hisoblanadi (PLAN 2.7)."""
+        from apps.core.translit import search_key as _key
+
+        self.search_key = _key(f"{self.last_name} {self.first_name} {self.phone}")
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return self.full_name
