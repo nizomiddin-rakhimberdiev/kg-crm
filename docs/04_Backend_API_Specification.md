@@ -522,14 +522,14 @@ Row: `{child_id, child_name, group_name, invoice_id, invoice_number, charged, pa
 
 ## 10. Debtors
 
-Module: `debtors` — **derived view over the finance ledger** ([03 §13.7](./03_Database_Design.md)). Read-only + reminder action.
+Module: `debtors` — **derived view over the finance ledger** ([03 §13.7](./03_Database_Design.md)). Read-only.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/debtors` | `debtors.read` | List children with outstanding balance (filters: `overdue=true`, `group_id`, `min_amount`, `min_days`; `order_by=debt\|days\|name`) |
 | GET | `/debtors/{childId}` | `debtors.read` | Debtor detail + ledger statement |
-| POST | `/debtors/{childId}/remind` | `debtors.update` + `notifications.create` | Send an SMS debt reminder to the primary guardian |
-| POST | `/debtors/remind-all` | `debtors.update` + `notifications.create` | Queue reminders to all current debtors (async) |
+
+> **Reminders are sent through `notifications`, not through `debtors`** ([§15](#15-notifications)). An earlier draft of this document put `POST /debtors/{childId}/remind` and `/debtors/remind-all` here; the implementation has one path instead — `POST /notifications/remind-debtors`, optionally narrowed by `child_ids` — because the preview, the daily cap, the sending window and the delivery log all live in one place. Two entry points would have meant two sets of rules.
 
 > `?overdue_days=N` is a **frontend** deep-link parameter ([07 §8](./07_Radix_Intelligence.md)): the page turns on `overdue=true` and narrows the list to `oldest_overdue_date < today − N` client-side. The API itself does not know it.
 
