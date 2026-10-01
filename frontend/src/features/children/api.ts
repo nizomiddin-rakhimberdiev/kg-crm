@@ -16,7 +16,10 @@ export interface ChildInput {
   date_of_birth: string
   gender: 'male' | 'female'
   enrollment_status?: string
+  enrolled_on?: string | null
   notes?: string
+  allergies?: string
+  medical_notes?: string
   branch_id?: string | null
   tariff_id?: string | null
 }
@@ -46,6 +49,28 @@ export const childrenApi = {
 
   enroll: (childId: string, groupId: string) =>
     api.post(`/children/${childId}/enroll`, { group_id: groupId }),
+
+  /** Holat — sana va sabab MAJBURIY (Q5). */
+  changeStatus: (
+    childId: string,
+    payload: { enrollment_status: string; status_changed_on: string; status_reason: string },
+  ) => api.post<Child>(`/children/${childId}/change-status`, payload),
+
+  archive: (childId: string, reason?: string) =>
+    api.post<Child>(`/children/${childId}/archive`, { reason: reason ?? '' }),
+  restore: (childId: string) => api.post<Child>(`/children/${childId}/restore`),
+
+  /** Xato kiritilgan yozuvni butunlay o'chiradi — faqat 24 soat ichida (Q6). */
+  hardDelete: (childId: string) => api.post(`/children/${childId}/hard-delete`),
+
+  updateGuardianLink: (
+    childId: string,
+    linkId: string,
+    payload: { relation?: string; is_primary?: boolean; can_pickup?: boolean },
+  ) => api.patch(`/children/${childId}/guardians/${linkId}`, payload),
+
+  unlinkGuardian: (childId: string, linkId: string) =>
+    api.delete(`/children/${childId}/guardians/${linkId}`),
 
   addGuardian: (
     childId: string,

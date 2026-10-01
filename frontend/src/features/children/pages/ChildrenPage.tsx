@@ -12,7 +12,7 @@
  */
 
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Phone, Plus, Search, Trash2, Upload, Users } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
@@ -39,6 +39,20 @@ const STATUS_LABELS: Record<string, string> = {
   withdrawn: t('Chiqib ketgan'),
 }
 
+interface GuardianDraft {
+  last_name: string
+  first_name: string
+  phone: string
+  relation: string
+}
+
+const EMPTY_GUARDIAN_DRAFT: GuardianDraft = {
+  last_name: '',
+  first_name: '',
+  phone: '',
+  relation: 'mother',
+}
+
 const EMPTY_FORM: ChildInput = {
   first_name: '',
   last_name: '',
@@ -52,6 +66,7 @@ export default function ChildrenPage() {
   const { selectedBranchId } = useBranchScope()
   const queryClient = useQueryClient()
   const { can } = useCan()
+  const navigate = useNavigate()
 
   const [search, setSearch] = useState('')
   // Guruhni ro'yxatdan o'zgartirish TASDIQ bilan (PLAN 1.4): ilgari
@@ -70,6 +85,10 @@ export default function ChildrenPage() {
   // chunki bola guruhdan guruhga ko'chadi va har ko'chish tarixda qoladi.
   // Shuning uchun u formada alohida holat sifatida yuriladi.
   const [formGroupId, setFormGroupId] = useState('')
+  // Yaratish formasidagi IXTIYORIY vasiy bloki (PLAN 2.3). Ilgari
+  // vasiyni ikkinchi ekranda qo'shish kerak edi va ko'pincha
+  // unutilardi — vasiysiz bola esa SMS olmaydigan bola.
+  const [guardian, setGuardian] = useState<GuardianDraft>(EMPTY_GUARDIAN_DRAFT)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
 
@@ -78,6 +97,7 @@ export default function ChildrenPage() {
     setEditing(null)
     setForm(EMPTY_FORM)
     setFormGroupId('')
+    setGuardian(EMPTY_GUARDIAN_DRAFT)
     setFieldErrors({})
     setError(null)
   }
@@ -87,6 +107,7 @@ export default function ChildrenPage() {
     setEditing(null)
     setForm(EMPTY_FORM)
     setFormGroupId('')
+    setGuardian(EMPTY_GUARDIAN_DRAFT)
     setFieldErrors({})
     setError(null)
     setShowForm(true)
@@ -128,6 +149,18 @@ export default function ChildrenPage() {
     // jadval har bosishda bo'shab-to'lib "lipillamaydi".
     placeholderData: keepPreviousData,
   })
+
+  // Ro'yxatdagi bolalar ichidan bir xil ism+sana qidiriladi.
+  // Server tekshiruvi emas: u BLOKLAMAYDI, faqat ogohlantiradi.
+  const duplicate =
+    !editing && form.first_name && form.last_name && form.date_of_birth
+      ? (childrenQuery.data?.items ?? []).find(
+          (row) =>
+            row.first_name.toLowerCase() === form.first_name.toLowerCase() &&
+            row.last_name.toLowerCase() === form.last_name.toLowerCase() &&
+            row.date_of_birth === form.date_of_birth,
+        )
+      : undefined
 
   const groupsQuery = useQuery({
     queryKey: queryKeys.groups(organizationId),
@@ -171,15 +204,31 @@ export default function ChildrenPage() {
   }
 
   const createMutation = useMutation({
-    mutationFn: async (payload: ChildInput & { groupId: string }) => {
-      const { groupId, ...childPayload } = payload
+    mutationFn: async (payload: ChildInput & { groupId: string; guardian?: GuardianDraft }) => {
+      const { groupId, guardian, ...childPayload } = payload
       const child = await childrenApi.create(childPayload)
       await enrollIfChosen(child.id, groupId)
+      // Vasiy ixtiyoriy, lekin agar kiritilgan bo'lsa — DARHOL
+      // biriktiriladi (PLAN 2.3). Ilgari uni ikkinchi ekranda qo'shish
+      // kerak edi va ko'pincha unutilardi: vasiysiz bola esa SMS
+      // olmaydigan bola.
+      if (guardian?.phone) {
+        await childrenApi.addGuardian(child.id, {
+          first_name: guardian.first_name,
+          last_name: guardian.last_name,
+          phone: guardian.phone,
+          relation: guardian.relation,
+          is_primary: true,
+        })
+      }
       return child
     },
-    onSuccess: () => {
+    onSuccess: (child) => {
       closeForm()
       void invalidate()
+      // Yaratilgach KARTAGA o'tiladi (PLAN 2.3): keyingi ish — tarif
+      // biriktirish va to'lov qabul qilish — o'sha yerda.
+      navigate(`/children/${child.id}`)
     },
     onError: handleError,
   })
@@ -211,7 +260,12 @@ export default function ChildrenPage() {
     if (editing) {
       updateMutation.mutate({ id: editing.id, payload: form, groupId: formGroupId })
     } else {
-      createMutation.mutate({ ...form, branch_id: selectedBranchId, groupId: formGroupId })
+      createMutation.mutate({
+        ...form,
+        branch_id: selectedBranchId,
+        groupId: formGroupId,
+        guardian: guardian.phone ? guardian : undefined,
+      })
     }
   }
 
@@ -282,10 +336,7 @@ export default function ChildrenPage() {
         onChange={(e) => e.target.value && setPendingGroup({ child, groupId: e.target.value })}
         className="max-w-[180px] rounded-lg border border-slate-200 px-2 py-1 text-xs outline-none focus:border-brand-500"
       >
-        <GroupOptions
-          groups={groupsQuery.data?.items ?? []}
-          currentId={child.current_group?.id}
-        />
+        <GroupOptions groups={groupsQuery.data?.items ?? []} currentId={child.current_group?.id} />
       </select>
     ) : (
       <span className="text-sm text-slate-600">{child.current_group?.name ?? '—'}</span>
@@ -482,6 +533,61 @@ export default function ChildrenPage() {
               </p>
             )}
           </div>
+
+          {/* Vasiy — IXTIYORIY, lekin shu yerda (PLAN 2.3).
+              Ilgari uni ikkinchi ekranda qo'shish kerak edi va
+              ko'pincha unutilardi; vasiysiz bola esa SMS olmaydigan
+              bola — ya'ni eslatma ham, kvitansiya ham bormaydi. */}
+          {!editing && (
+            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 sm:col-span-2">
+              <p className="text-xs font-semibold text-slate-700">{t('Vasiy (ixtiyoriy)')}</p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-4">
+                <input
+                  aria-label={t('Vasiy familiyasi')}
+                  placeholder={t('Familiya')}
+                  value={guardian.last_name}
+                  onChange={(e) => setGuardian((p) => ({ ...p, last_name: e.target.value }))}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                />
+                <input
+                  aria-label={t('Vasiy ismi')}
+                  placeholder={t('Ism')}
+                  value={guardian.first_name}
+                  onChange={(e) => setGuardian((p) => ({ ...p, first_name: e.target.value }))}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                />
+                <input
+                  aria-label={t('Vasiy telefoni')}
+                  type="tel"
+                  placeholder="+998 90 123 45 67"
+                  value={guardian.phone}
+                  onChange={(e) => setGuardian((p) => ({ ...p, phone: e.target.value }))}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                />
+                <select
+                  aria-label={t("Kim bo'ladi")}
+                  value={guardian.relation}
+                  onChange={(e) => setGuardian((p) => ({ ...p, relation: e.target.value }))}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                >
+                  <option value="mother">{t('Onasi')}</option>
+                  <option value="father">{t('Otasi')}</option>
+                  <option value="other">{t('Boshqa')}</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Dublikat ogohlantirishi (PLAN 2.3) — to'sib qo'ymaydi:
+              egizaklarda ism va tug'ilgan sana haqiqatan bir xil
+              bo'lishi mumkin. */}
+          {duplicate && (
+            <p className="rounded-lg bg-orik-50 px-3 py-2 text-sm text-orik-800 sm:col-span-2">
+              {t('Shunday ism va tugʻilgan sanali bola allaqachon bor: {name}', {
+                name: duplicate.full_name,
+              })}
+            </p>
+          )}
 
           <div className="flex gap-2 sm:col-span-2">
             <button

@@ -203,8 +203,15 @@ export interface Child {
   tariff_name: string | null
   balance: string
   notes: string
+  /** Allergiya — oshxona va tarbiyachiga kerak (PLAN 2.1). */
+  allergies: string
+  medical_notes: string
   guardians: GuardianLink[]
   current_group: { id: string; name: string } | null
+  /** Holat qachon va nega o'zgargan (Q5). */
+  status_changed_on: string | null
+  status_reason: string
+  archived_at: string | null
   is_active: boolean
   created_at: string
 }
