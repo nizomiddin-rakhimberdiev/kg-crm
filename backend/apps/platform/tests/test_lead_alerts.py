@@ -22,7 +22,7 @@ pytestmark = [pytest.mark.django_db, pytest.mark.big_update]
 @pytest.fixture
 def configured(settings):
     settings.TELEGRAM_BOT_TOKEN = "123:ABC"  # noqa: S105 — test qiymati
-    settings.TELEGRAM_LEAD_CHAT_ID = "-1001"
+    settings.TELEGRAM_LEADS_CHAT_ID = "-1001"
     return settings
 
 
@@ -83,7 +83,7 @@ class TestAlert:
 
     def test_without_configuration_nothing_is_sent_and_nothing_breaks(self, settings, client):
         settings.TELEGRAM_BOT_TOKEN = ""
-        settings.TELEGRAM_LEAD_CHAT_ID = ""
+        settings.TELEGRAM_LEADS_CHAT_ID = ""
         with patch("requests.post") as post:
             created = client.post(
                 reverse("v1:public-lead-create"), _payload(), content_type="application/json"

@@ -135,6 +135,8 @@ export interface Lead {
   source: string
   status: LeadStatus
   note: string
+  /** Keyingi qo'ng'iroq sanasi — "ertaga" bir hafta o'tib ma'nosini yo'qotadi. */
+  next_call_at: string | null
   status_changed_at: string | null
   consented_at: string
   privacy_policy_version: string
@@ -191,10 +193,19 @@ export const platform = {
 
   // Saytdagi «Demo olish» formasi — platforma darajasidagi ma'lumot, tenant emas.
   leads: (params?: { status?: LeadStatus }) => platformApi.get<LeadList>('/platform/leads', params),
-  setLeadStatus: (id: string, status: LeadStatus, note?: string) =>
+  setLeadStatus: (
+    id: string,
+    status: LeadStatus,
+    note?: string,
+    // `undefined` — tegilmaydi, `null` — rejani bekor qiladi. Ikkalasini
+    // bitta qiymat bilan ifodalash sotuvchining rejasini jimgina
+    // o'chirardi.
+    nextCallAt?: string | null,
+  ) =>
     platformApi.post<Lead>(`/platform/leads/${id}/status`, {
       status,
       ...(note !== undefined ? { note } : {}),
+      ...(nextCallAt !== undefined ? { next_call_at: nextCallAt } : {}),
     }),
   /** Amaldagi ruxsat bilan mijoz ilovasiga kirish tokenini oladi. */
   supportSession: (id: string) =>

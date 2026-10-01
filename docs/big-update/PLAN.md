@@ -227,16 +227,28 @@ modul×amal modelini **buzmasdan** qo'shiladi (yangi tekshiruv qatlami).
 
 ---
 
-### Bosqich 3 — Bildirishnomalar va qarzdorlar `[ ]`
+### Bosqich 3 — Bildirishnomalar va qarzdorlar `[x]`
 
-- [ ] **3.1** Eskiz.uz provayderi (token, yuborish, holat, xato) — `providers.py` registriga
-- [ ] **3.2** Console provayderda sariq "test rejimi" banneri
-- [ ] **3.3** Yuborish soatlari 08:00–21:00, kuniga 1 eslatma, qayta urinish, SMS soni/xarajat
-- [ ] **3.4** Shablon muharriri: o'zgaruvchi tugmalari, preview, belgi soni va SMS bo'laklari
-- [ ] **3.5** Qarzdorlar sahifasi: ustunlar, filtrlar, ommaviy eslatma, Excel, "ledger" jargonini olib tashlash
-- [ ] **3.6** Yangi lid → Telegram guruh
+- [x] **3.1** Eskiz.uz provayderi (token, yuborish, holat, xato) — `providers.py` registriga
+- [x] **3.2** Console provayderda sariq "test rejimi" banneri (+ `test_mode` holati, ADR-22)
+- [x] **3.3** Yuborish soatlari 08:00–21:00, kuniga 1 eslatma, qayta urinish, SMS soni/xarajat
+- [x] **3.4** Shablon muharriri: o'zgaruvchi tugmalari, preview, belgi soni va SMS bo'laklari, uz/ru shablonlar
+- [x] **3.5** Qarzdorlar sahifasi: ustunlar, filtrlar, ommaviy eslatma (tasdiq bilan), Excel, jargonni olib tashlash
+- [x] **3.6** Yangi lid → Telegram guruh (+ `next_call_at`)
 
 Env: `ESKIZ_EMAIL`, `ESKIZ_PASSWORD`, `ESKIZ_FROM`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_LEADS_CHAT_ID`
+
+Migratsiyalar: `notifications/0003_test_mode_status.py` (faqat `choices`),
+`notifications/0004_sms_language.py` (+`language`, unikal cheklov),
+`children/0009_sms_language.py` (+`guardian.language`),
+`platform/0004_lead_next_call.py` (+`lead.next_call_at`)
+
+Buyruq: `seed_sms_templates --tenant <slug> [--dry-run]` — mavjud
+bog'chalarga ruscha shablon qo'shadi (migratsiya EMAS: shablon matni
+mijozning matni).
+
+Yangi ADR: **ADR-22** — yetkazilmagan xabar "yuborildi" deb yozilmaydi;
+yuborish qoidalari sozlamada.
 
 ---
 

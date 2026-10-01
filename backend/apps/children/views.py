@@ -269,6 +269,8 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
             first_name=(request.data.get("first_name") or "").strip(),
             last_name=(request.data.get("last_name") or "").strip(),
             email=(request.data.get("email") or "").strip(),
+            # SMS tili (PLAN 3.4). Bo'sh — bog'chaning sukut tili.
+            language=(request.data.get("language") or "").strip()[:2],
         )
         link = services.attach_guardian(
             child=child,

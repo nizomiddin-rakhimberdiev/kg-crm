@@ -48,6 +48,7 @@ def upsert_guardian(
     first_name: str,
     last_name: str,
     email: str = "",
+    language: str = "",
 ) -> Guardian:
     """
     Telefon bo'yicha vasiyni topadi yoki yaratadi.
@@ -58,6 +59,12 @@ def upsert_guardian(
     """
     existing = Guardian.objects.filter(branch=branch, phone=phone, is_active=True).first()
     if existing:
+        # Mavjud vasiyning tilini faqat YANGI qiymat berilganda
+        # yangilaymiz: ikkinchi farzandni qo'shayotganda bo'sh qiymat
+        # avval tanlangan tilni o'chirib yuborardi (PLAN 3.4).
+        if language and existing.language != language:
+            existing.language = language
+            existing.save(update_fields=["language", "updated_at"])
         return existing
     return Guardian.objects.create(
         organization=organization,
@@ -66,6 +73,7 @@ def upsert_guardian(
         first_name=first_name,
         last_name=last_name,
         email=email,
+        language=language,
     )
 
 

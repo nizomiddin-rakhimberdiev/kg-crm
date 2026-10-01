@@ -81,6 +81,8 @@ export const childrenApi = {
       phone: string
       relation: string
       is_primary?: boolean
+      /** SMS tili; bo'sh — bog'chaning sukut tili (PLAN 3.4). */
+      language?: string
     },
   ) => api.post(`/children/${childId}/guardians`, payload),
 

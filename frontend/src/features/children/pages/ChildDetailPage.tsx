@@ -55,6 +55,9 @@ const EMPTY_GUARDIAN = {
   phone: '',
   relation: 'mother',
   is_primary: false,
+  // Bo'sh — bog'chaning sukut tili. Ruscha gaplashadigan oila
+  // ruscha SMS olishi kerak (PLAN 3.4).
+  language: '',
 }
 
 export default function ChildDetailPage() {
@@ -433,6 +436,16 @@ export default function ChildDetailPage() {
                       {label}
                     </option>
                   ))}
+                </select>
+                <select
+                  aria-label={t('SMS tili')}
+                  value={guardianForm.language}
+                  onChange={(e) => setGuardianForm((p) => ({ ...p, language: e.target.value }))}
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                >
+                  <option value="">{t('SMS tili: bog‘cha tili')}</option>
+                  <option value="uz">{t("O'zbekcha")}</option>
+                  <option value="ru">{t('Ruscha')}</option>
                 </select>
                 <label className="flex items-center gap-1.5 text-sm text-slate-600">
                   <input

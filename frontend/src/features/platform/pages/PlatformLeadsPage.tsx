@@ -32,11 +32,19 @@ const when = (iso: string) =>
 function LeadRow({ lead }: { lead: Lead }) {
   const queryClient = useQueryClient()
   const [note, setNote] = useState(lead.note)
+  const [nextCall, setNextCall] = useState(lead.next_call_at ?? '')
   const [error, setError] = useState<string | null>(null)
 
   const update = useMutation({
-    mutationFn: ({ status, text }: { status: LeadStatus; text?: string }) =>
-      platform.setLeadStatus(lead.id, status, text),
+    mutationFn: ({
+      status,
+      text,
+      call,
+    }: {
+      status: LeadStatus
+      text?: string
+      call?: string | null
+    }) => platform.setLeadStatus(lead.id, status, text, call),
     onSuccess: () => {
       setError(null)
       void queryClient.invalidateQueries({ queryKey: ['platform', 'leads'] })
@@ -75,6 +83,11 @@ function LeadRow({ lead }: { lead: Lead }) {
           <p className="mt-2 text-xs text-slate-500">
             Kelgan: {when(lead.created_at)}
             {lead.status_changed_at && ` · Holat: ${when(lead.status_changed_at)}`}
+            {lead.next_call_at && (
+              <span className="ml-1 text-amber-300">
+                · Qo‘ng‘iroq: {lead.next_call_at.split('-').reverse().join('.')}
+              </span>
+            )}
           </p>
         </div>
 
@@ -111,7 +124,21 @@ function LeadRow({ lead }: { lead: Lead }) {
             className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-brand-500"
           />
         </label>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap items-end gap-1.5">
+          {/* "Ertaga qo'ng'iroq qilaman" degan izoh bir hafta o'tib
+              ma'nosini yo'qotadi — sana yozib qo'yiladi. */}
+          <label className="mr-2 block text-xs font-medium text-slate-400">
+            Keyingi qo‘ng‘iroq
+            <input
+              type="date"
+              value={nextCall}
+              onChange={(e) => {
+                setNextCall(e.target.value)
+                update.mutate({ status: lead.status, call: e.target.value || null })
+              }}
+              className="mt-1 block min-h-10 rounded-lg border border-slate-700 bg-slate-800 px-2.5 text-sm text-slate-100 outline-none focus:border-brand-500"
+            />
+          </label>
           {ORDER.map((status) => (
             <button
               key={status}

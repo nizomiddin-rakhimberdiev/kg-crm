@@ -225,3 +225,97 @@ yurish ishladi, `check_rls` toza.
 3-bosqich: bildirishnomalar va qarzdorlar (Eskiz.uz, yuborish oynasi,
 shablonlar, qarzdorlar ekrani). Egasining "davom et" signali
 kutilmoqda.
+
+---
+
+## 2026-10-01 — Bosqich 3 bajarildi
+
+**Branch:** `big-update/phase-3` · **Commitlar:** `754a235`, `6a8b145`,
+`f1f84a4` (+ shu yozuv)
+
+### Nima tuzatildi
+
+Auditning eng jimgina xatosi bitta jumlada: **jurnal "Yuborildi" deb
+turardi, ota-ona esa hech narsa olmagan edi.** Hatto `12345` raqamiga
+yuborilgan xabar ham muvaffaqiyatli ko'rinardi. Bu turdagi xato eng
+yomoni, chunki u ishonchli ko'rinadi: bog'cha eslatmalar ketayotganiga
+ishonib turadi va bir oydan keyin "nega hech kim to'lamadi?" deb
+so'raydi.
+
+| Band | Holat | Natija |
+|---|---|---|
+| 3.1 Eskiz.uz | ✅ | Token keshda (20 kun), `401` da bir marta yangilanadi, xato matni jurnalda; `ESKIZ_FROM` bo'lmasa provayder ishga tushmaydi |
+| 3.2 Test rejimi | ✅ | `NotificationStatus.TEST_MODE` + yopilmaydigan sariq banner (Bildirishnomalar va Sozlamalar) |
+| 3.3 Qoidalar | ✅ | Yuborish oynasi 08:00–21:00, kuniga 1 eslatma, qayta urinish soni, oylik SMS soni va taxminiy xarajat |
+| 3.4 Shablon muharriri | ✅ | O'zgaruvchi tugmalari, jonli belgi/bo'lak hisoblagichi, serverdagi preview, uz/ru shablonlar |
+| 3.5 Qarzdorlar | ✅ | Kechikkan kunlar, oxirgi eslatma, guruh/15+/30+/60+/summa filtrlari, saralash, Excel, qator va ommaviy eslatma (tasdiq bilan) |
+| 3.6 Telegram | ✅ | Yangi ariza → sotuv chatiga xabar; lead'ga `next_call_at` |
+
+### Uchta qaror, sababi bilan
+
+**"Test rejimi" — muvaffaqiyatning ko'rinishi emas, alohida holat.**
+`sent` degan so'z bitta ma'noga ega bo'lishi kerak: shlyuz xabarni
+yetkazish uchun qabul qildi. Console provayder hech narsa yetkazmaydi,
+shuning uchun uning natijasi `test_mode` — va ekran buni banner bilan
+aytadi. Banner yopilmaydi: u eslatma emas, tizim holati.
+
+**Oyna tashqarisidagi xabar yo'qolmaydi, navbatda qoladi.** Tungi SMS
+ota-onani uyg'otadi; qarz eslatmasi esa ertalabgacha kutsa hech narsa
+yo'qotmaydi. Shuning uchun `dispatch` xabarni o'chirmaydi ham,
+yubormaydi ham — `queued` holatida qoldiradi va ertalabki dispatcher
+oladi. Vazifa natijasida ular `held` deb sanaladi, `failed` emas:
+monitoringda soxta signal bo'lmasligi kerak.
+
+**Buzuq filtr xato beradi, jimgina olib tashlanmaydi.** `group_id`
+noto'g'ri bo'lsa `None` qilib tashlash "shu guruhga yuboraman" ni
+"hammaga yuboraman" ga aylantirardi — va mudira buni SMS ketgandan
+keyin bilardi. Endi bu `422`.
+
+### Sifat darvozalari
+
+| Tekshiruv | Natija |
+|---|---|
+| `pytest` | **1106 o'tdi** · 0 xfail (3-bosqichning 7 tasi tuzatildi) · 0 xato |
+| `ruff` / `ruff format` / `mypy` | toza (274 fayl) |
+| `tsc` / `eslint` / `vitest` / `build` | toza · **122 test** |
+| `check_rls` | 46 jadval |
+| `makemigrations --check` | o'zgarish yo'q |
+
+### Migratsiya repetitsiyasi
+
+Urug'langan nusxada (`kg_crm_qa`: 25 bola, 193 ledger yozuvi, 105
+xabar, balans **12 919 000**):
+
+1. uchta yangi migratsiya qo'llandi → raqamlar o'zgarmadi, mavjud
+   shablonlar `uz` bo'lib qoldi, vasiylarning tili bo'sh (= bog'cha
+   tili);
+2. uchalasi **teskari** qaytarildi — toza;
+3. qayta oldinga yurildi → o'sha raqamlar, `check_rls` 46 jadval.
+
+`seed_sms_templates --all --dry-run` 3 ta shablon qo'shilishini
+ko'rsatdi va **hech narsa yozmadi**; haqiqiy ishga tushirishdan keyin
+ikkinchi marta 0 ta qo'shdi (idempotent), tahrirlangan o'zbekcha
+matnga tegmadi.
+
+### Deployda e'tibor bering
+
+1. **Jurnalda yangi holat — "Test rejimi".** Eski `sent` qatorlari
+   o'zgarmaydi; `NOTIFICATION_PROVIDER=console` turganda yangi
+   xabarlar `test_mode` bo'ladi. Bu xato emas, haqiqat.
+2. **Eskiz uchun uchta `.env` kaliti kerak** (`ESKIZ_EMAIL`,
+   `ESKIZ_PASSWORD`, `ESKIZ_FROM`) va `NOTIFICATION_PROVIDER=eskiz`.
+   Uchalasidan biri bo'lmasa provayder ishga tushmaydi — xabar
+   `failed` bo'ladi va sababi jurnalda turadi.
+3. **Telegram ixtiyoriy**: `TELEGRAM_BOT_TOKEN` va
+   `TELEGRAM_LEADS_CHAT_ID` bo'sh bo'lsa ariza baribir saqlanadi.
+4. **Ruscha shablonlar avtomatik qo'shilmaydi.** Mavjud bog'chalar
+   uchun `seed_sms_templates --tenant <slug>` ni EGASI ishga tushiradi
+   (avval `--dry-run`).
+5. **Narx ko'rsatilishi uchun** `notifications.sms_price` sozlamasiga
+   provayder shartnomasidagi raqamni kiriting; 0 bo'lsa xarajat
+   ko'rsatilmaydi.
+
+### Keyingi qadam
+
+4-bosqich: UI/UX, dizayn, tarjima. Egasining "davom et" signali
+kutilmoqda.

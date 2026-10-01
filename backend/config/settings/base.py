@@ -473,7 +473,7 @@ ESKIZ_FROM = env("ESKIZ_FROM", default="")
 # biznes. Chat ID manfiy bo'lishi mumkin (guruh) — shuning uchun u
 # satr sifatida o'qiladi.
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default="")
-TELEGRAM_LEAD_CHAT_ID = env("TELEGRAM_LEAD_CHAT_ID", default="")
+TELEGRAM_LEADS_CHAT_ID = env("TELEGRAM_LEADS_CHAT_ID", default="")
 
 # Konsol provayderi xabar MATNINI log'ga yozsinmi.
 #

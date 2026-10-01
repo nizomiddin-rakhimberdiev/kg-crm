@@ -182,6 +182,8 @@ export interface GuardianLink {
     full_name: string
     phone: string
     email: string
+    /** SMS tili; bo'sh — bog'chaning sukut tili (PLAN 3.4). */
+    language: string
   }
   relation: string
   is_primary: boolean

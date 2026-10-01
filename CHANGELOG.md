@@ -26,6 +26,19 @@ Bajarilgani: [`docs/big-update/PROGRESS.md`](./docs/big-update/PROGRESS.md)
   faqat o'z guruhini ko'radi. Bola kartasi qayta qurildi: hisob,
   tahrirlash, vasiylar, tablar.
 
+- **3-bosqich — SMS va qarzdorlar (ADR-22).** Eskiz.uz provayderi
+  (token keshi, xato matni, tasdiqlangan jo'natuvchi majburiy).
+  Yetkazilmagan xabar endi "Yuborildi" deb yozilmaydi — `test_mode`
+  holati va yopilmaydigan banner. Yuborish oynasi 08:00–21:00,
+  kuniga bitta eslatma, qayta urinish soni — hammasi sozlamada.
+  Oylik SMS soni va taxminiy xarajat (bo'laklar bo'yicha). Shablon
+  muharriri: o'zgaruvchi tugmalari, belgi/bo'lak hisoblagichi,
+  preview, o'zbekcha va ruscha matnlar. Qarzdorlar sahifasi:
+  kechikkan kunlar, oxirgi eslatma, filtrlar, saralash, Excel,
+  qator va ommaviy eslatma — ikkalasi ham aniq son ko'rsatilgan
+  tasdiq bilan. Yangi ariza sotuv Telegram chatiga tushadi, lead'da
+  "keyingi qo'ng'iroq" sanasi.
+
 ### O'zgardi
 - Ortiqcha to'lov endi rad etilmaydi — ortig'i avansga aylanadi (Q1).
 - `payroll.income_tax_rate` va `payroll.pension_rate` sukut qiymati
@@ -37,6 +50,15 @@ Bajarilgani: [`docs/big-update/PROGRESS.md`](./docs/big-update/PROGRESS.md)
   yozuvlar tegilmaydi — `report_bad_phones` ro'yxat beradi.
 - Tarbiyachi davomatni faqat oxirgi kunlar uchun belgilaydi
   (`attendance.teacher_edit_days`, sukut 1 = bugun va kecha).
+- Console provayder orqali ketgan xabar "Yuborildi" emas, **"Test
+  rejimi"**. Eski qatorlar o'zgarmaydi.
+- Noto'g'ri raqamga urinilmaydi: xabar darhol `failed` bo'ladi va
+  sababi jurnalda qoladi.
+- Yuborish oynasidan tashqarida tayyor bo'lgan xabar o'chirilmaydi —
+  navbatda qoladi va ertalab ketadi.
+- SMS matnidagi `ʻ` va `ʼ` oddiy `'` ga almashtiriladi (Q11): ular
+  xabarni UCS-2 ga o'tkazib narxni ikki baravar qilardi.
+- Ko'chirmada `tuition`/`payment` kabi xom kodlar o'rniga odam tili.
 
 ---
 

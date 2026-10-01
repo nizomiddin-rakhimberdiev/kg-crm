@@ -922,4 +922,6 @@ export const messages: Record<string, string> = {
   'Bitta SMS bo‘lagi narxi': 'Price per SMS part',
   'Taxminiy xarajatni hisoblash uchun — provayder shartnomasidagi narx.':
     'Used to estimate cost — the price from your provider contract.',
+  'SMS tili': 'SMS language',
+  'SMS tili: bog‘cha tili': 'SMS language: kindergarten default',
 }

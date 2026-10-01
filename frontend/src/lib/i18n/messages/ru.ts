@@ -920,4 +920,6 @@ export const messages: Record<string, string> = {
   'Bitta SMS bo‘lagi narxi': 'Цена одной части SMS',
   'Taxminiy xarajatni hisoblash uchun — provayder shartnomasidagi narx.':
     'Для расчёта примерных расходов — цена из договора с провайдером.',
+  'SMS tili': 'Язык SMS',
+  'SMS tili: bog‘cha tili': 'Язык SMS: язык садика',
 }

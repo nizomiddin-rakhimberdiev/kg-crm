@@ -526,7 +526,7 @@ Module: `debtors` — **derived view over the finance ledger** ([03 §13.7](./03
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/debtors` | `debtors.read` | List children with outstanding balance (filters: `overdue=true`, `group`, `min_amount`; `ordering=-balance`) |
+| GET | `/debtors` | `debtors.read` | List children with outstanding balance (filters: `overdue=true`, `group_id`, `min_amount`, `min_days`; `order_by=debt\|days\|name`) |
 | GET | `/debtors/{childId}` | `debtors.read` | Debtor detail + ledger statement |
 | POST | `/debtors/{childId}/remind` | `debtors.update` + `notifications.create` | Send an SMS debt reminder to the primary guardian |
 | POST | `/debtors/remind-all` | `debtors.update` + `notifications.create` | Queue reminders to all current debtors (async) |
@@ -539,9 +539,15 @@ Module: `debtors` — **derived view over the finance ledger** ([03 §13.7](./03
   "child": { "id": "…", "full_name": "Ali Karimov", "group": "Sunflowers" },
   "balance": "3000000.00",
   "oldest_overdue_date": "2026-06-05",
-  "primary_guardian": { "full_name": "Nodira K.", "phone": "+998901234567" }
+  "days_overdue": 118,
+  "primary_guardian": { "full_name": "Nodira K.", "phone": "+998901234567" },
+  "last_reminder_at": "2026-09-30T05:00:11Z"
 }
 ```
+
+> `days_overdue` and `last_reminder_at` are computed server-side **on purpose**. The screen's job is "who do I call today?", and both answers must come from one place: a day count computed in the browser drifts from the one in the export, and the reminder timestamp lives in `notification`, which `finance` must not import ([02 §5](./02_Software_Architecture.md)). The selector asks `notifications.selectors.last_reminders()` for all guardians in one query.
+
+> A malformed `group_id` is a **422, not an ignored filter**. Dropping it would silently turn "remind this group" into "remind everyone", and the sender would find out only after the SMS had gone.
 
 ---
 
@@ -750,10 +756,14 @@ Module: `notifications`. Channel-agnostic (SMS now; Telegram/Email later).
 |--------|------|------|-------------|
 | GET | `/notifications` | `notifications.read` | Delivery log (filters: `channel`, `status`, date range) |
 | GET | `/notifications/{id}` | `notifications.read` | Detail (status, retries, error) |
+| GET | `/notifications/status` | `notifications.read` | Provider state, sending window, limits, this month's usage and estimated cost |
+| GET | `/notifications/reminder-preview` | `notifications.read` | How many reminders the current filter would send, and what it would cost |
 | POST | `/notifications/send` | `notifications.create` | Send an ad-hoc message (template + recipients) |
+| POST | `/notifications/remind-debtors` | `notifications.create` | Queue debt reminders (same filters as the preview) |
 | POST | `/notifications/{id}/retry` | `notifications.create` | Retry a failed message |
-| GET | `/notification-templates` | `notifications.read` | List templates |
+| GET | `/notification-templates` | `notifications.read` | List templates (filters: `code`, `channel`, `language`) |
 | POST | `/notification-templates` | `notifications.create` | Create template |
+| POST | `/notification-templates/preview` | `notifications.read` | Render a draft with sample values; returns encoding, characters and SMS parts |
 | PATCH | `/notification-templates/{id}` | `notifications.update` | Edit template body/variables |
 
 **`POST /notifications/send` — request**
@@ -765,7 +775,34 @@ Module: `notifications`. Channel-agnostic (SMS now; Telegram/Email later).
   "variables": { "amount": "3000000.00", "due_date": "2026-07-30" }
 }
 ```
-**Behavior:** always async (Celery `notifications` queue); each dispatch produces a `notification` row with status lifecycle `queued → sent → delivered/failed`.
+**Behavior:** always async (Celery `notifications` queue); each dispatch produces a `notification` row with status lifecycle `queued → sent → delivered/failed`, plus two outcomes added by ADR-22:
+
+* **`test_mode`** — the message was accepted by a provider that does not deliver (the console adapter). It is **not** `sent`: the log said "Sent" for a year while nothing reached a parent, and that is the failure this status exists to prevent.
+* **still `queued`** — dispatch ran outside the sending window (`notifications.send_from_hour` … `send_to_hour`, default 08:00–21:00). Nothing is lost; the next `dispatch_queued` run in the morning sends it.
+
+A malformed recipient never reaches the provider: `delivery_problem()` marks it `failed` with a reason, because a gateway will happily accept `12345` and the log would then claim success.
+
+**`GET /notifications/status` — response**
+```json
+{
+  "test_mode": true,
+  "provider": "console",
+  "sms_enabled": true,
+  "send_from_hour": 8,
+  "send_to_hour": 21,
+  "reminders_per_day": 1,
+  "max_retries": 3,
+  "usage": {
+    "year": 2026, "month": 10,
+    "total": 412, "sent": 380, "failed": 4, "queued": 0, "test_mode": 28,
+    "parts": 465, "price_per_part": "85", "estimated_cost": "39525"
+  }
+}
+```
+
+> `estimated_cost` is `null` when `notifications.sms_price` is unset — showing "0 so'm" would read as "SMS is free". Only `sent` messages are counted: a `test_mode` row went nowhere and costs nothing. Parts, not messages: a Cyrillic body crosses into a second part at 71 characters (`apps/notifications/segments.py`), so the same text costs twice as much in Russian.
+
+**`GET /notifications/reminder-preview`** takes the same filters as `POST /notifications/remind-debtors` (`min_amount`, `min_days`, `group_id`, `child_ids`) and returns `{eligible, skipped_no_phone, skipped_already_sent, parts, estimated_cost}`. **One code path builds both lists** (`debt_reminder_targets()`): two separate queries would eventually show "48" and send 51.
 
 ---
 

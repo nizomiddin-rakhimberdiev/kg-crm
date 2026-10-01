@@ -1019,11 +1019,14 @@ Channel-agnostic hub (SMS now; Telegram/Email later). See [02_Software_Architect
 |--------|------|-------------|-------|
 | `code` | `VARCHAR(50)` | `NOT NULL` | `payment_received`, `debt_reminder`, … |
 | `channel` | `VARCHAR(12)` | `NOT NULL`, `CHECK (... IN ('sms','telegram','email'))` | |
+| `language` | `VARCHAR(2)` | `NOT NULL DEFAULT 'uz'` | `uz` / `ru` / `en` — the **parent's** language, not the staff member's |
 | `subject` | `VARCHAR(150)` | `NULL` | Email/Telegram title |
 | `body` | `TEXT` | `NOT NULL` | With `{variables}` |
 | `branch_id` | `UUID` | `NULL` FK → branch | `NULL` = global template |
 
-**Constraint:** `uq_template_code_channel_branch UNIQUE (code, channel, branch_id)`.
+**Constraint:** `uq_template_code_channel_branch UNIQUE (code, channel, language, branch_id)` plus the partial `uq_template_code_channel_global` for `branch_id IS NULL`.
+
+> **Why language is on the template, not on the message.** A Russian-speaking family that gets an Uzbek SMS does not read it — and then complains that no SMS arrived. The resolution order is branch+language → global+language → branch → global, so a missing translation never stops a message: the parent gets the other language, which beats silence. The parent's own choice lives on `guardian.language` (blank = the kindergarten's `general.default_language`), deliberately separate from the staff member's UI language.
 
 ### 17.2 `notification`
 One dispatch record per recipient per message.
@@ -1035,7 +1038,7 @@ One dispatch record per recipient per message.
 | `channel` | `VARCHAR(12)` | `NOT NULL`, `CHECK (... IN ('sms','telegram','email'))` | |
 | `recipient_address` | `VARCHAR(120)` | `NOT NULL` | Phone/chat-id/email snapshot |
 | `rendered_body` | `TEXT` | `NOT NULL` | Final message |
-| `status` | `VARCHAR(12)` | `NOT NULL DEFAULT 'queued'`, `CHECK (... IN ('queued','sent','delivered','failed','cancelled'))` | |
+| `status` | `VARCHAR(12)` | `NOT NULL DEFAULT 'queued'`, `CHECK (... IN ('queued','sent','delivered','failed','cancelled','test_mode'))` | `test_mode` = accepted by a provider that does not deliver |
 | `provider_message_id` | `VARCHAR(120)` | `NULL` | Gateway id |
 | `retry_count` | `SMALLINT` | `NOT NULL DEFAULT 0` | |
 | `error` | `TEXT` | `NULL` | Last failure reason |
@@ -1043,6 +1046,8 @@ One dispatch record per recipient per message.
 | `sent_at` | `TIMESTAMPTZ` | `NULL` | |
 
 **Business rules:** status transitions `queued → sent → delivered` or `→ failed` (with retry/backoff in Celery); `cancelled` allowed from `queued` only.
+
+> **`test_mode` is not a sixth flavour of success** (ADR-22). It is the honest answer when the configured provider is the console adapter: the row exists, the text is final, and nothing left the building. Before it existed the log read "Sent" — including for the number `12345` — and the kindergarten believed its reminders were working. Dispatch also refuses an unusable number outright (`failed` with a reason) and leaves a message `queued` outside the sending window rather than sending at 02:00; nothing is dropped in either case.
 
 ---
 

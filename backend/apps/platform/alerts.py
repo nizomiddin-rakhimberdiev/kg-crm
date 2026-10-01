@@ -32,7 +32,7 @@ TIMEOUT = 10
 
 def telegram_configured() -> bool:
     return bool(getattr(settings, "TELEGRAM_BOT_TOKEN", "")) and bool(
-        getattr(settings, "TELEGRAM_LEAD_CHAT_ID", "")
+        getattr(settings, "TELEGRAM_LEADS_CHAT_ID", "")
     )
 
 
@@ -48,7 +48,7 @@ def send_telegram(text: str) -> bool:
         response = requests.post(
             f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage",
             json={
-                "chat_id": settings.TELEGRAM_LEAD_CHAT_ID,
+                "chat_id": settings.TELEGRAM_LEADS_CHAT_ID,
                 "text": text,
                 "parse_mode": "HTML",
                 "disable_web_page_preview": True,
