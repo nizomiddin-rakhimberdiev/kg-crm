@@ -78,6 +78,13 @@ class NotificationStatus(models.TextChoices):
     DELIVERED = "delivered", gettext_lazy("Yetkazildi")
     FAILED = "failed", gettext_lazy("Muvaffaqiyatsiz")
     CANCELLED = "cancelled", gettext_lazy("Bekor qilindi")
+    # Haqiqiy provayder ulanmagan (PLAN 3.2).
+    #
+    # Auditda console provayder "Yuborildi" deb yozardi — hatto "12345"
+    # raqamiga ham. Ya'ni Bildirishnomalar sahifasi ishlayotgandek
+    # ko'rinardi, aslida esa hech kimga hech narsa bormagan. Bu eng
+    # yomon turdagi xato: jimgina va ishonchli ko'rinadigan.
+    TEST_MODE = "test_mode", gettext_lazy("Test rejimi")
 
 
 class Notification(BranchScopedModel):

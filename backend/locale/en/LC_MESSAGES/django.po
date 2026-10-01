@@ -1037,3 +1037,27 @@ msgstr "Give a reason for changing a past day's attendance."
 
 msgid "Tarbiyachi faqat oxirgi {days} kun davomatini belgilaydi. Eski kun uchun direktorga murojaat qiling."
 msgstr "A teacher may only mark the last {days} day(s). For earlier days, ask the director."
+
+msgid "Test rejimi"
+msgstr "Test mode"
+
+msgid "Noto'g'ri raqam"
+msgstr "Invalid number"
+
+msgid "Telefon raqami yo'q"
+msgstr "No phone number"
+
+msgid "Noto'g'ri identifikator."
+msgstr "Invalid identifier."
+
+msgid "{field}: raqam noto'g'ri."
+msgstr "{field}: invalid number."
+
+msgid "Qiymat"
+msgstr "Value"
+
+msgid "Kunlar"
+msgstr "Days"
+
+msgid "SMS provayderi sozlanmagan."
+msgstr "The SMS provider is not configured."

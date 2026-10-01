@@ -533,11 +533,21 @@ class DebtorViewSet(viewsets.ViewSet):
     def list(self, request: Request) -> Response:
         from decimal import Decimal as D
 
-        raw_min = request.query_params.get("min_amount")
-        min_amount = D(raw_min) if raw_min else None
-        overdue_only = request.query_params.get("overdue") == "true"
+        from apps.core.params import parse_bool, parse_decimal, parse_int, parse_uuid
 
-        rows = selectors.debtor_rows(min_amount=min_amount, overdue_only=overdue_only)
+        params = request.query_params
+        order_by = params.get("order_by") or "debt"
+        if order_by not in ("debt", "days", "name"):
+            order_by = "debt"
+
+        rows = selectors.debtor_rows(
+            min_amount=parse_decimal(params.get("min_amount"), field=gettext("Summa")),
+            overdue_only=parse_bool(params.get("overdue")),
+            # "15+ / 30+ / 60+ kun" filtrlari (PLAN 3.5).
+            min_days=parse_int(params.get("min_days"), field=gettext("Kunlar")),
+            group_id=parse_uuid(params.get("group_id")),
+            order_by=order_by,
+        )
         total = sum(D(row["balance"]) for row in rows)
         return Response({"count": len(rows), "total_debt": str(total), "results": rows})
 

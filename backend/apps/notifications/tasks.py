@@ -28,6 +28,9 @@ __all__ = ["dispatch_queued_notifications"]
 # Necha marta qayta urinamiz. Undan keyin xabar `failed` holatida
 # qoladi va uni odam ko'radi — cheksiz urinish shlyuzdagi doimiy
 # nosozlikni log'ga ko'mib yuborardi.
+#
+# Sukut qiymat; bog'cha uni `notifications.max_retries` sozlamasidan
+# o'zgartira oladi (PLAN 3.3).
 MAX_ATTEMPTS = 3
 
 
@@ -49,7 +52,7 @@ def dispatch_queued_notifications(batch_size: int = 200) -> dict[str, int]:
     from apps.organizations.models import Organization
     from apps.settings_app.services import get_setting
 
-    sent = failed = 0
+    sent = failed = held = 0
     with platform_context():
         organizations = list(Organization.objects.filter(is_active=True))
 
@@ -58,10 +61,11 @@ def dispatch_queued_notifications(batch_size: int = 200) -> dict[str, int]:
             if not get_setting(key="notifications.sms_enabled"):
                 continue
 
+            attempts = int(get_setting(key="notifications.max_retries") or MAX_ATTEMPTS)
             pending = (
                 Notification.objects.filter(
                     Q(status=NotificationStatus.QUEUED)
-                    | Q(status=NotificationStatus.FAILED, retry_count__lt=MAX_ATTEMPTS)
+                    | Q(status=NotificationStatus.FAILED, retry_count__lt=attempts)
                 )
                 .filter(
                     # Rejalashtirilgan xabar vaqti kelmaguncha kutadi.
@@ -77,9 +81,14 @@ def dispatch_queued_notifications(batch_size: int = 200) -> dict[str, int]:
                     logger.exception("Xabar uzatilmadi: %s", notification.id)
                     failed += 1
                     continue
-                if result.status == NotificationStatus.SENT:
+                if result.status in (NotificationStatus.SENT, NotificationStatus.TEST_MODE):
                     sent += 1
+                elif result.status == NotificationStatus.QUEUED:
+                    # Yuborish oynasidan tashqarida (Q9) — xato emas,
+                    # kutayotgan xabar. Uni `failed` deb sanash
+                    # monitoringda soxta signal berardi.
+                    held += 1
                 else:
                     failed += 1
 
-    return {"sent": sent, "failed": failed}
+    return {"sent": sent, "failed": failed, "held": held}

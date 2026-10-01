@@ -7,7 +7,7 @@ Asosiy savol: "xabar yuborilmagani jimgina yo'qolib keta oladimi?" —
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, time
 from decimal import Decimal
 
 import pytest
@@ -168,10 +168,12 @@ class TestDispatch:
                 guardian=guardian,
                 code="debt_reminder",
             )
-            services.dispatch_notification(notification)
+            services.dispatch_notification(notification, now_time=time(10, 0))
             notification.refresh_from_db()
 
-        assert notification.status == NotificationStatus.SENT
+        # Console provayder — "Yuborildi" emas, "Test rejimi" (PLAN 3.2):
+        # xabar hech qayerga ketmagan va jurnal buni aytishi kerak.
+        assert notification.status == NotificationStatus.TEST_MODE
         assert notification.provider_message_id
         assert notification.sent_at is not None
 
@@ -190,7 +192,7 @@ class TestDispatch:
                 guardian=guardian,
                 code="debt_reminder",
             )
-            services.dispatch_notification(notification)
+            services.dispatch_notification(notification, now_time=time(10, 0))
             notification.refresh_from_db()
 
         assert notification.status == NotificationStatus.FAILED
@@ -205,9 +207,9 @@ class TestDispatch:
                 guardian=guardian,
                 code="debt_reminder",
             )
-            services.dispatch_notification(notification)
+            services.dispatch_notification(notification, now_time=time(10, 0))
             with pytest.raises(BusinessRuleViolation, match="yuborib bo'lmaydi"):
-                services.dispatch_notification(notification)
+                services.dispatch_notification(notification, now_time=time(10, 0))
 
 
 class TestPaymentReceipt:

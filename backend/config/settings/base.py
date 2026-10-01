@@ -456,6 +456,16 @@ CHURN_EXPORT_RETENTION_DAYS = env.int("CHURN_EXPORT_RETENTION_DAYS", default=30)
 # mijozgacha kechiktirilgan (apps/notifications/providers.py).
 NOTIFICATION_PROVIDER = env("NOTIFICATION_PROVIDER", default="console")
 
+# --- Eskiz.uz (Q8, PLAN 3.1) ---
+#
+# Uchalasi ham bo'lmasa provayder ishga tushmaydi. `ESKIZ_FROM`
+# ataylab majburiy: Eskiz tasdiqlanmagan jo'natuvchi nomi bilan
+# xabarni QABUL qiladi, lekin yetkazmaydi — jurnal "yuborildi"
+# deydi, ota-ona esa hech narsa olmaydi.
+ESKIZ_EMAIL = env("ESKIZ_EMAIL", default="")
+ESKIZ_PASSWORD = env("ESKIZ_PASSWORD", default="")
+ESKIZ_FROM = env("ESKIZ_FROM", default="")
+
 # Konsol provayderi xabar MATNINI log'ga yozsinmi.
 #
 # Sukut bo'yicha YO'Q: matn ichida bolaning ismi, summa va bog'cha nomi

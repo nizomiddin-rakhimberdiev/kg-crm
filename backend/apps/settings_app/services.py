@@ -37,6 +37,31 @@ DEFAULTS: dict[str, Any] = {
     # yaratilgan kuniyoq kechikkan bo'lib qolmaydi.
     "finance.first_invoice_grace_days": 5,
     "notifications.sms_enabled": True,
+    # --- Yuborish oynasi (Q9, PLAN 3.3) ---
+    #
+    # Soat 08:00 dan oldin yoki 21:00 dan keyin tayyor bo'lgan xabar
+    # yuborilmaydi — navbatda turadi va ertalab ketadi. Tungi SMS
+    # ota-onani uyg'otadi va bog'cha haqida eng yomon taassurot
+    # qoldiradi; qarz eslatmasi esa bir necha soat kutsa hech narsa
+    # yo'qotmaydi.
+    "notifications.send_from_hour": 8,
+    "notifications.send_to_hour": 21,
+    # Bir bola bo'yicha kuniga nechta qarz eslatmasi.
+    #
+    # 1 — chunki ikkinchi SMS yangi ma'lumot bermaydi, faqat bezovta
+    # qiladi. Ommaviy yuborish tugmasi ikki marta bosilsa ham ota-ona
+    # buni sezmaydi.
+    "notifications.debt_reminders_per_day": 1,
+    # Xato bo'lgan xabarni necha marta qayta urinish.
+    "notifications.max_retries": 3,
+    # Bitta SMS bo'lagining narxi (so'm) — taxminiy tannarx uchun.
+    #
+    # 0 = noma'lum, ekranda narx ko'rsatilmaydi. Raqamni bog'cha o'z
+    # shartnomasidan kiritadi: provayder tariflari o'zgaradi va uni
+    # kodga yozib qo'yish eskirgan ma'lumotni ishonchli qilib
+    # ko'rsatardi. Hisob BO'LAKLAR bo'yicha: kirill xabari 70 belgidan
+    # keyin ikkinchi bo'lakka o'tadi (apps/notifications/segments.py).
+    "notifications.sms_price": "0",
     "notifications.payment_receipt": True,
     "attendance.auto_absent": False,
     # Tarbiyachi necha kun orqaga davomat belgilay oladi (PLAN 2.6).

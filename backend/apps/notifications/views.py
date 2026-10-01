@@ -12,6 +12,7 @@ from rest_framework.response import Response
 
 from apps.children.models import Guardian
 from apps.core.exceptions import BusinessRuleViolation
+from apps.core.params import parse_decimal, parse_int, parse_uuid
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchScopedMixin, TenantReadOnlyViewSet, TenantViewSet
 from apps.notifications import services
@@ -23,6 +24,30 @@ from apps.notifications.serializers import (
 )
 
 __all__ = ["NotificationTemplateViewSet", "NotificationViewSet"]
+
+
+def _reminder_filters(request: Request) -> dict[str, Any]:
+    """
+    Eslatma filtrlari — ko'rib chiqish va yuborish uchun BIR joydan.
+
+    Ikki joyda alohida o'qilsa, ko'rib chiqish "48 ta" deb ko'rsatib,
+    yuborish 51 tasiga ketishi mumkin edi.
+    """
+    params = request.query_params if request.method == "GET" else request.data
+    child_ids = params.get("child_ids") or None
+    if isinstance(child_ids, str):
+        child_ids = [value for value in child_ids.split(",") if value]
+
+    return {
+        "min_amount": parse_decimal(params.get("min_amount"), field=gettext("Summa")),
+        "min_days": parse_int(params.get("min_days"), field=gettext("Kunlar")),
+        # Buzuq UUID `500` bermasin: filtr qiymati foydalanuvchidan
+        # keladi va `filter(id="abc")` ichkarida `ValidationError`
+        # ko'taradi (docs/04 §2 — kutilmagan javob o'zi ma'lumot).
+        "group_id": parse_uuid(params.get("group_id")),
+        "child_ids": [value for value in (parse_uuid(item) for item in (child_ids or [])) if value]
+        or None,
+    }
 
 
 class NotificationTemplateViewSet(TenantViewSet):
@@ -44,12 +69,42 @@ class NotificationViewSet(BranchScopedMixin, TenantReadOnlyViewSet):
     """
 
     permission_module = "notifications"
-    permission_action_map = {"send": "create", "retry": "create", "remind_debtors": "create"}
+    permission_action_map = {
+        "send": "create",
+        "retry": "create",
+        "remind_debtors": "create",
+        "sms_status": "read",
+        "reminder_preview": "read",
+    }
     model = Notification
     serializer_class = NotificationSerializer
     select_related_fields = ("guardian", "template")
     filterset_fields = ["channel", "status", "guardian"]
     ordering_fields = ["created_at", "sent_at"]
+
+    @action(detail=False, methods=["get"], url_path="status")
+    def sms_status(self, request: Request) -> Response:
+        """
+        `GET /notifications/status` — ekranning bosh holati.
+
+        Eng muhim maydoni `test_mode`: haqiqiy provayder ulanmaguncha
+        hech bir xabar ota-onaga bormaydi va ekran buni ochiq aytishi
+        kerak (PLAN 3.2). Auditda aynan shu yo'q edi — jurnal
+        "Yuborildi" deb turardi.
+        """
+        from apps.notifications import selectors
+
+        user = request_user(request)
+        return Response(selectors.sms_status(branch=user.branch))
+
+    @action(detail=False, methods=["get"], url_path="reminder-preview")
+    def reminder_preview(self, request: Request) -> Response:
+        """
+        `GET /notifications/reminder-preview` — yuborishdan oldingi son.
+
+        Tugma 200 ta SMS yuborishi mumkin va uni qaytarib bo'lmaydi.
+        """
+        return Response(services.preview_debt_reminders(**_reminder_filters(request)))
 
     @action(detail=False, methods=["post"])
     def send(self, request: Request) -> Response:
@@ -110,7 +165,12 @@ class NotificationViewSet(BranchScopedMixin, TenantReadOnlyViewSet):
         to'lagan ota-onaga hech qachon ketmaydi.
         """
         user = request_user(request)
-        queued = services.queue_debt_reminders(organization=user.organization)
+        # Ekrandagi filtr yuborishda ham saqlanadi: "30+ kun" ni
+        # tanlab tugmani bosgan mudira HAMMAGA yuborilishini kutmaydi
+        # (PLAN 3.5).
+        queued = services.queue_debt_reminders(
+            organization=user.organization, **_reminder_filters(request)
+        )
         for notification in queued:
             services.dispatch_notification(notification)
         return Response(

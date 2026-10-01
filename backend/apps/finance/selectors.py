@@ -10,6 +10,7 @@ haqiqatdan ajralmaydi.
 
 from __future__ import annotations
 
+from datetime import timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -23,6 +24,7 @@ from django.db.models import (
     Value,
 )
 from django.db.models.functions import Coalesce
+from django.utils import timezone
 
 from apps.children.models import (
     Child,
@@ -45,7 +47,13 @@ __all__ = [
 ]
 
 
-def debtor_queryset(*, min_amount: Decimal | None = None, overdue_only: bool = False) -> Any:
+def debtor_queryset(
+    *,
+    min_amount: Decimal | None = None,
+    overdue_only: bool = False,
+    min_days: int | None = None,
+    group_id: Any = None,
+) -> Any:
     """
     Balansi musbat bolalar — bitta so'rovda.
 
@@ -66,17 +74,55 @@ def debtor_queryset(*, min_amount: Decimal | None = None, overdue_only: bool = F
         queryset = queryset.filter(ledger_balance__gte=min_amount)
     if overdue_only:
         queryset = queryset.filter(oldest_overdue_date__isnull=False)
+    if min_days is not None:
+        # "15+ kun", "30+ kun" filtrlari (PLAN 3.5). Sana bo'yicha
+        # taqqoslash kunlarni Python'da sanashdan tez va indeksdan
+        # foydalanadi: eng eski muddati shu sanadan OLDIN bo'lsa,
+        # kechikish shuncha kundan ko'p.
+        queryset = queryset.filter(
+            oldest_overdue_date__isnull=False,
+            oldest_overdue_date__lte=timezone.localdate() - timedelta(days=min_days),
+        )
+    if group_id:
+        queryset = queryset.filter(
+            enrollments__group_id=group_id,
+            enrollments__status=EnrollmentState.ACTIVE,
+            enrollments__end_date__isnull=True,
+        )
 
     return queryset.order_by("-ledger_balance")
 
 
 def debtor_rows(
-    *, min_amount: Decimal | None = None, overdue_only: bool = False
+    *,
+    min_amount: Decimal | None = None,
+    overdue_only: bool = False,
+    min_days: int | None = None,
+    group_id: Any = None,
+    order_by: str = "debt",
 ) -> list[dict[str, Any]]:
     """Qarzdorlar ro'yxati — API javobiga tayyor shaklda (docs/04 §10)."""
-    children = debtor_queryset(min_amount=min_amount, overdue_only=overdue_only).prefetch_related(
-        "guardian_links__guardian", "enrollments__group"
+    from apps.notifications.selectors import last_reminders
+
+    children = list(
+        debtor_queryset(
+            min_amount=min_amount,
+            overdue_only=overdue_only,
+            min_days=min_days,
+            group_id=group_id,
+        ).prefetch_related("guardian_links__guardian", "enrollments__group")
     )
+
+    # Oxirgi eslatma — BITTA so'rovda (PLAN 3.5). Qator-qator so'rash
+    # 200 qarzdor uchun 200 ta so'rovga aylanardi.
+    guardian_ids = [
+        link.guardian_id
+        for child in children
+        for link in child.guardian_links.all()
+        if link.guardian_id
+    ]
+    reminded_at = last_reminders(guardian_ids=guardian_ids)
+    today = timezone.localdate()
 
     rows: list[dict[str, Any]] = []
     for child in children:
@@ -103,6 +149,12 @@ def debtor_rows(
                 "oldest_overdue_date": (
                     child.oldest_overdue_date.isoformat() if child.oldest_overdue_date else None
                 ),
+                # Kechikkan kunlar — ekranda hisoblanmaydi: "qancha
+                # kechikdi?" degan savolga javob bitta joydan chiqsin,
+                # aks holda hisobot bilan ekran farq qila boshlaydi.
+                "days_overdue": (
+                    (today - child.oldest_overdue_date).days if child.oldest_overdue_date else None
+                ),
                 "primary_guardian": (
                     {
                         "full_name": primary.guardian.full_name,
@@ -111,8 +163,19 @@ def debtor_rows(
                     if primary
                     else None
                 ),
+                "last_reminder_at": (
+                    reminded_at[primary.guardian_id].isoformat()
+                    if primary and reminded_at.get(primary.guardian_id)
+                    else None
+                ),
             }
         )
+
+    # Saralash: qarz bo'yicha (sukut), kechikish yoki ism bo'yicha.
+    if order_by == "days":
+        rows.sort(key=lambda row: row["days_overdue"] or 0, reverse=True)
+    elif order_by == "name":
+        rows.sort(key=lambda row: row["child"]["full_name"])
     return rows
 
 

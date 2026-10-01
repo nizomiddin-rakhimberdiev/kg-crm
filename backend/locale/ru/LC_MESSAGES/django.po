@@ -1038,3 +1038,27 @@ msgstr "Укажите причину изменения посещаемост�
 
 msgid "Tarbiyachi faqat oxirgi {days} kun davomatini belgilaydi. Eski kun uchun direktorga murojaat qiling."
 msgstr "Воспитатель отмечает посещаемость только за последние {days} дн. По более ранним дням обратитесь к директору."
+
+msgid "Test rejimi"
+msgstr "Тестовый режим"
+
+msgid "Noto'g'ri raqam"
+msgstr "Неверный номер"
+
+msgid "Telefon raqami yo'q"
+msgstr "Нет номера телефона"
+
+msgid "Noto'g'ri identifikator."
+msgstr "Неверный идентификатор."
+
+msgid "{field}: raqam noto'g'ri."
+msgstr "{field}: неверное число."
+
+msgid "Qiymat"
+msgstr "Значение"
+
+msgid "Kunlar"
+msgstr "Дни"
+
+msgid "SMS provayderi sozlanmagan."
+msgstr "SMS-провайдер не настроен."

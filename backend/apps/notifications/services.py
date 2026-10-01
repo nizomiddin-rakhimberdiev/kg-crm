@@ -9,10 +9,12 @@ so'rov ichida kutish to'lov qabul qilishni sekinlashtirardi (P8).
 from __future__ import annotations
 
 import logging
+from datetime import date, time
 from decimal import Decimal
 from string import Template
 from typing import Any
 
+from django.core.exceptions import ImproperlyConfigured
 from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext
@@ -26,11 +28,14 @@ from apps.notifications.models import (
     TemplateCode,
 )
 from apps.notifications.providers import get_provider
+from apps.notifications.segments import parts_for, sms_safe
 
 logger = logging.getLogger(__name__)
 
 __all__ = [
     "seed_default_templates",
+    "preview_debt_reminders",
+    "debt_reminder_targets",
     "render_template",
     "queue_notification",
     "dispatch_notification",
@@ -120,6 +125,15 @@ def queue_notification(
         logger.info("Bildirishnoma o'tkazib yuborildi: vasiyda telefon yo'q")
         return None
 
+    # Kunlik chegara (PLAN 3.3) — faqat qarz eslatmasiga. To'lov
+    # kvitansiyasi yoki boshqa hodisa xabari cheklanmaydi: ular
+    # takrorlanmaydi va har biri yangi ma'lumot.
+    if code == TemplateCode.DEBT_REMINDER and not may_send_reminder(
+        guardian=guardian, branch=branch
+    ):
+        logger.info("Eslatma o'tkazib yuborildi: bugun allaqachon yuborilgan")
+        return None
+
     template = _resolve_template(
         organization=organization, code=code, channel=channel, branch=branch
     )
@@ -136,12 +150,87 @@ def queue_notification(
         # Manzil va matn SNAPSHOT: vasiy telefonini keyin o'zgartirsa ham
         # jurnalda AYNAN qayerga nima yuborilgani ko'rinib turishi kerak.
         recipient_address=address[:120],
-        rendered_body=render_template(body, variables or {}),
+        # Q11: `ʻ` va `ʼ` oddiy `'` ga almashtiriladi. Ular GSM-7 da
+        # yo'q va bitta shunday belgi 160 belgilik xabarni 70 belgilik
+        # UCS-2 xabariga aylantiradi — narx ikki baravar.
+        rendered_body=(
+            sms_safe(render_template(body, variables or {}))
+            if channel == Channel.SMS
+            else render_template(body, variables or {})
+        ),
         scheduled_for=scheduled_for,
     )
 
 
-def dispatch_notification(notification: Notification) -> Notification:
+# --- Yuborish qoidalari (PLAN 3.3, Q9) ---
+
+
+def _rule(key: str, branch: Any = None) -> Any:
+    from apps.settings_app.services import get_setting
+
+    return get_setting(key=key, branch=branch)
+
+
+def within_sending_window(at_time: time | None = None, branch: Any = None) -> bool:
+    """
+    Hozir xabar yuborish mumkinmi? (Q9)
+
+    Tungi SMS ota-onani uyg'otadi va bog'cha haqida eng yomon
+    taassurot qoldiradi; qarz eslatmasi esa bir necha soat kutsa hech
+    narsa yo'qotmaydi. Shuning uchun oyna tashqarisidagi xabar
+    YO'QOLMAYDI — u navbatda qoladi va ertalab ketadi.
+    """
+    at_time = at_time or timezone.localtime().time()
+    start = int(_rule("notifications.send_from_hour", branch) or 0)
+    end = int(_rule("notifications.send_to_hour", branch) or 24)
+    return start <= at_time.hour < end
+
+
+def delivery_problem(address: str) -> str:
+    """
+    Raqam bilan bog'liq muammo — bo'sh satr bo'lsa hammasi joyida.
+
+    Noto'g'ri raqamga urinish ma'nosiz: provayder uni qabul qilishi
+    ham mumkin va o'shanda jurnalda "yuborildi" deb turadi, ota-ona
+    esa hech narsa olmaydi. Auditda aynan shunday bo'lgan — "12345"
+    raqamiga yuborilgan xabar "Yuborildi" holatida edi.
+    """
+    from apps.core.phone import is_valid_phone
+
+    if not address.strip():
+        return gettext("Telefon raqami yo'q")
+    if not is_valid_phone(address):
+        return gettext("Noto'g'ri raqam")
+    return ""
+
+
+def reminders_sent_today(*, guardian_id: Any, on_date: date | None = None) -> int:
+    """Shu vasiyga bugun nechta qarz eslatmasi ketgan."""
+    day = on_date or timezone.localdate()
+    return Notification.objects.filter(
+        guardian_id=guardian_id,
+        template__code=TemplateCode.DEBT_REMINDER,
+        created_at__date=day,
+    ).count()
+
+
+def may_send_reminder(*, guardian: Any, branch: Any = None) -> bool:
+    """
+    Bugun yana bitta eslatma yuborish mumkinmi? (PLAN 3.3)
+
+    Ikkinchi SMS yangi ma'lumot bermaydi, faqat bezovta qiladi —
+    va ommaviy yuborish tugmasi ikki marta bosilsa ota-ona buni
+    sezmaydi.
+    """
+    limit = int(_rule("notifications.debt_reminders_per_day", branch) or 0)
+    if limit <= 0:
+        return True
+    return reminders_sent_today(guardian_id=guardian.id) < limit
+
+
+def dispatch_notification(
+    notification: Notification, *, now_time: time | None = None
+) -> Notification:
     """
     Bitta xabarni provayderga uzatadi va natijani jurnalga yozadi.
 
@@ -156,11 +245,43 @@ def dispatch_notification(notification: Notification) -> Notification:
             )
         )
 
-    provider = get_provider(notification.channel)
+    # 1. Raqam (PLAN 3.1). Noto'g'ri raqamga URINILMAYDI ham: provayder
+    #    uni qabul qilishi mumkin va o'shanda jurnal "yuborildi" deb
+    #    turadi, ota-ona esa hech narsa olmaydi.
+    problem = delivery_problem(notification.recipient_address)
+    if problem:
+        notification.status = NotificationStatus.FAILED
+        notification.error = problem
+        notification.save(update_fields=["status", "error", "updated_at"])
+        return notification
+
+    # 2. Soat (Q9). Oyna tashqarisida xabar YO'QOLMAYDI — navbatda
+    #    qoladi va `dispatch_queued` uni ertalab oladi.
+    if not within_sending_window(now_time, branch=notification.branch):
+        return notification
+
+    # 3. Provayder sozlanganmi. Yarim sozlangan shlyuz (masalan
+    #    `ESKIZ_FROM` yo'q) so'rovni `500` bilan yiqitardi — holbuki
+    #    bu sozlama xatosi va javobi jurnalda sabab bilan turishi
+    #    kerak.
+    try:
+        provider = get_provider(notification.channel)
+    except ImproperlyConfigured as exc:
+        logger.error("SMS provayderi sozlanmagan: %s", exc)
+        notification.status = NotificationStatus.FAILED
+        notification.error = gettext("SMS provayderi sozlanmagan.")
+        notification.save(update_fields=["status", "error", "updated_at"])
+        return notification
+
     result = provider.send(address=notification.recipient_address, body=notification.rendered_body)
 
     if result.success:
-        notification.status = NotificationStatus.SENT
+        # Test rejimi "Yuborildi" EMAS (PLAN 3.2): provayder ulanmagan
+        # bo'lsa, xabar hech qayerga ketmagan va jurnal buni aytishi
+        # kerak.
+        notification.status = (
+            NotificationStatus.TEST_MODE if result.test_mode else NotificationStatus.SENT
+        )
         notification.provider_message_id = result.provider_message_id[:120]
         notification.sent_at = timezone.now()
         notification.error = ""
@@ -218,20 +339,110 @@ def notify_payment_received(*, payment: Any) -> Notification | None:
         return None
 
 
+def debt_reminder_targets(
+    *,
+    min_amount: Decimal | None = None,
+    min_days: int | None = None,
+    group_id: Any = None,
+    child_ids: list[Any] | None = None,
+) -> Any:
+    """
+    Eslatma KIMGA ketishi — ko'rib chiqish va yuborish uchun BIR xil
+    ro'yxat.
+
+    Ikkita alohida so'rov yozilsa, ko'rib chiqishda "48 ta" deb
+    ko'rsatib, 51 tasiga yuborish holati paydo bo'lardi — va buni hech
+    kim sezmasdi.
+    """
+    from apps.finance.selectors import debtor_queryset
+
+    queryset = debtor_queryset(min_amount=min_amount, min_days=min_days, group_id=group_id)
+    if child_ids:
+        queryset = queryset.filter(id__in=child_ids)
+    return queryset.prefetch_related("guardian_links__guardian")
+
+
+def preview_debt_reminders(
+    *,
+    min_amount: Decimal | None = None,
+    min_days: int | None = None,
+    group_id: Any = None,
+    child_ids: list[Any] | None = None,
+) -> dict[str, Any]:
+    """
+    Ommaviy yuborishdan OLDINGI ko'rib chiqish (PLAN 3.5).
+
+    "Eslatma yuborish" tugmasi 200 ta SMS yuborishi mumkin va uni
+    qaytarib bo'lmaydi. Shuning uchun tasdiqdan oldin aniq son
+    ko'rsatiladi: nechtasiga ketadi, nechtasi telefonsiz, nechtasi
+    bugun allaqachon olgan va taxminan qanchaga tushadi.
+    """
+    from apps.settings_app.services import get_setting
+
+    eligible = 0
+    no_phone = 0
+    already = 0
+    parts = 0
+    seen: set[Any] = set()
+
+    for child in debt_reminder_targets(
+        min_amount=min_amount, min_days=min_days, group_id=group_id, child_ids=child_ids
+    ):
+        links = list(child.guardian_links.all())
+        primary = next((link for link in links if link.is_primary), next(iter(links), None))
+        if primary is None or not (primary.guardian.phone or "").strip():
+            no_phone += 1
+            continue
+        if primary.guardian_id in seen:
+            continue
+        seen.add(primary.guardian_id)
+        if not may_send_reminder(guardian=primary.guardian, branch=child.branch):
+            already += 1
+            continue
+        eligible += 1
+        parts += parts_for(
+            sms_safe(
+                render_template(
+                    DEFAULT_TEMPLATES[TemplateCode.DEBT_REMINDER],
+                    {
+                        "guardian": primary.guardian.full_name,
+                        "child": child.full_name,
+                        "amount": f"{child.ledger_balance:,.0f}".replace(",", " "),
+                        "organization": "",
+                    },
+                )
+            )
+        )
+
+    price = Decimal(str(get_setting(key="notifications.sms_price") or "0"))
+    return {
+        "eligible": eligible,
+        "skipped_no_phone": no_phone,
+        "skipped_already_sent": already,
+        "parts": parts,
+        "estimated_cost": str(price * parts) if price > 0 else None,
+    }
+
+
 def queue_debt_reminders(
-    *, organization: Any, min_amount: Decimal | None = None
+    *,
+    organization: Any,
+    min_amount: Decimal | None = None,
+    min_days: int | None = None,
+    group_id: Any = None,
+    child_ids: list[Any] | None = None,
 ) -> list[Notification]:
     """
-    Barcha qarzdorlarga eslatma navbatga qo'yadi (docs/04 §10).
+    Qarzdorlarga eslatma navbatga qo'yadi (docs/04 §10).
 
     Qarzdorlar ro'yxati ledger'dan hisoblanadi — alohida jadvaldan emas
     (ADR-7), shuning uchun eslatma hech qachon allaqachon to'lagan
     ota-onaga ketmaydi.
     """
-    from apps.finance.selectors import debtor_queryset
-
     queued: list[Notification] = []
-    children = debtor_queryset(min_amount=min_amount).prefetch_related("guardian_links__guardian")
+    children = debt_reminder_targets(
+        min_amount=min_amount, min_days=min_days, group_id=group_id, child_ids=child_ids
+    )
 
     # Bugun allaqachon eslatma olgan vasiylar — ular ikkinchi marta
     # olmasligi kerak.
