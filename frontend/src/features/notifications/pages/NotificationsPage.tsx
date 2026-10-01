@@ -11,6 +11,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { BellRing, RefreshCw, Send } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { notificationsApi, templatesApi } from '@/features/notifications/api'
+import { ReminderConfirmDialog } from '@/features/notifications/components/ReminderConfirmDialog'
+import { SmsUsageCard } from '@/features/notifications/components/SmsUsageCard'
+import { TemplateEditor } from '@/features/notifications/components/TemplateEditor'
+import { TestModeBanner } from '@/features/notifications/components/TestModeBanner'
+import { useSmsStatus } from '@/features/notifications/useSmsStatus'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
@@ -18,16 +23,14 @@ import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
 const STATUS: Record<string, [string, string]> = {
-  queued: [t('Navbatda'), 'bg-slate-100 text-slate-600'],
-  sent: [t('Yuborildi'), 'bg-emerald-50 text-emerald-700'],
-  failed: [t('Xato'), 'bg-red-50 text-red-700'],
-  cancelled: [t('Bekor qilingan'), 'bg-amber-50 text-amber-700'],
-}
-
-const TEMPLATE_LABEL: Record<string, string> = {
-  payment_received: t("To'lov qabul qilindi"),
-  debt_reminder: t('Qarzdorlik eslatmasi'),
-  absence_notice: t('Kelmagani haqida'),
+  queued: [t('Navbatda'), 'bg-tosh-100 text-tosh-600'],
+  sent: [t('Yuborildi'), 'bg-nihol-50 text-nihol-700'],
+  delivered: [t('Yetkazildi'), 'bg-nihol-50 text-nihol-700'],
+  // Test rejimi — "Yuborildi" EMAS (PLAN 3.2). Xabar hech qayerga
+  // ketmagan va jurnal buni aytishi kerak.
+  test_mode: [t('Test rejimi'), 'bg-orik-100 text-orik-900'],
+  failed: [t('Xato'), 'bg-orik-50 text-orik-800'],
+  cancelled: [t('Bekor qilingan'), 'bg-tosh-100 text-tosh-600'],
 }
 
 const when = (value: string | null) =>
@@ -39,8 +42,10 @@ export default function NotificationsPage() {
   const { can } = useCan()
 
   const [status, setStatus] = useState('')
-  const [draft, setDraft] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
+  // Ommaviy yuborish TASDIQ bilan (PLAN 3.5): tugma 200 ta SMS
+  // yuborishi mumkin va uni qaytarib bo'lmaydi.
+  const [confirming, setConfirming] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
 
   const params = status ? { status } : undefined
@@ -52,6 +57,7 @@ export default function NotificationsPage() {
     queryKey: queryKeys.notificationTemplates(organizationId),
     queryFn: templatesApi.list,
   })
+  const statusQuery = useSmsStatus()
 
   const invalidate = () =>
     void queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'notifications'] })
@@ -61,9 +67,10 @@ export default function NotificationsPage() {
   }
 
   const remind = useMutation({
-    mutationFn: notificationsApi.remindDebtors,
+    mutationFn: () => notificationsApi.remindDebtors(),
     onSuccess: (result) => {
       setError(null)
+      setConfirming(false)
       setNotice(
         result.queued === 0
           ? t('Qarzdor topilmadi — hech kimga eslatma yuborilmadi.')
@@ -83,27 +90,18 @@ export default function NotificationsPage() {
     onError: fail,
   })
 
-  const saveTemplate = useMutation({
-    mutationFn: ({ id, body }: { id: string; body: string }) => templatesApi.update(id, { body }),
-    onSuccess: (template) => {
-      setError(null)
-      setNotice(t('Shablon saqlandi.'))
-      setDraft((prev) => {
-        const next = { ...prev }
-        delete next[template.id]
-        return next
-      })
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.notificationTemplates(organizationId),
-      })
-    },
-    onError: fail,
-  })
-
   const rows = logQuery.data?.items ?? []
 
   return (
     <div className="space-y-6">
+      <ReminderConfirmDialog
+        open={confirming}
+        filters={{}}
+        busy={remind.isPending}
+        onConfirm={() => remind.mutate()}
+        onCancel={() => setConfirming(false)}
+      />
+
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -116,7 +114,7 @@ export default function NotificationsPage() {
         {can('notifications.create') && (
           <button
             type="button"
-            onClick={() => remind.mutate()}
+            onClick={() => setConfirming(true)}
             disabled={remind.isPending}
             className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
           >
@@ -126,8 +124,13 @@ export default function NotificationsPage() {
         )}
       </div>
 
+      {/* Test rejimi — jurnal "Yuborildi" deb yolg'on gapirmasligi
+          uchun eng tepada (PLAN 3.2). */}
+      <TestModeBanner />
+      {statusQuery.data && <SmsUsageCard status={statusQuery.data} />}
+
       {error && (
-        <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div role="alert" className="rounded-lg bg-orik-50 px-3 py-2 text-sm text-orik-900">
           {error}
         </div>
       )}
@@ -135,53 +138,8 @@ export default function NotificationsPage() {
         <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
       )}
 
-      {/* Shablonlar — matnni bog'cha o'zi tahrirlaydi, bu mahsulot qarori emas. */}
       {can('notifications.update') && templatesQuery.data && (
-        <section className="rounded-xl border border-slate-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-slate-900">{t('Xabar shablonlari')}</h2>
-          <p className="mt-1 text-xs text-slate-500">
-            <code className="rounded bg-slate-100 px-1">${'{guardian}'}</code>,{' '}
-            <code className="rounded bg-slate-100 px-1">${'{child}'}</code>,{' '}
-            <code className="rounded bg-slate-100 px-1">${'{amount}'}</code>,{' '}
-            <code className="rounded bg-slate-100 px-1">${'{organization}'}</code>{' '}
-            {t("o'rinbosarlari yuborishda to'ldiriladi.")}
-          </p>
-          <div className="mt-3 space-y-3">
-            {templatesQuery.data.items.map((template) => {
-              const value = draft[template.id] ?? template.body
-              const dirty = value !== template.body
-              return (
-                <div key={template.id} className="space-y-1">
-                  <label
-                    htmlFor={`tpl-${template.id}`}
-                    className="text-xs font-medium text-slate-600"
-                  >
-                    {TEMPLATE_LABEL[template.code] ?? template.code}
-                  </label>
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <textarea
-                      id={`tpl-${template.id}`}
-                      rows={2}
-                      value={value}
-                      onChange={(e) =>
-                        setDraft((prev) => ({ ...prev, [template.id]: e.target.value }))
-                      }
-                      className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
-                    />
-                    <button
-                      type="button"
-                      disabled={!dirty || saveTemplate.isPending}
-                      onClick={() => saveTemplate.mutate({ id: template.id, body: value })}
-                      className="h-fit rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40"
-                    >
-                      {t('Saqlash')}
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </section>
+        <TemplateEditor templates={templatesQuery.data.items} />
       )}
 
       <div className="flex items-center gap-2">

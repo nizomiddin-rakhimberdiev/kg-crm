@@ -6,7 +6,9 @@ const row = (id: string, oldest: string | null): DebtorRow => ({
   child: { id, full_name: id, group: null },
   balance: '100',
   oldest_overdue_date: oldest,
+  days_overdue: null,
   primary_guardian: null,
+  last_reminder_at: null,
 })
 
 describe('overdueDaysFromSearch', () => {

@@ -12,6 +12,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { Switch } from '@/components/ui/primitives'
 import { settingsApi } from '@/features/notifications/api'
+import { TestModeBanner } from '@/features/notifications/components/TestModeBanner'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type SettingValue } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
@@ -47,6 +48,26 @@ const META: Record<string, SettingMeta> = {
   'notifications.payment_receipt': {
     label: t("To'lov haqida SMS"),
     help: t("To'lov qabul qilinganda ota-onaga xabar ketadi."),
+  },
+  'notifications.send_from_hour': {
+    label: t('Yuborishni boshlash (soat)'),
+    help: t('Bundan oldin tayyor bo‘lgan xabar navbatda turadi — tungi SMS yuborilmaydi.'),
+  },
+  'notifications.send_to_hour': {
+    label: t('Yuborishni tugatish (soat)'),
+    help: t('Shu soatdan keyin xabar yuborilmaydi, ertalab ketadi.'),
+  },
+  'notifications.debt_reminders_per_day': {
+    label: t('Kuniga eslatma soni'),
+    help: t('Bir ota-ona kuniga shundan ortiq qarz eslatmasini olmaydi.'),
+  },
+  'notifications.max_retries': {
+    label: t('Qayta urinish soni'),
+    help: t('Xato bo‘lgan xabar shuncha marta qayta yuboriladi.'),
+  },
+  'notifications.sms_price': {
+    label: t('Bitta SMS bo‘lagi narxi'),
+    help: t('Taxminiy xarajatni hisoblash uchun — provayder shartnomasidagi narx.'),
   },
   'attendance.auto_absent': {
     label: t('Avtomatik "kelmadi"'),
@@ -161,6 +182,10 @@ export default function SettingsPage() {
           {t("O'zgarish darhol saqlanadi va tashkilotning barcha filiallariga tegishli.")}
         </p>
       </div>
+
+      {/* "SMS yoqilgan" degan sozlama ko'rinib turgan joyda, SMS
+          haqiqatda yuborilmayotgani ham ko'rinishi kerak (PLAN 3.2). */}
+      <TestModeBanner />
 
       {!editable && (
         <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">

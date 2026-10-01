@@ -145,7 +145,6 @@ export const messages: Record<string, string> = {
   Email: 'Email',
   'Email, rol va filialni tashkilot egasi':
     'Email, role and branch are changed by the organization owner in',
-  'Eng eski muddat': 'Oldest due date',
   'Eslatma kuni': 'Reminder day',
   'Excel fayli': 'An Excel file',
   "Excel fayli (.xlsx) — har bir yozuv alohida qator bo'lib tushadi. Tanlangan davr bilan, fayl fonda tayyorlanadi.":
@@ -191,8 +190,6 @@ export const messages: Record<string, string> = {
   'Hafta: {periodLabel}': 'Week: {periodLabel}',
   "Hali bayram kiritilmagan — qayta hisob barcha ish kunlarini to'liq sanaydi.":
     'No holidays entered yet — the credit counts every working day in full.',
-  "Hamma to'lagan. Muddati o'tgan hisob-faktura paydo bo'lsa, bola shu ro'yxatga tushadi.":
-    'Everyone has paid. When an invoice becomes overdue, the child will appear here.',
   Hammasi: 'All',
   'Hammasi keldi': 'All present',
   "Har bir hisob ortidagi asos — o'zgartirilmaydigan yozuv.":
@@ -424,7 +421,6 @@ export const messages: Record<string, string> = {
   'Qarz yo‘q': 'Nothing owed',
   'Qarzdor topilmadi — hech kimga eslatma yuborilmadi.':
     'No debtors found — no reminders were sent.',
-  "Qarzdor yo'q": 'No debtors',
   Qarzdorlar: 'Debtors',
   "Qarzdorlar yo'q.": 'No debtors.',
   'Qarzdorlarga eslatma': 'Debtor reminders',
@@ -505,7 +501,6 @@ export const messages: Record<string, string> = {
   "Sessiya ochilmadi — ruxsat muddati tugagan bo'lishi mumkin.":
     'The session couldn’t be opened — the grant may have expired.',
   'Sessiya topilmadi.': 'Session not found.',
-  'Shablon saqlandi.': 'Template saved.',
   "Shablonni yuklab bo'lmadi. Qaytadan urinib ko'ring.":
     'Couldn’t download the template. Try again.',
   "Shablonni yuklab oling, to'ldiring va shu yerga qaytaring.":
@@ -684,7 +679,6 @@ export const messages: Record<string, string> = {
   'muddati kelmagan': 'not yet due',
   "mumkin, o'zgartirish mumkin emas. Hisobingiz va tariximiz saqlanib turibdi.":
     'data, but not change it. Your account and history are kept.',
-  "o'rinbosarlari yuborishda to'ldiriladi.": 'placeholders are filled in when sending.',
   'oy kesimida hisoblanadi': 'calculated monthly',
   'oylik {formatMoney} bilan': 'with a salary of {formatMoney}',
   qaytarilgan: 'reversed',
@@ -846,4 +840,86 @@ export const messages: Record<string, string> = {
   'Tizim hisobi': 'System account',
   'Tizim hisobi bogʻlangan tarbiyachi faqat shu guruhni koʻradi.':
     'A teacher with a linked account sees only this group.',
+
+  // --- SMS va qarzdorlar (PLAN 3.2–3.5) ---
+  '15+ kun': '15+ days',
+  '30+ kun': '30+ days',
+  '60+ kun': '60+ days',
+  'Barcha guruhlar': 'All groups',
+  'Bu bola bo‘yicha hali hisob-faktura ham, to‘lov ham yo‘q.':
+    'This child has no invoices or payments yet.',
+  'Bu oy': 'This month',
+  'Bu tilda shablon yo‘q — ota-onalar boshqa tildagi matnni oladi.':
+    'No template in this language — parents will get the other language.',
+  'Eksport tayyorlanmadi.': 'The export was not produced.',
+  'Eksport uzoq davom etdi — Hisobotlar sahifasidan yuklab oling.':
+    'The export is taking long — download it from Reports.',
+  'Eng kam qarz': 'Minimum debt',
+  'Erkin xabar': 'Free-form message',
+  'Eslatma yuborilsinmi?': 'Send the reminder?',
+  Excel: 'Excel',
+  'Ha, yuborilsin': 'Yes, send it',
+  'Hammasiga eslatma': 'Remind everyone',
+  'Hech kimga eslatma yuborilmadi — telefon raqami yo‘q yoki bugun allaqachon olgan.':
+    'No reminders were sent — no phone number, or already reminded today.',
+  'Ism boʻyicha': 'By name',
+  Jarima: 'Penalty',
+  'Kechikish boʻyicha': 'By days overdue',
+  Kechikish: 'Overdue',
+  'Kelmagan kunlar uchun': 'For days absent',
+  'Ko‘rib chiqish': 'Preview',
+  "O'zbekcha": 'Uzbek',
+  'Ota-ona shunday oladi:': 'The parent will see:',
+  'Oxirgi eslatma': 'Last reminder',
+  "Oylik to'lov": 'Monthly fee',
+  'O‘rinbosarlar yuborishda to‘ldiriladi — tugmani bosib matnga qo‘shing.':
+    'Placeholders are filled in when sending — click a button to insert one.',
+  'Qarz boʻyicha': 'By amount',
+  Qaytarildi: 'Refunded',
+  Ruscha: 'Russian',
+  'SMS bo‘laklari': 'SMS parts',
+  'SMS test rejimida': 'SMS is in test mode',
+  'SMS yuborish o‘chirilgan — Sozlamalarda yoqishingiz mumkin.':
+    'SMS sending is off — you can turn it on in Settings.',
+  Saralash: 'Sort',
+  'Shablon qo‘shish': 'Add a template',
+  'Shablon tili': 'Template language',
+  'Shu ota-onaga eslatma': 'Remind this parent',
+  'Taxminiy xarajat': 'Estimated cost',
+  'Taxminiy xarajat: {cost}': 'Estimated cost: {cost}',
+  'Test rejimi': 'Test mode',
+  'Xabar matni': 'Message text',
+  'Xabarlar jurnalga yoziladi, lekin ota-onalarga YUBORILMAYDI. Haqiqiy yuborish uchun SMS provayderi ulanishi kerak.':
+    'Messages are written to the log but are NOT sent to parents. Real sending needs an SMS provider.',
+  Yetkazildi: 'Delivered',
+  "Yozuv yo'q": 'No entries',
+  'Yuborish vaqti: {from}:00 – {to}:00': 'Sending window: {from}:00 – {to}:00',
+  'narx kiritilmagan': 'price not set',
+  yuborilmagan: 'not sent',
+  '{characters}/{limit} belgi · {parts} SMS': '{characters}/{limit} characters · {parts} SMS',
+  '{count} ta SMS bo‘lagi': '{count} SMS parts',
+  '{count} ta ota-onaga SMS ketadi': '{count} parents will get an SMS',
+  '{count} ta xabar test rejimida qoldi — ular ota-onalarga yuborilmagan va pul turmaydi.':
+    '{count} messages stayed in test mode — not sent to parents and not billed.',
+  '{count} tasi bugun allaqachon eslatma olgan': '{count} were already reminded today',
+  '{count} tasining telefon raqami yo‘q — ularga yuborilmaydi':
+    '{count} have no phone number — they will be skipped',
+  '{days} kun': '{days} days',
+  '{name} uchun eslatma yuborish': 'Send a reminder for {name}',
+  '· kirill alifbosi: bitta SMS 70 belgi': '· Cyrillic: one SMS is 70 characters',
+  'Yuborishni boshlash (soat)': 'Sending starts (hour)',
+  'Bundan oldin tayyor bo‘lgan xabar navbatda turadi — tungi SMS yuborilmaydi.':
+    'A message ready before this waits in the queue — no night-time SMS.',
+  'Yuborishni tugatish (soat)': 'Sending ends (hour)',
+  'Shu soatdan keyin xabar yuborilmaydi, ertalab ketadi.':
+    'After this hour nothing is sent; it goes out in the morning.',
+  'Kuniga eslatma soni': 'Reminders per day',
+  'Bir ota-ona kuniga shundan ortiq qarz eslatmasini olmaydi.':
+    'One parent gets no more debt reminders than this per day.',
+  'Qayta urinish soni': 'Retry attempts',
+  'Xato bo‘lgan xabar shuncha marta qayta yuboriladi.':
+    'A failed message is retried this many times.',
+  'Bitta SMS bo‘lagi narxi': 'Price per SMS part',
+  'Taxminiy xarajatni hisoblash uchun — provayder shartnomasidagi narx.':
+    'Used to estimate cost — the price from your provider contract.',
 }

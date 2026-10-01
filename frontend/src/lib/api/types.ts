@@ -337,7 +337,11 @@ export interface DebtorRow {
   child: { id: string; full_name: string; group: string | null }
   balance: string
   oldest_overdue_date: string | null
+  /** Kechikkan kunlar — serverda hisoblanadi, ekranda emas (PLAN 3.5). */
+  days_overdue: number | null
   primary_guardian: { full_name: string; phone: string } | null
+  /** Oxirgi qarz eslatmasi qachon ketgan; `null` — hali yuborilmagan. */
+  last_reminder_at: string | null
 }
 
 export interface DebtorList {
@@ -543,15 +547,63 @@ export interface ExpenseSummary {
   by_category: Array<{ category: string; total: string }>
 }
 
+/** SMS uzunligi — narx BO'LAKLAR bo'yicha to'lanadi (PLAN 3.3, 3.4). */
+export interface SmsLength {
+  encoding: 'gsm7' | 'ucs2'
+  characters: number
+  parts: number
+  limit: number
+}
+
 export interface NotificationTemplate {
   id: string
   code: 'payment_received' | 'debt_reminder' | 'absence_notice' | string
   channel: 'sms' | 'telegram' | 'email'
+  language: 'uz' | 'ru' | 'en'
   subject: string
   body: string
   branch: string | null
   is_active: boolean
+  length: SmsLength
+  variables: string[]
   created_at: string
+}
+
+export interface TemplatePreview extends SmsLength {
+  rendered: string
+}
+
+/** Bildirishnomalar sahifasining bosh holati (PLAN 3.2, 3.3). */
+export interface SmsStatus {
+  /** Haqiqiy provayder ulanmagan — hech bir xabar ota-onaga bormaydi. */
+  test_mode: boolean
+  provider: string
+  sms_enabled: boolean
+  send_from_hour: number
+  send_to_hour: number
+  reminders_per_day: number
+  max_retries: number
+  usage: {
+    year: number
+    month: number
+    total: number
+    sent: number
+    failed: number
+    queued: number
+    test_mode: number
+    parts: number
+    price_per_part: string
+    /** `null` — narx kiritilmagan; "0 so'm" deb ko'rsatish yolg'on bo'lardi. */
+    estimated_cost: string | null
+  }
+}
+
+export interface ReminderPreview {
+  eligible: number
+  skipped_no_phone: number
+  skipped_already_sent: number
+  parts: number
+  estimated_cost: string | null
 }
 
 export interface Notification {
@@ -562,7 +614,7 @@ export interface Notification {
   channel: 'sms' | 'telegram' | 'email'
   recipient_address: string
   rendered_body: string
-  status: 'queued' | 'sent' | 'failed' | 'cancelled'
+  status: 'queued' | 'sent' | 'delivered' | 'failed' | 'cancelled' | 'test_mode'
   provider_message_id: string
   retry_count: number
   error: string

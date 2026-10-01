@@ -144,7 +144,6 @@ export const messages: Record<string, string> = {
   Email: 'Email',
   'Email, rol va filialni tashkilot egasi':
     'Email, роль и филиал владелец организации меняет в разделе',
-  'Eng eski muddat': 'Самый старый срок',
   'Eslatma kuni': 'День напоминания',
   'Excel fayli': 'Файл Excel',
   "Excel fayli (.xlsx) — har bir yozuv alohida qator bo'lib tushadi. Tanlangan davr bilan, fayl fonda tayyorlanadi.":
@@ -189,8 +188,6 @@ export const messages: Record<string, string> = {
   'Hafta: {periodLabel}': 'Неделя: {periodLabel}',
   "Hali bayram kiritilmagan — qayta hisob barcha ish kunlarini to'liq sanaydi.":
     'Праздники ещё не внесены — перерасчёт считает все рабочие дни полностью.',
-  "Hamma to'lagan. Muddati o'tgan hisob-faktura paydo bo'lsa, bola shu ro'yxatga tushadi.":
-    'Все оплатили. Как только появится просроченный счёт, ребёнок попадёт в этот список.',
   Hammasi: 'Все',
   'Hammasi keldi': 'Все пришли',
   "Har bir hisob ortidagi asos — o'zgartirilmaydigan yozuv.":
@@ -421,7 +418,6 @@ export const messages: Record<string, string> = {
   'Qarz yo‘q': 'Долга нет',
   'Qarzdor topilmadi — hech kimga eslatma yuborilmadi.':
     'Должников не найдено — напоминания никому не отправлены.',
-  "Qarzdor yo'q": 'Должников нет',
   Qarzdorlar: 'Должники',
   "Qarzdorlar yo'q.": 'Должников нет.',
   'Qarzdorlarga eslatma': 'Напоминание должникам',
@@ -502,7 +498,6 @@ export const messages: Record<string, string> = {
   "Sessiya ochilmadi — ruxsat muddati tugagan bo'lishi mumkin.":
     'Сеанс не открылся — возможно, срок разрешения истёк.',
   'Sessiya topilmadi.': 'Сеанс не найден.',
-  'Shablon saqlandi.': 'Шаблон сохранён.',
   "Shablonni yuklab bo'lmadi. Qaytadan urinib ko'ring.":
     'Не удалось скачать шаблон. Попробуйте ещё раз.',
   "Shablonni yuklab oling, to'ldiring va shu yerga qaytaring.":
@@ -682,7 +677,6 @@ export const messages: Record<string, string> = {
   'muddati kelmagan': 'срок не наступил',
   "mumkin, o'zgartirish mumkin emas. Hisobingiz va tariximiz saqlanib turibdi.":
     ', но не изменять. Ваш аккаунт и история сохраняются.',
-  "o'rinbosarlari yuborishda to'ldiriladi.": '— подстановки заполняются при отправке.',
   'oy kesimida hisoblanadi': 'считается по месяцам',
   'oylik {formatMoney} bilan': 'с окладом {formatMoney}',
   qaytarilgan: 'возвращён',
@@ -844,4 +838,86 @@ export const messages: Record<string, string> = {
   'Tizim hisobi': 'Учётная запись',
   'Tizim hisobi bogʻlangan tarbiyachi faqat shu guruhni koʻradi.':
     'Воспитатель со связанной учётной записью видит только эту группу.',
+
+  // --- SMS va qarzdorlar (PLAN 3.2–3.5) ---
+  '15+ kun': '15+ дней',
+  '30+ kun': '30+ дней',
+  '60+ kun': '60+ дней',
+  'Barcha guruhlar': 'Все группы',
+  'Bu bola bo‘yicha hali hisob-faktura ham, to‘lov ham yo‘q.':
+    'По этому ребёнку пока нет ни счёта, ни платежа.',
+  'Bu oy': 'В этом месяце',
+  'Bu tilda shablon yo‘q — ota-onalar boshqa tildagi matnni oladi.':
+    'Шаблона на этом языке нет — родители получат текст на другом языке.',
+  'Eksport tayyorlanmadi.': 'Экспорт не подготовлен.',
+  'Eksport uzoq davom etdi — Hisobotlar sahifasidan yuklab oling.':
+    'Экспорт занял слишком долго — скачайте со страницы «Отчёты».',
+  'Eng kam qarz': 'Минимальный долг',
+  'Erkin xabar': 'Произвольное сообщение',
+  'Eslatma yuborilsinmi?': 'Отправить напоминание?',
+  Excel: 'Excel',
+  'Ha, yuborilsin': 'Да, отправить',
+  'Hammasiga eslatma': 'Напомнить всем',
+  'Hech kimga eslatma yuborilmadi — telefon raqami yo‘q yoki bugun allaqachon olgan.':
+    'Напоминания никому не отправлены — нет номера или уже получили сегодня.',
+  'Ism boʻyicha': 'По имени',
+  Jarima: 'Штраф',
+  'Kechikish boʻyicha': 'По просрочке',
+  Kechikish: 'Просрочка',
+  'Kelmagan kunlar uchun': 'За дни отсутствия',
+  'Ko‘rib chiqish': 'Предпросмотр',
+  "O'zbekcha": 'Узбекский',
+  'Ota-ona shunday oladi:': 'Родитель получит так:',
+  'Oxirgi eslatma': 'Последнее напоминание',
+  "Oylik to'lov": 'Ежемесячная оплата',
+  'O‘rinbosarlar yuborishda to‘ldiriladi — tugmani bosib matnga qo‘shing.':
+    'Подстановки заполняются при отправке — нажмите кнопку, чтобы вставить в текст.',
+  'Qarz boʻyicha': 'По долгу',
+  Qaytarildi: 'Возврат',
+  Ruscha: 'Русский',
+  'SMS bo‘laklari': 'Части SMS',
+  'SMS test rejimida': 'SMS в тестовом режиме',
+  'SMS yuborish o‘chirilgan — Sozlamalarda yoqishingiz mumkin.':
+    'Отправка SMS отключена — включить можно в настройках.',
+  Saralash: 'Сортировка',
+  'Shablon qo‘shish': 'Добавить шаблон',
+  'Shablon tili': 'Язык шаблона',
+  'Shu ota-onaga eslatma': 'Напоминание этому родителю',
+  'Taxminiy xarajat': 'Примерные расходы',
+  'Taxminiy xarajat: {cost}': 'Примерные расходы: {cost}',
+  'Test rejimi': 'Тестовый режим',
+  'Xabar matni': 'Текст сообщения',
+  'Xabarlar jurnalga yoziladi, lekin ota-onalarga YUBORILMAYDI. Haqiqiy yuborish uchun SMS provayderi ulanishi kerak.':
+    'Сообщения попадают в журнал, но родителям НЕ ОТПРАВЛЯЮТСЯ. Для реальной отправки нужно подключить SMS-провайдера.',
+  Yetkazildi: 'Доставлено',
+  "Yozuv yo'q": 'Записей нет',
+  'Yuborish vaqti: {from}:00 – {to}:00': 'Время отправки: {from}:00 – {to}:00',
+  'narx kiritilmagan': 'цена не указана',
+  yuborilmagan: 'не отправлялось',
+  '{characters}/{limit} belgi · {parts} SMS': '{characters}/{limit} символов · {parts} SMS',
+  '{count} ta SMS bo‘lagi': 'частей SMS: {count}',
+  '{count} ta ota-onaga SMS ketadi': 'SMS получат родителей: {count}',
+  '{count} ta xabar test rejimida qoldi — ular ota-onalarga yuborilmagan va pul turmaydi.':
+    'Сообщений осталось в тестовом режиме: {count} — они не отправлены родителям и ничего не стоят.',
+  '{count} tasi bugun allaqachon eslatma olgan': 'уже получили напоминание сегодня: {count}',
+  '{count} tasining telefon raqami yo‘q — ularga yuborilmaydi':
+    'без номера телефона: {count} — им не отправим',
+  '{days} kun': '{days} дн.',
+  '{name} uchun eslatma yuborish': 'Отправить напоминание: {name}',
+  '· kirill alifbosi: bitta SMS 70 belgi': '· кириллица: одна SMS — 70 символов',
+  'Yuborishni boshlash (soat)': 'Начало отправки (час)',
+  'Bundan oldin tayyor bo‘lgan xabar navbatda turadi — tungi SMS yuborilmaydi.':
+    'Сообщение, готовое раньше, ждёт в очереди — ночные SMS не отправляются.',
+  'Yuborishni tugatish (soat)': 'Конец отправки (час)',
+  'Shu soatdan keyin xabar yuborilmaydi, ertalab ketadi.':
+    'После этого часа сообщения не отправляются — уйдут утром.',
+  'Kuniga eslatma soni': 'Напоминаний в день',
+  'Bir ota-ona kuniga shundan ortiq qarz eslatmasini olmaydi.':
+    'Один родитель не получит больше напоминаний о долге за день.',
+  'Qayta urinish soni': 'Число повторных попыток',
+  'Xato bo‘lgan xabar shuncha marta qayta yuboriladi.':
+    'Сообщение с ошибкой будет отправлено повторно столько раз.',
+  'Bitta SMS bo‘lagi narxi': 'Цена одной части SMS',
+  'Taxminiy xarajatni hisoblash uchun — provayder shartnomasidagi narx.':
+    'Для расчёта примерных расходов — цена из договора с провайдером.',
 }

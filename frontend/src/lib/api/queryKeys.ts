@@ -90,6 +90,9 @@ export const queryKeys = {
   platformAccess: (orgId: string) => ['org', orgId, 'audit-logs', 'platform-access'] as const,
 
   notificationTemplates: (orgId: string) => ['org', orgId, 'notification-templates'] as const,
+  smsStatus: (orgId: string) => ['org', orgId, 'notifications', 'status'] as const,
+  reminderPreview: (orgId: string, params?: Record<string, unknown>) =>
+    ['org', orgId, 'notifications', 'reminder-preview', params ?? {}] as const,
   notifications: (orgId: string, params?: Record<string, unknown>) =>
     ['org', orgId, 'notifications', params ?? {}] as const,
   settings: (orgId: string) => ['org', orgId, 'settings'] as const,
