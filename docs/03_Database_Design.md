@@ -504,6 +504,18 @@ Authentication identity.
 
 ---
 
+### 11a. Status, archive and search (PLAN 2.1, 2.2, 2.7)
+
+| Column | Table | Why |
+|--------|-------|-----|
+| `status_changed_on`, `status_reason` | `child` | A status alone says nothing. The question that follows is always about money — *"since when?"* — because no invoice is written for periods after that date (Q5). Both are mandatory at the service layer. |
+| `archived_at`, `archived_by` | `child` | `is_active` carried two meanings at once, "deleted" and "archived", and they could not be told apart — so "who archived this child, when and why" had no answer. `DELETE` on the API archives; the invoices, payments and attendance stay, because they are the kindergarten's financial history. A hard delete exists on a separate, deliberately narrow path: no financial records **and** created within 24 hours (Q6). |
+| `allergies`, `medical_notes` | `child` | Separate from the free-text `notes`: an allergy is information the kitchen and the teacher need, and hunting for it inside a paragraph is the easiest possible place to make a mistake. |
+| `teacher_id` | `group` | The group's teacher — an `Employee`, not a `User` (ADR-21). |
+| `search_key` | `child`, `guardian`, `employee` | One child is written three ways — "Ulug'bek", "Ulugʻbek", "Улугбек" — and the director must find them whichever she types; otherwise she concludes the child is missing and enters them again, leaving one child with two balances. The key is latin-only, apostrophe-free, lower-case, with `x` folded to `h`; the query goes through the same function. A denormalised column rather than `ILIKE`, because comparing the two spellings at query time would need `translate()` on every row and no index would be used. Phones go into the guardian's and employee's key too: the director usually searches by number. |
+
+---
+
 ## 12. Schema Domain: Attendance
 
 ### 12.1 `attendance_record` (append-only, high volume)

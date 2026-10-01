@@ -156,3 +156,72 @@ Seed ma'lumotli bazada (30 bola, 4 oy, 120 faktura, 112 to'lov):
 
 2-bosqich: bola kartasi, validatsiya, rollar. Egasining "davom et"
 signali kutilmoqda.
+
+
+---
+
+## 2026-10-01 — Bosqich 2 bajarildi (bola kartasi, validatsiya, rollar)
+
+**Branch:** `big-update/phase-2` · commitlar `0d40899` … `ef9d4e5`
+
+### Bandlar
+
+| Band | Holat | Natija |
+|---|---|---|
+| 2.1 Bola kartasi | ✅ | Hisob kartochkasi, tahrirlash, holat, vasiylar, 3 ta tab, tibbiy maydonlar |
+| 2.2 Arxiv va xato yozuv (Q6) | ✅ | `archived_at`/`archived_by`; `DELETE` = arxiv; `hard-delete` 24 soat oynasida |
+| 2.3 Yaratish oqimi | ✅ | Kartaga o'tish, dublikat ogohlantirishi, ixtiyoriy vasiy bloki |
+| 2.4 Validatsiya (Q7) | ✅ | `PhoneField` hamma joyda, yosh oralig'i, `report_bad_phones` |
+| 2.5 To'lgan guruh | ✅ | `GroupOptions` — uchta select bitta qoidadan |
+| 2.6 Tarbiyachi doirasi | ✅ | `children/scope.py` (ADR-21), davomat oynasi |
+| 2.7 Qidiruv (Q11) | ✅ | `search_key`: apostrof, kirill↔lotin, `x`↔`h`, telefon |
+| 2.8 Hisob ↔ xodim | ✅ | Mavjud `Employee.user` ishlatildi, UI qo'shildi |
+
+### Ikkita qaror, sababi bilan
+
+**Cheklov "ruxsat yo'q" dan emas, FAKTDAN kelib chiqadi.** Qator
+darajasidagi doira uch shart bilan yoqiladi va uchinchisi hal
+qiluvchi: foydalanuvchi **aynan birorta guruhning tarbiyachisi**
+bo'lishi kerak. Aks holda ruxsatlari tor har qanday maxsus rol
+(tashqaridan kelgan buxgalter) kutilmaganda hech narsa ko'rmay
+qolardi — hech kim bunday qaror qabul qilmagan holda. Ya'ni qatlam
+hech kim biriktirilmaguncha umuman ishlamaydi.
+
+**Telefon modelda `CHECK` bilan qo'riqlanmaydi.** Mavjud tenantlarda
+allaqachon noto'g'ri raqamlar bor va cheklov ularni saqlashni
+to'xtatib qo'yardi — ya'ni bolaning kartasini saqlab bo'lmaydigan
+holat. Ular uchun `report_bad_phones` faqat ro'yxat beradi: "12345"
+o'rniga nima yozish kerakligini tizim bilmaydi, taxmin qilib yozish
+esa SMS'ni butunlay boshqa odamga yuborardi.
+
+### Sifat darvozalari
+
+| Tekshiruv | Natija |
+|---|---|
+| `pytest` | 1057 o'tdi · 7 xfailed (3-bosqich) · 0 xato |
+| `ruff` / `ruff format` / `mypy` | toza |
+| `tsc` / `eslint` / `vitest` / `build` | toza · 111 test |
+| `check_rls` | 46 jadval |
+
+### Migratsiya repetitsiyasi
+
+Seed ma'lumotli bazada (20 bola, 3 oy): qidiruv kaliti 20/20 bolaga
+va 20/20 vasiyga to'ldi; telefon raqamlarining hammasi to'g'ri
+formatda; `children 0003` gacha orqaga qaytarish va qayta oldinga
+yurish ishladi, `check_rls` toza.
+
+### Xatti-harakat o'zgarishlari (deployda e'tibor bering)
+
+1. **`DELETE /children/{id}` endi ARXIVLAYDI** (ilgari `is_active=False`
+   qilardi — natija o'xshash, lekin endi "kim, qachon" ko'rinadi).
+2. **Noto'g'ri formatdagi telefon qabul qilinmaydi.** Mavjud
+   yozuvlarga tegilmaydi; deploydan keyin `report_bad_phones` ni
+   ishga tushirib, ro'yxatni mudiraga bering.
+3. **Tarbiyachi davomat oynasi** — sukut 1 kun (bugun va kecha).
+   Hech kim guruhga biriktirilmagan bo'lsa, hech narsa o'zgarmaydi.
+
+### Keyingi qadam
+
+3-bosqich: bildirishnomalar va qarzdorlar (Eskiz.uz, yuborish oynasi,
+shablonlar, qarzdorlar ekrani). Egasining "davom et" signali
+kutilmoqda.

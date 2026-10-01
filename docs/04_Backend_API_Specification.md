@@ -297,6 +297,18 @@ Module: `children`. Sub-domains: children, guardians, groups, enrollment.
 
 ---
 
+### 7.4a Child lifecycle and guardians (PLAN 2.1–2.3)
+
+| Method & path | Purpose |
+|---|---|
+| `POST /children/{id}/change-status` | Status with **date and reason**, both mandatory (Q5). After that date the child is not billed; the month they left still is — they were there for part of it, and refunding is a separate decision. |
+| `POST /children/{id}/archive` · `/restore` | Archive, not delete. `DELETE /children/{id}` does the same thing. |
+| `POST /children/{id}/hard-delete` | The only hard delete, and deliberately narrow: no financial records **and** created within 24 hours (Q6). The audit row outlives the child. |
+| `PATCH` · `DELETE /children/{id}/guardians/{link_id}` | Fix the relation, move "primary", or unlink. The guardian themselves is never deleted — they may be another child's guardian too. Only one link may be primary and the database enforces it, so the old one is cleared before the new one is saved. |
+| `GET /children?q=` | Search by the normalised key: apostrophes and alphabet stop mattering (Q11). |
+
+Phone numbers are normalised to `+998XXXXXXXXX` on every write — guardian, employee, user, branch, lead. Existing bad numbers are reported, never rewritten: `python manage.py report_bad_phones [--tenant]`.
+
 ## 8. Attendance
 
 Module: `attendance`.

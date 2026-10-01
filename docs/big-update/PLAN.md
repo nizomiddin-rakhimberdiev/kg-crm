@@ -6,7 +6,7 @@
 >
 > Bajarilgan ish `PROGRESS.md` da. Yangi sessiya shu ikki fayldan davom etadi.
 
-**Holat:** 0 va 1-bosqichlar bajarildi · 2-bosqich kutilmoqda
+**Holat:** 0, 1 va 2-bosqichlar bajarildi · 3-bosqich kutilmoqda
 **Boshlandi:** 2026-09-30 · **Baza:** `main` @ `dd32207`
 
 ---
@@ -209,16 +209,16 @@ Belgilar: `[ ]` kutilmoqda · `[~]` jarayonda · `[x]` bajarildi
 
 ---
 
-### Bosqich 2 — Bola kartasi, validatsiya, rollar `[ ]`
+### Bosqich 2 — Bola kartasi, validatsiya, rollar `[x]`
 
-- [ ] **2.1** Bola kartasi: tahrirlash, holat, guruh/tarif tasdiq bilan, vasiylar, balans kartochkasi, 7 ta tab
-- [ ] **2.2** Arxivlash + 24 soatlik xato yozuvni o'chirish (Q6)
-- [ ] **2.3** Yaratilgach kartaga o'tish, dublikat ogohlantirishi, ixtiyoriy vasiy bloki
-- [ ] **2.4** Validatsiya (telefon Q7, tug'ilgan sana, summa, yulduzcha, maydon ostidagi xato) + hisobot beruvchi command
-- [ ] **2.5** To'lgan guruhlar hamma joyda bir xil o'chirilgan
-- [ ] **2.6** Guruhga tarbiyachi biriktirish + qator darajasidagi ruxsat + davomat tahrirlash chegarasi
-- [ ] **2.7** Qidiruv: apostrof normalizatsiyasi (Q11), kirill↔lotin
-- [ ] **2.8** Tizim hisobini xodimga bog'lash
+- [x] **2.1** Bola kartasi: tahrirlash, holat, guruh/tarif tasdiq bilan, vasiylar, balans kartochkasi, 7 ta tab
+- [x] **2.2** Arxivlash + 24 soatlik xato yozuvni o'chirish (Q6)
+- [x] **2.3** Yaratilgach kartaga o'tish, dublikat ogohlantirishi, ixtiyoriy vasiy bloki
+- [x] **2.4** Validatsiya (telefon Q7, tug'ilgan sana, summa, yulduzcha, maydon ostidagi xato) + hisobot beruvchi command
+- [x] **2.5** To'lgan guruhlar hamma joyda bir xil o'chirilgan
+- [x] **2.6** Guruhga tarbiyachi biriktirish + qator darajasidagi ruxsat + davomat tahrirlash chegarasi
+- [x] **2.7** Qidiruv: apostrof normalizatsiyasi (Q11), kirill↔lotin
+- [x] **2.8** Tizim hisobini xodimga bog'lash
 
 Migratsiyalar: `children/00XX_child_status_change.py` (`status_changed_on`, `status_reason`, `archived_at`), `children/00XX_group_teacher.py`
 

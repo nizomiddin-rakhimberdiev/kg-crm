@@ -19,11 +19,24 @@ Bajarilgani: [`docs/big-update/PROGRESS.md`](./docs/big-update/PROGRESS.md)
   chiqim va kassaga tushadi. Oylikda tushib qolgan xodim signali va
   ishga kirgan oyi proporsional. Narx yagona modulda.
 
+- **2-bosqich — bola kartasi, validatsiya, rollar (ADR-21).** Telefon
+  raqami hamma joyda normalizatsiya qilinadi. Bola holati sana va
+  sabab bilan, arxiv `is_active` dan ajratildi. Qidiruv apostrof va
+  alifbo farqini ko'rmaydi. Guruhga tarbiyachi biriktiriladi va u
+  faqat o'z guruhini ko'radi. Bola kartasi qayta qurildi: hisob,
+  tahrirlash, vasiylar, tablar.
+
 ### O'zgardi
 - Ortiqcha to'lov endi rad etilmaydi — ortig'i avansga aylanadi (Q1).
 - `payroll.income_tax_rate` va `payroll.pension_rate` sukut qiymati
   0 ga tushdi (Q10). Yakunlangan hisoblar o'zgarmaydi.
 - Narxi ko'rsatilgan ombor xaridi chiqim yozuvini yaratadi (Q13).
+- `DELETE /children/{id}` endi ARXIVLAYDI (Q6); qattiq o'chirish
+  alohida, 24 soatlik oynada.
+- Noto'g'ri formatdagi telefon raqami qabul qilinmaydi (Q7). Mavjud
+  yozuvlar tegilmaydi — `report_bad_phones` ro'yxat beradi.
+- Tarbiyachi davomatni faqat oxirgi kunlar uchun belgilaydi
+  (`attendance.teacher_edit_days`, sukut 1 = bugun va kecha).
 
 ---
 
