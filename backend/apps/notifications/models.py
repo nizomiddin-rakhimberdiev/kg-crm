@@ -14,6 +14,7 @@ from apps.core.models import BranchScopedModel
 
 __all__ = [
     "NotificationTemplate",
+    "TemplateLanguage",
     "Notification",
     "Channel",
     "NotificationStatus",
@@ -36,9 +37,26 @@ class TemplateCode(models.TextChoices):
     CUSTOM = "custom", gettext_lazy("Erkin xabar")
 
 
+class TemplateLanguage(models.TextChoices):
+    """
+    Shablon tili (PLAN 3.4, ADR-16).
+
+    Ota-onaning tili bog'cha xodimining tilidan boshqa bo'lishi mumkin:
+    ruscha gaplashadigan oila o'zbekcha SMS olsa, u xabarni o'qimaydi
+    va "SMS kelmadi" deb shikoyat qiladi.
+    """
+
+    UZ = "uz", gettext_lazy("O'zbekcha")
+    RU = "ru", gettext_lazy("Ruscha")
+    EN = "en", gettext_lazy("Inglizcha")
+
+
 class NotificationTemplate(BranchScopedModel):
     code = models.CharField(max_length=50, choices=TemplateCode.choices)
     channel = models.CharField(max_length=12, choices=Channel.choices, default=Channel.SMS)
+    language = models.CharField(
+        max_length=2, choices=TemplateLanguage.choices, default=TemplateLanguage.UZ
+    )
     subject = models.CharField(max_length=150, blank=True)
     body = models.TextField(help_text="{o'zgaruvchi} shaklidagi o'rinbosarlar bilan")
     # Shablon filialga xos bo'lishi SHART EMAS — `NULL` tashkilotning
@@ -58,11 +76,11 @@ class NotificationTemplate(BranchScopedModel):
         ordering = ["code"]
         constraints = [
             models.UniqueConstraint(
-                fields=["organization", "code", "channel", "branch"],
+                fields=["organization", "code", "channel", "language", "branch"],
                 name="uq_template_code_channel_branch",
             ),
             models.UniqueConstraint(
-                fields=["organization", "code", "channel"],
+                fields=["organization", "code", "channel", "language"],
                 condition=models.Q(branch__isnull=True),
                 name="uq_template_code_channel_global",
             ),

@@ -1061,3 +1061,12 @@ msgstr "Days"
 
 msgid "SMS provayderi sozlanmagan."
 msgstr "The SMS provider is not configured."
+
+msgid "O'zbekcha"
+msgstr "Uzbek"
+
+msgid "Ruscha"
+msgstr "Russian"
+
+msgid "Inglizcha"
+msgstr "English"

@@ -280,3 +280,162 @@ class TestReminderPreview:
         assert response.status_code == 422
         with organization_context(tenant_a.organization.id):
             assert Notification.objects.count() == 0
+
+
+class TestLanguage:
+    """PLAN 3.4: ota-onaning tili xodimning tilidan boshqa bo'lishi mumkin."""
+
+    def test_a_russian_speaking_family_gets_the_russian_template(self, tenant_a):
+        guardian = _guardian(tenant_a)
+        with organization_context(tenant_a.organization.id):
+            services.seed_default_templates(tenant_a.organization)
+            Guardian.objects.filter(pk=guardian.pk).update(language="ru")
+            guardian.refresh_from_db()
+            notification = services.queue_notification(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                guardian=guardian,
+                code="debt_reminder",
+                variables={"guardian": "Иван", "child": "Аня", "amount": "500 000"},
+            )
+        assert notification is not None
+        assert "задолженность" in notification.rendered_body
+
+    def test_without_a_language_the_kindergarten_default_is_used(self, tenant_a):
+        guardian = _guardian(tenant_a)
+        with organization_context(tenant_a.organization.id):
+            services.seed_default_templates(tenant_a.organization)
+            notification = services.queue_notification(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                guardian=guardian,
+                code="debt_reminder",
+                variables={"guardian": "Olim", "child": "Ali", "amount": "500 000"},
+            )
+        assert notification is not None
+        assert "qarzdorlik" in notification.rendered_body
+
+    def test_a_missing_language_template_still_sends_something(self, tenant_a):
+        """Tilga mos shablon yo'q — xabar baribir ketadi, yo'qolmaydi."""
+        guardian = _guardian(tenant_a)
+        with organization_context(tenant_a.organization.id):
+            services.seed_default_templates(tenant_a.organization)
+            Guardian.objects.filter(pk=guardian.pk).update(language="en")
+            guardian.refresh_from_db()
+            notification = services.queue_notification(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                guardian=guardian,
+                code="debt_reminder",
+                variables={"guardian": "John", "child": "Ann", "amount": "500 000"},
+            )
+        assert notification is not None
+        assert notification.rendered_body
+
+
+class TestTemplateEditor:
+    def test_preview_counts_parts_without_sending(self, tenant_a):
+        response = tenant_a.client().post(
+            reverse("v1:notification-template-preview"),
+            {"body": "Hurmatli ${guardian}!", "variables": {"guardian": "Nodira"}},
+            format="json",
+        )
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["rendered"] == "Hurmatli Nodira!"
+        assert data["parts"] == 1
+        assert data["encoding"] == "gsm7"
+        with organization_context(tenant_a.organization.id):
+            assert Notification.objects.count() == 0
+
+    def test_preview_shows_the_cyrillic_price_jump(self, tenant_a):
+        response = tenant_a.client().post(
+            reverse("v1:notification-template-preview"),
+            {"body": "Уважаемый ${guardian}! " + "а" * 80},
+            format="json",
+        )
+        data = response.json()["data"]
+        assert data["encoding"] == "ucs2"
+        assert data["parts"] == 2
+
+    def test_the_template_list_carries_its_length_and_variables(self, tenant_a):
+        with organization_context(tenant_a.organization.id):
+            services.seed_default_templates(tenant_a.organization)
+        response = tenant_a.client().get(reverse("v1:notification-template-list"))
+        rows = response.json()["data"]
+        assert rows
+        assert rows[0]["length"]["parts"] >= 1
+        assert "guardian" in rows[0]["variables"]
+
+
+class TestSeedCommand:
+    """`seed_sms_templates` — mavjud bog'chalarga ruscha shablon (PLAN 3.4)."""
+
+    @pytest.fixture(autouse=True)
+    def _old_tenant(self, tenant_a):
+        """
+        O'zgarishdan OLDIN ochilgan bog'cha: faqat o'zbekcha shablon.
+
+        Yangi bog'cha ikkala tilni ro'yxatdan o'tishda oladi; buyruq
+        esa aynan eskilari uchun.
+        """
+        from apps.notifications.models import NotificationTemplate
+
+        with organization_context(tenant_a.organization.id):
+            services.seed_default_templates(tenant_a.organization)
+            NotificationTemplate.objects.filter(language="ru").delete()
+
+    def test_dry_run_writes_nothing(self, tenant_a):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        out = StringIO()
+        call_command(
+            "seed_sms_templates", tenant=tenant_a.organization.slug, dry_run=True, stdout=out
+        )
+        with organization_context(tenant_a.organization.id):
+            from apps.notifications.models import NotificationTemplate
+
+            assert not NotificationTemplate.objects.filter(language="ru").exists()
+        assert "DRY-RUN" in out.getvalue()
+
+    def test_running_twice_creates_nothing_the_second_time(self, tenant_a):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        from apps.notifications.models import NotificationTemplate
+
+        call_command("seed_sms_templates", tenant=tenant_a.organization.slug, stdout=StringIO())
+        with organization_context(tenant_a.organization.id):
+            first = NotificationTemplate.objects.filter(language="ru").count()
+        call_command("seed_sms_templates", tenant=tenant_a.organization.slug, stdout=StringIO())
+        with organization_context(tenant_a.organization.id):
+            assert NotificationTemplate.objects.filter(language="ru").count() == first
+        assert first == 3
+
+    def test_an_edited_uzbek_template_is_left_alone(self, tenant_a):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        from apps.notifications.models import NotificationTemplate
+
+        with organization_context(tenant_a.organization.id):
+            NotificationTemplate.objects.filter(code="debt_reminder", language="uz").update(
+                body="Mening o'z matnim"
+            )
+        call_command("seed_sms_templates", tenant=tenant_a.organization.slug, stdout=StringIO())
+        with organization_context(tenant_a.organization.id):
+            kept = NotificationTemplate.objects.get(code="debt_reminder", language="uz")
+        assert kept.body == "Mening o'z matnim"
+
+    def test_without_a_target_it_refuses(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+        from django.core.management.base import CommandError
+
+        with pytest.raises(CommandError):
+            call_command("seed_sms_templates", stdout=StringIO())

@@ -177,6 +177,10 @@ class Lead(models.Model):
     # holat bilan birga konsoldan yoziladi.
     note = models.TextField(blank=True, max_length=2_000)
     status_changed_at = models.DateTimeField(null=True, blank=True)
+    # Keyingi qo'ng'iroq sanasi (PLAN 3.6). Izoh "ertaga qo'ng'iroq
+    # qilaman" deb yozilsa, "ertaga" qachonligi bir hafta o'tib
+    # noma'lum bo'lib qoladi — va aynan shunday arizalar yo'qoladi.
+    next_call_at = models.DateField(null=True, blank=True, db_index=True)
 
     # Rozilik dalili hamda so'rovni takror yuborishga qarshi kalit. Kalit
     # brauzerda bir forma ochilganda yaratiladi; qayta urinish yangi lead

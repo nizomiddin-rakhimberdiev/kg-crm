@@ -1062,3 +1062,12 @@ msgstr "Дни"
 
 msgid "SMS provayderi sozlanmagan."
 msgstr "SMS-провайдер не настроен."
+
+msgid "O'zbekcha"
+msgstr "Узбекский"
+
+msgid "Ruscha"
+msgstr "Русский"
+
+msgid "Inglizcha"
+msgstr "Английский"

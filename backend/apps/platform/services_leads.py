@@ -8,9 +8,13 @@ from typing import Any
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
+from apps.platform import alerts
 from apps.platform.models import Lead
 
-__all__ = ["create_lead"]
+__all__ = ["create_lead", "update_lead_status", "NOT_SET"]
+
+#: "Qiymat berilmagan" — `None` dan farqli. `None` sanani O'CHIRADI.
+NOT_SET = object()
 
 
 @transaction.atomic
@@ -51,6 +55,10 @@ def create_lead(*, data: dict[str, Any]) -> tuple[Lead, bool]:
                 privacy_policy_version=data["privacy_policy_version"],
                 submission_id=submission_id,
             )
+        # Sotuvga darhol xabar (PLAN 3.6). `transaction.on_commit`:
+        # ariza BAZAGA tushgandan keyin yuboriladi, aks holda
+        # rollback bo'lgan arizaga qo'ng'iroq qilishardi.
+        transaction.on_commit(lambda: alerts.notify_new_lead(lead))
         return lead, True
     except IntegrityError:
         # Ikki bir xil request bir vaqtda kelishi mumkin. Transaction
@@ -60,7 +68,13 @@ def create_lead(*, data: dict[str, Any]) -> tuple[Lead, bool]:
 
 
 def update_lead_status(
-    *, lead: Lead, status: str, note: str | None, actor: Any, request: Any = None
+    *,
+    lead: Lead,
+    status: str,
+    note: str | None,
+    actor: Any,
+    request: Any = None,
+    next_call_at: Any = NOT_SET,
 ) -> Lead:
     """
     Sotuvchi holatni o'zgartiradi (yangi → bog'lanildi → mos keladi → yopildi).
@@ -72,18 +86,27 @@ def update_lead_status(
     from apps.platform import services as platform_services
 
     previous = lead.status
+    previous_call = lead.next_call_at
     lead.status = status
     if note is not None:
         lead.note = note
+    # `NOT_SET` va `None` farqli: birinchisi "tegma", ikkinchisi
+    # "sanani olib tashla". Ikkalasini `None` bilan ifodalash
+    # sotuvchining rejasini jimgina o'chirardi.
+    if next_call_at is not NOT_SET:
+        lead.next_call_at = next_call_at
     if previous != status:
         lead.status_changed_at = timezone.now()
-    lead.save(update_fields=["status", "note", "status_changed_at", "updated_at"])
+    lead.save(update_fields=["status", "note", "next_call_at", "status_changed_at", "updated_at"])
+    changes: dict[str, Any] = {"from": previous, "to": status}
+    if lead.next_call_at != previous_call:
+        changes["next_call_at"] = lead.next_call_at.isoformat() if lead.next_call_at else None
     platform_services.record_platform_action(
         actor=actor,
         action="lead.status",
         entity_type="lead",
         entity_id=lead.id,
-        changes={"from": previous, "to": status},
+        changes=changes,
         request=request,
     )
     return lead

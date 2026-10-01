@@ -466,6 +466,15 @@ ESKIZ_EMAIL = env("ESKIZ_EMAIL", default="")
 ESKIZ_PASSWORD = env("ESKIZ_PASSWORD", default="")
 ESKIZ_FROM = env("ESKIZ_FROM", default="")
 
+# --- Telegram: yangi ariza haqida ogohlantirish (PLAN 3.6) ---
+#
+# Sozlanmagan bo'lsa ogohlantirish jimgina o'tkazib yuboriladi va
+# ariza baribir saqlanadi: bildirishnoma qulaylik, ma'lumot esa
+# biznes. Chat ID manfiy bo'lishi mumkin (guruh) — shuning uchun u
+# satr sifatida o'qiladi.
+TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default="")
+TELEGRAM_LEAD_CHAT_ID = env("TELEGRAM_LEAD_CHAT_ID", default="")
+
 # Konsol provayderi xabar MATNINI log'ga yozsinmi.
 #
 # Sukut bo'yicha YO'Q: matn ichida bolaning ismi, summa va bog'cha nomi

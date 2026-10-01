@@ -26,6 +26,7 @@ from apps.notifications.models import (
     NotificationStatus,
     NotificationTemplate,
     TemplateCode,
+    TemplateLanguage,
 )
 from apps.notifications.providers import get_provider
 from apps.notifications.segments import parts_for, sms_safe
@@ -34,6 +35,8 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "seed_default_templates",
+    "guardian_language",
+    "TEMPLATE_VARIABLES",
     "preview_debt_reminders",
     "debt_reminder_targets",
     "render_template",
@@ -42,6 +45,17 @@ __all__ = [
     "notify_payment_received",
     "queue_debt_reminders",
 ]
+
+# Shablonda ishlatiladigan o'rinbosarlar — muharrirdagi tugmalar shu
+# ro'yxatdan quriladi (PLAN 3.4). Ro'yxat KOD tomonida: mijoz o'zi
+# o'ylab topgan `${summa}` hech narsaga almashmasdi va xabar shu
+# ko'rinishda ota-onaga ketardi.
+TEMPLATE_VARIABLES: dict[str, tuple[str, ...]] = {
+    TemplateCode.PAYMENT_RECEIVED: ("guardian", "child", "amount", "organization"),
+    TemplateCode.DEBT_REMINDER: ("guardian", "child", "amount", "days", "organization"),
+    TemplateCode.ABSENCE_NOTICE: ("guardian", "child", "organization"),
+    TemplateCode.CUSTOM: ("guardian", "child", "organization"),
+}
 
 # Signup'da seed qilinadigan boshlang'ich shablonlar. Bog'cha ularni
 # tahrirlashi mumkin — matn mahsulot qarori emas, mijoz qarori.
@@ -60,18 +74,44 @@ DEFAULT_TEMPLATES: dict[str, str] = {
 }
 
 
+#: Ruscha boshlang'ich matnlar (PLAN 3.4).
+#:
+#: Faqat SHU ikki til seed qilinadi: o'zbek va rus — O'zbekiston
+#: bog'chalarida ota-onalarning amalda ishlatadigan tillari. Inglizcha
+#: shablonni bog'cha o'zi qo'shadi, agar kerak bo'lsa.
+DEFAULT_TEMPLATES_RU: dict[str, str] = {
+    TemplateCode.PAYMENT_RECEIVED: (
+        "Уважаемый(ая) ${guardian}! Оплата ${amount} сум за ${child} принята. "
+        "Спасибо! ${organization}"
+    ),
+    TemplateCode.DEBT_REMINDER: (
+        "Уважаемый(ая) ${guardian}! По ${child} числится задолженность ${amount} сум. "
+        "Просим произвести оплату. ${organization}"
+    ),
+    TemplateCode.ABSENCE_NOTICE: (
+        "Уважаемый(ая) ${guardian}! ${child} сегодня не пришёл(ла) в детский сад. ${organization}"
+    ),
+}
+
+
 def seed_default_templates(organization: Any) -> int:
     """Tashkilot uchun boshlang'ich shablonlarni yaratadi (idempotent)."""
     created = 0
-    for code, body in DEFAULT_TEMPLATES.items():
-        _, was_created = NotificationTemplate.all_objects.get_or_create(
-            organization=organization,
-            code=code,
-            channel=Channel.SMS,
-            branch=None,
-            defaults={"body": body},
-        )
-        created += int(was_created)
+    catalogues = (
+        (TemplateLanguage.UZ, DEFAULT_TEMPLATES),
+        (TemplateLanguage.RU, DEFAULT_TEMPLATES_RU),
+    )
+    for language, bodies in catalogues:
+        for code, body in bodies.items():
+            _, was_created = NotificationTemplate.all_objects.get_or_create(
+                organization=organization,
+                code=code,
+                channel=Channel.SMS,
+                language=language,
+                branch=None,
+                defaults={"body": body},
+            )
+            created += int(was_created)
     return created
 
 
@@ -89,16 +129,50 @@ def render_template(body: str, variables: dict[str, Any]) -> str:
     )
 
 
+def guardian_language(guardian: Any, branch: Any = None) -> str:
+    """
+    Ota-ona qaysi tilda xabar oladi (PLAN 3.4).
+
+    Vasiyning o'z tili bo'lmasa — bog'chaning sukut tili. Bu xodimning
+    interfeys tilidan MUSTAQIL: ruscha ishlaydigan mudira o'zbek
+    oilasiga o'zbekcha SMS yuborishi kerak.
+    """
+    chosen = (getattr(guardian, "language", "") or "").strip()
+    if chosen:
+        return chosen
+    return str(_rule("general.default_language", branch) or "uz")
+
+
 def _resolve_template(
-    *, organization: Any, code: str, channel: str = Channel.SMS, branch: Any = None
+    *,
+    organization: Any,
+    code: str,
+    channel: str = Channel.SMS,
+    branch: Any = None,
+    language: str = "",
 ) -> NotificationTemplate | None:
-    """Filialga xos shablon global shablonni qoplaydi."""
+    """
+    Shablonni tanlaydi: filial + til → global + til → filial → global.
+
+    Til bo'yicha mos shablon topilmasa, xabar YUBORILMAY qolmaydi —
+    o'zbekchasiga tushadi. Ota-ona uchun boshqa tildagi xabar ham
+    hech qanday xabardan yaxshiroq.
+    """
     queryset = NotificationTemplate.objects.filter(code=code, channel=channel, is_active=True)
+    candidates = []
+    if language:
+        if branch is not None:
+            candidates.append(queryset.filter(branch=branch, language=language))
+        candidates.append(queryset.filter(branch__isnull=True, language=language))
     if branch is not None:
-        specific = queryset.filter(branch=branch).first()
-        if specific:
-            return specific
-    return queryset.filter(branch__isnull=True).first()
+        candidates.append(queryset.filter(branch=branch))
+    candidates.append(queryset.filter(branch__isnull=True))
+
+    for candidate in candidates:
+        found = candidate.first()
+        if found:
+            return found
+    return None
 
 
 @transaction.atomic
@@ -134,10 +208,12 @@ def queue_notification(
         logger.info("Eslatma o'tkazib yuborildi: bugun allaqachon yuborilgan")
         return None
 
+    language = guardian_language(guardian, branch)
     template = _resolve_template(
-        organization=organization, code=code, channel=channel, branch=branch
+        organization=organization, code=code, channel=channel, branch=branch, language=language
     )
-    body = body_override or (template.body if template else DEFAULT_TEMPLATES.get(code, ""))
+    fallback = (DEFAULT_TEMPLATES_RU if language == "ru" else DEFAULT_TEMPLATES).get(code, "")
+    body = body_override or (template.body if template else fallback)
     if not body:
         raise BusinessRuleViolation(gettext("'{code}' uchun shablon topilmadi.").format(code=code))
 

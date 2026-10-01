@@ -168,6 +168,9 @@ class PlatformConsoleViewSet(viewsets.ViewSet):
             lead=lead,
             status=serializer.validated_data["status"],
             note=serializer.validated_data.get("note"),
+            # Maydon yuborilmasa — tegmaymiz; `null` yuborilsa —
+            # rejani bekor qilamiz (PLAN 3.6).
+            next_call_at=serializer.validated_data.get("next_call_at", services_leads.NOT_SET),
             actor=self._actor(request),
             request=request._request,
         )

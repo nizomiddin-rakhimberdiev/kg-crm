@@ -147,6 +147,10 @@ class Guardian(BranchScopedModel):
     last_name = models.CharField(max_length=80)
     phone = models.CharField(max_length=20)
     email = models.EmailField(blank=True)
+    # SMS tili (PLAN 3.4). Bo'sh = bog'chaning sukut tili. Ruscha
+    # gaplashadigan oila o'zbekcha SMS olsa, u xabarni o'qimaydi va
+    # "SMS kelmadi" deb shikoyat qiladi.
+    language = models.CharField(max_length=2, blank=True)
 
     # Ism ham, TELEFON ham shu kalitga tushadi (PLAN 2.7): mudira
     # ko'pincha ota-onani raqami bo'yicha qidiradi.

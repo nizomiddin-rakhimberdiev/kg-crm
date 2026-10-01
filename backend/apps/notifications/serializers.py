@@ -2,22 +2,66 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from rest_framework import serializers
 
 from apps.notifications.models import Channel, Notification, NotificationTemplate
 
 __all__ = [
     "NotificationTemplateSerializer",
+    "TemplatePreviewSerializer",
     "NotificationSerializer",
     "SendNotificationSerializer",
 ]
 
 
 class NotificationTemplateSerializer(serializers.ModelSerializer):
+    # Muharrirdagi hisoblagich (PLAN 3.4): belgilar, kodlash va necha
+    # SMS bo'lagi. Hisob SERVERDA: narx shu bo'laklar bo'yicha
+    # to'lanadi va ikkita hisob ertami-kechmi ajraladi.
+    length = serializers.SerializerMethodField()
+    variables = serializers.SerializerMethodField()
+
     class Meta:
         model = NotificationTemplate
-        fields = ["id", "code", "channel", "subject", "body", "branch", "is_active", "created_at"]
-        read_only_fields = ["id", "created_at"]
+        fields = [
+            "id",
+            "code",
+            "channel",
+            "language",
+            "subject",
+            "body",
+            "branch",
+            "is_active",
+            "length",
+            "variables",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at", "length", "variables"]
+
+    def get_length(self, obj: NotificationTemplate) -> dict[str, Any]:
+        from apps.notifications.segments import measure, sms_safe
+
+        measured = measure(sms_safe(obj.body))
+        return {
+            "encoding": measured.encoding,
+            "characters": measured.characters,
+            "parts": measured.parts,
+            "limit": measured.limit,
+        }
+
+    def get_variables(self, obj: NotificationTemplate) -> list[str]:
+        from apps.notifications.services import TEMPLATE_VARIABLES
+
+        return list(TEMPLATE_VARIABLES.get(obj.code, ()))
+
+
+class TemplatePreviewSerializer(serializers.Serializer):
+    """Muharrirdagi "Ko'rib chiqish" — yuborilmaydi, faqat ko'rsatiladi."""
+
+    body = serializers.CharField()
+    variables = serializers.DictField(required=False, default=dict)
 
 
 class NotificationSerializer(serializers.ModelSerializer):

@@ -41,7 +41,17 @@ class GuardianSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Guardian
-        fields = ["id", "first_name", "last_name", "full_name", "phone", "email", "is_active"]
+        fields = [
+            "id",
+            "first_name",
+            "last_name",
+            "full_name",
+            "phone",
+            "email",
+            # SMS tili (PLAN 3.4). Bo'sh = bog'chaning sukut tili.
+            "language",
+            "is_active",
+        ]
         read_only_fields = ["id", "full_name"]
 
 

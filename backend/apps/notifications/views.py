@@ -21,6 +21,7 @@ from apps.notifications.serializers import (
     NotificationSerializer,
     NotificationTemplateSerializer,
     SendNotificationSerializer,
+    TemplatePreviewSerializer,
 )
 
 __all__ = ["NotificationTemplateViewSet", "NotificationViewSet"]
@@ -52,12 +53,43 @@ def _reminder_filters(request: Request) -> dict[str, Any]:
 
 class NotificationTemplateViewSet(TenantViewSet):
     permission_module = "notifications"
+    permission_action_map = {"preview": "read"}
     model = NotificationTemplate
     serializer_class = NotificationTemplateSerializer
-    filterset_fields = ["code", "channel"]
+    filterset_fields = ["code", "channel", "language"]
 
     def perform_create(self, serializer: Any) -> None:
         serializer.save(organization=request_user(self.request).organization)
+
+    @action(detail=False, methods=["post"])
+    def preview(self, request: Request) -> Response:
+        """
+        `POST /notification-templates/preview` — matn qanday ko'rinadi.
+
+        Hech narsa yuborilmaydi va saqlanmaydi. Nega server tomonida:
+        uzunlik va bo'laklar hisobi narxni belgilaydi, va ikkinchi
+        hisobni frontendda yozish ikkita haqiqat manbai yaratardi
+        (PLAN 3.4).
+        """
+        from apps.notifications.segments import measure, sms_safe
+
+        serializer = TemplatePreviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        rendered = sms_safe(
+            services.render_template(
+                serializer.validated_data["body"], serializer.validated_data.get("variables") or {}
+            )
+        )
+        measured = measure(rendered)
+        return Response(
+            {
+                "rendered": rendered,
+                "encoding": measured.encoding,
+                "characters": measured.characters,
+                "parts": measured.parts,
+                "limit": measured.limit,
+            }
+        )
 
 
 class NotificationViewSet(BranchScopedMixin, TenantReadOnlyViewSet):

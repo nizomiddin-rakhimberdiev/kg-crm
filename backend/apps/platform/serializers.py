@@ -142,6 +142,7 @@ class LeadSerializer(serializers.ModelSerializer):
             "source",
             "status",
             "note",
+            "next_call_at",
             "status_changed_at",
             "consented_at",
             "privacy_policy_version",
@@ -154,3 +155,6 @@ class LeadSerializer(serializers.ModelSerializer):
 class LeadStatusSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=LeadStatus.choices)
     note = serializers.CharField(required=False, allow_blank=True, max_length=2_000)
+    # Keyingi qo'ng'iroq sanasi (PLAN 3.6). `allow_null` — sotuvchi
+    # rejani bekor qilishi ham kerak.
+    next_call_at = serializers.DateField(required=False, allow_null=True)
