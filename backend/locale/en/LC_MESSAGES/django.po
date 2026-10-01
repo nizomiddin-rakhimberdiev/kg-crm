@@ -1028,3 +1028,12 @@ msgstr "financial record"
 
 msgid "to'lov"
 msgstr "payment"
+
+msgid "Bu guruh sizga biriktirilmagan — davomatni belgilay olmaysiz."
+msgstr "This group is not assigned to you — you cannot mark its attendance."
+
+msgid "O'tgan kun davomatini o'zgartirish uchun sabab yozing."
+msgstr "Give a reason for changing a past day's attendance."
+
+msgid "Tarbiyachi faqat oxirgi {days} kun davomatini belgilaydi. Eski kun uchun direktorga murojaat qiling."
+msgstr "A teacher may only mark the last {days} day(s). For earlier days, ask the director."

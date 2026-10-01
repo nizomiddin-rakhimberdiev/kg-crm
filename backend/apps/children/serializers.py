@@ -19,6 +19,7 @@ from apps.children.models import (
 from apps.core.fields import TenantPrimaryKeyRelatedField
 from apps.core.serializer_fields import PhoneField
 from apps.finance.models import TariffPlan
+from apps.hr.models import Employee
 
 __all__ = [
     "ChildSerializer",
@@ -45,9 +46,18 @@ class GuardianSerializer(serializers.ModelSerializer):
 
 
 class GroupSerializer(serializers.ModelSerializer):
+    # Tarbiyachi (PLAN 2.6) — u guruhni ko'rishi va davomatini
+    # belgilashi uchun biriktiriladi.
+    teacher_id = TenantPrimaryKeyRelatedField(
+        model=Employee, source="teacher", required=False, allow_null=True
+    )
+    teacher_name = serializers.CharField(source="teacher.full_name", read_only=True, default=None)
+
     class Meta:
         model = Group
         fields = [
+            "teacher_id",
+            "teacher_name",
             "id",
             "name",
             "age_min",

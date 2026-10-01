@@ -9,7 +9,14 @@ from __future__ import annotations
 
 from typing import Final
 
-__all__ = ["MODULES", "ACTIONS", "PERMISSION_LABELS", "SYSTEM_ROLES", "ROLE_MATRIX"]
+__all__ = [
+    "MODULES",
+    "ACTIONS",
+    "EXTRA_ACTIONS",
+    "PERMISSION_LABELS",
+    "SYSTEM_ROLES",
+    "ROLE_MATRIX",
+]
 
 # --- Modullar (docs/01 §6.1) ---
 MODULES: Final[tuple[str, ...]] = (
@@ -31,6 +38,18 @@ MODULES: Final[tuple[str, ...]] = (
 )
 
 ACTIONS: Final[tuple[str, ...]] = ("read", "create", "update", "delete", "export", "approve")
+
+# Faqat ayrim modullarda ma'noga ega amallar (PLAN 2.6).
+#
+# `read_all` — "butun bog'chani ko'rish". Usiz foydalanuvchi faqat
+# O'ZI tarbiyachisi bo'lgan guruhlar bilan cheklanadi. Uni `ACTIONS`
+# ga qo'shish har bir modulda keraksiz ruxsat yaratardi (`billing.
+# read_all` nimani anglatadi?), shuning uchun u modul bo'yicha
+# beriladi.
+EXTRA_ACTIONS: Final[dict[str, tuple[str, ...]]] = {
+    "children": ("read_all",),
+    "attendance": ("read_all",),
+}
 
 PERMISSION_LABELS: Final[dict[str, str]] = {
     "dashboard": "Boshqaruv paneli",
@@ -81,13 +100,22 @@ _W: Final[tuple[str, ...]] = ("read", "create", "update")
 _R: Final[tuple[str, ...]] = ("read",)
 _N: Final[tuple[str, ...]] = ()
 
+# `read_all` bilan — faqat `children` va `attendance` uchun (PLAN 2.6).
+#
+# Barcha TIZIM rollarida bor, ya'ni mavjud rollar hech narsa sezmaydi.
+# Yo'q bo'lgani — guruhga biriktirilgan tarbiyachi: u faqat o'z
+# guruhlarini ko'radi.
+_FA: Final[tuple[str, ...]] = (*_F, "read_all")
+_WA: Final[tuple[str, ...]] = (*_W, "read_all")
+_RA: Final[tuple[str, ...]] = (*_R, "read_all")
+
 ROLE_MATRIX: Final[dict[str, dict[str, tuple[str, ...]]]] = {
     "org_owner": {
         "dashboard": _F,
-        "children": _F,
+        "children": _FA,
         "payments": _F,
         "debtors": _F,
-        "attendance": _F,
+        "attendance": _FA,
         "payroll": _F,
         "inventory": _F,
         "expenses": _F,
@@ -101,10 +129,10 @@ ROLE_MATRIX: Final[dict[str, dict[str, tuple[str, ...]]]] = {
     },
     "director": {
         "dashboard": _F,
-        "children": _F,
+        "children": _FA,
         "payments": _F,
         "debtors": _F,
-        "attendance": _F,
+        "attendance": _FA,
         "payroll": _F,
         "inventory": _F,
         "expenses": _F,
@@ -118,10 +146,10 @@ ROLE_MATRIX: Final[dict[str, dict[str, tuple[str, ...]]]] = {
     },
     "manager": {
         "dashboard": _R,
-        "children": _W,
+        "children": _WA,
         "payments": _R,
         "debtors": _R,
-        "attendance": _W,
+        "attendance": _WA,
         "payroll": _N,
         "inventory": _F,
         "expenses": _W,
@@ -135,7 +163,7 @@ ROLE_MATRIX: Final[dict[str, dict[str, tuple[str, ...]]]] = {
     },
     "cashier": {
         "dashboard": _R,
-        "children": _R,
+        "children": _RA,
         "payments": _F,
         "debtors": _W,
         "attendance": _N,
@@ -152,10 +180,10 @@ ROLE_MATRIX: Final[dict[str, dict[str, tuple[str, ...]]]] = {
     },
     "attendance_manager": {
         "dashboard": _R,
-        "children": _R,
+        "children": _RA,
         "payments": _N,
         "debtors": _N,
-        "attendance": _F,
+        "attendance": _FA,
         "payroll": _N,
         "inventory": _N,
         "expenses": _N,

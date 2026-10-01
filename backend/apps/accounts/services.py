@@ -19,6 +19,7 @@ from django.utils.translation import gettext
 
 from apps.accounts.constants import (
     ACTIONS,
+    EXTRA_ACTIONS,
     MODULES,
     PERMISSION_LABELS,
     ROLE_MATRIX,
@@ -61,7 +62,10 @@ def sync_permission_catalog() -> int:
             label=f"{PERMISSION_LABELS.get(module, module)} — {action}",
         )
         for module in MODULES
-        for action in ACTIONS
+        # `EXTRA_ACTIONS` — faqat ayrim modullarda ma'noga ega amallar
+        # (`children.read_all`), ya'ni katalog keraksiz qatorlar bilan
+        # shishmaydi.
+        for action in (*ACTIONS, *EXTRA_ACTIONS.get(module, ()))
         if f"{module}.{action}" not in existing
     ]
     Permission.objects.bulk_create(new)
@@ -89,10 +93,14 @@ def seed_system_roles(organization: Organization) -> dict[str, Role]:
         )
         roles[code] = role
 
+        # Matritsa `read_all` ni hamma modulga beradi, lekin u faqat
+        # `EXTRA_ACTIONS` da e'lon qilinganlarida mavjud — qolganlari
+        # shu yerda tushib qoladi.
         wanted = {
             f"{module}.{action}"
             for module, allowed in ROLE_MATRIX[code].items()
             for action in allowed
+            if action in ACTIONS or action in EXTRA_ACTIONS.get(module, ())
         }
         current = set(
             RolePermission.objects.filter(role=role).values_list("permission__code", flat=True)

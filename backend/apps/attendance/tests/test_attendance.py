@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+from decimal import Decimal
 
 import pytest
 from django.db import IntegrityError, transaction
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.attendance import services as attendance_services
 from apps.attendance.models import AttendanceRecord
 from apps.attendance.services import daily_register, mark_bulk, monthly_summary
 from apps.children.models import Child, Group
@@ -395,3 +397,154 @@ class TestEndpoints:
         )
         assert marked.status_code == 200
         assert client.get(reverse("v1:user-list")).status_code == 403
+
+
+class TestTeacherScope:
+    """
+    Tarbiyachi faqat o'z guruhini belgilaydi — PLAN 2.6.
+
+    Bu qatlam mavjud RBAC'ni o'zgartirmaydi, ustiga qo'shiladi: modul
+    ruxsati avvalgidek birinchi to'siq, guruh esa ikkinchisi.
+    """
+
+    def _teacher(self, tenant, group):
+        """Tizim hisobi + xodim + guruhga biriktirish."""
+        from apps.accounts.models import Role, User
+        from apps.hr.models import Employee
+
+        with organization_context(tenant.organization.id):
+            role = Role.objects.create(
+                organization=tenant.organization, name="Tarbiyachi", code="teacher_custom"
+            )
+            # Modul ruxsati bor, `read_all` esa yo'q — aynan auditdagi
+            # maxsus rol holati.
+            from apps.accounts.models import Permission, RolePermission
+
+            for code in ("attendance.read", "attendance.create", "attendance.update"):
+                RolePermission.objects.create(
+                    role=role, permission=Permission.objects.get(code=code)
+                )
+            user = User.objects.create_user(
+                email="tarbiyachi@test.uz",
+                password="Juda-Kuchli-Parol-2026",
+                organization=tenant.organization,
+                branch=tenant.branch,
+                full_name="Dilnoza Ergasheva",
+                role=role,
+            )
+            Employee.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                first_name="Dilnoza",
+                last_name="Ergasheva",
+                hire_date=date(2024, 1, 1),
+                base_salary=Decimal("5000000"),
+                user=user,
+            )
+            group.teacher = Employee.objects.get(user=user)
+            group.save(update_fields=["teacher"])
+        return user
+
+    def test_a_teacher_may_mark_their_own_group(self, tenant_a, group_with_children):
+        group, children = group_with_children
+        user = self._teacher(tenant_a, group)
+        with organization_context(tenant_a.organization.id):
+            records = attendance_services.mark_bulk(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                group=group,
+                attendance_date=timezone.localdate(),
+                records=[{"child_id": children[0].id, "status": "present"}],
+                recorded_by=user,
+            )
+        assert len(records) == 1
+
+    def test_a_teacher_cannot_mark_another_group(self, tenant_a, group_with_children):
+        from apps.children.models import Group
+
+        group, children = group_with_children
+        user = self._teacher(tenant_a, group)
+        with organization_context(tenant_a.organization.id):
+            other = Group.objects.create(
+                organization=tenant_a.organization, branch=tenant_a.branch, name="Begona guruh"
+            )
+            with pytest.raises(BusinessRuleViolation, match="biriktirilmagan"):
+                attendance_services.mark_bulk(
+                    organization=tenant_a.organization,
+                    branch=tenant_a.branch,
+                    group=other,
+                    attendance_date=timezone.localdate(),
+                    records=[],
+                    recorded_by=user,
+                )
+
+    def test_a_teacher_cannot_edit_an_old_day(self, tenant_a, group_with_children):
+        """Sukut oyna: bugun va kecha. O'tgan oy pulga tegadi (ADR-19)."""
+        group, children = group_with_children
+        user = self._teacher(tenant_a, group)
+        with (
+            organization_context(tenant_a.organization.id),
+            pytest.raises(BusinessRuleViolation, match="oxirgi"),
+        ):
+            attendance_services.mark_bulk(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                group=group,
+                attendance_date=timezone.localdate() - timedelta(days=5),
+                records=[{"child_id": children[0].id, "status": "present"}],
+                recorded_by=user,
+            )
+
+    def test_a_teacher_may_still_fix_yesterday(self, tenant_a, group_with_children):
+        group, children = group_with_children
+        user = self._teacher(tenant_a, group)
+        with organization_context(tenant_a.organization.id):
+            records = attendance_services.mark_bulk(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                group=group,
+                attendance_date=timezone.localdate() - timedelta(days=1),
+                records=[{"child_id": children[0].id, "status": "present"}],
+                recorded_by=user,
+            )
+        assert len(records) == 1
+
+    def test_the_owner_needs_a_reason_for_an_old_day(self, tenant_a, group_with_children):
+        group, children = group_with_children
+        with (
+            organization_context(tenant_a.organization.id),
+            pytest.raises(BusinessRuleViolation, match="sabab"),
+        ):
+            attendance_services.mark_bulk(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                group=group,
+                attendance_date=timezone.localdate() - timedelta(days=30),
+                records=[{"child_id": children[0].id, "status": "present"}],
+                recorded_by=tenant_a.owner,
+            )
+
+    def test_the_owner_may_fix_an_old_day_with_a_reason(self, tenant_a, group_with_children):
+        group, children = group_with_children
+        with organization_context(tenant_a.organization.id):
+            records = attendance_services.mark_bulk(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                group=group,
+                attendance_date=timezone.localdate() - timedelta(days=30),
+                records=[{"child_id": children[0].id, "status": "present"}],
+                recorded_by=tenant_a.owner,
+                reason="Jurnal qog'ozdan ko'chirildi",
+            )
+        assert len(records) == 1
+
+    def test_nobody_is_restricted_until_a_teacher_is_assigned(self, tenant_a):
+        """
+        Cheklov "ruxsati yo'q" degan sababdan emas, "u aynan shu
+        guruhning tarbiyachisi" degan sababdan kelib chiqadi. Hech kim
+        biriktirilmagan bo'lsa, qatlam umuman ishlamaydi.
+        """
+        from apps.children.scope import is_group_restricted
+
+        with organization_context(tenant_a.organization.id):
+            assert not is_group_restricted(tenant_a.owner)

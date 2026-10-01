@@ -26,6 +26,7 @@ def mark_bulk(
     attendance_date: date,
     records: list[dict[str, Any]],
     recorded_by: Any = None,
+    reason: str = "",
 ) -> list[AttendanceRecord]:
     """
     Bir guruhning bir kunini bitta chaqiruvda belgilaydi.
@@ -38,6 +39,8 @@ def mark_bulk(
 
     if group.organization_id != organization.id:
         raise BusinessRuleViolation(gettext("Guruh boshqa tashkilotga tegishli."))
+
+    assert_can_mark(user=recorded_by, group=group, attendance_date=attendance_date, reason=reason)
 
     # Guruhdagi faol bolalar — faqat shularni belgilash mumkin. Aks holda
     # mijoz istalgan `child_id` yuborib, boshqa guruhning bolasiga yozuv
@@ -156,3 +159,60 @@ def monthly_summary(
         }
         for row in rows
     ]
+
+
+# --- Kim qaysi kunni belgilay oladi (PLAN 2.6) ---
+
+
+def teacher_edit_window(branch: Any = None) -> int:
+    """Tarbiyachi necha kun orqaga qaytib belgilay oladi."""
+    from apps.settings_app.services import get_setting
+
+    return int(get_setting(key="attendance.teacher_edit_days", branch=branch) or 0)
+
+
+def assert_can_mark(*, user: Any, group: Group, attendance_date: date, reason: str = "") -> None:
+    """
+    Shu odam shu guruhning shu kunini belgilay oladimi?
+
+    Ikki tekshiruv:
+
+    1. **Guruh** — guruhga biriktirilgan tarbiyachi faqat o'z guruhini
+       belgilaydi. Olti guruhli bog'chada u beshtasining davomatiga
+       tegishi kerak emas.
+
+    2. **Sana** — tarbiyachi uchun oyna tor (sukut: bugun va kecha).
+       O'tgan oyning davomatini jimgina o'zgartirish qayta hisobga
+       (ADR-19) va hisobotga ta'sir qiladi. Direktor va egasi istalgan
+       sanani o'zgartiradi, lekin SABAB bilan — u auditga yoziladi.
+
+    `user` berilmagan bo'lsa (import, fon vazifasi) tekshiruv
+    o'tkazilmaydi: u yerda odam yo'q va chegaraning ma'nosi ham yo'q.
+    """
+    if user is None:
+        return
+
+    from apps.children.scope import can_touch_group, is_group_restricted
+
+    if not can_touch_group(user, group):
+        raise BusinessRuleViolation(
+            gettext("Bu guruh sizga biriktirilmagan — davomatni belgilay olmaysiz.")
+        )
+
+    if not is_group_restricted(user):
+        # Direktor/egasi: istalgan sana, lekin eski kunga sabab bilan.
+        window = teacher_edit_window(getattr(group, "branch", None))
+        if (timezone.localdate() - attendance_date).days > window and not reason.strip():
+            raise BusinessRuleViolation(
+                gettext("O'tgan kun davomatini o'zgartirish uchun sabab yozing.")
+            )
+        return
+
+    window = teacher_edit_window(getattr(group, "branch", None))
+    if (timezone.localdate() - attendance_date).days > window:
+        raise BusinessRuleViolation(
+            gettext(
+                "Tarbiyachi faqat oxirgi {days} kun davomatini belgilaydi. "
+                "Eski kun uchun direktorga murojaat qiling."
+            ).format(days=window + 1)
+        )

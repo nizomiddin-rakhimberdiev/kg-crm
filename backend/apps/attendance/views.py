@@ -97,6 +97,10 @@ class AttendanceViewSet(BranchScopedMixin, TenantViewSet):
             attendance_date=data["attendance_date"],
             records=data["records"],
             recorded_by=user,
+            # Eski kunni o'zgartirish sababi (PLAN 2.6) — u auditga
+            # tushadi, chunki o'tgan oyning davomati qayta hisobga va
+            # hisobotga ta'sir qiladi.
+            reason=str(request.data.get("reason", "")),
         )
         return Response(
             AttendanceRecordSerializer(records, many=True).data,

@@ -193,6 +193,20 @@ class Group(BranchScopedModel):
     # Faol enrollment'lardan keshlangan (docs/03 §8.2).
     enrolled_count = models.SmallIntegerField(default=0)
 
+    # Guruhning tarbiyachisi (PLAN 2.6).
+    #
+    # `Employee` ga bog'lanadi, `User` ga emas: tarbiyachi avvalo
+    # XODIM — uning oyligi, davomati va shartnomasi bor. Tizim hisobi
+    # esa ixtiyoriy (hamma tarbiyachi ham tizimga kirmaydi) va u
+    # `user.employee` orqali ulanadi.
+    teacher = models.ForeignKey(
+        "hr.Employee",
+        on_delete=models.SET_NULL,
+        related_name="groups_led",
+        null=True,
+        blank=True,
+    )
+
     class Meta:
         db_table = "group"
         ordering = ["name"]

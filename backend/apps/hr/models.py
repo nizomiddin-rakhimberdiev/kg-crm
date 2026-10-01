@@ -58,8 +58,13 @@ class Employee(BranchScopedModel):
         null=True,
         blank=True,
     )
-    # Ixtiyoriy login bog'lanishi — kelajakdagi Tarbiyachi portali uchun
-    # (docs/02 §22.2). Hozircha ko'p xodimda `NULL`.
+    # Tizim hisobi bilan bog'lanish (PLAN 2.8).
+    #
+    # Ikkisi ATAYLAB alohida: hamma xodim tizimga kirmaydi (oshpazga
+    # hisob kerak emas), va hamma hisob xodim emas (buxgalter
+    # tashqaridan bo'lishi mumkin). Lekin bog'lanish KERAK — usiz
+    # "men qaysi guruhning tarbiyachisiman?" degan savolga javob yo'q,
+    # ya'ni tarbiyachi roli faqat o'z guruhini ko'ra olmaydi (PLAN 2.6).
     user = models.OneToOneField(
         "accounts.User",
         on_delete=models.SET_NULL,

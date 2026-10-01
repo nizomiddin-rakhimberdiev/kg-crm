@@ -1029,3 +1029,12 @@ msgstr "финансовая запись"
 
 msgid "to'lov"
 msgstr "платёж"
+
+msgid "Bu guruh sizga biriktirilmagan — davomatni belgilay olmaysiz."
+msgstr "Эта группа вам не закреплена — отметить посещаемость нельзя."
+
+msgid "O'tgan kun davomatini o'zgartirish uchun sabab yozing."
+msgstr "Укажите причину изменения посещаемости за прошедший день."
+
+msgid "Tarbiyachi faqat oxirgi {days} kun davomatini belgilaydi. Eski kun uchun direktorga murojaat qiling."
+msgstr "Воспитатель отмечает посещаемость только за последние {days} дн. По более ранним дням обратитесь к директору."

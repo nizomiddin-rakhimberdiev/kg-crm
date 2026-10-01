@@ -39,6 +39,13 @@ DEFAULTS: dict[str, Any] = {
     "notifications.sms_enabled": True,
     "notifications.payment_receipt": True,
     "attendance.auto_absent": False,
+    # Tarbiyachi necha kun orqaga davomat belgilay oladi (PLAN 2.6).
+    #
+    # 1 = bugun va kecha. Oldingi kunlarni faqat direktor yoki egasi
+    # o'zgartiradi — va o'shanda sabab so'raladi hamda auditga yoziladi.
+    # Nega chegara bor: o'tgan oyning davomatini jimgina o'zgartirish
+    # qayta hisobga va hisobotga ta'sir qiladi.
+    "attendance.teacher_edit_days": 1,
     # Bola yoshi chegarasi (PLAN 2.4). Sozlama, chunki bog'chalar
     # turlicha: ba'zilari 2 yoshdan, ba'zilari 7 yoshgacha oladi.
     "children.min_age": 0,

@@ -16,7 +16,7 @@ from rest_framework.response import Response
 
 from apps.audit import services as audit
 from apps.branches.selectors import resolve_branch
-from apps.children import importer, services
+from apps.children import importer, scope, services
 from apps.children.importer import import_children
 from apps.children.models import Child, Enrollment, Group, Guardian
 from apps.children.serializers import (
@@ -84,6 +84,12 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
         if ids:
             wanted = [value for value in ids.split(",") if value][: self.IDS_CAP]
             queryset = queryset.filter(id__in=_valid_uuids(wanted))
+
+        # Qator darajasidagi doira (PLAN 2.6): guruhga biriktirilgan
+        # tarbiyachi faqat o'z guruhining bolalarini ko'radi. Boshqa
+        # hamma uchun queryset o'zgarmay qaytadi, ya'ni "shartni
+        # unutish" xatosi tuzilishi bo'yicha mumkin emas.
+        queryset = scope.restrict_children(queryset, request_user(self.request))
         return queryset
 
     def get_serializer_class(self) -> Any:
@@ -331,6 +337,12 @@ class GroupViewSet(BranchScopedMixin, TenantViewSet):
     serializer_class = GroupSerializer
     search_fields = ["name"]
     ordering_fields = ["name", "enrolled_count"]
+
+    def get_base_queryset(self) -> Any:
+        return scope.restrict_groups(
+            super().get_base_queryset().select_related("teacher"),
+            request_user(self.request),
+        )
 
     def perform_create(self, serializer: Any) -> None:
         user = request_user(self.request)

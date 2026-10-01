@@ -81,6 +81,10 @@ class BulkAttendanceSerializer(serializers.Serializer):
     group_id = TenantPrimaryKeyRelatedField(model=Group, source="group")
     attendance_date = serializers.DateField()
     records = BulkRowSerializer(many=True)
+    # Eski kunni o'zgartirish sababi (PLAN 2.6). Tarbiyachi uchun u
+    # yordam bermaydi — unga oyna qattiq; direktor uchun esa MAJBURIY,
+    # chunki o'tgan oyning davomati pulga tegadi.
+    reason = serializers.CharField(required=False, allow_blank=True, max_length=255)
 
     def validate_records(self, value: list[dict[str, Any]]) -> list[dict[str, Any]]:
         seen = {row["child_id"] for row in value}
