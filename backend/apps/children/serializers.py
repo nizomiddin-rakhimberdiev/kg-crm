@@ -120,8 +120,13 @@ class ChildSerializer(serializers.ModelSerializer):
             "tariff_name",
             "balance",
             "notes",
+            "allergies",
+            "medical_notes",
             "guardians",
             "current_group",
+            "status_changed_on",
+            "status_reason",
+            "archived_at",
             "is_active",
             "created_at",
         ]
@@ -158,6 +163,8 @@ class ChildWriteSerializer(serializers.ModelSerializer):
             "enrollment_status",
             "enrolled_on",
             "notes",
+            "allergies",
+            "medical_notes",
             "branch_id",
             "tariff_id",
         ]

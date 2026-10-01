@@ -6,7 +6,8 @@ import io
 from typing import Any
 from uuid import UUID
 
-from django.http import FileResponse
+from django.db import transaction
+from django.http import FileResponse, Http404
 from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.decorators import action
@@ -57,6 +58,7 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
         "archive": "update",
         "restore": "update",
         "hard_delete": "delete",
+        "guardian_link": "update",
     }
     model = Child
     # `search_fields` ataylab qoldirilgan: u DRF ning standart qidiruvi
@@ -276,6 +278,55 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
             can_pickup=bool(request.data.get("can_pickup", True)),
         )
         return Response(ChildGuardianSerializer(link).data, status=status.HTTP_201_CREATED)
+
+    @action(
+        detail=True,
+        methods=["patch", "delete"],
+        url_path=r"guardians/(?P<link_id>[0-9a-f-]{36})",
+    )
+    def guardian_link(self, request: Request, pk: str | None = None, link_id: str = "") -> Response:
+        """
+        Vasiy bog'lanishini tahrirlaydi yoki uzadi (PLAN 2.1).
+
+        Ilgari vasiyni faqat QO'SHISH mumkin edi: qarindoshligi noto'g'ri
+        yozilgan bo'lsa yoki ota-ona ajrashgan bo'lsa, bog'lanishni
+        o'zgartirishning yo'li yo'q edi.
+
+        Vasiyning O'ZI o'chirilmaydi — faqat bog'lanish uziladi: u
+        boshqa bolaning ham vasiysi bo'lishi mumkin.
+        """
+        child = self.get_object()
+        link = child.guardian_links.filter(pk=link_id).first()
+        if link is None:
+            raise Http404
+
+        if request.method == "DELETE":
+            link.delete()
+            audit.record(
+                action="delete",
+                request=request._request,
+                actor=request_user(request),
+                entity_type="child_guardian",
+                entity_id=link.id,
+                changes={"child": child.full_name, "guardian": link.guardian.full_name},
+            )
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        for field in ("relation", "is_primary", "can_pickup"):
+            if field in request.data:
+                setattr(link, field, request.data[field])
+
+        # Asosiy vasiy BITTA va buni BAZA qo'riqlaydi (qisman unikal
+        # indeks). Shuning uchun tartib muhim: avval eskisi tushiriladi,
+        # keyin yangisi saqlanadi. Teskari tartibda `INSERT` cheklovga
+        # urilib, 409 qaytarardi — foydalanuvchi uchun esa bu shunchaki
+        # "nega ishlamayapti?" bo'lardi.
+        with transaction.atomic():
+            if link.is_primary:
+                child.guardian_links.exclude(pk=link.pk).update(is_primary=False)
+            link.save(update_fields=["relation", "is_primary", "can_pickup", "updated_at"])
+
+        return Response(ChildGuardianSerializer(link).data)
 
     @action(detail=False, methods=["get"], url_path="import-template")
     def import_template(self, request: Request) -> FileResponse:

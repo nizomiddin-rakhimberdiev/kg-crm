@@ -29,7 +29,7 @@ class TestApostrophes:
         assert search_key(spelling) == "ulugbek"
 
     def test_an_apostrophe_is_removed_not_replaced(self):
-        """"o'g'li" va "ogli" bir xil kalit berishi kerak."""
+        """ "o'g'li" va "ogli" bir xil kalit berishi kerak."""
         assert search_key("o'g'li") == search_key("ogli") == "ogli"
 
 

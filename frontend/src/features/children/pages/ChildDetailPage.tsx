@@ -16,6 +16,7 @@ import { tariffsApi } from '@/features/payments/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { GroupOptions } from '@/features/children/components/GroupOptions'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -181,13 +182,10 @@ export default function ChildDetailPage() {
               onChange={(e) => e.target.value && setPendingGroup(e.target.value)}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             >
-              <option value="">{t('— guruhsiz —')}</option>
-              {groupsQuery.data?.items.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.name}
-                  {group.capacity ? ` (${group.enrolled_count}/${group.capacity})` : ''}
-                </option>
-              ))}
+              <GroupOptions
+                groups={groupsQuery.data?.items ?? []}
+                currentId={child.current_group?.id}
+              />
             </select>
           ) : (
             <p className="text-sm text-slate-600">{child.current_group?.name ?? '—'}</p>

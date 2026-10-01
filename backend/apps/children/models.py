@@ -64,6 +64,14 @@ class Child(BranchScopedModel):
     photo_path = models.CharField(max_length=255, blank=True)
     notes = models.TextField(blank=True)
 
+    # --- Tibbiy ma'lumot (PLAN 2.1) ---
+    #
+    # Alohida maydonlar, umumiy `notes` ichida emas: allergiya oshxonaga
+    # va tarbiyachiga KERAK bo'ladigan ma'lumot, va uni erkin matn
+    # ichidan qidirish — xato qilish uchun eng qulay joy.
+    allergies = models.CharField(max_length=255, blank=True)
+    medical_notes = models.TextField(blank=True)
+
     # Ledger'dan keshlangan qiymat (docs/03 §8.2). Manba — `child_ledger_entry`;
     # bu ustun faqat ro'yxatlarni tez render qilish uchun va pul harakati
     # bilan bog'liq har qanday qaror ledger'dan qayta hisoblanadi (D3).

@@ -279,3 +279,73 @@ class TestSearchKey:
             ulugbek.refresh_from_db()
 
         assert ulugbek.search_key == "choriyevbekzod"
+
+
+class TestGuardianLink:
+    """Vasiy bog'lanishini tahrirlash va uzish — PLAN 2.1."""
+
+    @pytest.fixture
+    def linked(self, tenant_a, child):
+        response = tenant_a.client().post(
+            reverse("v1:child-add-guardian", args=[child.id]),
+            {
+                "phone": "+998901234567",
+                "first_name": "Dilnoza",
+                "last_name": "Ibragimova",
+                "relation": "mother",
+                "is_primary": True,
+            },
+            format="json",
+        )
+        assert response.status_code == 201
+        return response.data["id"]
+
+    def test_the_relation_can_be_corrected(self, tenant_a, child, linked):
+        response = tenant_a.client().patch(
+            reverse("v1:child-guardian-link", args=[child.id, linked]),
+            {"relation": "guardian"},
+            format="json",
+        )
+        assert response.status_code == 200
+        assert response.data["relation"] == "guardian"
+
+    def test_only_one_guardian_stays_primary(self, tenant_a, child, linked):
+        """Asosiy vasiy bitta: aks holda SMS kimga ketishi noaniq."""
+        created = tenant_a.client().post(
+            reverse("v1:child-add-guardian", args=[child.id]),
+            {"phone": "+998901234568", "first_name": "Akmal", "last_name": "Ibragimov"},
+            format="json",
+        )
+        assert created.status_code == 201, created.data
+        second = created.data["id"]
+
+        patched = tenant_a.client().patch(
+            reverse("v1:child-guardian-link", args=[child.id, second]),
+            {"is_primary": True},
+            format="json",
+        )
+        assert patched.status_code == 200, patched.data
+
+        with organization_context(tenant_a.organization.id):
+            primaries = child.guardian_links.filter(is_primary=True)
+            assert primaries.count() == 1
+            assert str(primaries.first().id) == second
+
+    def test_unlinking_keeps_the_guardian(self, tenant_a, child, linked):
+        """Vasiy boshqa bolaning ham vasiysi bo'lishi mumkin."""
+        from apps.children.models import Guardian
+
+        response = tenant_a.client().delete(
+            reverse("v1:child-guardian-link", args=[child.id, linked])
+        )
+        assert response.status_code == 204
+
+        with organization_context(tenant_a.organization.id):
+            assert not child.guardian_links.exists()
+            assert Guardian.objects.filter(phone="+998901234567").exists()
+
+    def test_another_tenant_cannot_touch_the_link(self, tenant_a, tenant_b, child, linked):
+        response = tenant_b.client().delete(
+            reverse("v1:child-guardian-link", args=[child.id, linked])
+        )
+        assert response.status_code == 404

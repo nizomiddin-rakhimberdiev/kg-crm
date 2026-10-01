@@ -26,6 +26,7 @@ import { usePageState } from '@/hooks/usePageState'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Child } from '@/lib/api/types'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { GroupOptions } from '@/features/children/components/GroupOptions'
 import { useCan } from '@/lib/rbac/useCan'
 import { avatarTone, cn, formatUZS, initials } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -281,13 +282,10 @@ export default function ChildrenPage() {
         onChange={(e) => e.target.value && setPendingGroup({ child, groupId: e.target.value })}
         className="max-w-[180px] rounded-lg border border-slate-200 px-2 py-1 text-xs outline-none focus:border-brand-500"
       >
-        <option value="">{t('— guruhsiz —')}</option>
-        {groupsQuery.data?.items.map((group) => (
-          <option key={group.id} value={group.id}>
-            {group.name}
-            {group.capacity ? ` (${group.enrolled_count}/${group.capacity})` : ''}
-          </option>
-        ))}
+        <GroupOptions
+          groups={groupsQuery.data?.items ?? []}
+          currentId={child.current_group?.id}
+        />
       </select>
     ) : (
       <span className="text-sm text-slate-600">{child.current_group?.name ?? '—'}</span>
@@ -457,17 +455,7 @@ export default function ChildrenPage() {
               onChange={(e) => setFormGroupId(e.target.value)}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             >
-              <option value="">{t('— guruhsiz —')}</option>
-              {groupsQuery.data?.items.map((group) => {
-                const full = group.capacity > 0 && group.enrolled_count >= group.capacity
-                return (
-                  <option key={group.id} value={group.id} disabled={full}>
-                    {group.name}
-                    {group.capacity ? ` (${group.enrolled_count}/${group.capacity})` : ''}
-                    {full ? ` — ${t("Guruh to'lgan")}` : ''}
-                  </option>
-                )
-              })}
+              <GroupOptions groups={groupsQuery.data?.items ?? []} />
             </select>
           </div>
 
