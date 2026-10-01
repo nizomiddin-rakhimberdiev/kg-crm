@@ -52,9 +52,6 @@ class TestGuardianPhone:
 class TestChildStatusChange:
     """Q5: holat o'zgarganda sana va sabab so'raladi; shu sanadan keyin faktura yozilmaydi."""
 
-    @pytest.mark.xfail(
-        strict=True, reason="PLAN 2.1 / Q5: holat sanasi va sababi uchun maydon yo'q"
-    )
     @pytest.mark.parametrize("field", ["status_changed_on", "status_reason"])
     def test_status_change_is_recorded_in_the_schema(self, field):
         """
@@ -74,9 +71,6 @@ class TestChildStatusChange:
         except FieldDoesNotExist:
             pytest.fail(f"Child.{field} maydoni yo'q")
 
-    @pytest.mark.xfail(
-        strict=True, reason="PLAN 2.2 / Q6: arxivlash tushunchasi yo'q — faqat is_active"
-    )
     def test_archiving_is_distinct_from_deleting(self):
         """
         Q6: bolalar qattiq o'chirilmaydi — faqat arxiv.
@@ -96,7 +90,6 @@ class TestChildStatusChange:
 
 
 class TestDateOfBirth:
-    @pytest.mark.xfail(strict=True, reason="PLAN 2.4: yosh oralig'i (0–8) tekshirilmaydi")
     def test_age_out_of_range_is_rejected(self, tenant_a):
         """Kelajakdagi sana allaqachon rad etiladi; 30 yoshli "bola" esa yo'q."""
         response = tenant_a.client().post(

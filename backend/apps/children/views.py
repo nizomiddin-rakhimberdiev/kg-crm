@@ -22,6 +22,7 @@ from apps.children.models import Child, Enrollment, Group, Guardian
 from apps.children.serializers import (
     ChildGuardianSerializer,
     ChildSerializer,
+    ChildStatusSerializer,
     ChildWriteSerializer,
     EnrollmentSerializer,
     GroupSerializer,
@@ -51,6 +52,10 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
         "enroll": "update",
         "add_guardian": "update",
         "bulk_import": "create",
+        "change_status": "update",
+        "archive": "update",
+        "restore": "update",
+        "hard_delete": "delete",
     }
     model = Child
     search_fields = ["first_name", "last_name", "middle_name"]
@@ -97,9 +102,11 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
         )
 
     def perform_destroy(self, instance: Child) -> None:
-        # Moliyaviy tarixi bo'lgan bola hech qachon fizik o'chirilmaydi (D5).
-        instance.is_active = False
-        instance.save(update_fields=["is_active"])
+        # `DELETE` = ARXIV (Q6). Bolalar hech qachon fizik o'chirilmaydi:
+        # ularning hisob-fakturasi, to'lovi va davomati bog'chaning
+        # moliyaviy tarixi. Xato kiritilgan yozuv uchun alohida,
+        # qattiq cheklangan yo'l bor: `POST /children/{id}/hard-delete`.
+        services.archive_child(child=instance, actor=request_user(self.request))
         audit.record(
             action="delete",
             request=self.request._request,
@@ -107,6 +114,103 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
             entity_type="child",
             entity_id=instance.id,
         )
+
+    @action(detail=True, methods=["post"], url_path="change-status")
+    def change_status(self, request: Request, pk: str | None = None) -> Response:
+        """
+        `POST /children/{id}/change-status` — holat, SANA va SABAB bilan (Q5).
+
+        Ikkalasi ham majburiy: "Chiqib ketgan" degan holat o'zi hech
+        narsa demaydi, savol esa har doim pul bilan birga keladi —
+        "qachondan buyon?".
+        """
+        serializer = ChildStatusSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        child = self.get_object()
+        before = {"status": child.enrollment_status, "on": str(child.status_changed_on)}
+        services.change_status(
+            child=child,
+            status=data["enrollment_status"],
+            on_date=data["status_changed_on"],
+            reason=data["status_reason"],
+            actor=request_user(request),
+        )
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="child",
+            entity_id=child.id,
+            changes={
+                "before": before,
+                "after": {
+                    "status": child.enrollment_status,
+                    "on": str(child.status_changed_on),
+                    "reason": child.status_reason,
+                },
+            },
+        )
+        return Response(ChildSerializer(child).data)
+
+    @action(detail=True, methods=["post"])
+    def archive(self, request: Request, pk: str | None = None) -> Response:
+        """`POST /children/{id}/archive` — ro'yxatdan chiqadi, ma'lumot qoladi (Q6)."""
+        child = self.get_object()
+        services.archive_child(
+            child=child,
+            actor=request_user(request),
+            reason=str(request.data.get("reason", "")),
+        )
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="child",
+            entity_id=child.id,
+            changes={"archived": True, "reason": child.status_reason},
+        )
+        return Response(ChildSerializer(child).data)
+
+    @action(detail=True, methods=["post"])
+    def restore(self, request: Request, pk: str | None = None) -> Response:
+        """`POST /children/{id}/restore` — xato arxivlash tuzatiladi."""
+        child = self.get_object()
+        services.restore_child(child=child)
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="child",
+            entity_id=child.id,
+            changes={"archived": False},
+        )
+        return Response(ChildSerializer(child).data)
+
+    @action(detail=True, methods=["post"], url_path="hard-delete")
+    def hard_delete(self, request: Request, pk: str | None = None) -> Response:
+        """
+        `POST /children/{id}/hard-delete` — xato kiritilgan yozuvni o'chiradi (Q6).
+
+        Yagona qattiq o'chirish yo'li va u ataylab tor: moliyaviy
+        yozuvi yo'q va 24 soat ichida yaratilgan yozuv. Ya'ni "ism
+        noto'g'ri yozildi, qaytadan kiritaman" degan holat — va faqat
+        o'sha. Audit izi bolaning o'zi o'chgandan KEYIN ham qoladi.
+        """
+        child = self.get_object()
+        snapshot = {"full_name": child.full_name, "date_of_birth": str(child.date_of_birth)}
+        child_id = child.id
+        services.delete_child(child=child, actor=request_user(request))
+        audit.record(
+            action="delete",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="child",
+            entity_id=child_id,
+            changes=snapshot,
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["post"])
     def enroll(self, request: Request, pk: str | None = None) -> Response:

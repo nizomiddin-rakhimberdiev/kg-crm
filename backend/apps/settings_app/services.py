@@ -39,6 +39,10 @@ DEFAULTS: dict[str, Any] = {
     "notifications.sms_enabled": True,
     "notifications.payment_receipt": True,
     "attendance.auto_absent": False,
+    # Bola yoshi chegarasi (PLAN 2.4). Sozlama, chunki bog'chalar
+    # turlicha: ba'zilari 2 yoshdan, ba'zilari 7 yoshgacha oladi.
+    "children.min_age": 0,
+    "children.max_age": 8,
     # --- Oylik maosh ushlanmalari (ADR-18) ---
     #
     # Stavkalar KODDA emas, sozlamada: ular qaror bilan, ba'zan yil

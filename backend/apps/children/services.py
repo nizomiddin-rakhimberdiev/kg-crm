@@ -4,7 +4,7 @@ Bolalar domenining biznes mantiqi — mutatsiyalar faqat shu yerda (P3).
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from typing import Any
 
 from django.db import transaction
@@ -17,6 +17,7 @@ from apps.children.models import (
     ChildGuardian,
     Enrollment,
     EnrollmentState,
+    EnrollmentStatus,
     Group,
     Guardian,
 )
@@ -28,6 +29,13 @@ __all__ = [
     "end_enrollment",
     "recount_group",
     "upsert_guardian",
+    "change_status",
+    "is_billable_for",
+    "archive_child",
+    "restore_child",
+    "delete_child",
+    "deletion_blockers",
+    "CLOSED_STATUSES",
 ]
 
 
@@ -178,3 +186,157 @@ def group_occupancy(organization_id: Any) -> dict[str, int]:
         .values_list("id", "active")
     )
     return {str(gid): count for gid, count in rows}
+
+
+# --- Holat va arxiv (PLAN 2.1, 2.2; Q5, Q6) ---
+
+#: Shu holatlardan keyin hisob-faktura yozilmaydi.
+CLOSED_STATUSES = (
+    EnrollmentStatus.PAUSED,
+    EnrollmentStatus.GRADUATED,
+    EnrollmentStatus.WITHDRAWN,
+)
+
+#: Xato yozuvni o'chirish oynasi (Q6).
+DELETE_WINDOW = timedelta(hours=24)
+
+
+@transaction.atomic
+def change_status(
+    *,
+    child: Child,
+    status: str,
+    on_date: date,
+    reason: str,
+    actor: Any = None,
+) -> Child:
+    """
+    Bolaning holatini SANA va SABAB bilan o'zgartiradi (Q5).
+
+    Ikkalasi ham majburiy va bu ataylab: "Chiqib ketgan" degan holat
+    o'zi hech narsa demaydi. Savol har doim pul bilan birga keladi —
+    "qachondan buyon?" — chunki o'sha sanadan keyin hisob-faktura
+    yozilmasligi kerak.
+
+    Joriy oy uchun kredit **avtomatik emas** (Q5): u alohida, tasdiqli
+    amal. Bola oyning 25-kunida ketgan bo'lsa ham, bog'cha o'sha oyni
+    to'liq olishi mumkin — bu shartnoma masalasi, tizimning qarori emas.
+    """
+    if status not in EnrollmentStatus.values:
+        raise BusinessRuleViolation(gettext("Noma'lum holat."))
+    if not reason.strip():
+        raise BusinessRuleViolation(gettext("Holatni o'zgartirish uchun sabab yozing."))
+    if on_date > timezone.localdate():
+        raise BusinessRuleViolation(gettext("Sana kelajakda bo'la olmaydi."))
+
+    child.enrollment_status = status
+    child.status_changed_on = on_date
+    child.status_reason = reason.strip()[:255]
+    child.save(
+        update_fields=["enrollment_status", "status_changed_on", "status_reason", "updated_at"]
+    )
+
+    # Guruhdan ham chiqariladi: "chiqib ketgan" bola davomat
+    # ro'yxatida turishi tarbiyachini chalkashtiradi.
+    if status in CLOSED_STATUSES:
+        for enrollment in child.enrollments.filter(status=EnrollmentState.ACTIVE):
+            end_enrollment(enrollment=enrollment, end_date=on_date)
+
+    return child
+
+
+def is_billable_for(child: Child, *, period_year: int, period_month: int) -> bool:
+    """
+    Shu davr uchun hisob-faktura yozilishi kerakmi?
+
+    Holat yopiq va o'zgarish sanasi davr boshidan OLDIN bo'lsa —
+    yo'q. Oy o'rtasida ketgan bolaga esa o'sha oy uchun hujjat
+    yoziladi: u oyning bir qismida bog'chada bo'lgan, va pulni
+    qaytarish — alohida qaror (Q5).
+    """
+    if child.enrollment_status not in CLOSED_STATUSES:
+        return True
+    if child.status_changed_on is None:
+        return False
+    return child.status_changed_on >= date(period_year, period_month, 1)
+
+
+@transaction.atomic
+def archive_child(*, child: Child, actor: Any = None, reason: str = "") -> Child:
+    """
+    Bolani arxivga oladi (Q6) — o'chirmaydi.
+
+    Arxivlangan bola ro'yxatlardan chiqadi, lekin uning hisob-fakturasi,
+    to'lovi va davomati joyida qoladi: ular bog'chaning moliyaviy
+    tarixi va ularni yo'qotish hisobotni buzardi.
+    """
+    if child.archived_at is not None:
+        return child
+    child.archived_at = timezone.now()
+    child.archived_by = actor
+    child.is_active = False
+    if reason.strip():
+        child.status_reason = reason.strip()[:255]
+    child.save(
+        update_fields=["archived_at", "archived_by", "is_active", "status_reason", "updated_at"]
+    )
+    return child
+
+
+@transaction.atomic
+def restore_child(*, child: Child) -> Child:
+    """Arxivdan qaytaradi — xato arxivlash tuzatilishi kerak."""
+    child.archived_at = None
+    child.archived_by = None
+    child.is_active = True
+    child.save(update_fields=["archived_at", "archived_by", "is_active", "updated_at"])
+    return child
+
+
+def deletion_blockers(child: Child) -> list[str]:
+    """
+    Bolani QATTIQ o'chirishga to'sqinlik qiladigan sabablar (Q6).
+
+    Bo'sh ro'yxat — o'chirish mumkin. Istisno tor: moliyaviy yozuvi
+    yo'q va 24 soat ichida yaratilgan yozuv. Ya'ni "ism noto'g'ri
+    yozildi, qaytadan kiritaman" degan holat — va faqat o'sha.
+    """
+    from apps.attendance.models import AttendanceRecord
+    from apps.finance.models import ChildLedgerEntry, Invoice, Payment
+
+    blockers: list[str] = []
+    if Invoice.objects.filter(child=child).exists():
+        blockers.append(gettext("hisob-faktura"))
+    if Payment.objects.filter(child=child).exists():
+        blockers.append(gettext("to'lov"))
+    if ChildLedgerEntry.objects.filter(child=child).exists():
+        blockers.append(gettext("moliyaviy yozuv"))
+    if AttendanceRecord.objects.filter(child=child).exists():
+        blockers.append(gettext("davomat"))
+    if timezone.now() - child.created_at > DELETE_WINDOW:
+        blockers.append(gettext("24 soatdan eski yozuv"))
+    return blockers
+
+
+@transaction.atomic
+def delete_child(*, child: Child, actor: Any = None) -> None:
+    """
+    Xato kiritilgan yozuvni butunlay o'chiradi (Q6).
+
+    Bu YAGONA qattiq o'chirish yo'li va u ataylab tor: bolalar
+    o'chirilmaydi, arxivlanadi. Lekin "TEST Sinov" deb yozib yuborilgan
+    yozuvni abadiy ro'yxatda saqlash ham to'g'ri emas.
+
+    Audit izi qoladi — chaqiruvchi `audit.record()` ni yozadi.
+    """
+    blockers = deletion_blockers(child)
+    if blockers:
+        raise BusinessRuleViolation(
+            gettext(
+                "Bu bolani o'chirib bo'lmaydi ({reasons}). Uni ARXIVGA oling — "
+                "ma'lumot saqlanadi, ro'yxatlardan chiqadi."
+            ).format(reasons=", ".join(blockers))
+        )
+    child.guardian_links.all().delete()
+    child.enrollments.all().delete()
+    child.delete()

@@ -8,7 +8,14 @@ from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.branches.models import Branch
-from apps.children.models import Child, ChildGuardian, Enrollment, Group, Guardian
+from apps.children.models import (
+    Child,
+    ChildGuardian,
+    Enrollment,
+    EnrollmentStatus,
+    Group,
+    Guardian,
+)
 from apps.core.fields import TenantPrimaryKeyRelatedField
 from apps.core.serializer_fields import PhoneField
 from apps.finance.models import TariffPlan
@@ -20,6 +27,7 @@ __all__ = [
     "GroupSerializer",
     "EnrollmentSerializer",
     "ChildGuardianSerializer",
+    "ChildStatusSerializer",
 ]
 
 
@@ -146,8 +154,47 @@ class ChildWriteSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
     def validate_date_of_birth(self, value: Any) -> Any:
+        """
+        Sana o'tgan va yosh oralig'ida bo'lishi kerak (PLAN 2.4).
+
+        Kelajakdagi sana allaqachon rad etilardi, 30 yoshli "bola" esa
+        yo'q edi. Bu shunchaki chiroysiz ma'lumot emas: yosh guruhga
+        biriktirishda va hisobotlarda ishlatiladi.
+
+        Chegara sozlamada: bog'chalar turlicha — ba'zilari 2 yoshdan,
+        ba'zilari 7 yoshgacha oladi.
+        """
         from django.utils import timezone
 
-        if value >= timezone.localdate():
+        from apps.settings_app.services import get_setting
+
+        today = timezone.localdate()
+        if value >= today:
             raise serializers.ValidationError(gettext("Tug'ilgan sana o'tgan bo'lishi kerak."))
+
+        min_age = int(get_setting(key="children.min_age") or 0)
+        max_age = int(get_setting(key="children.max_age") or 8)
+        years = (today - value).days / 365.25
+        # Yuqori chegaraga bir yil qo'shiladi: "8 yoshgacha" degani
+        # 8 yoshli bola hali bog'chada bo'lishi mumkin degani.
+        if not (min_age <= years <= max_age + 1):
+            raise serializers.ValidationError(
+                gettext("Bola yoshi {min}–{max} oralig'ida bo'lishi kerak.").format(
+                    min=min_age, max=max_age
+                )
+            )
         return value
+
+
+class ChildStatusSerializer(serializers.Serializer):
+    """
+    Holat o'zgarishi — sana va sabab MAJBURIY (Q5).
+
+    Ikkalasi ixtiyoriy bo'lsa, ular to'ldirilmasdi va keyin
+    "qachondan buyon?" degan savol javobsiz qolardi. Bu savol esa har
+    doim pul bilan birga keladi.
+    """
+
+    enrollment_status = serializers.ChoiceField(choices=EnrollmentStatus.choices)
+    status_changed_on = serializers.DateField()
+    status_reason = serializers.CharField(max_length=255, trim_whitespace=True)

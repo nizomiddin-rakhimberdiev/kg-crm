@@ -999,3 +999,33 @@ msgstr "{product} — {quantity} {unit}"
 
 msgid "Telefon raqamini {hint} formatida kiriting."
 msgstr "Введите номер телефона в формате {hint}."
+
+msgid "24 soatdan eski yozuv"
+msgstr "запись старше 24 часов"
+
+msgid "Bola yoshi {min}–{max} oralig'ida bo'lishi kerak."
+msgstr "Возраст ребёнка должен быть от {min} до {max} лет."
+
+msgid "Bu bolani o'chirib bo'lmaydi ({reasons}). Uni ARXIVGA oling — ma'lumot saqlanadi, ro'yxatlardan chiqadi."
+msgstr "Этого ребёнка нельзя удалить ({reasons}). Отправьте его в АРХИВ — данные сохранятся, из списков он исчезнет."
+
+msgid "Holatni o'zgartirish uchun sabab yozing."
+msgstr "Укажите причину смены статуса."
+
+msgid "Noma'lum holat."
+msgstr "Неизвестный статус."
+
+msgid "Sana kelajakda bo'la olmaydi."
+msgstr "Дата не может быть в будущем."
+
+msgid "davomat"
+msgstr "посещаемость"
+
+msgid "hisob-faktura"
+msgstr "счёт"
+
+msgid "moliyaviy yozuv"
+msgstr "финансовая запись"
+
+msgid "to'lov"
+msgstr "платёж"

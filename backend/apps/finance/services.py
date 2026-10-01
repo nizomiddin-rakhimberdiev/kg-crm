@@ -28,7 +28,6 @@ from apps.children.models import (
     Child,
     Enrollment,
     EnrollmentState,
-    EnrollmentStatus,
 )
 from apps.core.exceptions import BusinessRuleViolation
 from apps.finance import balance
@@ -630,14 +629,32 @@ class BillingPreview:
         }
 
 
-def _billing_candidates(*, branch: Any = None) -> Any:
-    """Generatsiyaga tushadigan bolalar — preview va ishning o'zi uchun BIR XIL."""
+def _billing_candidates(*, period_year: int, period_month: int, branch: Any = None) -> list[Child]:
+    """
+    Generatsiyaga tushadigan bolalar — preview va ishning o'zi uchun BIR XIL.
+
+    Ikki qatlam:
+      * baza filtri — arxivlanmagan, faol yozuvlar (Q6);
+      * `children.is_billable_for()` — holat va o'zgarish SANASI (Q5).
+
+    Ikkinchisi kerak, chunki oyning 20-kunida ketgan bolaga o'sha oy
+    uchun hujjat yozilishi kerak: u oyning bir qismida bog'chada
+    bo'lgan. Faqat `enrollment_status` ga qarash buni o'tkazib
+    yuborardi — va qoida ikki joyda ikki xil bo'lib qolardi.
+    """
+    from apps.children.services import is_billable_for
+
     children = Child.objects.filter(
-        is_active=True, enrollment_status=EnrollmentStatus.ACTIVE
+        is_active=True,
+        archived_at__isnull=True,
     ).select_related("tariff", "branch", "organization")
     if branch is not None:
         children = children.filter(branch=branch)
-    return children
+    return [
+        child
+        for child in children
+        if is_billable_for(child, period_year=period_year, period_month=period_month)
+    ]
 
 
 def preview_monthly_invoices(
@@ -661,7 +678,9 @@ def preview_monthly_invoices(
 
     preview = BillingPreview(period=f"{period_year}-{period_month:02d}")
 
-    for child in _billing_candidates(branch=branch):
+    for child in _billing_candidates(
+        period_year=period_year, period_month=period_month, branch=branch
+    ):
         if child.tariff_id is None:
             preview.skipped_no_tariff.append(child.full_name)
             continue
@@ -681,6 +700,8 @@ def preview_monthly_invoices(
         ):
             preview.skipped_next_month.append(child.full_name)
             continue
+
+        assert child.tariff is not None  # yuqoridagi `tariff_id is None` tekshiruvi kafolati
 
         issued = date(period_year, period_month, 1)
         if child.enrolled_on is not None and _is_first_period(child, period_year, period_month):
@@ -743,7 +764,9 @@ def generate_monthly_invoices(
 
     result = BillingRunResult(period=f"{period_year}-{period_month:02d}")
 
-    for child in _billing_candidates(branch=branch):
+    for child in _billing_candidates(
+        period_year=period_year, period_month=period_month, branch=branch
+    ):
         if child.tariff_id is None:
             result.skipped_no_tariff.append(child.full_name)
             continue

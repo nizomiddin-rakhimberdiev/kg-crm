@@ -60,6 +60,29 @@ class Child(BranchScopedModel):
     # Sprint 4 (finance) da to'ldiriladi.
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
+    # --- Holat o'zgarishi (Q5, PLAN 2.1) ---
+    #
+    # Auditda bolani "Chiqib ketgan" holatiga o'tkazganda na sana, na
+    # sabab so'ralardi. Keyin "qachondan buyon?" degan savolga javob
+    # yo'q edi — va bu savol har safar pul bilan birga keladi:
+    # o'sha sanadan keyin hisob-faktura yozilmasligi kerak.
+    status_changed_on = models.DateField(null=True, blank=True)
+    status_reason = models.CharField(max_length=255, blank=True)
+
+    # --- Arxiv (Q6) ---
+    #
+    # `is_active` ikki ma'noni ko'tarib yurardi: "o'chirilgan" va
+    # "arxivlangan". Ularni ajratib bo'lmasdi, ya'ni "kim, qachon,
+    # nega arxivladi?" degan savol javobsiz qolardi.
+    archived_at = models.DateTimeField(null=True, blank=True)
+    archived_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="children_archived",
+        null=True,
+        blank=True,
+    )
+
     class Meta:
         db_table = "child"
         ordering = ["last_name", "first_name"]
