@@ -182,8 +182,11 @@ export interface GuardianLink {
     full_name: string
     phone: string
     email: string
-    /** SMS tili; bo'sh — bog'chaning sukut tili (PLAN 3.4). */
+    /** Xabar tili; bo'sh — bog'chaning sukut tili (PLAN 3.4). */
     language: string
+    /** Telegram botga ulanganmi (PLAN 3.7). */
+    telegram_linked: boolean
+    telegram_linked_at: string | null
   }
   relation: string
   is_primary: boolean
@@ -575,11 +578,29 @@ export interface TemplatePreview extends SmsLength {
   rendered: string
 }
 
-/** Bildirishnomalar sahifasining bosh holati (PLAN 3.2, 3.3). */
+export interface TelegramLink {
+  /** Bo'sh — bot sozlanmagan; ekran havola emas, izoh ko'rsatadi. */
+  url: string
+  bot_username: string
+  linked: boolean
+}
+
+/** Bildirishnomalar sahifasining bosh holati (PLAN 3.2, 3.3, 3.7). */
 export interface SmsStatus {
-  /** Haqiqiy provayder ulanmagan — hech bir xabar ota-onaga bormaydi. */
+  /** Ishlatiladigan kanal: `telegram` (sukut) yoki `sms`. */
+  default_channel: 'telegram' | 'sms'
+  /** Shu kanalda haqiqiy provayder ulanmagan — xabar ota-onaga bormaydi. */
   test_mode: boolean
   provider: string
+  channels: {
+    telegram: {
+      configured: boolean
+      bot_username: string
+      /** Nechta ota-ona botga ulangan — asosiy kanalning qamrovi. */
+      reach: { linked: number; total: number }
+    }
+    sms: { configured: boolean; provider: string }
+  }
   sms_enabled: boolean
   send_from_hour: number
   send_to_hour: number
@@ -593,6 +614,8 @@ export interface SmsStatus {
     failed: number
     queued: number
     test_mode: number
+    telegram: number
+    sms: number
     parts: number
     price_per_part: string
     /** `null` — narx kiritilmagan; "0 so'm" deb ko'rsatish yolg'on bo'lardi. */
@@ -611,6 +634,8 @@ export interface ReminderPreview {
 export interface Notification {
   id: string
   template: string | null
+  /** Xabar turi — shablon o'chirilgan bo'lsa ham ko'rinadi (PLAN 3.7). */
+  template_code: string
   guardian: string | null
   guardian_name: string | null
   channel: 'sms' | 'telegram' | 'email'

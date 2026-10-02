@@ -362,7 +362,6 @@ export const messages: Record<string, string> = {
   Noyabr: 'November',
   "O'chirib bo'lmadi.": 'Couldn’t delete.',
   "O'chirildi": 'Deleted',
-  "O'chirilsa hech qanday SMS yuborilmaydi.": 'When off, no SMS is sent.',
   "O'chirish": 'Delete',
   "O'g'il bola": 'Boy',
   "O'tkaziladi": 'Transferred',
@@ -477,7 +476,6 @@ export const messages: Record<string, string> = {
   'Rol:': 'Role:',
   'Rollar va ruxsatlar': 'Roles and permissions',
   "Rolni o'chirish": 'Delete role',
-  'SMS xabarnomalar': 'SMS notifications',
   'STIR / INN': 'Tax ID (INN)',
   Sabab: 'Reason',
   'Sabab: {reason}': 'Reason: {reason}',
@@ -879,8 +877,6 @@ export const messages: Record<string, string> = {
   Ruscha: 'Russian',
   'SMS bo‘laklari': 'SMS parts',
   'SMS test rejimida': 'SMS is in test mode',
-  'SMS yuborish o‘chirilgan — Sozlamalarda yoqishingiz mumkin.':
-    'SMS sending is off — you can turn it on in Settings.',
   Saralash: 'Sort',
   'Shablon qo‘shish': 'Add a template',
   'Shablon tili': 'Template language',
@@ -922,6 +918,38 @@ export const messages: Record<string, string> = {
   'Bitta SMS bo‘lagi narxi': 'Price per SMS part',
   'Taxminiy xarajatni hisoblash uchun — provayder shartnomasidagi narx.':
     'Used to estimate cost — the price from your provider contract.',
-  'SMS tili': 'SMS language',
-  'SMS tili: bog‘cha tili': 'SMS language: kindergarten default',
+
+  // --- Telegram kanali (PLAN 3.7) ---
+  'Asosiy kanal': 'Primary channel',
+  Kanal: 'Channel',
+  Nusxalandi: 'Copied',
+  Nusxalash: 'Copy',
+  "O'chirilsa hech qanday xabar yuborilmaydi — na Telegram, na SMS.":
+    'When off, nothing is sent — neither Telegram nor SMS.',
+  SMS: 'SMS',
+  'Shu havolani ota-onaga yuboring — u botni ochib, xabarlarga ulanadi.':
+    'Send this link to the parent — they open the bot and get connected.',
+  'Telegram bepul; SMS har xabar uchun pul turadi va shlyuz shartnomasini talab qiladi.':
+    'Telegram is free; SMS costs money per message and needs a gateway contract.',
+  'Telegram bot sozlanmagan — administratorga murojaat qiling.':
+    'The Telegram bot is not configured — contact your administrator.',
+  'Telegram bot ulanmagan': 'The Telegram bot is not connected',
+  'Telegram ulangan': 'Telegram connected',
+  'Telegram ulanmagan': 'Telegram not connected',
+  Telegram: 'Telegram',
+  'Telegram: {telegram} · SMS: {sms}': 'Telegram: {telegram} · SMS: {sms}',
+  'Ulash havolasi': 'Connection link',
+  Uzish: 'Disconnect',
+  'Xabar tili': 'Message language',
+  'Xabar tili: bog‘cha tili': 'Message language: kindergarten default',
+  'Xabar yuborish o‘chirilgan — Sozlamalarda yoqishingiz mumkin.':
+    'Message sending is off — you can turn it on in Settings.',
+  'Xabarlar jurnalga yoziladi, lekin ota-onalarga YUBORILMAYDI. Botni ulash uchun administratorga murojaat qiling.':
+    'Messages are written to the log but are NOT sent to parents. Contact your administrator to connect the bot.',
+  Xabarnomalar: 'Notifications',
+  'Yangi havola — eskisi ishlamay qoladi': 'New link — the old one stops working',
+  bepul: 'free',
+  '{characters} belgi': '{characters} characters',
+  '{linked} ota-onadan {total} tasi Telegramga ulangan. Qolgan {missing} tasi xabar olmaydi — bola kartasidan ulash havolasini yuboring.':
+    "{linked} of {total} parents are connected to Telegram. The other {missing} get nothing — send the link from the child's card.",
 }

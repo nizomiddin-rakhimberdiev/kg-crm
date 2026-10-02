@@ -1,5 +1,5 @@
 import { api, httpClient } from '@/lib/api/client'
-import type { Child, Envelope, Group, ImportReport } from '@/lib/api/types'
+import type { Child, Envelope, Group, ImportReport, TelegramLink } from '@/lib/api/types'
 
 /** Guruh maydonlari — yosh oralig'i ixtiyoriy (`null` = cheklanmagan). */
 export interface GroupInput {
@@ -81,7 +81,7 @@ export const childrenApi = {
       phone: string
       relation: string
       is_primary?: boolean
-      /** SMS tili; bo'sh — bog'chaning sukut tili (PLAN 3.4). */
+      /** Xabar tili; bo'sh — bog'chaning sukut tili (PLAN 3.4). */
       language?: string
     },
   ) => api.post(`/children/${childId}/guardians`, payload),
@@ -102,6 +102,19 @@ export const childrenApi = {
     })
     return response.data.data
   },
+}
+
+export const guardiansApi = {
+  /**
+   * Ota-onaga beriladigan Telegram havolasi (PLAN 3.7).
+   *
+   * `rotate` eski havolani darhol ishlamas qiladi — havola oilaviy
+   * guruhga tashlanishi mumkin, xabarlar ichida esa bolaning ismi
+   * bilan qarz summasi ketadi.
+   */
+  telegramLink: (id: string, rotate = false) =>
+    api.post<TelegramLink>(`/guardians/${id}/telegram-link`, { rotate }),
+  telegramUnlink: (id: string) => api.post(`/guardians/${id}/telegram-unlink`),
 }
 
 export const groupsApi = {

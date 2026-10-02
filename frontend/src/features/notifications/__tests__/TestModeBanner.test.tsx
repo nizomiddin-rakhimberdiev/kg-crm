@@ -21,8 +21,13 @@ vi.mock('@/app/providers/AuthProvider', () => ({
 }))
 
 const status = (patch: Partial<SmsStatus> = {}): SmsStatus => ({
+  default_channel: 'telegram',
   test_mode: true,
   provider: 'console',
+  channels: {
+    telegram: { configured: false, bot_username: '', reach: { linked: 0, total: 0 } },
+    sms: { configured: false, provider: 'console' },
+  },
   sms_enabled: true,
   send_from_hour: 8,
   send_to_hour: 21,
@@ -36,6 +41,8 @@ const status = (patch: Partial<SmsStatus> = {}): SmsStatus => ({
     failed: 0,
     queued: 0,
     test_mode: 0,
+    telegram: 0,
+    sms: 0,
     parts: 0,
     price_per_part: '0',
     estimated_cost: null,
@@ -53,21 +60,50 @@ const show = () => {
 }
 
 describe('TestModeBanner', () => {
-  it('provayder ulanmagan bo‘lsa ogohlantiradi', async () => {
+  it('Telegram bot ulanmagan bo‘lsa ogohlantiradi', async () => {
     vi.mocked(notificationsApi.status).mockResolvedValue(status())
     show()
-    await waitFor(() => expect(screen.getByText('SMS test rejimida')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Telegram bot ulanmagan')).toBeInTheDocument())
     expect(screen.getByText(/YUBORILMAYDI/)).toBeInTheDocument()
   })
 
-  it('haqiqiy provayder ulangach banner yo‘qoladi', async () => {
-    vi.mocked(notificationsApi.status).mockResolvedValue(status({ test_mode: false }))
+  it('asosiy kanal SMS bo‘lsa, ogohlantirish SMS haqida bo‘ladi', async () => {
+    vi.mocked(notificationsApi.status).mockResolvedValue(status({ default_channel: 'sms' }))
+    show()
+    await waitFor(() => expect(screen.getByText('SMS test rejimida')).toBeInTheDocument())
+  })
+
+  it('bot ulangan va hamma ota-ona ulangan bo‘lsa banner yo‘qoladi', async () => {
+    vi.mocked(notificationsApi.status).mockResolvedValue(
+      status({
+        test_mode: false,
+        channels: {
+          telegram: { configured: true, bot_username: 'radix_bot', reach: { linked: 4, total: 4 } },
+          sms: { configured: false, provider: 'console' },
+        },
+      }),
+    )
     const { container } = show()
     await waitFor(() => expect(notificationsApi.status).toHaveBeenCalled())
     expect(container.textContent).toBe('')
   })
 
-  it('SMS butunlay o‘chirilgan bo‘lsa buni ham aytadi', async () => {
+  it('bot ishlaydi, lekin ota-onalar ulanmagan — bu ham aytiladi', async () => {
+    // Natija bir xil: xabar hech kimga bormaydi.
+    vi.mocked(notificationsApi.status).mockResolvedValue(
+      status({
+        test_mode: false,
+        channels: {
+          telegram: { configured: true, bot_username: 'radix_bot', reach: { linked: 1, total: 4 } },
+          sms: { configured: false, provider: 'console' },
+        },
+      }),
+    )
+    show()
+    await waitFor(() => expect(screen.getByText(/Qolgan 3 tasi/)).toBeInTheDocument())
+  })
+
+  it('xabar yuborish butunlay o‘chirilgan bo‘lsa buni ham aytadi', async () => {
     vi.mocked(notificationsApi.status).mockResolvedValue(
       status({ sms_enabled: false, test_mode: false }),
     )

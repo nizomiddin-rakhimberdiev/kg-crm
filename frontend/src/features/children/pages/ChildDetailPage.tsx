@@ -20,6 +20,7 @@ import { ChildBalanceCard } from '@/features/children/components/ChildBalanceCar
 import { ChildEditDialog } from '@/features/children/components/ChildEditDialog'
 import { ChildStatusDialog } from '@/features/children/components/ChildStatusDialog'
 import { ChildTabs } from '@/features/children/components/ChildTabs'
+import { TelegramLinkButton } from '@/features/children/components/TelegramLinkButton'
 import { GroupOptions } from '@/features/children/components/GroupOptions'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate } from '@/lib/utils'
@@ -363,6 +364,16 @@ export default function ChildDetailPage() {
                     <Phone className="h-3 w-3" />
                     {link.guardian.phone}
                   </p>
+                  {/* Asosiy kanal — Telegram (ADR-23): ulanmagan
+                      ota-ona hech qanday xabar olmaydi, shuning uchun
+                      bu holat bola kartasida ko'rinib turadi. */}
+                  <div className="mt-1.5">
+                    <TelegramLinkButton
+                      guardianId={link.guardian.id}
+                      linked={link.guardian.telegram_linked}
+                      onChange={invalidate}
+                    />
+                  </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   <span className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500">
@@ -438,12 +449,12 @@ export default function ChildDetailPage() {
                   ))}
                 </select>
                 <select
-                  aria-label={t('SMS tili')}
+                  aria-label={t('Xabar tili')}
                   value={guardianForm.language}
                   onChange={(e) => setGuardianForm((p) => ({ ...p, language: e.target.value }))}
                   className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
                 >
-                  <option value="">{t('SMS tili: bog‘cha tili')}</option>
+                  <option value="">{t('Xabar tili: bog‘cha tili')}</option>
                   <option value="uz">{t("O'zbekcha")}</option>
                   <option value="ru">{t('Ruscha')}</option>
                 </select>

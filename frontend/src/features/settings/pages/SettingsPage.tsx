@@ -42,8 +42,12 @@ const META: Record<string, SettingMeta> = {
     help: t('Qarzdorlarga eslatma shu kundan boshlab yuboriladi.'),
   },
   'notifications.sms_enabled': {
-    label: t('SMS xabarnomalar'),
-    help: t("O'chirilsa hech qanday SMS yuborilmaydi."),
+    label: t('Xabarnomalar'),
+    help: t("O'chirilsa hech qanday xabar yuborilmaydi — na Telegram, na SMS."),
+  },
+  'notifications.default_channel': {
+    label: t('Asosiy kanal'),
+    help: t('Telegram bepul; SMS har xabar uchun pul turadi va shlyuz shartnomasini talab qiladi.'),
   },
   'notifications.payment_receipt': {
     label: t("To'lov haqida SMS"),
@@ -114,6 +118,22 @@ export default function SettingsPage() {
   const renderControl = (key: string, value: SettingValue) => {
     // Til — ro'yxatdan tanlanadi. Erkin matn maydoni bo'lsa, xato yozilgan
     // kod ("рус") jimgina ishlamay qo'yardi.
+    // Asosiy kanal — ro'yxatdan. Erkin matn bo'lsa, xato yozilgan
+    // qiymat ("telegramm") jimgina SMS'ga qaytarardi.
+    if (key === 'notifications.default_channel') {
+      return (
+        <select
+          value={String(value ?? 'telegram')}
+          disabled={!editable}
+          onChange={(event) => save.mutate({ key, value: event.target.value })}
+          className="rounded-lg border border-tosh-200 px-2.5 py-1.5 text-sm outline-none focus:border-nihol-500 disabled:bg-tosh-50"
+        >
+          <option value="telegram">{t('Telegram')}</option>
+          <option value="sms">{t('SMS')}</option>
+        </select>
+      )
+    }
+
     if (key === 'general.default_language') {
       return (
         <select

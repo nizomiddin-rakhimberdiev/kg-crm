@@ -26,6 +26,12 @@ export function SmsUsageCard({ status }: { status: SmsStatus }) {
           <MessageSquare className="h-4 w-4 text-nihol-600" />
           {t('Bu oy')}
         </h2>
+        <p className="text-xs text-tosh-500">
+          {t('Telegram: {telegram} · SMS: {sms}', {
+            telegram: number(usage.telegram),
+            sms: number(usage.sms),
+          })}
+        </p>
         <p className="flex items-center gap-1.5 text-xs text-tosh-500">
           <Clock className="h-3.5 w-3.5" />
           {t('Yuborish vaqti: {from}:00 – {to}:00', {
@@ -51,7 +57,10 @@ export function SmsUsageCard({ status }: { status: SmsStatus }) {
         <div>
           <dt className="text-xs text-tosh-500">{t('Taxminiy xarajat')}</dt>
           <dd className="num text-lg font-semibold text-tosh-900">
-            {usage.estimated_cost ? (
+            {/* Faqat SMS pul turadi — Telegram bepul (ADR-23). */}
+            {usage.sms === 0 ? (
+              <span className="text-sm font-normal text-nihol-700">{t('bepul')}</span>
+            ) : usage.estimated_cost ? (
               money(usage.estimated_cost)
             ) : (
               <span className="text-sm font-normal text-tosh-400">{t('narx kiritilmagan')}</span>

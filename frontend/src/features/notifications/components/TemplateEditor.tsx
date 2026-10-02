@@ -30,6 +30,18 @@ const LANGUAGES: Array<[NotificationTemplate['language'], string]> = [
   ['ru', t('Ruscha')],
 ]
 
+/**
+ * Kanal ko'rinishlari (PLAN 3.7).
+ *
+ * Matnlar ataylab bir xil emas: SMS'da har belgi pul turadi, Telegram
+ * esa bepul va uzunlik bilan cheklanmagan — shuning uchun ularni
+ * alohida tahrirlash kerak.
+ */
+const CHANNELS: Array<[NotificationTemplate['channel'], string]> = [
+  ['telegram', t('Telegram')],
+  ['sms', t('SMS')],
+]
+
 const CODE_LABEL: Record<string, string> = {
   payment_received: t("To'lov qabul qilindi"),
   debt_reminder: t('Qarzdorlik eslatmasi'),
@@ -69,8 +81,17 @@ function VariableButtons({
   )
 }
 
-function LengthHint({ body }: { body: string }) {
+function LengthHint({ body, channel }: { body: string; channel: string }) {
   const measure = useMemo(() => measureSms(smsSafe(body)), [body])
+  // Telegramda uzunlik bepul, shuning uchun bo'lak hisoblagichi
+  // ma’nosiz — u faqat chalgʻitardi.
+  if (channel !== 'sms') {
+    return (
+      <p className="text-xs text-tosh-500">
+        {t('{characters} belgi', { characters: [...body].length })}
+      </p>
+    )
+  }
   const tight = measure.parts > 1
   return (
     <p className={cn('text-xs', tight ? 'text-orik-700' : 'text-tosh-500')}>
@@ -88,11 +109,13 @@ function LengthHint({ body }: { body: string }) {
 
 function OneTemplate({
   code,
+  channel,
   language,
   template,
   siblingBody,
 }: {
   code: string
+  channel: NotificationTemplate['channel']
   language: NotificationTemplate['language']
   template: NotificationTemplate | undefined
   siblingBody: string
@@ -121,7 +144,7 @@ function OneTemplate({
     mutationFn: () =>
       template
         ? templatesApi.update(template.id, { body })
-        : templatesApi.create({ code, channel: 'sms', language, body }),
+        : templatesApi.create({ code, channel, language, body }),
     onSuccess: () => {
       setError(null)
       refresh()
@@ -180,7 +203,7 @@ function OneTemplate({
         className="w-full rounded-lg border border-tosh-200 px-3 py-2 text-sm outline-none focus:border-nihol-500"
       />
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <LengthHint body={body} />
+        <LengthHint body={body} channel={channel} />
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -221,16 +244,38 @@ export function TemplateEditor({ templates }: { templates: NotificationTemplate[
   const codes = useMemo(() => {
     const seen: string[] = []
     for (const template of templates) {
-      if (template.channel === 'sms' && !seen.includes(template.code)) seen.push(template.code)
+      if (!seen.includes(template.code)) seen.push(template.code)
     }
     return seen
   }, [templates])
   const [language, setLanguage] = useState<NotificationTemplate['language']>('uz')
+  const [channel, setChannel] = useState<NotificationTemplate['channel']>('telegram')
 
   return (
     <section className="rounded-xl border border-tosh-200 bg-white p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-tosh-900">{t('Xabar shablonlari')}</h2>
+        <div
+          role="tablist"
+          aria-label={t('Kanal')}
+          className="flex items-center gap-1 rounded-lg bg-tosh-50 p-1"
+        >
+          {CHANNELS.map(([code, label]) => (
+            <button
+              key={code}
+              type="button"
+              role="tab"
+              aria-selected={channel === code}
+              onClick={() => setChannel(code)}
+              className={cn(
+                'rounded-md px-2.5 py-1 text-xs font-medium',
+                channel === code ? 'bg-white text-tosh-900 shadow-sm' : 'text-tosh-500',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div
           role="tablist"
           aria-label={t('Shablon tili')}
@@ -260,7 +305,7 @@ export function TemplateEditor({ templates }: { templates: NotificationTemplate[
 
       <div className="mt-4 space-y-5">
         {codes.map((code) => {
-          const forCode = templates.filter((item) => item.code === code && item.channel === 'sms')
+          const forCode = templates.filter((item) => item.code === code && item.channel === channel)
           const current = forCode.find((item) => item.language === language)
           const sibling = forCode.find((item) => item.language !== language)
           return (
@@ -270,8 +315,9 @@ export function TemplateEditor({ templates }: { templates: NotificationTemplate[
             >
               <p className="text-xs font-medium text-tosh-600">{CODE_LABEL[code] ?? code}</p>
               <OneTemplate
-                key={`${code}-${language}`}
+                key={`${code}-${channel}-${language}`}
                 code={code}
+                channel={channel}
                 language={language}
                 template={current}
                 siblingBody={sibling?.body ?? ''}
