@@ -434,6 +434,9 @@ Matches [02 §21](./02_Software_Architecture.md):
 | Zod schemas | `<entity>.schema.ts`; export schema + inferred type. |
 | Types | No `any`; API types derive from Zod or `types/api.ts`. |
 | Styling | Tailwind classes via `cn()` helper; no inline styles except dynamic values. |
+| Formatting | **One home: `lib/format.ts`** — `money`, `som`, `number`, `signed`, `compact`, `quantity`, `percent`, and every date helper. Never `new Intl.NumberFormat(…)` in a component, never a local `money()`; `lib/utils.ts` keeps the old names as re-exports for existing call sites. |
+| Dates in forms | `components/ui/DateInput` (`dd.mm.yyyy`), never a bare `input[type=date]`. The value in and out is ISO `yyyy-mm-dd`. |
+| Save feedback | `useToast()` from `app/providers/ToastProvider` — a save that changes data says so. |
 | Strings | Uzbek source text wrapped in `t('…')` from `lib/i18n` (§17); no bare UI text, no dynamic `t(variable)`. |
 | Env | Access only through `config/env.ts` (typed). |
 | Linting | ESLint + Prettier enforced in CI ([06](./06_Development_Roadmap.md)). |
@@ -451,11 +454,41 @@ The CRM shell is trilingual ([02 ADR-16](./02_Software_Architecture.md)). The me
 | Catalogs | `lib/i18n/messages/{ru,en}.ts` | `Record<sourceString, translation>`, sorted by key. `uz` has no catalog. Only the active one is loaded. |
 | Switcher | `components/layout/LanguageSwitch` | Topbar (`sm+`), mobile drawer footer, login page. |
 | Backend | `Accept-Language: <locale>` on every request (`lib/api/client.ts`) | Error messages, validation and choice labels come back translated (Django `gettext`). |
-| Dates | `lib/utils.ts` `MONTHS`, `formatDateLong`; `features/reports/period.ts` | Month names per locale; numeric dates (`14.09.2026`) are identical in all three. |
+| Dates | `lib/format.ts` `MONTHS`, `formatDateLong`; `features/reports/period.ts` | Month names per locale; numeric dates (`14.09.2026`) are identical in all three (Q12). |
+| Apostrophes | `lib/i18n/__tests__/apostrophes.test.ts` | Uzbek source text uses **U+02BB (ʻ)** for `oʻ`/`gʻ` and **U+02BC (ʼ)** for the glottal stop (Q11). ASCII `'` in a `t()` source or a catalog key is a build failure: the difference is invisible on screen but makes it a *different string*, so the lookup silently misses and the Russian app shows Uzbek. User data is never touched, and SMS bodies go the other way (`sms_safe` swaps them back to ASCII — `ʻ` is not in GSM-7 and doubles the price). |
 | Intelligence | `features/intelligence/content.ts` `getCopy()` | Its own uz/ru/en copy objects, selected by the app locale (key-parity test). |
 | Guarantee | `lib/i18n/__tests__/catalog.test.ts` | Extracts every `t('…')` literal from `src/` and fails when a source is missing from `ru`/`en`, when a catalog has stale keys, or when placeholders differ. |
 
 **Out of scope on purpose:** the public site (`features/landing`, own content layer + prerender per locale), the vendor console (`features/platform`, Uzbek only), and tenant data (role names, categories, message templates — the customer's own words). When adding UI text: write it in Uzbek, wrap it in `t()`, run the tests, add the `ru`/`en` lines the failing test lists.
+
+---
+
+## 17.1 Numbers, money and dates (Q12)
+
+| Rule | Detail |
+|------|--------|
+| Grouping | uz/ru use a **non-breaking space** (`1 500 000`), en uses a comma (`1,500,000`). Done by hand, not by `Intl`: the engine's output differs between browsers and Node versions, and a figure that renders one way on the server and another on screen produces "I copied it and it came out different". |
+| Currency | `CURRENCY`: uz `soʻm`, ru `сум`, en `UZS`. |
+| Dates | `dd.mm.yyyy` in **all three** languages. |
+| Missing value | An em dash, never `0` — in a report "0" and "no data" are different facts, and mixing them shows up in the worst place. |
+| Money type | Display only. Arithmetic stays on the backend in `Decimal` ([CLAUDE.md invariant 3](../CLAUDE.md)). |
+
+> **Why a dedicated `DateInput`.** A native `input[type=date]` renders the date in the *browser's* locale: one member of staff sees `02.10.2026`, another `10/02/2026` — and the second reads October 2nd as February 10th. On a financial document that is not a cheap mistake: an overdue invoice looks like one that is not due yet. So the display is ours and the calendar stays native (rewriting it breaks keyboard and screen-reader support, and the browser does it well). An impossible date (`31.02.2026`) is refused rather than silently rolled forward, which is what `new Date()` does.
+
+---
+
+## 17.2 Accessibility floor (PLAN 4.8)
+
+These four are guarded by `src/__tests__/a11y.test.ts`, because none of them breaks a feature — they just quietly make the product worse for some people, and they come back if nothing watches.
+
+| Rule | Why |
+|------|-----|
+| **No text below 12px** | A kindergarten director is often 40+ and looks at the screen at arm's length. The public site's miniature mock screens are exempt: there the small type is part of an *illustration*, not text to read. |
+| **An icon button carries `aria-label`** (as well as `title`) | `title` is a mouse tooltip; the reliable accessible name is `aria-label`. |
+| **A `placeholder` is not a label** | It disappears as soon as someone types, so a filled-in form stops saying what its fields are. Fields therefore have a `<label>` or an `aria-label`. |
+| **Visible focus** | `outline-none` appears in ~99 places and removes the browser's focus ring; a `focus:border-…` colour change is not enough for someone working by keyboard. A global `:focus-visible` ring (not `:focus` — no ring on mouse clicks) answers "where am I now?" in an eight-field form. |
+
+The payment modal is keyboard-operable end to end: **Enter** accepts, **Esc** closes. A cashier works at the keyboard all day, and reaching for the mouse costs a few seconds on every payment, hundreds of times a day. Every other button inside it is `type="button"` — otherwise picking a payment method would submit the payment.
 
 ---
 
@@ -532,4 +565,6 @@ Assets live in `public/brand/`; the favicon, the PWA manifest icons and the shar
 - Endpoints, permissions, and payloads consumed here: [04_Backend_API_Specification](./04_Backend_API_Specification.md).
 - Build order: [06_Development_Roadmap](./06_Development_Roadmap.md).
 
-*End of Frontend Architecture v1.4 — organization-scoped query cache, read-only mode, `billing`/`branches`/`onboarding` features; responsive shell (mobile drawer), server pagination, `/staff` tabs, report period picker; trilingual shell (§17) and public site (`/uz` `/ru` `/en`); Radix brand system (§18).*
+*End of Frontend Architecture v1.5 — formatting in one home (§17.1), `DateInput`, Uzbek apostrophes (Q11), accessibility floor (§17.2), sectioned navigation, kindergarten logo.*
+
+*Previously v1.4 — organization-scoped query cache, read-only mode, `billing`/`branches`/`onboarding` features; responsive shell (mobile drawer), server pagination, `/staff` tabs, report period picker; trilingual shell (§17) and public site (`/uz` `/ru` `/en`); Radix brand system (§18).*

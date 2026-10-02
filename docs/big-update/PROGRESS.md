@@ -415,3 +415,96 @@ shabloni qo'shilishini ko'rsatdi va hech narsa yozmadi.
 
 4-bosqich: UI/UX, dizayn, tarjima. Egasining "davom et" signali
 kutilmoqda.
+
+---
+
+## 2026-10-02 — Bosqich 4 bajarildi
+
+**Branch:** `big-update/phase-4` · **Commitlar:** `a19f82c`, `c62abae`,
+`a3005f9`, `1c089c1`, `d325d7c`, `799353b`, `88b17c7`, `69ef1b3`,
+`5f38a6e`, `5e09d9d` (+ shu yozuv)
+
+### Nima tuzatildi
+
+| Band | Natija |
+|---|---|
+| 4.1 Formatlash | `lib/format.ts` — yagona uy; guruhlash Q12 bo'yicha; `DateInput` (dd.mm.yyyy); apostroflar Q11 bo'yicha |
+| 4.2 Tarjima tozaligi | Ish kunlari katakchalari, 9 nomsiz sozlamaga nom, eksport fayl nomi tilda, CI darvozasi |
+| 4.3 Jargon | ledger / qoplar kesimi / schyot-faktura / Spravka / Zayavka / past_due / "TARBIYACHI" |
+| 4.4 Audit jurnali | UUID o'rniga nom (bir so'rovda), maydon nomlari tarjimada, "enrollment" → "Guruhga biriktirish" |
+| 4.5 Yon menyu | Bolalar · Moliya · Xodimlar · Ombor · Tizim |
+| 4.6 Brend | Bog'cha logotipi: yuklash, sarlavha, login, futer |
+| 4.7 Tuzatishlar | Qirqilgan nom, chiqim sanasi, toast, bo'sh holat tugmasi, mobil davomat |
+| 4.8 A11y | 12px minimum, 34 tugma + 20 maydonga nom, ko'rinadigan fokus, Enter/Esc |
+| 4.9 Obuna banneri | Summa, "Qanday to'lash", kunlik yopish, faqat egasi/direktor |
+
+### To'rtta qaror, sababi bilan
+
+**Formatlash bitta uyga yig'ildi.** O'n yettita `money()` nusxasi bir-
+biridan farq qilardi: biri `Math.round`, biri yo'q; `lib/utils.ts`
+`en-US` vergul bilan formatlardi, sahifalar `uz-UZ` bo'shliq bilan.
+Ya'ni bitta summa ikki ekranda ikki xil ko'rinishi mumkin edi. Eski
+nomlar (55 import joyi) yangi uyga yo'naltirildi — tegilmadi.
+
+**Guruhlash `Intl` ga qoldirilmadi.** `Intl` ning natijasi brauzer va
+Node versiyasiga bog'liq; server bilan ekran farq qilsa, "nusxa olib
+tekshirdim, boshqacha" degan shikoyat paydo bo'ladi.
+
+**Apostrof normalizatsiyasi 1200+ satrni qamradi va chegara sharti
+bilan qilindi** — faqat harf—apostrof—harf. Shu sababli `'{status}'`
+kabi qo'shtirnoq vazifasidagi apostrofga tegilmadi. Uchta takroriy
+lug'at kaliti ochildi: ular avval faqat apostrof turi bilan farq
+qilardi.
+
+**Landing sahifasining mayda yozuvlari 12px qoidasidan CHETDA.**
+Ulardagi 10–11px matn namunaviy ekran TASVIRINING bir qismi
+(`ui/Mock.tsx`), o'qiladigan matn emas — kattalashtirish tasvirni
+buzadi. Qoida ilovaga tegishli.
+
+### Sifat darvozalari
+
+| Tekshiruv | Natija |
+|---|---|
+| `pytest` | **1155 o'tdi** · 0 xato |
+| `ruff` / `ruff format` / `mypy` | toza (281 fayl) |
+| `tsc` / `eslint` / `vitest` / `build` | toza · **183 test** (0-bosqichda 99 edi) |
+| `check_rls` | 46 jadval |
+| `makemigrations --check` | o'zgarish yo'q |
+
+### Yangi qo'riqchi testlar
+
+Bu to'rtta qoida bir marta tuzatilib qo'riqlanmasa, ertami-kechmi
+qaytadi — ular hech qanday funksiyani buzmaydi:
+
+* `lib/i18n/__tests__/apostrophes` — `t()`, lug'at, landing, valyuta;
+* `__tests__/a11y` — 12px, `aria-label`, placeholder, fokus;
+* `config/__tests__/navigation` — menyu bo'limlarining to'liqligi;
+* `lib/__tests__/format` — Q12 (guruhlash, valyuta, sana, bo'sh qiymat).
+
+Backend tomonda: `apps/core/tests/test_i18n.py` ga ikkita apostrof
+darvozasi qo'shildi (`gettext` manbalari va `.po` msgid'lari).
+
+### Migratsiya repetitsiyasi
+
+`organizations/0002_organization_logo` urug'langan nusxada qo'llandi,
+teskari qaytarildi va qayta qo'llandi: 25 bola, balans 12 919 000 —
+o'zgarmadi; `check_rls` 46 jadval.
+
+### Deployda e'tibor bering
+
+1. **Eksport fayl nomlari o'zgardi**: `revenue-20261002-1030.xlsx` →
+   `tushum_2026-10-02_10-30.xlsx` (so'rov tilida). Eski fayllar
+   o'z nomi bilan qoladi.
+2. **Sana maydonlari endi matn** (`dd.mm.yyyy`) — brauzer kalendari
+   tugma ortida. Mobil brauzerda ham ishlaydi.
+3. **Obuna banneri faqat egasi va direktorga ko'rinadi.** Ilgari
+   matn hammaga ko'rinardi.
+4. **Logotip ixtiyoriy**: yuklanmasa bosh harf ko'rsatiladi, hech
+   qanday bo'sh joy qolmaydi. `media/` papkasiga yozish huquqi kerak
+   (u allaqachon bor — foydalanuvchi rasmlari shu yerda).
+5. Migratsiyadan keyin `check_rls` — har doimgidek.
+
+### Keyingi qadam
+
+5-bosqich: xavfsizlik, landing, huquqiy sahifalar, demo. Egasining
+"davom et" signali kutilmoqda.

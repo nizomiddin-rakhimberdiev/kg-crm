@@ -108,7 +108,7 @@ class OrganizationLogoView(APIView):
         if uploaded is None:
             raise BusinessRuleViolation(gettext("Fayl tanlanmagan."))
         if uploaded.size > self.MAX_BYTES:
-            raise BusinessRuleViolation(gettext("Fayl 2 MB dan kichik bo'lishi kerak."))
+            raise BusinessRuleViolation(gettext("Fayl 2 MB dan kichik boʻlishi kerak."))
         suffix = PurePosixPath(str(uploaded.name)).suffix.lower()
         if suffix not in self.ALLOWED_SUFFIXES:
             raise BusinessRuleViolation(gettext("PNG, JPG, WEBP yoki SVG yuboring."))

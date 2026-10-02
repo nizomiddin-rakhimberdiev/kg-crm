@@ -46,6 +46,20 @@ Bajarilgani: [`docs/big-update/PROGRESS.md`](./docs/big-update/PROGRESS.md)
   ko'rinadi, narx faqat SMS uchun hisoblanadi. SMS adapteri joyida —
   bitta `.env` qatori bilan yoqiladi.
 
+- **4-bosqich — UI/UX, dizayn, tarjima.** Formatlash yagona uyda
+  (`lib/format.ts`): pul, raqam, miqdor, sana — uz/ru bo'linmaydigan
+  bo'shliq, en vergul, valyuta `soʻm`/`сум`/`UZS`. Sana maydonlari
+  `dd.mm.yyyy` (brauzer lokalidan mustaqil). Apostroflar Q11 bo'yicha
+  normallashtirildi (1200+ satr). Ish kunlari katakchalar bilan
+  tanlanadi, har bir sozlamaning odamcha nomi bor, eksport fayllari
+  tilga mos nom oladi. Audit jurnalida UUID o'rniga nomlar va
+  tarjimadagi maydon nomlari. Yon menyu bo'limlarga ajraldi. Bog'cha
+  logotipi: yuklash, sarlavha, login, futer. Obuna banneri summani
+  aytadi, "Qanday to'lash" tugmasi bor, faqat egasi va direktorga
+  ko'rinadi, yopilsa kuniga bir marta qaytadi. A11y: 12px minimum,
+  ikonkali tugmalarga nom, ko'rinadigan fokus, to'lov oynasi
+  klaviatura bilan.
+
 ### O'zgardi
 - Ortiqcha to'lov endi rad etilmaydi — ortig'i avansga aylanadi (Q1).
 - `payroll.income_tax_rate` va `payroll.pension_rate` sukut qiymati
@@ -74,6 +88,12 @@ Bajarilgani: [`docs/big-update/PROGRESS.md`](./docs/big-update/PROGRESS.md)
   "Xabar tili": kanal endi bittadan ko'p.
 - `seed_sms_templates` buyrug'i `seed_templates` deb nomlandi va
   yetishmayotgan HAR QANDAY kanal×til shablonini qo'shadi.
+- **Eksport fayl nomlari** so'rov tilida: `tushum_2026-10-02.xlsx`.
+- **Sana maydonlari** native kalendar o'rniga `dd.mm.yyyy` matn
+  maydoni (kalendar tugma ortida qoladi).
+- **Obuna banneri faqat egasi va direktorga.**
+- Yon menyu bo'limlarga ajraldi; rol nomi hamma joyda bir xil
+  registrda.
 
 ---
 

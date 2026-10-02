@@ -1077,3 +1077,12 @@ msgstr "Telegram не подключён"
 
 msgid "Ota-ona botni bloklagan"
 msgstr "Родитель заблокировал бота"
+
+msgid "Fayl tanlanmagan."
+msgstr "Файл не выбран."
+
+msgid "Fayl 2 MB dan kichik boʻlishi kerak."
+msgstr "Файл должен быть меньше 2 МБ."
+
+msgid "PNG, JPG, WEBP yoki SVG yuboring."
+msgstr "Отправьте PNG, JPG, WEBP или SVG."

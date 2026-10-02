@@ -262,17 +262,23 @@ ulash kodi tashkilotni o'zida olib yuradi (RLS kengaytirilmaydi).
 
 ---
 
-### Bosqich 4 — UI/UX, dizayn, tarjima `[ ]`
+### Bosqich 4 — UI/UX, dizayn, tarjima `[x]`
 
-- [ ] **4.1** Yagona formatlash utillari (Q11, Q12) + dd.mm.yyyy date picker
-- [ ] **4.2** Tarjima tozaligi + CI'da yetishmayotgan kalit
-- [ ] **4.3** Jargonni almashtirish (ro'yxat 4.3 da)
-- [ ] **4.4** Audit jurnalida UUID o'rniga nomlar
-- [ ] **4.5** Yon menyu bo'limlarga ajratish
-- [ ] **4.6** Brend: bog'cha logotipi, login sahifasi, futer
-- [ ] **4.7** Mayda tuzatishlar (qirqilgan nom, sana sukut, toast, bo'sh holat, mobil davomat)
-- [ ] **4.8** A11y: aria-label, label, klaviatura, fokus, kontrast, 12px minimum
-- [ ] **4.9** Obuna banneri
+- [x] **4.1** `lib/format.ts` — yagona uy (Q12) + `DateInput` (dd.mm.yyyy) + apostroflar (Q11)
+- [x] **4.2** Ish kunlari katakchalari, har sozlamaning nomi, eksport fayl nomi tilda, CI darvozasi
+- [x] **4.3** Jargon almashtirildi (ledger/qoplar/schyot/spravka/zayavka/past_due/registr)
+- [x] **4.4** Audit jurnalida UUID o'rniga nomlar + maydon nomlari tarjimada
+- [x] **4.5** Yon menyu bo'limlarga ajratildi (Bolalar · Moliya · Xodimlar · Ombor · Tizim)
+- [x] **4.6** Bog'cha logotipi (yuklash, sarlavha, login, futer)
+- [x] **4.7** Qirqilgan nom, chiqim sanasi, toast, bo'sh holat tugmasi, mobil davomat
+- [x] **4.8** A11y: 12px minimum, aria-label, ko'rinadigan fokus, Enter/Esc
+- [x] **4.9** Obuna banneri: summa, "Qanday to'lash", kunlik yopish, faqat egasi/direktor
+
+Migratsiya: `organizations/0002_organization_logo.py` (+`logo`)
+
+Yangi qo'riqchi testlar: `lib/i18n/__tests__/apostrophes` (Q11),
+`__tests__/a11y` (12px, aria-label, fokus), `config/__tests__/navigation`
+(bo'limlar), `lib/__tests__/format` (Q12).
 
 ---
 

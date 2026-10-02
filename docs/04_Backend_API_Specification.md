@@ -833,6 +833,8 @@ Module: `settings_app` + `branches`. Managed by Org Owner (Director read-only).
 |--------|------|------|-------------|
 | GET | `/organization` | `settings.read` | The caller's own organization profile |
 | PATCH | `/organization` | `settings.update` | Edit name, legal name, tax id, contact details |
+| PUT | `/organization/logo` | `settings.update` | Upload the kindergarten's logo (`multipart/form-data`, ≤ 2 MB, PNG/JPG/WEBP/SVG) |
+| DELETE | `/organization/logo` | `settings.update` | Remove it |
 | GET | `/settings` | `settings.read` | List effective settings (branch overrides organization) |
 | GET | `/settings/{key}` | `settings.read` | Single setting |
 | PUT | `/settings/{key}` | `settings.update` | Set a value (JSONB) |
@@ -840,6 +842,8 @@ Module: `settings_app` + `branches`. Managed by Org Owner (Director read-only).
 | POST | `/branches` | `branches.create` | Create branch |
 | PATCH | `/branches/{id}` | `branches.update` | Update branch (currency, timezone) |
 | DELETE | `/branches/{id}` | `branches.delete` | Soft-delete (blocked if it holds children/employees) |
+
+> **The logo is its own endpoint** (PLAN 4.6). It arrives as `multipart/form-data` while every other field is JSON; mixing the two on one endpoint makes it easy for a `PATCH` without a file to wipe the logo, which is an unrecoverable loss. Removal is a separate deliberate `DELETE` for the same reason. The URL comes back as `logo_url` on both `/organization` and `/auth/me` — the header shows the mark on every screen, and `/organization` needs `settings.read`, which a teacher does not have.
 
 > **`/organization` is a singleton — it takes no id.** The organization is read from the caller's token, never from the URL, so there is no id to tamper with and no cross-tenant path to test for. `slug`, `onboarded_at` and `created_at` are read-only: the slug is the organization's global identifier, and the onboarding timestamp is what the trial period is counted from ([01 §4.4](./01_Project_Vision.md)) — editing it would move a billing date.
 
