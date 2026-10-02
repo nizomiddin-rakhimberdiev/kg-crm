@@ -72,6 +72,7 @@ export default function PlatformOrganizationsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Nomi bo'yicha qidirish"
+              aria-label="Nomi bo'yicha qidirish"
               className="w-64 rounded-lg border border-slate-800 bg-slate-900 py-2 pl-9 pr-3 text-sm outline-none placeholder:text-slate-600 focus:border-brand-500"
             />
           </div>

@@ -164,6 +164,7 @@ export default function BranchesPage() {
                           disabled={deleteMutation.isPending}
                           className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                           title={t('Oʻchirish')}
+                          aria-label={t('Oʻchirish')}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

@@ -11,6 +11,24 @@
   body {
     @apply bg-sut text-tosh-900 font-sans;
   }
+
+  /*
+   * KO'RINADIGAN FOKUS — butun ilovada (PLAN 4.8).
+   *
+   * Komponentlarda `outline-none` 99 joyda ishlatilgan: u brauzerning
+   * standart fokus halqasini olib tashlaydi, o'rniga esa faqat
+   * `focus:border-…` qoladi — va rang o'zgarishi klaviatura bilan
+   * ishlayotgan odam uchun yetarli belgi emas. Sakkiz maydonli
+   * formada "men hozir qayerdaman?" degan savol javobsiz qolardi.
+   *
+   * `:focus-visible` (`:focus` emas): sichqoncha bilan bosilgan
+   * tugmada halqa chiqmaydi — u faqat klaviatura va skrinriderga
+   * kerak. Halqa chegaradan QO'SHIMCHA, ya'ni komponentning o'z
+   * uslubini buzmaydi.
+   */
+  :focus-visible {
+    @apply outline-none ring-2 ring-nihol-600 ring-offset-1;
+  }
   /*
    * Sarlavhalar Onest'da — brendbuk 05. Har bir `<h1>` ga `font-display`
    * yozib chiqish o'rniga shu yerda bir marta: ekranlar ko'p, va yangi
@@ -34,7 +52,7 @@
    * yuboradi va 30 dan ortiq ekranda satr sig'masligiga olib keladi.
    */
   .num {
-    font-family: theme('fontFamily.mono');
+    font-family: theme("fontFamily.mono");
     font-variant-numeric: tabular-nums;
   }
 
@@ -53,7 +71,7 @@
 
 @layer components {
   .marketing {
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
   .marketing :focus-visible {
@@ -103,35 +121,35 @@
    * chizamiz. Sichqonchada 20px yetadi; sensorli ekranda (`pointer: coarse`)
    * 28px — aks holda 8px trekdagi kichik doirani ushlash qiyin.
    */
-  .marketing input[type='range']::-webkit-slider-thumb {
+  .marketing input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     height: 20px;
     width: 20px;
     border-radius: 9999px;
-    background: theme('colors.nihol.500');
+    background: theme("colors.nihol.500");
     border: 3px solid #fff;
     box-shadow: 0 1px 3px rgb(27 36 33 / 0.25);
     cursor: pointer;
   }
-  .marketing input[type='range']::-moz-range-thumb {
+  .marketing input[type="range"]::-moz-range-thumb {
     height: 20px;
     width: 20px;
     border-radius: 9999px;
-    background: theme('colors.nihol.500');
+    background: theme("colors.nihol.500");
     border: 3px solid #fff;
     box-shadow: 0 1px 3px rgb(27 36 33 / 0.25);
     cursor: pointer;
   }
   @media (pointer: coarse) {
-    .marketing input[type='range'] {
+    .marketing input[type="range"] {
       height: 12px;
     }
-    .marketing input[type='range']::-webkit-slider-thumb {
+    .marketing input[type="range"]::-webkit-slider-thumb {
       height: 28px;
       width: 28px;
     }
-    .marketing input[type='range']::-moz-range-thumb {
+    .marketing input[type="range"]::-moz-range-thumb {
       height: 28px;
       width: 28px;
     }

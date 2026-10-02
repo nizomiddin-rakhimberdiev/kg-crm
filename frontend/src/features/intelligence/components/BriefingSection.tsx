@@ -65,7 +65,7 @@ export function BriefingSection() {
             ko'rsatadi. Auditda bitta ekranda ikkita raqam turgan va
             qaysi biri qachongi holat ekani ko'rinmasdi. */}
         {data?.generated_at && (
-          <span className="num ml-auto text-[11px] text-slate-400">
+          <span className="num ml-auto text-xs text-slate-400">
             {t('holat {time}', {
               time: new Date(data.generated_at).toLocaleTimeString('uz-UZ', {
                 hour: '2-digit',

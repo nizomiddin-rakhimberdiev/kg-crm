@@ -161,7 +161,7 @@ interface AvatarProps {
 
 export function Avatar({ name, size = 'md', className }: AvatarProps) {
   const sizes = {
-    sm: 'w-8 h-8 text-[11px]',
+    sm: 'w-8 h-8 text-xs',
     md: 'w-9 h-9 text-xs',
     lg: 'w-12 h-12 text-sm',
   }
@@ -317,9 +317,7 @@ export function StatCard({
             <ArrowUpRight className="w-4 h-4 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100" />
           </div>
         </div>
-        <p className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-          {label}
-        </p>
+        <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
         <p className="num mt-1 text-2xl font-bold text-slate-900">{value}</p>
         {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
       </button>
@@ -336,7 +334,7 @@ export function StatCard({
               <Icon className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                 {label}
               </p>
               <p className="num text-3xl font-bold text-slate-900">{value}</p>
@@ -359,7 +357,7 @@ export function StatCard({
 
           {detail?.breakdown && detail.breakdown.length > 0 && (
             <div className="mt-5 space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                 {t('Taqsimot')}
               </p>
               {detail.breakdown.map((row) => (
@@ -601,7 +599,7 @@ export function Select({
   return (
     <div className="flex flex-col gap-1.5" ref={ref}>
       {label && (
-        <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
           {label}
         </label>
       )}

@@ -200,9 +200,22 @@ export function TakePaymentModal({
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
+  const submit = () => {
+    if (!save.isPending && taken > 0) save.mutate()
+  }
+
   return (
     <Modal open onClose={onClose} className="max-w-md">
-      <div className="p-6">
+      {/* `form` — Enter uchun (PLAN 4.8). Ichidagi boshqa tugmalar
+          `type="button"`, yaʼni ular formani yubormaydi; faqat
+          oxirgi "qabul qilish" tugmasi `type="submit"`. */}
+      <form
+        onSubmit={(event) => {
+          event.preventDefault()
+          submit()
+        }}
+        className="p-6"
+      >
         <div className="pr-10">
           <h2 className="text-lg font-bold text-slate-900">{row.child_name}</h2>
           <p className="mt-0.5 text-sm text-slate-500">
@@ -264,12 +277,12 @@ export function TakePaymentModal({
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-xs font-medium text-slate-700">
                       {invoice.period}
-                      <span className="ml-1.5 font-mono text-[11px] text-slate-400">
+                      <span className="ml-1.5 font-mono text-xs text-slate-400">
                         {invoice.number}
                       </span>
                     </span>
                     {invoice.is_overdue && (
-                      <span className="text-[11px] font-medium text-orik-700">
+                      <span className="text-xs font-medium text-orik-700">
                         {t('Muddati oʻtgan')}
                       </span>
                     )}
@@ -281,7 +294,7 @@ export function TakePaymentModal({
               )
             })}
             {preferred && (
-              <p className="pt-0.5 text-[11px] text-slate-500">
+              <p className="pt-0.5 text-xs text-slate-500">
                 {t('Avval tanlangan hujjat yopiladi, ortigʻi keyingisiga oʻtadi.')}
               </p>
             )}
@@ -383,6 +396,7 @@ export function TakePaymentModal({
                   type="button"
                   onClick={() => remove(tender.key)}
                   title={t('Oʻchirish')}
+                  aria-label={t('Oʻchirish')}
                   className="rounded p-1 text-slate-300 transition hover:bg-red-50 hover:text-red-600"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -419,7 +433,7 @@ export function TakePaymentModal({
             Endi taqsimot tasdiqlashdan OLDIN ko'rinadi. */}
         {plan.rows.length > 0 && (
           <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
               {t('Qaysi hisob-fakturaga tushadi')}
             </p>
             <ul className="mt-1.5 space-y-1">
@@ -431,7 +445,7 @@ export function TakePaymentModal({
                   <span className="min-w-0 truncate text-slate-600">
                     {allocation.invoice.period}
                     {allocation.amount >= Number(allocation.invoice.outstanding) && (
-                      <span className="ml-1.5 text-[11px] font-medium text-emerald-700">
+                      <span className="ml-1.5 text-xs font-medium text-emerald-700">
                         {t('yopiladi')}
                       </span>
                     )}
@@ -472,9 +486,12 @@ export function TakePaymentModal({
           </button>
         )}
 
+        {/* Enter — QABUL QILISH (PLAN 4.8).
+            Kassir kun boʻyi klaviatura bilan ishlaydi: summani yozib,
+            Enter bosadi. Sichqonchaga oʻtish har toʻlovda bir necha
+            soniya, kunda yuzlab marta. Esc esa `Modal` ning oʻzida. */}
         <button
-          type="button"
-          onClick={() => save.mutate()}
+          type="submit"
           disabled={save.isPending || taken <= 0}
           className={cn(
             'mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition',
@@ -488,7 +505,7 @@ export function TakePaymentModal({
               ? t('{money} soʻm qabul qilish', { money: money(taken) })
               : t('Usulni tanlang')}
         </button>
-      </div>
+      </form>
     </Modal>
   )
 }

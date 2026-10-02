@@ -350,6 +350,7 @@ export default function ChildrenPage() {
           onClick={() => openEdit(child)}
           className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           title={t('Tahrirlash')}
+          aria-label={t('Tahrirlash')}
         >
           <Pencil className="h-4 w-4" />
         </button>
@@ -360,6 +361,7 @@ export default function ChildrenPage() {
           onClick={() => removeMutation.mutate(child.id)}
           className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
           title={t('Arxivga oʻtkazish')}
+          aria-label={t('Arxivga oʻtkazish')}
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -616,6 +618,7 @@ export default function ChildrenPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('Ism yoki familiya boʻyicha…')}
+            aria-label={t('Ism yoki familiya boʻyicha…')}
             className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
           />
         </div>
@@ -672,7 +675,7 @@ export default function ChildrenPage() {
             {/* Jadval — planshet va undan keng ekranlar. */}
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[720px] text-sm">
-                <thead className="border-b border-slate-100 bg-slate-50/70 text-left text-[11px] uppercase tracking-wider text-slate-400">
+                <thead className="border-b border-slate-100 bg-slate-50/70 text-left text-xs uppercase tracking-wider text-slate-400">
                   <tr>
                     <th className="px-4 py-3 font-medium">{t('Bola')}</th>
                     <th className="px-4 py-3 font-medium">{t('Yosh')}</th>

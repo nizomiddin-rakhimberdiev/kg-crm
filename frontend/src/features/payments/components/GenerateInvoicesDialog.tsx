@@ -139,7 +139,7 @@ export function GenerateInvoicesDialog({ year, month, onClose, onDone }: Props) 
                         </span>
                       </span>
                       {Number(row.advance) > 0 && (
-                        <span className="num shrink-0 rounded-full bg-nihol-50 px-2 py-0.5 text-[11px] font-medium text-nihol-700">
+                        <span className="num shrink-0 rounded-full bg-nihol-50 px-2 py-0.5 text-xs font-medium text-nihol-700">
                           {t('avans {money}', { money: money(row.advance) })}
                         </span>
                       )}

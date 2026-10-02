@@ -148,7 +148,7 @@ export function ChildEditDialog({
               value={form.enrolled_on}
               onChange={(iso) => setForm((p) => ({ ...p, enrolled_on: iso }))}
             />
-            <p className="mt-1 text-[11px] text-slate-500">
+            <p className="mt-1 text-xs text-slate-500">
               {t('Birinchi hisob-faktura shu sanadan proporsional hisoblanadi.')}
             </p>
           </div>

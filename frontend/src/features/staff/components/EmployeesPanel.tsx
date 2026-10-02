@@ -294,6 +294,7 @@ export function EmployeesPanel() {
           onClick={() => openEdit(employee)}
           className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           title={t('Tahrirlash')}
+          aria-label={t('Tahrirlash')}
         >
           <Pencil className="h-4 w-4" />
         </button>
@@ -303,6 +304,7 @@ export function EmployeesPanel() {
             onClick={() => setConfirmTerminate(employee)}
             className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
             title={t('Ishdan boʻshatish')}
+            aria-label={t('Ishdan boʻshatish')}
           >
             <UserMinus className="h-4 w-4" />
           </button>
@@ -327,6 +329,7 @@ export function EmployeesPanel() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('Ism, familiya yoki telefon…')}
+            aria-label={t('Ism, familiya yoki telefon…')}
             className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
           />
         </div>
@@ -391,7 +394,7 @@ export function EmployeesPanel() {
           >
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[720px] text-sm">
-                <thead className="border-b border-slate-100 bg-slate-50/70 text-left text-[11px] uppercase tracking-wider text-slate-400">
+                <thead className="border-b border-slate-100 bg-slate-50/70 text-left text-xs uppercase tracking-wider text-slate-400">
                   <tr>
                     <th className="px-4 py-3 font-medium">{t('Xodim')}</th>
                     <th className="px-4 py-3 font-medium">{t('Lavozim')}</th>
@@ -557,7 +560,7 @@ export function EmployeesPanel() {
                   </option>
                 ))}
               </select>
-              <p className="mt-1 text-[11px] text-slate-500">
+              <p className="mt-1 text-xs text-slate-500">
                 {t('Tarbiyachi oʻz guruhini koʻrishi uchun hisob bogʻlanishi kerak.')}
               </p>
             </div>

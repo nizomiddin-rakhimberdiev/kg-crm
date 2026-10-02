@@ -33,6 +33,7 @@ export function LanguageSwitch({
           type="button"
           lang={item.code}
           title={item.label}
+          aria-label={item.label}
           aria-pressed={item.code === locale}
           onClick={() => setLocale(item.code as AppLocale)}
           className={cn(

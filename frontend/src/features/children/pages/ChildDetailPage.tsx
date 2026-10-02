@@ -383,6 +383,7 @@ export default function ChildDetailPage() {
                     <button
                       type="button"
                       title={t('Asosiy qilish')}
+                      aria-label={t('Asosiy qilish')}
                       onClick={() => makePrimary.mutate(link.id)}
                       className="rounded p-1 text-slate-300 transition hover:bg-orik-50 hover:text-orik-600"
                     >
@@ -393,6 +394,7 @@ export default function ChildDetailPage() {
                     <button
                       type="button"
                       title={t('Bogʻlanishni uzish')}
+                      aria-label={t('Bogʻlanishni uzish')}
                       onClick={() => unlinkGuardian.mutate(link.id)}
                       className="rounded p-1 text-slate-300 transition hover:bg-red-50 hover:text-red-600"
                     >
@@ -416,12 +418,14 @@ export default function ChildDetailPage() {
                 <input
                   required
                   placeholder={t('Familiya')}
+                  aria-label={t('Familiya')}
                   value={guardianForm.last_name}
                   onChange={(e) => setGuardianForm((p) => ({ ...p, last_name: e.target.value }))}
                   className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
                 />
                 <input
                   placeholder={t('Ism')}
+                  aria-label={t('Ism')}
                   value={guardianForm.first_name}
                   onChange={(e) => setGuardianForm((p) => ({ ...p, first_name: e.target.value }))}
                   className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
@@ -431,6 +435,7 @@ export default function ChildDetailPage() {
                 required
                 type="tel"
                 placeholder="+998 90 123 45 67"
+                aria-label="+998 90 123 45 67"
                 value={guardianForm.phone}
                 onChange={(e) => setGuardianForm((p) => ({ ...p, phone: e.target.value }))}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"

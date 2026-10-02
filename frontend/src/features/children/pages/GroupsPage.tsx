@@ -217,7 +217,7 @@ export default function GroupsPage() {
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-[11px] text-slate-500">
+            <p className="mt-1 text-xs text-slate-500">
               {t('Tizim hisobi bogʻlangan tarbiyachi faqat shu guruhni koʻradi.')}
             </p>
           </div>
@@ -276,6 +276,7 @@ export default function GroupsPage() {
                     type="button"
                     onClick={() => setOpenGroup({ id: group.id, name: group.name })}
                     title={t('Guruh tarkibini koʻrish')}
+                    aria-label={t('Guruh tarkibini koʻrish')}
                     className="flex min-w-0 flex-1 items-start gap-3 text-left"
                   >
                     <span
@@ -327,6 +328,7 @@ export default function GroupsPage() {
                         onClick={() => openEdit(group)}
                         className="rounded-lg p-1.5 text-slate-300 opacity-0 transition hover:bg-slate-100 hover:text-slate-700 focus:opacity-100 group-hover:opacity-100"
                         title={t('Tahrirlash')}
+                        aria-label={t('Tahrirlash')}
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
@@ -337,6 +339,7 @@ export default function GroupsPage() {
                         onClick={() => removeMutation.mutate(group.id)}
                         className="rounded-lg p-1.5 text-slate-300 opacity-0 transition hover:bg-red-50 hover:text-red-600 focus:opacity-100 group-hover:opacity-100"
                         title={t('Oʻchirish')}
+                        aria-label={t('Oʻchirish')}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

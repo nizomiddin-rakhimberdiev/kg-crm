@@ -128,7 +128,7 @@ export function ChildTabs({ childId }: { childId: string }) {
                     <td className="px-4 py-2.5 text-slate-700">
                       {paymentMethodLabel(payment.method)}
                       {payment.is_reversed && (
-                        <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">
+                        <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
                           {t('Qaytarilgan')}
                         </span>
                       )}

@@ -229,6 +229,7 @@ export default function ExpensesPage() {
                       type="button"
                       onClick={() => setEditingCategory({ id: c.id, name: c.name })}
                       title={t('Tahrirlash')}
+                      aria-label={t('Tahrirlash')}
                       className="rounded p-0.5 text-slate-300 transition hover:text-slate-700 group-hover:text-slate-500"
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -237,6 +238,7 @@ export default function ExpensesPage() {
                       type="button"
                       onClick={() => removeCategory.mutate(c.id)}
                       title={t('Oʻchirish')}
+                      aria-label={t('Oʻchirish')}
                       className="rounded p-0.5 text-slate-300 transition hover:text-red-600 group-hover:text-slate-500"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -420,6 +422,7 @@ export default function ExpensesPage() {
                             <button
                               type="button"
                               title={t('Tasdiqlash')}
+                              aria-label={t('Tasdiqlash')}
                               onClick={() => decide.mutate({ id: e.id, action: 'approve' })}
                               className="mr-1 rounded-lg p-2 text-emerald-600 hover:bg-emerald-50"
                             >
@@ -428,6 +431,7 @@ export default function ExpensesPage() {
                             <button
                               type="button"
                               title={t('Rad etish')}
+                              aria-label={t('Rad etish')}
                               onClick={() => decide.mutate({ id: e.id, action: 'reject' })}
                               className="rounded-lg p-2 text-red-600 hover:bg-red-50"
                             >

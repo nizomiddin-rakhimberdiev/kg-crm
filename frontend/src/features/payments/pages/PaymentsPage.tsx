@@ -646,6 +646,7 @@ export default function PaymentsPage() {
                           type="button"
                           onClick={() => setReceiptFor(payment.id)}
                           title={t('Kvitansiya')}
+                          aria-label={t('Kvitansiya')}
                           className="mr-1 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                         >
                           <Printer className="h-4 w-4" />
@@ -666,6 +667,7 @@ export default function PaymentsPage() {
                                 setReverseReason('')
                               }}
                               title={t('Qaytarish')}
+                              aria-label={t('Qaytarish')}
                               className="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                             >
                               <Ban className="h-4 w-4" />
@@ -751,6 +753,7 @@ export default function PaymentsPage() {
                       onClick={() => removeTariff.mutate(tariff.id)}
                       className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                       title={t('Oʻchirish')}
+                      aria-label={t('Oʻchirish')}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>

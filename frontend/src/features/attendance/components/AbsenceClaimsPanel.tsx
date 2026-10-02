@@ -290,6 +290,7 @@ export function AbsenceClaimsPanel() {
                         <button
                           type="button"
                           title={t('Tasdiqlash')}
+                          aria-label={t('Tasdiqlash')}
                           onClick={() => decide.mutate({ id: claim.id, approve: true })}
                           className="rounded-lg p-2 text-emerald-600 transition hover:bg-emerald-50"
                         >
@@ -298,6 +299,7 @@ export function AbsenceClaimsPanel() {
                         <button
                           type="button"
                           title={t('Rad etish')}
+                          aria-label={t('Rad etish')}
                           onClick={() => decide.mutate({ id: claim.id, approve: false })}
                           className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                         >

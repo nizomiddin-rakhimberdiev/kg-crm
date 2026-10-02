@@ -189,6 +189,7 @@ export function RolesPanel() {
                   value={newRoleName}
                   onChange={(e) => setNewRoleName(e.target.value)}
                   placeholder={t('Rol nomi')}
+                  aria-label={t('Rol nomi')}
                   className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
                 />
                 <div className="flex gap-1">
@@ -253,6 +254,7 @@ export function RolesPanel() {
                     onClick={() => deleteMutation.mutate(selectedRole.id)}
                     className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                     title={t('Rolni oʻchirish')}
+                    aria-label={t('Rolni oʻchirish')}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

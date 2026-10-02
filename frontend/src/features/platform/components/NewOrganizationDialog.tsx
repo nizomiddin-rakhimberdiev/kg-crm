@@ -42,7 +42,7 @@ function CopyRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2">
       <div className="min-w-0">
-        <p className="text-[11px] uppercase tracking-wide text-slate-500">{label}</p>
+        <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
         <p className="truncate font-mono text-sm text-slate-100">{value}</p>
       </div>
       <button
@@ -162,6 +162,7 @@ export function NewOrganizationDialog() {
                   onChange={set('organization_name')}
                   className={FIELD}
                   placeholder="Quyosh bog'chasi"
+                  aria-label="Quyosh bog'chasi"
                 />
               </label>
 
@@ -176,6 +177,7 @@ export function NewOrganizationDialog() {
                     onChange={set('slug')}
                     className="w-full bg-transparent px-1 py-2 text-sm outline-none"
                     placeholder="quyosh"
+                    aria-label="quyosh"
                   />
                 </div>
                 <span className="mt-1 block text-xs text-slate-500">
@@ -202,6 +204,7 @@ export function NewOrganizationDialog() {
                     onChange={set('contact_phone')}
                     className={FIELD}
                     placeholder="+998901234567"
+                    aria-label="+998901234567"
                   />
                 </label>
               </div>
@@ -225,6 +228,7 @@ export function NewOrganizationDialog() {
                   onChange={set('password')}
                   className={FIELD}
                   placeholder="Kamida 8 belgi"
+                  aria-label="Kamida 8 belgi"
                 />
               </label>
             </div>

@@ -69,7 +69,7 @@ function LeadRow({ lead }: { lead: Lead }) {
             >
               {STATUS[lead.status].label}
             </span>
-            <span className="rounded border border-slate-700 px-1.5 text-[11px] text-slate-400">
+            <span className="rounded border border-slate-700 px-1.5 text-xs text-slate-400">
               {LANG[lead.language]}
             </span>
           </div>
@@ -122,6 +122,7 @@ function LeadRow({ lead }: { lead: Lead }) {
             rows={2}
             maxLength={2000}
             placeholder="Masalan: ertaga 10:00 da qo‘ng‘iroq; narxni yubordim"
+            aria-label="Masalan: ertaga 10:00 da qo‘ng‘iroq; narxni yubordim"
             className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-brand-500"
           />
         </label>

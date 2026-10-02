@@ -106,7 +106,7 @@ export function GroupChildrenModal({
                 >
                   <span
                     className={cn(
-                      'grid h-8 w-8 shrink-0 place-items-center rounded-full text-[11px] font-bold',
+                      'grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold',
                       avatarTone(child.full_name),
                     )}
                   >

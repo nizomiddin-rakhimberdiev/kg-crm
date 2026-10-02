@@ -77,6 +77,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 <s.icon className={cn('w-5 h-5 shrink-0', s.iconColor)} />
                 <p className="flex-1 text-sm font-medium text-slate-700">{t.message}</p>
                 <button
+                  type="button"
+                  title="Yopish"
+                  aria-label="Yopish"
                   onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
                   className="grid place-items-center w-6 h-6 rounded-md text-slate-300 hover:bg-slate-100 hover:text-slate-500"
                 >

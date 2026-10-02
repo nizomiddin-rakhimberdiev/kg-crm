@@ -151,7 +151,7 @@ export function ReceiptModal({ paymentId, onClose }: { paymentId: string; onClos
               )}
             </dl>
 
-            <p className="mt-4 text-center text-[10px] text-slate-400">Radix CRM</p>
+            <p className="mt-4 text-center text-xs text-slate-400">Radix CRM</p>
           </div>
         )}
 

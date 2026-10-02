@@ -103,7 +103,7 @@ export function ChildStatusDialog({
               value={form.status_changed_on}
               onChange={(iso) => setForm((p) => ({ ...p, status_changed_on: iso }))}
             />
-            <p className="mt-1 text-[11px] text-slate-500">
+            <p className="mt-1 text-xs text-slate-500">
               {t('Shu sanadan keyin hisob-faktura yozilmaydi.')}
             </p>
           </div>

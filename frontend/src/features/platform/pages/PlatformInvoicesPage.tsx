@@ -194,6 +194,7 @@ export default function PlatformInvoicesPage() {
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
                 placeholder="MT-102"
+                aria-label="MT-102"
                 className={`${field} mt-1 block w-52`}
               />
             </label>

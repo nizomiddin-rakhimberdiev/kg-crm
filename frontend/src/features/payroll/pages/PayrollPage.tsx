@@ -399,6 +399,7 @@ export default function PayrollPage() {
                         type="button"
                         onClick={() => removeAdvance.mutate(advance.id)}
                         title={t('Oʻchirish')}
+                        aria-label={t('Oʻchirish')}
                         className="rounded-lg p-1.5 text-slate-300 transition hover:bg-red-50 hover:text-red-600"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -500,6 +501,7 @@ export default function PayrollPage() {
                     onClick={() => recalculate.mutate(run.id)}
                     disabled={recalculate.isPending}
                     title={t('Yangi xodimlar va avanslarni tortib oladi')}
+                    aria-label={t('Yangi xodimlar va avanslarni tortib oladi')}
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 sm:flex-none"
                   >
                     <RefreshCw className="h-4 w-4" /> {t('Qayta hisoblash')}
@@ -536,6 +538,7 @@ export default function PayrollPage() {
                       setReopening(run)
                     }}
                     title={t('Tahrirlash uchun qoralamaga qaytarish')}
+                    aria-label={t('Tahrirlash uchun qoralamaga qaytarish')}
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:flex-none"
                   >
                     <Unlock className="h-4 w-4" /> {t('Qayta ochish')}
@@ -568,11 +571,12 @@ export default function PayrollPage() {
                         type="button"
                         onClick={() => setPayslip(item)}
                         title={t('Oylik varaqasi')}
+                        aria-label={t('Oylik varaqasi')}
                         className="rounded text-left underline-offset-2 hover:underline"
                       >
                         {item.employee_name}
                         {Number(item.official_base) > 0 && (
-                          <span className="ml-1.5 rounded-full bg-ildiz-100 px-1.5 py-0.5 text-[11px] font-medium text-ildiz-800">
+                          <span className="ml-1.5 rounded-full bg-ildiz-100 px-1.5 py-0.5 text-xs font-medium text-ildiz-800">
                             {t('rasmiy')}
                           </span>
                         )}

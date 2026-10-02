@@ -183,6 +183,7 @@ export default function AttendancePage() {
             onChange={(e) => setReasonDraft(e.target.value)}
             maxLength={255}
             placeholder={t('Masalan: kasal, shifokorda, oilaviy sabab')}
+            aria-label={t('Masalan: kasal, shifokorda, oilaviy sabab')}
             className="mt-4 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
           />
           <div className="mt-5 flex justify-end gap-2">

@@ -34,6 +34,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         <input
           type="text"
           placeholder={t('Ism yoki ID boʻyicha qidiruv...')}
+          aria-label={t('Ism yoki ID boʻyicha qidiruv...')}
           className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
         />
       </div>
@@ -49,6 +50,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           onClick={toggle}
           data-sound="toggle"
           title={muted ? t('Ovozni yoqish') : t('Ovozni oʻchirish')}
+          aria-label={muted ? t('Ovozni yoqish') : t('Ovozni oʻchirish')}
           className="hidden h-10 w-10 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 active:scale-95 sm:grid"
         >
           {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
@@ -81,7 +83,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
                 <span className="block max-w-[160px] truncate text-sm font-semibold text-slate-900">
                   {user.full_name}
                 </span>
-                <span className="block text-[11px] text-slate-400">{user.role?.name ?? '—'}</span>
+                <span className="block text-xs text-slate-400">{user.role?.name ?? '—'}</span>
               </span>
             </Link>
 
@@ -90,6 +92,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
               type="button"
               onClick={() => void logout()}
               title={t('Chiqish')}
+              aria-label={t('Chiqish')}
               className="hidden h-10 w-10 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 active:scale-95 sm:grid"
             >
               <LogOut className="h-5 w-5" />

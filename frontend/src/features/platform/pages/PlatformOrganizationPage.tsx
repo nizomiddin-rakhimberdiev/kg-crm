@@ -249,6 +249,7 @@ export default function PlatformOrganizationPage() {
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Sabab (mijoz ko'radi) — masalan: hisob-faktura xatosi haqida murojaat"
+              aria-label="Sabab (mijoz ko'radi) — masalan: hisob-faktura xatosi haqida murojaat"
               className={field}
             />
             <div className="flex items-center gap-2">
@@ -281,6 +282,7 @@ export default function PlatformOrganizationPage() {
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Sabab — masalan: mijoz bayram kunlarida sinab ko'rolmadi"
+              aria-label="Sabab — masalan: mijoz bayram kunlarida sinab ko'rolmadi"
               className={field}
             />
             <div className="flex items-center gap-2">
@@ -318,6 +320,7 @@ export default function PlatformOrganizationPage() {
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Sabab — masalan: uch oy to'lov yo'q"
+              aria-label="Sabab — masalan: uch oy to'lov yo'q"
               className={field}
             />
             <button

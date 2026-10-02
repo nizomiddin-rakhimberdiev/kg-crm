@@ -141,6 +141,7 @@ export function HolidaysPanel() {
                   type="button"
                   onClick={() => remove.mutate(holiday.id)}
                   title={t('Oʻchirish')}
+                  aria-label={t('Oʻchirish')}
                   className="rounded-lg p-1.5 text-slate-300 transition hover:bg-red-50 hover:text-red-600"
                 >
                   <Trash2 className="h-4 w-4" />

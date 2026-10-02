@@ -426,13 +426,13 @@ export default function ReportsPage() {
                       ustidagi sichqonchani to'sib qo'yardi. */}
                   <div className="pointer-events-none absolute inset-0 grid place-items-center">
                     <div className="text-center">
-                      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                         {t('Jami')}
                       </p>
                       <p className="text-base font-bold tabular-nums text-slate-900">
                         {formatMoney(methodTotal)}
                       </p>
-                      <p className="text-[11px] text-slate-400">UZS</p>
+                      <p className="text-xs text-slate-400">UZS</p>
                     </div>
                   </div>
                 </div>
@@ -491,7 +491,7 @@ export default function ReportsPage() {
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] text-sm">
-                <thead className="bg-slate-50/70 text-left text-[11px] uppercase tracking-wider text-slate-400">
+                <thead className="bg-slate-50/70 text-left text-xs uppercase tracking-wider text-slate-400">
                   <tr>
                     <th className="px-4 py-2.5 font-medium">{t('Davr')}</th>
                     <th className="px-4 py-2.5 text-right font-medium">{t('Tushum')}</th>
@@ -551,7 +551,7 @@ export default function ReportsPage() {
                       >
                         {formatMoney(Number(pl.net))}
                         {!payrollInChart && (
-                          <span className="block text-[10px] font-normal text-slate-400">
+                          <span className="block text-xs font-normal text-slate-400">
                             {t('oylik {formatMoney} bilan', {
                               formatMoney: formatMoney(Number(pl.payroll)),
                             })}
