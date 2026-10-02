@@ -437,6 +437,7 @@ Matches [02 §21](./02_Software_Architecture.md):
 | Formatting | **One home: `lib/format.ts`** — `money`, `som`, `number`, `signed`, `compact`, `quantity`, `percent`, and every date helper. Never `new Intl.NumberFormat(…)` in a component, never a local `money()`; `lib/utils.ts` keeps the old names as re-exports for existing call sites. |
 | Dates in forms | `components/ui/DateInput` (`dd.mm.yyyy`), never a bare `input[type=date]`. The value in and out is ISO `yyyy-mm-dd`. |
 | Save feedback | `useToast()` from `app/providers/ToastProvider` — a save that changes data says so. |
+| Tokens | `lib/auth/tokenStorage` holds the **access token in memory only**. The refresh token is an `httpOnly` cookie the browser manages — the module deliberately has no `getRefresh`/`setRefresh`, because offering them would bring the old compromise back. |
 | Strings | Uzbek source text wrapped in `t('…')` from `lib/i18n` (§17); no bare UI text, no dynamic `t(variable)`. |
 | Env | Access only through `config/env.ts` (typed). |
 | Linting | ESLint + Prettier enforced in CI ([06](./06_Development_Roadmap.md)). |

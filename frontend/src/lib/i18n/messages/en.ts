@@ -493,7 +493,6 @@ export const messages: Record<string, string> = {
   'Sessiya muddati tugadi. Qaytadan kiring.': 'Your session has expired. Sign in again.',
   'Sessiya ochilmadi — ruxsat muddati tugagan boʻlishi mumkin.':
     'The session couldn’t be opened — the grant may have expired.',
-  'Sessiya topilmadi.': 'Session not found.',
   'Shablonni yuklab boʻlmadi. Qaytadan urinib koʻring.':
     'Couldn’t download the template. Try again.',
   'Shablonni yuklab oling, toʻldiring va shu yerga qaytaring.':

@@ -69,7 +69,14 @@ export const authApi = {
     return response.data.data
   },
 
-  logout: (refresh: string | null) => api.post<void>('/auth/logout', { refresh }),
+  /**
+   * Chiqish — tanasiz (PLAN 5.1).
+   *
+   * Refresh token `httpOnly` cookie'da: server uni oʻzi oʻqiydi,
+   * bekor qiladi va cookie'ni tozalaydi. Mijoz tomonida yuboradigan
+   * narsa yoʻq.
+   */
+  logout: () => api.post<void>('/auth/logout', {}),
 
   changePassword: (currentPassword: string, newPassword: string) =>
     api.post<void>('/auth/password/change', {

@@ -151,15 +151,23 @@ Public (no token) except `/me`, `/logout`, `/password/change`.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/auth/login` | public | Exchange credentials for tokens |
+| POST | `/auth/login` | public | Exchange credentials for an access token (refresh goes into a cookie) |
 | POST | `/auth/select-organization` | pending token | Choose organization when the email belongs to several |
-| POST | `/auth/refresh` | public (valid refresh) | Rotate access (+refresh) token |
-| POST | `/auth/logout` | authenticated | Blacklist refresh token |
+| POST | `/auth/refresh` | refresh cookie (+ CSRF header) | Rotate the pair; body is empty |
+| POST | `/auth/logout` | authenticated | Revoke the refresh token and clear the cookie |
+| POST | `/auth/password-reset` | — (5/hour) | Ask for a reset link; the answer never says whether the e-mail exists |
+| POST | `/auth/password-reset/confirm` | — (5/hour) | Set a new password from the link (`uid`, `token`, `password`) |
 | GET | `/auth/me` | authenticated | Current user profile + role + permissions + org/subscription state |
 | PATCH | `/auth/me` | authenticated | **Edit own profile** — `full_name`, `phone` only |
 | POST | `/auth/me/photo` | authenticated | Upload own profile photo (multipart, ≤2 MB, jpg/png/webp) |
 | DELETE | `/auth/me/photo` | authenticated | Remove own profile photo |
 | POST | `/auth/password/change` | authenticated | Change own password |
+
+> **The refresh token lives in an `httpOnly` cookie, not in the response body** (PLAN 5.1). It used to be returned and kept in `localStorage`; the price of that was precise — one malicious script (a compromised npm package, an ad snippet) could read it and post it elsewhere, and it is valid for seven days. JavaScript cannot read an `httpOnly` cookie at all. The cookie is `Secure` (outside `DEBUG`), `SameSite=Strict` and scoped to `/api/v1/auth`, so it is not attached to any other request. The access token stays in the body and lives only in memory.
+>
+> **`/auth/refresh` therefore takes an empty body**, and when the token arrives from the cookie it also requires an `X-CSRFToken` header matching the readable `radix_csrf` cookie (double submit). `SameSite=Strict` already stops most of this, but it trusts the browser; a foreign site cannot *read* our cookie, so it cannot fill the header. A body token is still accepted when no cookie is present — that is the one-time migration path for sessions that still hold a token in `localStorage`, and it is also how an attacker with a stolen raw token is detected (reuse closes every session, §5).
+>
+> **Login attempts are limited per account, not only per IP** (PLAN 5.3). The IP throttle is collective — everyone in a kindergarten is behind one Wi-Fi — so there is a second counter keyed by e-mail: 10 failures, then a 15-minute block that applies *regardless of the password*. A correct login clears it, and both the failures and the block land in the audit log (`login_failed` with an attempt count, `login_blocked`).
 
 > **There is no public signup.** `POST /auth/signup` was removed. Accounts are opened by vendor staff through the platform console — `POST /platform/organizations/create` (§19) — because every signup creates a real tenant (RLS policies, a subscription, seeded roles) and tenant data is never deleted (ADR-11). A door open to the internet meant strangers leaving permanent rows in the database. It also matched the commercial model badly: customers are legal entities who pay by bank transfer, so the tenant should exist *after* the sales conversation, not before it.
 

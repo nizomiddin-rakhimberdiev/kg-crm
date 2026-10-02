@@ -19,7 +19,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken as JWTRefreshToken
 
-from apps.accounts import lockout, password_reset, services
+from apps.accounts import cookies, lockout, password_reset, services
 from apps.accounts.authentication import (
     authenticate_candidates,
     hydrate_user,
@@ -55,6 +55,22 @@ __all__ = [
 
 
 logger = logging.getLogger(__name__)
+
+
+def _session_response(request: Request, payload: dict[str, Any]) -> Response:
+    """
+    Sessiya javobi: refresh token **cookie'da**, tanada emas (PLAN 5.1).
+
+    Tanadan olib tashlanishi ataylab: u yerda qolsa, mijoz uni
+    `localStorage` ga yozishi mumkin va butun o'zgarishning ma'nosi
+    qolmasdi. Access token esa tanada qoladi — u qisqa yashaydi va
+    faqat xotirada turadi.
+    """
+    refresh = str(payload.pop("refresh", "") or "")
+    response = Response(payload)
+    if refresh:
+        cookies.set_refresh_cookie(response, refresh)
+    return response
 
 
 class LoginThrottle(AnonRateThrottle):
@@ -173,7 +189,7 @@ class LoginView(APIView):
                 }
             )
 
-        return Response(self._complete_login(request, candidates[0]))
+        return _session_response(request, self._complete_login(request, candidates[0]))
 
     @staticmethod
     def _complete_login(request: Request, user: User) -> dict[str, Any]:
@@ -225,7 +241,7 @@ class SelectOrganizationView(APIView):
             # Bir xil umumiy xato — mavjudlikni oshkor qilmaymiz.
             return _auth_error(gettext("Tanlangan tashkilot mavjud emas."))
 
-        return Response(LoginView._complete_login(request, user))
+        return _session_response(request, LoginView._complete_login(request, user))
 
 
 class RefreshView(APIView):
@@ -235,9 +251,23 @@ class RefreshView(APIView):
     throttle_classes = [RefreshThrottle]
 
     def post(self, request: Request) -> Response:
-        raw = request.data.get("refresh")
+        # Cookie BIRINCHI (PLAN 5.1). Tanadagi token — eski mijozlar
+        # uchun yumshoq o'tish yo'li: `localStorage` da tokeni bor
+        # sessiya bir marta yangilanadi va shu paytda cookie'ga
+        # ko'chadi. Ikkinchi yangilashda u allaqachon cookie'dan
+        # keladi.
+        from_cookie = cookies.read_refresh_cookie(request)
+        # `Any`: `simplejwt` stublari satrni emas, `Token` ni kutadi —
+        # amalda konstruktor xom satrni qabul qiladi.
+        raw: Any = from_cookie or request.data.get("refresh")
         if not raw:
             return _auth_error(gettext("Refresh token koʻrsatilmagan."))
+
+        # CSRF faqat COOKIE bilan kelgan so'rovda ma'noli: tanadagi
+        # tokenni begona sayt bila olmaydi, ya'ni u yerda CSRF
+        # vektori yo'q.
+        if from_cookie and not cookies.csrf_ok(request):
+            return _auth_error(gettext("Soʻrov tasdiqlanmadi. Sahifani yangilang."))
 
         # Refresh token — tenant hali noma'lum bo'lgan paytdagi qidiruv,
         # xuddi login kabi. Tor eshik shuning uchun `refresh_token` ni
@@ -306,18 +336,22 @@ class RefreshView(APIView):
                 user_agent=request.META.get("HTTP_USER_AGENT", ""),
                 ip=audit.client_ip(request._request),
             )
-        return Response(tokens)
+        return _session_response(request, tokens)
 
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request: Request) -> Response:
-        raw = request.data.get("refresh")
+        raw = cookies.read_refresh_cookie(request) or request.data.get("refresh")
         if raw:
             services.revoke_refresh_token(raw)
         audit.record(action="logout", request=request._request, actor=request_user(request))
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        response = Response(status=status.HTTP_204_NO_CONTENT)
+        # Cookie HAR DOIM tozalanadi — token topilmasa ham: chiqish
+        # tugmasi bosilgach brauzerda hech narsa qolmasligi kerak.
+        cookies.clear_refresh_cookie(response)
+        return response
 
 
 class MeView(APIView):

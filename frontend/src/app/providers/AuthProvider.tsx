@@ -17,7 +17,7 @@ import {
 } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { authApi } from '@/features/auth/api'
-import { setSessionExpiredHandler } from '@/lib/api/client'
+import { restoreSession, setSessionExpiredHandler } from '@/lib/api/client'
 import { applyOrganizationLocale } from '@/lib/i18n'
 import { tokenStorage } from '@/lib/auth/tokenStorage'
 import { supportSession } from '@/lib/auth/supportSession'
@@ -64,9 +64,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const slug = session.user.organization?.slug ?? null
 
       tokenStorage.setAccess(session.access)
-      // Token DARHOL o'z bog'chasining kaliti ostiga yoziladi — hatto
-      // foydalanuvchi hozir boshqa manzilda turgan bo'lsa ham.
-      tokenStorage.setRefresh(session.refresh, slug)
+      // Refresh token JAVOBDA YO'Q — u `httpOnly` cookie'da va uni
+      // brauzer o'zi saqlaydi (PLAN 5.1). Shuning uchun bu yerda
+      // saqlanadigan narsa faqat access token, va u xotirada.
 
       // Kirish `/login` dan (manzilsiz) yoki boshqa bog'cha manzilidan
       // bo'lishi mumkin. Ikkala holatda ham foydalanuvchi O'Z manziliga
@@ -113,7 +113,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await authApi.logout(tokenStorage.getRefresh())
+      // Refresh token cookie'da — server uni o'zi o'qiydi va
+      // tozalaydi.
+      await authApi.logout()
     } catch {
       // Serverga yetib bormasa ham lokal sessiya baribir yopiladi.
     }
@@ -130,8 +132,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false
 
     const restore = async () => {
-      if (!tokenStorage.getRefresh()) {
-        setIsLoading(false)
+      // Avval YANGILASH, keyin `me` (PLAN 5.1).
+      //
+      // Refresh token cookie'da va JS uni ko'rmaydi, ya'ni "sessiya
+      // bormi?" degan savolga faqat server javob beradi. Shuning
+      // uchun boot ketma-ketligi aniq: `refresh` → `me`. Teskari
+      // tartibda har yuklanishda bitta keraksiz `401` chiqardi —
+      // konsolda shovqin va Sentry'da soxta xato.
+      //
+      // Cookie yo'q bo'lsa `refresh` 401 qaytaradi va biz jimgina
+      // mehmon holatiga o'tamiz: bu xato emas, "kirmagan" degani.
+      tokenStorage.dropLegacyTokens()
+      try {
+        await restoreSession()
+      } catch {
+        if (!cancelled) setIsLoading(false)
         return
       }
       try {

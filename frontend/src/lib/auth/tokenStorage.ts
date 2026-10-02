@@ -1,41 +1,29 @@
 /**
- * Token saqlash (docs/05 §12).
+ * Token saqlash (docs/05 §12, PLAN 5.1).
  *
- * Access token **xotirada** — u qisqa yashaydi va uni `localStorage` da
- * saqlash XSS uchun bepul o'lja bo'lardi.
+ * **Access token — faqat XOTIRADA.** U qisqa yashaydi (15 daqiqa) va
+ * uni `localStorage` da saqlash XSS uchun bepul oʻlja boʻlardi.
  *
- * Refresh token `localStorage` da: sahifa yangilanganda sessiya
- * yo'qolmasligi kerak. Bu ideal emas (XSS uni ham o'g'irlaydi), lekin
- * MVP uchun ongli murosa — httpOnly cookie'ga o'tish uchun backend
- * CSRF himoyasi bilan birga qayta ishlanadi va bu alohida qaror.
+ * **Refresh token — `httpOnly` cookie'da, bu yerda EMAS.** Avval u
+ * `localStorage` da yashardi va bu ongli murosa edi; narxi aniq:
+ * bitta zararli skript (buzilgan npm paketi, reklama kodi) uni oʻqib
+ * oʻz serveriga yuborishi mumkin, va u yetti kun ishlaydi.
+ * `httpOnly` cookie'ni JavaScript UMUMAN oʻqiy olmaydi — shuning
+ * uchun bu modulda refresh token bilan ishlash funksiyalari ataylab
+ * YOʻQ: ularni qaytarish murosani ham qaytarardi.
  *
- * **Kalit bog'cha MANZILI bilan nomlanadi.** Barcha bog'chalar bitta
- * origin'da yashaydi (`/t/<slug>`), ya'ni ular bitta `localStorage` ni
- * bo'lishadi. Bitta kalit bo'lganda ikki bog'chada ishlaydigan odam —
- * masalan bir necha bog'chaga xizmat qiladigan buxgalter — ikkinchisiga
- * kirishi bilan birinchisidan chiqib ketardi. Subdomenga o'tilganda har
- * bir bog'cha o'z origin'ini oladi va bu masala o'z-o'zidan yo'qoladi;
- * shu paytgacha nom bilan ajratamiz.
+ * Yangilash endi tanasiz soʻrov: `POST /auth/refresh` cookie'ni
+ * brauzerning oʻzi qoʻshadi, biz faqat CSRF sarlavhasini yuboramiz
+ * (`lib/api/client.ts`).
+ *
+ * **Eski kalitlar tozalanadi**: `localStorage` da qolgan token endi
+ * ishlatilmaydi, lekin u yerda turishi ham kerak emas.
  */
-
-import { currentSlug } from '@/lib/tenantAddress'
-import { env } from '@/config/env'
-
-const BASE_KEY = 'kg_crm_refresh'
-
-/**
- * Standalone o'rnatmada kalit HAR DOIM bitta (ADR-13).
- *
- * U yerda bog'cha bitta va manzilda slug yo'q, ya'ni `currentSlug`
- * har doim `null`. Kirish paytida esa token tashkilot slug'i bilan
- * yozilardi (`kg_crm_refresh:bahor-bogchasi`), o'qishda esa slug'siz
- * kalit so'ralardi (`kg_crm_refresh`) — ikki xil kalit, va sessiya
- * sahifa yangilanishidan omon chiqmasdi.
- */
-const keyFor = (slug: string | null): string =>
-  slug && !env.isStandalone ? `${BASE_KEY}:${slug}` : BASE_KEY
 
 let accessToken: string | null = null
+
+/** Eski versiyalardan qolgan refresh kalitlari (PLAN 5.1 dan oldin). */
+const LEGACY_PREFIX = 'kg_crm_refresh'
 
 export const tokenStorage = {
   getAccess: (): string | null => accessToken,
@@ -44,31 +32,22 @@ export const tokenStorage = {
     accessToken = token
   },
 
-  getRefresh(slug: string | null = currentSlug): string | null {
-    try {
-      return localStorage.getItem(keyFor(slug))
-    } catch {
-      return null
-    }
+  clear() {
+    accessToken = null
   },
 
   /**
-   * `slug` ataylab beriladigan parametr: kirish paytida foydalanuvchi
-   * hali o'z manzilida turmagan bo'lishi mumkin (`/login` dan kirdi), va
-   * token DARHOL to'g'ri kalit ostida yozilishi kerak — aks holda
-   * manzilga o'tishda u yo'qolardi.
+   * `localStorage` dagi eski tokenlarni oʻchiradi.
+   *
+   * Ilova yuklanganda bir marta chaqiriladi: cookie'ga oʻtgandan
+   * keyin u yerdagi qiymat foydasiz, lekin XSS uchun hamon oʻlja.
    */
-  setRefresh(token: string | null, slug: string | null = currentSlug) {
+  dropLegacyTokens() {
     try {
-      if (token) localStorage.setItem(keyFor(slug), token)
-      else localStorage.removeItem(keyFor(slug))
+      const keys = Object.keys(localStorage).filter((key) => key.startsWith(LEGACY_PREFIX))
+      for (const key of keys) localStorage.removeItem(key)
     } catch {
-      /* private rejimda localStorage bloklanadi — sessiya shu tab bilan cheklanadi */
+      /* maxfiy rejimda `localStorage` bloklanadi — tozalashga narsa ham yoʻq */
     }
-  },
-
-  clear() {
-    accessToken = null
-    this.setRefresh(null)
   },
 }

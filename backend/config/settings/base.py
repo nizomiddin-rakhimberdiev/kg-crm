@@ -396,6 +396,21 @@ REST_FRAMEWORK = {
     },
 }
 
+# --- Cookie bilan ishlash (PLAN 5.1) ---
+#
+# Refresh token `httpOnly` cookie'da. Brauzer uni faqat o'sha
+# origin'ga yuboradi, lekin ishlab chiqishda frontend boshqa portda
+# (`localhost:5173` → `localhost:8000`) va cookie'li so'rov uchun
+# server ham ruxsat berishi kerak.
+CORS_ALLOW_CREDENTIALS = True
+
+# `Strict` cookie uchun domenlar ro'yxati. Django POST so'rovida
+# `Origin` ni shu ro'yxat bilan solishtiradi.
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=["http://localhost:5173", "http://127.0.0.1:5173"],
+)
+
 # --- Pochta (PLAN 5.2) ---
 #
 # Parolni tiklash havolasi email bilan ketadi: xodimning telefoni
@@ -467,7 +482,11 @@ CORS_ALLOW_CREDENTIALS = True
 # chiqishda (`:5173` → `:8001`) va API alohida domenga chiqarilganda
 # (`app.` / `api.`) brauzer to'lov so'rovini BUTUNLAY bloklaydi — ya'ni
 # ikki marta yozishdan himoya (docs/04 §1) jimgina yo'qoladi.
-CORS_ALLOW_HEADERS = (*cors_default_headers, "idempotency-key")
+# `x-csrftoken` — cookie bilan ishlaydigan yangilash so'rovi uchun
+# (PLAN 5.1). `corsheaders` ning sukut ro'yxatida u bor, lekin bu
+# yerda ataylab ko'rsatilgan: ro'yxat qo'lda yozilgan va sukut
+# o'zgarsa, sabab ko'rinmaydigan `CORS` xatosi chiqardi.
+CORS_ALLOW_HEADERS = (*cors_default_headers, "idempotency-key", "x-csrftoken")
 
 # --- Mijoz manzili (apps/core/tenant_address.py) ---
 #

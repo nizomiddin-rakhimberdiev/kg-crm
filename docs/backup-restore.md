@@ -51,6 +51,15 @@ The manifest is deliberately left unencrypted — it contains counts, no persona
 
 ## 3. Automating it
 
+> **Audited 2026-10-02: the cron job was not installed.** The script, the
+> restore procedure and this document all existed; the schedule did not,
+> and `/srv/kg-crm/backups` was empty — so **no backup had ever been
+> taken**. Nothing about that is visible from the outside: a document
+> saying "backups exist" and the fact that backups are being taken are
+> different claims, and only the files can settle it. Installing the line
+> below is a launch-blocking step, and `scripts/backup-check.sh` is there
+> so the question can be answered in one command from then on.
+
 Nightly, on the server, via the host's crontab:
 
 ```cron
@@ -60,6 +69,15 @@ Nightly, on the server, via the host's crontab:
 02:30 sits between the nightly Celery jobs (invoice generation runs at 02:00, overdue marking at 03:00 — [`02 §18`](./02_Software_Architecture.md)), so a backup never captures a half-finished billing run.
 
 **Check the log.** A cron job that has been failing for three weeks looks exactly like one that has been working, until you look. The script exits non-zero on every failure, so wire it to whatever will actually reach you.
+
+Or ask the files directly:
+
+```bash
+./scripts/backup-check.sh                       # ./backups, 48 soat
+./scripts/backup-check.sh --max-age-hours 24    # qattiqroq chegara
+```
+
+It reports the newest dump's age and size and exits non-zero when either is wrong — an empty directory, a stale backup, or a suspiciously small file. That makes it usable from a monitor, and it answers the question this section had left open: not "is there a backup script?" but "was a backup taken last night?"
 
 ---
 

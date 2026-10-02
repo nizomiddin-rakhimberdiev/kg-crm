@@ -92,33 +92,37 @@ describe('kirishdan keyingi manzil', () => {
   })
 })
 
-describe('standalone sessiyasi', () => {
-  it("refresh token kirishdagi kalitdan O'QILADI ham", async () => {
-    // Haqiqiy nosozlik: kirish paytida token tashkilot slug'i bilan
-    // yozilardi, o'qishda esa slug'siz kalit so'ralardi — natijada
-    // foydalanuvchi kirgandek bo'lardi, lekin sahifa yangilanishi
-    // bilan yana login ekraniga tushardi.
+describe('sessiya saqlanishi (PLAN 5.1)', () => {
+  it('refresh token `localStorage` da SAQLANMAYDI', async () => {
+    // Avval u shu yerda yashardi va XSS uchun oʻlja edi. Endi u
+    // `httpOnly` cookie'da va JS uni koʻrmaydi — shuning uchun
+    // moduldan uni yozish/oʻqish funksiyalari ham olib tashlangan.
     const { tokenStorage } = await loadWithMode('standalone')
-    localStorage.clear()
-
-    tokenStorage.setRefresh('token-123', 'bahor-bogchasi')
-    expect(tokenStorage.getRefresh()).toBe('token-123')
-
-    tokenStorage.clear()
-    expect(tokenStorage.getRefresh()).toBeNull()
+    expect('setRefresh' in tokenStorage).toBe(false)
+    expect('getRefresh' in tokenStorage).toBe(false)
   })
 
-  it("SaaS rejimida kalit bog'cha bo'yicha ajratiladi", async () => {
-    // Bu xatti-harakat SAQLANISHI kerak: bir necha bog'chaga xizmat
-    // qiladigan buxgalter ikkinchisiga kirsa, birinchisidan chiqib
-    // ketmasligi kerak.
+  it('eski kalitlar tozalanadi', async () => {
+    const { tokenStorage } = await loadWithMode('saas')
+    localStorage.setItem('kg_crm_refresh', 'eski-token')
+    localStorage.setItem('kg_crm_refresh:bahor', 'eski-token-2')
+
+    tokenStorage.dropLegacyTokens()
+
+    // Cookie'ga oʻtgandan keyin u yerdagi qiymat foydasiz, lekin
+    // XSS uchun hamon oʻlja.
+    expect(localStorage.getItem('kg_crm_refresh')).toBeNull()
+    expect(localStorage.getItem('kg_crm_refresh:bahor')).toBeNull()
+  })
+
+  it('access token faqat xotirada', async () => {
     const { tokenStorage } = await loadWithMode('saas')
     localStorage.clear()
-
-    tokenStorage.setRefresh('token-a', 'bogcha-a')
-    tokenStorage.setRefresh('token-b', 'bogcha-b')
-    expect(tokenStorage.getRefresh('bogcha-a')).toBe('token-a')
-    expect(tokenStorage.getRefresh('bogcha-b')).toBe('token-b')
+    tokenStorage.setAccess('access-123')
+    expect(tokenStorage.getAccess()).toBe('access-123')
+    expect(Object.keys(localStorage)).toEqual([])
+    tokenStorage.clear()
+    expect(tokenStorage.getAccess()).toBeNull()
   })
 })
 

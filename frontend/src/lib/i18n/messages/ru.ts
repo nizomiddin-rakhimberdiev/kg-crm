@@ -490,7 +490,6 @@ export const messages: Record<string, string> = {
   'Sessiya muddati tugadi. Qaytadan kiring.': 'Сеанс истёк. Войдите снова.',
   'Sessiya ochilmadi — ruxsat muddati tugagan boʻlishi mumkin.':
     'Сеанс не открылся — возможно, срок разрешения истёк.',
-  'Sessiya topilmadi.': 'Сеанс не найден.',
   'Shablonni yuklab boʻlmadi. Qaytadan urinib koʻring.':
     'Не удалось скачать шаблон. Попробуйте ещё раз.',
   'Shablonni yuklab oling, toʻldiring va shu yerga qaytaring.':

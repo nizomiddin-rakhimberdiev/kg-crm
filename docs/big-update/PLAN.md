@@ -284,9 +284,9 @@ Yangi qo'riqchi testlar: `lib/i18n/__tests__/apostrophes` (Q11),
 
 ### Bosqich 5 — Xavfsizlik, landing, huquqiy, demo `[ ]`
 
-- [ ] **5.1** Refresh token → httpOnly cookie, access faqat xotirada, CSRF, yumshoq o'tish
-- [ ] **5.2** Parolni tiklash (30 daq, rate limit, oshkor qilmaydigan javob)
-- [ ] **5.3** Login cheklovi (10/15 daq, IP+email, audit)
+- [x] **5.1** Refresh token → httpOnly cookie, access faqat xotirada, CSRF, yumshoq o'tish
+- [x] **5.2** Parolni tiklash (30 daq, rate limit, oshkor qilmaydigan javob)
+- [x] **5.3** Login cheklovi (10/15 daq, IP+email, audit)
 - [ ] **5.4** 2FA: platforma uchun majburiy, tenant egasi uchun ixtiyoriy, zaxira kodlar
 - [ ] **5.5** Yangi bog'cha: 72 soatlik taklif havolasi, slug validatsiyasi
 - [ ] **5.6** Nginx: CSP, Permissions-Policy, `/` → 301 `/uz`, noma'lum yo'l → 404

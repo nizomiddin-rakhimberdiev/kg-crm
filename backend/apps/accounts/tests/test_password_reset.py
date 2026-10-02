@@ -165,7 +165,10 @@ class TestConfirm:
             {"email": tenant_a.owner.email, "password": tenant_a.password},
             format="json",
         )
-        refresh = logged_in.json()["data"]["refresh"]
+        # Refresh token COOKIE'da (PLAN 5.1).
+        from apps.accounts.cookies import REFRESH_COOKIE
+
+        refresh = logged_in.cookies[REFRESH_COOKIE].value
 
         uid, token = _link_parts(password_reset.build_link(tenant_a.owner))
         _confirm(api_client, uid, token, "Yangi-Kuchli-Parol-2026")
@@ -173,6 +176,10 @@ class TestConfirm:
         with organization_context(tenant_a.organization.id):
             assert RefreshToken.objects.filter(revoked_at__isnull=True).count() == 0
 
+        # Cookie tozalanadi: bu "eski tokeni bor, lekin brauzeri
+        # yo'q" holatini modellaydi — ya'ni token bekor qilinganini
+        # tekshiradi, cookie yo'qligini emas.
+        api_client.cookies.clear()
         again = api_client.post(reverse("v1:auth-refresh"), {"refresh": refresh}, format="json")
         assert again.status_code == 401
 

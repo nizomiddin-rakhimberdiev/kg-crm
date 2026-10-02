@@ -103,14 +103,18 @@ def test_login_rate_fits_a_shared_office_ip():
 @override_settings(REST_FRAMEWORK={**BASE_REST_FRAMEWORK, "DEFAULT_THROTTLE_RATES": {**BASE_RATES}})
 def test_many_refreshes_from_one_ip_are_not_blocked(tenant_a: Any, api_client: Any):
     """Bitta IP dan 40 ta yangilash — bitta bogʻchaning yarim kunlik ishi."""
-    login = api_client.post(
+    from apps.accounts.cookies import CSRF_COOKIE, CSRF_HEADER
+
+    api_client.post(
         reverse("v1:auth-login"),
         {"email": tenant_a.owner.email, "password": tenant_a.password},
         format="json",
     )
-    refresh = login.json()["data"]["refresh"]
 
+    # Refresh token COOKIE'da (PLAN 5.1) — klient uni o'zi saqlaydi,
+    # biz faqat CSRF sarlavhasini qo'yamiz (frontend ham shunday
+    # qiladi).
     for index in range(40):
-        response = api_client.post(reverse("v1:auth-refresh"), {"refresh": refresh}, format="json")
+        headers = {CSRF_HEADER: api_client.cookies[CSRF_COOKIE].value}
+        response = api_client.post(reverse("v1:auth-refresh"), {}, format="json", headers=headers)
         assert response.status_code == 200, f"{index}-urinishda {response.status_code}"
-        refresh = response.json()["data"]["refresh"]

@@ -19,6 +19,11 @@ export const httpClient: AxiosInstance = axios.create({
   // keladi — Django `LocaleMiddleware` sarlavhani o'qiydi.
   headers: { 'Content-Type': 'application/json', 'Accept-Language': locale },
   timeout: 30_000,
+  // Cookie'lar bir xil origin'da yashaydi, lekin `withCredentials`
+  // ataylab yoqilgan: ishlab chiqishda frontend boshqa portda
+  // (`localhost:5173` → `localhost:8000`) va usiz cookie
+  // yuborilmasdi.
+  withCredentials: true,
 })
 
 /** Sessiya tugaganda ilova xabardor bo'lishi uchun (AuthProvider ulanadi). */
@@ -41,6 +46,10 @@ export const lastRequestId = (): string | null => _lastRequestId
 httpClient.interceptors.request.use((config) => {
   const token = tokenStorage.getAccess()
   if (token) config.headers.Authorization = `Bearer ${token}`
+  // Cookie bilan ishlaydigan endpointlar (`/auth/refresh`,
+  // `/auth/logout`) CSRF sarlavhasini talab qiladi.
+  const csrf = csrfToken()
+  if (csrf) config.headers['X-CSRFToken'] = csrf
   return config
 })
 
@@ -52,19 +61,48 @@ httpClient.interceptors.request.use((config) => {
 // Shuning uchun refresh bitta va'daga birlashtiriladi.
 let refreshPromise: Promise<string> | null = null
 
-const refreshAccessToken = async (): Promise<string> => {
-  const refresh = tokenStorage.getRefresh()
-  if (!refresh) throw new ApiError('AUTHENTICATION_REQUIRED', t('Sessiya topilmadi.'))
+/**
+ * `radix_csrf` cookie'sini oʻqiydi (PLAN 5.1).
+ *
+ * Bu cookie ATAYLAB `httpOnly` emas: uning butun maʼnosi "bu soʻrov
+ * bizning sahifamizdan keldi" ni isbotlash, va buning uchun JS uni
+ * oʻqib sarlavhaga koʻchirishi kerak (double submit). Begona sayt
+ * bizning cookie'imizni oʻqiy olmaydi — same-origin policy.
+ */
+const csrfToken = (): string => {
+  const match = /(?:^|;\s*)radix_csrf=([^;]+)/.exec(document.cookie)
+  return match ? decodeURIComponent(match[1]) : ''
+}
 
-  const response = await axios.post<Envelope<{ access: string; refresh: string }>>(
+const refreshAccessToken = async (): Promise<string> => {
+  // Tana BOʻSH: refresh token `httpOnly` cookie'da va uni brauzer
+  // oʻzi qoʻshadi. JS uni oʻqiy olmaydi — bu oʻzgarishning butun
+  // maqsadi.
+  const response = await axios.post<Envelope<{ access: string }>>(
     `${env.apiBaseUrl}/auth/refresh`,
-    { refresh },
-    { headers: { 'Content-Type': 'application/json' } },
+    {},
+    {
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+      withCredentials: true,
+    },
   )
   const tokens = response.data.data
   tokenStorage.setAccess(tokens.access)
-  tokenStorage.setRefresh(tokens.refresh)
   return tokens.access
+}
+
+/**
+ * Boot paytidagi yangilash (PLAN 5.1).
+ *
+ * Interceptor `401` dan keyin chaqiradigan yoʻl bilan BIR XIL
+ * funksiyadan foydalanadi — ikki nusxa boʻlsa, biri CSRF sarlavhasini
+ * yuborib, ikkinchisi yubormay qolishi mumkin edi.
+ */
+export const restoreSession = (): Promise<string> => {
+  refreshPromise ??= refreshAccessToken().finally(() => {
+    refreshPromise = null
+  })
+  return refreshPromise
 }
 
 const isRefreshCall = (config?: InternalAxiosRequestConfig) =>

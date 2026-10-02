@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 from django.urls import reverse
 
@@ -50,6 +52,36 @@ class TestPublicSignupIsClosed:
             assert not Organization.objects.filter(name="Yangi Bogʻcha").exists()
 
 
+def _refresh_cookie(response: Any) -> str:
+    """
+    Refresh token javob TANASIDA emas, COOKIE'da (PLAN 5.1).
+
+    Testlar shu yordamchidan o'qiydi — ya'ni ular saqlash joyi
+    o'zgarganini BIR MARTA biladi, har bir test alohida emas.
+    """
+    from apps.accounts.cookies import REFRESH_COOKIE
+
+    return str(response.cookies[REFRESH_COOKIE].value)
+
+
+def _refresh(client: Any, body: dict[str, Any] | None = None) -> Any:
+    """
+    Yangilash so'rovi — frontend kabi, CSRF sarlavhasi bilan.
+
+    Cookie bilan kelgan so'rov `X-CSRFToken` ni talab qiladi va u
+    `radix_csrf` cookie'siga mos bo'lishi kerak (double submit).
+    Begona sayt bizning cookie'imizni o'qiy olmaydi, ya'ni
+    sarlavhani to'g'ri to'ldira olmaydi.
+    """
+    from apps.accounts.cookies import CSRF_COOKIE, CSRF_HEADER
+
+    headers = {}
+    token = client.cookies.get(CSRF_COOKIE)
+    if token is not None:
+        headers[CSRF_HEADER] = token.value
+    return client.post(reverse("v1:auth-refresh"), body or {}, format="json", headers=headers)
+
+
 class TestLogin:
     def test_single_organization_returns_tokens(self, api_client, tenant_a):
         response = api_client.post(
@@ -59,7 +91,12 @@ class TestLogin:
         )
         assert response.status_code == 200
         data = response.json()["data"]
-        assert data["access"] and data["refresh"]
+        # Refresh token TANADA YO'Q (PLAN 5.1): u yerda qolsa, mijoz
+        # uni `localStorage` ga yozishi mumkin va httpOnly cookie'ga
+        # o'tishning ma'nosi qolmasdi.
+        assert data["access"]
+        assert "refresh" not in data
+        assert _refresh_cookie(response)
         assert data["user"]["organization"]["id"] == str(tenant_a.organization.id)
 
     def test_wrong_password_is_generic_401(self, api_client, tenant_a):
@@ -153,13 +190,13 @@ class TestRefreshAndLogout:
             reverse("v1:auth-login"),
             {"email": tenant_a.owner.email, "password": PASSWORD},
             format="json",
-        ).json()["data"]
-
-        response = api_client.post(
-            reverse("v1:auth-refresh"), {"refresh": login["refresh"]}, format="json"
         )
+        first = _refresh_cookie(login)
+
+        # Cookie klientda saqlanadi — tanada hech narsa yuborilmaydi.
+        response = _refresh(api_client)
         assert response.status_code == 200
-        assert response.json()["data"]["refresh"] != login["refresh"]
+        assert _refresh_cookie(response) != first
 
     def test_old_refresh_token_stops_working(self, api_client, tenant_a):
         """Rotatsiyadan keyin eski token darhol oʻladi — qayta ishlatishga yoʻl yoʻq."""
@@ -167,12 +204,14 @@ class TestRefreshAndLogout:
             reverse("v1:auth-login"),
             {"email": tenant_a.owner.email, "password": PASSWORD},
             format="json",
-        ).json()["data"]
-        api_client.post(reverse("v1:auth-refresh"), {"refresh": login["refresh"]}, format="json")
-
-        again = api_client.post(
-            reverse("v1:auth-refresh"), {"refresh": login["refresh"]}, format="json"
         )
+        old = _refresh_cookie(login)
+        _refresh(api_client)
+
+        # Eski tokenni TANADA yuborib ko'rish ham ishlamaydi —
+        # rotatsiya uni o'ldirgan.
+        api_client.cookies.clear()
+        again = api_client.post(reverse("v1:auth-refresh"), {"refresh": old}, format="json")
         assert again.status_code == 401
 
     def test_logout_revokes_refresh_token(self, tenant_a):
@@ -216,7 +255,21 @@ class TestRefreshTokenReuse:
             format="json",
         )
         assert response.status_code == 200
-        return response.json()["data"]["refresh"]
+        return _refresh_cookie(response)
+
+    @staticmethod
+    def _raw(api_client, token: str):
+        """
+        XOM token bilan yangilash — brauzersiz.
+
+        Bu ikki holatni modellaydi: (a) `localStorage` dagi tokeni bor
+        ESKI mijozning bir martalik o'tishi, (b) tokenni o'g'irlagan,
+        lekin bizning cookie'imiz yo'q odam. Shuning uchun cookie
+        ataylab tozalanadi — aks holda view cookie'ni afzal ko'radi
+        va sinov o'z ma'nosini yo'qotardi.
+        """
+        api_client.cookies.clear()
+        return api_client.post(reverse("v1:auth-refresh"), {"refresh": token}, format="json")
 
     def test_reusing_a_rotated_token_closes_every_session(self, api_client, tenant_a):
         """
@@ -229,21 +282,15 @@ class TestRefreshTokenReuse:
         first = self._login(api_client, tenant_a)
 
         # Normal yangilash — `first` bekor qilinadi, `second` beriladi.
-        rotated = api_client.post(reverse("v1:auth-refresh"), {"refresh": first}, format="json")
+        rotated = self._raw(api_client, first)
         assert rotated.status_code == 200
-        second = rotated.json()["data"]["refresh"]
+        second = _refresh_cookie(rotated)
 
         # Yangi token hozircha ishlaydi.
-        assert (
-            api_client.post(
-                reverse("v1:auth-refresh"), {"refresh": second}, format="json"
-            ).status_code
-            == 200
-        )
+        assert self._raw(api_client, second).status_code == 200
 
         # ESKI tokenni qayta ishlatish — o'g'irlik belgisi.
-        replay = api_client.post(reverse("v1:auth-refresh"), {"refresh": first}, format="json")
-        assert replay.status_code == 401
+        assert self._raw(api_client, first).status_code == 401
 
         # Endi barcha sessiyalar yopilgan bo'lishi kerak.
         with organization_context(tenant_a.organization.id):
@@ -254,12 +301,10 @@ class TestRefreshTokenReuse:
     def test_the_thiefs_fresh_token_stops_working_too(self, api_client, tenant_a):
         """Eng muhimi: oʻgʻri olgan YANGI token ham oʻladi."""
         first = self._login(api_client, tenant_a)
-        stolen_new = api_client.post(
-            reverse("v1:auth-refresh"), {"refresh": first}, format="json"
-        ).json()["data"]["refresh"]
+        stolen_new = _refresh_cookie(self._raw(api_client, first))
 
         # Haqiqiy foydalanuvchi eski tokenini ishlatadi → oila yopiladi.
-        api_client.post(reverse("v1:auth-refresh"), {"refresh": first}, format="json")
+        self._raw(api_client, first)
 
         after = api_client.post(reverse("v1:auth-refresh"), {"refresh": stolen_new}, format="json")
         assert after.status_code == 401
@@ -382,3 +427,81 @@ class TestSubscriptionPayload:
         response = tenant_a.client().get(reverse("v1:auth-me"))
         assert response.status_code == 200
         assert response.json()["data"]["subscription"]["status"] == "trialing"
+
+
+class TestRefreshCookie:
+    """
+    Refresh token httpOnly cookie'da (PLAN 5.1).
+
+    Avval u `localStorage` da yashardi va bu ongli murosa edi. Narxi
+    aniq: bitta zararli skript (buzilgan npm paketi, reklama kodi)
+    tokenni o'qib o'z serveriga yuborishi mumkin, va u YETTI KUN
+    ishlaydi. `httpOnly` cookie'ni JavaScript umuman o'qiy olmaydi.
+    """
+
+    def _login(self, api_client, tenant):
+        return api_client.post(
+            reverse("v1:auth-login"),
+            {"email": tenant.owner.email, "password": PASSWORD},
+            format="json",
+        )
+
+    def test_the_cookie_carries_the_security_flags(self, api_client, tenant_a):
+        from apps.accounts.cookies import REFRESH_COOKIE
+
+        response = self._login(api_client, tenant_a)
+        cookie = response.cookies[REFRESH_COOKIE]
+        assert cookie["httponly"], "XSS tokenni o'qiy olmasligi kerak"
+        assert cookie["samesite"] == "Strict", "begona saytdan kelgan so'rovga qo'shilmasin"
+        # Yo'l cheklangan: cookie faqat auth endpointlariga ketadi.
+        assert cookie["path"] == "/api/v1/auth"
+
+    def test_an_old_session_migrates_once_and_then_uses_the_cookie(self, api_client, tenant_a):
+        """
+        Yumshoq o'tish: `localStorage` dagi tokeni bor sessiya bir
+        marta yangilanadi va shu paytda cookie'ga ko'chadi.
+        """
+        old_token = _refresh_cookie(self._login(api_client, tenant_a))
+        api_client.cookies.clear()
+
+        migrated = api_client.post(
+            reverse("v1:auth-refresh"), {"refresh": old_token}, format="json"
+        )
+        assert migrated.status_code == 200
+        assert _refresh_cookie(migrated), "cookie o'rnatilishi kerak"
+
+        # Ikkinchi yangilashda tana BO'SH — token cookie'dan keladi.
+        assert _refresh(api_client).status_code == 200
+
+    def test_a_cookie_request_without_the_csrf_header_is_refused(self, api_client, tenant_a):
+        """
+        CSRF — ikkinchi qatlam.
+
+        `SameSite=Strict` ning o'zi deyarli yetarli, lekin u brauzerga
+        ishonadi. Double submit esa begona saytni to'xtatadi: u
+        bizning cookie'imizni O'QIY olmaydi, ya'ni sarlavhani to'g'ri
+        to'ldira olmaydi.
+        """
+        self._login(api_client, tenant_a)
+        response = api_client.post(reverse("v1:auth-refresh"), {}, format="json")
+        assert response.status_code == 401
+
+    def test_a_wrong_csrf_header_is_refused(self, api_client, tenant_a):
+        from apps.accounts.cookies import CSRF_HEADER
+
+        self._login(api_client, tenant_a)
+        response = api_client.post(
+            reverse("v1:auth-refresh"), {}, format="json", headers={CSRF_HEADER: "boshqa-qiymat"}
+        )
+        assert response.status_code == 401
+
+    def test_logout_clears_the_cookie(self, api_client, tenant_a):
+        from apps.accounts.cookies import REFRESH_COOKIE
+
+        login = self._login(api_client, tenant_a).json()["data"]
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {login['access']}")
+        response = api_client.post(reverse("v1:auth-logout"), {}, format="json")
+        assert response.status_code == 204
+        # Chiqish tugmasi bosilgach brauzerda hech narsa qolmasligi
+        # kerak — token topilmasa ham cookie tozalanadi.
+        assert response.cookies[REFRESH_COOKIE].value == ""
