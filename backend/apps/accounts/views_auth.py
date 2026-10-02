@@ -19,7 +19,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken as JWTRefreshToken
 
-from apps.accounts import services
+from apps.accounts import lockout, services
 from apps.accounts.authentication import (
     authenticate_candidates,
     hydrate_user,
@@ -100,14 +100,47 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data["email"]
+        ip = audit.client_ip(request._request)
+
+        # Hisob bo'yicha blok (PLAN 5.3) — tezlik chegarasidan
+        # ALOHIDA qatlam. `LoginThrottle` IP bo'yicha 20/min beradi va
+        # u jamoaviy: bog'chada hamma bitta Wi-Fi ortida. 20/min esa
+        # soatda 1200 urinish — bitta hisobga qarshi parol terish
+        # uchun ko'p.
+        if lockout.is_locked(email=email, ip=ip):
+            audit.record(
+                action="login_blocked",
+                request=request._request,
+                actor_email=email,
+                changes={"reason": "too_many_attempts"},
+            )
+            return Response(
+                {
+                    "success": False,
+                    "error": {
+                        "code": "TOO_MANY_ATTEMPTS",
+                        # Aniq daqiqa aytiladi: "keyinroq urinib
+                        # ko'ring" degan javob odamni har 10 soniyada
+                        # qayta bosishga majbur qiladi.
+                        "message": gettext(
+                            "Juda koʻp urinish. {minutes} daqiqadan keyin qayta urinib koʻring."
+                        ).format(minutes=max(1, lockout.retry_after(email=email, ip=ip) // 60)),
+                        "details": None,
+                    },
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+                headers={"Retry-After": str(lockout.retry_after(email=email, ip=ip))},
+            )
 
         candidates = authenticate_candidates(email, serializer.validated_data["password"])
 
         if not candidates:
+            attempts = lockout.record_failure(email=email, ip=ip)
             audit.record(
                 action="login_failed",
                 request=request._request,
                 actor_email=email,
+                changes={"attempts": attempts},
             )
             # Umumiy xabar: "email yo'q" va "parol xato" farqlanmasin.
             return Response(
@@ -121,6 +154,10 @@ class LoginView(APIView):
                 },
                 status=status.HTTP_401_UNAUTHORIZED,
             )
+
+        # Muvaffaqiyat — hisoblagich nolga. Parolni unutib uch marta
+        # xato tergan xodim to'g'ri kirgach jazolanmasligi kerak.
+        lockout.reset(email=email, ip=ip)
 
         if len(candidates) > 1:
             # Faqat paroli MOS KELGAN tashkilotlar ko'rsatiladi — aks holda

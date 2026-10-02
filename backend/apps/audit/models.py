@@ -27,6 +27,12 @@ class AuditLog(models.Model):
     ACTION_CHOICES = [
         ("login", "Kirish"),
         ("login_failed", "Muvaffaqiyatsiz kirish"),
+        # Blok — xato urinishdan ALOHIDA hodisa (PLAN 5.3): u
+        # hujumning belgisi, va jurnaldan "qachon boshlandi, qancha
+        # davom etdi" degan savolga javob chiqishi kerak.
+        ("login_blocked", "Kirish bloklandi"),
+        ("password_reset_requested", "Parol tiklash so'raldi"),
+        ("password_reset", "Parol tiklandi"),
         ("logout", "Chiqish"),
         ("signup", "Ro'yxatdan o'tish"),
         ("password_change", "Parol o'zgardi"),
@@ -54,7 +60,10 @@ class AuditLog(models.Model):
     )
     actor_email = models.EmailField(blank=True)
 
-    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    # 32 — eng uzun qiymat ("password_reset_requested", 24) uchun
+    # zaxira bilan. Jurnal ustuni kengayishi arzon, nomni qisqartirish
+    # esa jurnalni o'qib bo'lmaydigan qiladi.
+    action = models.CharField(max_length=32, choices=ACTION_CHOICES)
     entity_type = models.CharField(max_length=60, blank=True)
     entity_id = models.UUIDField(null=True, blank=True)
 

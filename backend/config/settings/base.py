@@ -391,6 +391,19 @@ REST_FRAMEWORK = {
     },
 }
 
+# --- Kirish urinishlari chegarasi (PLAN 5.3) ---
+#
+# Tezlik chegarasi (`login` throttle) IP bo'yicha va JAMOAVIY:
+# bog'chada hamma bitta Wi-Fi ortida. Bu esa HISOB bo'yicha ikkinchi
+# qatlam — bitta hisobga qarshi parol terishni to'xtatadi, hujumchi
+# IP'ni almashtirsa ham.
+#
+# Blok qisqa (15 daqiqa) va avtomatik yechiladi: abadiy blok qo'lda
+# aralashuvni talab qiladi, ya'ni bog'chaning ishi egasining
+# telefoniga bog'liq bo'lib qolardi.
+LOGIN_MAX_ATTEMPTS = env.int("LOGIN_MAX_ATTEMPTS", default=10)
+LOGIN_BLOCK_SECONDS = env.int("LOGIN_BLOCK_SECONDS", default=15 * 60)
+
 # --- JWT (ADR-3) ---
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(

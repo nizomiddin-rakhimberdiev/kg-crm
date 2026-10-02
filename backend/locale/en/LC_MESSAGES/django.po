@@ -1085,3 +1085,6 @@ msgstr "The file must be smaller than 2 MB."
 
 msgid "PNG, JPG, WEBP yoki SVG yuboring."
 msgstr "Send a PNG, JPG, WEBP or SVG."
+
+msgid "Juda koʻp urinish. {minutes} daqiqadan keyin qayta urinib koʻring."
+msgstr "Too many attempts. Try again in {minutes} min."
