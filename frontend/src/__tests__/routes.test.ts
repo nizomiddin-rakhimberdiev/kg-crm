@@ -40,12 +40,20 @@ describe('sotuv sayti marshrutlari', () => {
 })
 
 describe('CRM marshrutlari', () => {
-  it.each(['/login', '/dashboard', '/children', '/payments', '/platform/login'])(
-    '%s mos keladi',
-    (pathname) => {
-      expect(matchRoutes(routes, pathname)).not.toBeNull()
-    },
-  )
+  it.each([
+    '/login',
+    '/dashboard',
+    '/children',
+    '/payments',
+    '/platform/login',
+    // Pochtadan ochiladigan sahifalar: ular kirmagan foydalanuvchi
+    // uchun MOS KELISHI kerak, aks holda havola login ekraniga
+    // tushib, odam parolini o'rnata olmasdi (PLAN 5.2, 5.5).
+    '/reset-password',
+    '/invite',
+  ])('%s mos keladi', (pathname) => {
+    expect(matchRoutes(routes, pathname)).not.toBeNull()
+  })
 
   it('`/dashboard` ildiz marshrutiga tushib qolmaydi', () => {
     expect(leafIdFor('/dashboard')).not.toBe('marketing-root')

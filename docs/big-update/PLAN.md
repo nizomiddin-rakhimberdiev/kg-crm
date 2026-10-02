@@ -288,7 +288,7 @@ Yangi qo'riqchi testlar: `lib/i18n/__tests__/apostrophes` (Q11),
 - [x] **5.2** Parolni tiklash (30 daq, rate limit, oshkor qilmaydigan javob)
 - [x] **5.3** Login cheklovi (10/15 daq, IP+email, audit)
 - [ ] **5.4** 2FA: platforma uchun majburiy, tenant egasi uchun ixtiyoriy, zaxira kodlar
-- [ ] **5.5** Yangi bog'cha: 72 soatlik taklif havolasi, slug validatsiyasi
+- [x] **5.5** Yangi bog'cha: 72 soatlik taklif havolasi, slug validatsiyasi
 - [ ] **5.6** Nginx: CSP, Permissions-Policy, `/` → 301 `/uz`, noma'lum yo'l → 404
 - [ ] **5.7** Landing: bitta shrift, aloqa bloki, demo javobi, mijozlar fikri joyi, 12px, mobil
 - [ ] **5.8** Huquqiy sahifalar (uz/ru/en) qayta yozish

@@ -71,6 +71,13 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, validators=[validate_password_strength])
 
 
+class InviteAcceptSerializer(serializers.Serializer):
+    """Taklif havolasidan parol o'rnatish (PLAN 5.5)."""
+
+    token = serializers.CharField(max_length=256)
+    password = serializers.CharField(write_only=True, validators=[validate_password_strength])
+
+
 class ProfilePhotoSerializer(serializers.ModelSerializer):
     """
     Profil rasmi — `POST /auth/me/photo` (multipart).

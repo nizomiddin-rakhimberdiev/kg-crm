@@ -1106,3 +1106,21 @@ msgstr "Radix CRM"
 
 msgid "Assalomu alaykum, {name}!\n\n{organization} hisobingiz uchun parolni tiklash soʻrovi keldi.\nYangi parol oʻrnatish uchun havolani bosing:\n\n{link}\n\nHavola {minutes} daqiqa ishlaydi va bir marta ishlatiladi.\nAgar bu soʻrovni siz yubormagan boʻlsangiz — hech narsa qilish kerak emas, parolingiz oʻzgarmaydi."
 msgstr "Hello, {name}!\n\nWe received a password reset request for your {organization} account.\nOpen this link to set a new password:\n\n{link}\n\nThe link works for {minutes} minutes and can be used once.\nIf you did not ask for this, no action is needed — your password stays the same."
+
+msgid "Soʻrov tasdiqlanmadi. Sahifani yangilang."
+msgstr "The request was not verified. Refresh the page."
+
+
+# Taklif havolasi (PLAN 5.5)
+msgid "Radix CRM — bogʻchangiz tayyor"
+msgstr "Radix CRM — your kindergarten is ready"
+
+msgid "Assalomu alaykum, {name}!\n\n{organization} uchun Radix CRM hisobi ochildi.\nParolni oʻzingiz oʻrnatasiz — havolani bosing:\n\n{link}\n\nHavola {hours} soat ishlaydi. Parolni hech kimga aytmang: biz ham uni bilmaymiz va soʻramaymiz."
+msgstr "Hello, {name}!\n\nA Radix CRM account has been opened for {organization}.\nYou set the password yourself — open the link:\n\n{link}\n\nThe link works for {hours} hours. Do not share the password with anyone: we do not know it either and will never ask."
+
+msgid "Havola eskirgan yoki ishlatilgan. Vendordan yangisini soʻrang."
+msgstr "The link has expired or has already been used. Ask the vendor for a new one."
+
+msgid "Parol oʻrnatildi. Endi kirishingiz mumkin."
+msgstr "Password set. You can sign in now."
+

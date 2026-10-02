@@ -1107,3 +1107,21 @@ msgstr "Radix CRM"
 
 msgid "Assalomu alaykum, {name}!\n\n{organization} hisobingiz uchun parolni tiklash soʻrovi keldi.\nYangi parol oʻrnatish uchun havolani bosing:\n\n{link}\n\nHavola {minutes} daqiqa ishlaydi va bir marta ishlatiladi.\nAgar bu soʻrovni siz yubormagan boʻlsangiz — hech narsa qilish kerak emas, parolingiz oʻzgarmaydi."
 msgstr "Здравствуйте, {name}!\n\nПоступил запрос на сброс пароля для вашей учётной записи ({organization}).\nЧтобы задать новый пароль, откройте ссылку:\n\n{link}\n\nСсылка действует {minutes} мин. и используется один раз.\nЕсли запрос отправляли не вы — ничего делать не нужно, пароль не изменится."
+
+msgid "Soʻrov tasdiqlanmadi. Sahifani yangilang."
+msgstr "Запрос не подтверждён. Обновите страницу."
+
+
+# Taklif havolasi (PLAN 5.5)
+msgid "Radix CRM — bogʻchangiz tayyor"
+msgstr "Radix CRM — ваш садик готов"
+
+msgid "Assalomu alaykum, {name}!\n\n{organization} uchun Radix CRM hisobi ochildi.\nParolni oʻzingiz oʻrnatasiz — havolani bosing:\n\n{link}\n\nHavola {hours} soat ishlaydi. Parolni hech kimga aytmang: biz ham uni bilmaymiz va soʻramaymiz."
+msgstr "Здравствуйте, {name}!\n\nДля «{organization}» открыта учётная запись Radix CRM.\nПароль вы задаёте сами — откройте ссылку:\n\n{link}\n\nСсылка действует {hours} ч. Никому не сообщайте пароль: мы его тоже не знаем и не спросим."
+
+msgid "Havola eskirgan yoki ishlatilgan. Vendordan yangisini soʻrang."
+msgstr "Ссылка устарела или уже использована. Запросите новую у поставщика."
+
+msgid "Parol oʻrnatildi. Endi kirishingiz mumkin."
+msgstr "Пароль установлен. Теперь вы можете войти."
+

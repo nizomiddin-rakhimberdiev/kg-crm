@@ -132,7 +132,11 @@ def register_organization(
     organization_name: str,
     contact_email: str,
     full_name: str,
-    password: str,
+    # `None` — parol O'RNATILMAYDI (PLAN 5.5): egaga taklif havolasi
+    # ketadi va u parolni o'zi tanlaydi. Vendor mijozning parolini
+    # bilmasligi kerak — aks holda "biz mijoz ma'lumotini ko'rmaymiz"
+    # (ADR-10) degan da'vo ishonchsiz bo'lib qoladi.
+    password: str | None = None,
     contact_phone: str = "",
     branch_name: str | None = None,
     slug: str | None = None,
@@ -193,6 +197,13 @@ def register_organization(
             role=roles["org_owner"],
             branch=None,  # Org Owner barcha filiallarni ko'radi
         )
+        if not password:
+            # Parolsiz hisob KIRISHGA YARAMAYDI: `set_unusable_password`
+            # tekshirishda hech qachon mos kelmaydigan qiymat yozadi.
+            # Bo'sh parol qoldirish esa `check_password("")` ni
+            # ishlatib qo'yish xavfini tug'dirardi.
+            owner.set_unusable_password()
+            owner.save(update_fields=["password", "updated_at"])
 
         # 15 kunlik sinov — karta so'ralmaydi (docs/01 §4.4).
         #

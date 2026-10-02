@@ -587,11 +587,12 @@ class TestOrganizationCreation:
     URL = "/api/v1/platform/organizations/create"
 
     def _payload(self, **overrides):
+        # **Parol maydoni yo'q** (PLAN 5.5): egaga taklif havolasi
+        # boradi va parolni u o'zi qo'yadi.
         payload = {
             "organization_name": "Yangi Bogʻcha",
             "contact_email": "owner@yangi.uz",
             "full_name": "Aziz Karimov",
-            "password": "Mijoz-Juda-Kuchli-2026",
         }
         payload.update(overrides)
         return payload
@@ -633,12 +634,45 @@ class TestOrganizationCreation:
         assert subscription.status == "trialing"
         assert subscription.trial_ends_at is not None
 
-    def test_weak_password_rejected(self):
+    # --- Parol (PLAN 5.5) ---
+
+    def test_the_vendor_gets_an_invite_link_instead_of_a_password(self):
+        response = _client(_platform_user()).post(self.URL, self._payload(), format="json")
+        assert response.status_code == 201
+        data = response.json()["data"]
+
+        # Havola javobda ham qaytadi: pochta yetib bormasa (spam,
+        # xato email) vendor uni qo'lda uzatishi kerak.
+        assert "/invite?token=" in data["invite_link"]
+        assert data["invite_hours"] == 72
+        assert "password" not in data
+
+    def test_a_password_in_the_request_is_ignored(self):
+        """
+        Vendor mijozning parolini BILMASLIGI kerak.
+
+        Maydon serializer'dan olib tashlandi, lekin eski mijoz
+        (yoki qo'lda yozilgan so'rov) uni hamon yuborishi mumkin —
+        va u jimgina qabul qilinsa, butun o'zgarishning ma'nosi
+        qolmasdi: ADR-10 dagi "biz mijoz ma'lumotini ko'rmaymiz"
+        da'vosi texnik jihatdan ham yolg'on bo'lardi.
+        """
+        sent = "Vendor-Bilgan-Parol-2026"  # noqa: S105 — test ma'lumoti
         response = _client(_platform_user()).post(
-            self.URL, self._payload(password="123"), format="json"
+            self.URL, self._payload(password=sent), format="json"
         )
-        assert response.status_code == 400
-        assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+        assert response.status_code == 201
+
+        from apps.accounts.models import User
+        from apps.organizations.models import Organization
+
+        with platform_context():
+            organization = Organization.objects.get(slug="yangi-bogcha")
+        with organization_context(organization.id):
+            owner = User.objects.get(email="owner@yangi.uz")
+
+        assert owner.has_usable_password() is False
+        assert owner.check_password(sent) is False
 
     def test_creation_is_atomic(self, monkeypatch):
         """
@@ -669,10 +703,44 @@ class TestOrganizationCreation:
 
     def test_the_vendor_can_choose_the_address(self):
         response = _client(_platform_user()).post(
-            self.URL, self._payload(slug="Quyosh Bogʻchasi"), format="json"
+            self.URL, self._payload(slug="quyosh-bogchasi"), format="json"
         )
         assert response.status_code == 201
         assert response.json()["data"]["slug"] == "quyosh-bogchasi"
+
+    def test_a_typed_url_is_refused_with_its_own_message(self):
+        """
+        Maydonga TO'LIQ MANZIL yozish — eng ko'p uchraydigan xato.
+
+        Umumiy "noto'g'ri format" xabari nima qilish kerakligini
+        aytmaydi, shuning uchun bu holat alohida gapiriladi.
+        """
+        response = _client(_platform_user()).post(
+            self.URL, self._payload(slug="radix-crm.uz/t/quyosh"), format="json"
+        )
+        assert response.status_code == 400
+        assert "manzil yoki domen emas" in str(response.json()["error"]["details"])
+
+    @pytest.mark.parametrize(
+        "bad",
+        [
+            "Quyosh Bogʻchasi",  # bo'sh joy va lotin bo'lmagan belgi
+            "бахор",  # kirill — havola punycode'ga aylanardi
+            "ab",  # juda qisqa
+            "-quyosh",  # chiziqcha bilan boshlanadi
+            "quyosh_bogcha",  # pastki chiziq URL'da odatiy emas
+        ],
+    )
+    def test_a_broken_address_is_refused(self, bad):
+        """
+        Manzil URL'ga tushadi va bosma materialga ko'chadi.
+
+        Ilgari u `slugify` orqali jimgina "tuzatilardi": kirill nom
+        bo'm-bo'sh qiymatga aylanib, tashkilot tasodifiy manzil olardi
+        va buni hech kim sezmasdi.
+        """
+        response = _client(_platform_user()).post(self.URL, self._payload(slug=bad), format="json")
+        assert response.status_code == 400, response.content
 
     def test_a_reserved_address_is_refused(self):
         """

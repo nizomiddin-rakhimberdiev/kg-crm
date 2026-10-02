@@ -43,7 +43,6 @@ class TestAuthAuditing:
             organization_name="Audit Bogʻcha",
             contact_email="owner@audit.uz",
             full_name="Egasi",
-            password=PASSWORD,
         )
 
         # Yozuv TASHKILOTGA tegishli, shuning uchun uni o'sha tashkilot

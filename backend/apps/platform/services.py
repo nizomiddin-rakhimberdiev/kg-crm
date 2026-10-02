@@ -298,7 +298,6 @@ def create_organization(
     organization_name: str,
     contact_email: str,
     full_name: str,
-    password: str,
     contact_phone: str = "",
     branch_name: str = "",
     slug: str = "",
@@ -320,11 +319,14 @@ def create_organization(
     """
     from apps.accounts.services import register_organization
 
+    # **Parolsiz** (PLAN 5.5): egaga 72 soatlik taklif havolasi
+    # ketadi va u parolni o'zi tanlaydi. Vendor mijozning parolini
+    # bilmasligi kerak — aks holda ADR-10 dagi "biz mijoz
+    # ma'lumotini ko'rmaymiz" da'vosi ishonchsiz bo'lib qoladi.
     result = register_organization(
         organization_name=organization_name,
         contact_email=contact_email,
         full_name=full_name,
-        password=password,
         contact_phone=contact_phone,
         branch_name=branch_name or None,
         slug=slug or None,
@@ -343,6 +345,15 @@ def create_organization(
             request=request,
         )
 
+    # Taklif havolasi. Javobda ham qaytariladi: pochta ishlamasa
+    # vendor uni qo'lda uzatishi kerak, va tashkilotni yaratmay
+    # turish noto'g'ri bo'lardi — sotuv suhbati tugagan, mijoz
+    # kutayapti.
+    from apps.accounts import invite
+
+    invite_link = invite.build_link(result.owner)
+    invite.send_invite_email(result.owner, invite_link, result.organization.name)
+
     return {
         "id": str(result.organization.id),
         "name": result.organization.name,
@@ -350,6 +361,8 @@ def create_organization(
         "login_url": tenant_login_url(result.organization.slug),
         "owner_email": result.owner.email,
         "branch": result.branch.name,
+        "invite_link": invite_link,
+        "invite_hours": invite.INVITE_MAX_AGE // 3600,
     }
 
 

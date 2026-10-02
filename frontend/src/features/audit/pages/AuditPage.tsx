@@ -19,6 +19,14 @@ import { t } from '@/lib/i18n'
 const ACTION: Record<string, [string, string]> = {
   login: [t('Kirish'), 'bg-slate-100 text-slate-600'],
   login_failed: [t('Kirish urinishi'), 'bg-amber-50 text-amber-700'],
+  // Xavfsizlik hodisalari (PLAN 5.2, 5.3, 5.5). Ular jadvalda XOM
+  // nom bilan chiqib turardi: `ACTION` da yo'q qiymat shunchaki
+  // o'zini ko'rsatadi, va o'qiyotgan odam uchun `login_blocked`
+  // hech narsa demaydi.
+  login_blocked: [t('Kirish bloklandi'), 'bg-red-50 text-red-700'],
+  password_reset_requested: [t('Parol tiklash soʻraldi'), 'bg-amber-50 text-amber-700'],
+  password_reset: [t('Parol tiklandi'), 'bg-amber-50 text-amber-700'],
+  invite_accepted: [t('Taklif qabul qilindi'), 'bg-emerald-50 text-emerald-700'],
   logout: [t('Chiqish'), 'bg-slate-100 text-slate-600'],
   signup: [t('Roʻyxatdan oʻtish'), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
   password_change: [t('Parol oʻzgardi'), 'bg-amber-50 text-amber-700'],
@@ -135,6 +143,7 @@ const FILTERS: Array<[string, string]> = [
   ['update', t('Yangilash')],
   ['delete', t('Oʻchirish')],
   ['login_failed', t('Kirish urinishlari')],
+  ['login_blocked', t('Bloklanishlar')],
 ]
 
 const when = (iso: string) =>

@@ -27,6 +27,16 @@ export const authApi = {
   confirmPasswordReset: (uid: string, token: string, password: string) =>
     api.post<{ detail: string }>('/auth/password-reset/confirm', { uid, token, password }),
 
+  /**
+   * Taklif havolasidan birinchi parolni oʻrnatish (PLAN 5.5).
+   *
+   * Sessiya qaytarmaydi: ega parolni oʻrnatgach odatdagi kirishdan
+   * oʻtadi. Shu bitta qadam "parol ishladimi?" degan savolga darhol
+   * javob beradi.
+   */
+  acceptInvite: (token: string, password: string) =>
+    api.post<{ detail: string }>('/auth/invite/accept', { token, password }),
+
   selectOrganization: (pendingToken: string, organizationId: string) =>
     api.post<AuthSession>('/auth/select-organization', {
       pending_token: pendingToken,

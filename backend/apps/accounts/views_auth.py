@@ -19,7 +19,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken as JWTRefreshToken
 
-from apps.accounts import cookies, lockout, password_reset, services
+from apps.accounts import cookies, invite, lockout, password_reset, services
 from apps.accounts.authentication import (
     authenticate_candidates,
     hydrate_user,
@@ -29,6 +29,7 @@ from apps.accounts.authentication import (
 )
 from apps.accounts.models import User
 from apps.accounts.serializers import (
+    InviteAcceptSerializer,
     LoginSerializer,
     PasswordChangeSerializer,
     PasswordResetConfirmSerializer,
@@ -43,6 +44,7 @@ from apps.core.typing import request_user
 
 __all__ = [
     "LoginView",
+    "InviteAcceptView",
     "PasswordResetRequestView",
     "PasswordResetConfirmView",
     "SelectOrganizationView",
@@ -609,3 +611,50 @@ class PasswordResetConfirmView(APIView):
         lockout.reset(email=user.email, ip=audit.client_ip(request._request) or "")
 
         return Response({"detail": gettext("Parol oʻzgartirildi. Endi kirishingiz mumkin.")})
+
+
+class InviteAcceptView(APIView):
+    """
+    `POST /auth/invite/accept` — taklif havolasidan parol o'rnatish
+    (PLAN 5.5).
+
+    Vendor parol yozmaydi; ega havolani ochib parolni o'zi tanlaydi.
+    Havola 72 soat yashaydi va BIR MARTALIK: token ichida parol
+    xeshining izi bor, parol o'rnatilgach iz o'zgaradi va havola
+    o'z-o'zidan o'ladi.
+    """
+
+    permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetThrottle]
+
+    def post(self, request: Request) -> Response:
+        serializer = InviteAcceptSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        user = invite.read_token(data["token"])
+        if user is None:
+            # Muddati o'tgan, ishlatilgan va buzuq havola BIR XIL
+            # javob oladi — farqini aytish token tuzilishi haqida
+            # ma'lumot berardi.
+            raise BusinessRuleViolation(
+                gettext("Havola eskirgan yoki ishlatilgan. Vendordan yangisini soʻrang.")
+            )
+
+        with organization_context(user.organization_id):
+            invite.accept(user=user, password=data["password"])
+            audit.record(
+                action="invite_accepted",
+                request=request._request,
+                actor=user,
+                entity_type="user",
+                entity_id=user.id,
+                changes=invite.audit_changes(),
+            )
+
+        # Hisob hali bir marta ham kirmagan, lekin egasi parolsiz
+        # kirishga urinib bloklangan bo'lishi mumkin — birinchi parol
+        # o'rnatilgandan keyin 15 daqiqa kutish mantiqsiz bo'lardi.
+        lockout.reset(email=user.email, ip=audit.client_ip(request._request) or "")
+
+        return Response({"detail": gettext("Parol oʻrnatildi. Endi kirishingiz mumkin.")})

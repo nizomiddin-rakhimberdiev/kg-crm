@@ -197,7 +197,6 @@ class PlatformConsoleViewSet(viewsets.ViewSet):
             organization_name=data["organization_name"],
             contact_email=data["contact_email"],
             full_name=data["full_name"],
-            password=data["password"],
             contact_phone=data.get("contact_phone", ""),
             branch_name=data.get("branch_name", ""),
             slug=data.get("slug", ""),

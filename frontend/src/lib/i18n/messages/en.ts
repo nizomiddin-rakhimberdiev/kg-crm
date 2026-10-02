@@ -1062,6 +1062,16 @@ export const messages: Record<string, string> = {
   'Barcha qurilmalardagi sessiyalar yopildi.': 'Sessions on every device have been closed.',
   'Havola toʻliq emas. Pochtadagi havolani toʻliq nusxalab oching.':
     'The link is incomplete. Copy the whole link from the e-mail.',
+  // Audit hodisalari (PLAN 5.2, 5.3, 5.5)
+  'Kirish bloklandi': 'Sign-in blocked',
+  'Parol tiklash soʻraldi': 'Password reset requested',
+  'Taklif qabul qilindi': 'Invitation accepted',
+  Bloklanishlar: 'Blocks',
+  // Taklif havolasi (PLAN 5.5)
+  'Bogʻchangiz tayyor': 'Your kindergarten is ready',
+  'Parol oʻrnatildi. Endi kirishingiz mumkin.': 'Password set. You can sign in now.',
+  'Parolni oʻzingiz yaratasiz — biz uni bilmaymiz va hech qachon soʻramaymiz.':
+    'You create the password yourself — we do not know it and will never ask for it.',
   'Parolni koʻrsatish': 'Show the password',
   'Parolni yashirish': 'Hide the password',
 }

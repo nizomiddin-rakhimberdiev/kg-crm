@@ -11,6 +11,7 @@ import {
 } from './app/routes/ProtectedRoute'
 import LoginPage from './features/auth/pages/LoginPage'
 import ResetPasswordPage from './features/auth/pages/ResetPasswordPage'
+import InvitePage from './features/auth/pages/InvitePage'
 import { basenameFor, currentSlug } from './lib/tenantAddress'
 import { env } from './config/env'
 import { t } from '@/lib/i18n'
@@ -206,6 +207,9 @@ export const routes: RouteObject[] = [
       // Tiklash havolasi POCHTADAN ochiladi, ya'ni foydalanuvchi
       // tizimga kirmagan holatda (PLAN 5.2).
       { path: '/reset-password', element: <ResetPasswordPage /> },
+      // Taklif havolasi ham POCHTADAN ochiladi: yangi bogʻcha egasi
+      // birinchi parolini shu yerda qoʻyadi (PLAN 5.5).
+      { path: '/invite', element: <InvitePage /> },
     ],
   },
   {

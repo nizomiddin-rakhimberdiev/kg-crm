@@ -33,6 +33,10 @@ class AuditLog(models.Model):
         ("login_blocked", "Kirish bloklandi"),
         ("password_reset_requested", "Parol tiklash so'raldi"),
         ("password_reset", "Parol tiklandi"),
+        # Taklif havolasidan birinchi parol o'rnatildi (PLAN 5.5). U
+        # `password_reset` dan ALOHIDA: jurnalda "hisob jonlandi"
+        # degan fakt "parolini unutdi" dan boshqa narsa.
+        ("invite_accepted", "Taklif qabul qilindi"),
         ("logout", "Chiqish"),
         ("signup", "Ro'yxatdan o'tish"),
         ("password_change", "Parol o'zgardi"),

@@ -106,7 +106,6 @@ export interface NewOrgPayload {
   contact_email: string
   contact_phone?: string
   full_name: string
-  password: string
   slug?: string
   branch_name?: string
 }
@@ -119,6 +118,10 @@ export interface NewOrgResult {
   login_url: string
   owner_email: string
   branch: string
+  // Taklif havolasi — vendor parol yozmaydi (PLAN 5.5). Javobda
+  // qaytadi, chunki pochta yetib bormasa uni qo'lda uzatish kerak.
+  invite_link: string
+  invite_hours: number
 }
 
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'closed'

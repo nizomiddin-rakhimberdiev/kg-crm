@@ -1,10 +1,15 @@
 /**
  * Yangi bog'cha ochish — ochiq ro'yxatdan o'tishning o'rnini bosadi.
  *
- * Muvaffaqiyatdan keyin forma YOPILMAYDI, natija ekranini ko'rsatadi.
- * Sabab amaliy: parolni siz belgilaysiz va uni mijozga topshirishingiz
- * kerak. Modal darhol yopilsa, parol ko'z oldidan g'oyib bo'lardi va uni
- * qayta tiklashning yagona yo'li — parolni almashtirish bo'lardi.
+ * **Parol maydoni YO'Q** (PLAN 5.5). Avval parolni vendor belgilardi va
+ * uni mijozga telefonda aytardi; endi egaga 72 soatlik taklif havolasi
+ * boradi va parolni u o'zi qo'yadi. Siz mijozning parolini bilmaysiz —
+ * ADR-10 dagi "biz mijoz ma'lumotini ko'rmaymiz" da'vosi shu bilan
+ * texnik jihatdan ham to'g'ri bo'ladi.
+ *
+ * Muvaffaqiyatdan keyin forma YOPILMAYDI, natija ekranini ko'rsatadi:
+ * pochta yetib bormasa (spam, xato email) havolani qo'lda uzatish
+ * kerak, va u boshqa ko'rsatilmaydi.
  */
 
 import { useState } from 'react'
@@ -22,20 +27,30 @@ const EMPTY = {
   contact_email: '',
   contact_phone: '',
   full_name: '',
-  password: '',
   slug: '',
   branch_name: '',
 }
 
-/** Backenddagi `slugify` ning yengil ko'rinishi — faqat oldindan ko'rsatish uchun. */
+/** Backenddagi `slugify` ning yengil ko'rinishi — nomdan olinadigan manzilni ko'rsatish uchun. */
 const previewSlug = (value: string): string =>
   value
     .toLowerCase()
-    .replace(/['’]/g, '')
+    .replace(/['’ʻʼ]/g, '')
     .replace(/[^a-z0-9\s-]/g, '')
     .trim()
     .replace(/\s+/g, '-')
-    .slice(0, 50)
+    .slice(0, 40)
+
+/**
+ * Qo'lda yozilgan manzil uchun server qoidasi (PLAN 5.5).
+ *
+ * Bir xil tekshiruv ikki joyda: server rad etadi, forma esa buni
+ * YOZIB BO'LGANDA aytadi. Ikkinchisi birinchisining o'rnini bosmaydi.
+ */
+const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/
+
+/** Bo'sh joy va bosh harf — aniq xato, uni so'ramay to'g'rilaymiz. */
+const tidySlug = (value: string): string => value.toLowerCase().replace(/\s+/g, '-')
 
 function CopyRow({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false)
@@ -96,7 +111,10 @@ export function NewOrganizationDialog() {
     setError(null)
   }
 
-  const slugPreview = previewSlug(form.slug || form.organization_name)
+  // Manzil bo'sh bo'lsa server uni NOMDAN oladi, shuning uchun
+  // ko'rsatiladigan qiymat ham o'sha yo'ldan hosil qilinadi.
+  const slugPreview = form.slug || previewSlug(form.organization_name)
+  const slugBroken = form.slug.length > 0 && !SLUG_RE.test(form.slug)
 
   return (
     <>
@@ -115,19 +133,20 @@ export function NewOrganizationDialog() {
             <div>
               <h2 className="text-lg font-semibold">{created.name} ochildi</h2>
               <p className="mt-1 text-sm text-slate-400">
-                Quyidagilarni mijozga topshiring. Parol boshqa ko'rsatilmaydi — uni hozir nusxalab
-                oling.
+                Egasiga taklif havolasi pochta orqali yuborildi. Agar xat yetib bormasa —
+                quyidagisini qo'lda uzating; u boshqa ko'rsatilmaydi.
               </p>
             </div>
 
             <div className="space-y-2">
+              <CopyRow label="Taklif havolasi" value={created.invite_link} />
               <CopyRow label="Kirish havolasi" value={created.login_url} />
               <CopyRow label="Login (email)" value={created.owner_email} />
-              <CopyRow label="Parol" value={form.password} />
             </div>
 
             <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
-              15 kunlik sinov <strong>shu paytdan</strong> boshlandi.
+              Taklif havolasi <strong>{created.invite_hours} soat</strong> ishlaydi va bir martalik:
+              ega parolni o'rnatgach o'ladi. 15 kunlik sinov <strong>shu paytdan</strong> boshlandi.
             </p>
 
             <button
@@ -149,7 +168,8 @@ export function NewOrganizationDialog() {
             <div>
               <h2 className="text-lg font-semibold">Yangi bog'cha ochish</h2>
               <p className="mt-1 text-sm text-slate-400">
-                Mijoz o'zini o'zi ro'yxatdan o'tkaza olmaydi — akkauntni siz ochasiz.
+                Mijoz o'zini o'zi ro'yxatdan o'tkaza olmaydi — akkauntni siz ochasiz. Parolni
+                yozmaysiz: egaga taklif havolasi boradi.
               </p>
             </div>
 
@@ -174,17 +194,25 @@ export function NewOrganizationDialog() {
                   <span className="pl-3 font-mono text-sm text-slate-500">/t/</span>
                   <input
                     value={form.slug}
-                    onChange={set('slug')}
+                    onChange={(event) =>
+                      setForm((previous) => ({ ...previous, slug: tidySlug(event.target.value) }))
+                    }
                     className="w-full bg-transparent px-1 py-2 text-sm outline-none"
-                    placeholder="quyosh"
-                    aria-label="quyosh"
+                    placeholder="quyosh-bogchasi"
+                    aria-label="quyosh-bogchasi"
                   />
                 </div>
                 <span className="mt-1 block text-xs text-slate-500">
                   Bu — bog'cha jamoasi kiradigan sahifaning veb-havolasi, bog'chaning jismoniy
                   manzili emas. Masalan:{' '}
-                  <span className="font-mono">/t/{slugPreview || 'quyosh'}</span>
+                  <span className="font-mono">/t/{slugPreview || 'quyosh-bogchasi'}</span>
                 </span>
+                {slugBroken && (
+                  <span className="mt-1 block text-xs text-amber-300">
+                    3–40 belgi: kichik lotin harflari, raqam va chiziqcha. Boshi va oxiri harf yoki
+                    raqam bo'lsin.
+                  </span>
+                )}
               </label>
 
               <div className="grid grid-cols-2 gap-3">
@@ -219,18 +247,6 @@ export function NewOrganizationDialog() {
                   className={FIELD}
                 />
               </label>
-
-              <label className="block">
-                <span className="mb-1 block text-xs text-slate-400">Boshlang'ich parol</span>
-                <input
-                  required
-                  value={form.password}
-                  onChange={set('password')}
-                  className={FIELD}
-                  placeholder="Kamida 8 belgi"
-                  aria-label="Kamida 8 belgi"
-                />
-              </label>
             </div>
 
             {error && (
@@ -249,7 +265,7 @@ export function NewOrganizationDialog() {
               </button>
               <button
                 type="submit"
-                disabled={create.isPending}
+                disabled={create.isPending || slugBroken}
                 className="flex-1 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:opacity-50"
               >
                 {create.isPending ? 'Ochilmoqda…' : 'Ochish'}

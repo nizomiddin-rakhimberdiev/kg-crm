@@ -5,6 +5,7 @@ from django.urls import path
 from api.v1.router import router
 from api.v1.views import ApiRootView, HealthCheckView
 from apps.accounts.views_auth import (
+    InviteAcceptView,
     LoginView,
     LogoutView,
     MeView,
@@ -43,6 +44,10 @@ auth_patterns = [
         PasswordResetConfirmView.as_view(),
         name="auth-password-reset-confirm",
     ),
+    # Taklif havolasi — yangi bog'cha egasi parolni o'zi o'rnatadi
+    # (PLAN 5.5). Standalone nusxada ham kerak: u yerda ham birinchi
+    # hisob shu yo'l bilan ochilishi mumkin.
+    path("auth/invite/accept", InviteAcceptView.as_view(), name="auth-invite-accept"),
 ]
 
 # Platforma kirishi ALOHIDA yo'lda (ADR-10): mijoz `/auth/login` ni,

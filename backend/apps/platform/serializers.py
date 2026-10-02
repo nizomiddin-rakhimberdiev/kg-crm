@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
-from apps.accounts.serializers import validate_password_strength
 from apps.core.serializer_fields import PhoneField
 from apps.platform.models import GRANT_MAX_HOURS, Lead, LeadStatus, SupportGrant
 
@@ -88,12 +88,48 @@ class OrganizationCreateSerializer(serializers.Serializer):
     contact_email = serializers.EmailField()
     contact_phone = PhoneField(required=False, allow_blank=True)
     full_name = serializers.CharField(max_length=150)
-    password = serializers.CharField(validators=[validate_password_strength])
+
+    # **Parol YO'Q** (PLAN 5.5). Egaga 72 soatlik taklif havolasi
+    # ketadi va u parolni o'zi tanlaydi. Vendor mijozning parolini
+    # bilmasligi kerak: aks holda "biz mijoz ma'lumotini ko'rmaymiz"
+    # (ADR-10) degan da'vo ishonchsiz bo'lib qoladi — texnik jihatdan
+    # ham, ijtimoiy jihatdan ham.
 
     # Bo'sh qoldirilsa nomdan hosil qilinadi. Vendor uni ATAYLAB tanlay
     # oladi: bu mijozning manzili (`/t/<slug>`) va u bosma materialga,
-    # SMS matniga, hisob-faktura havolasiga tushadi.
-    slug = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    # xabar matniga, hisob-faktura havolasiga tushadi.
+    slug = serializers.CharField(max_length=40, required=False, allow_blank=True)
+
+    def validate_slug(self, value: str) -> str:
+        """
+        Manzil nomi: kichik lotin harflari, raqam va chiziqcha, 3–40.
+
+        Nega qattiq: bu qiymat URL'ga tushadi va bosma materialga
+        ko'chadi. Kirill harfi `/t/бахор` ni punycode'ga aylantiradi
+        va havola xatda tanib bo'lmaydigan ko'rinishga keladi; nuqta
+        yoki `/` esa marshrutni butunlay buzadi.
+        """
+        import re
+
+        cleaned = (value or "").strip().lower()
+        if not cleaned:
+            return ""
+
+        # Odam maydonga TO'LIQ MANZIL yozishi — eng ko'p uchraydigan
+        # xato, va uni alohida aytish kerak: umumiy "noto'g'ri format"
+        # xabari nima qilish kerakligini aytmaydi.
+        if "://" in cleaned or "/" in cleaned or "." in cleaned:
+            raise serializers.ValidationError(
+                gettext("Faqat nomni yozing — manzil yoki domen emas (masalan: bahor-bogcha).")
+            )
+        if not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,38}[a-z0-9]", cleaned):
+            raise serializers.ValidationError(
+                gettext(
+                    "3–40 belgi, kichik lotin harflari, raqam va chiziqcha. "
+                    "Boshi va oxiri harf yoki raqam boʻlsin."
+                )
+            )
+        return cleaned
 
     branch_name = serializers.CharField(max_length=120, required=False, allow_blank=True)
 
