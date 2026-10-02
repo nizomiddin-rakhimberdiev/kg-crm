@@ -63,7 +63,6 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.finance.ChildLedgerEntry",
     "apps.finance.Invoice",
     "apps.finance.Discount",
-    "apps.finance.TariffPlan",
     # Operatsion yozuvlar
     "apps.intelligence.Insight",  # acted_by → User; hosila, avval ketadi
     # Da'vo bolaga va hisob-fakturaga `RESTRICT` bilan bog'langan —
@@ -97,6 +96,10 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.children.Enrollment",
     "apps.children.ChildGuardian",
     "apps.children.Child",
+    # Tarif BOLADAN KEYIN: `Child.tariff` — `RESTRICT`. Avval u moliya
+    # bo'limida, bolalardan oldin turardi va tarifi bor bitta bola ham
+    # butun o'chirishni yiqitardi (PLAN 5.10 da topildi).
+    "apps.finance.TariffPlan",
     "apps.children.Guardian",
     "apps.children.Group",
     # Kirish

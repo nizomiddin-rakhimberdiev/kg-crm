@@ -91,6 +91,34 @@ class TestPurge:
         with platform_context():
             assert not Organization.objects.filter(pk=organization_id).exists()
 
+    def test_a_child_on_a_tariff_does_not_block_the_purge(self, tenant_a):
+        """
+        `Child.tariff` — `RESTRICT`. Tartibda `TariffPlan` bolalardan
+        OLDIN turardi, ya'ni tarifi bor BIRORTA bola bo'lsa ham o'chirish
+        `RestrictedError` bilan yiqilardi — amalda har bir haqiqiy
+        mijozda. Yuqoridagi testlar tarifsiz bola bilan ishlagani uchun
+        buni ko'rmasdi; demo tenantni kechasi tiklash (PLAN 5.10) uni
+        birinchi bo'lib ushladi.
+        """
+        from decimal import Decimal
+
+        from apps.finance.models import TariffPlan
+
+        _prepare(tenant_a)
+        with organization_context(tenant_a.organization.id):
+            tariff = TariffPlan.objects.create(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                name="To'liq kun",
+                amount=Decimal("1500000"),
+            )
+            Child.objects.update(tariff=tariff)
+
+        deleted = purge_organization(
+            organization_id=tenant_a.organization.id, confirm_slug=tenant_a.organization.slug
+        )
+        assert deleted["organization"] == 1
+
     def test_an_organization_with_audit_rows_can_be_purged(self, tenant_a):
         """
         Audit qatorlari bor tashkilot ham o'chirilishi kerak.
