@@ -1223,7 +1223,7 @@ Security is layered — no single control is trusted alone.
 | **Validation** | Two-layer | Zod on the frontend (UX) + serializer/service validation on the backend (authority). Never trust the client. |
 | **Secrets** | Env-based | `.env` / secrets manager; never committed. Separate secrets per environment. |
 | **Injection** | ORM + parameterization | Django ORM prevents SQL injection; avoid raw SQL, and parameterize if unavoidable. |
-| **Headers** | Security headers | CSP, X-Content-Type-Options, X-Frame-Options (clickjacking), Referrer-Policy via Nginx/Django. |
+| **Headers** | Security headers | One list in `deploy/nginx/_headers.conf`, included by both server blocks **and** by `/media/` (an `add_header` in a location silently drops every inherited one): HSTS (1 year, no `preload` — that is an owner's decision), CSP, Permissions-Policy, X-Content-Type-Options, X-Frame-Options, Referrer-Policy. CSP: `script-src 'self'` with no inline script and no `eval`; `style-src 'unsafe-inline'` only because prerendered HTML carries React's `style="…"` attributes; Google Fonts as the one outside origin; `connect-src 'self'`; `frame-ancestors 'none'`. Uploaded media get a second, stricter `CSP: sandbox`. Verified in headless Chrome on the landing page, both login pages, the invite page and the vendor console: zero violations. |
 | **File uploads** | Type/size allowlist + async re-encode | Prevents malicious uploads; private storage. |
 | **Least privilege** | DB & infra | App DB user limited to needed privileges; workers scoped per queue. |
 

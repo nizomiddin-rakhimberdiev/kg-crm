@@ -213,6 +213,8 @@ export interface Copy {
   final: { title: string; text: string; cta: string; secondary: string }
   footer: { privacy: string; terms: string; login: string; copyright: string }
   seo: { title: string; description: string }
+  /** Notoʻgʻri manzil sahifasi (PLAN 5.6) — `dist/404.html`. */
+  notFound: { title: string; text: string; home: string }
   ui: UiCopy
 }
 
@@ -534,6 +536,11 @@ const uz: Copy = {
     terms: 'Foydalanish shartlari',
     login: 'CRMʼga kirish',
     copyright: '© 2026 Radix CRM',
+  },
+  notFound: {
+    title: 'Bu sahifa topilmadi',
+    text: 'Manzil notoʻgʻri yozilgan yoki sahifa koʻchirilgan.',
+    home: 'Bosh sahifa',
   },
   seo: {
     title: 'Radix CRM — bogʻchangizni boshqarishning barchasi bitta tizimda',
@@ -943,6 +950,11 @@ const ru: Copy = {
     login: 'Войти в CRM',
     copyright: '© 2026 Radix CRM',
   },
+  notFound: {
+    title: 'Страница не найдена',
+    text: 'Адрес набран с ошибкой или страница перенесена.',
+    home: 'На главную',
+  },
   seo: {
     title: 'Radix CRM — всё управление детским садом в одной системе',
     description:
@@ -1343,6 +1355,11 @@ const en: Copy = {
     terms: 'Terms of Use',
     login: 'Sign in to CRM',
     copyright: '© 2026 Radix CRM',
+  },
+  notFound: {
+    title: 'Page not found',
+    text: 'The address is mistyped or the page has moved.',
+    home: 'Home page',
   },
   seo: {
     title: 'Radix CRM — everything to run your kindergarten in one system',

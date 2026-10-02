@@ -18,6 +18,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { copy, type Locale } from '@/features/landing/content'
 import { LandingPage } from '@/features/landing/pages/LandingPage'
+import { NotFoundPage } from '@/features/landing/pages/NotFoundPage'
 import { landingJsonLd, landingMeta } from '@/features/landing/seo'
 import { LegalPage } from '@/features/marketing/pages/MarketingPage'
 import { LOCALES, buildPageMeta, headHtml, legalMeta } from '@/features/marketing/seo'
@@ -84,4 +85,21 @@ export function prerenderPages(): PrerenderedPage[] {
     }
   }
   return pages
+}
+
+/**
+ * `dist/404.html` — nginx notoʻgʻri manzilga `404` bilan beradi
+ * (PLAN 5.6). Skriptsiz: React ishga tushsa, manzilni yana kirish
+ * sahifasiga burib yuborardi.
+ */
+export function notFoundPage(): { head: string; body: string } {
+  return {
+    head: [
+      `<title>404 — Radix CRM</title>`,
+      // Indekslanmasin: bu sahifa minglab notoʻgʻri manzillarda
+      // bir xil koʻrinadi.
+      `<meta name="robots" content="noindex" />`,
+    ].join('\n    '),
+    body: renderToString(<NotFoundPage />),
+  }
 }

@@ -32,7 +32,8 @@ const FONT_HREF =
 // log'ini to'ldiradi. Boshqa xatolar avvalgidek ko'rinadi.
 const originalError = console.error
 console.error = (...args) => {
-  if (typeof args[0] === 'string' && args[0].includes('useLayoutEffect does nothing on the server')) return
+  if (typeof args[0] === 'string' && args[0].includes('useLayoutEffect does nothing on the server'))
+    return
   originalError(...args)
 }
 
@@ -69,7 +70,27 @@ for (const page of entry.prerenderPages()) {
   await mkdir(dir, { recursive: true })
   await writeFile(path.join(dir, 'index.html'), html)
   count += 1
-  const words = page.body.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length
+  const words = page.body
+    .replace(/<[^>]+>/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean).length
   console.log(`prerender: ${page.path.padEnd(12)} ${String(words).padStart(5)} so‘z`)
 }
+// --- 404 (PLAN 5.6) ---
+//
+// SPA skripti OLIB TASHLANADI: React ishga tushsa, notoʻgʻri manzilni
+// oʻzi "tuzatib" kirish sahifasiga yuborardi va `404` maʼnosiz
+// boʻlardi. Uslublar (Tailwind CSS) qoladi — sahifa brend koʻrinishida.
+const notFound = entry.notFoundPage()
+const notFoundHtml = stripDefaultMeta(template)
+  .replace(/\s*<script type="module"[^>]*><\/script>/, '')
+  .replace('</head>', `    ${notFound.head}\n  </head>`)
+  .replace('<div id="root"></div>', `<div id="root">${notFound.body}</div>`)
+if (notFoundHtml.includes('type="module"')) {
+  throw new Error('prerender: 404.html ichida SPA skripti qoldi')
+}
+await writeFile(path.join(dist, '404.html'), notFoundHtml)
+count += 1
+console.log('prerender: /404.html      statik, skriptsiz')
+
 console.log(`prerender: ${count} sahifa yozildi`)

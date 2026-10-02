@@ -34,6 +34,20 @@ else
     export WWW_DOMAIN="_"
 fi
 
+# SPA qoidalari rejimga qarab (PLAN 5.6, ADR-13). SaaS'da sotuv sayti,
+# `/` → `/uz` va haqiqiy `404`; standalone'da ilova domen ildizida va
+# har qanday yo'lni o'zi hal qiladi. Noma'lum qiymat — xato: jimgina
+# SaaS'ga tushish mijoz serverida ilovani `404` bilan yopib qo'yardi.
+case "${DEPLOYMENT_MODE:-saas}" in
+    saas)       cp /etc/nginx/kg-spa/saas.conf /etc/nginx/kg-spa.conf ;;
+    standalone) cp /etc/nginx/kg-spa/standalone.conf /etc/nginx/kg-spa.conf ;;
+    *)
+        echo "[kg-crm] DEPLOYMENT_MODE noto'g'ri: '${DEPLOYMENT_MODE}' (saas yoki standalone)" >&2
+        exit 1
+        ;;
+esac
+echo "[kg-crm] SPA rejimi: ${DEPLOYMENT_MODE:-saas}"
+
 # shellcheck disable=SC2016  # envsubst AYNAN literal ${DOMAIN} ni kutadi
 if [ -s "$CERT" ] && [ -s "$KEY" ]; then
     echo "[kg-crm] sertifikat topildi → HTTPS rejim ($DOMAIN, $WWW_DOMAIN)"

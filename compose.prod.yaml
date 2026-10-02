@@ -176,9 +176,16 @@ services:
         # to'g'ri ishlaydi.
         VITE_PUBLIC_HOST: ${DOMAIN:-radix-crm.uz}
         VITE_LEGAL_ENTITY_NAME: ${LEGAL_ENTITY_NAME:-}
+        # Backend bilan BIR XIL qiymat (ADR-13). Ilgari bu yerda yo'q
+        # edi va standalone o'rnatmaning frontendi SaaS rejimida
+        # yig'ilardi.
+        VITE_DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-saas}
     restart: unless-stopped
     environment:
       DOMAIN: ${DOMAIN:-_}
+      # nginx SPA qoidalarini shunga qarab tanlaydi (PLAN 5.6):
+      # SaaS'da `/` → `/uz` va `404`, standalone'da ilova ildizda.
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-saas}
     ports:
       - "${HTTP_PORT:-80}:80"
       - "${HTTPS_PORT:-443}:443"

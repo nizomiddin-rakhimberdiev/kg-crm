@@ -28,6 +28,13 @@ COPY frontend/ ./
 ARG VITE_API_BASE_URL=/api/v1
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
+# Rejim ham BUILD paytida yoziladi (ADR-13): standalone'da sotuv
+# sahifalari prerender qilinmaydi va ilova `/t/<slug>` siz ishlaydi.
+# Ilgari bu ARG yo'q edi — `compose.prod.yaml` bilan yig'ilgan
+# standalone o'rnatma frontendni SaaS rejimida olardi.
+ARG VITE_DEPLOYMENT_MODE=saas
+ENV VITE_DEPLOYMENT_MODE=${VITE_DEPLOYMENT_MODE}
+
 RUN npm run build
 
 
@@ -41,6 +48,11 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 COPY deploy/nginx/http-only.conf /etc/nginx/kg-templates/http-only.conf
 COPY deploy/nginx/tls.conf       /etc/nginx/kg-templates/tls.conf
 COPY deploy/nginx/_shared.conf   /etc/nginx/kg-shared.conf
+COPY deploy/nginx/_headers.conf  /etc/nginx/kg-headers.conf
+# Ikkala SPA varianti ham tasvirda; `entrypoint.sh` bittasini
+# `/etc/nginx/kg-spa.conf` ga ko'chiradi.
+COPY deploy/nginx/_spa_saas.conf       /etc/nginx/kg-spa/saas.conf
+COPY deploy/nginx/_spa_standalone.conf /etc/nginx/kg-spa/standalone.conf
 COPY deploy/nginx/entrypoint.sh  /docker-entrypoint.d/40-choose-config.sh
 
 RUN chmod +x /docker-entrypoint.d/40-choose-config.sh
