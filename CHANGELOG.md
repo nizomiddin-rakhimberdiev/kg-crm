@@ -60,7 +60,35 @@ Bajarilgani: [`docs/big-update/PROGRESS.md`](./docs/big-update/PROGRESS.md)
   ikonkali tugmalarga nom, ko'rinadigan fokus, to'lov oynasi
   klaviatura bilan.
 
+- **5-bosqich — xavfsizlik, landing, huquqiy, demo.** Refresh token
+  `httpOnly` cookie'da, access faqat xotirada, CSRF. Parolni tiklash
+  (30 daqiqa, bir martalik). Hisob bo'yicha kirish cheklovi (10/15 daq).
+  Ikki bosqichli tasdiqlash: vendor uchun sukut bo'yicha, mijoz uchun
+  ixtiyoriy, 10 ta bir martalik zaxira kodi (ADR-24). Yangi bog'cha
+  egasi 72 soatlik taklif havolasi bilan parolni o'zi qo'yadi. nginx:
+  CSP, Permissions-Policy, `/` → `/uz` (ruscha brauzer → `/ru`), haqiqiy
+  404. Landing: bitta shrift, aloqa bloki, "24 soat ichida" javobi va
+  Telegram tugmasi, 12px minimum, telefonda sahifa ikki baravar qisqa.
+  Maxfiylik siyosati va foydalanish shartlari qayta yozildi (uz/ru/en).
+  `/t/demo` namoyish bog'chasi (`seed_demo_tenant`). 2026-09-30 sinov
+  yozuvlarini tozalash buyrug'i (sukut — dry-run). Vendor konsoli:
+  tarjima, ruxsatlar tarixi, reja va to'lov davrini o'zgartirish,
+  faollik, taxminiy oylik. Zaxira cron o'rnatuvchisi.
+
+### Tuzatildi
+- **Tashkilotni o'chirish (offboarding) tarifi bor bolada yiqilardi** —
+  `TariffPlan` o'chirish tartibida bolalardan oldin turardi.
+- `seed_demo` davomati faqat bugungi kunni yozardi (o'tgan kun sabab
+  talab qiladi).
+- `compose.prod.yaml` dagi `VITE_PUBLIC_HOST`/`VITE_LEGAL_ENTITY_NAME`
+  Docker'da jimgina yo'qolardi (`ARG` e'lon qilinmagan); standalone
+  o'rnatmaning frontendi SaaS rejimida yig'ilardi.
+
 ### O'zgardi
+- **`PLATFORM_2FA_REQUIRED` sukut bo'yicha `True`** (ADR-24, ADR-15 dagi
+  `False` o'rniga).
+- Vendor yangi bog'cha ochganda parol YOZMAYDI.
+- Manzil nomi (slug) qat'iy tekshiriladi: lotin, raqam, chiziqcha, 3–40.
 - Ortiqcha to'lov endi rad etilmaydi — ortig'i avansga aylanadi (Q1).
 - `payroll.income_tax_rate` va `payroll.pension_rate` sukut qiymati
   0 ga tushdi (Q10). Yakunlangan hisoblar o'zgarmaydi.

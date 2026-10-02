@@ -508,3 +508,61 @@ o'zgarmadi; `check_rls` 46 jadval.
 
 5-bosqich: xavfsizlik, landing, huquqiy sahifalar, demo. Egasining
 "davom et" signali kutilmoqda.
+
+---
+
+## 2026-10-02 — Bosqich 5 bajarildi (xavfsizlik, landing, huquqiy, demo)
+
+Branch: `big-update/phase-5`. Barcha 12 band yopildi.
+
+| Band | Natija |
+|---|---|
+| 5.1 | Refresh token `httpOnly` cookie'da, access faqat xotirada, CSRF (double submit), eski tokenlar bir marta yumshoq o'tadi |
+| 5.2 | Parolni tiklash: 30 daqiqa, bir martalik, javob email borligini aytmaydi, barcha sessiyalar yopiladi |
+| 5.3 | Kirish cheklovi hisob bo'yicha (10/15 daq, IP + email), blok auditda |
+| 5.4 | 2FA (ADR-24): vendor uchun sukut bo'yicha yoqilgan, mijoz uchun ixtiyoriy, 10 ta zaxira kodi; TOTP `core/` ga ko'chdi |
+| 5.5 | Vendor parol yozmaydi — 72 soatlik taklif havolasi; slug qat'iy tekshiruvi |
+| 5.6 | nginx: CSP, Permissions-Policy, `/` → `/uz` (`ru` → `/ru`), haqiqiy 404; SPA ro'yxati `router.tsx` bilan test orqali qotirilgan |
+| 5.7 | Landing: bitta shrift, aloqa bloki, "24 soat" + Telegram, 12px, telefonda 26 590 → 12 924 px |
+| 5.8 | Maxfiylik siyosati va shartlar qayta yozildi (uz/ru/en), `{{…}}` rekvizitlar `.env` dan |
+| 5.9 | `docs/ops/backup.md`, `install-backup-cron.sh` (dry-run sukut) |
+| 5.10 | `seed_demo_tenant` — `/t/demo`, faqat `demo` slug'i |
+| 5.11 | `cleanup_test_records` — sukut dry-run, qarshi yozuvlar bilan |
+| 5.12 | Konsol: tarjima, ruxsatlar tarixi, reja/davr o'zgartirish, faollik, taxminiy oylik |
+
+### Yo'lda topilgan va tuzatilgan xatolar
+
+* **Offboarding (`purge_organization`) har bir haqiqiy mijozda
+  yiqilardi** — `TariffPlan` bolalardan oldin o'chirilardi, `Child.tariff`
+  esa `RESTRICT`. Testlar tarifsiz bola bilan ishlagani uchun ko'rmagan.
+  Demo tenantni qayta tiklash birinchi bo'lib ushladi.
+* `seed_demo` davomati faqat bugungi kunni yozardi — `mark_bulk` o'tgan
+  kun uchun sabab talab qiladi, xato esa faqat log'ga tushardi.
+* Docker `ARG` e'lon qilinmagan build argumentlarini jimgina tashlardi:
+  `VITE_PUBLIC_HOST`, `VITE_LEGAL_ENTITY_NAME` hech qachon yetib
+  bormagan; standalone frontend SaaS rejimida yig'ilardi.
+* Vendor login serializer'i zaxira kodini (`a1b2-c3d4`) `max_length=6`
+  bilan `400` qaytarib rad etardi.
+
+### Sifat darvozalari
+
+| Tekshiruv | Natija |
+|---|---|
+| `pytest` (tasodifiy tartib) | **1255 o'tdi** · 0 xato (4-bosqichda 1155) |
+| `ruff` / `ruff format` / `mypy` | toza (300 fayl) |
+| `tsc` / `eslint` / `vitest` / `build` | toza · **211 test** (4-bosqichda 183) · eslint 0 xato, 23 eski ogohlantirish |
+| `makemigrations --check` | o'zgarish yo'q |
+| `check_rls` | 46 jadval |
+| nginx (haqiqiy `nginx:1.27-alpine`) | SaaS HTTP + TLS, standalone; 30+ manzil; Accept-Language |
+| Headless Chrome | CSP buzilishi 0; landing 390/768/1024/1280 o'lchandi |
+
+### Migratsiya repetitsiyasi (`kg_crm_qa`)
+
+`accounts.0007`, `audit.0003–0004`, `platform_console.0005` — oldinga →
+orqaga → oldinga; 25 bola, balans 12 919 000 o'zgarmadi; `check_rls` 46.
+`seed_demo_tenant` → `--reset` (4 869 qator purge) → qayta; mavjud
+tashkilot o'zgarmadi.
+
+### Keyingi qadam
+
+6-bosqich faqat "6-bosqichni boshla" buyrug'i bilan (dizayn hujjati).
