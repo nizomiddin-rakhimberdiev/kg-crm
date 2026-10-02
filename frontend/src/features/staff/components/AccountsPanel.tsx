@@ -10,7 +10,7 @@
 import { useState } from 'react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { KeyRound, Pencil, Plus, Search, UserCheck, UserX } from 'lucide-react'
-import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { useBranchScope } from '@/app/providers/BranchProvider'
 import { Modal } from '@/components/ui/Modal'
 import { Pagination } from '@/components/ui/primitives'
@@ -47,6 +47,16 @@ export function AccountsPanel() {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
   const { can } = useCan()
+  const { user } = useAuth()
+  const isOwner = user?.role?.code === 'org_owner'
+  // Filiallar ro'yxati (`branches.read`) bo'lmasa ham hisob ochish ishlashi
+  // kerak: filialga bog'langan xodim faqat O'Z filialiga qo'sha oladi
+  // (ADR-25), ya'ni tanlov baribir bitta. Avval forma `/branches` ni har
+  // doim so'rardi va menejerda `403` bilan bo'sh qolib, hisob ochilmasdi.
+  const canListBranches = can('branches.read')
+  /** Hisobni boshqarish mumkinmi — backend qoidasining UI ko'zgusi. */
+  const manageable = (member: StaffUser) =>
+    isOwner || (member.id !== user?.id && Boolean(member.role?.can_assign))
   const { selectedBranchId } = useBranchScope()
 
   const [search, setSearch] = useState('')
@@ -72,7 +82,7 @@ export function AccountsPanel() {
 
   const openCreate = () => {
     setEditing(null)
-    setForm(EMPTY_FORM)
+    setForm(!isOwner && user?.branch ? { ...EMPTY_FORM, branch_id: user.branch.id } : EMPTY_FORM)
     setFieldErrors({})
     setError(null)
     setShowForm(true)
@@ -113,8 +123,13 @@ export function AccountsPanel() {
   const branchesQuery = useQuery({
     queryKey: queryKeys.branches(organizationId),
     queryFn: branchesApi.list,
-    enabled: showForm,
+    enabled: showForm && canListBranches,
   })
+  const branchOptions = canListBranches
+    ? (branchesQuery.data?.items ?? [])
+    : user?.branch
+      ? [user.branch]
+      : []
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'users'] })
@@ -194,7 +209,7 @@ export function AccountsPanel() {
         {initials(member.full_name)}
       </span>
       <div className="min-w-0">
-        {can('users.update') ? (
+        {can('users.update') && manageable(member) ? (
           <button
             type="button"
             onClick={() => openEdit(member)}
@@ -224,7 +239,7 @@ export function AccountsPanel() {
 
   const renderActions = (member: StaffUser) => (
     <div className="flex items-center justify-end gap-1">
-      {can('users.update') && (
+      {can('users.update') && manageable(member) && (
         <button
           type="button"
           onClick={() => openEdit(member)}
@@ -235,7 +250,8 @@ export function AccountsPanel() {
         </button>
       )}
       {member.is_active
-        ? can('users.delete') && (
+        ? can('users.delete') &&
+          manageable(member) && (
             <button
               type="button"
               disabled={deactivateMutation.isPending}
@@ -246,7 +262,8 @@ export function AccountsPanel() {
               <UserX className="h-4 w-4" />
             </button>
           )
-        : can('users.update') && (
+        : can('users.update') &&
+          manageable(member) && (
             <button
               type="button"
               disabled={reactivateMutation.isPending}
@@ -484,11 +501,15 @@ export function AccountsPanel() {
                 className={inputClass(Boolean(fieldErrors.role_id))}
               >
                 <option value="">{t('Tanlang…')}</option>
-                {rolesQuery.data?.items.map((role) => (
-                  <option key={role.id} value={role.id}>
-                    {role.name}
-                  </option>
-                ))}
+                {/* Faqat bera oladigan rollar (ADR-25); tahrirlanayotgan
+                    hisobning joriy roli ham ro'yxatda qoladi. */}
+                {rolesQuery.data?.items
+                  .filter((role) => role.can_assign !== false || role.id === form.role_id)
+                  .map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
+                    </option>
+                  ))}
               </select>
               {fieldErrors.role_id && (
                 <p className="mt-1 text-xs text-red-600">{fieldErrors.role_id}</p>
@@ -506,10 +527,13 @@ export function AccountsPanel() {
                 onChange={(e) => setForm((p) => ({ ...p, branch_id: e.target.value }))}
                 className={inputClass(Boolean(fieldErrors.branch_id))}
               >
-                <option value="">
-                  {branchRequired ? t('Tanlang…') : t('Barcha filiallar (Org Owner)')}
-                </option>
-                {branchesQuery.data?.items.map((branch) => (
+                {/* Egasi bo'lmagan xodim faqat o'z filialini ko'radi. */}
+                {(isOwner || !branchRequired) && (
+                  <option value="">
+                    {branchRequired ? t('Tanlang…') : t('Barcha filiallar (Org Owner)')}
+                  </option>
+                )}
+                {branchOptions.map((branch) => (
                   <option key={branch.id} value={branch.id}>
                     {branch.name}
                   </option>

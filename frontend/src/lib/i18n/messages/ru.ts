@@ -759,4 +759,16 @@ export const messages: Record<string, string> = {
   '— tanlanmagan —': '— не выбрано —',
   '— tarifsiz —': '— без тарифа —',
   '−{formatUZS} chegirma': '−{formatUZS} скидка',
+
+  // --- ADR-25: rol delegatsiyasi, ruxsatga mos hisobotlar ---
+  "Bu rolni o'zgartira olmaysiz: u sizning rolingiz, tashkilot egasi roli yoki sizdan kengroq huquqli rol.":
+    'Вы не можете изменить эту роль: это ваша роль, роль владельца организации или роль с более широкими правами, чем у вас.',
+  "Moliyaviy hisobotlarni ko'rish uchun to'lovlar yoki chiqimlar bo'limiga ruxsat kerak. Pastdagi eksportdan foydalanishingiz mumkin.":
+    'Для просмотра финансовых отчётов нужен доступ к разделу платежей или расходов. Вы можете воспользоваться экспортом ниже.',
+  "Oylik maosh va sof natija bu ko'rinishda yo'q — ular «Oylik» bo'limiga ruxsati bor xodimga ko'rinadi.":
+    'Зарплата и чистый результат здесь не показаны — их видит сотрудник с доступом к разделу «Зарплата».',
+  'qabul qilingan pul': 'полученные деньги',
+  'Sizda bu ruxsat yo‘q — uni bera olmaysiz.': 'У вас нет этого права — вы не можете его выдать.',
+  'Tushum va tasdiqlangan chiqimlar, davr bo‘yicha':
+    'Поступления и подтверждённые расходы по периодам',
 }

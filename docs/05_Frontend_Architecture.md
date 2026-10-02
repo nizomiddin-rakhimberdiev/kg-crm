@@ -257,7 +257,7 @@ Path constants live in `config/routes.ts`. Each route maps to a feature page and
 | `/inventory/movements` | StockMovementsPage | `inventory.read` |
 | `/inventory/suppliers` | SuppliersPage | `inventory.read` |
 | `/expenses` | ExpensesPage | `expenses.read` |
-| `/reports` | ReportsPage — period picker (day / week / month / quarter / year / custom, with ◀ ▶), grouping derived one step finer than the preset (`features/reports/period.ts`) | `reports.read` |
+| `/reports` | ReportsPage — period picker (day / week / month / quarter / year / custom, with ◀ ▶), grouping derived one step finer than the preset (`features/reports/period.ts`). Sections follow the backend's per-report scope (`REPORT_SCOPE`): profit-and-loss needs `payroll.read`, so a caller without it gets revenue and expenses from their own endpoints, no payroll or net figure, and a line saying why — the page never requests a report the role cannot read | `reports.read` |
 | `/notifications` | NotificationsPage | `notifications.read` |
 | `/settings` | SettingsPage | `settings.read` |
 | `/users`, `/users/roles` | folded into `/staff` tabs (above) | — |

@@ -212,7 +212,7 @@ Module: `users` (backed by `accounts`). Managed by **Org Owner** (Director read-
 | POST | `/users/{id}/reset-password` | `users.update` | Admin password reset |
 | GET | `/roles` | `users.read` | List roles |
 | POST | `/roles` | `users.create` | Create role |
-| PATCH | `/roles/{id}` | `users.update` | Update role (not system roles) |
+| PATCH | `/roles/{id}` | `users.update` | Update role name/description — `code` is immutable after creation |
 | GET | `/roles/{id}/permissions` | `users.read` | Role's permissions |
 | PUT | `/roles/{id}/permissions` | `users.update` | Replace role's permission set |
 | GET | `/permissions` | `users.read` | List all permissions (reference) |
@@ -228,7 +228,9 @@ Module: `users` (backed by `accounts`). Managed by **Org Owner** (Director read-
   "phone": "+998901234567"
 }
 ```
-**Errors:** `409 CONFLICT` (email exists), `422 BUSINESS_RULE_VIOLATION` (non-super-admin without branch).
+**Errors:** `409 CONFLICT` (email exists), `422 BUSINESS_RULE_VIOLATION` (non-super-admin without branch), `403 PERMISSION_DENIED` (delegation rule — below).
+
+**Delegation rule (ADR-25).** `users.*` alone is not enough to hand out power. A caller who is not the Org Owner gets `403` when they try to: assign a role whose permissions are not a subset of their own (the Owner role always counts as wider); create an account outside their own branch; edit, deactivate or reset the password of an account whose role is wider than theirs, of the Owner, or of themselves (own details go through `/auth/me`); or edit, delete or re-permission the Owner role, their own role, or a role wider than theirs. The check runs before payload validation. `GET /roles` adds `can_assign` and `can_edit` (booleans, computed for the caller) so the client can hide what would be refused.
 
 ---
 

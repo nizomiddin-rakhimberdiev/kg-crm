@@ -984,3 +984,41 @@ msgstr "В {year}-{month:02d} нет рабочих дней — проверь�
 
 msgid "`period_year` va `period_month` butun son bo'lishi kerak."
 msgstr "`period_year` и `period_month` должны быть целыми числами."
+
+# --- ADR-25: delegatsiya qoidasi, filial tanlovi ---
+
+msgid "Bu bog'chada bir nechta filial bor — avval yuqoridagi filial tanlovidan kerakli filialni tanlang."
+msgstr "В этом детском саду несколько филиалов — сначала выберите нужный филиал в переключателе вверху."
+
+msgid "Bu rolda sizda yo'q ruxsatlar bor, shuning uchun uni bera olmaysiz: {codes}."
+msgstr "В этой роли есть права, которых нет у вас, поэтому вы не можете её назначить: {codes}."
+
+msgid "Faqat o'z filialingizga xodim qo'sha olasiz."
+msgstr "Вы можете добавлять сотрудников только в свой филиал."
+
+msgid "O'z hisobingizni Profil sahifasida tahrirlang."
+msgstr "Редактируйте свою учётную запись на странице «Профиль»."
+
+msgid "O'z rolingizning ruxsatlarini o'zgartira olmaysiz."
+msgstr "Вы не можете изменять права своей собственной роли."
+
+msgid "Rol kodini yaratilgandan keyin o'zgartirib bo'lmaydi."
+msgstr "Код роли нельзя изменить после создания."
+
+msgid "Sizda yo'q ruxsatlarni bera olmaysiz: {codes}."
+msgstr "Вы не можете выдавать права, которых нет у вас: {codes}."
+
+msgid "Sizdan kengroq huquqli rolni o'zgartira olmaysiz."
+msgstr "Вы не можете изменять роль с более широкими правами, чем у вас."
+
+msgid "Sizdan kengroq huquqli xodimning hisobini boshqara olmaysiz."
+msgstr "Вы не можете управлять учётной записью сотрудника с более широкими правами, чем у вас."
+
+msgid "Tashkilot egasi rolini faqat tashkilot egasi bera oladi."
+msgstr "Роль владельца организации может назначить только владелец организации."
+
+msgid "Tashkilot egasi rolini faqat tashkilot egasi o'zgartira oladi."
+msgstr "Роль владельца организации может изменять только владелец организации."
+
+msgid "Tashkilot egasining hisobini faqat egasi boshqara oladi."
+msgstr "Учётной записью владельца организации может управлять только владелец."

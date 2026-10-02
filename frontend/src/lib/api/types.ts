@@ -157,6 +157,12 @@ export interface Role {
   is_system: boolean
   branch: string | null
   permissions: string[]
+  /**
+   * Joriy foydalanuvchi bu rolni bera oladimi / tahrirlay oladimi
+   * (ADR-25). Backend hisoblaydi — UI faqat tugmani yashiradi.
+   */
+  can_assign?: boolean
+  can_edit?: boolean
 }
 
 export interface StaffUser {
@@ -657,6 +663,16 @@ export interface RevenueReport {
   /** Uzluksiz davrlar: `period` — davr boshi (ISO sana), bo'sh davr ham bor. */
   by_period: Array<{ period: string; total: string; count: number }>
   by_method: Array<{ method: string; total: string; count: number }>
+}
+
+export interface ExpenseReport {
+  date_from: string
+  date_to: string
+  group_by: ReportGroupBy
+  total: string
+  /** Uzluksiz davrlar — bo'sh davr ham nol bilan bor (docs/04 §14.2). */
+  by_period: Array<{ period: string; total: string }>
+  by_category: Array<{ category: string; total: string }>
 }
 
 export interface ProfitLoss {

@@ -42,5 +42,11 @@ def resolve_branch(user: Any, explicit_id: Any = None) -> Branch:
         return candidates[0]
 
     raise BusinessRuleViolation(
-        gettext("Tashkilotda bir nechta filial bor — `branch_id` ko'rsatilishi shart.")
+        # Egasi "Barcha filiallar" tanlangan holda yangi yozuv yaratsa shu
+        # xato chiqadi. Avval matn `branch_id` deb texnik maydon nomini
+        # aytardi — egasi nima qilishni bilmasdi. Endi qadamni aytadi.
+        gettext(
+            "Bu bog'chada bir nechta filial bor — avval yuqoridagi filial tanlovidan "
+            "kerakli filialni tanlang."
+        )
     )

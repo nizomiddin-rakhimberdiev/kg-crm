@@ -120,16 +120,88 @@ class PermissionSerializer(serializers.ModelSerializer):
 
 class RoleSerializer(serializers.ModelSerializer):
     permissions = serializers.SerializerMethodField()
+    # Joriy foydalanuvchi bu rolni bera oladimi / tahrirlay oladimi
+    # (ADR-25). Hisob-kitob backend'da — frontend uni takrorlamaydi,
+    # faqat o'qiydi va tugmani yashiradi.
+    can_assign = serializers.SerializerMethodField()
+    can_edit = serializers.SerializerMethodField()
 
     class Meta:
         model = Role
-        fields = ["id", "name", "code", "description", "is_system", "branch", "permissions"]
-        read_only_fields = ["id", "is_system", "permissions"]
+        fields = [
+            "id",
+            "name",
+            "code",
+            "description",
+            "is_system",
+            "branch",
+            "permissions",
+            "can_assign",
+            "can_edit",
+        ]
+        read_only_fields = ["id", "is_system", "permissions", "can_assign", "can_edit"]
+
+    # Ro'yxatda (masalan 25 ta xodim, har birida ichki rol) har bir qator
+    # uchun bazaga qayta bormaslik: to'plamlar butun javob davomida
+    # `context` da saqlanadi — ichki serializer'lar ildizniki bilan BIR
+    # `context` ni ko'radi.
+    def _cache(self) -> dict[str, Any]:
+        return self.context.setdefault("_role_codes_cache", {"roles": {}})
+
+    def _codes_of(self, obj: Role) -> set[str]:
+        roles = self._cache()["roles"]
+        if obj.id not in roles:
+            roles[obj.id] = set(
+                Permission.objects.filter(role_permissions__role=obj).values_list("code", flat=True)
+            )
+        return roles[obj.id]  # type: ignore[no-any-return]
+
+    def _actor(self) -> Any:
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        return user if user is not None and user.is_authenticated else None
+
+    def _actor_codes(self, actor: Any) -> set[str]:
+        cache = self._cache()
+        if "actor" not in cache:
+            cache["actor"] = actor.permission_codes()
+        return cache["actor"]  # type: ignore[no-any-return]
 
     def get_permissions(self, obj: Role) -> list[str]:
-        return sorted(
-            Permission.objects.filter(role_permissions__role=obj).values_list("code", flat=True)
+        return sorted(self._codes_of(obj))
+
+    def get_can_assign(self, obj: Role) -> bool:
+        from apps.accounts.delegation import can_assign_role
+
+        actor = self._actor()
+        return bool(
+            actor
+            and can_assign_role(
+                actor, obj, actor_codes=self._actor_codes(actor), role_codes=self._codes_of(obj)
+            )
         )
+
+    def get_can_edit(self, obj: Role) -> bool:
+        from apps.accounts.delegation import can_edit_role
+
+        actor = self._actor()
+        return bool(
+            actor
+            and can_edit_role(
+                actor, obj, actor_codes=self._actor_codes(actor), role_codes=self._codes_of(obj)
+            )
+        )
+
+    def update(self, instance: Role, validated_data: dict[str, Any]) -> Role:
+        # `code` — rolning shaxsi: `is_org_owner` aynan `code == "org_owner"`
+        # ga qaraydi. Uni o'zgartirish mumkin bo'lsa, egasi rolini qayta
+        # nomlab haqiqiy egani egalikdan mahrum qilish yoki o'z rolini
+        # `org_owner` deb atash mumkin edi (ADR-25). Kod faqat yaratishda.
+        if "code" in validated_data and validated_data["code"] != instance.code:
+            raise serializers.ValidationError(
+                {"code": [gettext("Rol kodini yaratilgandan keyin o'zgartirib bo'lmaydi.")]}
+            )
+        return super().update(instance, validated_data)
 
     def validate_code(self, value: str) -> str:
         """

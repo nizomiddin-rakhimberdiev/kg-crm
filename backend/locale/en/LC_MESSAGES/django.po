@@ -983,3 +983,41 @@ msgstr "{year}-{month:02d} has no working days — check the calendar."
 
 msgid "`period_year` va `period_month` butun son bo'lishi kerak."
 msgstr "`period_year` and `period_month` must be whole numbers."
+
+# --- ADR-25: delegatsiya qoidasi, filial tanlovi ---
+
+msgid "Bu bog'chada bir nechta filial bor — avval yuqoridagi filial tanlovidan kerakli filialni tanlang."
+msgstr "This kindergarten has several branches — first choose the branch in the selector at the top."
+
+msgid "Bu rolda sizda yo'q ruxsatlar bor, shuning uchun uni bera olmaysiz: {codes}."
+msgstr "This role includes permissions you do not have, so you cannot assign it: {codes}."
+
+msgid "Faqat o'z filialingizga xodim qo'sha olasiz."
+msgstr "You can only add staff to your own branch."
+
+msgid "O'z hisobingizni Profil sahifasida tahrirlang."
+msgstr "Edit your own account on the Profile page."
+
+msgid "O'z rolingizning ruxsatlarini o'zgartira olmaysiz."
+msgstr "You cannot change the permissions of your own role."
+
+msgid "Rol kodini yaratilgandan keyin o'zgartirib bo'lmaydi."
+msgstr "A role's code cannot be changed after it is created."
+
+msgid "Sizda yo'q ruxsatlarni bera olmaysiz: {codes}."
+msgstr "You cannot grant permissions you do not have: {codes}."
+
+msgid "Sizdan kengroq huquqli rolni o'zgartira olmaysiz."
+msgstr "You cannot change a role with broader permissions than yours."
+
+msgid "Sizdan kengroq huquqli xodimning hisobini boshqara olmaysiz."
+msgstr "You cannot manage the account of a staff member with broader permissions than yours."
+
+msgid "Tashkilot egasi rolini faqat tashkilot egasi bera oladi."
+msgstr "Only the organization owner can assign the owner role."
+
+msgid "Tashkilot egasi rolini faqat tashkilot egasi o'zgartira oladi."
+msgstr "Only the organization owner can change the owner role."
+
+msgid "Tashkilot egasining hisobini faqat egasi boshqara oladi."
+msgstr "Only the owner can manage the organization owner's account."

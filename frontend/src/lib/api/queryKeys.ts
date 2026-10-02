@@ -79,6 +79,8 @@ export const queryKeys = {
     ['org', orgId, 'insights', 'list', params ?? {}] as const,
   childLabels: (orgId: string, ids: string[]) =>
     ['org', orgId, 'children', 'labels', ids.join(',')] as const,
+  reportExpenses: (orgId: string, from: string, to: string, groupBy: string) =>
+    ['org', orgId, 'reports', 'expenses', from, to, groupBy] as const,
   reportRevenue: (orgId: string, from: string, to: string, groupBy: string) =>
     ['org', orgId, 'reports', 'revenue', from, to, groupBy] as const,
   reportProfitLoss: (orgId: string, from: string, to: string, groupBy: string) =>

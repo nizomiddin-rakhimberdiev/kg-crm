@@ -11,7 +11,7 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from apps.accounts import services
+from apps.accounts import delegation, services
 from apps.accounts.constants import OWNER_LOCKED_PERMISSIONS, OWNER_ROLE_CODE
 from apps.accounts.models import Permission, Role, RolePermission, User
 from apps.accounts.serializers import (
@@ -49,8 +49,13 @@ class UserViewSet(BranchScopedMixin, TenantViewSet):
 
     def perform_create(self, serializer: Any) -> None:
         data = serializer.validated_data
-        organization = request_user(self.request).organization
+        actor = request_user(self.request)
+        organization = actor.organization
         assert organization is not None  # IsAuthenticated + tenant scoping kafolati
+        # Delegatsiya (ADR-25): o'zida yo'q huquqli rolni bera olmaydi va
+        # filialga bog'langan bo'lsa — faqat o'z filialiga.
+        delegation.assert_can_assign_role(actor, data["role"])
+        delegation.assert_can_assign_branch(actor, data.get("branch"))
         user = services.create_user(
             organization=organization,
             email=data["email"],
@@ -70,8 +75,20 @@ class UserViewSet(BranchScopedMixin, TenantViewSet):
             changes={"email": user.email, "role": user.role.code if user.role else None},
         )
 
+    def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        # Avtorizatsiya validatsiyadan OLDIN: ruxsati yo'q odam `400` bilan
+        # maydonlar haqida ma'lumot olmasin, aniq `403` olsin.
+        delegation.assert_can_manage_user(request_user(request), self.get_object())
+        return super().update(request, *args, **kwargs)
+
     def perform_update(self, serializer: Any) -> None:
-        password = serializer.validated_data.pop("password", None)
+        actor = request_user(self.request)
+        data = serializer.validated_data
+        if "role" in data:
+            delegation.assert_can_assign_role(actor, data["role"])
+        if "branch" in data:
+            delegation.assert_can_assign_branch(actor, data["branch"])
+        password = data.pop("password", None)
         user = serializer.save()
         if password:
             user.set_password(password)
@@ -89,6 +106,7 @@ class UserViewSet(BranchScopedMixin, TenantViewSet):
         )
 
     def perform_destroy(self, instance: User) -> None:
+        delegation.assert_can_manage_user(request_user(self.request), instance)
         # Yumshoq o'chirish (D5) + barcha sessiyalarni yopish.
         instance.is_active = False
         instance.save(update_fields=["is_active"])
@@ -104,6 +122,7 @@ class UserViewSet(BranchScopedMixin, TenantViewSet):
     @action(detail=True, methods=["post"], url_path="reset-password")
     def reset_password(self, request: Request, pk: str | None = None) -> Response:
         user = self.get_object()
+        delegation.assert_can_manage_user(request_user(request), user)
         new_password = request.data.get("password")
         if not new_password:
             return Response(
@@ -138,7 +157,12 @@ class RoleViewSet(TenantViewSet):
     serializer_class = RoleSerializer
     search_fields = ["name", "code"]
 
+    def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        delegation.assert_can_edit_role(request_user(request), self.get_object())
+        return super().update(request, *args, **kwargs)
+
     def perform_destroy(self, instance: Role) -> None:
+        delegation.assert_can_edit_role(request_user(self.request), instance)
         if instance.is_system:
             from apps.core.exceptions import BusinessRuleViolation
 
@@ -157,6 +181,7 @@ class RoleViewSet(TenantViewSet):
             return Response({"permissions": sorted(codes)})
 
         wanted = set(request.data.get("permissions", []))
+        delegation.assert_can_edit_role(request_user(request), role, wanted)
 
         # Matritsa (docs/02 §11.2) — boshlang'ich holat, abadiy cheklov emas:
         # tashkilot egasi har bir rolni o'z ish jarayoniga moslashtira oladi.
