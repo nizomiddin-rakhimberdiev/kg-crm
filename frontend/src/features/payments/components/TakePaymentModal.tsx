@@ -31,9 +31,8 @@ import { invalidateMoney } from '@/lib/api/invalidate'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { money } from '@/lib/format'
 import { t } from '@/lib/i18n'
-
-const money = (value: number) => new Intl.NumberFormat('uz-UZ').format(Math.round(value))
 
 interface Tender {
   key: string

@@ -92,6 +92,7 @@ export function PlatformAuthProvider({ children }: { children: ReactNode }) {
 
 export function usePlatformAuth(): PlatformAuthValue {
   const context = useContext(PlatformAuthContext)
-  if (!context) throw new Error('usePlatformAuth() <PlatformAuthProvider> ichida chaqirilishi kerak')
+  if (!context)
+    throw new Error('usePlatformAuth() <PlatformAuthProvider> ichida chaqirilishi kerak')
   return context
 }

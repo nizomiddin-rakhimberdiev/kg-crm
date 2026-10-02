@@ -13,8 +13,7 @@ import { AlertTriangle, Building2, Clock, Wallet } from 'lucide-react'
 import { formatDate, formatUZS } from '@/lib/utils'
 import { platform } from '../api'
 
-const day = (iso: string) =>
-  formatDate(iso)
+const day = (iso: string) => formatDate(iso)
 
 const daysLeft = (iso: string) =>
   Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000))
@@ -67,9 +66,7 @@ export default function PlatformDashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Ish ro'yxati</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          Bugun e'tibor talab qiladigan narsalar.
-        </p>
+        <p className="mt-1 text-sm text-slate-400">Bugun e'tibor talab qiladigan narsalar.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -140,9 +137,7 @@ export default function PlatformDashboardPage() {
 
         <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
           <h2 className="text-sm font-semibold">Muddati o'tgan hisoblar</h2>
-          <p className="mt-0.5 text-xs text-slate-500">
-            Eng ko'p kechikkani birinchi.
-          </p>
+          <p className="mt-0.5 text-xs text-slate-500">Eng ko'p kechikkani birinchi.</p>
           <ul className="mt-4 divide-y divide-slate-800 border-t border-slate-800">
             {overdue.map((row) => (
               <li key={row.number} className="flex items-center justify-between gap-3 py-2.5">
@@ -158,9 +153,7 @@ export default function PlatformDashboardPage() {
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="text-sm font-semibold">
-                    {formatUZS(Number(row.total_amount))}
-                  </p>
+                  <p className="text-sm font-semibold">{formatUZS(Number(row.total_amount))}</p>
                   <p className="text-xs text-red-400">{row.days_late} kun kechikdi</p>
                 </div>
               </li>

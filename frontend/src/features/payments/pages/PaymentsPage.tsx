@@ -23,10 +23,10 @@ import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate, formatMoney } from '@/lib/utils'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
+import { som } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
-const money = (value: string | number) =>
-  new Intl.NumberFormat('uz-UZ').format(Math.round(Number(value))) + t(" so'm")
+const money = som
 
 const MONTHS = [
   t('Yanvar'),

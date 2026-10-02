@@ -18,10 +18,8 @@ import { Modal } from '@/components/ui/Modal'
 import { invoicesApi } from '@/features/payments/api'
 import type { BillingRunResult } from '@/lib/api/types'
 import { ApiError } from '@/lib/api/types'
+import { money } from '@/lib/format'
 import { t } from '@/lib/i18n'
-
-const money = (value: string | number) =>
-  new Intl.NumberFormat('uz-UZ').format(Math.round(Number(value)))
 
 interface Props {
   year: number

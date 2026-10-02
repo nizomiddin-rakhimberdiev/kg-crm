@@ -34,9 +34,8 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type PayrollItem, type PayrollRun } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate } from '@/lib/utils'
+import { money } from '@/lib/format'
 import { t } from '@/lib/i18n'
-
-const money = (v: string) => new Intl.NumberFormat('uz-UZ').format(Number(v))
 
 const STATUS = {
   draft: [t('Qoralama'), 'bg-slate-100 text-slate-600'],

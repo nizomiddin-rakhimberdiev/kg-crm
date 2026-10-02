@@ -18,9 +18,10 @@ import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { notificationsApi, type ReminderFilters } from '@/features/notifications/api'
 import { queryKeys } from '@/lib/api/queryKeys'
+import { som } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
-const money = (value: string) => new Intl.NumberFormat('uz-UZ').format(Number(value)) + t(" so'm")
+const money = som
 
 interface Props {
   open: boolean

@@ -1,7 +1,6 @@
 /** Ruscha lug'at — kalit: koddagi o'zbekcha manba matn (lib/i18n). Tartib: kalit bo'yicha. */
 export const messages: Record<string, string> = {
   ' ({remaining} kun)': ' ({remaining} дн.)',
-  " so'm": ' сум',
   ' · {row_count} qator': ' · строк: {row_count}',
   " — hozircha faqat o'qish rejimi": ' — пока только чтение',
   ' — {remaining} kun qoldi': ' — осталось {remaining} дн.',

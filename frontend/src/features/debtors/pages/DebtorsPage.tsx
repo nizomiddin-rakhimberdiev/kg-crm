@@ -38,9 +38,10 @@ import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { EmptyRow } from '@/components/ui/EmptyState'
+import { som } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
-const money = (value: string) => new Intl.NumberFormat('uz-UZ').format(Number(value)) + t(" so'm")
+const money = som
 
 const date = (value: string | null) =>
   value ? value.slice(0, 10).split('-').reverse().join('.') : '—'

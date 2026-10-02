@@ -20,9 +20,10 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import type { Invoice } from '@/lib/api/types'
 import { cn, formatDate } from '@/lib/utils'
 import { Modal } from '@/components/ui/Modal'
+import { som } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
-const money = (value: number) => new Intl.NumberFormat('uz-UZ').format(value) + t(" so'm")
+const money = som
 
 /** Rangli nishon — diagramma va jurnal bir xil rang tilida gapirsin. */
 function MethodMark({ method }: { method: string }) {

@@ -9,9 +9,8 @@
 import { Modal } from '@/components/ui/Modal'
 import type { PayrollItem } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
+import { money } from '@/lib/format'
 import { t } from '@/lib/i18n'
-
-const money = (value: string | number) => new Intl.NumberFormat('uz-UZ').format(Number(value))
 
 function Row({
   label,

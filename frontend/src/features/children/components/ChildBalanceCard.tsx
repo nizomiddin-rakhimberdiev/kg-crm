@@ -17,10 +17,8 @@ import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { paymentsApi } from '@/features/payments/api'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate } from '@/lib/utils'
+import { money } from '@/lib/format'
 import { t } from '@/lib/i18n'
-
-const money = (value: string | number) =>
-  new Intl.NumberFormat('uz-UZ').format(Math.round(Number(value)))
 
 export function ChildBalanceCard({
   childId,

@@ -23,13 +23,12 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type AbsenceClaim } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate } from '@/lib/utils'
+import { money } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
 // Yaxlitlanadi: kun narxi bo'linishdan chiqadi va "340 909,1 so'm"
 // degan yarim tiyin ekranda ma'nosiz — ilovadagi qolgan pul
 // maydonlari ham butun songa yaxlitlaydi.
-const money = (value: string) => new Intl.NumberFormat('uz-UZ').format(Math.round(Number(value)))
-
 const KIND_LABELS: Record<string, string> = {
   medical: t("Shifokor ma'lumotnomasi"),
   parental: t('Ota-ona arizasi'),

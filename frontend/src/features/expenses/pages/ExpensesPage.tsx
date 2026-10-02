@@ -18,9 +18,10 @@ import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { EmptyRow } from '@/components/ui/EmptyState'
+import { som } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
-const money = (v: string) => new Intl.NumberFormat('uz-UZ').format(Number(v)) + t(" so'm")
+const money = som
 
 const STATUS: Record<string, [string, string]> = {
   pending: [t('Kutilmoqda'), 'bg-amber-50 text-amber-700'],

@@ -18,8 +18,7 @@ import { supportHandoff } from '@/lib/auth/supportSession'
 import { usePlatformAuth } from '../PlatformAuthProvider'
 import { STATUS_LABEL } from './PlatformOrganizationsPage'
 
-const day = (iso: string | null) =>
-  formatDate(iso)
+const day = (iso: string | null) => formatDate(iso)
 
 const INVOICE_TONE: Record<string, string> = {
   paid: 'bg-emerald-500/10 text-emerald-400',
@@ -163,7 +162,9 @@ export default function PlatformOrganizationPage() {
           ],
           [
             isTrial ? 'Sinov tugaydi' : 'Davr tugaydi',
-            isTrial ? day(subscription?.trial_ends_at ?? null) : (subscription?.current_period_end ?? '—'),
+            isTrial
+              ? day(subscription?.trial_ends_at ?? null)
+              : (subscription?.current_period_end ?? '—'),
           ],
         ].map(([label, value]) => (
           <div key={label} className="rounded-xl border border-slate-800 bg-slate-900 p-4">
@@ -241,8 +242,8 @@ export default function PlatformOrganizationPage() {
           <div className="mt-4 space-y-3 rounded-lg border border-slate-800 bg-slate-950 p-4">
             <p className="text-xs text-slate-400">
               Ruxsat vaqt bilan cheklanadi va <strong>mijozga ko'rinadi</strong>. U mijozning
-              operatsion ma'lumotini ko'rish uchun oddiy bog'cha interfeysi orqali ishlash
-              huquqini beradi — bu ekranda ma'lumot baribir ko'rinmaydi.
+              operatsion ma'lumotini ko'rish uchun oddiy bog'cha interfeysi orqali ishlash huquqini
+              beradi — bu ekranda ma'lumot baribir ko'rinmaydi.
             </p>
             <input
               value={reason}
@@ -344,9 +345,7 @@ export default function PlatformOrganizationPage() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold">
-                    {formatUZS(Number(invoice.total_amount))}
-                  </p>
+                  <p className="text-sm font-semibold">{formatUZS(Number(invoice.total_amount))}</p>
                   <span
                     className={cn(
                       'rounded-full px-2 py-0.5 text-xs',

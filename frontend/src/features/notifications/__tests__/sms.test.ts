@@ -38,13 +38,13 @@ describe('measureSms', () => {
 
 describe('smsSafe', () => {
   it("o'zbek apostrofi narxni ikki baravar qiladi — almashtirilgach yo'q", () => {
-    const text = "Toʻlov qabul qilindi. " + 'a'.repeat(100)
+    const text = 'Toʻlov qabul qilindi. ' + 'a'.repeat(100)
     expect(measureSms(text).encoding).toBe('ucs2')
     expect(measureSms(smsSafe(text)).encoding).toBe('gsm7')
     expect(measureSms(smsSafe(text)).parts).toBeLessThan(measureSms(text).parts)
   })
 
-  it("tipografik tirnoq va tire ham oddiylashtiriladi", () => {
+  it('tipografik tirnoq va tire ham oddiylashtiriladi', () => {
     expect(smsSafe('“matn” — izoh…')).toBe('"matn" - izoh...')
   })
 })

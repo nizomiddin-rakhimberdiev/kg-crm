@@ -22,9 +22,8 @@ import { PAYMENT_METHODS, paymentMethodLabel } from '@/features/payments/methods
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Invoice } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
+import { money } from '@/lib/format'
 import { t } from '@/lib/i18n'
-
-const money = (value: number) => new Intl.NumberFormat('uz-UZ').format(value)
 
 interface Line {
   key: string

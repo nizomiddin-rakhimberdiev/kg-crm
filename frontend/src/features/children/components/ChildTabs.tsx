@@ -19,10 +19,8 @@ import { invoicesApi, paymentsApi } from '@/features/payments/api'
 import { paymentMethodLabel } from '@/features/payments/methods'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { cn, formatDate, formatDateTime } from '@/lib/utils'
+import { money } from '@/lib/format'
 import { t } from '@/lib/i18n'
-
-const money = (value: string | number) =>
-  new Intl.NumberFormat('uz-UZ').format(Math.round(Number(value)))
 
 type TabKey = 'invoices' | 'payments' | 'history'
 

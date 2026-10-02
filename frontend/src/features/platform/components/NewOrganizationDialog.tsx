@@ -115,8 +115,8 @@ export function NewOrganizationDialog() {
             <div>
               <h2 className="text-lg font-semibold">{created.name} ochildi</h2>
               <p className="mt-1 text-sm text-slate-400">
-                Quyidagilarni mijozga topshiring. Parol boshqa ko'rsatilmaydi — uni hozir
-                nusxalab oling.
+                Quyidagilarni mijozga topshiring. Parol boshqa ko'rsatilmaydi — uni hozir nusxalab
+                oling.
               </p>
             </div>
 
@@ -180,7 +180,8 @@ export function NewOrganizationDialog() {
                 </div>
                 <span className="mt-1 block text-xs text-slate-500">
                   Bu — bog'cha jamoasi kiradigan sahifaning veb-havolasi, bog'chaning jismoniy
-                  manzili emas. Masalan: <span className="font-mono">/t/{slugPreview || 'quyosh'}</span>
+                  manzili emas. Masalan:{' '}
+                  <span className="font-mono">/t/{slugPreview || 'quyosh'}</span>
                 </span>
               </label>
 

@@ -18,10 +18,8 @@ import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { Modal } from '@/components/ui/Modal'
 import { paymentsApi } from '@/features/payments/api'
 import { formatDateTime } from '@/lib/utils'
+import { money } from '@/lib/format'
 import { t } from '@/lib/i18n'
-
-const money = (value: string | number) =>
-  new Intl.NumberFormat('uz-UZ').format(Math.round(Number(value)))
 
 type Size = 'a4' | 'thermal'
 

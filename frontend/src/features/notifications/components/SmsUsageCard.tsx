@@ -12,10 +12,8 @@
 
 import { Clock, MessageSquare } from 'lucide-react'
 import type { SmsStatus } from '@/lib/api/types'
+import { money, som } from '@/lib/format'
 import { t } from '@/lib/i18n'
-
-const number = (value: number) => new Intl.NumberFormat('uz-UZ').format(value)
-const money = (value: string) => new Intl.NumberFormat('uz-UZ').format(Number(value)) + t(" so'm")
 
 export function SmsUsageCard({ status }: { status: SmsStatus }) {
   const { usage } = status
@@ -28,8 +26,8 @@ export function SmsUsageCard({ status }: { status: SmsStatus }) {
         </h2>
         <p className="text-xs text-tosh-500">
           {t('Telegram: {telegram} · SMS: {sms}', {
-            telegram: number(usage.telegram),
-            sms: number(usage.sms),
+            telegram: money(usage.telegram),
+            sms: money(usage.sms),
           })}
         </p>
         <p className="flex items-center gap-1.5 text-xs text-tosh-500">
@@ -44,15 +42,15 @@ export function SmsUsageCard({ status }: { status: SmsStatus }) {
       <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div>
           <dt className="text-xs text-tosh-500">{t('Yuborilgan')}</dt>
-          <dd className="num text-lg font-semibold text-tosh-900">{number(usage.sent)}</dd>
+          <dd className="num text-lg font-semibold text-tosh-900">{money(usage.sent)}</dd>
         </div>
         <div>
           <dt className="text-xs text-tosh-500">{t('SMS bo‘laklari')}</dt>
-          <dd className="num text-lg font-semibold text-tosh-900">{number(usage.parts)}</dd>
+          <dd className="num text-lg font-semibold text-tosh-900">{money(usage.parts)}</dd>
         </div>
         <div>
           <dt className="text-xs text-tosh-500">{t('Xato')}</dt>
-          <dd className="num text-lg font-semibold text-orik-700">{number(usage.failed)}</dd>
+          <dd className="num text-lg font-semibold text-orik-700">{money(usage.failed)}</dd>
         </div>
         <div>
           <dt className="text-xs text-tosh-500">{t('Taxminiy xarajat')}</dt>
@@ -61,7 +59,7 @@ export function SmsUsageCard({ status }: { status: SmsStatus }) {
             {usage.sms === 0 ? (
               <span className="text-sm font-normal text-nihol-700">{t('bepul')}</span>
             ) : usage.estimated_cost ? (
-              money(usage.estimated_cost)
+              som(usage.estimated_cost)
             ) : (
               <span className="text-sm font-normal text-tosh-400">{t('narx kiritilmagan')}</span>
             )}
@@ -73,7 +71,7 @@ export function SmsUsageCard({ status }: { status: SmsStatus }) {
         <p className="mt-3 text-xs text-orik-800">
           {t(
             '{count} ta xabar test rejimida qoldi — ular ota-onalarga yuborilmagan va pul turmaydi.',
-            { count: number(usage.test_mode) },
+            { count: money(usage.test_mode) },
           )}
         </p>
       )}

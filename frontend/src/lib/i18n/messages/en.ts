@@ -1,7 +1,6 @@
 /** Inglizcha lug'at — kalit: koddagi o'zbekcha manba matn (lib/i18n). Tartib: kalit bo'yicha. */
 export const messages: Record<string, string> = {
   ' ({remaining} kun)': ' ({remaining} days)',
-  " so'm": ' UZS',
   ' · {row_count} qator': ' · {row_count} rows',
   " — hozircha faqat o'qish rejimi": ' — read-only for now',
   ' — {remaining} kun qoldi': ' — {remaining} days left',
