@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom'
 import { Building2, Search } from 'lucide-react'
 import { monthlyEstimate } from '@/lib/pricing'
 import { cn, formatUZS } from '@/lib/utils'
+import { PAYMENT_TERM, label as labelOf } from '../labels'
 import { platform } from '../api'
 import { usePlatformAuth } from '../PlatformAuthProvider'
 import { NewOrganizationDialog } from '../components/NewOrganizationDialog'
@@ -139,7 +140,7 @@ export default function PlatformOrganizationsPage() {
                       {subscription ? formatUZS(monthlyEstimate(row.billable_children)) : '—'}
                     </td>
                     <td className="px-4 py-3 text-slate-400">
-                      {subscription?.payment_term ?? '—'}
+                      {labelOf(PAYMENT_TERM, subscription?.payment_term)}
                       {subscription && Number(subscription.discount_percent) > 0 && (
                         <span className="ml-1 text-emerald-400">
                           −{Number(subscription.discount_percent)}%

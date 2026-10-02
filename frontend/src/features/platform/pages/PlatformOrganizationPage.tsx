@@ -10,13 +10,14 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, KeyRound, Pause, Play, Timer } from 'lucide-react'
+import { ArrowLeft, CalendarRange, KeyRound, Layers, Pause, Play, Timer } from 'lucide-react'
 import { ApiError } from '@/lib/api/types'
 import { cn, formatDate, formatUZS } from '@/lib/utils'
 import { platform } from '../api'
 import { supportHandoff } from '@/lib/auth/supportSession'
 import { usePlatformAuth } from '../PlatformAuthProvider'
 import { STATUS_LABEL } from './PlatformOrganizationsPage'
+import { INVOICE_STATUS, PAYMENT_TERM, PLAN, USAGE_METHOD, label } from '../labels'
 
 const day = (iso: string | null) => formatDate(iso)
 
@@ -34,7 +35,9 @@ export default function PlatformOrganizationPage() {
 
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const [dialog, setDialog] = useState<'suspend' | 'trial' | 'grant' | null>(null)
+  const [dialog, setDialog] = useState<'suspend' | 'trial' | 'grant' | 'term' | 'plan' | null>(null)
+  const [term, setTerm] = useState('monthly')
+  const [planCode, setPlanCode] = useState('')
   const [reason, setReason] = useState('')
   const [days, setDays] = useState(7)
   const [hours, setHours] = useState(2)
@@ -43,6 +46,12 @@ export default function PlatformOrganizationPage() {
     queryKey: ['platform', 'organization', organizationId],
     queryFn: () => platform.organization(organizationId),
     enabled: Boolean(organizationId),
+  })
+  // Rejalar ro'yxati — faqat "Rejani almashtirish" ochilganda kerak.
+  const { data: plans } = useQuery({
+    queryKey: ['platform', 'plans'],
+    queryFn: () => platform.plans(),
+    enabled: dialog === 'plan',
   })
 
   const done = (message: string) => {
@@ -70,6 +79,17 @@ export default function PlatformOrganizationPage() {
   const extendTrial = useMutation({
     mutationFn: () => platform.extendTrial(organizationId, days, reason),
     onSuccess: () => done(`Sinov ${days} kunga uzaytirildi.`),
+    onError: fail,
+  })
+  const changeTerm = useMutation({
+    mutationFn: () => platform.changePaymentTerm(organizationId, term, reason),
+    onSuccess: () =>
+      done(`Toʻlov davri: ${label(PAYMENT_TERM, term)}. Keyingi davrdan kuchga kiradi.`),
+    onError: fail,
+  })
+  const changePlan = useMutation({
+    mutationFn: () => platform.changePlan(organizationId, planCode, reason),
+    onSuccess: () => done(`Reja almashtirildi: ${label(PLAN, planCode)}. Keyingi hisobdan.`),
     onError: fail,
   })
   const grant = useMutation({
@@ -149,11 +169,11 @@ export default function PlatformOrganizationPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           ['Hisoblanadigan bolalar', String(data.billable_children)],
-          ['Reja', subscription?.plan_code ?? '—'],
+          ['Reja', label(PLAN, subscription?.plan_code)],
           [
             "To'lov muddati",
             subscription
-              ? `${subscription.payment_term}${
+              ? `${label(PAYMENT_TERM, subscription.payment_term)}${
                   Number(subscription.discount_percent) > 0
                     ? ` (−${Number(subscription.discount_percent)}%)`
                     : ''
@@ -173,6 +193,48 @@ export default function PlatformOrganizationPage() {
           </div>
         ))}
       </div>
+
+      {/* --- Faollik va prognoz (PLAN 5.12) — faqat sonlar --- */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          [
+            'Oxirgi faollik',
+            data.activity.last_activity_at
+              ? day(data.activity.last_activity_at)
+              : 'Hali kirilmagan',
+          ],
+          [
+            'Faol foydalanuvchilar (30 kun)',
+            `${data.activity.active_users_30d} / ${data.activity.users_total}`,
+          ],
+          [
+            'Taxminiy oylik',
+            data.projection ? formatUZS(Number(data.projection.projected.total_amount)) : '—',
+          ],
+          [
+            'Bolalar soni (oylar boʻyicha)',
+            data.usage_history.length
+              ? [...data.usage_history]
+                  .reverse()
+                  .slice(-6)
+                  .map((row) => row.billable_children)
+                  .join(' → ')
+              : '—',
+          ],
+        ].map(([title, value]) => (
+          <div key={title} className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+            <p className="text-xs text-slate-500">{title}</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums">{value}</p>
+          </div>
+        ))}
+      </div>
+      {data.projection && (
+        <p className="-mt-3 text-xs text-slate-500">
+          Taxminiy oylik — prognoz, hisob emas: mijoz oʻz "Obuna" sahifasida aynan shu raqamni
+          koʻradi (eng yuqori {data.projection.peak_children} bola
+          {data.projection.prepaid_base ? ', baza oldindan toʻlangan' : ''}).
+        </p>
+      )}
 
       {/* --- Amallar --- */}
       <section className="rounded-xl border border-slate-800 bg-slate-900 p-5">
@@ -205,6 +267,33 @@ export default function PlatformOrganizationPage() {
               <Timer className="h-4 w-4" />
               Sinovni uzaytirish
             </button>
+          )}
+
+          {isAdmin && subscription && !isSuspended && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setTerm(subscription.payment_term)
+                  setDialog(dialog === 'term' ? null : 'term')
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-sm font-medium hover:bg-slate-800"
+              >
+                <CalendarRange className="h-4 w-4" />
+                Toʻlov davri
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPlanCode(subscription.plan_code)
+                  setDialog(dialog === 'plan' ? null : 'plan')
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-sm font-medium hover:bg-slate-800"
+              >
+                <Layers className="h-4 w-4" />
+                Reja
+              </button>
+            </>
           )}
 
           {isAdmin && !isSuspended && (
@@ -273,6 +362,84 @@ export default function PlatformOrganizationPage() {
                 Ruxsat olish
               </button>
             </div>
+          </div>
+        )}
+
+        {dialog === 'term' && (
+          <div className="mt-4 space-y-3 rounded-lg border border-slate-800 bg-slate-950 p-4">
+            <p className="text-xs text-slate-400">
+              Yangi davr <strong>keyingi hisobdan</strong> kuchga kiradi — yozilgan hisob
+              oʻzgarmaydi. Mijoz bu oʻzgarishni oʻz audit jurnalida koʻradi.
+            </p>
+            <label className="block text-xs text-slate-400">
+              Toʻlov davri
+              <select
+                value={term}
+                onChange={(e) => setTerm(e.target.value)}
+                className={`${field} mt-1`}
+              >
+                {Object.entries(PAYMENT_TERM).map(([value, text]) => (
+                  <option key={value} value={value}>
+                    {text}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-xs text-slate-400">
+              Sabab (mijoz koʻradi)
+              <input
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className={`${field} mt-1`}
+              />
+            </label>
+            <button
+              type="button"
+              disabled={reason.trim().length < 3 || changeTerm.isPending}
+              onClick={() => changeTerm.mutate()}
+              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+            >
+              Saqlash
+            </button>
+          </div>
+        )}
+
+        {dialog === 'plan' && (
+          <div className="mt-4 space-y-3 rounded-lg border border-slate-800 bg-slate-950 p-4">
+            <p className="text-xs text-slate-400">
+              Rejaning <strong>amaldagi versiyasi</strong> olinadi. Yozilgan hisob oʻz rejasi bilan
+              qoladi — yangisi keyingi hisobdan.
+            </p>
+            <label className="block text-xs text-slate-400">
+              Reja
+              <select
+                value={planCode}
+                onChange={(e) => setPlanCode(e.target.value)}
+                className={`${field} mt-1`}
+              >
+                {[...new Set((plans ?? []).map((plan) => plan.code))].map((code) => (
+                  <option key={code} value={code}>
+                    {label(PLAN, code)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-xs text-slate-400">
+              Sabab (mijoz koʻradi)
+              <input
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className={`${field} mt-1`}
+              />
+            </label>
+            <button
+              type="button"
+              disabled={reason.trim().length < 3 || !planCode || changePlan.isPending}
+              onClick={() => changePlan.mutate()}
+              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+            >
+              Almashtirish
+            </button>
           </div>
         )}
 
@@ -355,7 +522,7 @@ export default function PlatformOrganizationPage() {
                       INVOICE_TONE[invoice.status] ?? 'bg-slate-700/40 text-slate-400',
                     )}
                   >
-                    {invoice.status}
+                    {label(INVOICE_STATUS, invoice.status)}
                   </span>
                 </div>
               </li>
@@ -378,7 +545,7 @@ export default function PlatformOrganizationPage() {
                   {row.period}
                   {row.method === 'manual_adjustment' && (
                     <span className="ml-2 rounded bg-amber-500/10 px-1.5 py-0.5 text-xs text-amber-400">
-                      qo'lda
+                      {label(USAGE_METHOD, row.method)}
                     </span>
                   )}
                 </span>
@@ -394,6 +561,39 @@ export default function PlatformOrganizationPage() {
           </ul>
         </section>
       </div>
+
+      {/* --- Kirish ruxsatlari tarixi (PLAN 5.12) — tugaganlari bilan --- */}
+      <section className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+        <h2 className="text-sm font-semibold">Kirish ruxsatlari</h2>
+        <p className="mt-0.5 text-xs text-slate-500">
+          Tugagan va bekor qilinganlari ham — mijoz ham shu roʻyxatni koʻradi.
+        </p>
+        <ul className="mt-3 divide-y divide-slate-800 border-t border-slate-800">
+          {data.grants.map((row) => (
+            <li key={row.id} className="flex items-start justify-between gap-4 py-2.5 text-sm">
+              <div className="min-w-0">
+                <p className="truncate">{row.reason}</p>
+                <p className="text-xs text-slate-500">
+                  {row.platform_email} · {day(row.created_at)} → {day(row.expires_at)}
+                </p>
+              </div>
+              <span
+                className={cn(
+                  'shrink-0 rounded-full px-2 py-0.5 text-xs',
+                  row.is_active
+                    ? 'bg-emerald-500/10 text-emerald-400'
+                    : 'bg-slate-700/40 text-slate-400',
+                )}
+              >
+                {row.is_active ? 'Faol' : row.revoked_at ? 'Bekor qilingan' : 'Tugagan'}
+              </span>
+            </li>
+          ))}
+          {data.grants.length === 0 && (
+            <li className="py-6 text-center text-sm text-slate-500">Ruxsat soʻralmagan.</li>
+          )}
+        </ul>
+      </section>
     </div>
   )
 }

@@ -34,6 +34,8 @@ from apps.platform.authentication import (
 from apps.platform.models import Lead, LeadStatus, PlatformUser, SupportGrant
 from apps.platform.permissions import IsPlatformAdmin, IsPlatformStaff
 from apps.platform.serializers import (
+    ChangePaymentTermSerializer,
+    ChangePlanSerializer,
     ExtendTrialSerializer,
     LeadSerializer,
     LeadStatusSerializer,
@@ -234,6 +236,44 @@ class PlatformConsoleViewSet(viewsets.ViewSet):
             actor=self._actor(request), organization_id=organization_id, request=request._request
         )
         return Response({"status": subscription.status})
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path=r"organizations/(?P<organization_id>[0-9a-f-]{36})/payment-term",
+    )
+    def payment_term(self, request: Request, organization_id: str = "") -> Response:
+        """To'lov davrini o'zgartirish — faqat administrator, sabab bilan (PLAN 5.12)."""
+        self._admin_only(request)
+        serializer = ChangePaymentTermSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        subscription = services.change_payment_term(
+            actor=self._actor(request),
+            organization_id=organization_id,
+            payment_term=serializer.validated_data["payment_term"],
+            reason=serializer.validated_data["reason"],
+            request=request._request,
+        )
+        return Response({"payment_term": subscription.payment_term})
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path=r"organizations/(?P<organization_id>[0-9a-f-]{36})/plan",
+    )
+    def change_plan(self, request: Request, organization_id: str = "") -> Response:
+        """Tarif rejasini almashtirish — faqat administrator, sabab bilan (PLAN 5.12)."""
+        self._admin_only(request)
+        serializer = ChangePlanSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        subscription = services.change_plan(
+            actor=self._actor(request),
+            organization_id=organization_id,
+            plan_code=serializer.validated_data["plan_code"],
+            reason=serializer.validated_data["reason"],
+            request=request._request,
+        )
+        return Response({"plan_code": subscription.plan.code})
 
     @action(
         detail=False,

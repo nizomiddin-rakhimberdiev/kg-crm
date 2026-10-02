@@ -46,6 +46,14 @@ class ReasonSerializer(serializers.Serializer):
     reason = serializers.CharField(min_length=3, max_length=500)
 
 
+class ChangePaymentTermSerializer(ReasonSerializer):
+    payment_term = serializers.ChoiceField(choices=["monthly", "semiannual", "annual"])
+
+
+class ChangePlanSerializer(ReasonSerializer):
+    plan_code = serializers.SlugField(max_length=40)
+
+
 class ExtendTrialSerializer(ReasonSerializer):
     days = serializers.IntegerField(min_value=1, max_value=30)
 

@@ -346,9 +346,19 @@ class TestMetadataOnly:
             "billable_children",
             "usage_history",
             "invoices",
+            # PLAN 5.12 — hammasi metama'lumot: faollik SONLAR,
+            # prognoz mijoz ekranidagi o'sha raqam, ruxsatlar vendor
+            # tekisligining o'z jadvali.
+            "activity",
+            "projection",
+            "grants",
         }
         assert "Testov" not in str(detail)
         assert "500000" not in str(detail)
+        # Faollik — faqat sonlar va sana: kim kirgani (email, ism) yo'q.
+        assert set(detail["activity"]) == {"users_total", "active_users_30d", "last_activity_at"}
+        assert tenant_a.owner.email not in str(detail["activity"])
+        assert detail["activity"]["users_total"] == 1
 
     def test_there_is_no_endpoint_that_lists_children(self, tenant_a):
         """

@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom'
 import { CreditCard } from 'lucide-react'
 import { ApiError } from '@/lib/api/types'
 import { cn, formatDate, formatUZS } from '@/lib/utils'
+import { INVOICE_STATUS, label } from '../labels'
 import { platform } from '../api'
 import { usePlatformAuth } from '../PlatformAuthProvider'
 
@@ -144,7 +145,7 @@ export default function PlatformInvoicesPage() {
                         TONE[invoice.status] ?? 'bg-slate-700/40 text-slate-400',
                       )}
                     >
-                      {invoice.status}
+                      {label(INVOICE_STATUS, invoice.status)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">

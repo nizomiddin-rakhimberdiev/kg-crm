@@ -27,6 +27,25 @@ export interface OrgRow {
 
 export interface OrgDetail extends OrgRow {
   contact_phone: string
+  /** Faollik — faqat sonlar (PLAN 5.12): kim kirgani emas, nechta va qachon. */
+  activity: { users_total: number; active_users_30d: number; last_activity_at: string | null }
+  /** "Taxminiy oylik" — mijoz ekranidagi o'sha prognoz (PLAN 1.11). */
+  projection: {
+    peak_children: number
+    billable_children: number
+    prepaid_base: boolean
+    projected: { total_amount: string; currency: string }
+  } | null
+  /** Kirish ruxsatlari tarixi — tugaganlari bilan. */
+  grants: Array<{
+    id: string
+    platform_email: string
+    reason: string
+    created_at: string
+    expires_at: string
+    revoked_at: string | null
+    is_active: boolean
+  }>
   usage_history: Array<{
     period: string
     peak_children: number
@@ -182,6 +201,16 @@ export const platform = {
     platformApi.post<{ status: string }>(`/platform/organizations/${id}/suspend`, { reason }),
   reactivate: (id: string) =>
     platformApi.post<{ status: string }>(`/platform/organizations/${id}/reactivate`),
+  changePaymentTerm: (id: string, paymentTerm: string, reason: string) =>
+    platformApi.post<{ payment_term: string }>(`/platform/organizations/${id}/payment-term`, {
+      payment_term: paymentTerm,
+      reason,
+    }),
+  changePlan: (id: string, planCode: string, reason: string) =>
+    platformApi.post<{ plan_code: string }>(`/platform/organizations/${id}/plan`, {
+      plan_code: planCode,
+      reason,
+    }),
   extendTrial: (id: string, days: number, reason: string) =>
     platformApi.post<{ trial_ends_at: string }>(`/platform/organizations/${id}/extend-trial`, {
       days,

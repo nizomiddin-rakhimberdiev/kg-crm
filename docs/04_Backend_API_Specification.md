@@ -948,10 +948,12 @@ Module: `platform`. **Not part of the customer API surface** — separate auth p
 |--------|------|-------------|
 | POST | `/platform/organizations/create` | **Open a new customer** — organization + first branch + Org Owner + trial. Admin only. Replaces the removed public signup. |
 | GET | `/platform/organizations` | List all organizations — **metadata only** (name, plan, status, child count, MRR) |
-| GET | `/platform/organizations/{id}` | Organization detail + subscription + usage history |
+| GET | `/platform/organizations/{id}` | Organization detail + subscription + usage history; `activity` (**counts only**: users, users active in 30 days, last sign-in — read inside the tenant context like `billable_children`, so the vendor gets numbers, never rows), `projection` (the very `projected_usage` the customer sees on their own billing page — one formula, PLAN 1.11) and `grants` (support-grant history including expired and revoked) |
 | POST | `/platform/organizations/{id}/suspend` | Move to `suspended` (read-only for the customer) |
 | POST | `/platform/organizations/{id}/reactivate` | Restore access |
 | POST | `/platform/organizations/{id}/extend-trial` | Extend the trial (reason required) |
+| POST | `/platform/organizations/{id}/payment-term` | Change the billing period (`monthly` / `semiannual` / `annual`) from the next period — admin only, reason required, written to the customer's audit log (PLAN 5.12) |
+| POST | `/platform/organizations/{id}/plan` | Switch to the **current version** of another plan, effective from the next invoice — admin only, reason required, audited (PLAN 5.12) |
 | POST | `/platform/organizations/{id}/support-grant` | Request time-boxed operational access (reason required, customer-visible) |
 | POST | `/platform/organizations/{id}/support-session` | Enter the customer's app under an active grant — **read-only**, short-lived, no refresh token |
 

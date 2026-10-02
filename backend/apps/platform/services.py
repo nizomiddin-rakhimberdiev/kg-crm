@@ -173,6 +173,65 @@ def _billable_children(organization_id: Any) -> int:
         return active_children_count(organization_id=organization_id)
 
 
+def _activity(organization_id: Any) -> dict[str, Any]:
+    """
+    Faollik — SONLAR, qatorlar emas (PLAN 5.12).
+
+    `_billable_children` bilan bir xil yo'l: so'rov tashkilot
+    kontekstida bajariladi, chunki `user` jadvali platforma rejimida
+    ko'rinmaydi (va ko'rinmasligi kerak, ADR-10). Vendor "nechta odam
+    va qachon oxirgi marta kirdi" ni oladi — kim kirganini emas.
+    """
+    from django.db.models import Max
+
+    from apps.accounts.models import User
+
+    month_ago = timezone.now() - timedelta(days=30)
+    with organization_context(organization_id):
+        users = User.objects.filter(is_active=True)
+        last = users.aggregate(last=Max("last_login_at"))["last"]
+        return {
+            "users_total": users.count(),
+            "active_users_30d": users.filter(last_login_at__gte=month_ago).count(),
+            "last_activity_at": last.isoformat() if last else None,
+        }
+
+
+def _projection(subscription: Subscription | None) -> dict[str, Any] | None:
+    """
+    "Taxminiy oylik" — mijozning o'z ekranidagi AYNAN o'sha prognoz
+    (`subscriptions.projected_usage`, PLAN 1.11). Ikki xil formula
+    bo'lsa, vendor bilan mijoz ikki xil raqamni ko'rib bahslashardi.
+    """
+    if subscription is None or subscription.status == SubscriptionStatus.CANCELLED:
+        return None
+    from apps.subscriptions.services import projected_usage
+
+    with organization_context(subscription.organization_id):
+        return projected_usage(subscription=subscription)
+
+
+def _grant_history(organization: Organization) -> list[dict[str, Any]]:
+    """Kirish ruxsatlari — tugagan va bekor qilinganlari bilan (PLAN 5.12)."""
+    grants = (
+        SupportGrant.objects.filter(organization=organization)
+        .select_related("platform_user")
+        .order_by("-created_at")[:20]
+    )
+    return [
+        {
+            "id": str(grant.id),
+            "platform_email": grant.platform_user.email,
+            "reason": grant.reason,
+            "created_at": grant.created_at.isoformat(),
+            "expires_at": grant.expires_at.isoformat(),
+            "revoked_at": grant.revoked_at.isoformat() if grant.revoked_at else None,
+            "is_active": grant.is_active,
+        }
+        for grant in grants
+    ]
+
+
 def organization_detail(*, organization_id: Any) -> dict[str, Any]:
     """Bitta tashkilot: obuna, o'lchov tarixi, hisoblar — metama'lumot."""
     from apps.subscriptions.models import UsageSnapshot
@@ -209,6 +268,9 @@ def organization_detail(*, organization_id: Any) -> dict[str, Any]:
             "created_at": organization.created_at.isoformat(),
             "subscription": _subscription_summary(subscription),
             "billable_children": _billable_children(organization.id),
+            "activity": _activity(organization.id),
+            "projection": _projection(subscription),
+            "grants": _grant_history(organization),
             "usage_history": [
                 {
                     "period": f"{row.period_year}-{row.period_month:02d}",
@@ -571,6 +633,80 @@ def extend_trial(
                 "from": previous.isoformat() if previous else None,
                 "to": subscription.trial_ends_at.isoformat(),
             },
+            request=request,
+        )
+    return subscription
+
+
+def change_payment_term(
+    *,
+    actor: PlatformUser,
+    organization_id: Any,
+    payment_term: str,
+    reason: str,
+    request: Any = None,
+) -> Subscription:
+    """
+    To'lov davrini o'zgartiradi (PLAN 5.12) — keyingi davrdan, sabab bilan.
+
+    Mantiq `subscriptions.change_payment_term` da (mijoz o'zi ham shu
+    yo'ldan o'tadi); bu yerda faqat vendor qarori uchun sabab va audit.
+    """
+    from apps.subscriptions import services as subscription_services
+
+    if not reason.strip():
+        raise BusinessRuleViolation("To'lov davrini o'zgartirish uchun sabab majburiy.")
+    organization, subscription = _load_subscription(organization_id)
+    previous = subscription.payment_term
+    with organization_context(organization.id):
+        subscription_services.change_payment_term(
+            subscription=subscription, payment_term=payment_term
+        )
+        record_platform_action(
+            actor=actor,
+            action="update",
+            organization=organization,
+            entity_type="subscription",
+            entity_id=subscription.id,
+            changes={
+                "payment_term": {"from": previous, "to": payment_term},
+                "reason": reason.strip(),
+            },
+            request=request,
+        )
+    return subscription
+
+
+def change_plan(
+    *, actor: PlatformUser, organization_id: Any, plan_code: str, reason: str, request: Any = None
+) -> Subscription:
+    """
+    Tarif rejasini almashtiradi (PLAN 5.12).
+
+    Amaldagi VERSIYA olinadi (`current_plan`) — reja versiyalanadi va
+    eski versiyaga o'tkazish yangi narxni chetlab o'tish bo'lardi. Allaqachon
+    yozilgan hisob-faktura o'zgarmaydi (ADR-11): u o'z `usage_snapshot`i
+    va o'sha paytdagi reja bilan muhrlangan; yangi reja keyingi hisobdan.
+    """
+    from apps.subscriptions.services import current_plan
+
+    if not reason.strip():
+        raise BusinessRuleViolation("Rejani almashtirish uchun sabab majburiy.")
+    organization, subscription = _load_subscription(organization_id)
+    if subscription.status == SubscriptionStatus.SUSPENDED:
+        raise BusinessRuleViolation("To'xtatilgan obunaning rejasini almashtirib bo'lmaydi.")
+    plan = current_plan(plan_code)
+    previous = subscription.plan.code
+    with organization_context(organization.id):
+        subscription.plan = plan
+        subscription.save(update_fields=["plan", "updated_at"])
+        record_platform_action(
+            actor=actor,
+            action="update",
+            organization=organization,
+            entity_type="subscription",
+            entity_id=subscription.id,
+            changes={"plan": {"from": previous, "to": plan.code}, "reason": reason.strip()},
             request=request,
         )
     return subscription
