@@ -13,6 +13,20 @@ export const authApi = {
   login: (email: string, password: string) =>
     api.post<LoginResult>('/auth/login', { email, password }),
 
+  /**
+   * Parolni tiklash havolasini soʻrash (PLAN 5.2).
+   *
+   * Javob HAR DOIM bir xil — email tizimda bor-yoʻqligi tashqaridan
+   * koʻrinmaydi. Shuning uchun ekranda ham bitta xabar koʻrsatiladi:
+   * "bunday email yoʻq" degan matn begona odamga mijozlar roʻyxatini
+   * tekshirish imkonini berardi.
+   */
+  requestPasswordReset: (email: string) =>
+    api.post<{ detail: string }>('/auth/password-reset', { email }),
+
+  confirmPasswordReset: (uid: string, token: string, password: string) =>
+    api.post<{ detail: string }>('/auth/password-reset/confirm', { uid, token, password }),
+
   selectOrganization: (pendingToken: string, organizationId: string) =>
     api.post<AuthSession>('/auth/select-organization', {
       pending_token: pendingToken,

@@ -19,7 +19,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken as JWTRefreshToken
 
-from apps.accounts import lockout, services
+from apps.accounts import lockout, password_reset, services
 from apps.accounts.authentication import (
     authenticate_candidates,
     hydrate_user,
@@ -31,16 +31,20 @@ from apps.accounts.models import User
 from apps.accounts.serializers import (
     LoginSerializer,
     PasswordChangeSerializer,
+    PasswordResetConfirmSerializer,
     ProfilePhotoSerializer,
     ProfileUpdateSerializer,
     SelectOrganizationSerializer,
 )
 from apps.audit import services as audit
+from apps.core.exceptions import BusinessRuleViolation
 from apps.core.tenancy import auth_lookup_context, organization_context
 from apps.core.typing import request_user
 
 __all__ = [
     "LoginView",
+    "PasswordResetRequestView",
+    "PasswordResetConfirmView",
     "SelectOrganizationView",
     "RefreshView",
     "LogoutView",
@@ -100,7 +104,7 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data["email"]
-        ip = audit.client_ip(request._request)
+        ip = audit.client_ip(request._request) or ""
 
         # Hisob bo'yicha blok (PLAN 5.3) — tezlik chegarasidan
         # ALOHIDA qatlam. `LoginThrottle` IP bo'yicha 20/min beradi va
@@ -462,3 +466,112 @@ def _auth_error(message: str) -> Response:
         },
         status=status.HTTP_401_UNAUTHORIZED,
     )
+
+
+class PasswordResetThrottle(AnonRateThrottle):
+    """
+    Tiklash so'rovi — qimmat va suiiste'molga ochiq (PLAN 5.2).
+
+    Har so'rov xat yuboradi, ya'ni cheklovsiz endpoint begona odamga
+    bizning pochtamiz bilan boshqa odamni bezovta qilish imkonini
+    beradi (mail bombing). Chegara past: normal odam parolni kuniga
+    bir-ikki marta tiklaydi.
+    """
+
+    scope = "password_reset"
+
+
+class PasswordResetRequestView(APIView):
+    """
+    `POST /auth/password-reset` — tiklash havolasini so'rash.
+
+    **Javob email mavjudligini oshkor qilmaydi.** "Bu email ro'yxatda
+    yo'q" degan javob begona odamga mijozlar ro'yxatini tekshirish
+    imkonini beradi: bir bog'cha direktori raqobatchisining xodimi
+    tizimda borligini bilib oladi. Shuning uchun javob HAR DOIM bir
+    xil — xat ketdi yoki ketmadi, farqi tashqaridan ko'rinmaydi.
+    """
+
+    permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetThrottle]
+
+    def post(self, request: Request) -> Response:
+        email = str(request.data.get("email") or "").strip()
+
+        # Bir email ikki bog'chada bo'lishi mumkin (email tashkilot
+        # ICHIDA unikal, ADR-9) — har bir hisob uchun alohida havola,
+        # aks holda ikkinchi bog'chadagi xodim parolini tiklay olmasdi.
+        for user in password_reset.all_users(email):
+            link = password_reset.build_link(user)
+            password_reset.send_reset_email(user, link)
+            with organization_context(user.organization_id):
+                audit.record(
+                    action="password_reset_requested",
+                    request=request._request,
+                    actor=user,
+                    entity_type="user",
+                    entity_id=user.id,
+                )
+
+        if email:
+            # So'rov FAKTI auditda qoladi, hisob topilmasa ham:
+            # "kimdir shu emailni tekshirib ko'rdi" — xavfsizlik
+            # jurnalining to'g'ri yozuvi.
+            audit.record(
+                action="password_reset_requested",
+                request=request._request,
+                actor_email=email,
+            )
+
+        return Response(
+            {
+                "detail": gettext(
+                    "Agar bu email tizimda boʻlsa, tiklash havolasi yuborildi. "
+                    "Pochtangizni tekshiring."
+                )
+            }
+        )
+
+
+class PasswordResetConfirmView(APIView):
+    """
+    `POST /auth/password-reset/confirm` — yangi parolni o'rnatish.
+
+    Havola bir martalik: token foydalanuvchining joriy parol xeshidan
+    hosil qilinadi, ya'ni parol o'zgargach o'zi o'ladi
+    (`password_reset.py` izohiga qarang).
+    """
+
+    permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetThrottle]
+
+    def post(self, request: Request) -> Response:
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        user = password_reset.user_from_uid(data["uid"])
+        if user is None or not password_reset.check_token(user, data["token"]):
+            # Bitta xabar ikki holat uchun: havola eskirgan,
+            # ishlatilgan yoki buzuq — farqini aytish hujumchiga
+            # token tuzilishi haqida ma'lumot berardi.
+            raise BusinessRuleViolation(
+                gettext("Havola eskirgan yoki ishlatilgan. Yangisini soʻrang.")
+            )
+
+        with organization_context(user.organization_id):
+            password_reset.reset_password(user=user, password=data["password"])
+            audit.record(
+                action="password_reset",
+                request=request._request,
+                actor=user,
+                entity_type="user",
+                entity_id=user.id,
+                changes=password_reset.audit_changes(user),
+            )
+
+        # Kirish hisoblagichi ham tozalanadi: parolni unutib bloklangan
+        # odam tiklagandan keyin darhol kira olishi kerak.
+        lockout.reset(email=user.email, ip=audit.client_ip(request._request) or "")
+
+        return Response({"detail": gettext("Parol oʻzgartirildi. Endi kirishingiz mumkin.")})

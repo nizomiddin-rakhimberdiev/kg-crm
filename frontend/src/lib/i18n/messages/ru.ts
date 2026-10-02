@@ -1040,4 +1040,26 @@ export const messages: Record<string, string> = {
   'Oziq-ovqat, kanselyariya, tozalik — nima hisobga olinsa, shu yerda turadi.':
     'Продукты, канцелярия, бытовая химия — всё, что учитывается, будет здесь.',
   'Davomat saqlandi': 'Посещаемость сохранена',
+
+  // --- Parolni tiklash (PLAN 5.2) ---
+  'Parolni unutdingizmi?': 'Забыли пароль?',
+  'Parolni tiklash': 'Сброс пароля',
+  'Email manzilingizni yozing — tiklash havolasini yuboramiz.':
+    'Укажите e-mail — отправим ссылку для сброса.',
+  'Havolani yuborish': 'Отправить ссылку',
+  'Yuborilmoqda…': 'Отправляется…',
+  'Agar bu email tizimda boʻlsa, tiklash havolasi yuborildi. Pochtangizni tekshiring.':
+    'Если такой e-mail есть в системе, ссылка для сброса отправлена. Проверьте почту.',
+  'Havola 30 daqiqa ishlaydi.': 'Ссылка действует 30 минут.',
+  'Kirishga qaytish': 'Вернуться к входу',
+  'Yangi parol oʻrnatish': 'Установить новый пароль',
+  'Yangi parol': 'Новый пароль',
+  'Parolni takrorlang': 'Повторите пароль',
+  'Parolni oʻrnatish': 'Установить пароль',
+  'Parol oʻzgartirildi. Endi kirishingiz mumkin.': 'Пароль изменён. Теперь вы можете войти.',
+  'Barcha qurilmalardagi sessiyalar yopildi.': 'Сессии на всех устройствах закрыты.',
+  'Havola toʻliq emas. Pochtadagi havolani toʻliq nusxalab oching.':
+    'Ссылка неполная. Скопируйте ссылку из письма целиком.',
+  'Parolni koʻrsatish': 'Показать пароль',
+  'Parolni yashirish': 'Скрыть пароль',
 }

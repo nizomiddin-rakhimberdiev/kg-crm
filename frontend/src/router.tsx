@@ -10,6 +10,7 @@ import {
   PublicOnlyRoute,
 } from './app/routes/ProtectedRoute'
 import LoginPage from './features/auth/pages/LoginPage'
+import ResetPasswordPage from './features/auth/pages/ResetPasswordPage'
 import { basenameFor, currentSlug } from './lib/tenantAddress'
 import { env } from './config/env'
 import { t } from '@/lib/i18n'
@@ -200,7 +201,12 @@ export const routes: RouteObject[] = [
   ...saasOnlyRoutes,
   {
     element: <PublicOnlyRoute />,
-    children: [{ path: '/login', element: <LoginPage /> }],
+    children: [
+      { path: '/login', element: <LoginPage /> },
+      // Tiklash havolasi POCHTADAN ochiladi, ya'ni foydalanuvchi
+      // tizimga kirmagan holatda (PLAN 5.2).
+      { path: '/reset-password', element: <ResetPasswordPage /> },
+    ],
   },
   {
     element: <ProtectedRoute />,

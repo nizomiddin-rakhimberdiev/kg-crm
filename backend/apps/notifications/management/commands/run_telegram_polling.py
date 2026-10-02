@@ -40,6 +40,7 @@ idempotent.
 
 from __future__ import annotations
 
+import contextlib
 import signal
 import time
 from typing import Any
@@ -60,6 +61,24 @@ BACKOFF_SECONDS = 5
 
 class Command(BaseCommand):
     help = "Telegram botni uzun so'rov rejimida ishga tushiradi."
+
+    def _say(self, text: str, *, error: bool = False) -> None:
+        """
+        Yozib, DARHOL chiqaradi.
+
+        Python stdout'i TTY bo'lmaganda buferlanadi, ya'ni `nohup`,
+        systemd yoki Docker ostida bu buyruqning loglari faqat
+        **chiqishda** paydo bo'lardi. Uzoq ishlaydigan jarayon uchun
+        bu kamchilik emas, nosozlik: "bot ishlayaptimi?" degan
+        savolga javob bo'lmay qoladi.
+        """
+        stream = self.stderr if error else self.stdout
+        stream.write(text)
+        # `flush` hech qachon ishni to'xtatmaydi: yopilgan oqim
+        # (masalan quvur uzilgan) log yozishning muammosi, botning
+        # emas.
+        with contextlib.suppress(Exception):
+            stream.flush()
 
     def add_arguments(self, parser: Any) -> None:
         parser.add_argument("--once", action="store_true", help="Bir marta so'rab chiqadi")
@@ -90,15 +109,15 @@ class Command(BaseCommand):
 
         self._ensure_no_webhook(api, drop=bool(options.get("drop_webhook")))
 
-        self.stdout.write(self.style.SUCCESS(f"@{username} — uzun so'rov rejimida"))
-        self.stdout.write("To'xtatish: Ctrl+C")
+        self._say(self.style.SUCCESS(f"@{username} — uzun so'rov rejimida"))
+        self._say("To'xtatish: Ctrl+C")
 
         running = True
 
         def stop(*_: Any) -> None:
             nonlocal running
             running = False
-            self.stdout.write("\nTo'xtatilmoqda…")
+            self._say("To'xtatilmoqda…")
 
         signal.signal(signal.SIGINT, stop)
         signal.signal(signal.SIGTERM, stop)
@@ -126,12 +145,12 @@ class Command(BaseCommand):
                 )
                 payload = response.json()
             except Exception as exc:  # noqa: BLE001 — tsikl to'xtamasligi kerak
-                self.stderr.write(f"Tarmoq xatosi: {exc}")
+                self._say(f"Tarmoq xatosi: {exc}", error=True)
                 time.sleep(BACKOFF_SECONDS)
                 continue
 
             if not payload.get("ok"):
-                self.stderr.write(f"Telegram: {payload}")
+                self._say(f"Telegram: {payload}", error=True)
                 time.sleep(BACKOFF_SECONDS)
                 continue
 
@@ -140,16 +159,16 @@ class Command(BaseCommand):
                 try:
                     outcome = handle_update(update)
                 except Exception as exc:  # noqa: BLE001 — bitta update tsiklni to'xtatmaydi
-                    self.stderr.write(f"Update {update.get('update_id')}: {exc}")
+                    self._say(f"Update {update.get('update_id')}: {exc}", error=True)
                     continue
                 handled += 1
                 chat = ((update.get("message") or {}).get("chat") or {}).get("id")
-                self.stdout.write(f"  {outcome}  chat={chat}")
+                self._say(f"  {outcome}  chat={chat}")
 
             if options.get("once"):
                 break
 
-        self.stdout.write(self.style.SUCCESS(f"Tugadi. Qayta ishlangan update: {handled}"))
+        self._say(self.style.SUCCESS(f"Tugadi. Qayta ishlangan update: {handled}"))
 
     # --- Yordamchi ---
 
@@ -174,4 +193,4 @@ class Command(BaseCommand):
                 "aks holda bog'chalar bildirishnomasiz qoladi."
             )
         requests.post(f"{api}/deleteWebhook", timeout=15)
-        self.stdout.write(f"Webhook olib tashlandi: {url}")
+        self._say(f"Webhook olib tashlandi: {url}")

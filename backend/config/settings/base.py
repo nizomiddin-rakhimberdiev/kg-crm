@@ -388,8 +388,45 @@ REST_FRAMEWORK = {
         # haqiqiy update'ni yo'qotish ota-onaning ulanmay qolishi
         # degani, va u buni "ishlamadi" deb tushunadi.
         "telegram_webhook": env("TELEGRAM_WEBHOOK_THROTTLE_RATE", default="600/min"),
+        # Parolni tiklash: har so'rov XAT yuboradi, ya'ni cheklovsiz
+        # endpoint begona odamga bizning pochtamiz bilan boshqa odamni
+        # bezovta qilish imkonini berardi. Normal odam parolni kuniga
+        # bir-ikki marta tiklaydi.
+        "password_reset": env("PASSWORD_RESET_THROTTLE_RATE", default="5/hour"),
     },
 }
+
+# --- Pochta (PLAN 5.2) ---
+#
+# Parolni tiklash havolasi email bilan ketadi: xodimning telefoni
+# almashishi mumkin, email esa hisobning o'zi (login).
+#
+# Sukut — KONSOL: sozlanmagan muhitda xat log'ga yoziladi va hech
+# qayerga ketmaydi. Bu ongli tanlov: yarim sozlangan SMTP xatni
+# jimgina yo'qotardi va foydalanuvchi "havola kelmadi" deb kutib
+# o'tirardi (ADR-22 bilan bir xil mantiq — yetkazilmagan xabar
+# "yuborildi" deb ko'rinmasligi kerak).
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.console.EmailBackend",
+)
+EMAIL_HOST = env("EMAIL_HOST", default="")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Radix CRM <noreply@radix-crm.uz>")
+
+#: Havoladagi manzil. Frontend va backend bir domenda bo'lsa ham
+#: alohida sozlama: lokal ishlab chiqishda ular boshqa portda.
+FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:5173")
+
+# Parolni tiklash havolasi 30 daqiqa yashaydi (PLAN 5.2).
+#
+# Django'ning standart qiymati 3 kun — pochta qutisiga kirgan odam
+# uchun uzoq oyna. 30 daqiqa: havola xodimning o'zi so'ragan paytda
+# ishlaydi, keyin esa o'lik qog'oz.
+PASSWORD_RESET_TIMEOUT = env.int("PASSWORD_RESET_TIMEOUT", default=30 * 60)
 
 # --- Kirish urinishlari chegarasi (PLAN 5.3) ---
 #

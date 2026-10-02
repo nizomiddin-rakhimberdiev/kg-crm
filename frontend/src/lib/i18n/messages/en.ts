@@ -1042,4 +1042,27 @@ export const messages: Record<string, string> = {
   'Oziq-ovqat, kanselyariya, tozalik — nima hisobga olinsa, shu yerda turadi.':
     'Food, stationery, cleaning supplies — whatever you track lives here.',
   'Davomat saqlandi': 'Attendance saved',
+
+  // --- Parolni tiklash (PLAN 5.2) ---
+  'Parolni unutdingizmi?': 'Forgot your password?',
+  'Parolni tiklash': 'Reset your password',
+  'Email manzilingizni yozing — tiklash havolasini yuboramiz.':
+    'Enter your e-mail — we will send a reset link.',
+  'Havolani yuborish': 'Send the link',
+  'Yuborilmoqda…': 'Sending…',
+  'Agar bu email tizimda boʻlsa, tiklash havolasi yuborildi. Pochtangizni tekshiring.':
+    'If that e-mail is in the system, a reset link has been sent. Please check your inbox.',
+  'Havola 30 daqiqa ishlaydi.': 'The link works for 30 minutes.',
+  'Kirishga qaytish': 'Back to sign in',
+  'Yangi parol oʻrnatish': 'Set a new password',
+  'Yangi parol': 'New password',
+  'Parolni takrorlang': 'Repeat the password',
+  'Parolni oʻrnatish': 'Set the password',
+  'Parol oʻzgartirildi. Endi kirishingiz mumkin.':
+    'Your password has been changed. You can sign in now.',
+  'Barcha qurilmalardagi sessiyalar yopildi.': 'Sessions on every device have been closed.',
+  'Havola toʻliq emas. Pochtadagi havolani toʻliq nusxalab oching.':
+    'The link is incomplete. Copy the whole link from the e-mail.',
+  'Parolni koʻrsatish': 'Show the password',
+  'Parolni yashirish': 'Hide the password',
 }

@@ -1089,3 +1089,21 @@ msgstr "Отправьте PNG, JPG, WEBP или SVG."
 
 msgid "Juda koʻp urinish. {minutes} daqiqadan keyin qayta urinib koʻring."
 msgstr "Слишком много попыток. Повторите через {minutes} мин."
+
+msgid "Agar bu email tizimda boʻlsa, tiklash havolasi yuborildi. Pochtangizni tekshiring."
+msgstr "Если такой e-mail есть в системе, ссылка для сброса отправлена. Проверьте почту."
+
+msgid "Havola eskirgan yoki ishlatilgan. Yangisini soʻrang."
+msgstr "Ссылка устарела или уже использована. Запросите новую."
+
+msgid "Parol oʻzgartirildi. Endi kirishingiz mumkin."
+msgstr "Пароль изменён. Теперь вы можете войти."
+
+msgid "Radix CRM — parolni tiklash"
+msgstr "Radix CRM — сброс пароля"
+
+msgid "Radix CRM"
+msgstr "Radix CRM"
+
+msgid "Assalomu alaykum, {name}!\n\n{organization} hisobingiz uchun parolni tiklash soʻrovi keldi.\nYangi parol oʻrnatish uchun havolani bosing:\n\n{link}\n\nHavola {minutes} daqiqa ishlaydi va bir marta ishlatiladi.\nAgar bu soʻrovni siz yubormagan boʻlsangiz — hech narsa qilish kerak emas, parolingiz oʻzgarmaydi."
+msgstr "Здравствуйте, {name}!\n\nПоступил запрос на сброс пароля для вашей учётной записи ({organization}).\nЧтобы задать новый пароль, откройте ссылку:\n\n{link}\n\nСсылка действует {minutes} мин. и используется один раз.\nЕсли запрос отправляли не вы — ничего делать не нужно, пароль не изменится."

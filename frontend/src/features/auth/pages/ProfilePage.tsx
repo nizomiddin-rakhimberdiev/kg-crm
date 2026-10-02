@@ -13,6 +13,7 @@ import { Camera, KeyRound, ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { Avatar } from '@/components/ui/Avatar'
 import { authApi } from '@/features/auth/api'
+import { PasswordInput } from '@/components/ui/PasswordInput'
 import { subscriptionStatusLabel } from '@/features/billing/status'
 import { ApiError } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
@@ -278,9 +279,11 @@ export default function ProfilePage() {
                 <label htmlFor={key} className="mb-1 block text-xs font-medium text-slate-600">
                   {label}
                 </label>
-                <input
+                {/* Koʻrsatish tugmasi bilan (PLAN 5.2): kuchli
+                    parol uzun va aralash belgili, mobil
+                    klaviaturada uni xato terish oson. */}
+                <PasswordInput
                   id={key}
-                  type="password"
                   autoComplete={key === 'current' ? 'current-password' : 'new-password'}
                   value={value}
                   onChange={(e) => {
@@ -288,10 +291,8 @@ export default function ProfilePage() {
                     setDone(false)
                   }}
                   className={cn(
-                    'w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2',
-                    fieldErrors[key === 'current' ? 'current_password' : 'new_password']
-                      ? 'border-red-300 focus:ring-red-100'
-                      : 'border-slate-200 focus:border-brand-500 focus:ring-brand-100',
+                    fieldErrors[key === 'current' ? 'current_password' : 'new_password'] &&
+                      'border-orik-400',
                   )}
                 />
               </div>

@@ -1088,3 +1088,21 @@ msgstr "Send a PNG, JPG, WEBP or SVG."
 
 msgid "Juda koʻp urinish. {minutes} daqiqadan keyin qayta urinib koʻring."
 msgstr "Too many attempts. Try again in {minutes} min."
+
+msgid "Agar bu email tizimda boʻlsa, tiklash havolasi yuborildi. Pochtangizni tekshiring."
+msgstr "If that e-mail is in the system, a reset link has been sent. Please check your inbox."
+
+msgid "Havola eskirgan yoki ishlatilgan. Yangisini soʻrang."
+msgstr "The link has expired or has already been used. Request a new one."
+
+msgid "Parol oʻzgartirildi. Endi kirishingiz mumkin."
+msgstr "Your password has been changed. You can sign in now."
+
+msgid "Radix CRM — parolni tiklash"
+msgstr "Radix CRM — password reset"
+
+msgid "Radix CRM"
+msgstr "Radix CRM"
+
+msgid "Assalomu alaykum, {name}!\n\n{organization} hisobingiz uchun parolni tiklash soʻrovi keldi.\nYangi parol oʻrnatish uchun havolani bosing:\n\n{link}\n\nHavola {minutes} daqiqa ishlaydi va bir marta ishlatiladi.\nAgar bu soʻrovni siz yubormagan boʻlsangiz — hech narsa qilish kerak emas, parolingiz oʻzgarmaydi."
+msgstr "Hello, {name}!\n\nWe received a password reset request for your {organization} account.\nOpen this link to set a new password:\n\n{link}\n\nThe link works for {minutes} minutes and can be used once.\nIf you did not ask for this, no action is needed — your password stays the same."

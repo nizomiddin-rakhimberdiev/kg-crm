@@ -57,6 +57,20 @@ class PasswordChangeSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True, validators=[validate_password_strength])
 
 
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """
+    Tiklash havolasidan kelgan ma'lumot (PLAN 5.2).
+
+    Parol KUCHLILIGI shu yerda tekshiriladi — tiklash eng ko'p
+    ishlatiladigan "yangi parol o'rnatish" yo'li, va u zaifroq
+    qoidaga bo'ysunsa, qoidaning ma'nosi qolmaydi.
+    """
+
+    uid = serializers.CharField(max_length=64)
+    token = serializers.CharField(max_length=128)
+    password = serializers.CharField(write_only=True, validators=[validate_password_strength])
+
+
 class ProfilePhotoSerializer(serializers.ModelSerializer):
     """
     Profil rasmi — `POST /auth/me/photo` (multipart).

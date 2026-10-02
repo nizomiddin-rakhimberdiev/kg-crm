@@ -9,6 +9,8 @@ from apps.accounts.views_auth import (
     LogoutView,
     MeView,
     PasswordChangeView,
+    PasswordResetConfirmView,
+    PasswordResetRequestView,
     ProfilePhotoView,
     RefreshView,
     SelectOrganizationView,
@@ -33,6 +35,14 @@ auth_patterns = [
     path("auth/me", MeView.as_view(), name="auth-me"),
     path("auth/me/photo", ProfilePhotoView.as_view(), name="auth-me-photo"),
     path("auth/password/change", PasswordChangeView.as_view(), name="auth-password-change"),
+    # Parolni tiklash — standalone nusxada ham kerak (ADR-13): u
+    # vendor xizmati emas, hisobning o'ziga tegishli amal.
+    path("auth/password-reset", PasswordResetRequestView.as_view(), name="auth-password-reset"),
+    path(
+        "auth/password-reset/confirm",
+        PasswordResetConfirmView.as_view(),
+        name="auth-password-reset-confirm",
+    ),
 ]
 
 # Platforma kirishi ALOHIDA yo'lda (ADR-10): mijoz `/auth/login` ni,
@@ -47,6 +57,7 @@ urlpatterns = [
     path("health", HealthCheckView.as_view(), name="health"),
     # Singleton resurs — ID yo'q, tashkilot tokendan olinadi (docs/04 §16).
     path("organization", OrganizationView.as_view(), name="organization"),
+    path("organization/logo", OrganizationLogoView.as_view(), name="organization-logo"),
     *auth_patterns,
     *router.urls,
 ]
@@ -59,7 +70,6 @@ urlpatterns = [
 # lekin javob beradigan yo'l — bu o'sha yo'lning ochiq qolgani.
 if is_saas():
     urlpatterns += [
-        path("organization/logo", OrganizationLogoView.as_view(), name="organization-logo"),
         path("public/leads", PublicLeadCreateView.as_view(), name="public-lead-create"),
         # Telegram webhook: maxfiy qism YO'LDA, chunki Telegram
         # ixtiyoriy sarlavha qo'yadi va eski botlar uni yubormaydi.
