@@ -347,7 +347,6 @@ export const messages: Record<string, string> = {
   Miqdor: 'Количество',
   Moliya: 'Финансы',
   Muddat: 'Срок',
-  'Muddati oʻtgan': 'Просрочен',
   Naqd: 'Наличные',
   'Naqd kassa (sukut)': 'Наличная касса (по умолчанию)',
   'Naqd qism': 'Наличная часть',
@@ -366,7 +365,6 @@ export const messages: Record<string, string> = {
     'Изменение сохраняется сразу и действует для всех филиалов организации.',
   'Oʻzgartirmaslik uchun boʻsh qoldiring': 'Оставьте пустым, чтобы не менять',
   Obuna: 'Подписка',
-  'Obuna holati: {status}': 'Статус подписки: {status}',
   'Obuna toʻxtatilgan — maʼlumotlarni': 'Подписка приостановлена — данные можно',
   'Obuna va toʻlov': 'Подписка и оплата',
   Obyekt: 'Объект',
@@ -518,7 +516,7 @@ export const messages: Record<string, string> = {
   Sozlama: 'Настройка',
   Sozlamalar: 'Настройки',
   'Sozlamalarni faqat koʻrishingiz mumkin.': 'Настройки доступны только для просмотра.',
-  'Spravka yoki ariza keltirilganda shu yerga yoziladi — va tasdiqlangach toʻlovdan ayriladi.':
+  'Maʼlumotnoma yoki ariza keltirilganda shu yerga yoziladi — va tasdiqlangach toʻlovdan ayriladi.':
     'Когда приносят справку или заявление, запись появляется здесь — и после подтверждения вычитается из оплаты.',
   'Stok harakati': 'Движение остатка',
   Summa: 'Сумма',
@@ -539,7 +537,7 @@ export const messages: Record<string, string> = {
   Tasdiqlangan: 'Подтверждён',
   Tasdiqlash: 'Подтвердить',
   Tashkilot: 'Организация',
-  'Tashkilot maʼlumotlari — schyot-faktura va hujjatlarda shular ishlatiladi.':
+  'Tashkilot maʼlumotlari — hisob-faktura va hujjatlarda shular ishlatiladi.':
     'Данные организации — используются в счетах и документах.',
   'Tashkilotni tanlang': 'Выберите организацию',
   Tavsif: 'Описание',
@@ -552,7 +550,7 @@ export const messages: Record<string, string> = {
   Til: 'Язык',
   'Tizim hisoblari': 'Учётные записи',
   'Tizim provayderi kirishi': 'Доступ провайдера системы',
-  'Tizim roli — ruxsatlarini oʻzgartirsangiz boʻladi, faqat kodi qotib qoladi.':
+  'Tizim roli: ruxsatlarini oʻzgartirish mumkin, nomi va kodi oʻzgarmaydi.':
     'Системная роль — права можно менять, но код фиксирован.',
   Toʻlandi: 'Оплачено',
   Toʻlangan: 'Оплачен',
@@ -678,7 +676,7 @@ export const messages: Record<string, string> = {
   'oylik {formatMoney} bilan': 'с окладом {formatMoney}',
   qaytarilgan: 'возвращён',
   'qoʻlda tuzatilgan': 'скорректировано вручную',
-  'qoplar kesimi': 'по счетам',
+  'kassalar boʻyicha': 'по счетам',
   rasmiy: 'официально',
   'sinov boshlangan kundan': 'отсчитывается со дня начала пробного периода',
   'tasdiqlangan va toʻlangan': 'подтверждённые и оплаченные',
@@ -989,4 +987,7 @@ export const messages: Record<string, string> = {
   'Ijtimoiy soliq (%)': 'Социальный налог (%)',
   'Bogʻcha ustiga toʻlaydi — xodim maoshidan ushlanmaydi.':
     'Платит садик сверху — из зарплаты сотрудника не удерживается.',
+  'Obuna: toʻlov muddati oʻtgan': 'Подписка: срок оплаты истёк',
+  Obunasiz: 'Без подписки',
+  'Muddati oʻtgan': 'Срок истёк',
 }

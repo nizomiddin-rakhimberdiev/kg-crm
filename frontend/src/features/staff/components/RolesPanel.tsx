@@ -225,7 +225,7 @@ export function RolesPanel() {
                 <p className="mt-0.5 text-xs text-slate-500">
                   {selectedRole.is_system
                     ? t(
-                        'Tizim roli — ruxsatlarini oʻzgartirsangiz boʻladi, faqat kodi qotib qoladi.',
+                        'Tizim roli: ruxsatlarini oʻzgartirish mumkin, nomi va kodi oʻzgarmaydi.',
                       )
                     : t('Maxsus rol — ruxsatlari ham, oʻzi ham toʻliq sizning ixtiyoringizda.')}
                 </p>

@@ -350,7 +350,6 @@ export const messages: Record<string, string> = {
   Miqdor: 'Quantity',
   Moliya: 'Finance',
   Muddat: 'Due date',
-  'Muddati oʻtgan': 'Overdue',
   Naqd: 'Cash',
   'Naqd kassa (sukut)': 'Cash till (default)',
   'Naqd qism': 'Cash part',
@@ -369,7 +368,6 @@ export const messages: Record<string, string> = {
     'Changes are saved immediately and apply to all branches of the organization.',
   'Oʻzgartirmaslik uchun boʻsh qoldiring': 'Leave blank to keep unchanged',
   Obuna: 'Subscription',
-  'Obuna holati: {status}': 'Subscription status: {status}',
   'Obuna toʻxtatilgan — maʼlumotlarni': 'Subscription suspended — you can',
   'Obuna va toʻlov': 'Subscription and billing',
   Obyekt: 'Object',
@@ -521,7 +519,7 @@ export const messages: Record<string, string> = {
   Sozlama: 'Setting',
   Sozlamalar: 'Settings',
   'Sozlamalarni faqat koʻrishingiz mumkin.': 'You can only view the settings.',
-  'Spravka yoki ariza keltirilganda shu yerga yoziladi — va tasdiqlangach toʻlovdan ayriladi.':
+  'Maʼlumotnoma yoki ariza keltirilganda shu yerga yoziladi — va tasdiqlangach toʻlovdan ayriladi.':
     'When a certificate or application is brought in it is recorded here — and once approved it is deducted from the fee.',
   'Stok harakati': 'Stock movement',
   Summa: 'Amount',
@@ -542,7 +540,7 @@ export const messages: Record<string, string> = {
   Tasdiqlangan: 'Approved',
   Tasdiqlash: 'Approve',
   Tashkilot: 'Organization',
-  'Tashkilot maʼlumotlari — schyot-faktura va hujjatlarda shular ishlatiladi.':
+  'Tashkilot maʼlumotlari — hisob-faktura va hujjatlarda shular ishlatiladi.':
     'Organization details — used on invoices and documents.',
   'Tashkilotni tanlang': 'Choose an organization',
   Tavsif: 'Description',
@@ -555,7 +553,7 @@ export const messages: Record<string, string> = {
   Til: 'Language',
   'Tizim hisoblari': 'System accounts',
   'Tizim provayderi kirishi': 'Platform provider access',
-  'Tizim roli — ruxsatlarini oʻzgartirsangiz boʻladi, faqat kodi qotib qoladi.':
+  'Tizim roli: ruxsatlarini oʻzgartirish mumkin, nomi va kodi oʻzgarmaydi.':
     'System role — you can change its permissions, but its code is fixed.',
   Toʻlandi: 'Paid',
   Toʻlangan: 'Paid',
@@ -680,7 +678,7 @@ export const messages: Record<string, string> = {
   'oylik {formatMoney} bilan': 'with a salary of {formatMoney}',
   qaytarilgan: 'reversed',
   'qoʻlda tuzatilgan': 'adjusted manually',
-  'qoplar kesimi': 'by account',
+  'kassalar boʻyicha': 'by account',
   rasmiy: 'official',
   'sinov boshlangan kundan': 'starts from the day the trial began',
   'tasdiqlangan va toʻlangan': 'approved and paid',
@@ -991,4 +989,7 @@ export const messages: Record<string, string> = {
   'Ijtimoiy soliq (%)': 'Social tax (%)',
   'Bogʻcha ustiga toʻlaydi — xodim maoshidan ushlanmaydi.':
     'The kindergarten pays it on top — not withheld from the salary.',
+  'Obuna: toʻlov muddati oʻtgan': 'Subscription: payment overdue',
+  Obunasiz: 'No subscription',
+  'Muddati oʻtgan': 'Overdue',
 }

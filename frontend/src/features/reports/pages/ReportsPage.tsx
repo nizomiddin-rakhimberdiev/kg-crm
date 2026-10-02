@@ -90,7 +90,7 @@ export default function ReportsPage() {
 
   const [period, setPeriod] = useState<Period>(() => periodFor('month', new Date()))
   const [error, setError] = useState<string | null>(null)
-  // Sof natija bosilganda ochiladigan qoplar kesimi (ADR-17).
+  // Sof natija bosilganda ochiladigan kassalar kesimi (ADR-17).
   const [cashOpen, setCashOpen] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
 
@@ -207,7 +207,7 @@ export default function ReportsPage() {
               t('tushum − chiqim − oylik'),
             ],
           ].map(([label, value, tone, hint]) => {
-            // Sof natija BOSILADI: "bu pul qaysi qopda?" — mijozning
+            // Sof natija BOSILADI: "bu pul qaysi kassada?" — mijozning
             // so'ragan kesimi (ADR-17).
             const isNet = label === t('Sof natija')
             const body = (
@@ -216,7 +216,7 @@ export default function ReportsPage() {
                   {label as string}
                   {isNet && (cash?.length ?? 0) > 0 && (
                     <span className="ml-1.5 text-xs font-normal text-brand-600">
-                      {t('qoplar kesimi')}
+                      {t('kassalar boʻyicha')}
                     </span>
                   )}
                 </p>

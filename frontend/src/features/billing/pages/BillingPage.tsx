@@ -17,18 +17,10 @@ import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { env } from '@/config/env'
 import { billingApi } from '@/features/billing/api'
 import { queryKeys } from '@/lib/api/queryKeys'
+import { SUBSCRIPTION_STATUS } from '@/features/billing/status'
 import { ApiError } from '@/lib/api/types'
 import { cn, formatDate, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
-
-const STATUS: Record<string, [string, string]> = {
-  trialing: [t('Sinov davri'), 'bg-brand-50 text-brand-700'],
-  pending_payment: [t('Toʻlov kutilmoqda'), 'bg-amber-50 text-amber-700'],
-  active: [t('Faol'), 'bg-emerald-50 text-emerald-700'],
-  past_due: [t('Muddati oʻtgan'), 'bg-amber-50 text-amber-800'],
-  suspended: [t('Toʻxtatilgan'), 'bg-red-50 text-red-700'],
-  cancelled: [t('Bekor qilingan'), 'bg-slate-100 text-slate-600'],
-}
 
 const INVOICE_STATUS: Record<string, [string, string]> = {
   issued: [t('Yozilgan'), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
@@ -102,7 +94,10 @@ export default function BillingPage() {
   const usage = usageQuery.data
   const isTrial = subscription?.status === 'trialing'
   const remaining = daysLeft(subscription?.trial_ends_at ?? null)
-  const [statusLabel, statusTone] = STATUS[subscription?.status ?? ''] ?? ['—', 'bg-slate-100']
+  const [statusLabel, statusTone] = SUBSCRIPTION_STATUS[subscription?.status ?? ''] ?? [
+    '—',
+    'bg-tosh-100',
+  ]
 
   return (
     <div className="space-y-6">

@@ -3,7 +3,7 @@
  *
  * Ruxsat `settings` moduli bo'yicha: tashkilot egasi tahrirlaydi, direktor
  * ko'radi. Bu qasddan — bog'cha nomi va rekvizitlari kundalik operatsiya
- * emas, sozlama; ular schyot-fakturaga ham tushadi.
+ * emas, sozlama; ular hisob-fakturaga ham tushadi.
  */
 
 import { useEffect, useState } from 'react'
@@ -99,7 +99,7 @@ export default function OrganizationPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Bogʻcha profili')}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          {t('Tashkilot maʼlumotlari — schyot-faktura va hujjatlarda shular ishlatiladi.')}
+          {t('Tashkilot maʼlumotlari — hisob-faktura va hujjatlarda shular ishlatiladi.')}
         </p>
       </div>
 

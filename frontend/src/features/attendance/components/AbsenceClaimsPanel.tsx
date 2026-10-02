@@ -314,7 +314,7 @@ export function AbsenceClaimsPanel() {
                   icon={CalendarX2}
                   title={t('Hujjatli kelmaslik yoʻq')}
                   hint={t(
-                    'Spravka yoki ariza keltirilganda shu yerga yoziladi — va tasdiqlangach toʻlovdan ayriladi.',
+                    'Maʼlumotnoma yoki ariza keltirilganda shu yerga yoziladi — va tasdiqlangach toʻlovdan ayriladi.',
                   )}
                 />
               )}

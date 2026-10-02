@@ -1,7 +1,7 @@
 /**
  * Huquqiy sahifalar matni (maxfiylik siyosati, foydalanish shartlari).
  *
- * Eski landing content'idan ajratib olingan — sotuv sahifasi endi
+ * Eski landing contentʼidan ajratib olingan — sotuv sahifasi endi
  * `features/landing` da, bu yerda faqat huquqiy matn qoldi.
  */
 
@@ -31,34 +31,34 @@ export const legal: Record<Locale, LegalCopy> = {
     operator: 'Radix CRM operatori',
     privacySections: [
       {
-        title: 'Qanday ma’lumot yig‘amiz',
-        text: 'Demo formasida ism, telefon, bog‘cha nomi, bolalar soni, hudud va ixtiyoriy izohni yig‘amiz.',
+        title: 'Qanday maʼlumot yigʻamiz',
+        text: 'Demo formasida ism, telefon, bogʻcha nomi, bolalar soni, hudud va ixtiyoriy izohni yigʻamiz.',
       },
       {
         title: 'Nima uchun ishlatamiz',
-        text: 'Zayavkani ko‘rib chiqish, demo tashkil qilish va Radix CRM bo‘yicha bog‘lanish uchun.',
+        text: 'Arizani koʻrib chiqish, demo tashkil qilish va Radix CRM boʻyicha bogʻlanish uchun.',
       },
       {
         title: 'Saqlash va uzatish',
-        text: 'Forma ma’lumotlari platforma bazasida saqlanadi. Uchinchi tomon bildirishnomasi yoki analytics xizmati ma’lumotlar oqimiga qo‘shilmaydi, agar bu siyosatda oldindan ko‘rsatilmasa.',
+        text: 'Forma maʼlumotlari platforma bazasida saqlanadi. Uchinchi tomon bildirishnomasi yoki analytics xizmati maʼlumotlar oqimiga qoʻshilmaydi, agar bu siyosatda oldindan koʻrsatilmasa.',
       },
       {
         title: 'Sizning tanlovingiz',
-        text: 'Rozilik ixtiyoriy, ammo zayavkani ko‘rib chiqish uchun zarur. Ma’lumotlaringiz bo‘yicha murojaat qilish uchun operatorning rasmiy aloqa kanali launchdan oldin e’lon qilinadi.',
+        text: 'Rozilik ixtiyoriy, ammo arizani koʻrib chiqish uchun zarur. Maʼlumotlaringiz boʻyicha murojaat qilish uchun operatorning rasmiy aloqa kanali ishga tushishdan oldin eʼlon qilinadi.',
       },
     ],
     termsSections: [
       {
         title: 'Xizmat tavsifi',
-        text: 'Radix CRM xususiy bog‘chalar uchun boshqaruv platformasidir. Demo formasi hisob ochish yoki shartnoma tuzish emas.',
+        text: 'Radix CRM xususiy bogʻchalar uchun boshqaruv platformasidir. Demo formasi hisob ochish yoki shartnoma tuzish emas.',
       },
       {
         title: 'Narxlar',
-        text: 'Landingdagi kalkulyator joriy subscription plan asosidagi yo‘naltiruvchi hisobdir. Majburiyat faqat rasmiy shartnoma va hisob-faktura bilan yuzaga keladi.',
+        text: 'Landingdagi kalkulyator joriy subscription plan asosidagi yoʻnaltiruvchi hisobdir. Majburiyat faqat rasmiy shartnoma va hisob-faktura bilan yuzaga keladi.',
       },
       {
         title: 'Kirish va foydalanish',
-        text: 'CRM hisobi platforma jamoasi tomonidan sotuv suhbatidan keyin yaratiladi. Har bir tashkilot o‘z xodimlari kirishini boshqaradi.',
+        text: 'CRM hisobi platforma jamoasi tomonidan sotuv suhbatidan keyin yaratiladi. Har bir tashkilot oʻz xodimlari kirishini boshqaradi.',
       },
     ],
   },
@@ -122,7 +122,7 @@ export const legal: Record<Locale, LegalCopy> = {
       },
       {
         title: 'Your choice',
-        text: 'Consent is voluntary but required to review the request. The operator’s official contact channel for questions about your data will be published before launch.',
+        text: 'Consent is voluntary but required to review the request. The operatorʼs official contact channel for questions about your data will be published before launch.',
       },
     ],
     termsSections: [

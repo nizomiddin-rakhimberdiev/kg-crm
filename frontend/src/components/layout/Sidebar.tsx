@@ -117,9 +117,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               <p className="truncate text-sm font-semibold text-slate-900">
                 {user?.full_name ?? '—'}
               </p>
-              <p className="truncate text-[11px] uppercase tracking-wide text-slate-400">
-                {user?.role?.name ?? '—'}
-              </p>
+              {/* Rol nomi AYNAN bazadagidek: CSS `uppercase` uni
+                  "TARBIYACHI" qilib ko'rsatardi, qolgan ekranlarda esa
+                  "Tarbiyachi" turardi (PLAN 4.3). O'lcham 12px —
+                  undan kichigi o'qilmaydi (PLAN 4.8). */}
+              <p className="truncate text-xs text-slate-400">{user?.role?.name ?? '—'}</p>
             </div>
           </NavLink>
           <button

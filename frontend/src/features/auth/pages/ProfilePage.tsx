@@ -13,6 +13,7 @@ import { Camera, KeyRound, ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { Avatar } from '@/components/ui/Avatar'
 import { authApi } from '@/features/auth/api'
+import { subscriptionStatusLabel } from '@/features/billing/status'
 import { ApiError } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -332,7 +333,9 @@ export default function ProfilePage() {
 
           {subscription && (
             <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">
-              {t('Obuna holati: {status}', { status: subscription.status })}
+              {/* XOM holat emas (PLAN 4.3): "past_due" foydalanuvchiga
+                  na tushunarli, na nima qilish kerakligini aytadi. */}
+              {subscriptionStatusLabel(subscription.status)}
               {subscription.read_only && t(' — hozircha faqat oʻqish rejimi')}
             </p>
           )}
