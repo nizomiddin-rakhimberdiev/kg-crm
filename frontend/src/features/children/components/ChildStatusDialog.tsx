@@ -9,6 +9,7 @@
 
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { DateInput } from '@/components/ui/DateInput'
 import { Modal } from '@/components/ui/Modal'
 import { childrenApi } from '@/features/children/api'
 import { ApiError, type Child } from '@/lib/api/types'
@@ -95,14 +96,12 @@ export function ChildStatusDialog({
             <label htmlFor="cs-date" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Qaysi sanadan')} <span className="text-red-500">*</span>
             </label>
-            <input
+            <DateInput
               id="cs-date"
-              type="date"
               required
               max={new Date().toISOString().slice(0, 10)}
               value={form.status_changed_on}
-              onChange={(e) => setForm((p) => ({ ...p, status_changed_on: e.target.value }))}
-              className={field}
+              onChange={(iso) => setForm((p) => ({ ...p, status_changed_on: iso }))}
             />
             <p className="mt-1 text-[11px] text-slate-500">
               {t('Shu sanadan keyin hisob-faktura yozilmaydi.')}

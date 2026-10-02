@@ -9,6 +9,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Pencil, Plus, Receipt, Trash2, X } from 'lucide-react'
+import { DateInput } from '@/components/ui/DateInput'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { expensesApi } from '@/features/expenses/api'
 import { cashApi } from '@/features/cash/api'
@@ -314,13 +315,11 @@ export default function ExpensesPage() {
                 <label htmlFor="edate" className="mb-1 block text-xs font-medium text-slate-600">
                   {t('Sana')}
                 </label>
-                <input
+                <DateInput
                   id="edate"
-                  type="date"
                   required
                   value={form.expense_date}
-                  onChange={(e) => setForm((p) => ({ ...p, expense_date: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                  onChange={(iso) => setForm((p) => ({ ...p, expense_date: iso }))}
                 />
               </div>
               {/* Tavsif maydoni bazada ham, jadvalda ham bor edi — faqat

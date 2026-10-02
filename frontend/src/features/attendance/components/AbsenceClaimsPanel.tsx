@@ -14,6 +14,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarX2, Check, Plus, X } from 'lucide-react'
+import { DateInput } from '@/components/ui/DateInput'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { absenceApi } from '@/features/attendance/api'
@@ -179,13 +180,11 @@ export function AbsenceClaimsPanel() {
             <label htmlFor="ac-from" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Boshlanishi')}
             </label>
-            <input
+            <DateInput
               id="ac-from"
-              type="date"
               required
               value={form.date_from}
-              onChange={(e) => setForm((p) => ({ ...p, date_from: e.target.value }))}
-              className={fieldClass}
+              onChange={(iso) => setForm((p) => ({ ...p, date_from: iso }))}
             />
           </div>
 
@@ -193,13 +192,11 @@ export function AbsenceClaimsPanel() {
             <label htmlFor="ac-to" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Tugashi')}
             </label>
-            <input
+            <DateInput
               id="ac-to"
-              type="date"
               required
               value={form.date_to}
-              onChange={(e) => setForm((p) => ({ ...p, date_to: e.target.value }))}
-              className={fieldClass}
+              onChange={(iso) => setForm((p) => ({ ...p, date_to: iso }))}
             />
           </div>
 

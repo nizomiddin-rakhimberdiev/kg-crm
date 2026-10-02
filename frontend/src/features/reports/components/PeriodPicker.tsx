@@ -8,6 +8,7 @@
  */
 
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
+import { DateInput } from '@/components/ui/DateInput'
 import { cn } from '@/lib/utils'
 import {
   PRESETS,
@@ -112,23 +113,19 @@ export function PeriodPicker({ value, onChange, className }: PeriodPickerProps) 
 
         {isCustom && (
           <div className="flex flex-wrap items-center gap-2">
-            <input
-              type="date"
+            <DateInput
               aria-label={t('Dan')}
               value={value.from}
               max={value.to}
-              onChange={(e) => e.target.value && onChange({ ...value, from: e.target.value })}
-              className="h-9 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-brand-500"
+              onChange={(iso) => iso && onChange({ ...value, from: iso })}
             />
             <span className="text-slate-400">—</span>
-            <input
-              type="date"
+            <DateInput
               aria-label={t('Gacha')}
               value={value.to}
               min={value.from}
               max={toISODate(today)}
-              onChange={(e) => e.target.value && onChange({ ...value, to: e.target.value })}
-              className="h-9 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-brand-500"
+              onChange={(iso) => iso && onChange({ ...value, to: iso })}
             />
           </div>
         )}

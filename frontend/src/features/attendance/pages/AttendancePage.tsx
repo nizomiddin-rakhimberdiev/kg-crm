@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarCheck, Check, Save, X } from 'lucide-react'
+import { DateInput } from '@/components/ui/DateInput'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { attendanceApi } from '@/features/attendance/api'
 import { groupsApi } from '@/features/children/api'
@@ -232,14 +233,7 @@ export default function AttendancePage() {
           <label htmlFor="date" className="mb-1 block text-xs font-medium text-slate-600">
             {t('Sana')}
           </label>
-          <input
-            id="date"
-            type="date"
-            max={today()}
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
-          />
+          <DateInput id="date" max={today()} value={date} onChange={(iso) => setDate(iso)} />
         </div>
 
         {editable && rows.length > 0 && (

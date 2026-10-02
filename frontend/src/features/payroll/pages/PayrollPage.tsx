@@ -23,6 +23,7 @@ import {
   Unlock,
   Wallet,
 } from 'lucide-react'
+import { DateInput } from '@/components/ui/DateInput'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
@@ -343,15 +344,11 @@ export default function PayrollPage() {
                   >
                     {t('Sana')}
                   </label>
-                  <input
+                  <DateInput
                     id="adv-date"
-                    type="date"
                     required
                     value={advanceForm.paid_on}
-                    onChange={(e) =>
-                      setAdvanceForm((prev) => ({ ...prev, paid_on: e.target.value }))
-                    }
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                    onChange={(iso) => setAdvanceForm((prev) => ({ ...prev, paid_on: iso }))}
                   />
                 </div>
                 <div>

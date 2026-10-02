@@ -13,6 +13,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarDays, Plus, Trash2 } from 'lucide-react'
+import { DateInput } from '@/components/ui/DateInput'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { holidaysApi } from '@/features/attendance/api'
 import { invalidateAttendance } from '@/lib/api/invalidate'
@@ -93,13 +94,11 @@ export function HolidaysPanel() {
               <label htmlFor="hol-date" className="mb-1 block text-xs font-medium text-slate-600">
                 {t('Sana')}
               </label>
-              <input
+              <DateInput
                 id="hol-date"
-                type="date"
                 required
                 value={form.holiday_date}
-                onChange={(e) => setForm((p) => ({ ...p, holiday_date: e.target.value }))}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                onChange={(iso) => setForm((p) => ({ ...p, holiday_date: iso }))}
               />
             </div>
             <div>

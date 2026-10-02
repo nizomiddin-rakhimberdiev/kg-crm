@@ -13,6 +13,7 @@
 import { useState } from 'react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Briefcase, Pencil, Phone, Plus, Search, UserMinus, UserPlus } from 'lucide-react'
+import { DateInput } from '@/components/ui/DateInput'
 import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { useBranchScope } from '@/app/providers/BranchProvider'
 import { Modal } from '@/components/ui/Modal'
@@ -676,15 +677,11 @@ export function EmployeesPanel() {
                     >
                       {t("Bo'shagan sana")}
                     </label>
-                    <input
+                    <DateInput
                       id="emp-termination"
-                      type="date"
                       min={form.hire_date || undefined}
                       value={form.termination_date ?? ''}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, termination_date: e.target.value }))
-                      }
-                      className={inputClass(Boolean(fieldErrors.termination_date))}
+                      onChange={(iso) => setForm((prev) => ({ ...prev, termination_date: iso }))}
                     />
                     {fieldErrors.termination_date && (
                       <p className="mt-1 text-xs text-red-600">{fieldErrors.termination_date}</p>

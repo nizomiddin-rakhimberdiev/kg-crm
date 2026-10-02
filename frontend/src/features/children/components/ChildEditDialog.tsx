@@ -12,6 +12,7 @@
 
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { DateInput } from '@/components/ui/DateInput'
 import { Modal } from '@/components/ui/Modal'
 import { childrenApi } from '@/features/children/api'
 import { ApiError, type Child } from '@/lib/api/types'
@@ -114,14 +115,12 @@ export function ChildEditDialog({
             <label htmlFor="ce-dob" className={label}>
               {t("Tug'ilgan sana")} {required}
             </label>
-            <input
+            <DateInput
               id="ce-dob"
-              type="date"
               required
               max={new Date().toISOString().slice(0, 10)}
               value={form.date_of_birth}
-              onChange={(e) => setForm((p) => ({ ...p, date_of_birth: e.target.value }))}
-              className={field}
+              onChange={(iso) => setForm((p) => ({ ...p, date_of_birth: iso }))}
             />
           </div>
           <div>
@@ -144,12 +143,10 @@ export function ChildEditDialog({
             <label htmlFor="ce-enrolled" className={label}>
               {t('Qabul sanasi')}
             </label>
-            <input
+            <DateInput
               id="ce-enrolled"
-              type="date"
               value={form.enrolled_on}
-              onChange={(e) => setForm((p) => ({ ...p, enrolled_on: e.target.value }))}
-              className={field}
+              onChange={(iso) => setForm((p) => ({ ...p, enrolled_on: iso }))}
             />
             <p className="mt-1 text-[11px] text-slate-500">
               {t('Birinchi hisob-faktura shu sanadan proporsional hisoblanadi.')}

@@ -9,6 +9,7 @@
 import { useState } from 'react'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ban, FileText, Plus, Printer, Search, Trash2, Users, Wallet } from 'lucide-react'
+import { DateInput } from '@/components/ui/DateInput'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { paymentsApi, tariffsApi, type BoardRow } from '@/features/payments/api'
 import { GenerateInvoicesDialog } from '@/features/payments/components/GenerateInvoicesDialog'
@@ -546,24 +547,20 @@ export default function PaymentsPage() {
               >
                 {t('Sanadan')}
               </label>
-              <input
+              <DateInput
                 id="journal-from"
-                type="date"
                 value={journal.paid_from}
-                onChange={(e) => setJournal((p) => ({ ...p, paid_from: e.target.value }))}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                onChange={(iso) => setJournal((p) => ({ ...p, paid_from: iso }))}
               />
             </div>
             <div>
               <label htmlFor="journal-to" className="mb-1 block text-xs font-medium text-slate-600">
                 {t('Sanagacha')}
               </label>
-              <input
+              <DateInput
                 id="journal-to"
-                type="date"
                 value={journal.paid_to}
-                onChange={(e) => setJournal((p) => ({ ...p, paid_to: e.target.value }))}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                onChange={(iso) => setJournal((p) => ({ ...p, paid_to: iso }))}
               />
             </div>
             <div>

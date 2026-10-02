@@ -13,6 +13,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Inbox, MessageCircle, Phone } from 'lucide-react'
+import { DateInput } from '@/components/ui/DateInput'
 import { ApiError } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
 import { platform, type Lead, type LeadStatus } from '../api'
@@ -129,14 +130,14 @@ function LeadRow({ lead }: { lead: Lead }) {
               ma'nosini yo'qotadi — sana yozib qo'yiladi. */}
           <label className="mr-2 block text-xs font-medium text-slate-400">
             Keyingi qo‘ng‘iroq
-            <input
-              type="date"
+            <DateInput
+              tone="dark"
+              className="mt-1"
               value={nextCall}
-              onChange={(e) => {
-                setNextCall(e.target.value)
-                update.mutate({ status: lead.status, call: e.target.value || null })
+              onChange={(iso) => {
+                setNextCall(iso)
+                update.mutate({ status: lead.status, call: iso || null })
               }}
-              className="mt-1 block min-h-10 rounded-lg border border-slate-700 bg-slate-800 px-2.5 text-sm text-slate-100 outline-none focus:border-brand-500"
             />
           </label>
           {ORDER.map((status) => (

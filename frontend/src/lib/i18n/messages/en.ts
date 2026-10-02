@@ -951,4 +951,6 @@ export const messages: Record<string, string> = {
   '{characters} belgi': '{characters} characters',
   '{linked} ota-onadan {total} tasi Telegramga ulangan. Qolgan {missing} tasi xabar olmaydi — bola kartasidan ulash havolasini yuboring.':
     "{linked} of {total} parents are connected to Telegram. The other {missing} get nothing — send the link from the child's card.",
+  'Kalendardan tanlash': 'Pick from the calendar',
+  'kk.oo.yyyy': 'dd.mm.yyyy',
 }
