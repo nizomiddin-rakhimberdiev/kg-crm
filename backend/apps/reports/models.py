@@ -31,6 +31,7 @@ REPORT_TYPES: tuple[str, ...] = (
     "attendance",
     "debtors",
     "profit-loss",
+    "staff-attendance",
 )
 
 

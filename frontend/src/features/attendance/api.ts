@@ -1,5 +1,8 @@
 import { api } from '@/lib/api/client'
 import type {
+  StaffAttendanceStatus,
+  StaffDailyRow,
+  StaffTimesheet,
   AbsenceClaim,
   AttendanceStatus,
   AttendanceSummaryRow,
@@ -28,6 +31,37 @@ export const attendanceApi = {
       group_id: groupId,
       attendance_date: date,
       records,
+    }),
+}
+
+/**
+ * Xodimlar davomati va oylik tabel (docs/04 §8.3).
+ *
+ * `branch` — faqat ega uchun ma'noli (topbar tanlovi); filialga bog'langan
+ * xodimga backend baribir o'z filialini beradi.
+ */
+export const staffAttendanceApi = {
+  daily: (date: string, branch?: string | null) =>
+    api.get<{ date: string; rows: StaffDailyRow[] }>('/staff-attendance/daily', {
+      date,
+      ...(branch ? { branch } : {}),
+    }),
+
+  markBulk: (
+    date: string,
+    records: Array<{ employee_id: string; status: StaffAttendanceStatus; note?: string }>,
+    branch?: string | null,
+  ) =>
+    api.post<{ saved: number }>('/staff-attendance/bulk', {
+      attendance_date: date,
+      records,
+      ...(branch ? { branch_id: branch } : {}),
+    }),
+
+  timesheet: (month: string, branch?: string | null) =>
+    api.get<StaffTimesheet>('/staff-attendance/timesheet', {
+      month,
+      ...(branch ? { branch } : {}),
     }),
 }
 

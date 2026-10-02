@@ -251,7 +251,7 @@ Path constants live in `config/routes.ts`. Each route maps to a feature page and
 | `/invoices` | InvoicesPage | `payments.read` |
 | `/invoices/:id` | InvoiceDetailPage | `payments.read` |
 | `/debtors` | DebtorsPage | `debtors.read` |
-| `/attendance` | AttendancePage | `attendance.read` |
+| `/attendance` | AttendancePage — tabs *Bolalar* / *Xodimlar* (`?tab=staff`); staff tab: daily marking and monthly timesheet grid with Excel export (`features/attendance/components/StaffAttendancePanel`) | `attendance.read` |
 | `/payroll` | PayrollRunsPage | `payroll.read` |
 | `/payroll/:id` | PayrollRunDetailPage | `payroll.read` |
 | `/staff` | StaffPage — tabs: *Xodimlar* (HR employees, `payroll.read`), *Tizim hisoblari* (login accounts, `users.read`), *Rollar* (`users.read`); tab in `?tab=` | any of `payroll.read`, `users.read` |

@@ -127,3 +127,9 @@ from apps.attendance.models_absence import (  # noqa: E402
 )
 
 __all__ = [*__all__, "AbsenceClaim", "ClaimKind", "ClaimStatus", "Holiday"]
+
+# Xodimlar davomati (tabel) — alohida faylda: bolalar jurnali bilan bir
+# modulda (bir xil "davomat" ruxsati), lekin bir-biridan hech narsa o'qimaydi.
+from apps.attendance.models_staff import StaffAttendance, StaffAttendanceStatus  # noqa: E402
+
+__all__ = [*__all__, "StaffAttendance", "StaffAttendanceStatus"]

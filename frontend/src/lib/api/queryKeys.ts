@@ -86,6 +86,10 @@ export const queryKeys = {
   reportProfitLoss: (orgId: string, from: string, to: string, groupBy: string) =>
     ['org', orgId, 'reports', 'profit-loss', from, to, groupBy] as const,
   reportExports: (orgId: string) => ['org', orgId, 'reports', 'exports'] as const,
+  staffDaily: (orgId: string, date: string, branch: string | null) =>
+    ['org', orgId, 'staff-attendance', 'daily', date, branch ?? 'all'] as const,
+  staffTimesheet: (orgId: string, month: string, branch: string | null) =>
+    ['org', orgId, 'staff-attendance', 'timesheet', month, branch ?? 'all'] as const,
   auditLogs: (orgId: string, params?: Record<string, unknown>) =>
     ['org', orgId, 'audit-logs', params ?? {}] as const,
 

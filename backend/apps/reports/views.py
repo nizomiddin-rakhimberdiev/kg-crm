@@ -65,11 +65,22 @@ class _ScopeMixin:
     """
     So'rovdagi davr va filialni o'qiydi.
 
-    Filial ID'si tekshirilmaydi va tekshirilishi SHART EMAS: har bir
-    so'rov allaqachon tashkilot bilan cheklangan, shuning uchun begona
-    filial ID'si bo'sh natija beradi, boshqa tashkilotning ma'lumotini
-    emas.
+    Filial doirasi ROLGA bog'liq — Dashboard bilan bir xil (docs/02 §11.3):
+    ega `?branch=` bilan bitta filialni yoki hammasini ko'radi, filialga
+    bog'langan xodim esa FAQAT o'z filialini, so'rovda nima yozilganidan
+    qat'i nazar. Avval parametr bo'lmasa butun tashkilot qaytardi — ya'ni
+    bitta filial menejeri boshqa filialning tushumini ham ko'rardi.
+
+    Begona tashkilotning filial ID'si baribir bo'sh natija beradi: so'rov
+    tashkilot bilan cheklangan.
     """
+
+    @staticmethod
+    def branch_for(request: Request, requested: Any = None) -> Any:
+        user = request_user(request)
+        if user.is_org_owner:
+            return requested or None
+        return user.branch_id
 
     def scope(self, request: Request) -> dict[str, Any]:
         today = timezone.localdate()
@@ -78,7 +89,7 @@ class _ScopeMixin:
             "organization_id": request_user(request).organization_id,
             "date_from": _parse_date(request.query_params.get("from"), default_from),
             "date_to": _parse_date(request.query_params.get("to"), today),
-            "branch_id": request.query_params.get("branch") or None,
+            "branch_id": self.branch_for(request, request.query_params.get("branch")),
         }
 
     def period_scope(self, request: Request) -> dict[str, Any]:
@@ -136,6 +147,7 @@ class DashboardViewSet(_ScopeMixin, viewsets.ViewSet):
 # `profit-loss` oylik maoshni o'z ichiga oladi, shuning uchun u eng qattiq
 # komponent — `payroll.read` — bilan qo'riqlanadi.
 REPORT_SCOPE: dict[str, str] = {
+    "staff-attendance": "attendance.read",
     "revenue": "payments.read",
     "debtors": "debtors.read",
     "expenses": "expenses.read",
@@ -253,6 +265,9 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
         # ishchisida yig'iladi va u yerda `Accept-Language` yo'q — ustun
         # sarlavhalari foydalanuvchi ko'rgan tilda bo'lishi kerak.
         params = {**serializer.validated_data.get("params", {}), "language": get_language()}
+        # Filial doirasi eksportda ham — o'qishdagi bilan bir xil (yuqorida).
+        branch_id = self.branch_for(request, params.get("branch_id"))
+        params["branch_id"] = str(branch_id) if branch_id else None
         export = ReportExport.objects.create(
             organization=user.organization,
             report_type=pk,

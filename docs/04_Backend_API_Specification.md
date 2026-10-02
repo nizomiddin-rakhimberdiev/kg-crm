@@ -356,6 +356,19 @@ There is no `PATCH` and no `DELETE` on a claim: once approved it has produced a 
 
 **Withholding rates and the working calendar live in `system_setting`**: `payroll.income_tax_rate` (12), `payroll.pension_rate` (0.1), `attendance.working_weekdays` (`1,2,3,4,5`). They change by decree, so they are configuration, not code (ADR-18).
 
+### 8.4 Staff attendance (timesheet, 2026-10)
+
+Permission module `attendance` — whoever keeps the children's register keeps the staff one; responses carry names and positions, never salaries. Scope follows the role: the Org Owner sees all branches or `?branch=`; anyone else only their own branch, whatever they ask for.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/staff-attendance/daily?date=&branch=` | `attendance.read` | Every employee employed that day, `status: null` if unmarked, `on_leave` from the employee card |
+| POST | `/staff-attendance/bulk` | `attendance.create` | `{attendance_date, records: [{employee_id, status, note?}], branch_id?}` — upsert; `status ∈ present/absent/sick/leave` |
+| GET | `/staff-attendance/timesheet?month=YYYY-MM&branch=` | `attendance.read` | Employee × day grid (`days: {"1": "present", …}`), counts per status, `working_days` per employee, `unmarked` up to today, `working_dates` for the header |
+| POST | `/reports/staff-attendance/export` | `reports.export` + `attendance.read` | Excel timesheet: employee, position, branch, day 1…31 codes (K/Y/B/T — translated), totals. `params: {year, month, branch_id?}` |
+
+**Errors:** `422` future date or a day the employee was not employed; `404` an employee outside the caller's tenant **or branch** (existence is not disclosed); `402` on `bulk` when the subscription is suspended.
+
 ## 9. Finance
 
 Module: `finance` (Payments module UI). The **ledger** is the source of truth ([03 §13](./03_Database_Design.md)).
@@ -670,6 +683,8 @@ A reversed payment is also excluded from `/reports/revenue` and its `by_method` 
 - Exports (`POST /reports/{type}/export`) accept the same `group_by` in `params`, so the CSV matches what was on screen (header column `period`).
 | POST | `/reports/{type}/export` | `reports.export` | Queue an Excel/PDF export → returns `job_id` |
 | GET | `/reports/exports/{jobId}` | `reports.read` | Poll export status / download link |
+
+**Branch scope (2026-10).** Report reads and exports follow the role, like `/dashboard`: the Org Owner gets the whole organization or `?branch=` / `params.branch_id`; a branch-bound caller always gets **their own branch**, whatever they send. Before this a manager of one branch could read another branch's revenue by leaving `branch` out.
 
 > Report reads may route to a replica; heavy aggregations are served from materialized views ([03 §25](./03_Database_Design.md)).
 

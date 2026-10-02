@@ -787,4 +787,30 @@ export const messages: Record<string, string> = {
   "Tarif bo'yicha": 'По тарифу',
   "Tarif yo'q — individual narxni tanlang yoki avval tarif yarating.":
     'Тарифов нет — выберите индивидуальную цену или сначала создайте тариф.',
+
+  // --- Xodimlar davomati / tabel (2026-10) ---
+  '«Ish kuni» — xodimning shu oydagi ish kunlari (ishga kirgan/ketgan sanasi, dam olish kunlari va bayramlar hisobga olingan). «Belgisiz» — bugungacha hali belgilanmagan ish kunlari.':
+    '«Раб. дни» — рабочие дни сотрудника в этом месяце (с учётом даты приёма/увольнения, выходных и праздников). «Без отметки» — рабочие дни до сегодняшнего дня, ещё не отмеченные.',
+  '{n} ta xodim · belgilanmagan: {u}': 'Сотрудников: {n} · без отметки: {u}',
+  B: 'Б',
+  K: 'Я',
+  T: 'О',
+  Y: 'Н',
+  Belgisiz: 'Без отметки',
+  'Bu kuni ishlaydigan xodim yo‘q. Xodimlarni «Xodimlar» bo‘limida kiriting.':
+    'В этот день нет работающих сотрудников. Добавьте сотрудников в разделе «Сотрудники».',
+  'Bu oyda ishlagan xodim yo‘q.': 'В этом месяце нет работавших сотрудников.',
+  'dam olish / bayram': 'выходной / праздник',
+  'Eksport tayyorlanmadi.': 'Экспорт не подготовлен.',
+  'Excel’ga yuklash': 'Выгрузить в Excel',
+  'Ish kuni': 'Раб. дни',
+  'kartada: ta’tilda': 'в карточке: в отпуске',
+  Kasal: 'Болен',
+  Kelmadi: 'Не пришёл',
+  'Kunlik belgilash': 'Ежедневная отметка',
+  'Oylik tabel': 'Табель за месяц',
+  'Qolganlar keldi': 'Остальные пришли',
+  'Saqlab bo‘lmadi.': 'Не удалось сохранить.',
+  'Saqlash ({v})': 'Сохранить ({v})',
+  'Ta’tilda': 'В отпуске',
 }

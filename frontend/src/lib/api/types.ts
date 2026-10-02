@@ -884,3 +884,43 @@ export interface EmployeeAdvance {
   note: string
   created_at: string
 }
+
+// --- Xodimlar davomati (tabel), docs/04 §8.3 ---
+
+export type StaffAttendanceStatus = 'present' | 'absent' | 'sick' | 'leave'
+
+export interface StaffDailyRow {
+  employee_id: string
+  full_name: string
+  position: string | null
+  branch: string
+  /** Xodim kartasida "ta'tilda" — UI "Ta'tilda" ni oldindan taklif qiladi. */
+  on_leave: boolean
+  status: StaffAttendanceStatus | null
+  note: string
+}
+
+export interface StaffTimesheetRow {
+  employee_id: string
+  full_name: string
+  position: string | null
+  branch: string
+  /** Kun raqami → holat; belgilanmagan kun kalitda yo'q. */
+  days: Record<string, StaffAttendanceStatus>
+  working_days: number
+  /** Bugungacha bo'lgan, hali belgilanmagan ish kunlari. */
+  unmarked: number
+  present: number
+  absent: number
+  sick: number
+  leave: number
+}
+
+export interface StaffTimesheet {
+  year: number
+  month: number
+  days_in_month: number
+  working_dates: string[]
+  employees: StaffTimesheetRow[]
+  totals: Record<StaffAttendanceStatus, number>
+}

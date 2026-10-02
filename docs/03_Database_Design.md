@@ -581,6 +581,23 @@ Days the kindergarten is closed. **Organization-scoped, not branch-scoped**: a p
 
 ---
 
+### 12.4 `staff_attendance` (2026-10)
+
+Staff timesheet — one row per employee per day. Asked for by a customer so the month-end salary report stops living on paper.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `id` | `UUID` | PK | |
+| `organization_id` | `UUID` | `NOT NULL` FK, immutable trigger, **RLS** | Tenant boundary |
+| `branch_id` | `UUID` | `NOT NULL` FK | The employee's branch at marking time |
+| `employee_id` | `UUID` | `NOT NULL` FK → employee `ON DELETE RESTRICT` | |
+| `attendance_date` | `DATE` | `NOT NULL`, `ck_staff_attendance_not_future` (+1 day slack, as §12.1) | |
+| `status` | `VARCHAR(10)` | `NOT NULL`, `ck_staff_attendance_status IN ('present','absent','sick','leave')` | |
+| `note` | `VARCHAR(255)` | | |
+| `recorded_by` | `UUID` | FK → user `ON DELETE SET NULL` | |
+
+**Business rules:** `uq_staff_attendance_employee_date (employee_id, attendance_date)` — re-marking a day **updates** the row (like §12.1: the day's state is a fact, not money). Sick and leave are separate statuses because payroll treats them differently; children only need one "excused". Only an employee employed that day (`hire_date ≤ d ≤ termination_date`) can be marked. The timesheet counts each employee's **own** working days — the organization's working weekdays and `holiday` rows, clipped to their hire/termination dates. **Salaries are never changed from this table**: it is the fact the accountant reads, not a payroll rule.
+
 ## 13. Schema Domain: Finance
 
 > The **`child_ledger_entry`** table is the single source of financial truth. Invoices and payments are *documents* that generate ledger entries. Balances and the entire **Debtors** module are derived from this ledger (D3, ADR-7).

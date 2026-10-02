@@ -1038,3 +1038,32 @@ msgstr "{full_name}: there is neither a price nor an invoice."
 
 msgid "Faqat o'z filialingizda yozuv yarata olasiz."
 msgstr "You can only create records in your own branch."
+
+# --- Xodimlar davomati / tabel (2026-10) ---
+
+msgid "B"
+msgstr "S"
+
+msgid "K"
+msgstr "P"
+
+msgid "T"
+msgstr "L"
+
+msgid "Y"
+msgstr "A"
+
+msgid "Ish kunlari"
+msgstr "Working days"
+
+msgid "Kasal"
+msgstr "Sick"
+
+msgid "Kelmadi"
+msgstr "Absent"
+
+msgid "Xodim topilmadi."
+msgstr "Employee not found."
+
+msgid "{full_name} {date} kuni ishlamagan (ishga kirish/bo'shash sanasi)."
+msgstr "{full_name} was not employed on {date} (hire/termination date)."

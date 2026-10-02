@@ -8,6 +8,7 @@ from rest_framework.routers import DefaultRouter
 
 from apps.accounts.views import PermissionViewSet, RoleViewSet, UserViewSet
 from apps.attendance.views import AbsenceClaimViewSet, AttendanceViewSet, HolidayViewSet
+from apps.attendance.views_staff import StaffAttendanceViewSet
 from apps.audit.views import AuditLogViewSet
 from apps.branches.views import BranchViewSet
 from apps.cash.views import CashAccountViewSet
@@ -49,6 +50,7 @@ router.register("guardians", GuardianViewSet, basename="guardian")
 router.register("groups", GroupViewSet, basename="group")
 router.register("cash-accounts", CashAccountViewSet, basename="cash-account")
 router.register("attendance", AttendanceViewSet, basename="attendance")
+router.register("staff-attendance", StaffAttendanceViewSet, basename="staff-attendance")
 # Kelmagan kunlar uchun qaytarish va bayram kalendari (ADR-19).
 router.register("absence-claims", AbsenceClaimViewSet, basename="absence-claim")
 router.register("holidays", HolidayViewSet, basename="holiday")

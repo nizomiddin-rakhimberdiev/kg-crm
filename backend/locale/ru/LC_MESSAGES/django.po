@@ -1039,3 +1039,32 @@ msgstr "{full_name}: нет ни цены, ни счёта."
 
 msgid "Faqat o'z filialingizda yozuv yarata olasiz."
 msgstr "Вы можете создавать записи только в своём филиале."
+
+# --- Xodimlar davomati / tabel (2026-10) ---
+
+msgid "B"
+msgstr "Б"
+
+msgid "K"
+msgstr "Я"
+
+msgid "T"
+msgstr "О"
+
+msgid "Y"
+msgstr "Н"
+
+msgid "Ish kunlari"
+msgstr "Рабочие дни"
+
+msgid "Kasal"
+msgstr "Болен"
+
+msgid "Kelmadi"
+msgstr "Не пришёл"
+
+msgid "Xodim topilmadi."
+msgstr "Сотрудник не найден."
+
+msgid "{full_name} {date} kuni ishlamagan (ishga kirish/bo'shash sanasi)."
+msgstr "{full_name} не работал(а) {date} (дата приёма/увольнения)."

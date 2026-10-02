@@ -84,6 +84,13 @@ def _run_report(report_type: str, organization_id: Any, params: dict[str, Any]) 
     raise ValueError(f"Noma'lum hisobot turi: {report_type}")
 
 
+def _staff_timesheet_rows(**kwargs: Any) -> list[dict[str, Any]]:
+    """Xodimlar tabeli — davomat modulining servisidan (invariant 1)."""
+    from apps.attendance.services_staff import timesheet_rows
+
+    return timesheet_rows(**kwargs)
+
+
 def _detail_rows(report_type: str, organization_id: Any, params: dict[str, Any]) -> list[Any]:
     """
     Eksport uchun BATAFSIL qatorlar.
@@ -112,6 +119,7 @@ def _detail_rows(report_type: str, organization_id: Any, params: dict[str, Any])
         "payroll": selectors.payroll_rows,
         "debtors": selectors.debtor_rows,
         "attendance": selectors.attendance_rows,
+        "staff-attendance": _staff_timesheet_rows,
     }
     builder = builders.get(report_type)
     if builder is None:

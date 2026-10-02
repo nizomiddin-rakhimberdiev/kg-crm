@@ -789,4 +789,30 @@ export const messages: Record<string, string> = {
   "Tarif bo'yicha": 'By tariff',
   "Tarif yo'q — individual narxni tanlang yoki avval tarif yarating.":
     'No tariffs yet — choose an individual price or create a tariff first.',
+
+  // --- Xodimlar davomati / tabel (2026-10) ---
+  '«Ish kuni» — xodimning shu oydagi ish kunlari (ishga kirgan/ketgan sanasi, dam olish kunlari va bayramlar hisobga olingan). «Belgisiz» — bugungacha hali belgilanmagan ish kunlari.':
+    "“Work days” — the employee's working days this month (accounting for hire/termination date, weekends and holidays). “Unmarked” — working days up to today not yet marked.",
+  '{n} ta xodim · belgilanmagan: {u}': '{n} employees · unmarked: {u}',
+  B: 'S',
+  K: 'P',
+  T: 'L',
+  Y: 'A',
+  Belgisiz: 'Unmarked',
+  'Bu kuni ishlaydigan xodim yo‘q. Xodimlarni «Xodimlar» bo‘limida kiriting.':
+    'No employees work on this day. Add employees in the Staff section.',
+  'Bu oyda ishlagan xodim yo‘q.': 'No employees worked this month.',
+  'dam olish / bayram': 'day off / holiday',
+  'Eksport tayyorlanmadi.': 'The export failed.',
+  'Excel’ga yuklash': 'Export to Excel',
+  'Ish kuni': 'Work days',
+  'kartada: ta’tilda': 'card: on leave',
+  Kasal: 'Sick',
+  Kelmadi: 'Absent',
+  'Kunlik belgilash': 'Daily marking',
+  'Oylik tabel': 'Monthly timesheet',
+  'Qolganlar keldi': 'Everyone else present',
+  'Saqlab bo‘lmadi.': 'Could not save.',
+  'Saqlash ({v})': 'Save ({v})',
+  'Ta’tilda': 'On leave',
 }

@@ -98,6 +98,7 @@ OPERATIONAL_TABLES: tuple[str, ...] = (
     "payroll_run",
     "position",
     "product",
+    "staff_attendance",
     "product_category",
     "report_export",
     "role",
