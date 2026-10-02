@@ -383,9 +383,9 @@ def delivery_problem(address: str, channel: str = Channel.SMS) -> str:
         return ""
 
     if not address.strip():
-        return gettext("Telefon raqami yo'q")
+        return gettext("Telefon raqami yoʻq")
     if not is_valid_phone(address):
-        return gettext("Noto'g'ri raqam")
+        return gettext("Notoʻgʻri raqam")
     return ""
 
 
@@ -425,7 +425,7 @@ def dispatch_notification(
     """
     if notification.status not in (NotificationStatus.QUEUED, NotificationStatus.FAILED):
         raise BusinessRuleViolation(
-            gettext("'{status}' holatidagi xabarni yuborib bo'lmaydi.").format(
+            gettext("'{status}' holatidagi xabarni yuborib boʻlmaydi.").format(
                 status=notification.get_status_display()
             )
         )

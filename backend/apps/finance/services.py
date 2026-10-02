@@ -118,7 +118,7 @@ def post_ledger_entry(
     o'tadi, shuning uchun invariantlar bir joyda tekshiriladi.
     """
     if amount <= 0:
-        raise BusinessRuleViolation(gettext("Ledger summasi musbat bo'lishi kerak."))
+        raise BusinessRuleViolation(gettext("Ledger summasi musbat boʻlishi kerak."))
 
     return ChildLedgerEntry.objects.create(
         organization=child.organization,
@@ -366,7 +366,7 @@ def issue_invoice(
     if child.tariff_id is None:
         raise BusinessRuleViolation(
             gettext(
-                "{full_name}: tarif biriktirilmagan — hisob-faktura chiqarib bo'lmaydi."
+                "{full_name}: tarif biriktirilmagan — hisob-faktura chiqarib boʻlmaydi."
             ).format(full_name=child.full_name)
         )
 
@@ -387,7 +387,7 @@ def issue_invoice(
     ):
         raise BusinessRuleViolation(
             gettext(
-                "{full_name}: sozlamaga ko'ra birinchi hisob-faktura keyingi oydan yoziladi."
+                "{full_name}: sozlamaga koʻra birinchi hisob-faktura keyingi oydan yoziladi."
             ).format(full_name=child.full_name)
         )
 
@@ -446,7 +446,7 @@ def issue_invoice(
         )
         if existing:
             return existing
-        raise BusinessRuleViolation(gettext("Hisob-fakturani yaratib bo'lmadi.")) from exc
+        raise BusinessRuleViolation(gettext("Hisob-fakturani yaratib boʻlmadi.")) from exc
 
     # Satr izohida proporsiya KO'RINADI. "68 182 soʻm" degan raqam
     # sababsiz tushunarsiz; "22 ish kunidan 1 kun" esa ota-onaga ham,
@@ -532,7 +532,7 @@ def cancel_invoice(*, invoice: Invoice, reason: str = "", created_by: Any = None
     if invoice.amount_paid > 0:
         raise BusinessRuleViolation(
             gettext(
-                "To'lov qilingan hisob-fakturani bekor qilib bo'lmaydi — avval to'lovni qaytaring."
+                "Toʻlov qilingan hisob-fakturani bekor qilib boʻlmaydi — avval toʻlovni qaytaring."
             )
         )
 
@@ -674,7 +674,7 @@ def preview_monthly_invoices(
     keyin sindiradi.
     """
     if not 1 <= period_month <= 12:
-        raise BusinessRuleViolation(gettext("Oy 1–12 oralig'ida bo'lishi kerak."))
+        raise BusinessRuleViolation(gettext("Oy 1–12 oraligʻida boʻlishi kerak."))
 
     preview = BillingPreview(period=f"{period_year}-{period_month:02d}")
 
@@ -760,7 +760,7 @@ def generate_monthly_invoices(
     bog'chada bitta nosozlik oyni bloklab qo'yardi.
     """
     if not 1 <= period_month <= 12:
-        raise BusinessRuleViolation(gettext("Oy 1–12 oralig'ida bo'lishi kerak."))
+        raise BusinessRuleViolation(gettext("Oy 1–12 oraligʻida boʻlishi kerak."))
 
     result = BillingRunResult(period=f"{period_year}-{period_month:02d}")
 
@@ -861,7 +861,7 @@ def record_payment(
     ushlay olmaydi — u boshqa tranzaksiyani ko'rmaydi.
     """
     if amount <= 0:
-        raise BusinessRuleViolation(gettext("To'lov summasi musbat bo'lishi kerak."))
+        raise BusinessRuleViolation(gettext("Toʻlov summasi musbat boʻlishi kerak."))
 
     amount = _money(amount)
 
@@ -879,7 +879,7 @@ def record_payment(
             raise BusinessRuleViolation(gettext("Hisob-faktura boshqa bolaga tegishli."))
         if invoice.status == InvoiceStatus.CANCELLED:
             raise BusinessRuleViolation(
-                gettext("Bekor qilingan hisob-fakturaga to'lov qabul qilinmaydi.")
+                gettext("Bekor qilingan hisob-fakturaga toʻlov qabul qilinmaydi.")
             )
         locked = Invoice.objects.select_for_update().get(pk=invoice.pk)
     else:
@@ -1209,7 +1209,7 @@ def record_payment_batch(
     kassir qaysi usul avansga ketganini oldindan ko'radi.
     """
     if not lines:
-        raise BusinessRuleViolation(gettext("Kamida bitta to'lov qatori kerak."))
+        raise BusinessRuleViolation(gettext("Kamida bitta toʻlov qatori kerak."))
 
     # Takrorlanish TO'PLAM darajasida tekshiriladi, qator darajasida
     # emas — va bu farq muhim.
@@ -1246,14 +1246,14 @@ def record_payment_batch(
         locked = Invoice.objects.select_for_update().get(pk=invoice.pk)
         if locked.status == InvoiceStatus.CANCELLED:
             raise BusinessRuleViolation(
-                gettext("Bekor qilingan hisob-fakturaga to'lov qabul qilinmaydi.")
+                gettext("Bekor qilingan hisob-fakturaga toʻlov qabul qilinmaydi.")
             )
         outstanding = locked.amount_due - locked.amount_paid
 
     for index, line in enumerate(lines):
         amount = _money(Decimal(line["amount"]))
         if amount <= 0:
-            raise BusinessRuleViolation(gettext("To'lov summasi musbat bo'lishi kerak."))
+            raise BusinessRuleViolation(gettext("Toʻlov summasi musbat boʻlishi kerak."))
         method = line["method"]
         reference = str(line.get("reference", ""))
 
@@ -1303,7 +1303,7 @@ def reverse_payment(*, payment: Payment, reason: str = "", created_by: Any = Non
     keyin qaytarildi" deb ko'rsatadi — "hech narsa bo'lmagan" emas.
     """
     if payment.is_reversed:
-        raise BusinessRuleViolation(gettext("Bu to'lov allaqachon qaytarilgan."))
+        raise BusinessRuleViolation(gettext("Bu toʻlov allaqachon qaytarilgan."))
 
     payment.reversed_at = timezone.now()
     payment.reversal_reason = reason[:255]
@@ -1324,13 +1324,13 @@ def reverse_payment(*, payment: Payment, reason: str = "", created_by: Any = Non
     cash.reverse_movements_for(
         source_type=MovementSource.PAYMENT,
         source_id=payment.id,
-        description=reason or gettext("to'lov qaytarildi"),
+        description=reason or gettext("toʻlov qaytarildi"),
         created_by=created_by,
     )
 
     # Taqsimot bo'shaydi: pul endi hech qaysi hujjatni yopmaydi va
     # yopilgan deb belgilangan hisob-fakturalar yana ochiladi.
-    release_allocations(payment=payment, reason=reason or gettext("to'lov qaytarildi"))
+    release_allocations(payment=payment, reason=reason or gettext("toʻlov qaytarildi"))
 
     recompute_child_balance(payment.child)
     return payment

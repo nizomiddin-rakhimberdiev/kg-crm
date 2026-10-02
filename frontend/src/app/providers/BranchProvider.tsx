@@ -23,10 +23,7 @@ const BranchContext = createContext<BranchContextValue | null>(null)
 export function BranchProvider({ children }: { children: ReactNode }) {
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null)
 
-  const value = useMemo(
-    () => ({ selectedBranchId, setSelectedBranchId }),
-    [selectedBranchId],
-  )
+  const value = useMemo(() => ({ selectedBranchId, setSelectedBranchId }), [selectedBranchId])
 
   return <BranchContext.Provider value={value}>{children}</BranchContext.Provider>
 }

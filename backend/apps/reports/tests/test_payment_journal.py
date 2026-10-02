@@ -30,12 +30,12 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture
 def paid(tenant_a):
-    """Ikki bola, uch to'lov, bittasi qaytarilgan."""
+    """Ikki bola, uch toʻlov, bittasi qaytarilgan."""
     with organization_context(tenant_a.organization.id):
         tariff = TariffPlan.objects.create(
             organization=tenant_a.organization,
             branch=tenant_a.branch,
-            name="To'liq kun",
+            name="Toʻliq kun",
             amount=Decimal("1500000"),
         )
         children = [

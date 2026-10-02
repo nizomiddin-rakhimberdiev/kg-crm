@@ -1,7 +1,7 @@
 """
 Eksport testlari (docs/04 §14.2).
 
-Asosiy savol: "tayyor faylni boshqa bog'cha yuklab ololadimi?" Hisobot
+Asosiy savol: "tayyor faylni boshqa bogʻcha yuklab ololadimi?" Hisobot
 fayli — butun moliyaviy tarix bitta hujjatda, ya'ni sizib chiqishi eng
 qimmat turdagi ma'lumot.
 """
@@ -85,7 +85,7 @@ class TestExportJob:
         assert sheet.freeze_panes == "A2"
 
     def test_headers_follow_the_request_language(self, tenant_a, paid_child):
-        """Ustun sarlavhalari — so'rov tilida (ADR-16), Celery'da ham."""
+        """Ustun sarlavhalari — soʻrov tilida (ADR-16), Celeryʼda ham."""
         from openpyxl import load_workbook
 
         client = tenant_a.client()
@@ -103,7 +103,7 @@ class TestExportJob:
         """
         Xato yozuvda qoladi.
 
-        "Eksport bosdim, hech narsa bo'lmadi" — javobsiz qoladigan
+        "Eksport bosdim, hech narsa boʻlmadi" — javobsiz qoladigan
         shikoyat; sabab jurnalda bo'lishi kerak.
         """
         with organization_context(tenant_a.organization.id):

@@ -26,7 +26,7 @@ type TabKey = 'invoices' | 'payments' | 'history'
 
 const TABS: Array<[TabKey, string]> = [
   ['invoices', t('Hisob-fakturalar')],
-  ['payments', t("To'lovlar")],
+  ['payments', t('Toʻlovlar')],
   ['history', t('Tarix')],
 ]
 
@@ -82,7 +82,7 @@ export function ChildTabs({ childId }: { childId: string }) {
                   <th className="px-4 py-2.5 font-medium">{t('Raqam')}</th>
                   <th className="px-4 py-2.5 font-medium">{t('Muddat')}</th>
                   <th className="px-4 py-2.5 text-right font-medium">{t('Hisoblangan')}</th>
-                  <th className="px-4 py-2.5 text-right font-medium">{t("To'langan")}</th>
+                  <th className="px-4 py-2.5 text-right font-medium">{t('Toʻlangan')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -115,7 +115,7 @@ export function ChildTabs({ childId }: { childId: string }) {
               <thead className="bg-slate-50/70 text-left text-xs uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">{t('Sana')}</th>
-                  <th className="px-4 py-2.5 font-medium">{t("To'lov usuli")}</th>
+                  <th className="px-4 py-2.5 font-medium">{t('Toʻlov usuli')}</th>
                   <th className="px-4 py-2.5 text-right font-medium">{t('Summa')}</th>
                 </tr>
               </thead>
@@ -144,7 +144,7 @@ export function ChildTabs({ childId }: { childId: string }) {
                   </tr>
                 ))}
                 {payments.data?.items.length === 0 && (
-                  <EmptyRow colSpan={3} title={t("To'lov yoʻq")} />
+                  <EmptyRow colSpan={3} title={t('Toʻlov yoʻq')} />
                 )}
               </tbody>
             </>

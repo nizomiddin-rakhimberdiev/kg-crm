@@ -45,7 +45,7 @@ export function SmsUsageCard({ status }: { status: SmsStatus }) {
           <dd className="num text-lg font-semibold text-tosh-900">{money(usage.sent)}</dd>
         </div>
         <div>
-          <dt className="text-xs text-tosh-500">{t('SMS bo‘laklari')}</dt>
+          <dt className="text-xs text-tosh-500">{t('SMS boʻlaklari')}</dt>
           <dd className="num text-lg font-semibold text-tosh-900">{money(usage.parts)}</dd>
         </div>
         <div>

@@ -6,7 +6,7 @@ kerak. 2026-09-30 auditida shunday emas edi: To'lovlar doskasi
 1 500 000, Qarzdorlar 130 000 ko'rsatdi. Sabab — ikkita mustaqil
 formula (`docs/big-update/PLAN.md` §2).
 
-Bu fayl tekshiradigan narsa "funksiya to'g'ri ishlaydimi" emas, balki
+Bu fayl tekshiradigan narsa "funksiya toʻgʻri ishlaydimi" emas, balki
 **ikki funksiya bir-biriga zid javob beryaptimi**. Shuning uchun
 testlar bitta amalni emas, REAL KETMA-KETLIKNI o'ynaydi: bir necha oy,
 qisman to'lovlar, avans, qaytarish — va har qadamdan keyin barcha
@@ -36,7 +36,7 @@ def tariff(tenant_a) -> TariffPlan:
         return TariffPlan.objects.create(
             organization=tenant_a.organization,
             branch=tenant_a.branch,
-            name="To'liq kun",
+            name="Toʻliq kun",
             amount=TARIFF,
         )
 
@@ -59,7 +59,7 @@ def children(tenant_a, tariff) -> list[Child]:
 
 
 def _assert_child_invariants(child: Child, year: int, month: int) -> None:
-    """Bitta bola: hamma o'quvchi bir xil raqamni bermoqda."""
+    """Bitta bola: hamma oʻquvchi bir xil raqamni bermoqda."""
     detail = balance.child_balance(child)
 
     # 1. Balans ledger'dan chiqadi: Σ debet − Σ kredit.
@@ -67,7 +67,7 @@ def _assert_child_invariants(child: Child, year: int, month: int) -> None:
 
     # 2. Bola kartasidagi kesh ledger bilan bir xil.
     child.refresh_from_db()
-    assert child.balance == detail.balance, "`child.balance` keshi ledger'dan ajralgan"
+    assert child.balance == detail.balance, "`child.balance` keshi ledgerʼdan ajralgan"
 
     # 3. To'lovlar doskasi.
     row = selectors.board_row(
@@ -79,7 +79,7 @@ def _assert_child_invariants(child: Child, year: int, month: int) -> None:
             if r.id == child.id
         )
     )
-    assert Decimal(row["balance"]) == detail.balance, "doska boshqa balans ko'rsatyapti"
+    assert Decimal(row["balance"]) == detail.balance, "doska boshqa balans koʻrsatyapti"
     assert Decimal(row["advance"]) == max(detail.advance, Decimal("0"))
 
     # 4. Qarzdorlar ro'yxati (faqat musbat balansli bolalar).
@@ -88,10 +88,10 @@ def _assert_child_invariants(child: Child, year: int, month: int) -> None:
         None,
     )
     if detail.balance > 0:
-        assert debtor is not None, "qarzdor ro'yxatdan tushib qolgan"
+        assert debtor is not None, "qarzdor roʻyxatdan tushib qolgan"
         assert Decimal(debtor["balance"]) == detail.balance
     else:
-        assert debtor is None, "qarzi yo'q bola qarzdorlar ro'yxatida"
+        assert debtor is None, "qarzi yoʻq bola qarzdorlar roʻyxatida"
 
     # 5. Avans = to'langan − taqsimlangan.
     assert detail.advance == detail.paid - detail.allocated
@@ -106,7 +106,7 @@ def _assert_ledger_invariants(organization_id) -> None:
             Decimal("0"),
         )
         assert invoice.amount_paid == allocated, f"{invoice.number}: kesh taqsimotdan ajralgan"
-        assert invoice.amount_paid <= invoice.amount_due, f"{invoice.number}: ortiqcha to'langan"
+        assert invoice.amount_paid <= invoice.amount_due, f"{invoice.number}: ortiqcha toʻlangan"
 
     # Hech bir to'lov o'zidan ko'proq taqsimlanmagan.
     for payment in Payment.objects.all():
@@ -114,9 +114,9 @@ def _assert_ledger_invariants(organization_id) -> None:
             (a.amount for a in payment.allocations.filter(released_at__isnull=True)),
             Decimal("0"),
         )
-        assert allocated <= payment.amount, "to'lov o'zidan ko'proq taqsimlangan"
+        assert allocated <= payment.amount, "toʻlov oʻzidan koʻproq taqsimlangan"
         if payment.is_reversed:
-            assert allocated == 0, "qaytarilgan to'lov hali ham hujjat yopib turibdi"
+            assert allocated == 0, "qaytarilgan toʻlov hali ham hujjat yopib turibdi"
 
     # Qarzdorlar yig'indisi = musbat balanslar yig'indisi.
     rows = selectors.debtor_rows()
@@ -131,7 +131,7 @@ def _assert_ledger_invariants(organization_id) -> None:
         ),
         Decimal("0"),
     )
-    assert listed == computed, "Qarzdorlardagi 'Jami qarz' bolalar yig'indisiga teng emas"
+    assert listed == computed, "Qarzdorlardagi 'Jami qarz' bolalar yigʻindisiga teng emas"
 
 
 class TestOneNumberEverywhere:
@@ -216,7 +216,7 @@ class TestOneNumberEverywhere:
 
 class TestAdvanceIsNotDebt:
     def test_a_child_with_only_an_advance_is_not_a_debtor(self, tenant_a, children):
-        """Oldindan to'lagan oila qarzdorlar ro'yxatiga tushmasligi kerak."""
+        """Oldindan toʻlagan oila qarzdorlar roʻyxatiga tushmasligi kerak."""
         child = children[0]
         with organization_context(tenant_a.organization.id):
             services.record_payment(child=child, amount=Decimal("200000"), method="cash")

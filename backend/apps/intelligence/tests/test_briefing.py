@@ -1,7 +1,7 @@
 """
 Brifing va uchidan-uchiga generatsiya (docs/07 §11, Appendix B).
 
-Ikki savol: (1) "davomat to'liq" faqat HAR BIR bola yozilganda
+Ikki savol: (1) "davomat toʻliq" faqat HAR BIR bola yozilganda
 yashilmi? (2) haqiqiy fakturalardan haqiqiy `payment_delay` qatori
 chiqadimi — bu selektor + qoida + reconcile'ning birgalikdagi testi.
 """
@@ -116,7 +116,7 @@ class TestGenerateForBranch:
             group = _group(tenant_a)
             late = _child(tenant_a, "Kech", group, tariff)
             fresh = _child(tenant_a, "Yaqin", group, tariff)
-            paid = _child(tenant_a, "To'lagan", group, tariff)
+            paid = _child(tenant_a, "Toʻlagan", group, tariff)
             as_of = date(2026, 9, 17)
 
             # 40 kun kechikkan — `status` hali `issued` (beat ishlamagan): qoida sanaga qaraydi.

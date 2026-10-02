@@ -107,7 +107,7 @@ def recompute_item(
         raise BusinessRuleViolation(
             gettext(
                 "{employee}: ushlab qolish va avans ({taken}) naqd qismdan ({cash}) oshib "
-                "ketdi. Rasmiy maoshni yoki avansni to'g'rilang."
+                "ketdi. Rasmiy maoshni yoki avansni toʻgʻrilang."
             ).format(
                 employee=item.employee.full_name,
                 taken=_money(item.deduction + item.advance),
@@ -227,7 +227,7 @@ def _assert_editable(run: PayrollRun) -> None:
     if not run.is_editable:
         raise BusinessRuleViolation(
             gettext(
-                "Hisoblash '{status}' holatida — o'zgartirib bo'lmaydi. "
+                "Hisoblash '{status}' holatida — oʻzgartirib boʻlmaydi. "
                 "Tuzatishni keyingi oyda bonus yoki ushlab qolish bilan kiriting."
             ).format(status=run.get_status_display())
         )
@@ -245,7 +245,7 @@ def create_run(
     hisoblash xodimga ikki marta oylik to'lash xavfini yaratardi.
     """
     if not 1 <= period_month <= 12:
-        raise BusinessRuleViolation(gettext("Oy 1–12 oralig'ida bo'lishi kerak."))
+        raise BusinessRuleViolation(gettext("Oy 1–12 oraligʻida boʻlishi kerak."))
 
     try:
         run = PayrollRun.objects.create(
@@ -432,7 +432,7 @@ def record_advance(
 ) -> EmployeeAdvance:
     """Avans yozadi va o'sha davrning QORALAMA hisoblashini yangilaydi."""
     if amount <= 0:
-        raise BusinessRuleViolation(gettext("Avans summasi musbat bo'lishi kerak."))
+        raise BusinessRuleViolation(gettext("Avans summasi musbat boʻlishi kerak."))
 
     advance = EmployeeAdvance.objects.create(
         organization=employee.organization,
@@ -510,11 +510,11 @@ def update_item(
 
     if bonus is not None:
         if bonus < 0:
-            raise BusinessRuleViolation(gettext("Bonus manfiy bo'lolmaydi."))
+            raise BusinessRuleViolation(gettext("Bonus manfiy boʻlolmaydi."))
         item.bonus = _money(bonus)
     if deduction is not None:
         if deduction < 0:
-            raise BusinessRuleViolation(gettext("Ushlab qolish manfiy bo'lolmaydi."))
+            raise BusinessRuleViolation(gettext("Ushlab qolish manfiy boʻlolmaydi."))
         item.deduction = _money(deduction)
     if note is not None:
         item.note = note[:255]
@@ -564,7 +564,7 @@ def finalize_run(*, run: PayrollRun, finalized_by: Any = None) -> PayrollRun:
 
     if not PayrollItem.objects.filter(payroll_run=run).exists():
         raise BusinessRuleViolation(
-            gettext("Bo'sh hisoblashni yakunlab bo'lmaydi — xodimlar yo'q.")
+            gettext("Boʻsh hisoblashni yakunlab boʻlmaydi — xodimlar yoʻq.")
         )
 
     recompute_run_totals(run)
@@ -630,12 +630,12 @@ def pay_run(
     """
     if run.status != PayrollStatus.FINALIZED:
         raise BusinessRuleViolation(
-            gettext("Faqat yakunlangan hisoblashni to'langan deb belgilash mumkin.")
+            gettext("Faqat yakunlangan hisoblashni toʻlangan deb belgilash mumkin.")
         )
 
     rows = payouts if payouts is not None else planned_payouts(run)
     if not rows:
-        raise BusinessRuleViolation(gettext("To'lanadigan summa yo'q."))
+        raise BusinessRuleViolation(gettext("Toʻlanadigan summa yoʻq."))
 
     when = paid_on or timezone.localdate()
     items = {item.id: item for item in run.items.select_related("employee")}
@@ -660,7 +660,7 @@ def pay_run(
             if paid_before + amount > allowed:
                 raise BusinessRuleViolation(
                     gettext(
-                        "{employee}: to'lov summasi hisoblangandan oshib ketdi "
+                        "{employee}: toʻlov summasi hisoblangandan oshib ketdi "
                         "({total} > {allowed})."
                     ).format(
                         employee=item.employee.full_name,
@@ -737,7 +737,7 @@ def reopen_run(*, run: PayrollRun, reason: str) -> PayrollRun:
 
     cleaned = (reason or "").strip()
     if not cleaned:
-        raise BusinessRuleViolation(gettext("Qayta ochish sababini ko'rsating."))
+        raise BusinessRuleViolation(gettext("Qayta ochish sababini koʻrsating."))
 
     # To'langan hisoblashni ochish — pulni KASSAGA QAYTARISH demak.
     #

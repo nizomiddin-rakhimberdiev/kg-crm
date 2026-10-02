@@ -31,7 +31,7 @@ class Channel(models.TextChoices):
 class TemplateCode(models.TextChoices):
     """MVP shablonlari — ular signup'da seed qilinadi."""
 
-    PAYMENT_RECEIVED = "payment_received", gettext_lazy("To'lov qabul qilindi")
+    PAYMENT_RECEIVED = "payment_received", gettext_lazy("Toʻlov qabul qilindi")
     DEBT_REMINDER = "debt_reminder", gettext_lazy("Qarz eslatmasi")
     ABSENCE_NOTICE = "absence_notice", gettext_lazy("Kelmagani haqida")
     CUSTOM = "custom", gettext_lazy("Erkin xabar")
@@ -46,7 +46,7 @@ class TemplateLanguage(models.TextChoices):
     va "SMS kelmadi" deb shikoyat qiladi.
     """
 
-    UZ = "uz", gettext_lazy("O'zbekcha")
+    UZ = "uz", gettext_lazy("Oʻzbekcha")
     RU = "ru", gettext_lazy("Ruscha")
     EN = "en", gettext_lazy("Inglizcha")
 

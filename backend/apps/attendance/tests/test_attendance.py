@@ -151,7 +151,7 @@ class TestBulkMarking:
 
 class TestDatabaseConstraints:
     def test_one_record_per_child_per_day(self, tenant_a, group_with_children):
-        """Bazadagi kafolat (D1) — servis qatlami chetlab o'tilganda ham."""
+        """Bazadagi kafolat (D1) — servis qatlami chetlab oʻtilganda ham."""
         group, children = group_with_children
         today = timezone.localdate()
         with organization_context(tenant_a.organization.id):
@@ -365,7 +365,7 @@ class TestEndpoints:
         assert len(response.json()["data"]["rows"]) >= 1
 
     def test_attendance_manager_can_mark_but_not_read_payments(self, tenant_a, group_with_children):
-        """Davomat menejerida `attendance` to'liq, `payments` yo'q (docs/02 §11.2)."""
+        """Davomat menejerida `attendance` toʻliq, `payments` yoʻq (docs/02 §11.2)."""
         from rest_framework.test import APIClient
 
         from apps.accounts.authentication import issue_token_pair
@@ -479,7 +479,7 @@ class TestTeacherScope:
                 )
 
     def test_a_teacher_cannot_edit_an_old_day(self, tenant_a, group_with_children):
-        """Sukut oyna: bugun va kecha. O'tgan oy pulga tegadi (ADR-19)."""
+        """Sukut oyna: bugun va kecha. Oʻtgan oy pulga tegadi (ADR-19)."""
         group, children = group_with_children
         user = self._teacher(tenant_a, group)
         with (
@@ -534,13 +534,13 @@ class TestTeacherScope:
                 attendance_date=timezone.localdate() - timedelta(days=30),
                 records=[{"child_id": children[0].id, "status": "present"}],
                 recorded_by=tenant_a.owner,
-                reason="Jurnal qog'ozdan ko'chirildi",
+                reason="Jurnal qogʻozdan koʻchirildi",
             )
         assert len(records) == 1
 
     def test_nobody_is_restricted_until_a_teacher_is_assigned(self, tenant_a):
         """
-        Cheklov "ruxsati yo'q" degan sababdan emas, "u aynan shu
+        Cheklov "ruxsati yoʻq" degan sababdan emas, "u aynan shu
         guruhning tarbiyachisi" degan sababdan kelib chiqadi. Hech kim
         biriktirilmagan bo'lsa, qatlam umuman ishlamaydi.
         """

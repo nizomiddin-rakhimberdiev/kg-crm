@@ -39,7 +39,7 @@ class TestGuardianPhone:
         ["+998 90 123 45 67", "998901234567", "90 123 45 67", "(90) 123-45-67"],
     )
     def test_phone_is_normalised_to_e164(self, tenant_a, typed):
-        """Odam qanday yozsa ham, bazada bitta shakl bo'lishi kerak."""
+        """Odam qanday yozsa ham, bazada bitta shakl boʻlishi kerak."""
         response = tenant_a.client().post(
             reverse("v1:guardian-list"),
             {"first_name": "Vasiy", "last_name": "Sinov", "phone": typed},
@@ -50,7 +50,7 @@ class TestGuardianPhone:
 
 
 class TestChildStatusChange:
-    """Q5: holat o'zgarganda sana va sabab so'raladi; shu sanadan keyin faktura yozilmaydi."""
+    """Q5: holat oʻzgarganda sana va sabab soʻraladi; shu sanadan keyin faktura yozilmaydi."""
 
     @pytest.mark.parametrize("field", ["status_changed_on", "status_reason"])
     def test_status_change_is_recorded_in_the_schema(self, field):
@@ -69,13 +69,13 @@ class TestChildStatusChange:
         try:
             Child._meta.get_field(field)
         except FieldDoesNotExist:
-            pytest.fail(f"Child.{field} maydoni yo'q")
+            pytest.fail(f"Child.{field} maydoni yoʻq")
 
     def test_archiving_is_distinct_from_deleting(self):
         """
         Q6: bolalar qattiq o'chirilmaydi — faqat arxiv.
 
-        Hozir yagona vosita `is_active=False`, va u "o'chirilgan" degani
+        Hozir yagona vosita `is_active=False`, va u "oʻchirilgan" degani
         ham, "arxivlangan" degani ham bo'lishi mumkin — ikkisini ajratib
         bo'lmaydi, ya'ni "kim, qachon, nega arxivladi?" javobsiz qoladi.
         """
@@ -86,12 +86,12 @@ class TestChildStatusChange:
         try:
             Child._meta.get_field("archived_at")
         except FieldDoesNotExist:
-            pytest.fail("Child.archived_at maydoni yo'q")
+            pytest.fail("Child.archived_at maydoni yoʻq")
 
 
 class TestDateOfBirth:
     def test_age_out_of_range_is_rejected(self, tenant_a):
-        """Kelajakdagi sana allaqachon rad etiladi; 30 yoshli "bola" esa yo'q."""
+        """Kelajakdagi sana allaqachon rad etiladi; 30 yoshli "bola" esa yoʻq."""
         response = tenant_a.client().post(
             reverse("v1:child-list"),
             {

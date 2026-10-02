@@ -220,14 +220,14 @@ export function TakePaymentModal({
             birinchi savoli aynan shu. */}
         <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            {due > 0 ? t("To'lanishi kerak") : t('Qarz yo‘q')}
+            {due > 0 ? t('Toʻlanishi kerak') : t('Qarz yoʻq')}
           </p>
           <p className="mt-0.5 text-2xl font-bold tabular-nums text-slate-900">
-            {t("{money} so'm", { money: money(due) })}
+            {t('{money} soʻm', { money: money(due) })}
           </p>
           {credit > 0 && (
             <p className="mt-1 text-xs font-medium text-emerald-700">
-              {t("Avansda {money} so'm bor", { money: money(credit) })}
+              {t('Avansda {money} soʻm bor', { money: money(credit) })}
             </p>
           )}
           {openInvoices.length > 1 && (
@@ -237,7 +237,7 @@ export function TakePaymentModal({
           )}
           {detail && openInvoices.length === 0 && (
             <p className="mt-1 text-xs text-orik-700">
-              {t("Ochiq hisob-faktura yo'q — pul avansga tushadi.")}
+              {t('Ochiq hisob-faktura yoʻq — pul avansga tushadi.')}
             </p>
           )}
         </div>
@@ -382,7 +382,7 @@ export function TakePaymentModal({
                 <button
                   type="button"
                   onClick={() => remove(tender.key)}
-                  title={t("O'chirish")}
+                  title={t('Oʻchirish')}
                   className="rounded p-1 text-slate-300 transition hover:bg-red-50 hover:text-red-600"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -485,7 +485,7 @@ export function TakePaymentModal({
           {save.isPending
             ? t('Saqlanmoqda…')
             : taken > 0
-              ? t("{money} so'm qabul qilish", { money: money(taken) })
+              ? t('{money} soʻm qabul qilish', { money: money(taken) })
               : t('Usulni tanlang')}
         </button>
       </div>

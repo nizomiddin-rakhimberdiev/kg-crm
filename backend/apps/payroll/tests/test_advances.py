@@ -89,7 +89,7 @@ def test_recalculation_is_idempotent(tenant_a: Any, employee: Employee):
 
 
 def test_recalculation_adds_a_newly_hired_employee(tenant_a: Any, employee: Employee):
-    """Oy o'rtasida ishga kirgan xodim — hisoblashni o'chirmasdan qo'shiladi."""
+    """Oy oʻrtasida ishga kirgan xodim — hisoblashni oʻchirmasdan qoʻshiladi."""
     with organization_context(tenant_a.organization.id):
         run = _run(tenant_a)
         before = run.items.count()
@@ -129,7 +129,7 @@ def test_advance_cannot_exceed_gross(tenant_a: Any, employee: Employee):
 
 
 def test_finalized_run_is_not_touched_by_a_late_advance(tenant_a: Any, employee: Employee):
-    """Yakunlangan hisoblash o'zgarmaydi — tuzatish keyingi oyda."""
+    """Yakunlangan hisoblash oʻzgarmaydi — tuzatish keyingi oyda."""
     with organization_context(tenant_a.organization.id):
         run = _run(tenant_a)
         services.finalize_run(run=run)

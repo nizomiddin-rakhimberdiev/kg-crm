@@ -97,7 +97,7 @@ def test_withholdings_apply_only_to_the_official_part(tenant_a: Any):
 
 
 def test_a_cash_bonus_never_becomes_taxable(tenant_a: Any):
-    """Naqd bonus rasmiy qismga qo'shilmaydi — soliq o'zgarmaydi."""
+    """Naqd bonus rasmiy qismga qoʻshilmaydi — soliq oʻzgarmaydi."""
     employee = _employee(tenant_a, base="4000000", official="4000000")
     with organization_context(tenant_a.organization.id):
         run = _run(tenant_a)
@@ -111,7 +111,7 @@ def test_a_cash_bonus_never_becomes_taxable(tenant_a: Any):
 
 
 def test_rates_come_from_settings_not_from_code(tenant_a: Any):
-    """Stavka qaror bilan o'zgaradi — reliz talab qilmasligi kerak."""
+    """Stavka qaror bilan oʻzgaradi — reliz talab qilmasligi kerak."""
     employee = _employee(tenant_a, base="1000000", official="1000000")
     with organization_context(tenant_a.organization.id):
         set_setting(organization=tenant_a.organization, key="payroll.income_tax_rate", value=15)
@@ -122,7 +122,7 @@ def test_rates_come_from_settings_not_from_code(tenant_a: Any):
 
 
 def test_the_snapshot_survives_a_later_rate_change(tenant_a: Any):
-    """Martda o'zgargan stavka fevralning payslipini qayta yozmaydi."""
+    """Martda oʻzgargan stavka fevralning payslipini qayta yozmaydi."""
     employee = _employee(tenant_a, base="1000000", official="1000000")
     with organization_context(tenant_a.organization.id):
         run = _run(tenant_a, month=8)
@@ -204,7 +204,7 @@ def test_reopening_a_paid_run_returns_the_money(tenant_a: Any):
         services.pay_run(run=run)
         assert _balances(tenant_a)["cash"] == Decimal("-4000000.00")
 
-        services.reopen_run(run=run, reason="Xato to'langan")
+        services.reopen_run(run=run, reason="Xato toʻlangan")
         run.refresh_from_db()
 
         assert run.status == PayrollStatus.DRAFT

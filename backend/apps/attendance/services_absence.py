@@ -119,7 +119,7 @@ def daily_rate_for(*, child: Any, on_date: date) -> tuple[Decimal, int]:
     )
     if days <= 0:
         raise BusinessRuleViolation(
-            gettext("{year}-{month:02d} oyida ish kuni yo'q — kalendarni tekshiring.").format(
+            gettext("{year}-{month:02d} oyida ish kuni yoʻq — kalendarni tekshiring.").format(
                 year=on_date.year, month=on_date.month
             )
         )
@@ -132,7 +132,7 @@ def daily_rate_for(*, child: Any, on_date: date) -> tuple[Decimal, int]:
     base = invoice.amount_due if invoice is not None else getattr(child.tariff, "amount", None)
     if base is None:
         raise BusinessRuleViolation(
-            gettext("{full_name}: tarif ham, hisob-faktura ham yo'q.").format(
+            gettext("{full_name}: tarif ham, hisob-faktura ham yoʻq.").format(
                 full_name=child.full_name
             )
         )
@@ -159,7 +159,7 @@ def create_claim(
     cheklovning o'zi, chunki u poygani yutqazmaydi.
     """
     if date_to < date_from:
-        raise BusinessRuleViolation(gettext("Tugash sanasi boshlanishdan oldin bo'lolmaydi."))
+        raise BusinessRuleViolation(gettext("Tugash sanasi boshlanishdan oldin boʻlolmaydi."))
 
     clash = (
         AbsenceClaim.objects.filter(child=child, date_from__lte=date_to, date_to__gte=date_from)
@@ -168,7 +168,7 @@ def create_claim(
     )
     if clash is not None:
         raise BusinessRuleViolation(
-            gettext("Bu kunlar uchun da'vo allaqachon bor: {date_from} — {date_to}.").format(
+            gettext("Bu kunlar uchun daʼvo allaqachon bor: {date_from} — {date_to}.").format(
                 date_from=clash.date_from, date_to=clash.date_to
             )
         )
@@ -196,7 +196,7 @@ def approve_claim(*, claim: AbsenceClaim, approved_by: Any = None, note: str = "
     """
     if claim.status != ClaimStatus.PENDING:
         raise BusinessRuleViolation(
-            gettext("Da'vo '{status}' holatida — tasdiqlab bo'lmaydi.").format(
+            gettext("Daʼvo '{status}' holatida — tasdiqlab boʻlmaydi.").format(
                 status=claim.get_status_display()
             )
         )
@@ -211,7 +211,7 @@ def approve_claim(*, claim: AbsenceClaim, approved_by: Any = None, note: str = "
     if days <= 0:
         raise BusinessRuleViolation(
             gettext(
-                "Bu oraliqda bog'cha ishlamagan (dam olish yoki bayram) — qaytariladigan kun yo'q."
+                "Bu oraliqda bogʻcha ishlamagan (dam olish yoki bayram) — qaytariladigan kun yoʻq."
             )
         )
 
@@ -260,7 +260,7 @@ def reject_claim(*, claim: AbsenceClaim, approved_by: Any = None, note: str = ""
     """Rad etilgan da'vo O'CHIRILMAYDI — nima so'ralgani yozuv bo'lib qoladi."""
     if claim.status != ClaimStatus.PENDING:
         raise BusinessRuleViolation(
-            gettext("Da'vo '{status}' holatida — rad etib bo'lmaydi.").format(
+            gettext("Daʼvo '{status}' holatida — rad etib boʻlmaydi.").format(
                 status=claim.get_status_display()
             )
         )

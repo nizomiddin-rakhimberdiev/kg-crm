@@ -107,9 +107,9 @@ class Discount(BranchScopedModel):
 class InvoiceStatus(models.TextChoices):
     DRAFT = "draft", gettext_lazy("Qoralama")
     ISSUED = "issued", gettext_lazy("Chiqarilgan")
-    PARTIALLY_PAID = "partially_paid", gettext_lazy("Qisman to'langan")
-    PAID = "paid", gettext_lazy("To'langan")
-    OVERDUE = "overdue", gettext_lazy("Muddati o'tgan")
+    PARTIALLY_PAID = "partially_paid", gettext_lazy("Qisman toʻlangan")
+    PAID = "paid", gettext_lazy("Toʻlangan")
+    OVERDUE = "overdue", gettext_lazy("Muddati oʻtgan")
     CANCELLED = "cancelled", gettext_lazy("Bekor qilingan")
 
 
@@ -230,7 +230,7 @@ class PaymentMethod(models.TextChoices):
 
     CASH = "cash", gettext_lazy("Naqd")
     TERMINAL = "terminal", gettext_lazy("Terminal")
-    BANK_TRANSFER = "bank_transfer", gettext_lazy("O'tkazma")
+    BANK_TRANSFER = "bank_transfer", gettext_lazy("Oʻtkazma")
     ONLINE = "online", gettext_lazy("Payme / Click")
 
 
@@ -422,7 +422,7 @@ class PaymentAllocation(BranchScopedModel):
 
 class EntryType(models.TextChoices):
     CHARGE = "charge", gettext_lazy("Hisoblangan")
-    PAYMENT = "payment", gettext_lazy("To'lov")
+    PAYMENT = "payment", gettext_lazy("Toʻlov")
     DISCOUNT = "discount", gettext_lazy("Chegirma")
     ADJUSTMENT = "adjustment", gettext_lazy("Tuzatish")
     REFUND = "refund", gettext_lazy("Qaytarish")
@@ -435,9 +435,9 @@ class Direction(models.TextChoices):
 
 class SourceType(models.TextChoices):
     INVOICE = "invoice", gettext_lazy("Hisob-faktura")
-    PAYMENT = "payment", gettext_lazy("To'lov")
+    PAYMENT = "payment", gettext_lazy("Toʻlov")
     DISCOUNT = "discount", gettext_lazy("Chegirma")
-    MANUAL = "manual", gettext_lazy("Qo'lda")
+    MANUAL = "manual", gettext_lazy("Qoʻlda")
 
 
 class ChildLedgerEntry(BranchScopedModel):

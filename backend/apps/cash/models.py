@@ -81,14 +81,14 @@ class MovementDirection(models.TextChoices):
 
 
 class MovementSource(models.TextChoices):
-    PAYMENT = "payment", gettext_lazy("To'lov")
-    PAYMENT_REVERSAL = "payment_reversal", gettext_lazy("To'lov qaytarildi")
+    PAYMENT = "payment", gettext_lazy("Toʻlov")
+    PAYMENT_REVERSAL = "payment_reversal", gettext_lazy("Toʻlov qaytarildi")
     EXPENSE = "expense", gettext_lazy("Chiqim")
     PAYROLL = "payroll", gettext_lazy("Oylik maosh")
     ADVANCE = "advance", gettext_lazy("Avans")
-    TRANSFER = "transfer", gettext_lazy("Qoplar orasida o'tkazma")
-    OPENING = "opening", gettext_lazy("Boshlang'ich qoldiq")
-    MANUAL = "manual", gettext_lazy("Qo'lda tuzatish")
+    TRANSFER = "transfer", gettext_lazy("Qoplar orasida oʻtkazma")
+    OPENING = "opening", gettext_lazy("Boshlangʻich qoldiq")
+    MANUAL = "manual", gettext_lazy("Qoʻlda tuzatish")
 
 
 class CashMovement(BranchScopedModel):

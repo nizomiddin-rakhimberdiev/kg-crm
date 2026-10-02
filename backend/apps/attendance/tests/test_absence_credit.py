@@ -32,7 +32,7 @@ def _child(tenant: Any, amount: str = "2200000") -> Child:
         tariff = TariffPlan.objects.create(
             organization=tenant.organization,
             branch=tenant.branch,
-            name="To'liq kun",
+            name="Toʻliq kun",
             amount=Decimal(amount),
         )
         return Child.objects.create(
@@ -188,7 +188,7 @@ def test_a_credit_is_applied_only_once(tenant_a: Any):
 
 
 def test_the_credit_never_makes_an_invoice_negative(tenant_a: Any):
-    """Bog'cha qarzdor bo'lib qolsa, u BALANSDA ko'rinadi, hujjatda emas."""
+    """Bogʻcha qarzdor boʻlib qolsa, u BALANSDA koʻrinadi, hujjatda emas."""
     child = _child(tenant_a, "500000")
     with organization_context(tenant_a.organization.id):
         claim = _claim(tenant_a, child, date(2026, 9, 1), date(2026, 9, 30))
@@ -234,7 +234,7 @@ def test_the_service_explains_an_overlap_before_the_database_refuses_it(tenant_a
 
 
 def test_a_rejected_claim_frees_the_days(tenant_a: Any):
-    """Rad etilgan da'vo kunlarni band qilmaydi — cheklov uni chiqarib tashlaydi."""
+    """Rad etilgan daʼvo kunlarni band qilmaydi — cheklov uni chiqarib tashlaydi."""
     child = _child(tenant_a)
     with organization_context(tenant_a.organization.id):
         first = _claim(tenant_a, child, date(2026, 9, 7), date(2026, 9, 11))
@@ -245,7 +245,7 @@ def test_a_rejected_claim_frees_the_days(tenant_a: Any):
 
 
 def test_there_is_no_minimum_length(tenant_a: Any):
-    """Egasining qarori: uch kun ham, o'n besh kun ham qaytariladi."""
+    """Egasining qarori: uch kun ham, oʻn besh kun ham qaytariladi."""
     child = _child(tenant_a, "2200000")
     with organization_context(tenant_a.organization.id):
         short = _claim(tenant_a, child, date(2026, 9, 7), date(2026, 9, 7))

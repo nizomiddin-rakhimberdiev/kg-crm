@@ -82,7 +82,7 @@ class TestPurchaseIsAlsoSpending:
         assert after == before - TOTAL
 
     def test_purchase_is_not_counted_twice(self, tenant_a, product, warehouse):
-        """Xarid chiqimga bog'lansa ham, foyda-zararda BIR marta ko'rinishi kerak."""
+        """Xarid chiqimga bogʻlansa ham, foyda-zararda BIR marta koʻrinishi kerak."""
         with organization_context(tenant_a.organization.id):
             movement = services.record_movement(
                 product=product,
@@ -126,7 +126,7 @@ class TestPurchaseCanBeSeparated:
             assert movement.expense is None
 
     def test_consumption_is_not_spending(self, tenant_a, product, warehouse):
-        """Iste'mol — pul harakati emas: pul xarid paytida allaqachon chiqqan."""
+        """Isteʼmol — pul harakati emas: pul xarid paytida allaqachon chiqqan."""
         with organization_context(tenant_a.organization.id):
             services.record_movement(
                 product=product,
@@ -145,7 +145,7 @@ class TestPurchaseCanBeSeparated:
             assert Expense.objects.count() == before
 
     def test_the_cash_account_can_be_chosen(self, tenant_a, product, warehouse):
-        """Q13: qaysi qopdan to'langani tanlanadi."""
+        """Q13: qaysi qopdan toʻlangani tanlanadi."""
         from apps.cash.services import account_for_method
 
         with organization_context(tenant_a.organization.id):

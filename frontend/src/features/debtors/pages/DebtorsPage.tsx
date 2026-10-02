@@ -54,8 +54,8 @@ const date = (value: string | null) =>
  * — tushunarsizlik va ishonchsizlik.
  */
 const ENTRY_LABEL: Record<string, string> = {
-  tuition: t("Oylik to'lov"),
-  payment: t("To'lov"),
+  tuition: t('Oylik toʻlov'),
+  payment: t('Toʻlov'),
   discount: t('Chegirma'),
   penalty: t('Jarima'),
   adjustment: t('Tuzatish'),
@@ -83,7 +83,7 @@ function StatementDrawer({ childId, onClose }: { childId: string; onClose: () =>
       <div className="p-6">
         <div className="mb-4 pr-10">
           <h2 className="text-lg font-bold text-tosh-900">
-            {query.data?.child.full_name ?? t("Ko'chirma")}
+            {query.data?.child.full_name ?? t('Koʻchirma')}
           </h2>
           <p className="mt-1 text-sm text-tosh-500">
             {t('Moliyaviy koʻchirma — har bir hisob-faktura va toʻlov')}
@@ -136,8 +136,8 @@ function StatementDrawer({ childId, onClose }: { childId: string; onClose: () =>
                     <EmptyRow
                       colSpan={4}
                       icon={CheckCircle2}
-                      title={t("Yozuv yo'q")}
-                      hint={t('Bu bola bo‘yicha hali hisob-faktura ham, to‘lov ham yo‘q.')}
+                      title={t('Yozuv yoʻq')}
+                      hint={t('Bu bola boʻyicha hali hisob-faktura ham, toʻlov ham yoʻq.')}
                     />
                   )}
                 </tbody>
@@ -208,7 +208,7 @@ export default function DebtorsPage() {
       setConfirming(null)
       setNotice(
         result.queued === 0
-          ? t('Hech kimga eslatma yuborilmadi — telefon raqami yo‘q yoki bugun allaqachon olgan.')
+          ? t('Hech kimga eslatma yuborilmadi — telefon raqami yoʻq yoki bugun allaqachon olgan.')
           : t('{queued} ta eslatma yuborildi.', { queued: result.queued }),
       )
       void queryClient.invalidateQueries({ queryKey: ['org', organizationId, 'debtors'] })
@@ -378,7 +378,7 @@ export default function DebtorsPage() {
             disabled={aiDays !== null}
             onChange={(event) => setOverdueOnly(event.target.checked)}
           />
-          {t("Faqat muddati o'tganlar")}
+          {t('Faqat muddati oʻtganlar')}
         </label>
 
         {debtorsQuery.data && (
@@ -400,13 +400,13 @@ export default function DebtorsPage() {
           <p className="px-4 py-8 text-center text-sm text-orik-800">
             {debtorsQuery.error instanceof ApiError
               ? debtorsQuery.error.message
-              : t("Ma'lumotni yuklab bo'lmadi.")}
+              : t('Maʼlumotni yuklab boʻlmadi.')}
           </p>
         )}
         {debtorsQuery.data && rows.length === 0 && (
           <div className="px-4 py-12 text-center">
             <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-tosh-200" />
-            <p className="text-sm text-tosh-500">{t("Qarzdorlar yo'q.")}</p>
+            <p className="text-sm text-tosh-500">{t('Qarzdorlar yoʻq.')}</p>
           </div>
         )}
 
@@ -443,7 +443,7 @@ export default function DebtorsPage() {
                           </p>
                         </>
                       ) : (
-                        <span className="text-orik-800">{t("vasiy yo'q")}</span>
+                        <span className="text-orik-800">{t('vasiy yoʻq')}</span>
                       )}
                     </td>
                     <td className="px-4 py-3">

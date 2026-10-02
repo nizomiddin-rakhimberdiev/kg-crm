@@ -3,7 +3,7 @@ RBAC testlari — docs/02 §11.2 matritsasi kod bilan mos ekanini qotiradi.
 
 Bu testlar hujjat va kod bir-biridan ajralib ketmasligi uchun: matritsa
 o'zgarsa, ular qizaradi va hujjat bilan birga yangilanadi (CLAUDE.md
-"docs va kod birga o'zgaradi").
+"docs va kod birga oʻzgaradi").
 """
 
 from __future__ import annotations
@@ -76,7 +76,7 @@ class TestSeededRoles:
 
 class TestPermissionEnforcement:
     def test_cashier_cannot_list_users(self, tenant_a):
-        """Kassirda `users.read` yo'q (docs/02 §11.2)."""
+        """Kassirda `users.read` yoʻq (docs/02 §11.2)."""
         client = _client_for(tenant_a, _member(tenant_a, "cashier"))
         assert client.get(reverse("v1:user-list")).status_code == 403
 
@@ -88,7 +88,7 @@ class TestPermissionEnforcement:
         assert response.status_code == 403
 
     def test_director_can_read_but_not_create_users(self, tenant_a):
-        """Direktorda `users` faqat o'qish (docs/02 §11.2)."""
+        """Direktorda `users` faqat oʻqish (docs/02 §11.2)."""
         client = _client_for(tenant_a, _member(tenant_a, "director"))
         assert client.get(reverse("v1:user-list")).status_code == 200
 
@@ -115,8 +115,8 @@ class TestPermissionEnforcement:
         """
         Ruxsat yo'qligi `403`, mavjud emasligi `404`.
 
-        Bu ikkisi ataylab farqlanadi: `403` "sizda huquq yo'q" (bir tashkilot
-        ichida), `404` esa "bunday narsa yo'q" (tashkilotlar orasida).
+        Bu ikkisi ataylab farqlanadi: `403` "sizda huquq yoʻq" (bir tashkilot
+        ichida), `404` esa "bunday narsa yoʻq" (tashkilotlar orasida).
         """
         client = _client_for(tenant_a, _member(tenant_a, "cashier"))
         response = client.get(reverse("v1:user-list"))
@@ -126,7 +126,7 @@ class TestPermissionEnforcement:
 
 class TestBranchScoping:
     def test_non_owner_sees_only_own_branch_users(self, tenant_a):
-        """Filial doirasi tashkilot filtridan KEYIN qo'llanadi (docs/02 §11.3)."""
+        """Filial doirasi tashkilot filtridan KEYIN qoʻllanadi (docs/02 §11.3)."""
         from apps.branches.models import Branch
 
         with organization_context(tenant_a.organization.id):
@@ -207,7 +207,7 @@ class TestUserCreation:
         response = tenant_a.client().post(
             reverse("v1:user-list"),
             {
-                "full_name": "Buzg'unchi",
+                "full_name": "Buzgʻunchi",
                 "email": "buzgunchi@alfa.uz",
                 "password": PASSWORD,
                 "role_id": str(tenant_b.role("cashier").id),
@@ -223,7 +223,7 @@ class TestUserCreation:
         response = tenant_a.client().post(
             reverse("v1:user-list"),
             {
-                "full_name": "Buzg'unchi",
+                "full_name": "Buzgʻunchi",
                 "email": "buzgunchi2@alfa.uz",
                 "password": PASSWORD,
                 "role_id": str(tenant_a.role("cashier").id),
@@ -342,17 +342,17 @@ class TestRoleCustomisation:
         assert "code" in response.json()["error"]["details"]
 
     def test_system_role_can_be_renamed(self, tenant_a):
-        """Nomi — bog'chaning atamasi, uni o'zgartirish mumkin."""
+        """Nomi — bogʻchaning atamasi, uni oʻzgartirish mumkin."""
         role = tenant_a.role("director")
 
         response = tenant_a.client().patch(
             reverse("v1:role-detail", args=[role.id]),
-            {"name": "Bog'cha mudiri"},
+            {"name": "Bogʻcha mudiri"},
             format="json",
         )
 
         assert response.status_code == 200
-        assert response.json()["data"]["name"] == "Bog'cha mudiri"
+        assert response.json()["data"]["name"] == "Bogʻcha mudiri"
 
 
 class TestSelfServiceProfile:
@@ -444,7 +444,7 @@ class TestProfilePhoto:
         assert str(tenant_a.organization.id) in photo_url
 
     def test_a_renamed_non_image_is_rejected(self, tenant_a):
-        """Kengaytmasi `.png` bo'lgan ixtiyoriy bayt to'plami rad etiladi."""
+        """Kengaytmasi `.png` boʻlgan ixtiyoriy bayt toʻplami rad etiladi."""
         from django.core.files.uploadedfile import SimpleUploadedFile
 
         response = tenant_a.client().post(

@@ -39,7 +39,7 @@ def tariff(tenant_a) -> TariffPlan:
         return TariffPlan.objects.create(
             organization=tenant_a.organization,
             branch=tenant_a.branch,
-            name="To'liq kun",
+            name="Toʻliq kun",
             amount=TARIFF,
         )
 
@@ -59,7 +59,7 @@ def _child(tenant_a, tariff, *, first: str, last: str, enrolled_on: date | None 
 
 
 def _board_row(tenant_a, child, year: int, month: int) -> dict:
-    """Bolaning To'lovlar doskasidagi qatori."""
+    """Bolaning Toʻlovlar doskasidagi qatori."""
     queryset = selectors.month_board_queryset(
         organization_id=tenant_a.organization.id, period_year=year, period_month=month
     )
@@ -68,7 +68,7 @@ def _board_row(tenant_a, child, year: int, month: int) -> dict:
 
 
 def _debtor_row(tenant_a, child) -> dict | None:
-    """Bolaning Qarzdorlar ro'yxatidagi qatori (bo'lmasa None)."""
+    """Bolaning Qarzdorlar roʻyxatidagi qatori (boʻlmasa None)."""
     return next(
         (r for r in selectors.debtor_rows() if r["child"]["id"] == str(child.id)),
         None,
@@ -117,7 +117,7 @@ class TestBalanceIsOneNumber:
 
 
 class TestAdvanceAllocation:
-    """PLAN 1.2 — Q1: to'lov eng eski ochiq fakturaga (FIFO), qoldiq avans."""
+    """PLAN 1.2 — Q1: toʻlov eng eski ochiq fakturaga (FIFO), qoldiq avans."""
 
     def test_payment_is_allocated_to_the_oldest_open_invoice(self, tenant_a, tariff):
         child = _child(tenant_a, tariff, first="Robiya", last="Ibragimova")
@@ -231,7 +231,7 @@ class TestFirstInvoice:
 
 
 class TestInvoiceRunPreview:
-    """PLAN 1.4 — ommaviy generatsiyadan oldin nima bo'lishini ko'rsatish."""
+    """PLAN 1.4 — ommaviy generatsiyadan oldin nima boʻlishini koʻrsatish."""
 
     def test_run_can_be_previewed_before_it_is_committed(self, tenant_a, tariff):
         from apps.children.models import Child

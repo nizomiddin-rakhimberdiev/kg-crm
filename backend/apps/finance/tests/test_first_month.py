@@ -37,7 +37,7 @@ def tariff(tenant_a) -> TariffPlan:
         return TariffPlan.objects.create(
             organization=tenant_a.organization,
             branch=tenant_a.branch,
-            name="To'liq kun",
+            name="Toʻliq kun",
             amount=TARIFF,
         )
 
@@ -99,7 +99,7 @@ class TestProration:
         assert invoice.amount_due == Decimal("142857.00")
 
     def test_only_the_first_month_is_prorated(self, tenant_a, tariff):
-        """Ikkinchi oy — to'liq tarif, garchi qabul oy o'rtasida bo'lsa ham."""
+        """Ikkinchi oy — toʻliq tarif, garchi qabul oy oʻrtasida boʻlsa ham."""
         child = _child(tenant_a, tariff, date(2026, 9, 17))
         with organization_context(tenant_a.organization.id):
             services.issue_invoice(child=child, period_year=2026, period_month=9)
@@ -108,7 +108,7 @@ class TestProration:
         assert october.amount_due == TARIFF
 
     def test_a_child_without_an_enrolment_date_pays_the_full_month(self, tenant_a, tariff):
-        """Import qilingan eski bolada qabul sanasi bo'lmasligi mumkin."""
+        """Import qilingan eski bolada qabul sanasi boʻlmasligi mumkin."""
         child = _child(tenant_a, tariff, None)
         with organization_context(tenant_a.organization.id):
             invoice = services.issue_invoice(child=child, period_year=2026, period_month=9)
@@ -153,7 +153,7 @@ class TestFirstMonthMode:
 
 class TestDueDate:
     def test_late_enrolment_gets_a_grace_period(self, tenant_a, tariff):
-        """Q3: muddat = max(to'lov kuni, qabul + imtiyoz kunlari)."""
+        """Q3: muddat = max(toʻlov kuni, qabul + imtiyoz kunlari)."""
         child = _child(tenant_a, tariff, date(2026, 9, 30))
         with organization_context(tenant_a.organization.id):
             invoice = services.issue_invoice(child=child, period_year=2026, period_month=9)
@@ -185,7 +185,7 @@ class TestDueDate:
         assert october.due_date == date(2026, 10, 10)
 
     def test_a_short_month_clamps_the_payment_day(self, tenant_a, tariff):
-        """To'lov kuni 31 bo'lsa, fevralda oyning oxirgi kuniga tushadi."""
+        """Toʻlov kuni 31 boʻlsa, fevralda oyning oxirgi kuniga tushadi."""
         child = _child(tenant_a, tariff, date(2026, 2, 2))
         with organization_context(tenant_a.organization.id):
             set_setting(organization=tenant_a.organization, key="finance.due_day", value=31)
@@ -195,7 +195,7 @@ class TestDueDate:
 
 
 class TestBillingPreview:
-    """PLAN 1.4 — tasdiqdan oldin nima bo'lishini ko'rsatish."""
+    """PLAN 1.4 — tasdiqdan oldin nima boʻlishini koʻrsatish."""
 
     def test_preview_and_run_agree(self, tenant_a, tariff):
         """
@@ -264,7 +264,7 @@ class TestBillingPreview:
         assert "22" in preview.rows[0].note
 
     def test_preview_shows_the_advance_that_will_be_consumed(self, tenant_a, tariff):
-        """Mudira avans yeyilishini TASDIQLASHDAN OLDIN ko'rishi kerak."""
+        """Mudira avans yeyilishini TASDIQLASHDAN OLDIN koʻrishi kerak."""
         child = _child(tenant_a, tariff, date(2026, 9, 1))
         with organization_context(tenant_a.organization.id):
             services.record_payment(child=child, amount=Decimal("200000"), method="cash")
@@ -275,7 +275,7 @@ class TestBillingPreview:
         assert preview.rows[0].advance == Decimal("200000.00")
 
     def test_next_month_mode_is_listed_not_crashed(self, tenant_a, tariff):
-        """Bitta bolaning qoidasi butun ishni to'xtatmasligi kerak."""
+        """Bitta bolaning qoidasi butun ishni toʻxtatmasligi kerak."""
         _child(tenant_a, tariff, date(2026, 9, 30))
         with organization_context(tenant_a.organization.id):
             set_setting(

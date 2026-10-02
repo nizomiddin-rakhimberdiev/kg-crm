@@ -479,7 +479,7 @@ class GroupViewSet(BranchScopedMixin, TenantViewSet):
         ).count()
         if active:
             raise BusinessRuleViolation(
-                gettext("Guruhda {active} ta faol bola bor — avval ularni ko'chiring.").format(
+                gettext("Guruhda {active} ta faol bola bor — avval ularni koʻchiring.").format(
                     active=active
                 )
             )

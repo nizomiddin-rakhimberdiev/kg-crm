@@ -25,7 +25,7 @@ afterEach(() => {
 })
 
 describe('ErrorBoundary', () => {
-  it('xato bo\'lmasa bolalarni ko\'rsatadi', () => {
+  it("xato bo'lmasa bolalarni ko'rsatadi", () => {
     render(
       <ErrorBoundary>
         <p>normal mazmun</p>
@@ -34,7 +34,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('normal mazmun')).toBeInTheDocument()
   })
 
-  it('xato bo\'lsa oq ekran emas, XABAR ko\'rsatadi', () => {
+  it("xato bo'lsa oq ekran emas, XABAR ko'rsatadi", () => {
     render(
       <ErrorBoundary>
         <Boom />

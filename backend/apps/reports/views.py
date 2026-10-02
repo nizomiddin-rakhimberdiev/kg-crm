@@ -39,7 +39,7 @@ def _parse_date(value: Any, fallback: date) -> date:
         return date.fromisoformat(str(value))
     except ValueError as exc:
         raise BusinessRuleViolation(
-            gettext("Sana formati noto'g'ri: {value}").format(value=value)
+            gettext("Sana formati notoʻgʻri: {value}").format(value=value)
         ) from exc
 
 
@@ -54,7 +54,7 @@ def _parse_int(value: Any, fallback: int, *, low: int, high: int) -> int:
         ) from exc
     if not low <= parsed <= high:
         raise BusinessRuleViolation(
-            gettext("Qiymat {low}–{high} oralig'ida bo'lishi kerak: {parsed}").format(
+            gettext("Qiymat {low}–{high} oraligʻida boʻlishi kerak: {parsed}").format(
                 low=low, high=high, parsed=parsed
             )
         )
@@ -158,7 +158,7 @@ _ACTION_REPORT: dict[str, str] = {
 class HasReportScope(permissions.BasePermission):
     """`reports.read` ustiga hisobot mavzusining ruxsatini tekshiradi."""
 
-    message = gettext_lazy("Bu amalga ruxsat yo'q.")
+    message = gettext_lazy("Bu amalga ruxsat yoʻq.")
 
     def has_permission(self, request: Request, view: Any) -> bool:
         action = getattr(view, "action", None)

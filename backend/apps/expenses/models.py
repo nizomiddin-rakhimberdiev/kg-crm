@@ -39,7 +39,7 @@ class ExpenseStatus(models.TextChoices):
     PENDING = "pending", gettext_lazy("Kutilmoqda")
     APPROVED = "approved", gettext_lazy("Tasdiqlangan")
     REJECTED = "rejected", gettext_lazy("Rad etilgan")
-    PAID = "paid", gettext_lazy("To'langan")
+    PAID = "paid", gettext_lazy("Toʻlangan")
 
 
 class Expense(BranchScopedModel):

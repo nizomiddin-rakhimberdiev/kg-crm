@@ -58,7 +58,7 @@ class TestSubscriptionEndpoint:
         `is_projection: true` bezak emas.
 
         U raqam hali OLINMAGANINI bildiradi. Haqiqiy hisob doim yopilgan
-        dalildan chiqadi — bu farq "kutilmagan hisob yo'q" va'dasining
+        dalildan chiqadi — bu farq "kutilmagan hisob yoʻq" va'dasining
         texnik asosi (docs/04 §18).
         """
         response = tenant_a.client().get(reverse("v1:billing-usage"))
@@ -138,7 +138,7 @@ class TestIsolation:
         assert api_client.get(reverse("v1:billing-subscription")).status_code == 401
 
     def test_only_the_owner_sees_billing(self, tenant_a):
-        """`billing` faqat Org Owner'da (docs/02 §11.2)."""
+        """`billing` faqat Org Ownerʼda (docs/02 §11.2)."""
         from rest_framework.test import APIClient
 
         from apps.accounts.authentication import issue_token_pair
@@ -203,7 +203,7 @@ class TestWriteGate:
         """
         `403` EMAS, `402`.
 
-        `403` "sizga ruxsat yo'q" degani — ya'ni ROL muammosi, va
+        `403` "sizga ruxsat yoʻq" degani — ya'ni ROL muammosi, va
         foydalanuvchi uni tuzata olmaydi. Bu yerda rol joyida: hisob
         to'lanmagan, va buni tuzatish mumkin. Kod farqi frontendga
         to'g'ri xabar ko'rsatish imkonini beradi.
@@ -213,7 +213,7 @@ class TestWriteGate:
         assert response.status_code == 402
 
     def test_payments_are_blocked_too(self, tenant_a):
-        """Pul qabul qilish ham yozish — u ham to'xtaydi."""
+        """Pul qabul qilish ham yozish — u ham toʻxtaydi."""
         _suspend(tenant_a)
         response = tenant_a.client().post(
             reverse("v1:payment-list"),
@@ -299,7 +299,7 @@ class TestInvoiceImmutability:
         assert invoice.total_amount == Decimal("400000.00")
 
     def test_invoice_arithmetic_is_enforced_by_the_database(self, tenant_a):
-        """Yig'indisi mos kelmaydigan hisob umuman yozilmasin."""
+        """Yigʻindisi mos kelmaydigan hisob umuman yozilmasin."""
         from django.db import IntegrityError, transaction
 
         with organization_context(tenant_a.organization.id):

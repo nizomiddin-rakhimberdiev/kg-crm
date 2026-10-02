@@ -132,7 +132,7 @@ def enroll_child(*, child: Child, group: Group, start_date: date | None = None) 
     ).count()
     if locked.capacity and active_count >= locked.capacity:
         raise BusinessRuleViolation(
-            gettext("'{name}' guruhi to'lgan ({active_count}/{capacity}).").format(
+            gettext("'{name}' guruhi toʻlgan ({active_count}/{capacity}).").format(
                 name=locked.name, active_count=active_count, capacity=locked.capacity
             )
         )
@@ -231,11 +231,11 @@ def change_status(
     to'liq olishi mumkin — bu shartnoma masalasi, tizimning qarori emas.
     """
     if status not in EnrollmentStatus.values:
-        raise BusinessRuleViolation(gettext("Noma'lum holat."))
+        raise BusinessRuleViolation(gettext("Nomaʼlum holat."))
     if not reason.strip():
-        raise BusinessRuleViolation(gettext("Holatni o'zgartirish uchun sabab yozing."))
+        raise BusinessRuleViolation(gettext("Holatni oʻzgartirish uchun sabab yozing."))
     if on_date > timezone.localdate():
-        raise BusinessRuleViolation(gettext("Sana kelajakda bo'la olmaydi."))
+        raise BusinessRuleViolation(gettext("Sana kelajakda boʻla olmaydi."))
 
     child.enrollment_status = status
     child.status_changed_on = on_date
@@ -316,7 +316,7 @@ def deletion_blockers(child: Child) -> list[str]:
     if Invoice.objects.filter(child=child).exists():
         blockers.append(gettext("hisob-faktura"))
     if Payment.objects.filter(child=child).exists():
-        blockers.append(gettext("to'lov"))
+        blockers.append(gettext("toʻlov"))
     if ChildLedgerEntry.objects.filter(child=child).exists():
         blockers.append(gettext("moliyaviy yozuv"))
     if AttendanceRecord.objects.filter(child=child).exists():
@@ -341,8 +341,8 @@ def delete_child(*, child: Child, actor: Any = None) -> None:
     if blockers:
         raise BusinessRuleViolation(
             gettext(
-                "Bu bolani o'chirib bo'lmaydi ({reasons}). Uni ARXIVGA oling — "
-                "ma'lumot saqlanadi, ro'yxatlardan chiqadi."
+                "Bu bolani oʻchirib boʻlmaydi ({reasons}). Uni ARXIVGA oling — "
+                "maʼlumot saqlanadi, roʻyxatlardan chiqadi."
             ).format(reasons=", ".join(blockers))
         )
     child.guardian_links.all().delete()

@@ -36,7 +36,7 @@ def _guardian(tenant, phone: str = "+998901112233", name: str = "Vasiy") -> Guar
 
 
 class TestSegments:
-    """Narx BO'LAKLAR bo'yicha — bu hisob shablon muharririda ham ko'rinadi."""
+    """Narx BOʻLAKLAR boʻyicha — bu hisob shablon muharririda ham koʻrinadi."""
 
     def test_latin_fits_160_characters(self):
         assert measure("a" * 160).parts == 1
@@ -47,7 +47,7 @@ class TestSegments:
         assert measure("ё" * 71).parts == 2
 
     def test_uzbek_apostrophe_doubles_the_price_until_it_is_replaced(self):
-        """Q11: `ʻ` GSM-7 da yo'q — bitta belgi narxni ikki baravar qiladi."""
+        """Q11: `ʻ` GSM-7 da yoʻq — bitta belgi narxni ikki baravar qiladi."""
         text = "Toʻlov qabul qilindi. " + "a" * 100
         assert measure(text).encoding == "ucs2"
         assert measure(sms_safe(text)).encoding == "gsm7"
@@ -108,7 +108,7 @@ class TestInvalidNumber:
     @pytest.mark.parametrize("phone", ["12345", "+1 555 0100", ""])
     def test_a_bad_number_never_reads_as_delivered(self, tenant_a, phone):
         problem = services.delivery_problem(phone)
-        assert problem, "sabab bo'lishi kerak"
+        assert problem, "sabab boʻlishi kerak"
 
 
 class TestDailyLimit:
@@ -133,7 +133,7 @@ class TestDailyLimit:
         assert second is None
 
     def test_a_payment_receipt_is_not_limited(self, tenant_a):
-        """Kvitansiya takrorlanmaydi va har biri yangi ma'lumot."""
+        """Kvitansiya takrorlanmaydi va har biri yangi maʼlumot."""
         guardian = _guardian(tenant_a)
         with organization_context(tenant_a.organization.id):
             services.queue_notification(
@@ -305,7 +305,7 @@ class TestReminderPreview:
 
 
 class TestLanguage:
-    """PLAN 3.4: ota-onaning tili xodimning tilidan boshqa bo'lishi mumkin."""
+    """PLAN 3.4: ota-onaning tili xodimning tilidan boshqa boʻlishi mumkin."""
 
     def test_a_russian_speaking_family_gets_the_russian_template(self, tenant_a):
         guardian = _guardian(tenant_a)
@@ -340,7 +340,7 @@ class TestLanguage:
         assert "qarzdorlik" in notification.rendered_body
 
     def test_a_missing_language_template_still_sends_something(self, tenant_a):
-        """Tilga mos shablon yo'q — xabar baribir ketadi, yo'qolmaydi."""
+        """Tilga mos shablon yoʻq — xabar baribir ketadi, yoʻqolmaydi."""
         guardian = _guardian(tenant_a)
         with organization_context(tenant_a.organization.id):
             services.seed_default_templates(tenant_a.organization)
@@ -394,7 +394,7 @@ class TestTemplateEditor:
 
 
 class TestSeedCommand:
-    """`seed_templates` — mavjud bog'chalarga yetishmayotgan shablon (PLAN 3.4, 3.7)."""
+    """`seed_templates` — mavjud bogʻchalarga yetishmayotgan shablon (PLAN 3.4, 3.7)."""
 
     @pytest.fixture(autouse=True)
     def _old_tenant(self, tenant_a):
@@ -416,9 +416,7 @@ class TestSeedCommand:
         from django.core.management import call_command
 
         out = StringIO()
-        call_command(
-            "seed_templates", tenant=tenant_a.organization.slug, dry_run=True, stdout=out
-        )
+        call_command("seed_templates", tenant=tenant_a.organization.slug, dry_run=True, stdout=out)
         with organization_context(tenant_a.organization.id):
             from apps.notifications.models import NotificationTemplate
 
@@ -451,13 +449,13 @@ class TestSeedCommand:
         with organization_context(tenant_a.organization.id):
             NotificationTemplate.objects.filter(
                 code="debt_reminder", language="uz", channel="sms"
-            ).update(body="Mening o'z matnim")
+            ).update(body="Mening oʻz matnim")
         call_command("seed_templates", tenant=tenant_a.organization.slug, stdout=StringIO())
         with organization_context(tenant_a.organization.id):
             kept = NotificationTemplate.objects.get(
                 code="debt_reminder", language="uz", channel="sms"
             )
-        assert kept.body == "Mening o'z matnim"
+        assert kept.body == "Mening oʻz matnim"
 
     def test_without_a_target_it_refuses(self):
         from io import StringIO

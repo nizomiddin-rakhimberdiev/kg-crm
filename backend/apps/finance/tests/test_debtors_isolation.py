@@ -30,7 +30,7 @@ pytestmark = [pytest.mark.django_db, pytest.mark.tenancy]
 
 
 def _indebted_child(tenant, name: str) -> Child:
-    """Qarzdor bola yaratadi: tarif + yozilgan, to'lanmagan hisob-faktura."""
+    """Qarzdor bola yaratadi: tarif + yozilgan, toʻlanmagan hisob-faktura."""
     with organization_context(tenant.organization.id):
         # Tarif nomi filial ichida noyob — har bir bola uchun o'ziniki.
         tariff = TariffPlan.objects.create(
@@ -70,7 +70,7 @@ def test_debtor_statement_of_another_tenant_is_404(tenant_a, tenant_b):
     """
     403 emas, 404.
 
-    403 "bunday bola bor, lekin sizga ruxsat yo'q" degani bo'lardi — ya'ni
+    403 "bunday bola bor, lekin sizga ruxsat yoʻq" degani bo'lardi — ya'ni
     boshqa bog'chada shu ID borligini tasdiqlardi (docs/04 §2).
     """
     foreign = _indebted_child(tenant_b, "Begona")
@@ -148,7 +148,7 @@ def test_balance_is_not_multiplied_by_the_invoice_count(tenant_a):
 
         assert debit - credit == Decimal("2000000.00")
         assert row.ledger_balance == Decimal("2000000.00"), (
-            f"Balans {row.ledger_balance} — hisob-fakturalar soniga ko'paytirilgan"
+            f"Balans {row.ledger_balance} — hisob-fakturalar soniga koʻpaytirilgan"
         )
 
 
@@ -161,7 +161,7 @@ def test_malformed_id_is_404_not_500(tenant_a):
     `filter(pk="not-a-uuid")` `ValidationError` ko'taradi va `500`
     bo'lib chiqadi — qolgan hamma endpoint esa `404` beradi.
 
-    Farq muhim: `500` "bu yerda kutilmagan narsa bo'ldi" deb aytadi va
+    Farq muhim: `500` "bu yerda kutilmagan narsa boʻldi" deb aytadi va
     skanerlaydigan odamga qazishni davom ettirish uchun signal beradi.
     """
     client = tenant_a.client()

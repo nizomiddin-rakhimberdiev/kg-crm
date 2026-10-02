@@ -22,7 +22,7 @@ __all__ = ["PayrollPayout", "PayoutPart", "PayrollRun", "PayrollItem", "PayrollS
 class PayrollStatus(models.TextChoices):
     DRAFT = "draft", gettext_lazy("Qoralama")
     FINALIZED = "finalized", gettext_lazy("Yakunlangan")
-    PAID = "paid", gettext_lazy("To'langan")
+    PAID = "paid", gettext_lazy("Toʻlangan")
 
 
 class PayrollRun(BranchScopedModel):

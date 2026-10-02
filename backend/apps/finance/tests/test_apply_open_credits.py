@@ -30,12 +30,12 @@ TARIFF = Decimal("1500000.00")
 
 
 def _setup(tenant) -> Child:
-    """Auditdagi Ibragimov Robiya holati: faktura bor, pul avans bo'lib yotibdi."""
+    """Auditdagi Ibragimov Robiya holati: faktura bor, pul avans boʻlib yotibdi."""
     with organization_context(tenant.organization.id):
         tariff = TariffPlan.objects.create(
             organization=tenant.organization,
             branch=tenant.branch,
-            name="To'liq kun",
+            name="Toʻliq kun",
             amount=TARIFF,
         )
         child = Child.objects.create(

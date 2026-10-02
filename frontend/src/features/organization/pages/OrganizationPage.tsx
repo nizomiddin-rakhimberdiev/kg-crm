@@ -18,7 +18,7 @@ import { cn, formatDate } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
 const FIELDS: Array<[keyof OrganizationInput, string, string]> = [
-  ['name', t("Bog'cha nomi"), 'text'],
+  ['name', t('Bogʻcha nomi'), 'text'],
   ['legal_name', t('Yuridik nomi'), 'text'],
   ['tax_id', t('STIR / INN'), 'text'],
   ['contact_email', t('Aloqa emaili'), 'email'],
@@ -78,7 +78,7 @@ export default function OrganizationPage() {
         setError(err.message)
         setFieldErrors(err.fieldErrors())
       } else {
-        setError(t("Saqlab bo'lmadi."))
+        setError(t('Saqlab boʻlmadi.'))
       }
     },
   })
@@ -89,7 +89,7 @@ export default function OrganizationPage() {
   if (query.isError) {
     return (
       <p className="py-8 text-center text-sm text-red-600">
-        {query.error instanceof ApiError ? query.error.message : t("Ma'lumotni yuklab bo'lmadi.")}
+        {query.error instanceof ApiError ? query.error.message : t('Maʼlumotni yuklab boʻlmadi.')}
       </p>
     )
   }
@@ -97,9 +97,9 @@ export default function OrganizationPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t("Bog'cha profili")}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Bogʻcha profili')}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          {t("Tashkilot ma'lumotlari — schyot-faktura va hujjatlarda shular ishlatiladi.")}
+          {t('Tashkilot maʼlumotlari — schyot-faktura va hujjatlarda shular ishlatiladi.')}
         </p>
       </div>
 
@@ -111,7 +111,7 @@ export default function OrganizationPage() {
           <div>
             <p className="font-semibold text-slate-900">{query.data?.name}</p>
             <p className="text-xs text-slate-400">
-              {t("Identifikator: {slug} · Ro'yxatdan o'tgan:", { slug: query.data?.slug })}{' '}
+              {t('Identifikator: {slug} · Roʻyxatdan oʻtgan:', { slug: query.data?.slug })}{' '}
               {query.data ? formatDate(query.data.created_at) : '—'}
             </p>
           </div>

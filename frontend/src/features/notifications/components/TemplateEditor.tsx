@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
 const LANGUAGES: Array<[NotificationTemplate['language'], string]> = [
-  ['uz', t("O'zbekcha")],
+  ['uz', t('Oʻzbekcha')],
   ['ru', t('Ruscha')],
 ]
 
@@ -43,7 +43,7 @@ const CHANNELS: Array<[NotificationTemplate['channel'], string]> = [
 ]
 
 const CODE_LABEL: Record<string, string> = {
-  payment_received: t("To'lov qabul qilindi"),
+  payment_received: t('Toʻlov qabul qilindi'),
   debt_reminder: t('Qarzdorlik eslatmasi'),
   absence_notice: t('Kelmagani haqida'),
   custom: t('Erkin xabar'),
@@ -177,7 +177,7 @@ function OneTemplate({
     return (
       <div className="rounded-lg border border-dashed border-tosh-200 p-3">
         <p className="text-xs text-tosh-500">
-          {t('Bu tilda shablon yo‘q — ota-onalar boshqa tildagi matnni oladi.')}
+          {t('Bu tilda shablon yoʻq — ota-onalar boshqa tildagi matnni oladi.')}
         </p>
         <button
           type="button"
@@ -185,7 +185,7 @@ function OneTemplate({
           className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-tosh-200 px-2.5 py-1.5 text-xs font-medium text-tosh-700 hover:bg-tosh-50"
         >
           <Plus className="h-3.5 w-3.5" />
-          {t('Shablon qo‘shish')}
+          {t('Shablon qoʻshish')}
         </button>
       </div>
     )
@@ -212,7 +212,7 @@ function OneTemplate({
             className="inline-flex items-center gap-1.5 rounded-lg border border-tosh-200 px-2.5 py-1.5 text-xs font-medium text-tosh-700 hover:bg-tosh-50 disabled:opacity-40"
           >
             <Eye className="h-3.5 w-3.5" />
-            {t('Ko‘rib chiqish')}
+            {t('Koʻrib chiqish')}
           </button>
           <button
             type="button"
@@ -300,7 +300,7 @@ export function TemplateEditor({ templates }: { templates: NotificationTemplate[
         </div>
       </div>
       <p className="mt-1 text-xs text-tosh-500">
-        {t('O‘rinbosarlar yuborishda to‘ldiriladi — tugmani bosib matnga qo‘shing.')}
+        {t('Oʻrinbosarlar yuborishda toʻldiriladi — tugmani bosib matnga qoʻshing.')}
       </p>
 
       <div className="mt-4 space-y-5">

@@ -25,7 +25,7 @@ describe('access token', () => {
 })
 
 describe('refresh token', () => {
-  it('manzil bo\'yicha ajratiladi', () => {
+  it("manzil bo'yicha ajratiladi", () => {
     tokenStorage.setRefresh('quyosh-token', 'quyosh')
     tokenStorage.setRefresh('bahor-token', 'bahor')
 
@@ -33,13 +33,13 @@ describe('refresh token', () => {
     expect(tokenStorage.getRefresh('bahor')).toBe('bahor-token')
   })
 
-  it('ikkinchi bog\'chaga kirish birinchisini chiqarib yubormaydi', () => {
+  it("ikkinchi bog'chaga kirish birinchisini chiqarib yubormaydi", () => {
     tokenStorage.setRefresh('quyosh-token', 'quyosh')
     tokenStorage.setRefresh('bahor-token', 'bahor')
     expect(tokenStorage.getRefresh('quyosh')).toBe('quyosh-token')
   })
 
-  it('o\'chirish faqat o\'sha bog\'chaga tegadi', () => {
+  it("o'chirish faqat o'sha bog'chaga tegadi", () => {
     tokenStorage.setRefresh('quyosh-token', 'quyosh')
     tokenStorage.setRefresh('bahor-token', 'bahor')
     tokenStorage.setRefresh(null, 'quyosh')

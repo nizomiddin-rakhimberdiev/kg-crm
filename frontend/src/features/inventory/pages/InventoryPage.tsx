@@ -20,10 +20,10 @@ import { t } from '@/lib/i18n'
 const UNITS = ['kg', 'g', 'l', 'ml', 'pcs', 'pack'] as const
 const MOVEMENT_LABELS: Record<string, string> = {
   purchase: t('Xarid'),
-  consumption: t("Iste'mol"),
+  consumption: t('Isteʼmol'),
   adjustment: t('Tuzatish'),
   waste: t('Yaroqsiz'),
-  transfer: t("Ko'chirish"),
+  transfer: t('Koʻchirish'),
 }
 
 export default function InventoryPage() {
@@ -113,13 +113,13 @@ export default function InventoryPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Ombor')}</h1>
           <p className="mt-1 text-sm text-slate-500">
-            {t("Qoldiq harakatlardan hisoblanadi — to'g'ridan-to'g'ri tahrirlanmaydi.")}
+            {t('Qoldiq harakatlardan hisoblanadi — toʻgʻridan-toʻgʻri tahrirlanmaydi.')}
           </p>
         </div>
         {lowCount > 0 && (
           <div className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
             <AlertTriangle className="h-4 w-4" />
-            {t("{lowCount} ta mahsulot qoldig'i past", { lowCount })}
+            {t('{lowCount} ta mahsulot qoldigʻi past', { lowCount })}
           </div>
         )}
       </div>
@@ -199,7 +199,7 @@ export default function InventoryPage() {
             disabled={createProduct.isPending}
             className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
           >
-            <Plus className="h-4 w-4" /> {t("Qo'shish")}
+            <Plus className="h-4 w-4" /> {t('Qoʻshish')}
           </button>
         </form>
       )}
@@ -245,7 +245,7 @@ export default function InventoryPage() {
       {products.length === 0 && !productsQuery.isPending && (
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-12 text-center">
           <Package className="mx-auto mb-3 h-10 w-10 text-slate-200" />
-          <p className="text-sm text-slate-500">{t("Hozircha mahsulot yo'q.")}</p>
+          <p className="text-sm text-slate-500">{t('Hozircha mahsulot yoʻq.')}</p>
         </div>
       )}
 
@@ -347,7 +347,7 @@ export default function InventoryPage() {
               </li>
             ))}
             {movementsQuery.data?.items.length === 0 && (
-              <li className="py-4 text-center text-slate-400">{t("Harakat yo'q.")}</li>
+              <li className="py-4 text-center text-slate-400">{t('Harakat yoʻq.')}</li>
             )}
           </ul>
         </div>

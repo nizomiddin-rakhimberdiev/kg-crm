@@ -37,7 +37,7 @@ class TestTenantIsolation:
         assert theirs.id not in ids
 
     def test_other_organization_row_is_not_found_by_pk(self, organization, rows):
-        """Begona qatorga PK bo'yicha murojaat — DoesNotExist, 403 emas."""
+        """Begona qatorga PK boʻyicha murojaat — DoesNotExist, 403 emas."""
         _, theirs = rows
         with organization_context(organization.id), pytest.raises(TenantThing.DoesNotExist):
             TenantThing.objects.get(pk=theirs.id)
@@ -62,7 +62,7 @@ class TestTenantIsolation:
         assert remaining == []
 
     def test_count_and_aggregate_are_scoped(self, organization, rows):
-        """Agregatlar ham cheklanadi — hisoblash orqali sizib chiqish bo'lmaydi."""
+        """Agregatlar ham cheklanadi — hisoblash orqali sizib chiqish boʻlmaydi."""
         with organization_context(organization.id):
             assert TenantThing.objects.count() == 1
 
@@ -80,7 +80,7 @@ class TestFailClosed:
         Kontekstsiz so'rov — xato, bo'sh natija emas.
 
         Jimgina bo'sh ro'yxat qaytarish xavfliroq: u haqiqiy tenant xatosini
-        yashiradi va "ma'lumot yo'qoldi" degan noto'g'ri diagnostikaga olib
+        yashiradi va "maʼlumot yoʻqoldi" degan noto'g'ri diagnostikaga olib
         keladi.
         """
         with pytest.raises(TenantScopeMissing):
@@ -103,7 +103,7 @@ class TestFailClosed:
 
 class TestExplicitEscapeHatches:
     def test_unscoped_sees_everything(self, rows):
-        """`.unscoped()` — ataylab, grep bilan topiladigan chiqish yo'li."""
+        """`.unscoped()` — ataylab, grep bilan topiladigan chiqish yoʻli."""
         assert TenantThing.objects.unscoped().count() == 2
 
     def test_all_objects_manager_is_unscoped(self, rows):

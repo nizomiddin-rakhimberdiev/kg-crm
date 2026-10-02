@@ -34,7 +34,7 @@ class TestPublicSignupIsClosed:
         response = api_client.post(
             "/api/v1/auth/signup",
             {
-                "organization_name": "Yangi Bog'cha",
+                "organization_name": "Yangi Bogʻcha",
                 "contact_email": "owner@yangi.uz",
                 "full_name": "Aziz Karimov",
                 "password": PASSWORD,
@@ -47,7 +47,7 @@ class TestPublicSignupIsClosed:
         from apps.organizations.models import Organization
 
         with platform_context():
-            assert not Organization.objects.filter(name="Yangi Bog'cha").exists()
+            assert not Organization.objects.filter(name="Yangi Bogʻcha").exists()
 
 
 class TestLogin:
@@ -69,8 +69,8 @@ class TestLogin:
             format="json",
         )
         assert response.status_code == 401
-        # Xabar "email yo'q" va "parol xato" ni farqlamasligi kerak.
-        assert response.json()["error"]["message"] == "Email yoki parol noto'g'ri."
+        # Xabar "email yoʻq" va "parol xato" ni farqlamasligi kerak.
+        assert response.json()["error"]["message"] == "Email yoki parol notoʻgʻri."
 
     def test_unknown_email_gives_identical_response(self, api_client, tenant_a):
         known = api_client.post(
@@ -83,11 +83,11 @@ class TestLogin:
             {"email": "yoq@example.uz", "password": "noto-g-ri"},
             format="json",
         ).json()
-        assert known == unknown, "Javob mavjud va mavjud bo'lmagan emailni farqlamasin"
+        assert known == unknown, "Javob mavjud va mavjud boʻlmagan emailni farqlamasin"
 
 
 class TestMultiOrganizationLogin:
-    """Bir odam ikki bog'chada ishlashi mumkin (docs/03 §10.6)."""
+    """Bir odam ikki bogʻchada ishlashi mumkin (docs/03 §10.6)."""
 
     @pytest.fixture
     def shared_email_user(self, tenant_a, tenant_b) -> str:
@@ -134,7 +134,7 @@ class TestMultiOrganizationLogin:
 
     def test_wrong_password_never_lists_organizations(self, api_client, shared_email_user):
         """
-        Login "bu email qaysi bog'chalarda bor?" orakuli bo'lmasligi kerak.
+        Login "bu email qaysi bogʻchalarda bor?" orakuli bo'lmasligi kerak.
 
         Parol noto'g'ri bo'lsa tashkilotlar ro'yxati umuman qaytmaydi.
         """
@@ -162,7 +162,7 @@ class TestRefreshAndLogout:
         assert response.json()["data"]["refresh"] != login["refresh"]
 
     def test_old_refresh_token_stops_working(self, api_client, tenant_a):
-        """Rotatsiyadan keyin eski token darhol o'ladi — qayta ishlatishga yo'l yo'q."""
+        """Rotatsiyadan keyin eski token darhol oʻladi — qayta ishlatishga yoʻl yoʻq."""
         login = api_client.post(
             reverse("v1:auth-login"),
             {"email": tenant_a.owner.email, "password": PASSWORD},
@@ -249,10 +249,10 @@ class TestRefreshTokenReuse:
         with organization_context(tenant_a.organization.id):
             assert not RefreshToken.objects.filter(
                 user=tenant_a.owner, revoked_at__isnull=True
-            ).exists(), "ochiq sessiya qoldi — o'g'ri hamon kira oladi"
+            ).exists(), "ochiq sessiya qoldi — oʻgʻri hamon kira oladi"
 
     def test_the_thiefs_fresh_token_stops_working_too(self, api_client, tenant_a):
-        """Eng muhimi: o'g'ri olgan YANGI token ham o'ladi."""
+        """Eng muhimi: oʻgʻri olgan YANGI token ham oʻladi."""
         first = self._login(api_client, tenant_a)
         stolen_new = api_client.post(
             reverse("v1:auth-refresh"), {"refresh": first}, format="json"

@@ -79,7 +79,7 @@ httpClient.interceptors.response.use(
     const config = error.config as (InternalAxiosRequestConfig & { _retried?: boolean }) | undefined
 
     if (!error.response) {
-      throw new ApiError('NETWORK_ERROR', t("Serverga ulanib bo'lmadi. Internetni tekshiring."))
+      throw new ApiError('NETWORK_ERROR', t('Serverga ulanib boʻlmadi. Internetni tekshiring.'))
     }
 
     _lastRequestId = (error.response.headers?.['x-request-id'] as string) ?? _lastRequestId

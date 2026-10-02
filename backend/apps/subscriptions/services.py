@@ -154,10 +154,10 @@ def accept_trial(
     ochiq aytilgani.
     """
     if subscription.status != SubscriptionStatus.TRIALING:
-        raise BusinessRuleViolation(gettext("Faqat sinov davridagi obunani o'tkazish mumkin."))
+        raise BusinessRuleViolation(gettext("Faqat sinov davridagi obunani oʻtkazish mumkin."))
     if payment_term not in TERM_DISCOUNTS:
         raise BusinessRuleViolation(
-            gettext("Noma'lum to'lov muddati: {payment_term}").format(payment_term=payment_term)
+            gettext("Nomaʼlum toʻlov muddati: {payment_term}").format(payment_term=payment_term)
         )
 
     months = TERM_MONTHS[payment_term]
@@ -211,10 +211,10 @@ def change_payment_term(*, subscription: Subscription, payment_term: str) -> Sub
     """
     if payment_term not in TERM_DISCOUNTS:
         raise BusinessRuleViolation(
-            gettext("Noma'lum to'lov muddati: {payment_term}").format(payment_term=payment_term)
+            gettext("Nomaʼlum toʻlov muddati: {payment_term}").format(payment_term=payment_term)
         )
     if subscription.status in (SubscriptionStatus.CANCELLED, SubscriptionStatus.SUSPENDED):
-        raise BusinessRuleViolation(gettext("Bu holatda muddatni o'zgartirib bo'lmaydi."))
+        raise BusinessRuleViolation(gettext("Bu holatda muddatni oʻzgartirib boʻlmaydi."))
 
     subscription.payment_term = payment_term
     subscription.discount_percent = TERM_DISCOUNTS[payment_term]
@@ -433,7 +433,7 @@ def issue_invoice(
     ya'ni ortiqcha faqat undan oshgani uchun olinadi (docs/01 §4.3).
     """
     if snapshot.closed_at is None:
-        raise BusinessRuleViolation(gettext("Yopilmagan o'lchovdan hisob yozib bo'lmaydi."))
+        raise BusinessRuleViolation(gettext("Yopilmagan oʻlchovdan hisob yozib boʻlmaydi."))
 
     quote = pricing.quote(
         plan=subscription.plan,
@@ -482,14 +482,14 @@ def record_subscription_payment(
     """
     locked = SubscriptionInvoice.objects.select_for_update().get(pk=invoice.pk)
     if locked.status == SubscriptionInvoiceStatus.CANCELLED:
-        raise BusinessRuleViolation(gettext("Bekor qilingan hisobga to'lov yozib bo'lmaydi."))
+        raise BusinessRuleViolation(gettext("Bekor qilingan hisobga toʻlov yozib boʻlmaydi."))
     if amount <= 0:
-        raise BusinessRuleViolation(gettext("To'lov summasi noldan katta bo'lishi kerak."))
+        raise BusinessRuleViolation(gettext("Toʻlov summasi noldan katta boʻlishi kerak."))
 
     paid = sum((payment.amount for payment in locked.payments.all()), Decimal("0"))
     if paid + amount > locked.total_amount:
         raise BusinessRuleViolation(
-            gettext("Ortiqcha to'lov: qoldiq {v}, kiritilgan {amount}.").format(
+            gettext("Ortiqcha toʻlov: qoldiq {v}, kiritilgan {amount}.").format(
                 v=locked.total_amount - paid, amount=amount
             )
         )

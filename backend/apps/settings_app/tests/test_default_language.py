@@ -22,7 +22,7 @@ def test_default_is_uzbek():
 
 
 def test_me_exposes_the_organization_language(tenant_a: Any):
-    """Frontend uni boot paytida `/auth/me` dan oladi — alohida so'rovsiz."""
+    """Frontend uni boot paytida `/auth/me` dan oladi — alohida soʻrovsiz."""
     body = tenant_a.client().get("/api/v1/auth/me").json()["data"]
     assert body["organization_settings"]["default_language"] == "uz"
 

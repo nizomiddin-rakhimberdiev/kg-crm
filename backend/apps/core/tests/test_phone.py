@@ -30,11 +30,11 @@ class TestNormalisation:
         ],
     )
     def test_every_spelling_lands_on_one_form(self, typed):
-        """Bazada bitta ko'rinish bo'lishi SHART — aks holda dublikat topilmaydi."""
+        """Bazada bitta koʻrinish boʻlishi SHART — aks holda dublikat topilmaydi."""
         assert normalise_phone(typed) == "+998901234567"
 
     def test_an_empty_value_stays_empty(self):
-        """Telefon hamma joyda majburiy emas: import qilingan bola vasiysiz bo'lishi mumkin."""
+        """Telefon hamma joyda majburiy emas: import qilingan bola vasiysiz boʻlishi mumkin."""
         assert normalise_phone("") == ""
         assert normalise_phone("   ") == ""
 
@@ -105,11 +105,11 @@ class TestReportCommand:
 
         assert "12345" in report
         assert "Yozuv Eski" in report
-        assert "+998901234567" not in report, "to'g'ri raqam ro'yxatga tushmasligi kerak"
+        assert "+998901234567" not in report, "toʻgʻri raqam roʻyxatga tushmasligi kerak"
 
         with organization_context(tenant_a.organization.id):
             bad.refresh_from_db()
-            assert bad.phone == "12345", "buyruq hech narsani o'zgartirmasligi kerak"
+            assert bad.phone == "12345", "buyruq hech narsani oʻzgartirmasligi kerak"
 
     def test_a_clean_tenant_reports_nothing(self, tenant_a):
         from io import StringIO

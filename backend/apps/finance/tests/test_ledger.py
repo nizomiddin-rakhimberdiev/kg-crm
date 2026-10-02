@@ -40,7 +40,7 @@ def tariff(tenant_a) -> TariffPlan:
         return TariffPlan.objects.create(
             organization=tenant_a.organization,
             branch=tenant_a.branch,
-            name="To'liq kun",
+            name="Toʻliq kun",
             amount=Decimal("1500000.00"),
         )
 
@@ -93,7 +93,7 @@ class TestLedgerContract:
             )
 
     def test_database_rejects_negative_amount(self, tenant_a, child):
-        """Servis chetlab o'tilsa ham baza to'sadi (D1)."""
+        """Servis chetlab oʻtilsa ham baza toʻsadi (D1)."""
         with (
             organization_context(tenant_a.organization.id),
             pytest.raises(IntegrityError),
@@ -164,7 +164,7 @@ class TestInvoiceIssuing:
             assert ChildLedgerEntry.objects.filter(child=child).count() == 1
 
     def test_database_blocks_duplicate_period(self, tenant_a, child):
-        """Servis chetlab o'tilsa ham qisman unikal indeks to'sadi."""
+        """Servis chetlab oʻtilsa ham qisman unikal indeks toʻsadi."""
         with organization_context(tenant_a.organization.id):
             services.issue_invoice(child=child, period_year=2026, period_month=7)
             with pytest.raises(IntegrityError), transaction.atomic():
@@ -283,7 +283,7 @@ class TestCancellation:
         """
         Bekor qilish ledger'dan qator O'CHIRMAYDI — teng kredit qo'shadi.
 
-        Shunda "nima bo'ldi?" degan savolga jurnal javob beradi.
+        Shunda "nima boʻldi?" degan savolga jurnal javob beradi.
         """
         with organization_context(tenant_a.organization.id):
             invoice = services.issue_invoice(child=child, period_year=2026, period_month=7)
@@ -300,7 +300,7 @@ class TestCancellation:
             assert invoice.status == InvoiceStatus.CANCELLED
 
     def test_cancelled_period_can_be_reissued(self, tenant_a, child):
-        """Bekor qilingandan keyin o'sha davrga yangisini chiqarish mumkin."""
+        """Bekor qilingandan keyin oʻsha davrga yangisini chiqarish mumkin."""
         with organization_context(tenant_a.organization.id):
             first = services.issue_invoice(child=child, period_year=2026, period_month=7)
             services.cancel_invoice(invoice=first)
@@ -465,7 +465,7 @@ class TestEndpoints:
         assert client.delete(url).status_code == 405
 
     def test_ledger_has_no_write_endpoint(self, tenant_a, child):
-        """Ledger'ga API orqali qo'lda yozuv qo'shib bo'lmaydi."""
+        """Ledgerʼga API orqali qoʻlda yozuv qoʻshib boʻlmaydi."""
         client = tenant_a.client()
         response = client.post(
             reverse("v1:ledger-list"),
@@ -501,7 +501,7 @@ class TestEndpoints:
         assert "topilmadi" in response.json()["error"]["message"]
 
     def test_cashier_can_generate_invoices(self, tenant_a, child):
-        """Kassirda `payments` to'liq (docs/02 §11.2)."""
+        """Kassirda `payments` toʻliq (docs/02 §11.2)."""
         from rest_framework.test import APIClient
 
         from apps.accounts.authentication import issue_token_pair

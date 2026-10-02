@@ -59,7 +59,7 @@ class TariffPlanViewSet(BranchScopedMixin, TenantViewSet):
         if instance.children.filter(is_active=True).exists():
             raise BusinessRuleViolation(
                 gettext(
-                    "Bu tarifga biriktirilgan bolalar bor — avval ularni boshqa tarifga o'tkazing."
+                    "Bu tarifga biriktirilgan bolalar bor — avval ularni boshqa tarifga oʻtkazing."
                 )
             )
         instance.is_active = False
@@ -337,10 +337,10 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
             month = int(request.query_params.get("period_month") or today.month)
         except ValueError as exc:
             raise BusinessRuleViolation(
-                gettext("`period_year` va `period_month` butun son bo'lishi kerak.")
+                gettext("`period_year` va `period_month` butun son boʻlishi kerak.")
             ) from exc
         if not 1 <= month <= 12:
-            raise BusinessRuleViolation(gettext("Oy 1–12 oralig'ida bo'lishi kerak."))
+            raise BusinessRuleViolation(gettext("Oy 1–12 oraligʻida boʻlishi kerak."))
         return year, month
 
     @staticmethod

@@ -21,8 +21,8 @@ from apps.subscriptions.permissions import SubscriptionWriteGate
 
 # Darvozasiz qoladigan endpointlar — har biri sabab bilan.
 GATE_EXEMPT: dict[str, str] = {
-    "billing": "Hisobni ko'rish va to'lash yo'li ochiq qolishi shart.",
-    "platform": "Vendor tekisligi — mijoz obunasiga umuman bog'liq emas (ADR-10).",
+    "billing": "Hisobni koʻrish va toʻlash yoʻli ochiq qolishi shart.",
+    "platform": "Vendor tekisligi — mijoz obunasiga umuman bogʻliq emas (ADR-10).",
 }
 
 
@@ -36,15 +36,15 @@ def test_write_gate_is_everywhere():
             missing.append(basename)
 
     assert not missing, (
-        f"Bu endpointlarda obuna darvozasi yo'q: {sorted(missing)}. "
-        f"Ya'ni to'lamagan mijoz ularga yozishda davom etadi. "
-        f"`permission_classes` ga `SubscriptionWriteGate` qo'shing yoki "
+        f"Bu endpointlarda obuna darvozasi yoʻq: {sorted(missing)}. "
+        f"Yaʼni toʻlamagan mijoz ularga yozishda davom etadi. "
+        f"`permission_classes` ga `SubscriptionWriteGate` qoʻshing yoki "
         f"GATE_EXEMPT ga sabab yozing."
     )
 
 
 def test_exemptions_are_still_real():
-    """Kerak bo'lmay qolgan istisno ro'yxatda qolib ketmasin."""
+    """Kerak boʻlmay qolgan istisno roʻyxatda qolib ketmasin."""
     basenames = {basename for _p, _v, basename in router.registry}
     stale = set(GATE_EXEMPT) - basenames
-    assert not stale, f"GATE_EXEMPT da mavjud bo'lmagan endpointlar: {sorted(stale)}"
+    assert not stale, f"GATE_EXEMPT da mavjud boʻlmagan endpointlar: {sorted(stale)}"

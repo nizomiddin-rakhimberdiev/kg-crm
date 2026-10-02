@@ -43,8 +43,8 @@ class Position(BranchScopedModel):
 
 class EmploymentStatus(models.TextChoices):
     ACTIVE = "active", gettext_lazy("Ishlayapti")
-    ON_LEAVE = "on_leave", gettext_lazy("Ta'tilda")
-    TERMINATED = "terminated", gettext_lazy("Ishdan bo'shagan")
+    ON_LEAVE = "on_leave", gettext_lazy("Taʼtilda")
+    TERMINATED = "terminated", gettext_lazy("Ishdan boʻshagan")
 
 
 class Employee(BranchScopedModel):

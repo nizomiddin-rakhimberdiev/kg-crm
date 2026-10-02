@@ -106,7 +106,7 @@ class TestProvider:
     def test_a_network_failure_is_not_a_crash(self, bot):
         import requests
 
-        with patch("requests.post", side_effect=requests.ConnectionError("tarmoq yo'q")):
+        with patch("requests.post", side_effect=requests.ConnectionError("tarmoq yoʻq")):
             result = TelegramProvider().send(address="55501", body="Salom")
         assert result.success is False and "Tarmoq" in result.error
 
@@ -132,7 +132,7 @@ class TestChannelChoice:
         assert notification.status == NotificationStatus.SENT
 
     def test_an_unlinked_parent_is_not_silently_skipped(self, bot, tenant_a):
-        """Jurnalda sabab turishi kerak — bog'cha nimani tuzatishni bilsin."""
+        """Jurnalda sabab turishi kerak — bogʻcha nimani tuzatishni bilsin."""
         guardian = _guardian(tenant_a)
         with organization_context(tenant_a.organization.id):
             notification = services.queue_notification(
@@ -160,7 +160,7 @@ class TestChannelChoice:
             assert services.resolve_channel(guardian) == "sms"
 
     def test_telegram_keeps_the_uzbek_apostrophe(self, bot, tenant_a):
-        """SMS'da `ʻ` narxni ikki baravar qiladi; Telegramda cheklov yo'q."""
+        """SMSʼda `ʻ` narxni ikki baravar qiladi; Telegramda cheklov yoʻq."""
         guardian = _guardian(tenant_a, chat="55501")
         with organization_context(tenant_a.organization.id):
             notification = services.queue_notification(
@@ -278,7 +278,7 @@ class TestLinkEndpoint:
         assert "start=" in issued
 
         again = tenant_a.client().post(url, {}, format="json")
-        assert again.json()["data"]["url"] == issued, "qayta so'rash kodni almashtirmaydi"
+        assert again.json()["data"]["url"] == issued, "qayta soʻrash kodni almashtirmaydi"
 
         rotated = tenant_a.client().post(url, {"rotate": True}, format="json")
         assert rotated.json()["data"]["url"] != issued
@@ -316,7 +316,7 @@ class TestWebhook:
             self._update("/start"),
             content_type="application/json",
         )
-        # `403` "endpoint bor, lekin ruxsat yo'q" deb aytib qo'yardi.
+        # `403` "endpoint bor, lekin ruxsat yoʻq" deb aytib qo'yardi.
         assert response.status_code == 404
 
     def test_without_configuration_the_endpoint_does_not_exist(self, settings, client):

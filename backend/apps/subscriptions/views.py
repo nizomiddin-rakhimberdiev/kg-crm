@@ -61,7 +61,7 @@ class BillingViewSet(viewsets.ViewSet):
             .first()
         )
         if subscription is None:
-            raise BusinessRuleViolation(gettext("Bu tashkilotda faol obuna yo'q."))
+            raise BusinessRuleViolation(gettext("Bu tashkilotda faol obuna yoʻq."))
         return subscription
 
     @action(detail=False, methods=["get"])

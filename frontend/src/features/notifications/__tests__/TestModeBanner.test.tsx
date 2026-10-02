@@ -103,11 +103,11 @@ describe('TestModeBanner', () => {
     await waitFor(() => expect(screen.getByText(/Qolgan 3 tasi/)).toBeInTheDocument())
   })
 
-  it('xabar yuborish butunlay o‘chirilgan bo‘lsa buni ham aytadi', async () => {
+  it('xabar yuborish butunlay oʻchirilgan bo‘lsa buni ham aytadi', async () => {
     vi.mocked(notificationsApi.status).mockResolvedValue(
       status({ sms_enabled: false, test_mode: false }),
     )
     show()
-    await waitFor(() => expect(screen.getByText(/o‘chirilgan/)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/oʻchirilgan/)).toBeInTheDocument())
   })
 })

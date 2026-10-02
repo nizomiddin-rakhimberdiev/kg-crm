@@ -100,7 +100,7 @@ export function GenerateInvoicesDialog({ year, month, onClose, onDone }: Props) 
               <div className="mt-3 space-y-1.5 rounded-xl border border-orik-200 bg-orik-50 px-4 py-3 text-sm">
                 <p className="flex items-center gap-1.5 font-semibold text-orik-800">
                   <AlertTriangle className="h-3.5 w-3.5" />
-                  {t("O'tkazib yuboriladi")}
+                  {t('Oʻtkazib yuboriladi')}
                 </p>
                 {data.skipped_existing > 0 && (
                   <p className="text-orik-800">

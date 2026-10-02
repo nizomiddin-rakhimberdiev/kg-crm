@@ -78,7 +78,7 @@ class PayrollRunViewSet(BranchScopedMixin, TenantViewSet):
         self.get_object()
         raise BusinessRuleViolation(
             gettext(
-                "Hisoblash to'g'ridan-to'g'ri tahrirlanmaydi — `finalize`, "
+                "Hisoblash toʻgʻridan-toʻgʻri tahrirlanmaydi — `finalize`, "
                 "`mark-paid` yoki `reopen` amallaridan foydalaning."
             )
         )

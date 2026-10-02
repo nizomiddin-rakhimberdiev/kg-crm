@@ -93,7 +93,7 @@ _TRUNC = {
 def _validate_group_by(group_by: str) -> str:
     if group_by not in GROUP_BY_CHOICES:
         raise BusinessRuleViolation(
-            gettext("`group_by` noto'g'ri: {group_by!r}. Mumkin: {join}.").format(
+            gettext("`group_by` notoʻgʻri: {group_by!r}. Mumkin: {join}.").format(
                 group_by=group_by, join=", ".join(GROUP_BY_CHOICES)
             )
         )
@@ -140,7 +140,7 @@ def period_buckets(date_from: date, date_to: date, group_by: str) -> list[date]:
     """
     group_by = _validate_group_by(group_by)
     if date_from > date_to:
-        raise BusinessRuleViolation(gettext("Davr boshi oxiridan keyin bo'lishi mumkin emas."))
+        raise BusinessRuleViolation(gettext("Davr boshi oxiridan keyin boʻlishi mumkin emas."))
 
     buckets: list[date] = []
     cursor = _bucket_start(date_from, group_by)

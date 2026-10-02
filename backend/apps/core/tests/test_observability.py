@@ -32,7 +32,7 @@ class TestRequestId:
         assert response[HEADER] == "abc-123"
 
     def test_an_oversized_id_is_trimmed(self, api_client):
-        """Mijoz bergan qiymat ishonchsiz manba — log'ni to'ldirmasin."""
+        """Mijoz bergan qiymat ishonchsiz manba — logʻni toʻldirmasin."""
         response = api_client.get(reverse("v1:health"), **{"HTTP_X_REQUEST_ID": "x" * 500})
         assert len(response[HEADER]) == 64
 
@@ -80,7 +80,7 @@ class TestHealthChecksTheWorker:
         assert data["checks"]["database"] == "ok"
 
     def test_a_dead_database_does_take_the_service_down(self, api_client, monkeypatch):
-        """Baza yo'q bo'lsa — `503`. Bu haqiqiy nosozlik."""
+        """Baza yoʻq boʻlsa — `503`. Bu haqiqiy nosozlik."""
         from api.v1 import views
 
         monkeypatch.setattr(views.HealthCheckView, "_check_database", staticmethod(lambda: "error"))

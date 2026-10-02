@@ -44,10 +44,10 @@ export function SubscriptionBanner() {
       <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-6 py-2.5 text-sm text-amber-900">
         <AlertTriangle className="h-4 w-4 shrink-0" />
         <span>
-          {t("Obuna to'xtatilgan — ma'lumotlarni")} <strong>{t("ko'rish")}</strong>{' '}
-          {t("mumkin, o'zgartirish mumkin emas. Hisobingiz va tariximiz saqlanib turibdi.")}
+          {t('Obuna toʻxtatilgan — maʼlumotlarni')} <strong>{t('koʻrish')}</strong>{' '}
+          {t('mumkin, oʻzgartirish mumkin emas. Hisobingiz va tariximiz saqlanib turibdi.')}
         </span>
-        <BillingLink label={t("Hisobni ko'rish")} />
+        <BillingLink label={t('Hisobni koʻrish')} />
       </div>
     )
   }
@@ -60,7 +60,7 @@ export function SubscriptionBanner() {
         <span>
           {t('Sinov davri faol')}
           {remaining !== null && t(' — {remaining} kun qoldi', { remaining })}
-          {t(". Yoqmasa, hech qanday to'lov olinmaydi.")}
+          {t('. Yoqmasa, hech qanday toʻlov olinmaydi.')}
         </span>
         <BillingLink label={t('Rejani tanlash')} />
       </div>
@@ -77,10 +77,10 @@ export function SubscriptionBanner() {
         <CreditCard className="h-4 w-4 shrink-0" />
         <span>
           {isPending
-            ? t("Hisob yozildi — to'lov kutilmoqda. Kirish to'liq ochiq.")
-            : t("Hisob muddati o'tdi. Kirish hozircha to'liq ochiq.")}
+            ? t('Hisob yozildi — toʻlov kutilmoqda. Kirish toʻliq ochiq.')
+            : t('Hisob muddati oʻtdi. Kirish hozircha toʻliq ochiq.')}
         </span>
-        <BillingLink label={t("Hisobni ko'rish")} />
+        <BillingLink label={t('Hisobni koʻrish')} />
       </div>
     )
   }

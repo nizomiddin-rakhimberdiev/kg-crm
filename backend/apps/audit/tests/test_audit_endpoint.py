@@ -46,7 +46,7 @@ class TestReadOnly:
         Tahrirlanadigan audit — audit emas.
 
         Jurnalning butun ma'nosi shundaki, unga tegib bo'lmaydi; aks
-        holda "kim o'chirdi?" degan savolga javob ham o'chirilardi.
+        holda "kim oʻchirdi?" degan savolga javob ham o'chirilardi.
         """
         entry = _log(tenant_a)
         client = tenant_a.client()
@@ -97,7 +97,7 @@ class TestIsolation:
         assert all(row["actor_email"] != "vendor@kg-crm.uz" for row in rows)
 
     def test_requires_the_audit_permission(self, tenant_a):
-        """Faqat egada `audit` bor (docs/02 §11.2) — menejerda yo'q."""
+        """Faqat egada `audit` bor (docs/02 §11.2) — menejerda yoʻq."""
         from rest_framework.test import APIClient
 
         from apps.accounts.authentication import issue_token_pair

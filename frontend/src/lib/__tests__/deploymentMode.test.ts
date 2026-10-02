@@ -31,34 +31,34 @@ async function loadWithMode(mode: string | undefined, basePath = '/') {
 }
 
 describe('deploy rejimi', () => {
-  it('sukut bo\'yicha SaaS — mavjud o\'rnatmalar o\'zgarmaydi', async () => {
+  it("sukut bo'yicha SaaS — mavjud o'rnatmalar o'zgarmaydi", async () => {
     const { env } = await loadWithMode(undefined)
     expect(env.isStandalone).toBe(false)
     expect(env.deploymentMode).toBe('saas')
   })
 
-  it('noma\'lum qiymat SaaS deb qabul qilinadi, standalone emas', async () => {
+  it("noma'lum qiymat SaaS deb qabul qilinadi, standalone emas", async () => {
     // Xato yozilgan bayroq tizimni ATAYLAB ochib yubormasligi kerak:
     // noaniqlikda xavfsizroq tomon — obuna darvozasi yoqiq qoladi.
     const { env } = await loadWithMode('stand-alone')
     expect(env.isStandalone).toBe(false)
   })
 
-  it('standalone bayrog\'i tanilaydi', async () => {
+  it("standalone bayrog'i tanilaydi", async () => {
     const { env } = await loadWithMode('standalone')
     expect(env.isStandalone).toBe(true)
   })
 })
 
 describe('standalone manzili', () => {
-  it('bog\'cha prefiksi ishlatilmaydi', async () => {
+  it("bog'cha prefiksi ishlatilmaydi", async () => {
     const { tenantAddress } = await loadWithMode('standalone')
     // Slug berilgan bo'lsa ham: standalone'da bog'cha bitta.
     expect(tenantAddress.basenameFor('quyosh')).toBe('/')
     expect(tenantAddress.basenameFor(null)).toBe('/')
   })
 
-  it('sub-path o\'rnatmasida basename o\'sha yo\'l bo\'ladi', async () => {
+  it("sub-path o'rnatmasida basename o'sha yo'l bo'ladi", async () => {
     // Demo nusxasi `radix-crm.uz/private` da yashaydi.
     const { tenantAddress } = await loadWithMode('standalone', '/private/')
     expect(tenantAddress.basenameFor(null)).toBe('/private')
@@ -71,7 +71,7 @@ describe('standalone manzili', () => {
 })
 
 describe('kirishdan keyingi manzil', () => {
-  it('standalone: hech qachon ko\'chirmaydi', async () => {
+  it("standalone: hech qachon ko'chirmaydi", async () => {
     // Aynan shu joy buzilgan edi — foydalanuvchi kirishi bilan
     // `/t/<slug>` ga, ya'ni boshqa o'rnatmaga uloqtirilardi.
     const { tenantAddress } = await loadWithMode('standalone')
@@ -79,13 +79,13 @@ describe('kirishdan keyingi manzil', () => {
     expect(tenantAddress.shouldLandOnTenantAddress('bahor-bogchasi', 'boshqa')).toBe(false)
   })
 
-  it('SaaS: o\'z manzilida bo\'lmasa ko\'chiradi', async () => {
+  it("SaaS: o'z manzilida bo'lmasa ko'chiradi", async () => {
     const { tenantAddress } = await loadWithMode('saas')
     expect(tenantAddress.shouldLandOnTenantAddress('quyosh', null)).toBe(true)
     expect(tenantAddress.shouldLandOnTenantAddress('quyosh', 'bahor')).toBe(true)
   })
 
-  it('SaaS: allaqachon o\'z manzilida bo\'lsa ko\'chirmaydi', async () => {
+  it("SaaS: allaqachon o'z manzilida bo'lsa ko'chirmaydi", async () => {
     const { tenantAddress } = await loadWithMode('saas')
     expect(tenantAddress.shouldLandOnTenantAddress('quyosh', 'quyosh')).toBe(false)
     expect(tenantAddress.shouldLandOnTenantAddress(null, null)).toBe(false)
@@ -93,7 +93,7 @@ describe('kirishdan keyingi manzil', () => {
 })
 
 describe('standalone sessiyasi', () => {
-  it('refresh token kirishdagi kalitdan O\'QILADI ham', async () => {
+  it("refresh token kirishdagi kalitdan O'QILADI ham", async () => {
     // Haqiqiy nosozlik: kirish paytida token tashkilot slug'i bilan
     // yozilardi, o'qishda esa slug'siz kalit so'ralardi — natijada
     // foydalanuvchi kirgandek bo'lardi, lekin sahifa yangilanishi
@@ -108,7 +108,7 @@ describe('standalone sessiyasi', () => {
     expect(tokenStorage.getRefresh()).toBeNull()
   })
 
-  it('SaaS rejimida kalit bog\'cha bo\'yicha ajratiladi', async () => {
+  it("SaaS rejimida kalit bog'cha bo'yicha ajratiladi", async () => {
     // Bu xatti-harakat SAQLANISHI kerak: bir necha bog'chaga xizmat
     // qiladigan buxgalter ikkinchisiga kirsa, birinchisidan chiqib
     // ketmasligi kerak.
@@ -123,7 +123,7 @@ describe('standalone sessiyasi', () => {
 })
 
 describe('standalone menyusi', () => {
-  it('obuna punkti ko\'rinmaydi', async () => {
+  it("obuna punkti ko'rinmaydi", async () => {
     const { navigation } = await loadWithMode('standalone')
     expect(navigation.navItems.some((item) => item.to === '/billing')).toBe(false)
     // Qolgan modullar joyida — rejim menyuni qirqmaydi, faqat sotuvga

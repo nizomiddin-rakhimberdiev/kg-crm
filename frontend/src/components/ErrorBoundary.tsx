@@ -56,7 +56,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <h2 className="mt-4 text-lg font-semibold text-slate-900">{t('Sahifa ochilmadi')}</h2>
           <p className="mt-2 text-sm text-slate-600">
             {t(
-              "Kutilmagan xatolik yuz berdi. Ma'lumotlaringiz joyida — bu faqat shu ekranga tegishli.",
+              'Kutilmagan xatolik yuz berdi. Maʼlumotlaringiz joyida — bu faqat shu ekranga tegishli.',
             )}
           </p>
 
@@ -80,7 +80,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
           {requestId && (
             <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">
-              {t("Qo'llab-quvvatlashga ayting:")} <span className="font-mono">{requestId}</span>
+              {t('Qoʻllab-quvvatlashga ayting:')} <span className="font-mono">{requestId}</span>
             </p>
           )}
         </div>

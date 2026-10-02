@@ -62,9 +62,9 @@ def test_sources_are_found():
 def test_every_source_is_translated(lang: str):
     entries = _po_entries(lang)
     missing = sorted(s for s in _sources() if s not in entries)
-    assert missing == [], f"{lang} lug'atida yo'q: {missing[:5]}"
+    assert missing == [], f"{lang} lugʻatida yoʻq: {missing[:5]}"
     empty = sorted(s for s in _sources() if entries.get(s) == "")
-    assert empty == [], f"{lang} lug'atida bo'sh: {empty[:5]}"
+    assert empty == [], f"{lang} lugʻatida boʻsh: {empty[:5]}"
 
 
 @pytest.mark.parametrize("lang", ["ru", "en"])
@@ -75,7 +75,7 @@ def test_placeholders_match(lang: str):
 
 
 def test_compiled_catalog_is_used():
-    """`.mo` yig'ilgan bo'lsa (Docker/compilemessages), tarjima ishlaydi."""
+    """`.mo` yigʻilgan boʻlsa (Docker/compilemessages), tarjima ishlaydi."""
     if not (LOCALE_DIR / "ru" / "LC_MESSAGES" / "django.mo").exists():
         pytest.skip("compilemessages bajarilmagan")
     with translation.override("ru"):
@@ -85,7 +85,7 @@ def test_compiled_catalog_is_used():
 
 
 def test_accept_language_switches_error_message(api_client):
-    """Login xatosi — so'ralgan tilda; sarlavhasiz — o'zbekcha (LANGUAGE_CODE)."""
+    """Login xatosi — soʻralgan tilda; sarlavhasiz — oʻzbekcha (LANGUAGE_CODE)."""
     if not (LOCALE_DIR / "ru" / "LC_MESSAGES" / "django.mo").exists():
         pytest.skip("compilemessages bajarilmagan")
     payload = {"email": "nobody@example.com", "password": "x"}
@@ -93,7 +93,7 @@ def test_accept_language_switches_error_message(api_client):
     ru = api_client.post("/api/v1/auth/login", payload, format="json", HTTP_ACCEPT_LANGUAGE="ru")
     en = api_client.post("/api/v1/auth/login", payload, format="json", HTTP_ACCEPT_LANGUAGE="en")
     assert uz.status_code == ru.status_code == en.status_code == 401
-    assert uz.json()["error"]["message"] == "Email yoki parol noto'g'ri."
+    assert uz.json()["error"]["message"] == "Email yoki parol notoʻgʻri."
     assert ru.json()["error"]["message"] == "Неверный email или пароль."
     assert en.json()["error"]["message"] == "Incorrect email or password."
 
@@ -131,7 +131,7 @@ def test_thirdparty_messages_are_uzbek(message: str):
 
 
 def test_password_length_message_is_uzbek():
-    """Ko'plik shakli: msgid Django versiyasiga bog'liq (`%d` va nomlangan)."""
+    """Koʻplik shakli: msgid Django versiyasiga bogʻliq (`%d` va nomlangan)."""
     if not (BASE_DIR / "vendor_i18n" / "locale" / "uz" / "LC_MESSAGES" / "django.mo").exists():
         pytest.skip("compilemessages bajarilmagan")
     with translation.override("uz"):
@@ -157,3 +157,34 @@ def test_no_fuzzy_entries(lang: str):
     text = (LOCALE_DIR / lang / "LC_MESSAGES" / "django.po").read_text()
     fuzzy = [line for line in text.splitlines() if line.startswith("#, fuzzy")]
     assert fuzzy == [], f"{lang}: {len(fuzzy)} ta tekshirilmagan tarjima"
+
+
+# --- Q11: apostroflar (PLAN 4.1) ---
+
+#: Harf—ASCII apostrof—harf. Aynan shu ketma-ketlik normallashtirilishi
+#: kerak: `oʻ`/`gʻ` uchun U+02BB, tutuq uchun U+02BC.
+RAW_APOSTROPHE = re.compile(r"[^\W\d_]['‘’`´][^\W\d_]", re.UNICODE)
+
+
+def test_gettext_sources_use_the_uzbek_apostrophe():
+    """
+    Nega test kerak: bu farq KO'ZGA KO'RINMAYDI.
+
+    ASCII `'` bilan yozilgan "to'lov" ekranda deyarli bir xil
+    ko'rinadi, lekin u boshqa satr — ya'ni `.po` kaliti mos kelmaydi
+    va xabar ruscha ilovada o'zbekcha chiqib qoladi. Bir marta
+    normallashtirib, keyin qo'riqlash — yagona ishlaydigan yo'l.
+
+    SMS matni ALOHIDA: u yerda apostrof ataylab ASCII'ga
+    almashtiriladi (`segments.sms_safe`), chunki `ʻ` GSM-7 da yo'q va
+    narxni ikki baravar qiladi. Bu almashtirish YUBORISHDA bo'ladi,
+    manbada emas — shuning uchun bu test unga tegishli emas.
+    """
+    offenders = sorted(source for source in _sources() if RAW_APOSTROPHE.search(source))
+    assert offenders == [], f"ASCII apostrof: {offenders[:5]}"
+
+
+@pytest.mark.parametrize("lang", ["ru", "en"])
+def test_po_sources_use_the_uzbek_apostrophe(lang: str):
+    offenders = sorted(key for key in _po_entries(lang) if RAW_APOSTROPHE.search(key))
+    assert offenders == [], f"{lang}: {offenders[:5]}"

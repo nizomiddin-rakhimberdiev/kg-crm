@@ -36,7 +36,7 @@ export function GroupOptions({
           <option key={group.id} value={group.id} disabled={full}>
             {group.name}
             {group.capacity ? ` (${group.enrolled_count}/${group.capacity})` : ''}
-            {full ? ` — ${t("to'lgan")}` : ''}
+            {full ? ` — ${t('toʻlgan')}` : ''}
           </option>
         )
       })}

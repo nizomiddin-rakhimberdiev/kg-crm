@@ -122,7 +122,7 @@ def mark_expense_paid(
     """
     if expense.status != ExpenseStatus.APPROVED:
         raise BusinessRuleViolation(
-            gettext("Faqat tasdiqlangan chiqimni to'langan deb belgilash mumkin.")
+            gettext("Faqat tasdiqlangan chiqimni toʻlangan deb belgilash mumkin.")
         )
 
     fields = ["status", "updated_at"]
@@ -136,7 +136,7 @@ def mark_expense_paid(
             cash.reverse_movements_for(
                 source_type=MovementSource.EXPENSE,
                 source_id=expense.id,
-                description=gettext("qop o'zgartirildi"),
+                description=gettext("qop oʻzgartirildi"),
                 created_by=created_by,
             )
             cash.post_movement(

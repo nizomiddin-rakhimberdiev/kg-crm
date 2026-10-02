@@ -39,7 +39,7 @@ def _parse_date(raw: str | None, field: str) -> Any:
         return datetime.strptime(raw, "%Y-%m-%d").date()
     except ValueError as exc:
         raise BusinessRuleViolation(
-            gettext("`{field}` formati noto'g'ri (kutilgan: 2026-07-24).").format(field=field)
+            gettext("`{field}` formati notoʻgʻri (kutilgan: 2026-07-24).").format(field=field)
         ) from exc
 
 

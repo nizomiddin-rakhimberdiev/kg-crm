@@ -46,9 +46,9 @@ const MONTHS = [
 
 /** Qatordagi holat belgisi — rangi bir qarashda o'qiladi. */
 const BOARD_STATE: Record<BoardRow['state'], [string, string]> = {
-  unpaid: [t("To'lanmagan"), 'bg-red-50 text-red-700'],
-  partial: [t("Qisman to'langan"), 'bg-amber-50 text-amber-700'],
-  paid: [t("To'langan"), 'bg-emerald-50 text-emerald-700'],
+  unpaid: [t('Toʻlanmagan'), 'bg-red-50 text-red-700'],
+  partial: [t('Qisman toʻlangan'), 'bg-amber-50 text-amber-700'],
+  paid: [t('Toʻlangan'), 'bg-emerald-50 text-emerald-700'],
   no_invoice: [t('Fakturasiz'), 'bg-slate-100 text-slate-500'],
 }
 
@@ -206,13 +206,13 @@ export default function PaymentsPage() {
           }}
           className="p-5"
         >
-          <h2 className="text-base font-semibold text-slate-900">{t("To'lovni qaytarish")}</h2>
+          <h2 className="text-base font-semibold text-slate-900">{t('Toʻlovni qaytarish')}</h2>
           <p className="mt-1 text-sm text-slate-500">
             {reversing?.child_name} · {reversing ? money(reversing.amount) : ''}
           </p>
           <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
             {t(
-              "To'lov o'chirilmaydi — ustiga qarshi yozuv qo'shiladi va jurnalda ikkalasi ham ko'rinadi.",
+              'Toʻlov oʻchirilmaydi — ustiga qarshi yozuv qoʻshiladi va jurnalda ikkalasi ham koʻrinadi.',
             )}
           </p>
           <label htmlFor="rev-reason" className="mt-4 block text-xs font-medium text-slate-600">
@@ -264,7 +264,7 @@ export default function PaymentsPage() {
       )}
 
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t("To'lovlar")}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Toʻlovlar')}</h1>
         <p className="mt-1 text-sm text-slate-500">
           {t('Bolani qidiring, ustiga bosing va pulni qabul qiling.')}
         </p>
@@ -273,7 +273,7 @@ export default function PaymentsPage() {
       <div className="flex gap-1 border-b border-slate-200">
         {(
           [
-            ['board', t("To'lov qabul qilish")],
+            ['board', t('Toʻlov qabul qilish')],
             ['payments', t('Jurnal')],
             ['tariffs', t('Tariflar')],
           ] as const
@@ -373,7 +373,7 @@ export default function PaymentsPage() {
               [
                 ['', t('Hammasi'), summary?.children],
                 ['debtor', t('Shu oy toʻlanmagan'), summary?.debtors],
-                ['paid', t("To'langan"), (summary?.with_invoice ?? 0) - (summary?.debtors ?? 0)],
+                ['paid', t('Toʻlangan'), (summary?.with_invoice ?? 0) - (summary?.debtors ?? 0)],
                 ['no_invoice', t('Fakturasiz'), summary?.without_invoice],
               ] as const
             ).map(([value, label, count]) => (
@@ -403,7 +403,7 @@ export default function PaymentsPage() {
             {(
               [
                 [t('Hisoblangan'), summary?.charged, 'text-slate-900'],
-                [t("To'langan"), summary?.paid, 'text-emerald-600'],
+                [t('Toʻlangan'), summary?.paid, 'text-emerald-600'],
                 [t('Qolgan'), summary?.outstanding, 'text-amber-600'],
               ] as const
             ).map(([label, value, tone]) => (
@@ -421,7 +421,7 @@ export default function PaymentsPage() {
           {(summary?.without_invoice ?? 0) > 0 && (
             <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
               {t(
-                "{v} ta bolaga bu oy uchun hisob-faktura chiqarilmagan — tarifi yo'q bo'lishi mumkin.",
+                '{v} ta bolaga bu oy uchun hisob-faktura chiqarilmagan — tarifi yoʻq boʻlishi mumkin.',
                 { v: summary?.without_invoice },
               )}
             </p>
@@ -429,7 +429,7 @@ export default function PaymentsPage() {
 
           {runResult && (
             <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-              {t('{created} ta chiqarildi · {skipped} ta o‘tkazib yuborildi', {
+              {t('{created} ta chiqarildi · {skipped} ta oʻtkazib yuborildi', {
                 created: runResult.created,
                 skipped: runResult.skipped_existing,
               })}
@@ -503,12 +503,12 @@ export default function PaymentsPage() {
                 <li className="px-4 py-12 text-center">
                   <Users className="mx-auto h-8 w-8 text-slate-300" />
                   <p className="mt-2 text-sm font-medium text-slate-600">
-                    {search ? t('Hech kim topilmadi') : t("Bola yo'q")}
+                    {search ? t('Hech kim topilmadi') : t('Bola yoʻq')}
                   </p>
                   <p className="mt-1 text-xs text-slate-400">
                     {search
-                      ? t('Boshqa ism bilan qidirib ko‘ring.')
-                      : t("Avval bolalarni ro'yxatga oling.")}
+                      ? t('Boshqa ism bilan qidirib koʻring.')
+                      : t('Avval bolalarni roʻyxatga oling.')}
                   </p>
                 </li>
               )}
@@ -527,7 +527,7 @@ export default function PaymentsPage() {
                 onClick={() => void boardQuery.fetchNextPage()}
                 className="w-full border-t border-slate-100 px-4 py-3 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
               >
-                {boardQuery.isFetchingNextPage ? t('Yuklanmoqda…') : t('Yana ko‘rsatish')}
+                {boardQuery.isFetchingNextPage ? t('Yuklanmoqda…') : t('Yana koʻrsatish')}
               </button>
             )}
           </div>
@@ -568,7 +568,7 @@ export default function PaymentsPage() {
                 htmlFor="journal-method"
                 className="mb-1 block text-xs font-medium text-slate-600"
               >
-                {t("To'lov usuli")}
+                {t('Toʻlov usuli')}
               </label>
               <select
                 id="journal-method"
@@ -592,7 +592,7 @@ export default function PaymentsPage() {
               </p>
               <p className="num text-xl font-bold text-slate-900">
                 {journalSummary.data
-                  ? t("{money} so'm", { money: formatMoney(Number(journalSummary.data.total)) })
+                  ? t('{money} soʻm', { money: formatMoney(Number(journalSummary.data.total)) })
                   : '—'}
               </p>
               {journalSummary.data && (
@@ -613,7 +613,7 @@ export default function PaymentsPage() {
                     <th className="px-4 py-3">{t('Sana')}</th>
                     <th className="px-4 py-3">{t('Bola')}</th>
                     <th className="px-4 py-3">{t('Hisob-faktura')}</th>
-                    <th className="px-4 py-3">{t("To'lov usuli")}</th>
+                    <th className="px-4 py-3">{t('Toʻlov usuli')}</th>
                     <th className="px-4 py-3 text-right">{t('Summa')}</th>
                     <th className="px-4 py-3" />
                   </tr>
@@ -679,7 +679,7 @@ export default function PaymentsPage() {
                     <EmptyRow
                       colSpan={6}
                       icon={Wallet}
-                      title={t("Hozircha to'lov qabul qilinmagan.")}
+                      title={t('Hozircha toʻlov qabul qilinmagan.')}
                     />
                   )}
                 </tbody>
@@ -732,7 +732,7 @@ export default function PaymentsPage() {
                 className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
               >
                 <Plus className="h-4 w-4" />
-                {t("Qo'shish")}
+                {t('Qoʻshish')}
               </button>
             </form>
           )}
@@ -750,7 +750,7 @@ export default function PaymentsPage() {
                       type="button"
                       onClick={() => removeTariff.mutate(tariff.id)}
                       className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                      title={t("O'chirish")}
+                      title={t('Oʻchirish')}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -764,7 +764,7 @@ export default function PaymentsPage() {
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-12 text-center">
               <p className="text-sm text-slate-500">
                 {t(
-                  "Hozircha tarif yo'q. Hisob-faktura chiqarish uchun avval tarif yarating va bolalarga biriktiring.",
+                  'Hozircha tarif yoʻq. Hisob-faktura chiqarish uchun avval tarif yarating va bolalarga biriktiring.',
                 )}
               </p>
             </div>

@@ -20,17 +20,17 @@ const ACTION: Record<string, [string, string]> = {
   login: [t('Kirish'), 'bg-slate-100 text-slate-600'],
   login_failed: [t('Kirish urinishi'), 'bg-amber-50 text-amber-700'],
   logout: [t('Chiqish'), 'bg-slate-100 text-slate-600'],
-  signup: [t("Ro'yxatdan o'tish"), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
-  password_change: [t("Parol o'zgardi"), 'bg-amber-50 text-amber-700'],
+  signup: [t('Roʻyxatdan oʻtish'), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
+  password_change: [t('Parol oʻzgardi'), 'bg-amber-50 text-amber-700'],
   create: [t('Yaratildi'), 'bg-emerald-50 text-emerald-700'],
   update: [t('Yangilandi'), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
-  delete: [t("O'chirildi"), 'bg-red-50 text-red-700'],
+  delete: [t('Oʻchirildi'), 'bg-red-50 text-red-700'],
 }
 
 const ENTITY: Record<string, string> = {
   child: t('Bola'),
   child_import: t('Bolalar importi'),
-  payment: t("To'lov"),
+  payment: t('Toʻlov'),
   invoice: t('Hisob-faktura'),
   invoice_run: t('Hisob-faktura generatsiyasi'),
   discount: t('Chegirma'),
@@ -48,7 +48,7 @@ const FILTERS: Array<[string, string]> = [
   ['', t('Hammasi')],
   ['create', t('Yaratish')],
   ['update', t('Yangilash')],
-  ['delete', t("O'chirish")],
+  ['delete', t('Oʻchirish')],
   ['login_failed', t('Kirish urinishlari')],
 ]
 
@@ -81,7 +81,7 @@ export default function AuditPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Audit jurnali')}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          {t("Kim, nima va qachon — o'zgartirib bo'lmaydigan yozuv.")}
+          {t('Kim, nima va qachon — oʻzgartirib boʻlmaydigan yozuv.')}
         </p>
       </div>
 
@@ -100,7 +100,7 @@ export default function AuditPage() {
           </div>
           <p className="mt-1 text-xs text-slate-500">
             {t(
-              "Radix CRM xodimlari sukut bo'yicha sizning ma'lumotingizni ko'rmaydi. Har qanday kirish vaqt bilan cheklanadi, sababi yoziladi va shu yerda ko'rinadi.",
+              'Radix CRM xodimlari sukut boʻyicha sizning maʼlumotingizni koʻrmaydi. Har qanday kirish vaqt bilan cheklanadi, sababi yoziladi va shu yerda koʻrinadi.',
             )}
           </p>
 

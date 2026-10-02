@@ -125,12 +125,12 @@ export default function ReportsPage() {
       }),
     onSuccess: () => {
       setError(null)
-      setNotice(t('Eksport navbatga qo’yildi — tayyor bo‘lganda yuklab olasiz.'))
+      setNotice(t('Eksport navbatga qoʻyildi — tayyor boʻlganda yuklab olasiz.'))
       void queryClient.invalidateQueries({ queryKey: queryKeys.reportExports(organizationId) })
     },
     onError: (err: unknown) => {
       setNotice(null)
-      setError(err instanceof ApiError ? err.message : t('Eksportni boshlab bo‘lmadi.'))
+      setError(err instanceof ApiError ? err.message : t('Eksportni boshlab boʻlmadi.'))
     },
   })
 
@@ -191,9 +191,9 @@ export default function ReportsPage() {
               t('Tushum'),
               pl?.revenue,
               'text-emerald-600',
-              t("{v} ta to'lov", { v: revenueQuery.data?.payment_count ?? 0 }),
+              t('{v} ta toʻlov', { v: revenueQuery.data?.payment_count ?? 0 }),
             ],
-            [t('Chiqimlar'), pl?.expenses, 'text-slate-900', t('tasdiqlangan va to‘langan')],
+            [t('Chiqimlar'), pl?.expenses, 'text-slate-900', t('tasdiqlangan va toʻlangan')],
             [
               t('Oylik maosh'),
               pl?.payroll,
@@ -285,13 +285,13 @@ export default function ReportsPage() {
               ))}
               {(cash?.length ?? 0) === 0 && (
                 <li className="py-8 text-center text-sm text-slate-400">
-                  {t("Bu davrda pul harakati yo'q.")}
+                  {t('Bu davrda pul harakati yoʻq.')}
                 </li>
               )}
             </ul>
             <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">
               {t(
-                "Bu yerdagi yig'indi yuqoridagi sof natijadan farq qilishi mumkin: hisobot yakunlangan oylikni xarajat deb sanaydi, bu esa faqat kassadan haqiqatan chiqqan pulni.",
+                'Bu yerdagi yigʻindi yuqoridagi sof natijadan farq qilishi mumkin: hisobot yakunlangan oylikni xarajat deb sanaydi, bu esa faqat kassadan haqiqatan chiqqan pulni.',
               )}
             </p>
           </div>
@@ -304,12 +304,12 @@ export default function ReportsPage() {
             <p className="mt-0.5 text-xs text-slate-500">
               {payrollInChart
                 ? t('Chiqim ustuni: xarajat + oylik maosh (ustma-ust)')
-                : t('Kun/hafta kesimida oylik maosh ustunlarga kirmaydi — u jami ko‘rsatkichda')}
+                : t('Kun/hafta kesimida oylik maosh ustunlarga kirmaydi — u jami koʻrsatkichda')}
             </p>
             <div className="mt-4 h-64 sm:h-72">
               {rows.length === 0 ? (
                 <p className="grid h-full place-items-center text-sm text-slate-400">
-                  {t("Bu davrda ma'lumot yo'q.")}
+                  {t('Bu davrda maʼlumot yoʻq.')}
                 </p>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
@@ -375,11 +375,11 @@ export default function ReportsPage() {
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-            <h2 className="text-sm font-semibold text-slate-900">{t("To'lov usullari")}</h2>
+            <h2 className="text-sm font-semibold text-slate-900">{t('Toʻlov usullari')}</h2>
             <p className="mt-0.5 text-xs text-slate-500">{t('Davr ichida qabul qilingan pul')}</p>
             {methods.length === 0 ? (
               <p className="mt-4 grid h-40 place-items-center text-sm text-slate-400">
-                {t("Bu davrda to'lov yo'q.")}
+                {t('Bu davrda toʻlov yoʻq.')}
               </p>
             ) : (
               <div className="mt-4 flex flex-col items-center gap-5">
@@ -572,7 +572,7 @@ export default function ReportsPage() {
           <h2 className="text-sm font-semibold text-slate-900">{t('Eksport')}</h2>
           <p className="mt-0.5 text-xs text-slate-500">
             {t(
-              "Excel fayli (.xlsx) — har bir yozuv alohida qator bo'lib tushadi. Tanlangan davr bilan, fayl fonda tayyorlanadi.",
+              'Excel fayli (.xlsx) — har bir yozuv alohida qator boʻlib tushadi. Tanlangan davr bilan, fayl fonda tayyorlanadi.',
             )}
           </p>
 

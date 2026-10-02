@@ -74,7 +74,7 @@ class TenantJWTAuthentication(JWTAuthentication):
             grant = SupportGrant.objects.filter(pk=token.get("grant_id")).first()
 
         if grant is None or grant.revoked_at is not None or grant.expires_at <= timezone.now():
-            raise AuthenticationFailed(gettext("Qo'llab-quvvatlash ruxsati amal qilmaydi."))
+            raise AuthenticationFailed(gettext("Qoʻllab-quvvatlash ruxsati amal qilmaydi."))
 
         if str(grant.organization_id) != str(token.get("organization_id")):
             # Kod xatosi bo'lishi mumkin bo'lgan yagona holat — baribir yopamiz.
@@ -83,15 +83,15 @@ class TenantJWTAuthentication(JWTAuthentication):
         if request.method not in SAFE_METHODS:
             raise PermissionDenied(
                 gettext(
-                    "Qo'llab-quvvatlash sessiyasi faqat o'qish uchun. "
-                    "O'zgartirishni bog'chaning o'zi bajarishi kerak."
+                    "Qoʻllab-quvvatlash sessiyasi faqat oʻqish uchun. "
+                    "Oʻzgartirishni bogʻchaning oʻzi bajarishi kerak."
                 )
             )
 
     def get_user(self, validated_token: Any) -> Any:
         user_id = validated_token.get(api_settings.USER_ID_CLAIM)
         if user_id is None:
-            raise InvalidToken(gettext("Tokenda foydalanuvchi identifikatori yo'q."))
+            raise InvalidToken(gettext("Tokenda foydalanuvchi identifikatori yoʻq."))
 
         # Tashkilot TOKENDAN olinadi va kontekst foydalanuvchini
         # qidirishdan OLDIN o'rnatiladi.
@@ -106,7 +106,7 @@ class TenantJWTAuthentication(JWTAuthentication):
         # tekshiruvni kod bilan BIRGA bajaradi, kod o'rniga emas.
         claimed = validated_token.get("organization_id")
         if not claimed:
-            raise InvalidToken(gettext("Tokenda tashkilot ko'rsatilmagan."))
+            raise InvalidToken(gettext("Tokenda tashkilot koʻrsatilmagan."))
 
         set_current_organization_id(uuid.UUID(str(claimed)))
         apply_tenant_setting(claimed)

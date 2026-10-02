@@ -39,7 +39,7 @@ def _subscription(tenant) -> Subscription:
 
 
 def _backdate(invoice: SubscriptionInvoice, *, days: int) -> None:
-    """Hisobni o'tmishga suradi — muddati o'tish stsenariylarini sinash uchun."""
+    """Hisobni oʻtmishga suradi — muddati oʻtish stsenariylarini sinash uchun."""
     issued = timezone.localdate() - timedelta(days=days + 7)
     SubscriptionInvoice.objects.filter(pk=invoice.pk).update(
         issued_at=issued, due_at=timezone.localdate() - timedelta(days=days)
@@ -194,7 +194,7 @@ class TestMetering:
             _add_children(tenant_a, 40)  # 100 ga chiqdi
             after = services.record_daily_usage(subscription=subscription)
 
-        assert after.peak_children == 60, "Yopilgan davr o'zgardi"
+        assert after.peak_children == 60, "Yopilgan davr oʻzgardi"
 
     def test_correction_is_a_new_row_with_a_note(self, tenant_a):
         """

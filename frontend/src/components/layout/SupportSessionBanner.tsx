@@ -19,8 +19,8 @@ export function SupportSessionBanner() {
     <div className="flex items-center justify-center gap-2 bg-amber-500 px-4 py-2 text-center text-sm font-medium text-amber-950">
       <ShieldAlert className="h-4 w-4 flex-none" />
       <span>
-        {t("Qo'llab-quvvatlash sessiyasi —")} <strong>{user?.organization?.name}</strong>{' '}
-        {t("tizimidasiz. Faqat o'qish: hech narsani o'zgartira olmaysiz.")}
+        {t('Qoʻllab-quvvatlash sessiyasi —')} <strong>{user?.organization?.name}</strong>{' '}
+        {t('tizimidasiz. Faqat oʻqish: hech narsani oʻzgartira olmaysiz.')}
       </span>
     </div>
   )

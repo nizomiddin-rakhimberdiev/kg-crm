@@ -15,6 +15,30 @@ from apps.core.tenancy import organization_context, platform_context
 from apps.organizations.models import Organization
 
 
+@pytest.fixture(autouse=True)
+def _neutral_providers(settings):  # type: ignore[no-untyped-def]
+    """
+    Testlar ishlab chiquvchining `.env` iga BOG'LIQ BO'LMASIN.
+
+    Mahalliy `.env` da haqiqiy Telegram tokeni yoki Eskiz kalitlari
+    turgan bo'lsa, `is_test_mode()` boshqa javob qaytaradi va test
+    kodga emas, o'sha mashinaning sozlamasiga qarab yiqiladi yoki
+    o'tadi. Aynan shunday bo'ldi: token `.env` ga qo'yilgach, uchta
+    test sababsiz yiqildi.
+
+    Kerak bo'lgan test o'zi aniq yoqadi (`settings.TELEGRAM_BOT_TOKEN
+    = "…"`), ya'ni niyat testda ko'rinib turadi.
+    """
+    settings.NOTIFICATION_PROVIDER = "console"
+    settings.TELEGRAM_BOT_TOKEN = ""
+    settings.TELEGRAM_BOT_USERNAME = ""
+    settings.TELEGRAM_WEBHOOK_SECRET = ""
+    settings.TELEGRAM_LEADS_CHAT_ID = ""
+    settings.ESKIZ_EMAIL = ""
+    settings.ESKIZ_PASSWORD = ""
+    settings.ESKIZ_FROM = ""
+
+
 @pytest.fixture(scope="session")
 def django_db_setup(django_db_setup, django_db_blocker):  # type: ignore[no-untyped-def]
     """

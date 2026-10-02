@@ -20,14 +20,14 @@ __all__ = ["Child", "Guardian", "ChildGuardian", "Group", "Enrollment"]
 
 
 class Gender(models.TextChoices):
-    MALE = "male", gettext_lazy("O'g'il bola")
+    MALE = "male", gettext_lazy("Oʻgʻil bola")
     FEMALE = "female", gettext_lazy("Qiz bola")
 
 
 class EnrollmentStatus(models.TextChoices):
     PROSPECT = "prospect", gettext_lazy("Nomzod")
     ACTIVE = "active", gettext_lazy("Faol")
-    PAUSED = "paused", gettext_lazy("To'xtatilgan")
+    PAUSED = "paused", gettext_lazy("Toʻxtatilgan")
     GRADUATED = "graduated", gettext_lazy("Bitirgan")
     WITHDRAWN = "withdrawn", gettext_lazy("Chiqib ketgan")
 
@@ -316,7 +316,7 @@ class Group(BranchScopedModel):
 class EnrollmentState(models.TextChoices):
     ACTIVE = "active", gettext_lazy("Faol")
     ENDED = "ended", gettext_lazy("Tugagan")
-    TRANSFERRED = "transferred", gettext_lazy("Ko'chirilgan")
+    TRANSFERRED = "transferred", gettext_lazy("Koʻchirilgan")
 
 
 class Enrollment(BranchScopedModel):

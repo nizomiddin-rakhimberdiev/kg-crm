@@ -1,7 +1,7 @@
 """
 To'lov va qarzdorlar testlari — pul yadrosining yakuni.
 
-Bu yerdagi asosiy savol: "balans qachondir noto'g'ri bo'lib qola oladimi?"
+Bu yerdagi asosiy savol: "balans qachondir notoʻgʻri boʻlib qola oladimi?"
 Har bir test shu savolning bitta ehtimolli javobini yopadi.
 """
 
@@ -40,7 +40,7 @@ def tariff(tenant_a) -> TariffPlan:
         return TariffPlan.objects.create(
             organization=tenant_a.organization,
             branch=tenant_a.branch,
-            name="To'liq kun",
+            name="Toʻliq kun",
             amount=AMOUNT,
         )
 
@@ -75,7 +75,7 @@ class TestRecordPayment:
             assert services.child_balance(child.id) == Decimal("0.00")
 
     def test_partial_payment_marks_partially_paid(self, tenant_a, child):
-        """Muddati kelmagan hisob-faktura qisman to'langanda `partially_paid`."""
+        """Muddati kelmagan hisob-faktura qisman toʻlanganda `partially_paid`."""
         today = timezone.localdate()
         with organization_context(tenant_a.organization.id):
             current = services.issue_invoice(
@@ -137,14 +137,14 @@ class TestRecordPayment:
             )
             invoice.refresh_from_db()
 
-            assert invoice.amount_paid == AMOUNT, "hisob-faktura ortiqcha to'lanmaydi"
+            assert invoice.amount_paid == AMOUNT, "hisob-faktura ortiqcha toʻlanmaydi"
             assert invoice.status == InvoiceStatus.PAID
             assert services.child_advance(child) == Decimal("200000.00")
             # Balans manfiy — bog'cha oilaga qarzdor.
             assert services.child_balance(child.id) == Decimal("-200000.00")
 
     def test_unlinked_advance_payment_creates_credit_balance(self, tenant_a, child):
-        """Hisob-fakturasiz to'lov — avans, balans manfiy bo'ladi."""
+        """Hisob-fakturasiz toʻlov — avans, balans manfiy boʻladi."""
         with organization_context(tenant_a.organization.id):
             services.record_payment(child=child, amount=Decimal("300000"), method="cash")
             assert services.child_balance(child.id) == Decimal("-300000.00")
@@ -218,7 +218,7 @@ class TestReversal:
         Qaytarish o'chirmaydi — teng debet qo'shadi.
 
         Kassa jurnali "qabul qilindi, keyin qaytarildi" deb ko'rsatishi
-        kerak, "hech narsa bo'lmagan" emas.
+        kerak, "hech narsa boʻlmagan" emas.
         """
         with organization_context(tenant_a.organization.id):
             payment = services.record_payment(
@@ -232,7 +232,7 @@ class TestReversal:
             still_exists = Payment.objects.filter(pk=payment.pk).exists()
             balance = services.child_balance(child.id)
 
-        assert still_exists, "Qaytarilgan to'lov qatori o'chirilmasligi kerak"
+        assert still_exists, "Qaytarilgan toʻlov qatori oʻchirilmasligi kerak"
         assert payment.is_reversed
         assert [e.direction for e in entries] == [
             Direction.DEBIT,  # hisob-faktura
@@ -278,7 +278,7 @@ class TestDebtorsAreDerived:
         `debtor` jadvali BO'LMASLIGI kerak (ADR-7).
 
         Agar kimdir uni qo'shsa, ro'yxat ertami kechmi ledger bilan mos
-        kelmay qoladi va "qaysi biri to'g'ri?" degan javobsiz savol
+        kelmay qoladi va "qaysi biri toʻgʻri?" degan javobsiz savol
         paydo bo'ladi.
         """
         from django.apps import apps as django_apps
@@ -429,7 +429,7 @@ class TestEndpoints:
         assert response.json()["data"]["total"] == "500000.00"
 
     def test_attendance_manager_cannot_touch_payments(self, tenant_a, child):
-        """Davomat menejerida `payments` yo'q (docs/02 §11.2)."""
+        """Davomat menejerida `payments` yoʻq (docs/02 §11.2)."""
         from rest_framework.test import APIClient
 
         from apps.accounts.authentication import issue_token_pair

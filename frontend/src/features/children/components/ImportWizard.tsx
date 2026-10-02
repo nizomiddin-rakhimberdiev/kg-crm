@@ -42,7 +42,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
       }
     },
     onError: (err) => {
-      setError(err instanceof ApiError ? err.message : t("Faylni yuklab bo'lmadi."))
+      setError(err instanceof ApiError ? err.message : t('Faylni yuklab boʻlmadi.'))
       setReport(null)
     },
   })
@@ -79,7 +79,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
       link.click()
       URL.revokeObjectURL(url)
     } catch {
-      setError(t("Shablonni yuklab bo'lmadi. Qaytadan urinib ko'ring."))
+      setError(t('Shablonni yuklab boʻlmadi. Qaytadan urinib koʻring.'))
     } finally {
       setTemplateBusy(false)
     }
@@ -91,11 +91,11 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
     <Modal open onClose={onClose} className="max-w-2xl">
       <div className="p-6">
         <div className="mb-4 pr-10">
-          <h2 className="text-lg font-bold text-slate-900">{t("Ro'yxatni import qilish")}</h2>
+          <h2 className="text-lg font-bold text-slate-900">{t('Roʻyxatni import qilish')}</h2>
           <p className="mt-1 text-sm text-slate-500">
-            {t("Shablonni yuklab oling, to'ldiring va shu yerga qaytaring.")}{' '}
+            {t('Shablonni yuklab oling, toʻldiring va shu yerga qaytaring.')}{' '}
             <strong>{t('Excel fayli')}</strong>{' '}
-            {t("to'g'ridan-to'g'ri qabul qilinadi — CSV ga aylantirish shart emas.")}
+            {t('toʻgʻridan-toʻgʻri qabul qilinadi — CSV ga aylantirish shart emas.')}
           </p>
         </div>
 

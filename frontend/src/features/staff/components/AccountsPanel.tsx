@@ -275,7 +275,7 @@ export function AccountsPanel() {
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("Ism yoki email bo'yicha qidirish…")}
+            placeholder={t('Ism yoki email boʻyicha qidirish…')}
             className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
           />
         </div>
@@ -299,7 +299,7 @@ export function AccountsPanel() {
           <p className="px-4 py-8 text-center text-sm text-red-600">
             {staffQuery.error instanceof ApiError
               ? staffQuery.error.message
-              : t("Ma'lumotni yuklab bo'lmadi.")}
+              : t('Maʼlumotni yuklab boʻlmadi.')}
           </p>
         )}
         {staffQuery.data && members.length === 0 && (
@@ -308,7 +308,7 @@ export function AccountsPanel() {
             <p className="text-sm text-slate-500">
               {debouncedSearch
                 ? t('Shartga mos hisob topilmadi.')
-                : t("Hozircha tizim hisobi yo'q.")}
+                : t('Hozircha tizim hisobi yoʻq.')}
             </p>
           </div>
         )}
@@ -415,14 +415,14 @@ export function AccountsPanel() {
                   <dd>{dateTime(editing.last_login_at)}</dd>
                 </div>
                 <div className="flex gap-2">
-                  <dt>{t("Qo'shilgan:")}</dt>
+                  <dt>{t('Qoʻshilgan:')}</dt>
                   <dd>{dateTime(editing.created_at)}</dd>
                 </div>
               </dl>
             ) : (
               <p className="mt-0.5 text-xs text-slate-500">
                 {t(
-                  "Hisob egasi ko'rsatilgan email va parol bilan tizimga kiradi; nimani ko'rishi rolga bog'liq.",
+                  'Hisob egasi koʻrsatilgan email va parol bilan tizimga kiradi; nimani koʻrishi rolga bogʻliq.',
                 )}
               </p>
             )}
@@ -456,7 +456,7 @@ export function AccountsPanel() {
                   required={key !== 'phone' && !(key === 'password' && editing)}
                   placeholder={
                     key === 'password' && editing
-                      ? t("O'zgartirmaslik uchun bo'sh qoldiring")
+                      ? t('Oʻzgartirmaslik uchun boʻsh qoldiring')
                       : undefined
                   }
                   autoComplete={

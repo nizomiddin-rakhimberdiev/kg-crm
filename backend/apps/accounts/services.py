@@ -267,7 +267,7 @@ def _checked_slug(slug: str) -> str:
     """
     candidate = slugify(slug)[:50]
     if not candidate:
-        raise BusinessRuleViolation(gettext("Manzil (slug) bo'sh bo'lishi mumkin emas."))
+        raise BusinessRuleViolation(gettext("Manzil (slug) boʻsh boʻlishi mumkin emas."))
     if candidate in RESERVED_SLUGS:
         raise BusinessRuleViolation(
             gettext("'{candidate}' — band nom, boshqasini tanlang.").format(candidate=candidate)
@@ -301,7 +301,7 @@ def create_user(
 
     if role.code != "org_owner" and branch is None:
         raise BusinessRuleViolation(
-            gettext("Org Owner'dan boshqa barcha rollar uchun filial ko'rsatilishi shart.")
+            gettext("Org Ownerʼdan boshqa barcha rollar uchun filial koʻrsatilishi shart.")
         )
 
     return User.objects.create_user(

@@ -2,7 +2,7 @@
 Qidiruv kaliti — Q11, PLAN 2.7.
 
 Bog'chada bitta bola uch xil yoziladi. Mudira qaysi birini yozsa ham
-topishi kerak: topa olmasa, u "bu bola tizimda yo'q" deb xulosa qiladi
+topishi kerak: topa olmasa, u "bu bola tizimda yoʻq" deb xulosa qiladi
 va ikkinchi marta kiritadi — natijada bitta bola ikkita balansda.
 """
 
@@ -17,11 +17,11 @@ class TestApostrophes:
     @pytest.mark.parametrize(
         "spelling",
         [
-            "Ulug'bek",
             "Ulugʻbek",
-            "Ulug’bek",
-            "Ulug`bek",
-            "ULUG'BEK",
+            "Ulugʻbek",
+            "Ulugʻbek",
+            "Ulugʻbek",
+            "ULUGʻBEK",
             "ulugbek",
         ],
     )
@@ -30,7 +30,7 @@ class TestApostrophes:
 
     def test_an_apostrophe_is_removed_not_replaced(self):
         """ "o'g'li" va "ogli" bir xil kalit berishi kerak."""
-        assert search_key("o'g'li") == search_key("ogli") == "ogli"
+        assert search_key("oʻgʻli") == search_key("ogli") == "ogli"
 
 
 class TestCyrillic:

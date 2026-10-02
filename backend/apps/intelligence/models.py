@@ -19,7 +19,7 @@ from apps.core.models import BranchScopedModel
 
 
 class InsightType(models.TextChoices):
-    PAYMENT_DELAY = "payment_delay", gettext_lazy("To'lov kechikishi")
+    PAYMENT_DELAY = "payment_delay", gettext_lazy("Toʻlov kechikishi")
     ATTENDANCE_DROP = "attendance_drop", gettext_lazy("Davomat pasayishi")
 
 
@@ -30,10 +30,10 @@ class InsightSeverity(models.TextChoices):
 
 class InsightStatus(models.TextChoices):
     NEW = "new", gettext_lazy("Yangi")
-    SEEN = "seen", gettext_lazy("Ko'rilgan")
+    SEEN = "seen", gettext_lazy("Koʻrilgan")
     RESOLVED = "resolved", gettext_lazy("Hal qilingan")
     DISMISSED = "dismissed", gettext_lazy("Rad etilgan")
-    AUTO_RESOLVED = "auto_resolved", gettext_lazy("O'zi hal bo'lgan")
+    AUTO_RESOLVED = "auto_resolved", gettext_lazy("Oʻzi hal boʻlgan")
 
 
 class SubjectType(models.TextChoices):

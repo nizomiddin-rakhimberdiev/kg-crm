@@ -22,7 +22,7 @@ pytestmark = pytest.mark.django_db
 
 
 def test_default_is_saas():
-    """Bayroq berilmasa — SaaS. Mavjud o'rnatmalar o'zgarmasligi kerak."""
+    """Bayroq berilmasa — SaaS. Mavjud oʻrnatmalar oʻzgarmasligi kerak."""
     assert is_saas()
     assert not is_standalone()
 
@@ -45,7 +45,7 @@ def test_saas_address_keeps_tenant_prefix():
     PUBLIC_BASE_URL="https://bogcha.uz", TENANT_URL_STYLE="path", DEPLOYMENT_MODE="standalone"
 )
 def test_standalone_address_is_the_root():
-    """Bitta bog'cha — prefiks hech narsani ajratmaydi."""
+    """Bitta bogʻcha — prefiks hech narsani ajratmaydi."""
     assert tenant_base_url("quyosh") == "https://bogcha.uz"
 
 
@@ -59,7 +59,7 @@ def test_standalone_registration_creates_no_subscription():
     from apps.subscriptions.models import Subscription
 
     result = register_organization(
-        organization_name="Yakka bog'cha",
+        organization_name="Yakka bogʻcha",
         contact_email="ega@example.com",
         full_name="Ega Egayev",
         password="parol-12345",  # noqa: S106
@@ -70,13 +70,13 @@ def test_standalone_registration_creates_no_subscription():
 
 
 def test_saas_registration_starts_a_trial():
-    """Teskari tomoni ham qotirilgan: SaaS'da sinov ochilishi SHART."""
+    """Teskari tomoni ham qotirilgan: SaaSʼda sinov ochilishi SHART."""
     from apps.accounts.services import register_organization
     from apps.core.tenancy import organization_context
     from apps.subscriptions.models import Subscription
 
     result = register_organization(
-        organization_name="Obunali bog'cha",
+        organization_name="Obunali bogʻcha",
         contact_email="ega2@example.com",
         full_name="Ega Egayev",
         password="parol-12345",  # noqa: S106

@@ -205,7 +205,7 @@ def test_reversed_payments_are_not_income(tenant_a: Any):
 
 
 def test_the_balance_is_broken_down_by_pot(tenant_a: Any):
-    """Mijozning aynan so'ragan kesimi: naqd qancha, plastikda qancha."""
+    """Mijozning aynan soʻragan kesimi: naqd qancha, plastikda qancha."""
     child = _child(tenant_a)
     with organization_context(tenant_a.organization.id):
         finance.record_payment(child=child, amount=Decimal("1400000"), method="cash")

@@ -1,7 +1,7 @@
 """
 Kassa jurnali (ADR-17, docs/03 §13a).
 
-Bu jurnal "hozir qo'limizda qancha pul bor?" degan savolga javob beradi,
+Bu jurnal "hozir qoʻlimizda qancha pul bor?" degan savolga javob beradi,
 va u pul haqidagi savol — shuning uchun testlar ikki narsani qattiq
 ushlaydi: **qoldiq yozuvlardan hisoblanadi** va **hech bir yozuv
 o'zgartirilmaydi**.
@@ -50,7 +50,7 @@ def _balances(tenant: Any) -> dict[str, Decimal]:
 
 
 def test_branch_is_born_with_four_accounts(tenant_a: Any):
-    """Ro'yxatdan o'tish paytida ochiladi — birinchi to'lovdan oldin."""
+    """Roʻyxatdan oʻtish paytida ochiladi — birinchi toʻlovdan oldin."""
     with organization_context(tenant_a.organization.id):
         accounts = CashAccount.objects.filter(branch=tenant_a.branch, is_active=True)
         assert {a.kind for a in accounts} == {"cash", "terminal", "bank", "ewallet"}
@@ -82,7 +82,7 @@ def test_ensure_accounts_is_idempotent_and_keeps_renames(tenant_a: Any):
 
 
 def test_one_account_per_method_is_enforced_by_the_database(tenant_a: Any):
-    """Ikkita qop `cash` ni da'vo qilsa, pul qayerga tushgani tanga tashlash bo'lardi."""
+    """Ikkita qop `cash` ni daʼvo qilsa, pul qayerga tushgani tanga tashlash boʻlardi."""
     from django.db import IntegrityError
 
     with organization_context(tenant_a.organization.id), pytest.raises(IntegrityError):
@@ -152,11 +152,11 @@ def test_reversing_twice_does_not_double_the_counter_entry(tenant_a: Any):
 
 def test_approving_an_expense_is_what_moves_the_money(tenant_a: Any):
     """
-    Pul TASDIQLASHDA chiqadi, "to'landi" tugmasida emas.
+    Pul TASDIQLASHDA chiqadi, "toʻlandi" tugmasida emas.
 
     Hisobotlar boshidan beri `approved` ni xarajat deb sanaydi. Kassa
     faqat `paid` da kamasa, ikkita ekran bir xil savolga ikki xil javob
-    berardi — ko'p bog'cha esa "to'landi" tugmasini umuman bosmaydi.
+    berardi — ko'p bog'cha esa "toʻlandi" tugmasini umuman bosmaydi.
     """
     child = _child(tenant_a)
     with organization_context(tenant_a.organization.id):
@@ -174,7 +174,7 @@ def test_approving_an_expense_is_what_moves_the_money(tenant_a: Any):
         expenses.approve_expense(expense=expense, approved_by=None)
         assert _balances(tenant_a)["cash"] == Decimal("1700000.00")
 
-        # "To'landi" — faqat bayroq. Pul IKKINCHI marta chiqmaydi.
+        # "Toʻlandi" — faqat bayroq. Pul IKKINCHI marta chiqmaydi.
         expenses.mark_expense_paid(expense=expense)
         assert _balances(tenant_a)["cash"] == Decimal("1700000.00")
 
@@ -202,12 +202,12 @@ def test_paid_expense_leaves_the_till(tenant_a: Any):
 
 
 def test_a_pending_request_does_not_move_money(tenant_a: Any):
-    """Tasdiqlanmagan so'rov hali pul emas — u kassadan chiqmagan."""
+    """Tasdiqlanmagan soʻrov hali pul emas — u kassadan chiqmagan."""
     child = _child(tenant_a)
     with organization_context(tenant_a.organization.id):
         finance.record_payment(child=child, amount=Decimal("2000000"), method="cash")
         category = ExpenseCategory.objects.create(
-            organization=tenant_a.organization, branch=tenant_a.branch, name="Ta'mirlash"
+            organization=tenant_a.organization, branch=tenant_a.branch, name="Taʼmirlash"
         )
         Expense.objects.create(
             organization=tenant_a.organization,
@@ -223,7 +223,7 @@ def test_a_pending_request_does_not_move_money(tenant_a: Any):
 
 
 def test_transfer_moves_money_between_pots_without_changing_the_total(tenant_a: Any):
-    """Kun oxirida naqdni bankka topshirish — jami o'zgarmasligi SHART."""
+    """Kun oxirida naqdni bankka topshirish — jami oʻzgarmasligi SHART."""
     child = _child(tenant_a)
     with organization_context(tenant_a.organization.id):
         finance.record_payment(child=child, amount=Decimal("3000000"), method="cash")

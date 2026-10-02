@@ -120,7 +120,7 @@ export function RecordPaymentModal({
     <Modal open onClose={onClose} className="max-w-md">
       <div className="p-6">
         <div className="mb-4 pr-10">
-          <h2 className="text-lg font-bold text-slate-900">{t("To'lov qabul qilish")}</h2>
+          <h2 className="text-lg font-bold text-slate-900">{t('Toʻlov qabul qilish')}</h2>
           <p className="mt-1 text-sm text-slate-500">
             {invoice
               ? `${invoice.child_name} · ${invoice.number}`
@@ -130,9 +130,9 @@ export function RecordPaymentModal({
 
         {invoice && (
           <div className="mb-4 rounded-lg bg-slate-50 px-3 py-2 text-sm">
-            <span className="text-slate-500">{t("To'lanishi kerak:")} </span>
+            <span className="text-slate-500">{t('Toʻlanishi kerak:')} </span>
             <span className="font-semibold tabular-nums text-slate-900">
-              {t("{money} so'm", { money: money(outstanding) })}
+              {t('{money} soʻm', { money: money(outstanding) })}
             </span>
           </div>
         )}
@@ -181,7 +181,7 @@ export function RecordPaymentModal({
                 <div key={line.key}>
                   <div className="flex gap-2">
                     <select
-                      aria-label={t("To'lov usuli")}
+                      aria-label={t('Toʻlov usuli')}
                       value={line.method}
                       onChange={(e) => update(line.key, { method: e.target.value })}
                       className="w-[9.5rem] shrink-0 rounded-lg border border-slate-200 px-2 py-2 text-sm outline-none focus:border-brand-500"
@@ -207,7 +207,7 @@ export function RecordPaymentModal({
                       <button
                         type="button"
                         onClick={() => setLines((prev) => prev.filter((l) => l.key !== line.key))}
-                        title={t("Qatorni o'chirish")}
+                        title={t('Qatorni oʻchirish')}
                         className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                       >
                         <X className="h-4 w-4" />
@@ -216,7 +216,7 @@ export function RecordPaymentModal({
                   </div>
                   {line.method !== 'cash' && (
                     <input
-                      aria-label={t("Ma'lumotnoma (ixtiyoriy)")}
+                      aria-label={t('Maʼlumotnoma (ixtiyoriy)')}
                       value={line.reference}
                       onChange={(e) => update(line.key, { reference: e.target.value })}
                       placeholder={t('Tranzaksiya raqami')}
@@ -233,7 +233,7 @@ export function RecordPaymentModal({
                 onClick={addLine}
                 className="mt-2 flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-brand-700 transition hover:bg-brand-50"
               >
-                <Plus className="h-4 w-4" /> {t('Yana usul qo‘shish')}
+                <Plus className="h-4 w-4" /> {t('Yana usul qoʻshish')}
               </button>
             )}
           </div>
@@ -246,14 +246,14 @@ export function RecordPaymentModal({
               <div className="flex justify-between">
                 <dt className="text-slate-500">{t('Jami')}</dt>
                 <dd className="font-semibold tabular-nums text-slate-900">
-                  {t("{money} so'm", { money: money(total) })}
+                  {t('{money} soʻm', { money: money(total) })}
                 </dd>
               </div>
               {invoice && settled > 0 && (
                 <div className="flex justify-between">
                   <dt className="text-slate-500">{t('Hisob-fakturaga')}</dt>
                   <dd className="tabular-nums text-slate-700">
-                    {t("{money} so'm", { money: money(settled) })}
+                    {t('{money} soʻm', { money: money(settled) })}
                   </dd>
                 </div>
               )}
@@ -261,7 +261,7 @@ export function RecordPaymentModal({
                 <div className="flex justify-between">
                   <dt className="text-amber-700">{t('Avansga (balansga)')}</dt>
                   <dd className="font-medium tabular-nums text-amber-700">
-                    {t("{money} so'm", { money: money(advance) })}
+                    {t('{money} soʻm', { money: money(advance) })}
                   </dd>
                 </div>
               )}
@@ -279,7 +279,7 @@ export function RecordPaymentModal({
             <Banknote className="h-4 w-4" />
             {record.isPending
               ? t('Saqlanmoqda…')
-              : t("{money} so'm qabul qilish", { money: money(total) })}
+              : t('{money} soʻm qabul qilish', { money: money(total) })}
           </button>
         </form>
       </div>

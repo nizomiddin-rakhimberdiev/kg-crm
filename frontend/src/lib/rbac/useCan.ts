@@ -27,10 +27,7 @@ export function useCan() {
     [user, isReadOnly],
   )
 
-  const canAny = useCallback(
-    (...permissions: PermissionCode[]) => permissions.some(can),
-    [can],
-  )
+  const canAny = useCallback((...permissions: PermissionCode[]) => permissions.some(can), [can])
 
   return { can, canAny, isReadOnly }
 }

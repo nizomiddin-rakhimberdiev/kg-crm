@@ -61,9 +61,9 @@ export function PayslipModal({ item, onClose }: { item: PayrollItem | null; onCl
             </h3>
             <div className="mt-1 divide-y divide-slate-100">
               <Row label={t('Lavozim maoshi')} value={item.official_base} />
-              <Row label={t("Daromad solig'i")} value={item.tax_income} negative />
+              <Row label={t('Daromad soligʻi')} value={item.tax_income} negative />
               <Row label={t('Pensiya badali')} value={item.tax_pension} negative />
-              <Row label={t("O'tkaziladi")} value={item.official_net} strong />
+              <Row label={t('Oʻtkaziladi')} value={item.official_net} strong />
             </div>
           </section>
         )}
@@ -86,14 +86,14 @@ export function PayslipModal({ item, onClose }: { item: PayrollItem | null; onCl
         </section>
 
         <div className="mt-4 flex items-baseline justify-between gap-3 border-t border-slate-200 pt-3">
-          <span className="text-sm font-medium text-slate-600">{t("Jami qo'lga")}</span>
+          <span className="text-sm font-medium text-slate-600">{t('Jami qoʻlga')}</span>
           <span className="text-xl font-bold tabular-nums text-slate-900">{money(item.net)}</span>
         </div>
 
         {hasOfficial && (
           <p className="mt-3 text-xs text-slate-400">
             {t(
-              "Ushlab qolingan soliq xodimga berilmaydi va kassadan ham chiqmaydi — u davlatga to'langanda oddiy chiqim bo'lib yoziladi.",
+              'Ushlab qolingan soliq xodimga berilmaydi va kassadan ham chiqmaydi — u davlatga toʻlanganda oddiy chiqim boʻlib yoziladi.',
             )}
           </p>
         )}

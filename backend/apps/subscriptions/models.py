@@ -94,10 +94,10 @@ class SubscriptionPlan(BaseModel):
 
 class SubscriptionStatus(models.TextChoices):
     TRIALING = "trialing", gettext_lazy("Sinov davri")
-    PENDING_PAYMENT = "pending_payment", gettext_lazy("To'lov kutilmoqda")
+    PENDING_PAYMENT = "pending_payment", gettext_lazy("Toʻlov kutilmoqda")
     ACTIVE = "active", gettext_lazy("Faol")
-    PAST_DUE = "past_due", gettext_lazy("Muddati o'tgan")
-    SUSPENDED = "suspended", gettext_lazy("To'xtatilgan")
+    PAST_DUE = "past_due", gettext_lazy("Muddati oʻtgan")
+    SUSPENDED = "suspended", gettext_lazy("Toʻxtatilgan")
     CANCELLED = "cancelled", gettext_lazy("Bekor qilingan")
 
 
@@ -208,7 +208,7 @@ class Subscription(TenantScopedModel):
 
 class MeasurementMethod(models.TextChoices):
     DAILY_PEAK = "daily_peak", gettext_lazy("Kunlik eng yuqori")
-    MANUAL_ADJUSTMENT = "manual_adjustment", gettext_lazy("Qo'lda tuzatish")
+    MANUAL_ADJUSTMENT = "manual_adjustment", gettext_lazy("Qoʻlda tuzatish")
 
 
 class UsageSnapshot(TenantScopedModel):
@@ -286,8 +286,8 @@ class UsageSnapshot(TenantScopedModel):
 
 class SubscriptionInvoiceStatus(models.TextChoices):
     ISSUED = "issued", gettext_lazy("Yozilgan")
-    PAID = "paid", gettext_lazy("To'langan")
-    OVERDUE = "overdue", gettext_lazy("Muddati o'tgan")
+    PAID = "paid", gettext_lazy("Toʻlangan")
+    OVERDUE = "overdue", gettext_lazy("Muddati oʻtgan")
     CANCELLED = "cancelled", gettext_lazy("Bekor qilingan")
 
 
@@ -370,7 +370,7 @@ class SubscriptionInvoice(TenantScopedModel):
 
 
 class SubscriptionPaymentMethod(models.TextChoices):
-    BANK_TRANSFER = "bank_transfer", gettext_lazy("Bank o'tkazmasi")
+    BANK_TRANSFER = "bank_transfer", gettext_lazy("Bank oʻtkazmasi")
     CARD = "card", gettext_lazy("Karta")
     CASH = "cash", gettext_lazy("Naqd")
 

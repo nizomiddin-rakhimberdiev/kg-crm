@@ -94,11 +94,11 @@ class TestEnrollment:
                 date_of_birth=date(2021, 1, 1),
                 gender="female",
             )
-            with pytest.raises(BusinessRuleViolation, match="to'lgan"):
+            with pytest.raises(BusinessRuleViolation, match="toʻlgan"):
                 enroll_child(child=overflow, group=group)
 
     def test_zero_capacity_means_unlimited(self, tenant_a, child):
-        """`capacity=0` — cheklov yo'q (yangi guruh uchun default)."""
+        """`capacity=0` — cheklov yoʻq (yangi guruh uchun default)."""
         with organization_context(tenant_a.organization.id):
             open_group = Group.objects.create(
                 organization=tenant_a.organization,

@@ -71,7 +71,7 @@ class TestAlert:
         import requests
 
         with (
-            patch("requests.post", side_effect=requests.ConnectionError("tarmoq yo'q")),
+            patch("requests.post", side_effect=requests.ConnectionError("tarmoq yoʻq")),
             django_capture_on_commit_callbacks(execute=True),
         ):
             created = client.post(
@@ -96,7 +96,7 @@ class TestAlert:
         lead = Mock(
             name_="x",
             phone="+998901234567",
-            kindergarten_name="<b>Bog'cha</b>",
+            kindergarten_name="<b>Bogʻcha</b>",
             children_count=10,
             city="Toshkent",
             message="",
@@ -112,7 +112,7 @@ class TestAlert:
 
 
 class TestNextCall:
-    """PLAN 3.6: "ertaga qo'ng'iroq qilaman" — qachon ekanini yozib qo'yish."""
+    """PLAN 3.6: "ertaga qo'ng'iroq qilaman" — qachon ekanini yozib qoʻyish."""
 
     @pytest.fixture
     def console(self):

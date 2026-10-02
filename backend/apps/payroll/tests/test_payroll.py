@@ -1,8 +1,8 @@
 """
 Oylik hisoblash testlari (docs/03 §14, docs/04 §11.2).
 
-Asosiy savol: "yakunlangan hisoblash o'zgarib qola oladimi?" — xodim
-"o'tgan oyda menga qancha hisoblangan edi?" deb so'raganda javob bir xil
+Asosiy savol: "yakunlangan hisoblash oʻzgarib qola oladimi?" — xodim
+"oʻtgan oyda menga qancha hisoblangan edi?" deb so'raganda javob bir xil
 bo'lishi kerak.
 """
 
@@ -71,7 +71,7 @@ class TestRunCreation:
         Maosh SNAPSHOT sifatida ko'chiriladi.
 
         Keyin maosh oshsa, o'tgan oyning hisoblashi o'zgarmasligi kerak —
-        aks holda "o'tgan oy qancha edi?" degan savolga javob vaqt o'tishi
+        aks holda "oʻtgan oy qancha edi?" degan savolga javob vaqt o'tishi
         bilan o'zgarardi.
         """
         with organization_context(tenant_a.organization.id):
@@ -80,7 +80,7 @@ class TestRunCreation:
         assert item.base_amount == SALARY
 
     def test_duplicate_period_is_rejected(self, tenant_a, run):
-        """Bir filial — bir davr — bitta hisoblash (ikki marta to'lamaslik)."""
+        """Bir filial — bir davr — bitta hisoblash (ikki marta toʻlamaslik)."""
         with (
             organization_context(tenant_a.organization.id),
             pytest.raises(BusinessRuleViolation, match="allaqachon mavjud"),
@@ -146,7 +146,7 @@ class TestItemEditing:
                 services.update_item(item=item, bonus=Decimal("-1"))
 
     def test_totals_are_recomputed_not_incremented(self, tenant_a, run):
-        """Yig'indi keshi buzilsa, keyingi tahrirda tuzaladi."""
+        """Yigʻindi keshi buzilsa, keyingi tahrirda tuzaladi."""
         with organization_context(tenant_a.organization.id):
             PayrollRun.objects.filter(pk=run.pk).update(total_net=Decimal("1"))
             item = PayrollItem.objects.filter(payroll_run=run).first()
@@ -164,7 +164,7 @@ class TestStateMachine:
             assert run.finalized_at is not None
 
             item = PayrollItem.objects.filter(payroll_run=run).first()
-            with pytest.raises(BusinessRuleViolation, match="o'zgartirib bo'lmaydi"):
+            with pytest.raises(BusinessRuleViolation, match="oʻzgartirib boʻlmaydi"):
                 services.update_item(item=item, bonus=Decimal("100000"))
 
     def test_empty_run_cannot_be_finalized(self, tenant_a):
@@ -175,7 +175,7 @@ class TestStateMachine:
                 period_year=2026,
                 period_month=9,
             )
-            with pytest.raises(BusinessRuleViolation, match="Bo'sh"):
+            with pytest.raises(BusinessRuleViolation, match="Boʻsh"):
                 services.finalize_run(run=empty)
 
     def test_double_finalize_is_rejected(self, tenant_a, run):
@@ -201,7 +201,7 @@ class TestPayslip:
     def test_reflects_the_run_not_current_salary(self, tenant_a, run, employees):
         with organization_context(tenant_a.organization.id):
             item = PayrollItem.objects.get(payroll_run=run, employee=employees[0])
-            services.update_item(item=item, bonus=Decimal("300000"), note="Qo'shimcha smena")
+            services.update_item(item=item, bonus=Decimal("300000"), note="Qoʻshimcha smena")
             Employee.objects.filter(pk=employees[0].pk).update(base_salary=Decimal("9000000"))
             item.refresh_from_db()
             slip = services.payslip(item=item)
@@ -209,7 +209,7 @@ class TestPayslip:
         assert slip["base_amount"] == "4000000.00"  # o'sha oyning maoshi
         assert slip["bonus"] == "300000.00"
         assert slip["net"] == "4300000.00"
-        assert slip["note"] == "Qo'shimcha smena"
+        assert slip["note"] == "Qoʻshimcha smena"
 
 
 class TestEndpoints:
@@ -264,7 +264,7 @@ class TestEndpoints:
         assert response.json()["data"]["net"] == "4000000.00"
 
     def test_cashier_cannot_access_payroll(self, tenant_a):
-        """Kassirda `payroll` yo'q (docs/02 §11.2)."""
+        """Kassirda `payroll` yoʻq (docs/02 §11.2)."""
         from rest_framework.test import APIClient
 
         from apps.accounts.authentication import issue_token_pair

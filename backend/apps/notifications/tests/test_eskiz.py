@@ -113,7 +113,7 @@ class TestSending:
         import requests
 
         login = _response(200, {"data": {"token": "jwt-1"}})
-        with patch("requests.post", side_effect=[login, requests.ConnectionError("tarmoq yo'q")]):
+        with patch("requests.post", side_effect=[login, requests.ConnectionError("tarmoq yoʻq")]):
             result = EskizProvider().send(address="+998901234567", body="Salom")
 
         assert result.success is False

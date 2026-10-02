@@ -64,7 +64,7 @@ def _run_together(target, count: int = 2) -> list:
 
 
 class ConcurrencyCase(TransactionTestCase):
-    """Har bir test uchun haqiqiy, commit qilingan ma'lumot."""
+    """Har bir test uchun haqiqiy, commit qilingan maʼlumot."""
 
     def setUp(self) -> None:
         # `TransactionTestCase` har bir testdan keyin JADVALLARNI
@@ -86,7 +86,7 @@ class ConcurrencyCase(TransactionTestCase):
         )
 
         self.tenant = register_organization(
-            organization_name="Poyga Bog'chasi",
+            organization_name="Poyga Bogʻchasi",
             contact_email="owner@poyga.uz",
             full_name="Egasi",
             password="Juda-Kuchli-Parol-2026",  # noqa: S106 — test ma'lumoti
@@ -96,7 +96,7 @@ class ConcurrencyCase(TransactionTestCase):
             self.tariff = TariffPlan.objects.create(
                 organization=self.org,
                 branch=self.tenant.branch,
-                name="To'liq kun",
+                name="Toʻliq kun",
                 amount=Decimal("1000000"),
             )
             self.child = Child.objects.create(
@@ -149,7 +149,7 @@ class ConcurrencyCase(TransactionTestCase):
         with organization_context(self.org.id):
             invoice.refresh_from_db()
             # Asosiy invariant: hujjat ortiqcha to'lanmaydi.
-            assert invoice.amount_paid == due, "hisob-faktura ortiqcha to'langan"
+            assert invoice.amount_paid == due, "hisob-faktura ortiqcha toʻlangan"
             assert invoice.status == InvoiceStatus.PAID
             # Ikkinchi to'lov yo'qolmaydi — u avans bo'lib turadi.
             assert finance.child_advance(Child.objects.get(pk=self.child.pk)) == due
@@ -177,14 +177,14 @@ class ConcurrencyCase(TransactionTestCase):
         results = _run_together(pay, count=4)
         payments = [r for r in results if isinstance(r, Payment)]
         assert len(payments) == 4, f"hammasi javob qaytarishi kerak edi: {results}"
-        assert len({p.id for p in payments}) == 1, "har xil to'lovlar yaratildi"
+        assert len({p.id for p in payments}) == 1, "har xil toʻlovlar yaratildi"
 
         with organization_context(self.org.id):
             assert Payment.objects.filter(child=self.child).count() == 1
             assert finance.child_balance(self.child.id) == Decimal("-500000.00")
 
     def test_different_keys_create_different_payments(self) -> None:
-        """Himoya haqiqiy ikkinchi to'lovni to'sib qo'ymasin."""
+        """Himoya haqiqiy ikkinchi toʻlovni toʻsib qoʻymasin."""
         with organization_context(self.org.id):
             for _ in range(2):
                 finance.record_payment(
@@ -227,7 +227,7 @@ class ConcurrencyCase(TransactionTestCase):
         results = _run_together(issue, count=2)
         succeeded = [r for r in results if not isinstance(r, Exception)]
 
-        assert len(succeeded) == 1, "ikkala chiqim ham o'tdi — qoldiq manfiy bo'lardi"
+        assert len(succeeded) == 1, "ikkala chiqim ham oʻtdi — qoldiq manfiy boʻlardi"
         with organization_context(self.org.id):
             product.refresh_from_db()
             assert product.current_stock == Decimal("2.000")

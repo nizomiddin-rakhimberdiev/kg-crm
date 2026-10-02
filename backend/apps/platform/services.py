@@ -430,7 +430,7 @@ def start_support_session(
     grant = active_grant(platform_user=actor, organization_id=organization_id)
     if grant is None:
         raise BusinessRuleViolation(
-            "Amaldagi ruxsat yo'q. Avval sabab ko'rsatib kirish ruxsatini oling."
+            "Amaldagi ruxsat yoʻq. Avval sabab koʻrsatib kirish ruxsatini oling."
         )
 
     with platform_context():

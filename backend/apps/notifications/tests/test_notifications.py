@@ -1,7 +1,7 @@
 """
 Bildirishnoma testlari (docs/03 §17, docs/04 §15).
 
-Asosiy savol: "xabar yuborilmagani jimgina yo'qolib keta oladimi?" —
+Asosiy savol: "xabar yuborilmagani jimgina yoʻqolib keta oladimi?" —
 "SMS kelmadi" degan shikoyatga javob jurnalda bo'lishi kerak.
 """
 
@@ -84,12 +84,12 @@ class TestTemplates:
 
 class TestRendering:
     def test_variables_are_substituted(self):
-        body = "Salom ${guardian}, ${child} uchun ${amount} so'm"
+        body = "Salom ${guardian}, ${child} uchun ${amount} soʻm"
         assert (
             services.render_template(
                 body, {"guardian": "Nodira", "child": "Ali", "amount": "500 000"}
             )
-            == "Salom Nodira, Ali uchun 500 000 so'm"
+            == "Salom Nodira, Ali uchun 500 000 soʻm"
         )
 
     def test_unknown_placeholder_does_not_break_the_message(self):
@@ -103,8 +103,8 @@ class TestRendering:
         assert "${nomalum}" in result
 
     def test_stray_brace_does_not_break_the_message(self):
-        """`.format()` bo'lganda `{` belgisi yuborishni yiqitardi."""
-        assert services.render_template("Narx {100} so'm", {}) == "Narx {100} so'm"
+        """`.format()` boʻlganda `{` belgisi yuborishni yiqitardi."""
+        assert services.render_template("Narx {100} soʻm", {}) == "Narx {100} soʻm"
 
 
 class TestQueueing:
@@ -214,7 +214,7 @@ class TestDispatch:
                 channel="sms",
             )
             services.dispatch_notification(notification, now_time=time(10, 0))
-            with pytest.raises(BusinessRuleViolation, match="yuborib bo'lmaydi"):
+            with pytest.raises(BusinessRuleViolation, match="yuborib boʻlmaydi"):
                 services.dispatch_notification(notification, now_time=time(10, 0))
 
 

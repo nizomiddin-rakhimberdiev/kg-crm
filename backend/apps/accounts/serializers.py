@@ -144,7 +144,7 @@ class RoleSerializer(serializers.ModelSerializer):
         normalized = re.sub(r"[^a-z0-9_]+", "_", value.strip().lower()).strip("_")
         if not normalized:
             raise serializers.ValidationError(
-                gettext("Kod lotin harflari va raqamlardan iborat bo'lsin.")
+                gettext("Kod lotin harflari va raqamlardan iborat boʻlsin.")
             )
 
         organization = request_user(self.context["request"]).organization
@@ -164,7 +164,7 @@ class RoleSerializer(serializers.ModelSerializer):
             new_code = attrs.get("code")
             if new_code is not None and new_code != self.instance.code:
                 raise serializers.ValidationError(
-                    {"code": gettext("Tizim rolining kodini o'zgartirib bo'lmaydi.")}
+                    {"code": gettext("Tizim rolining kodini oʻzgartirib boʻlmaydi.")}
                 )
         return attrs
 
@@ -255,7 +255,7 @@ class UserWriteSerializer(serializers.ModelSerializer):
         branch = attrs.get("branch", getattr(self.instance, "branch", None))
         if role and role.code != "org_owner" and branch is None:
             raise serializers.ValidationError(
-                {"branch_id": gettext("Org Owner'dan boshqa rollar uchun filial majburiy.")}
+                {"branch_id": gettext("Org Ownerʼdan boshqa rollar uchun filial majburiy.")}
             )
         if self.instance is None and not attrs.get("password"):
             raise serializers.ValidationError({"password": gettext("Parol majburiy.")})

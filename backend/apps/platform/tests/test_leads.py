@@ -22,7 +22,7 @@ def payload(**overrides):
     body = {
         "name": "Dilshod Karimov",
         "phone": "90 123 45 67",
-        "kindergarten_name": "Mehrjon bog'chasi",
+        "kindergarten_name": "Mehrjon bogʻchasi",
         "children_count": 60,
         "city": "Toshkent",
         "message": "Demo olishni xohlaymiz.",
@@ -108,14 +108,14 @@ class TestLeadAccess:
         response = client.get("/api/v1/platform/leads")
         assert response.status_code == 200
         body = response.json()["data"]
-        assert body["items"][0]["kindergarten_name"] == "Mehrjon bog'chasi"
+        assert body["items"][0]["kindergarten_name"] == "Mehrjon bogʻchasi"
         assert body["counts"] == {"new": 1, "contacted": 0, "qualified": 0, "closed": 0}
 
     def test_anonymous_user_cannot_list_leads(self):
         assert APIClient().get("/api/v1/platform/leads").status_code == 401
 
     def test_admin_moves_a_lead_through_statuses_with_audit(self):
-        """Konsoldan holat + izoh; har o'zgarish platforma auditida."""
+        """Konsoldan holat + izoh; har oʻzgarish platforma auditida."""
         from apps.audit.models import AuditLog
 
         APIClient().post(URL, payload(), format="json")
@@ -126,7 +126,7 @@ class TestLeadAccess:
 
         response = client.post(
             f"/api/v1/platform/leads/{lead_id}/status",
-            {"status": "contacted", "note": "Ertaga 10:00 da qo'ng'iroq"},
+            {"status": "contacted", "note": "Ertaga 10:00 da qoʻngʻiroq"},
             format="json",
         )
         assert response.status_code == 200

@@ -30,7 +30,7 @@ def parse_decimal(raw: Any, *, field: str = "") -> Decimal | None:
         return Decimal(str(raw))
     except (InvalidOperation, ValueError, TypeError) as exc:
         raise BusinessRuleViolation(
-            gettext("{field}: raqam noto'g'ri.").format(field=field or gettext("Qiymat"))
+            gettext("{field}: raqam notoʻgʻri.").format(field=field or gettext("Qiymat"))
         ) from exc
 
 
@@ -41,7 +41,7 @@ def parse_int(raw: Any, *, field: str = "") -> int | None:
         return int(str(raw))
     except (ValueError, TypeError) as exc:
         raise BusinessRuleViolation(
-            gettext("{field}: raqam noto'g'ri.").format(field=field or gettext("Qiymat"))
+            gettext("{field}: raqam notoʻgʻri.").format(field=field or gettext("Qiymat"))
         ) from exc
 
 
@@ -59,7 +59,7 @@ def parse_uuid(raw: Any) -> str | None:
     try:
         return str(uuid.UUID(str(raw)))
     except (ValueError, TypeError, AttributeError) as exc:
-        raise BusinessRuleViolation(gettext("Noto'g'ri identifikator.")) from exc
+        raise BusinessRuleViolation(gettext("Notoʻgʻri identifikator.")) from exc
 
 
 def parse_bool(raw: Any) -> bool:

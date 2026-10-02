@@ -22,7 +22,7 @@ from apps.subscriptions import pricing
 
 @dataclass(frozen=True)
 class FakePlan:
-    """Bazasiz plan — narx mantiqi bazaga bog'liq emasligini ko'rsatadi."""
+    """Bazasiz plan — narx mantiqi bazaga bogʻliq emasligini koʻrsatadi."""
 
     base_price: Decimal = Decimal("500000.00")
     included_children: int = 50
@@ -68,7 +68,7 @@ class TestFloor:
         assert quote.overage_steps == 0
 
     def test_zero_children_is_not_zero_money(self):
-        """Bo'sh bog'cha ham bazani to'laydi — obuna to'xtatilmaguncha."""
+        """Boʻsh bogʻcha ham bazani toʻlaydi — obuna toʻxtatilmaguncha."""
         assert pricing.quote(plan=PLAN, peak_children=0).total_amount == Decimal("500000.00")
 
 
@@ -97,7 +97,7 @@ class TestTierBoundaries:
     )
     def test_each_boundary(self, children, steps, total):
         quote = pricing.quote(plan=PLAN, peak_children=children)
-        assert quote.overage_steps == steps, f"{children} bola uchun qadamlar noto'g'ri"
+        assert quote.overage_steps == steps, f"{children} bola uchun qadamlar notoʻgʻri"
         assert quote.total_amount == Decimal(total)
 
     def test_price_never_goes_down_as_children_increase(self):
@@ -153,7 +153,7 @@ class TestDiscounts:
 
 
 class TestOverageOnly:
-    """Oldindan to'langan muddat ichidagi oylik o'sish hisobi."""
+    """Oldindan toʻlangan muddat ichidagi oylik oʻsish hisobi."""
 
     def test_base_is_excluded_when_already_prepaid(self):
         """
@@ -180,7 +180,7 @@ class TestOverageOnly:
 
 class TestRounding:
     def test_amounts_always_have_two_decimals(self):
-        """Sxema `NUMERIC(12,2)` — natija ham shunday bo'lishi kerak."""
+        """Sxema `NUMERIC(12,2)` — natija ham shunday boʻlishi kerak."""
         quote = pricing.quote(plan=PLAN, peak_children=73, discount_percent=Decimal("15"), months=6)
         for amount in (
             quote.base_amount,
@@ -214,7 +214,7 @@ class TestRounding:
 
 class TestGuards:
     def test_zero_step_is_rejected(self):
-        """Nol qadam — cheksiz tsikl yoki nolga bo'lish; oldindan to'xtatiladi."""
+        """Nol qadam — cheksiz tsikl yoki nolga boʻlish; oldindan toʻxtatiladi."""
         with pytest.raises(ValueError, match="Qadam"):
             pricing.overage_steps(billable=60, included=50, step=0)
 
@@ -251,7 +251,7 @@ class TestPrepaidCoverage:
     """
 
     def test_no_growth_means_nothing_to_bill(self):
-        """64 bolaga to'lagan mijozda 64 bola qolsa — hisob nol."""
+        """64 bolaga toʻlagan mijozda 64 bola qolsa — hisob nol."""
         quote = pricing.quote(
             plan=PLAN,
             peak_children=64,
@@ -282,7 +282,7 @@ class TestPrepaidCoverage:
         assert quote.total_amount == Decimal("68000.00")  # 80 000 − 15 %
 
     def test_shrinking_below_the_committed_count_bills_nothing(self):
-        """Bolalar kamaysa ham qaytarilmaydi, lekin qo'shimcha ham olinmaydi."""
+        """Bolalar kamaysa ham qaytarilmaydi, lekin qoʻshimcha ham olinmaydi."""
         quote = pricing.quote(plan=PLAN, peak_children=40, covered_children=64, include_base=False)
         assert quote.total_amount == Decimal("0.00")
 

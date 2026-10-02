@@ -101,7 +101,7 @@ class TestPlatformLoginWith2FA:
         """
         Xato xabari HAR DOIM bir xil.
 
-        "Parol noto'g'ri" va "kod noto'g'ri" ni ajratish hujumchiga
+        "Parol notoʻgʻri" va "kod notoʻgʻri" ni ajratish hujumchiga
         qaysi bosqichda ekanini aytardi — ya'ni parolni topganini
         tasdiqlardi.
         """
@@ -204,7 +204,7 @@ class TestPlatformLoginWithout2FA:
         assert response.json()["error"]["code"] == "AUTHENTICATION_REQUIRED"
 
     def test_token_still_carries_the_platform_plane(self, tenant_a):
-        """2FA o'chiq bo'lsa ham, token vendor tekisligiga tegishli qoladi."""
+        """2FA oʻchiq boʻlsa ham, token vendor tekisligiga tegishli qoladi."""
         user = _platform_user()
         access = (
             APIClient()
@@ -301,7 +301,7 @@ class TestMetadataOnly:
         """
         Konsolda bolalar ro'yxatini beradigan endpoint YO'Q.
 
-        Bu testning maqsadi — kelajakda kimdir "qulay bo'lardi" deb
+        Bu testning maqsadi — kelajakda kimdir "qulay boʻlardi" deb
         qo'shishga urinsa, u avval shu testni o'chirishi kerak bo'ladi.
         Ongli qaror qabul qilishga majbur qilish — himoyaning bir turi.
         """
@@ -311,7 +311,7 @@ class TestMetadataOnly:
             "/api/v1/platform/children",
             "/api/v1/platform/payments",
         ):
-            assert client.get(path).status_code == 404, f"{path} mavjud bo'lib qoldi"
+            assert client.get(path).status_code == 404, f"{path} mavjud boʻlib qoldi"
 
 
 class TestSupportGrants:
@@ -350,13 +350,13 @@ class TestSupportGrants:
         Mijoz vendor kirishini KO'RADI.
 
         Ko'rinmaydigan kirish ishonchni texnik jihatdan emas, ijtimoiy
-        jihatdan buzadi: "bizning ma'lumotimizga kim qaraydi?" degan
+        jihatdan buzadi: "bizning maʼlumotimizga kim qaraydi?" degan
         savolga javob mijozning o'zida bo'lishi kerak (ADR-10).
         """
         user = _platform_user()
         _client(user).post(
             f"/api/v1/platform/organizations/{tenant_a.organization.id}/support-grant",
-            {"reason": "To'lov bo'yicha murojaat", "hours": 1},
+            {"reason": "Toʻlov boʻyicha murojaat", "hours": 1},
             format="json",
         )
 
@@ -364,7 +364,7 @@ class TestSupportGrants:
         assert len(rows) == 1
         assert rows[0]["entity_type"] == "support_grant"
         assert rows[0]["actor_email"] == user.email
-        assert rows[0]["changes"]["reason"] == "To'lov bo'yicha murojaat"
+        assert rows[0]["changes"]["reason"] == "Toʻlov boʻyicha murojaat"
 
     def test_another_organization_does_not_see_the_grant(self, tenant_a, tenant_b):
         _client(_platform_user()).post(
@@ -403,7 +403,7 @@ class TestCommercialActions:
         Qo'llab-quvvatlash xodimi obunani to'xtata olmaydi.
 
         To'xtatish — tijorat qarori, texnik yordam emas. Bu ajratish
-        "yordam berayotgan xodim tasodifan mijozni ishdan to'xtatdi"
+        "yordam berayotgan xodim tasodifan mijozni ishdan toʻxtatdi"
         holatini imkonsiz qiladi.
         """
         support = _platform_user(role=PlatformRole.SUPPORT, email="support@kg-crm.uz")
@@ -419,7 +419,7 @@ class TestCommercialActions:
         client = _client(admin)
         base = f"/api/v1/platform/organizations/{tenant_a.organization.id}"
 
-        suspended = client.post(f"{base}/suspend", {"reason": "To'lov yo'q"}, format="json")
+        suspended = client.post(f"{base}/suspend", {"reason": "Toʻlov yoʻq"}, format="json")
         assert suspended.json()["data"]["status"] == "suspended"
 
         # Mijoz endi yozolmaydi, lekin O'QIY oladi (docs/03 §20.6).
@@ -444,11 +444,11 @@ class TestCommercialActions:
         admin = _platform_user()
         _client(admin).post(
             f"/api/v1/platform/organizations/{tenant_a.organization.id}/suspend",
-            {"reason": "Uch oy to'lov yo'q"},
+            {"reason": "Uch oy toʻlov yoʻq"},
             format="json",
         )
         rows = tenant_a.client().get("/api/v1/audit-logs/platform-access").json()["data"]
-        assert any(row["changes"].get("reason") == "Uch oy to'lov yo'q" for row in rows)
+        assert any(row["changes"].get("reason") == "Uch oy toʻlov yoʻq" for row in rows)
 
     def test_extend_trial_requires_a_reason(self, tenant_a):
         response = _client(_platform_user()).post(
@@ -529,7 +529,7 @@ class TestTotp:
         Bir qadam farq qabul qilinadi.
 
         Telefon soati bir necha soniya farq qilishi normal holat va uni
-        "noto'g'ri kod" deb ko'rsatish foydalanuvchini tizimdan
+        "notoʻgʻri kod" deb ko'rsatish foydalanuvchini tizimdan
         chiqarib yuborardi.
         """
         from apps.platform.totp import PERIOD, verify
@@ -588,7 +588,7 @@ class TestOrganizationCreation:
 
     def _payload(self, **overrides):
         payload = {
-            "organization_name": "Yangi Bog'cha",
+            "organization_name": "Yangi Bogʻcha",
             "contact_email": "owner@yangi.uz",
             "full_name": "Aziz Karimov",
             "password": "Mijoz-Juda-Kuchli-2026",
@@ -601,7 +601,7 @@ class TestOrganizationCreation:
         assert response.status_code == 201, response.content
         data = response.json()["data"]
 
-        assert data["name"] == "Yangi Bog'cha"
+        assert data["name"] == "Yangi Bogʻcha"
         assert data["owner_email"] == "owner@yangi.uz"
         assert data["slug"] == "yangi-bogcha"
         assert data["login_url"].endswith("/t/yangi-bogcha/login")
@@ -622,7 +622,7 @@ class TestOrganizationCreation:
             assert Branch.objects.filter(organization=organization).count() == 1
 
     def test_the_trial_starts_with_the_account(self):
-        """Obunasiz tashkilot — hisob-kitobi yo'q mijoz degani."""
+        """Obunasiz tashkilot — hisob-kitobi yoʻq mijoz degani."""
         response = _client(_platform_user()).post(self.URL, self._payload(), format="json")
         assert response.status_code == 201
 
@@ -669,7 +669,7 @@ class TestOrganizationCreation:
 
     def test_the_vendor_can_choose_the_address(self):
         response = _client(_platform_user()).post(
-            self.URL, self._payload(slug="Quyosh Bog'chasi"), format="json"
+            self.URL, self._payload(slug="Quyosh Bogʻchasi"), format="json"
         )
         assert response.status_code == 201
         assert response.json()["data"]["slug"] == "quyosh-bogchasi"
@@ -761,7 +761,7 @@ class TestSupportSession:
         services.create_support_grant(
             actor=actor,
             organization_id=tenant.organization.id,
-            reason="Mijoz to'lov ko'rinmayapti deb yozdi",
+            reason="Mijoz toʻlov koʻrinmayapti deb yozdi",
             hours=hours,
         )
         client = _client(actor)
@@ -800,7 +800,7 @@ class TestSupportSession:
             assert entry.organization_id == tenant_a.organization.id
             # Sabab yozuvda qoladi: "nega kirdingiz?" savoli keyin emas,
             # kirishdan oldin javob olgan.
-            assert "to'lov" in entry.changes["reason"]
+            assert "toʻlov" in entry.changes["reason"]
 
     # --- Kirish CHEKLANGAN ---
 
@@ -819,7 +819,7 @@ class TestSupportSession:
 
         payloads = [
             ("post", "/api/v1/children", {"first_name": "Yangi", "last_name": "Bola"}),
-            ("patch", f"/api/v1/children/{child_id}", {"first_name": "O'zgargan"}),
+            ("patch", f"/api/v1/children/{child_id}", {"first_name": "Oʻzgargan"}),
             ("delete", f"/api/v1/children/{child_id}", None),
         ]
         for method, url, body in payloads:
@@ -864,7 +864,7 @@ class TestSupportSession:
             f"/api/v1/platform/organizations/{tenant_a.organization.id}/support-session"
         )
         assert response.status_code == 422
-        assert "ruxsat yo'q" in response.json()["error"]["message"]
+        assert "ruxsat yoʻq" in response.json()["error"]["message"]
 
     def test_a_grant_for_one_customer_does_not_open_another(self, tenant_a, tenant_b):
         """Ruxsat BITTA tashkilotga beriladi (ADR-9)."""

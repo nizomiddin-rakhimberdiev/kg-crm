@@ -64,7 +64,7 @@ class AttendanceWriteSerializer(serializers.ModelSerializer):
 
         if value > timezone.localdate():
             raise serializers.ValidationError(
-                gettext("Kelajakdagi kunga davomat belgilab bo'lmaydi.")
+                gettext("Kelajakdagi kunga davomat belgilab boʻlmaydi.")
             )
         return value
 
@@ -92,7 +92,7 @@ class BulkAttendanceSerializer(serializers.Serializer):
             # Bitta so'rovda bir bola ikki marta — qaysi biri to'g'ri
             # ekanini taxmin qilishdan ko'ra rad etgan ma'qul.
             raise serializers.ValidationError(
-                gettext("Bitta so'rovda bir bola bir marta bo'lishi kerak.")
+                gettext("Bitta soʻrovda bir bola bir marta boʻlishi kerak.")
             )
         return value
 

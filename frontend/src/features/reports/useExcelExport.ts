@@ -54,7 +54,7 @@ export function useExcelExport(reportType: string) {
 
       await poll()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : t('Eksportni boshlab bo‘lmadi.'))
+      setError(err instanceof ApiError ? err.message : t('Eksportni boshlab boʻlmadi.'))
       setBusy(false)
     }
   }

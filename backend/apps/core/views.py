@@ -29,7 +29,7 @@ def _envelope(code: str, message: str, status: int) -> JsonResponse:
 
 def api_not_found(request: HttpRequest, exception: Exception | None = None) -> Any:
     if request.path.startswith(_API_PREFIX):
-        return _envelope("NOT_FOUND", gettext("So'ralgan resurs topilmadi."), 404)
+        return _envelope("NOT_FOUND", gettext("Soʻralgan resurs topilmadi."), 404)
     from django.views.defaults import page_not_found
 
     return page_not_found(request, exception)  # type: ignore[arg-type]

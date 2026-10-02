@@ -33,7 +33,7 @@ def _tariff(tenant: Any, amount: str = "1500000") -> TariffPlan:
     return TariffPlan.objects.create(
         organization=tenant.organization,
         branch=tenant.branch,
-        name="To'liq kun",
+        name="Toʻliq kun",
         amount=Decimal(amount),
     )
 
@@ -109,7 +109,7 @@ def test_the_board_shows_what_is_still_owed_this_month(tenant_a: Any):
 
 
 def test_an_advance_shows_as_a_negative_balance(tenant_a: Any):
-    """Kassir avansni to'lov qabul qilishdan OLDIN ko'rishi kerak."""
+    """Kassir avansni toʻlov qabul qilishdan OLDIN koʻrishi kerak."""
     with organization_context(tenant_a.organization.id):
         child = _child(tenant_a, "Javohir")
         services.record_payment(child=child, amount=Decimal("500000"), method="cash")
@@ -173,7 +173,7 @@ def test_the_summary_counts_every_child_not_just_one_page(tenant_a: Any):
 
 
 def test_the_summary_reports_children_without_an_invoice(tenant_a: Any):
-    """Tarifsiz bola jimgina yo'qolib qolmasin — ular sanаb turiladi."""
+    """Tarifsiz bola jimgina yoʻqolib qolmasin — ular sanаb turiladi."""
     with organization_context(tenant_a.organization.id):
         tariff = _tariff(tenant_a)
         with_tariff = _child(tenant_a, "Bor", last="Aaa", tariff=tariff)

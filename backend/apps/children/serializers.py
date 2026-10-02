@@ -206,7 +206,7 @@ class ChildWriteSerializer(serializers.ModelSerializer):
 
         today = timezone.localdate()
         if value >= today:
-            raise serializers.ValidationError(gettext("Tug'ilgan sana o'tgan bo'lishi kerak."))
+            raise serializers.ValidationError(gettext("Tugʻilgan sana oʻtgan boʻlishi kerak."))
 
         min_age = int(get_setting(key="children.min_age") or 0)
         max_age = int(get_setting(key="children.max_age") or 8)
@@ -215,7 +215,7 @@ class ChildWriteSerializer(serializers.ModelSerializer):
         # 8 yoshli bola hali bog'chada bo'lishi mumkin degani.
         if not (min_age <= years <= max_age + 1):
             raise serializers.ValidationError(
-                gettext("Bola yoshi {min}–{max} oralig'ida bo'lishi kerak.").format(
+                gettext("Bola yoshi {min}–{max} oraligʻida boʻlishi kerak.").format(
                     min=min_age, max=max_age
                 )
             )

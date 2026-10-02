@@ -78,7 +78,7 @@ export function InvoicePaymentsModal({
       <div className="p-6">
         {/* `pr-10` — sarlavha yopish tugmasining ostiga kirib ketmasin. */}
         <div className="pr-10">
-          <h2 className="text-lg font-bold text-slate-900">{t("To'lovlar tafsiloti")}</h2>
+          <h2 className="text-lg font-bold text-slate-900">{t('Toʻlovlar tafsiloti')}</h2>
           <p className="mt-1 text-sm text-slate-500">
             {invoice?.child_name}
             <span className="text-slate-300"> · </span>
@@ -91,7 +91,7 @@ export function InvoicePaymentsModal({
           <div className="flex items-end justify-between gap-3">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                {t("To'langan")}
+                {t('Toʻlangan')}
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{money(paid)}</p>
             </div>
@@ -140,7 +140,7 @@ export function InvoicePaymentsModal({
         {live.length > 1 && (
           <>
             <h3 className="mt-6 text-xs font-medium uppercase tracking-wide text-slate-500">
-              {t("Usul bo'yicha")}
+              {t('Usul boʻyicha')}
             </h3>
             <ul className="mt-2 space-y-2">
               {breakdown.map(([method, row]) => (
@@ -170,7 +170,7 @@ export function InvoicePaymentsModal({
         )}
 
         <h3 className="mt-6 text-xs font-medium uppercase tracking-wide text-slate-500">
-          {t("To'lovlar")}
+          {t('Toʻlovlar')}
         </h3>
         <ul className="mt-1 divide-y divide-slate-100">
           {payments.map((payment) => (
@@ -198,7 +198,7 @@ export function InvoicePaymentsModal({
           ))}
           {!isPending && payments.length === 0 && (
             <li className="py-8 text-center text-sm text-slate-400">
-              {t("Bu hisob-faktura bo'yicha to'lov yo'q.")}
+              {t('Bu hisob-faktura boʻyicha toʻlov yoʻq.')}
             </li>
           )}
           {isPending && (

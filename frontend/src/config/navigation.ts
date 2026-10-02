@@ -45,7 +45,7 @@ const allNavItems: NavItem[] = [
   { label: t('Dashboard'), to: '/dashboard', icon: LayoutDashboard, permission: 'dashboard.read' },
   { label: t('Bolalar'), to: '/children', icon: Users, permission: 'children.read' },
   { label: t('Guruhlar'), to: '/groups', icon: Users2, permission: 'children.read' },
-  { label: t("To'lovlar"), to: '/payments', icon: CreditCard, permission: 'payments.read' },
+  { label: t('Toʻlovlar'), to: '/payments', icon: CreditCard, permission: 'payments.read' },
   { label: t('Qarzdorlar'), to: '/debtors', icon: AlertTriangle, permission: 'debtors.read' },
   { label: t('Davomat'), to: '/attendance', icon: CalendarCheck, permission: 'attendance.read' },
   { label: t('Xodimlar'), to: '/staff', icon: UserCog, permission: ['payroll.read', 'users.read'] },

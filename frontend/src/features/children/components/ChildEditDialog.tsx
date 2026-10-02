@@ -113,7 +113,7 @@ export function ChildEditDialog({
           </div>
           <div>
             <label htmlFor="ce-dob" className={label}>
-              {t("Tug'ilgan sana")} {required}
+              {t('Tugʻilgan sana')} {required}
             </label>
             <DateInput
               id="ce-dob"
@@ -135,7 +135,7 @@ export function ChildEditDialog({
               }
               className={field}
             >
-              <option value="male">{t("O'g'il bola")}</option>
+              <option value="male">{t('Oʻgʻil bola')}</option>
               <option value="female">{t('Qiz bola')}</option>
             </select>
           </div>

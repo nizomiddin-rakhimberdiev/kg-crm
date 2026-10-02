@@ -58,7 +58,7 @@ export default function BranchesPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Filiallar')}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          {t("Bitta obuna — cheksiz filial. To'lov faqat bolalar soniga bog'liq.")}
+          {t('Bitta obuna — cheksiz filial. Toʻlov faqat bolalar soniga bogʻliq.')}
         </p>
       </div>
 
@@ -110,7 +110,7 @@ export default function BranchesPage() {
             )}
           >
             <Plus className="h-4 w-4" />
-            {t("Qo'shish")}
+            {t('Qoʻshish')}
           </button>
         </form>
       )}
@@ -124,13 +124,13 @@ export default function BranchesPage() {
           <p className="px-4 py-8 text-center text-sm text-red-600">
             {branchesQuery.error instanceof ApiError
               ? branchesQuery.error.message
-              : t("Ma'lumotni yuklab bo'lmadi.")}
+              : t('Maʼlumotni yuklab boʻlmadi.')}
           </p>
         )}
 
         {branchesQuery.data?.items.length === 0 && (
           <p className="px-4 py-8 text-center text-sm text-slate-400">
-            {t("Hozircha filial yo'q.")}
+            {t('Hozircha filial yoʻq.')}
           </p>
         )}
 
@@ -163,7 +163,7 @@ export default function BranchesPage() {
                           onClick={() => deleteMutation.mutate(branch.id)}
                           disabled={deleteMutation.isPending}
                           className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                          title={t("O'chirish")}
+                          title={t('Oʻchirish')}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -175,9 +175,9 @@ export default function BranchesPage() {
                   <EmptyRow
                     colSpan={5}
                     icon={Building2}
-                    title={t("Filial yo'q")}
+                    title={t('Filial yoʻq')}
                     hint={t(
-                      "Bog'chaning birinchi filiali ro'yxatdan o'tishda yaratiladi. Yangi bino ochsangiz shu yerdan qo'shasiz.",
+                      'Bogʻchaning birinchi filiali roʻyxatdan oʻtishda yaratiladi. Yangi bino ochsangiz shu yerdan qoʻshasiz.',
                     )}
                   />
                 )}

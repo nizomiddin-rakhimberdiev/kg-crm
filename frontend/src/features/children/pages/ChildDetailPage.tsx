@@ -37,7 +37,7 @@ const RELATIONS: Array<[string, string]> = [
 const STATUS_LABEL: Record<string, string> = {
   prospect: t('Nomzod'),
   active: t('Faol'),
-  paused: t("To'xtatilgan"),
+  paused: t('Toʻxtatilgan'),
   graduated: t('Bitirgan'),
   withdrawn: t('Chiqib ketgan'),
 }
@@ -158,7 +158,7 @@ export default function ChildDetailPage() {
           {childQuery.error instanceof ApiError ? childQuery.error.message : t('Bola topilmadi.')}
         </p>
         <Link to="/children" className="mt-3 inline-block text-sm text-brand-600 hover:underline">
-          {t("Ro'yxatga qaytish")}
+          {t('Roʻyxatga qaytish')}
         </Link>
       </div>
     )
@@ -224,8 +224,8 @@ export default function ChildDetailPage() {
           </div>
           <p className="mt-1 text-sm text-slate-500">
             {t('{age_years} yosh ·', { age_years: child.age_years })}{' '}
-            {child.gender === 'male' ? t("O'g'il bola") : t('Qiz bola')}{' '}
-            {t("· tug'ilgan {date_of_birth}", { date_of_birth: formatDate(child.date_of_birth) })}
+            {child.gender === 'male' ? t('Oʻgʻil bola') : t('Qiz bola')}{' '}
+            {t('· tugʻilgan {date_of_birth}', { date_of_birth: formatDate(child.date_of_birth) })}
             {child.enrolled_on && t(' · qabul {date}', { date: formatDate(child.enrolled_on) })}
           </p>
           {/* Holat SABABI ko'rinib turadi: "qachondan buyon va nega"
@@ -310,7 +310,7 @@ export default function ChildDetailPage() {
               <option value="">{t('— tarifsiz —')}</option>
               {tariffsQuery.data?.items.map((tariff) => (
                 <option key={tariff.id} value={tariff.id}>
-                  {t("{name} — {toLocaleString} so'm", {
+                  {t('{name} — {toLocaleString} soʻm', {
                     name: tariff.name,
                     toLocaleString: Number(tariff.amount).toLocaleString('uz-UZ'),
                   })}
@@ -338,7 +338,7 @@ export default function ChildDetailPage() {
                 className="flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:underline"
               >
                 <UserPlus className="h-3.5 w-3.5" />
-                {t("Qo'shish")}
+                {t('Qoʻshish')}
               </button>
             )}
           </div>
@@ -437,7 +437,7 @@ export default function ChildDetailPage() {
               />
               <div className="flex items-center gap-2">
                 <select
-                  aria-label={t("Kim bo'ladi")}
+                  aria-label={t('Kim boʻladi')}
                   value={guardianForm.relation}
                   onChange={(e) => setGuardianForm((p) => ({ ...p, relation: e.target.value }))}
                   className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
@@ -454,8 +454,8 @@ export default function ChildDetailPage() {
                   onChange={(e) => setGuardianForm((p) => ({ ...p, language: e.target.value }))}
                   className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
                 >
-                  <option value="">{t('Xabar tili: bog‘cha tili')}</option>
-                  <option value="uz">{t("O'zbekcha")}</option>
+                  <option value="">{t('Xabar tili: bogʻcha tili')}</option>
+                  <option value="uz">{t('Oʻzbekcha')}</option>
                   <option value="ru">{t('Ruscha')}</option>
                 </select>
                 <label className="flex items-center gap-1.5 text-sm text-slate-600">
@@ -481,7 +481,7 @@ export default function ChildDetailPage() {
               </button>
               <p className="text-xs text-slate-400">
                 {t(
-                  "Bu telefon bilan vasiy allaqachon mavjud bo'lsa, yangi yozuv yaratilmaydi — mavjudi biriktiriladi.",
+                  'Bu telefon bilan vasiy allaqachon mavjud boʻlsa, yangi yozuv yaratilmaydi — mavjudi biriktiriladi.',
                 )}
               </p>
             </form>

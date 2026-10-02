@@ -35,7 +35,7 @@ def mark_bulk(
     belgilab, tushdan keyin tuzatishi — normal ish oqimi, xato emas.
     """
     if attendance_date > timezone.localdate():
-        raise BusinessRuleViolation(gettext("Kelajakdagi kunga davomat belgilab bo'lmaydi."))
+        raise BusinessRuleViolation(gettext("Kelajakdagi kunga davomat belgilab boʻlmaydi."))
 
     if group.organization_id != organization.id:
         raise BusinessRuleViolation(gettext("Guruh boshqa tashkilotga tegishli."))
@@ -63,7 +63,7 @@ def mark_bulk(
 
         status = row.get("status")
         if status not in valid_statuses:
-            raise BusinessRuleViolation(gettext("Noma'lum holat: {status}").format(status=status))
+            raise BusinessRuleViolation(gettext("Nomaʼlum holat: {status}").format(status=status))
 
         record, _ = AttendanceRecord.objects.update_or_create(
             child_id=child_id,
@@ -204,7 +204,7 @@ def assert_can_mark(*, user: Any, group: Group, attendance_date: date, reason: s
         window = teacher_edit_window(getattr(group, "branch", None))
         if (timezone.localdate() - attendance_date).days > window and not reason.strip():
             raise BusinessRuleViolation(
-                gettext("O'tgan kun davomatini o'zgartirish uchun sabab yozing.")
+                gettext("Oʻtgan kun davomatini oʻzgartirish uchun sabab yozing.")
             )
         return
 

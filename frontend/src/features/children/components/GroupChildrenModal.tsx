@@ -70,10 +70,10 @@ export function GroupChildrenModal({
             )}
           >
             {!limited
-              ? t("Sig'im cheklanmagan")
+              ? t('Sigʻim cheklanmagan')
               : full
-                ? t("Guruh to'lgan — yangi bola qo'shib bo'lmaydi")
-                : t("{free_seats} ta joy bo'sh", { free_seats: data.free_seats })}
+                ? t('Guruh toʻlgan — yangi bola qoʻshib boʻlmaydi')
+                : t('{free_seats} ta joy boʻsh', { free_seats: data.free_seats })}
           </div>
         )}
 
@@ -84,14 +84,14 @@ export function GroupChildrenModal({
           <p className="py-8 text-center text-sm text-red-600">
             {query.error instanceof ApiError
               ? query.error.message
-              : t("Ma'lumotni yuklab bo'lmadi.")}
+              : t('Maʼlumotni yuklab boʻlmadi.')}
           </p>
         )}
 
         {data && data.children.length === 0 && (
           <div className="py-10 text-center">
             <Users2 className="mx-auto mb-3 h-10 w-10 text-slate-200" />
-            <p className="text-sm text-slate-500">{t("Bu guruhda hozircha bola yo'q.")}</p>
+            <p className="text-sm text-slate-500">{t('Bu guruhda hozircha bola yoʻq.')}</p>
           </div>
         )}
 

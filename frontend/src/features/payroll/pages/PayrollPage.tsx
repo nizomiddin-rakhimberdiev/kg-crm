@@ -41,7 +41,7 @@ import { t } from '@/lib/i18n'
 const STATUS = {
   draft: [t('Qoralama'), 'bg-slate-100 text-slate-600'],
   finalized: [t('Yakunlangan'), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
-  paid: [t("To'langan"), 'bg-emerald-50 text-emerald-700'],
+  paid: [t('Toʻlangan'), 'bg-emerald-50 text-emerald-700'],
 } as const
 
 export default function PayrollPage() {
@@ -199,7 +199,7 @@ export default function PayrollPage() {
           {reopening?.status === 'paid' && (
             <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
               {t(
-                "Bu hisoblash to'langan deb belgilangan. Pul allaqachon berilgan bo'lsa, o'zgartirish kiritishdan oldin xodim bilan kelishing.",
+                'Bu hisoblash toʻlangan deb belgilangan. Pul allaqachon berilgan boʻlsa, oʻzgartirish kiritishdan oldin xodim bilan kelishing.',
               )}
             </p>
           )}
@@ -241,7 +241,7 @@ export default function PayrollPage() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Oylik maosh')}</h1>
           <p className="mt-1 text-sm text-slate-500">
             {t(
-              "Yakunlangan hisoblashni tahrirlash uchun avval qoralamaga qaytaring — sabab so'raladi.",
+              'Yakunlangan hisoblashni tahrirlash uchun avval qoralamaga qaytaring — sabab soʻraladi.',
             )}
           </p>
         </div>
@@ -251,7 +251,7 @@ export default function PayrollPage() {
               to="/staff"
               className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
-              {t("Xodimlar ro'yxati")}
+              {t('Xodimlar roʻyxati')}
               <ArrowUpRight className="h-4 w-4 text-slate-400" />
             </Link>
           )}
@@ -372,7 +372,7 @@ export default function PayrollPage() {
                     disabled={addAdvance.isPending}
                     className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
                   >
-                    <Plus className="h-4 w-4" /> {t("Qo'shish")}
+                    <Plus className="h-4 w-4" /> {t('Qoʻshish')}
                   </button>
                 </div>
               </form>
@@ -398,7 +398,7 @@ export default function PayrollPage() {
                       <button
                         type="button"
                         onClick={() => removeAdvance.mutate(advance.id)}
-                        title={t("O'chirish")}
+                        title={t('Oʻchirish')}
                         className="rounded-lg p-1.5 text-slate-300 transition hover:bg-red-50 hover:text-red-600"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -445,7 +445,7 @@ export default function PayrollPage() {
                 </span>
               </div>
               <p className="mt-2 text-lg font-bold text-slate-900 tabular-nums">
-                {t("{money} so'm", { money: money(r.total_net) })}
+                {t('{money} soʻm', { money: money(r.total_net) })}
               </p>
               <p className="text-xs text-slate-500">
                 {t('{length} ta xodim', { length: r.items.length })}
@@ -458,7 +458,7 @@ export default function PayrollPage() {
       {runsQuery.data?.items.length === 0 && (
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-12 text-center">
           <Wallet className="mx-auto mb-3 h-10 w-10 text-slate-200" />
-          <p className="text-sm text-slate-500">{t("Hozircha hisoblash yo'q.")}</p>
+          <p className="text-sm text-slate-500">{t('Hozircha hisoblash yoʻq.')}</p>
           <p className="mt-1 text-xs text-slate-400">
             {t('Avval')}{' '}
             <Link to="/staff" className="font-medium text-brand-600 hover:underline">
@@ -522,7 +522,7 @@ export default function PayrollPage() {
                     disabled={markPaid.isPending}
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 sm:flex-none"
                   >
-                    <CheckCircle2 className="h-4 w-4" /> {t("To'langan")}
+                    <CheckCircle2 className="h-4 w-4" /> {t('Toʻlangan')}
                   </button>
                 )}
                 {/* Yakunlangan yoki to'langan hisoblashni tahrirlashning
@@ -641,7 +641,7 @@ export default function PayrollPage() {
                   <EmptyRow
                     colSpan={6}
                     icon={Wallet}
-                    title={t("Bu davrda xodim yo'q")}
+                    title={t('Bu davrda xodim yoʻq')}
                     hint={t(
                       'Hisoblash yaratilgan paytda ishlayotgan xodim topilmadi. Xodimlar sahifasida ularni kiriting va yangi davr oching.',
                     )}

@@ -33,7 +33,7 @@ export default function LoginPage() {
 
   const handleError = (err: unknown) => {
     setError(
-      err instanceof ApiError ? err.message : t("Kutilmagan xatolik. Qaytadan urinib ko'ring."),
+      err instanceof ApiError ? err.message : t('Kutilmagan xatolik. Qaytadan urinib koʻring.'),
     )
   }
 
@@ -86,7 +86,7 @@ export default function LoginPage() {
               Sarlavha matni yo'q: logotipning o'zida yozuv bor va uni
               takrorlash brendbuk qoidasiga zid. */}
           <Logo height={40} />
-          <p className="mt-3 text-sm text-tosh-500">{t("Bog'cha boshqaruv tizimi")}</p>
+          <p className="mt-3 text-sm text-tosh-500">{t('Bogʻcha boshqaruv tizimi')}</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
@@ -145,7 +145,7 @@ export default function LoginPage() {
               <div>
                 <h2 className="text-sm font-semibold text-slate-900">{t('Tashkilotni tanlang')}</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  {t("Bu email bir nechta bog'chada ro'yxatdan o'tgan.")}
+                  {t('Bu email bir nechta bogʻchada roʻyxatdan oʻtgan.')}
                 </p>
               </div>
 
@@ -177,7 +177,7 @@ export default function LoginPage() {
             havolasi endi hech qayerga olib bormasdi. O'rniga aloqa yo'li:
             bu sahifaga adashib tushgan odam nima qilishini bilsin. */}
         <p className="mt-6 text-center text-xs text-slate-400">
-          {t("Hisobingiz yo'qmi? Bog'changiz uchun akkaunt ochish uchun biz bilan bog'laning.")}
+          {t('Hisobingiz yoʻqmi? Bogʻchangiz uchun akkaunt ochish uchun biz bilan bogʻlaning.')}
         </p>
         <div className="mt-4 flex justify-center">
           <LanguageSwitch size="md" />

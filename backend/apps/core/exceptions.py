@@ -47,7 +47,7 @@ class SubscriptionInactive(drf_exceptions.APIException):
 
     status_code = status.HTTP_402_PAYMENT_REQUIRED
     default_detail = gettext_lazy(
-        "Obuna faol emas. Ma'lumotlarni o'qish mumkin, o'zgartirish mumkin emas."
+        "Obuna faol emas. Maʼlumotlarni oʻqish mumkin, oʻzgartirish mumkin emas."
     )
     default_code = "SUBSCRIPTION_INACTIVE"
 
@@ -65,14 +65,14 @@ _STATUS_TO_CODE = {
 }
 
 _DEFAULT_MESSAGES = {
-    "VALIDATION_ERROR": gettext_lazy("Yuborilgan ma'lumot noto'g'ri."),
+    "VALIDATION_ERROR": gettext_lazy("Yuborilgan maʼlumot notoʻgʻri."),
     "AUTHENTICATION_REQUIRED": gettext_lazy("Autentifikatsiya talab qilinadi."),
     # Platforma konsoli: 2FA yoqilgan, lekin so'rovda `code` yo'q (ADR-15).
     "TOTP_REQUIRED": gettext_lazy("Authenticator kodini kiriting."),
-    "PERMISSION_DENIED": gettext_lazy("Bu amalga ruxsat yo'q."),
-    "NOT_FOUND": gettext_lazy("So'ralgan resurs topilmadi."),
-    "CONFLICT": gettext_lazy("Bu amal mavjud ma'lumot bilan ziddiyatga kirdi."),
-    "RATE_LIMITED": gettext_lazy("So'rovlar soni chegaradan oshdi."),
+    "PERMISSION_DENIED": gettext_lazy("Bu amalga ruxsat yoʻq."),
+    "NOT_FOUND": gettext_lazy("Soʻralgan resurs topilmadi."),
+    "CONFLICT": gettext_lazy("Bu amal mavjud maʼlumot bilan ziddiyatga kirdi."),
+    "RATE_LIMITED": gettext_lazy("Soʻrovlar soni chegaradan oshdi."),
     "INTERNAL_ERROR": gettext_lazy("Kutilmagan xatolik yuz berdi."),
 }
 

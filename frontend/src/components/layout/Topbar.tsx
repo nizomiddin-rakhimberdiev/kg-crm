@@ -33,7 +33,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
           type="text"
-          placeholder={t("Ism yoki ID bo'yicha qidiruv...")}
+          placeholder={t('Ism yoki ID boʻyicha qidiruv...')}
           className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
         />
       </div>
@@ -48,7 +48,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         <button
           onClick={toggle}
           data-sound="toggle"
-          title={muted ? t('Ovozni yoqish') : t("Ovozni o'chirish")}
+          title={muted ? t('Ovozni yoqish') : t('Ovozni oʻchirish')}
           className="hidden h-10 w-10 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 active:scale-95 sm:grid"
         >
           {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}

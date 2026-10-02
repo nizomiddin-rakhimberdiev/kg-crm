@@ -133,7 +133,7 @@ def post_movement(
     """
     amount = _money(amount)
     if amount <= 0:
-        raise BusinessRuleViolation(gettext("Summa musbat bo'lishi kerak."))
+        raise BusinessRuleViolation(gettext("Summa musbat boʻlishi kerak."))
 
     return CashMovement.objects.create(
         organization=account.organization,
@@ -208,13 +208,13 @@ def transfer(
     kiradi. JAMI o'zgarmaydi — o'tkazma pul topmaydi va yo'qotmaydi.
     """
     if source.pk == target.pk:
-        raise BusinessRuleViolation(gettext("Bir qopdan o'ziga o'tkazib bo'lmaydi."))
+        raise BusinessRuleViolation(gettext("Bir qopdan oʻziga oʻtkazib boʻlmaydi."))
     if source.organization_id != target.organization_id:
         raise BusinessRuleViolation(gettext("Qoplar boshqa tashkilotga tegishli."))
 
     group = uuid.uuid4()
     when = occurred_at or timezone.now()
-    text = description or gettext("Qoplar orasida o'tkazma")
+    text = description or gettext("Qoplar orasida oʻtkazma")
     out = post_movement(
         account=source,
         direction=MovementDirection.OUT,

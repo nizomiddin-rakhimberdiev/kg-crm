@@ -26,11 +26,11 @@ export default function SupportEntryPage() {
 
     const token = supportHandoff.take()
     if (!token) {
-      setError(t("Kirish tokeni topilmadi. Konsoldan qayta urinib ko'ring."))
+      setError(t('Kirish tokeni topilmadi. Konsoldan qayta urinib koʻring.'))
       return
     }
     applySupportSession(token).catch(() =>
-      setError(t("Sessiya ochilmadi — ruxsat muddati tugagan bo'lishi mumkin.")),
+      setError(t('Sessiya ochilmadi — ruxsat muddati tugagan boʻlishi mumkin.')),
     )
   }, [applySupportSession])
 
@@ -41,7 +41,7 @@ export default function SupportEntryPage() {
       <div className="w-full max-w-sm text-center">
         <ShieldCheck className="mx-auto h-8 w-8 text-brand-600" />
         <p className="mt-4 text-sm text-slate-600">
-          {error ?? t("Qo'llab-quvvatlash sessiyasi ochilmoqda…")}
+          {error ?? t('Qoʻllab-quvvatlash sessiyasi ochilmoqda…')}
         </p>
       </div>
     </div>

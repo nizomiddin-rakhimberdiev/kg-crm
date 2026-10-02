@@ -28,7 +28,7 @@ class TestOrganizationProfile:
         response = tenant_a.client().patch(
             reverse("v1:organization"),
             {
-                "name": "Quyosh bog'chasi",
+                "name": "Quyosh bogʻchasi",
                 "legal_name": "Quyosh MCHJ",
                 "tax_id": "305123456",
                 "contact_phone": "+998901112233",
@@ -38,7 +38,7 @@ class TestOrganizationProfile:
 
         assert response.status_code == 200
         data = response.json()["data"]
-        assert data["name"] == "Quyosh bog'chasi"
+        assert data["name"] == "Quyosh bogʻchasi"
         assert data["tax_id"] == "305123456"
 
         # So'rov tugagach kontekst tozalanadi (P0-001) — o'qish uchun qayta ochamiz.
@@ -46,10 +46,10 @@ class TestOrganizationProfile:
 
         with organization_context(tenant_a.organization.id):
             tenant_a.organization.refresh_from_db()
-            assert tenant_a.organization.name == "Quyosh bog'chasi"
+            assert tenant_a.organization.name == "Quyosh bogʻchasi"
 
     def test_slug_is_immutable(self, tenant_a):
-        """`slug` — global identifikator; nomni o'zgartirish uni ko'chirmaydi."""
+        """`slug` — global identifikator; nomni oʻzgartirish uni koʻchirmaydi."""
         original = tenant_a.organization.slug
 
         response = tenant_a.client().patch(
@@ -75,7 +75,7 @@ class TestOrganizationProfile:
         assert second["name"] == tenant_b.organization.name
 
     def test_cashier_cannot_read_or_edit(self, tenant_a):
-        """`settings` moduli kassirda yo'q (docs/02 §11.2)."""
+        """`settings` moduli kassirda yoʻq (docs/02 §11.2)."""
         from rest_framework.test import APIClient
 
         from apps.accounts.authentication import issue_token_pair

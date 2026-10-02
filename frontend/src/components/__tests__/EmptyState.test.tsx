@@ -4,7 +4,7 @@ import { Users } from 'lucide-react'
 import { EmptyState, EmptyRow } from '@/components/ui/EmptyState'
 
 describe('EmptyState', () => {
-  it('nima yo\'q, nega normal va keyingi qadamni aytadi', () => {
+  it("nima yo'q, nega normal va keyingi qadamni aytadi", () => {
     render(
       <EmptyState
         icon={Users}

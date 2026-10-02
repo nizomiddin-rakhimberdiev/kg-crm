@@ -11,43 +11,43 @@ import { describe, expect, it } from 'vitest'
 import { basenameFor, slugFromPath, tenantPath, TENANT_PREFIX } from '../tenantAddress'
 
 describe('slugFromPath', () => {
-  it('prefiksli yo\'ldan slug oladi', () => {
+  it("prefiksli yo'ldan slug oladi", () => {
     expect(slugFromPath('/t/quyosh/dashboard')).toBe('quyosh')
     expect(slugFromPath('/t/quyosh')).toBe('quyosh')
     expect(slugFromPath('/t/quyosh/')).toBe('quyosh')
   })
 
-  it('prefiks bo\'lmasa null qaytaradi', () => {
+  it("prefiks bo'lmasa null qaytaradi", () => {
     expect(slugFromPath('/')).toBeNull()
     expect(slugFromPath('/login')).toBeNull()
     expect(slugFromPath('/dashboard')).toBeNull()
   })
 
-  it('vendor konsolini bog\'cha deb hisoblamaydi', () => {
+  it("vendor konsolini bog'cha deb hisoblamaydi", () => {
     // ADR-10: ikki tekislik URL darajasida ham ajralgan. `/platform`
     // hech qachon bog'cha `basename` i ostiga tushmasligi kerak.
     expect(slugFromPath('/platform')).toBeNull()
     expect(slugFromPath('/platform/organizations')).toBeNull()
   })
 
-  it('prefiks bor, lekin slug yo\'q — bu manzil emas', () => {
+  it("prefiks bor, lekin slug yo'q — bu manzil emas", () => {
     expect(slugFromPath(`/${TENANT_PREFIX}`)).toBeNull()
     expect(slugFromPath(`/${TENANT_PREFIX}/`)).toBeNull()
   })
 })
 
 describe('basenameFor', () => {
-  it('slug bo\'lsa prefiksli basename', () => {
+  it("slug bo'lsa prefiksli basename", () => {
     expect(basenameFor('quyosh')).toBe('/t/quyosh')
   })
 
-  it('slug bo\'lmasa ildiz', () => {
+  it("slug bo'lmasa ildiz", () => {
     expect(basenameFor(null)).toBe('/')
   })
 })
 
 describe('tenantPath', () => {
-  it('boshqa bog\'chaga to\'liq yo\'l quradi', () => {
+  it("boshqa bog'chaga to'liq yo'l quradi", () => {
     expect(tenantPath('bahor')).toBe('/t/bahor/home')
     expect(tenantPath('bahor', '/payments')).toBe('/t/bahor/payments')
   })

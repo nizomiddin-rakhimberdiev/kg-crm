@@ -45,7 +45,7 @@ def employee(tenant_a: Any) -> Employee:
 
 
 def _client_with(tenant: Any, codes: list[str], email: str) -> APIClient:
-    """Aynan berilgan ruxsatlarga ega maxsus rol — bog'cha egasi yasagani kabi."""
+    """Aynan berilgan ruxsatlarga ega maxsus rol — bogʻcha egasi yasagani kabi."""
     with organization_context(tenant.organization.id):
         role = Role.objects.create(
             organization=tenant.organization, code=email.split("@")[0], name="Maxsus"
@@ -104,14 +104,14 @@ def test_paid_run_can_be_reopened_too(tenant_a: Any, employee: Employee):
     """
     To'langan hisoblash ham ochiladi.
 
-    Bir tugma bilan "to'landi" deb belgilab qo'yish oson, va shundan
+    Bir tugma bilan "toʻlandi" deb belgilab qo'yish oson, va shundan
     keyin hech narsa qilib bo'lmasligi mijozni tuzatib bo'lmaydigan
     holatda qoldirardi.
     """
     with organization_context(tenant_a.organization.id):
         run = _finalized(tenant_a)
         services.mark_run_paid(run=run)
-        services.reopen_run(run=run, reason="Xato to'langan deb belgilangan")
+        services.reopen_run(run=run, reason="Xato toʻlangan deb belgilangan")
         run.refresh_from_db()
 
         assert run.status == PayrollStatus.DRAFT
@@ -156,7 +156,7 @@ def test_advance_recorded_after_finalizing_lands_in_the_reopened_run(
         )
 
         item = run.items.get(employee=employee)
-        assert item.advance == Decimal("0.00"), "yakunlangan hisoblash o'zgarmasligi kerak"
+        assert item.advance == Decimal("0.00"), "yakunlangan hisoblash oʻzgarmasligi kerak"
 
         services.reopen_run(run=run, reason="Avans keyin berilgan")
         item.refresh_from_db()

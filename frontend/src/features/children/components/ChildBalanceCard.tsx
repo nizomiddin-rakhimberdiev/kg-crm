@@ -58,7 +58,7 @@ export function ChildBalanceCard({
               debt > 0 ? 'text-orik-700' : 'text-slate-900',
             )}
           >
-            {t("{money} so'm", { money: money(debt) })}
+            {t('{money} soʻm', { money: money(debt) })}
           </p>
           <p className="text-xs text-slate-500">{debt > 0 ? t('Jami qarz') : t('Qarz yoʻq')}</p>
 
@@ -92,7 +92,7 @@ export function ChildBalanceCard({
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-nihol-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-nihol-700"
             >
               <Banknote className="h-4 w-4" />
-              {t("To'lov qabul qilish")}
+              {t('Toʻlov qabul qilish')}
             </button>
           )}
         </>

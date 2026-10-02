@@ -33,7 +33,7 @@ def tariff(tenant_a) -> TariffPlan:
         return TariffPlan.objects.create(
             organization=tenant_a.organization,
             branch=tenant_a.branch,
-            name="To'liq kun",
+            name="Toʻliq kun",
             amount=Decimal("1500000"),
         )
 
@@ -60,13 +60,13 @@ class TestStatusChange:
                 child=child,
                 status=EnrollmentStatus.WITHDRAWN,
                 on_date=date(2026, 9, 20),
-                reason="Oila boshqa shaharga ko'chdi",
+                reason="Oila boshqa shaharga koʻchdi",
             )
             child.refresh_from_db()
 
         assert child.enrollment_status == EnrollmentStatus.WITHDRAWN
         assert child.status_changed_on == date(2026, 9, 20)
-        assert child.status_reason == "Oila boshqa shaharga ko'chdi"
+        assert child.status_reason == "Oila boshqa shaharga koʻchdi"
 
     def test_a_reason_is_required(self, tenant_a, child):
         with (
@@ -165,7 +165,7 @@ class TestArchive:
 
 class TestHardDelete:
     def test_a_fresh_mistake_can_be_deleted(self, tenant_a, child):
-        """Q6: "TEST Sinov" deb yozib yuborilgan yozuvni abadiy saqlash to'g'ri emas."""
+        """Q6: "TEST Sinov" deb yozib yuborilgan yozuvni abadiy saqlash toʻgʻri emas."""
         with organization_context(tenant_a.organization.id):
             assert services.deletion_blockers(child) == []
             services.delete_child(child=child)
@@ -201,7 +201,7 @@ class TestEndpoints:
         assert "status_reason" in str(response.data)
 
     def test_delete_archives_instead_of_removing(self, tenant_a, child):
-        """`DELETE` = arxiv (Q6): bolalar hech qachon fizik o'chirilmaydi."""
+        """`DELETE` = arxiv (Q6): bolalar hech qachon fizik oʻchirilmaydi."""
         response = tenant_a.client().delete(reverse("v1:child-detail", args=[child.id]))
         assert response.status_code == 204
 
@@ -227,7 +227,7 @@ class TestSearchKey:
     Qidiruv kaliti — Q11, PLAN 2.7.
 
     Mudira bolani qaysi alifboda yozsa ham topishi kerak. Topa olmasa,
-    u "bu bola tizimda yo'q" deb ikkinchi marta kiritadi — va bitta
+    u "bu bola tizimda yoʻq" deb ikkinchi marta kiritadi — va bitta
     bola ikkita balansda qoladi.
     """
 
@@ -237,7 +237,7 @@ class TestSearchKey:
             return Child.objects.create(
                 organization=tenant_a.organization,
                 branch=tenant_a.branch,
-                first_name="Ulug'bek",
+                first_name="Ulugʻbek",
                 last_name="Choriyev",
                 date_of_birth=date(2021, 3, 14),
                 gender="male",
@@ -249,12 +249,12 @@ class TestSearchKey:
             ulugbek.refresh_from_db()
         assert ulugbek.search_key == "choriyevulugbek"
 
-    @pytest.mark.parametrize("term", ["Ulug'bek", "Ulugʻbek", "Улугбек", "ulugbek", "CHORIYEV"])
+    @pytest.mark.parametrize("term", ["Ulugʻbek", "Ulugʻbek", "Улугбек", "ulugbek", "CHORIYEV"])
     def test_every_spelling_finds_the_child(self, tenant_a, ulugbek, term):
         response = tenant_a.client().get(reverse("v1:child-list"), {"q": term})
         assert response.status_code == 200
         names = [row["first_name"] for row in response.json()["data"]]
-        assert "Ulug'bek" in names, f"{term!r} bo'yicha topilmadi"
+        assert "Ulugʻbek" in names, f"{term!r} boʻyicha topilmadi"
 
     def test_a_guardian_is_found_by_phone(self, tenant_a):
         from apps.children.models import Guardian
@@ -282,7 +282,7 @@ class TestSearchKey:
 
 
 class TestGuardianLink:
-    """Vasiy bog'lanishini tahrirlash va uzish — PLAN 2.1."""
+    """Vasiy bogʻlanishini tahrirlash va uzish — PLAN 2.1."""
 
     @pytest.fixture
     def linked(self, tenant_a, child):
@@ -332,7 +332,7 @@ class TestGuardianLink:
             assert str(primaries.first().id) == second
 
     def test_unlinking_keeps_the_guardian(self, tenant_a, child, linked):
-        """Vasiy boshqa bolaning ham vasiysi bo'lishi mumkin."""
+        """Vasiy boshqa bolaning ham vasiysi boʻlishi mumkin."""
         from apps.children.models import Guardian
 
         response = tenant_a.client().delete(

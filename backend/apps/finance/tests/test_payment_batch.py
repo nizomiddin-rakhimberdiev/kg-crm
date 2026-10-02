@@ -30,7 +30,7 @@ def _child_with_invoice(tenant: Any, amount: str = "1500000") -> tuple[Child, In
         tariff = TariffPlan.objects.create(
             organization=tenant.organization,
             branch=tenant.branch,
-            name="To'liq kun",
+            name="Toʻliq kun",
             amount=Decimal(amount),
         )
         child = Child.objects.create(
@@ -109,7 +109,7 @@ def test_overpayment_becomes_an_advance_instead_of_an_error(tenant_a: Any):
 
 
 def test_allocation_follows_the_order_of_the_lines(tenant_a: Any):
-    """Kassir qaysi usul avansga tushishini oldindan ko'radi."""
+    """Kassir qaysi usul avansga tushishini oldindan koʻradi."""
     child, invoice = _child_with_invoice(tenant_a, "1000000")
     with organization_context(tenant_a.organization.id):
         payments = services.record_payment_batch(

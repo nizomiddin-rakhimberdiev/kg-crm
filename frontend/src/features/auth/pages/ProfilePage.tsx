@@ -53,7 +53,7 @@ export default function ProfilePage() {
       setPhotoError(
         err instanceof ApiError
           ? (err.fieldErrors().photo ?? err.message)
-          : t("Rasmni yuklab bo'lmadi."),
+          : t('Rasmni yuklab boʻlmadi.'),
       ),
   })
 
@@ -63,7 +63,7 @@ export default function ProfilePage() {
       setPhotoError(null)
       await refreshUser()
     },
-    onError: () => setPhotoError(t("Rasmni o'chirib bo'lmadi.")),
+    onError: () => setPhotoError(t('Rasmni oʻchirib boʻlmadi.')),
   })
 
   const [current, setCurrent] = useState('')
@@ -89,7 +89,7 @@ export default function ProfilePage() {
         setError(err.message)
         setFieldErrors(err.fieldErrors())
       } else {
-        setError(t("Parolni almashtirib bo'lmadi."))
+        setError(t('Parolni almashtirib boʻlmadi.'))
       }
     },
   })
@@ -111,7 +111,7 @@ export default function ProfilePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Profil')}</h1>
-        <p className="mt-1 text-sm text-slate-500">{t("Hisobingiz ma'lumotlari va xavfsizlik.")}</p>
+        <p className="mt-1 text-sm text-slate-500">{t('Hisobingiz maʼlumotlari va xavfsizlik.')}</p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -238,7 +238,7 @@ export default function ProfilePage() {
             <p>
               {t('Email, rol va filialni tashkilot egasi')} <strong>{t('Xodimlar')}</strong>{' '}
               {t(
-                "bo'limida o'zgartiradi — ular imtiyoz chegarasi, shuning uchun o'z-o'zini tahrirlash yo'lidan o'tmaydi.",
+                'boʻlimida oʻzgartiradi — ular imtiyoz chegarasi, shuning uchun oʻz-oʻzini tahrirlash yoʻlidan oʻtmaydi.',
               )}
             </p>
           </div>
@@ -304,7 +304,7 @@ export default function ProfilePage() {
             )}
             {tooShort && (
               <p className="text-xs text-amber-600">
-                {t("Yangi parol kamida {MIN_PASSWORD_LENGTH} belgidan iborat bo'lsin.", {
+                {t('Yangi parol kamida {MIN_PASSWORD_LENGTH} belgidan iborat boʻlsin.', {
                   MIN_PASSWORD_LENGTH,
                 })}
               </p>
@@ -333,7 +333,7 @@ export default function ProfilePage() {
           {subscription && (
             <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">
               {t('Obuna holati: {status}', { status: subscription.status })}
-              {subscription.read_only && t(" — hozircha faqat o'qish rejimi")}
+              {subscription.read_only && t(' — hozircha faqat oʻqish rejimi')}
             </p>
           )}
         </div>

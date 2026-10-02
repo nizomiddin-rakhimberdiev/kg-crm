@@ -58,7 +58,7 @@ describe('brend', () => {
     expect(hits).toEqual([])
   })
 
-  it("rang qattiq yozilmaydi — `lib/brand.ts` yoki Tailwind shkalasi ishlatiladi", () => {
+  it('rang qattiq yozilmaydi — `lib/brand.ts` yoki Tailwind shkalasi ishlatiladi', () => {
     const hits = FILES.flatMap(([rel, text]) =>
       (text.match(HEX) ?? []).map((hex) => `${rel}: ${hex}`),
     )

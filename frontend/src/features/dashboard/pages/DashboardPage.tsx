@@ -117,7 +117,7 @@ function CashPanel({ cash, isLoading }: { cash: DashboardKpis['cash']; isLoading
             </div>
             <div>
               <p className="text-sm font-medium text-slate-600">{t('Kassadagi qoldiq')}</p>
-              <p className="text-xs text-slate-400">{t("Bog'cha ochilganidan beri")}</p>
+              <p className="text-xs text-slate-400">{t('Bogʻcha ochilganidan beri')}</p>
             </div>
           </div>
           <p
@@ -209,7 +209,7 @@ function QuickLinks() {
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
-      <h2 className="text-sm font-semibold text-slate-900">{t("Sizga ochiq bo'limlar")}</h2>
+      <h2 className="text-sm font-semibold text-slate-900">{t('Sizga ochiq boʻlimlar')}</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {open.map((item) => (
           <Link
@@ -255,7 +255,7 @@ export default function DashboardPage() {
   if (isError) {
     return (
       <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-        {t("Ko'rsatkichlarni yuklab bo'lmadi.")}
+        {t('Koʻrsatkichlarni yuklab boʻlmadi.')}
       </div>
     )
   }
@@ -290,7 +290,7 @@ export default function DashboardPage() {
           <Tile
             label={t('Faol bolalar')}
             value={isLoading ? '…' : t('{v} nafar', { v: data?.active_children ?? 0 })}
-            hint={t("Ro'yxatdagi bolalar")}
+            hint={t('Roʻyxatdagi bolalar')}
             icon={Users}
             mono={false}
             tone="bg-nihol-50 text-nihol-600"
@@ -302,7 +302,7 @@ export default function DashboardPage() {
             <Tile
               label={t('Shu oy tushum')}
               value={isLoading ? '…' : formatUZS(Number(data?.month_revenue ?? 0))}
-              hint={t("Qabul qilingan to'lovlar")}
+              hint={t('Qabul qilingan toʻlovlar')}
               icon={Wallet}
               tone="bg-nihol-100 text-nihol-700"
               to="/payments"
@@ -310,7 +310,7 @@ export default function DashboardPage() {
             <Tile
               label={t('Jami qarz')}
               value={isLoading ? '…' : formatUZS(Number(data?.outstanding_debt ?? 0))}
-              hint={t("{v} nafar bola bo'yicha", { v: data?.debtor_count ?? 0 })}
+              hint={t('{v} nafar bola boʻyicha', { v: data?.debtor_count ?? 0 })}
               icon={AlertTriangle}
               tone="bg-orik-100 text-orik-700"
               to="/debtors"
@@ -336,7 +336,7 @@ export default function DashboardPage() {
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
             <h2 className="text-sm font-semibold text-slate-900">{t('Tushum dinamikasi')}</h2>
             <p className="mt-0.5 text-xs text-slate-500">
-              {t("Oxirgi 6 oy, qabul qilingan to'lovlar")}
+              {t('Oxirgi 6 oy, qabul qilingan toʻlovlar')}
             </p>
             <div className="mt-4 h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -364,7 +364,7 @@ export default function DashboardPage() {
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
-            <h2 className="text-sm font-semibold text-slate-900">{t("Oxirgi to'lovlar")}</h2>
+            <h2 className="text-sm font-semibold text-slate-900">{t('Oxirgi toʻlovlar')}</h2>
             <ul className="mt-4 space-y-3">
               {(data?.recent_payments ?? []).map((payment, index) => (
                 <li
@@ -382,7 +382,7 @@ export default function DashboardPage() {
               ))}
               {!isLoading && (data?.recent_payments ?? []).length === 0 && (
                 <li className="py-6 text-center text-sm text-slate-400">
-                  {t("Hozircha to'lov qabul qilinmagan.")}
+                  {t('Hozircha toʻlov qabul qilinmagan.')}
                 </li>
               )}
             </ul>

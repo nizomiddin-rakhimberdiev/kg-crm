@@ -12,6 +12,9 @@ import { useCallback, useState } from 'react'
 export function usePageState(filterKey: string): [number, (page: number) => void] {
   const [state, setState] = useState({ key: filterKey, page: 1 })
   const page = state.key === filterKey ? state.page : 1
-  const setPage = useCallback((next: number) => setState({ key: filterKey, page: next }), [filterKey])
+  const setPage = useCallback(
+    (next: number) => setState({ key: filterKey, page: next }),
+    [filterKey],
+  )
   return [page, setPage]
 }

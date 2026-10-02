@@ -111,7 +111,7 @@ class UserViewSet(BranchScopedMixin, TenantViewSet):
                     "success": False,
                     "error": {
                         "code": "VALIDATION_ERROR",
-                        "message": gettext("Yangi parol ko'rsatilmagan."),
+                        "message": gettext("Yangi parol koʻrsatilmagan."),
                         "details": {"password": [gettext("Bu maydon majburiy.")]},
                     },
                 },
@@ -142,7 +142,7 @@ class RoleViewSet(TenantViewSet):
         if instance.is_system:
             from apps.core.exceptions import BusinessRuleViolation
 
-            raise BusinessRuleViolation(gettext("Tizim rolini o'chirib bo'lmaydi."))
+            raise BusinessRuleViolation(gettext("Tizim rolini oʻchirib boʻlmaydi."))
         instance.is_active = False
         instance.save(update_fields=["is_active"])
 
@@ -167,7 +167,7 @@ class RoleViewSet(TenantViewSet):
             missing = sorted(OWNER_LOCKED_PERMISSIONS - wanted)
             raise BusinessRuleViolation(
                 gettext(
-                    "Tashkilot egasi rolidan quyidagi ruxsatlarni olib tashlab bo'lmaydi "
+                    "Tashkilot egasi rolidan quyidagi ruxsatlarni olib tashlab boʻlmaydi "
                     "(aks holda rollarni hech kim sozlay olmay qoladi): {join}."
                 ).format(join=", ".join(missing))
             )

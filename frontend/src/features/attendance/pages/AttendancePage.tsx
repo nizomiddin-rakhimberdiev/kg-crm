@@ -111,7 +111,7 @@ export default function AttendancePage() {
       })
       invalidateAttendance(queryClient, organizationId)
     },
-    onError: (err) => setError(err instanceof ApiError ? err.message : t("Saqlab bo'lmadi.")),
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Saqlab boʻlmadi.')),
   })
 
   const rows = registerQuery.data?.rows ?? []
@@ -296,7 +296,7 @@ export default function AttendancePage() {
         )}
         {registerQuery.data?.rows.length === 0 && (
           <p className="px-4 py-8 text-center text-sm text-slate-400">
-            {t("Bu guruhda faol bola yo'q.")}
+            {t('Bu guruhda faol bola yoʻq.')}
           </p>
         )}
 

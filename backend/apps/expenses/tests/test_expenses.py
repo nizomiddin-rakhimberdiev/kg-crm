@@ -51,17 +51,17 @@ class TestApprovalWorkflow:
         Rad etilgan chiqim O'CHIRILMAYDI.
 
         U nima so'ralgani va nega rad etilgani haqidagi yozuv bo'lib
-        qoladi — aks holda "men buni so'ragan edim" bahsiga javob
+        qoladi — aks holda "men buni soʻragan edim" bahsiga javob
         bo'lmasdi.
         """
         with organization_context(tenant_a.organization.id):
             services.reject_expense(
-                expense=expense, approved_by=tenant_a.owner, note="Byudjetda yo'q"
+                expense=expense, approved_by=tenant_a.owner, note="Byudjetda yoʻq"
             )
             expense.refresh_from_db()
             assert Expense.objects.filter(pk=expense.pk).exists()
         assert expense.status == ExpenseStatus.REJECTED
-        assert expense.decision_note == "Byudjetda yo'q"
+        assert expense.decision_note == "Byudjetda yoʻq"
 
     def test_double_decision_is_rejected(self, tenant_a, expense):
         with organization_context(tenant_a.organization.id):
@@ -117,7 +117,7 @@ class TestEndpoints:
                 "category_id": str(category.id),
                 "amount": "750000",
                 "expense_date": "2026-07-20",
-                "description": "Ta'mirlash",
+                "description": "Taʼmirlash",
             },
             format="json",
         )
@@ -168,7 +168,7 @@ class TestEndpoints:
         assert response.json()["data"]["total"] == "500000.00"
 
     def test_cashier_can_read_but_not_approve(self, tenant_a, expense):
-        """Kassirda `expenses` faqat o'qish (docs/02 §11.2)."""
+        """Kassirda `expenses` faqat oʻqish (docs/02 §11.2)."""
         from rest_framework.test import APIClient
 
         from apps.accounts.authentication import issue_token_pair

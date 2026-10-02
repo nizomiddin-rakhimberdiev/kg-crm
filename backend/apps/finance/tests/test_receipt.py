@@ -30,7 +30,7 @@ def child(tenant_a) -> Child:
         tariff = TariffPlan.objects.create(
             organization=tenant_a.organization,
             branch=tenant_a.branch,
-            name="To'liq kun",
+            name="Toʻliq kun",
             amount=TARIFF,
         )
         return Child.objects.create(
@@ -46,7 +46,7 @@ def child(tenant_a) -> Child:
 
 class TestReceiptNumber:
     def test_the_number_is_stable_across_reprints(self, tenant_a, child):
-        """Qayta chop etish AYNAN o'sha raqamni berishi kerak."""
+        """Qayta chop etish AYNAN oʻsha raqamni berishi kerak."""
         with organization_context(tenant_a.organization.id):
             payment = services.record_payment(child=child, amount=TARIFF, method="cash")
             first = services.receipt_number(payment)

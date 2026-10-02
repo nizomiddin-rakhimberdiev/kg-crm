@@ -1,7 +1,7 @@
 """
 Ombor testlari (docs/03 §15.5, §26).
 
-Asosiy savol: "stok manfiy bo'lib qola oladimi?" — bu ombor uchun
+Asosiy savol: "stok manfiy boʻlib qola oladimi?" — bu ombor uchun
 balansning noto'g'ri bo'lishi bilan bir xil og'irlikdagi xato.
 """
 
@@ -176,7 +176,7 @@ class TestDirectionInference:
         """
         with (
             organization_context(tenant_a.organization.id),
-            pytest.raises(BusinessRuleViolation, match="yo'nalish"),
+            pytest.raises(BusinessRuleViolation, match="yoʻnalish"),
         ):
             services.record_movement(
                 product=product,
@@ -245,7 +245,7 @@ class TestEndpoints:
         assert client.delete(url).status_code == 405
 
     def test_current_stock_is_read_only_over_the_api(self, tenant_a, product, warehouse):
-        """Qoldiqni to'g'ridan-to'g'ri yozib bo'lmaydi — faqat harakat orqali."""
+        """Qoldiqni toʻgʻridan-toʻgʻri yozib boʻlmaydi — faqat harakat orqali."""
         _in(tenant_a, product, warehouse, "10")
         response = tenant_a.client().patch(
             reverse("v1:product-detail", args=[product.id]),
@@ -285,7 +285,7 @@ class TestEndpoints:
         assert "warehouse_id" in response.json()["error"]["details"]
 
     def test_manager_can_manage_inventory(self, tenant_a, product, warehouse):
-        """Menejerda `inventory` to'liq (docs/02 §11.2)."""
+        """Menejerda `inventory` toʻliq (docs/02 §11.2)."""
         from rest_framework.test import APIClient
 
         from apps.accounts.authentication import issue_token_pair

@@ -152,7 +152,7 @@ def _rows_from_xlsx(file_bytes: bytes) -> tuple[list[list[str]], list[RowError]]
                 0,
                 "file",
                 gettext(
-                    "Excel faylini o'qib bo'lmadi. Fayl to'liq yuklanganini va "
+                    "Excel faylini oʻqib boʻlmadi. Fayl toʻliq yuklanganini va "
                     "parol bilan himoyalanmaganini tekshiring."
                 ),
             )
@@ -199,7 +199,7 @@ def parse_rows(file_bytes: bytes) -> tuple[list[dict[str, str]], list[RowError]]
         try:
             text = file_bytes.decode("cp1251")  # Windows'dagi eski fayllar
         except UnicodeDecodeError:
-            return [], [RowError(0, "file", gettext("Faylni o'qib bo'lmadi (kodlash noma'lum)."))]
+            return [], [RowError(0, "file", gettext("Faylni oʻqib boʻlmadi (kodlash nomaʼlum)."))]
 
     # Ajratgichni aniqlaymiz: bog'chalar `,` ham, `;` ham ishlatadi.
     sample = text[:2048]
@@ -218,7 +218,7 @@ def _rows_from_table(table: list[list[str]]) -> tuple[list[dict[str, str]], list
     """
     errors: list[RowError] = []
     if not table:
-        return [], [RowError(0, "file", gettext("Fayl bo'sh."))]
+        return [], [RowError(0, "file", gettext("Fayl boʻsh."))]
 
     header = table[0]
 
@@ -260,9 +260,9 @@ def _validate(row: dict[str, str], line: int) -> tuple[dict[str, Any] | None, li
     last_name = row.get("last_name", "").strip()
     first_name = row.get("first_name", "").strip()
     if not last_name:
-        errors.append(RowError(line, "last_name", gettext("Familiya bo'sh.")))
+        errors.append(RowError(line, "last_name", gettext("Familiya boʻsh.")))
     if not first_name:
-        errors.append(RowError(line, "first_name", gettext("Ism bo'sh.")))
+        errors.append(RowError(line, "first_name", gettext("Ism boʻsh.")))
 
     dob = _parse_date(row.get("date_of_birth", ""))
     if dob is None:
@@ -270,13 +270,13 @@ def _validate(row: dict[str, str], line: int) -> tuple[dict[str, Any] | None, li
             RowError(
                 line,
                 "date_of_birth",
-                gettext("Sana o'qilmadi (kutilgan: 2020-05-14 yoki 14.05.2020)."),
+                gettext("Sana oʻqilmadi (kutilgan: 2020-05-14 yoki 14.05.2020)."),
             )
         )
     elif dob >= date.today():
         errors.append(
             RowError(
-                line, "date_of_birth", gettext("Tug'ilgan sana kelajakda bo'lishi mumkin emas.")
+                line, "date_of_birth", gettext("Tugʻilgan sana kelajakda boʻlishi mumkin emas.")
             )
         )
 
@@ -296,7 +296,7 @@ def _validate(row: dict[str, str], line: int) -> tuple[dict[str, Any] | None, li
     guardian_name = row.get("guardian_name", "").strip()
     if phone and not guardian_name:
         errors.append(
-            RowError(line, "guardian_name", gettext("Telefon bor, lekin ota-ona ismi yo'q."))
+            RowError(line, "guardian_name", gettext("Telefon bor, lekin ota-ona ismi yoʻq."))
         )
 
     if errors:

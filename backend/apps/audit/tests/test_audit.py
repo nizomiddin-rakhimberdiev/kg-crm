@@ -40,7 +40,7 @@ class TestAuthAuditing:
 
         platform_services.create_organization(
             actor=actor,
-            organization_name="Audit Bog'cha",
+            organization_name="Audit Bogʻcha",
             contact_email="owner@audit.uz",
             full_name="Egasi",
             password=PASSWORD,
@@ -150,7 +150,7 @@ class TestMutationAuditing:
 
 class TestAuditImmutability:
     def test_log_has_no_updated_at(self):
-        """Append-only jadvalda `updated_at`/`is_active` bo'lmasligi kerak (D3)."""
+        """Append-only jadvalda `updated_at`/`is_active` boʻlmasligi kerak (D3)."""
         fields = {f.name for f in AuditLog._meta.get_fields()}
         assert "updated_at" not in fields
         assert "is_active" not in fields

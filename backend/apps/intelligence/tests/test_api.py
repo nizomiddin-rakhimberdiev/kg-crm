@@ -64,7 +64,7 @@ class TestList:
         assert "children" not in data or "full_name" not in str(data)
 
     def test_cashier_reads_but_cannot_close(self, tenant_a):
-        """Kassirda `dashboard.read` bor, `dashboard.update` yo'q → amal 403."""
+        """Kassirda `dashboard.read` bor, `dashboard.update` yoʻq → amal 403."""
         from rest_framework.test import APIClient
 
         from apps.accounts.authentication import issue_token_pair

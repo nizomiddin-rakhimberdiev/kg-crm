@@ -30,8 +30,8 @@ import { t } from '@/lib/i18n'
 
 const STATUS: Record<Employee['employment_status'], [string, string]> = {
   active: [t('Ishlayapti'), 'bg-emerald-50 text-emerald-700'],
-  on_leave: [t("Ta'tilda"), 'bg-amber-50 text-amber-700'],
-  terminated: [t("Bo'shagan"), 'bg-slate-100 text-slate-500'],
+  on_leave: [t('Taʼtilda'), 'bg-amber-50 text-amber-700'],
+  terminated: [t('Boʻshagan'), 'bg-slate-100 text-slate-500'],
 }
 
 const EMPTY_FORM: EmployeeInput = {
@@ -269,7 +269,7 @@ export function EmployeesPanel() {
             {employee.phone}
           </a>
         ) : (
-          <p className="text-xs text-slate-300">{t("telefon yo'q")}</p>
+          <p className="text-xs text-slate-300">{t('telefon yoʻq')}</p>
         )}
       </div>
     </div>
@@ -302,7 +302,7 @@ export function EmployeesPanel() {
             type="button"
             onClick={() => setConfirmTerminate(employee)}
             className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-            title={t("Ishdan bo'shatish")}
+            title={t('Ishdan boʻshatish')}
           >
             <UserMinus className="h-4 w-4" />
           </button>
@@ -337,8 +337,8 @@ export function EmployeesPanel() {
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
         >
           <option value="active">{t('Ishlayotganlar')}</option>
-          <option value="on_leave">{t("Ta'tildagilar")}</option>
-          <option value="terminated">{t("Bo'shaganlar")}</option>
+          <option value="on_leave">{t('Taʼtildagilar')}</option>
+          <option value="terminated">{t('Boʻshaganlar')}</option>
           <option value="">{t('Barchasi')}</option>
         </select>
         {can('payroll.create') && (
@@ -348,7 +348,7 @@ export function EmployeesPanel() {
             className="flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 sm:ml-auto"
           >
             <UserPlus className="h-4 w-4" />
-            {t("Xodim qo'shish")}
+            {t('Xodim qoʻshish')}
           </button>
         )}
       </div>
@@ -362,7 +362,7 @@ export function EmployeesPanel() {
           <p className="px-4 py-8 text-center text-sm text-red-600">
             {employeesQuery.error instanceof ApiError
               ? employeesQuery.error.message
-              : t("Ma'lumotni yuklab bo'lmadi.")}
+              : t('Maʼlumotni yuklab boʻlmadi.')}
           </p>
         )}
         {employeesQuery.data && employees.length === 0 && (
@@ -371,7 +371,7 @@ export function EmployeesPanel() {
             <p className="text-sm text-slate-500">
               {debouncedSearch || statusFilter !== 'active'
                 ? t('Shartga mos xodim topilmadi.')
-                : t("Hozircha xodim yo'q.")}
+                : t('Hozircha xodim yoʻq.')}
             </p>
             {can('payroll.create') && !debouncedSearch && statusFilter === 'active' && (
               <button
@@ -379,7 +379,7 @@ export function EmployeesPanel() {
                 onClick={openCreate}
                 className="mt-3 text-sm font-medium text-brand-600 hover:underline"
               >
-                {t("Birinchi xodimni qo'shing")}
+                {t('Birinchi xodimni qoʻshing')}
               </button>
             )}
           </div>
@@ -411,7 +411,7 @@ export function EmployeesPanel() {
                       </td>
                       <td className="px-4 py-3">{renderStatus(employee.employment_status)}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-right text-slate-700 tabular-nums">
-                        {t("{formatMoney} so'm", {
+                        {t('{formatMoney} soʻm', {
                           formatMoney: formatMoney(Number(employee.base_salary)),
                         })}
                       </td>
@@ -443,7 +443,7 @@ export function EmployeesPanel() {
                     <p className="col-span-2">
                       <span className="text-slate-400">{t('Maosh:')}</span>{' '}
                       <span className="font-medium text-slate-800 tabular-nums">
-                        {t("{formatMoney} so'm", {
+                        {t('{formatMoney} soʻm', {
                           formatMoney: formatMoney(Number(employee.base_salary)),
                         })}
                       </span>
@@ -486,7 +486,7 @@ export function EmployeesPanel() {
             </h2>
             <p className="mt-0.5 text-xs text-slate-500">
               {t(
-                "Bazaviy maosh oylik hisoblashda nusxalanadi — keyin o'zgartirilsa, o'tgan oylar o'zgarmaydi.",
+                'Bazaviy maosh oylik hisoblashda nusxalanadi — keyin oʻzgartirilsa, oʻtgan oylar oʻzgarmaydi.',
               )}
             </p>
           </div>
@@ -504,11 +504,11 @@ export function EmployeesPanel() {
                 ['first_name', t('Ism'), 'text', true],
                 ['phone', t('Telefon'), 'tel', false],
                 ['hire_date', t('Ishga kirgan sana'), 'date', true],
-                ['base_salary', t("Oylik maosh (so'm)"), 'number', true],
+                ['base_salary', t('Oylik maosh (soʻm)'), 'number', true],
                 // Rasmiy qism (ADR-18): bankka, soliq ushlab qolingan
                 // holda. Bo'sh qoldirilsa 0 — ya'ni hammasi naqd, va
                 // hech bir eski raqam siljimaydi.
-                ['official_salary', t("Shundan rasmiy (so'm)"), 'number', false],
+                ['official_salary', t('Shundan rasmiy (soʻm)'), 'number', false],
               ] as const
             ).map(([key, label, type, required]) => (
               <div key={key}>
@@ -636,7 +636,7 @@ export function EmployeesPanel() {
                     className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    {t("Qo'shish")}
+                    {t('Qoʻshish')}
                   </button>
                 </div>
               )}
@@ -675,7 +675,7 @@ export function EmployeesPanel() {
                       htmlFor="emp-termination"
                       className="mb-1 block text-xs font-medium text-slate-600"
                     >
-                      {t("Bo'shagan sana")}
+                      {t('Boʻshagan sana')}
                     </label>
                     <DateInput
                       id="emp-termination"
@@ -721,12 +721,12 @@ export function EmployeesPanel() {
         {confirmTerminate && (
           <div className="p-5 sm:p-6">
             <h2 className="pr-8 text-base font-semibold text-slate-900">
-              {t("Ishdan bo'shatish")}
+              {t('Ishdan boʻshatish')}
             </h2>
             <p className="mt-2 text-sm text-slate-600">
               <strong>{confirmTerminate.full_name}</strong>{' '}
               {t(
-                "\"bo'shagan\" holatiga o'tadi va keyingi oylik hisoblashga kirmaydi. O'tgan oylardagi maosh tarixi saqlanib qoladi.",
+                '"boʻshagan" holatiga oʻtadi va keyingi oylik hisoblashga kirmaydi. Oʻtgan oylardagi maosh tarixi saqlanib qoladi.',
               )}
             </p>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -743,7 +743,7 @@ export function EmployeesPanel() {
                 onClick={() => terminateMutation.mutate(confirmTerminate.id)}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
               >
-                {terminateMutation.isPending ? t('Bajarilmoqda…') : t("Bo'shatish")}
+                {terminateMutation.isPending ? t('Bajarilmoqda…') : t('Boʻshatish')}
               </button>
             </div>
           </div>

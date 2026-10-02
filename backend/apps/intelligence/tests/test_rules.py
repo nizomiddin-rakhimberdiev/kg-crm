@@ -170,7 +170,7 @@ class TestAttendanceDrop:
         )
 
     def test_attendance_days_without_records_are_not_absent(self):
-        # Yozuvsiz oyna: hech narsa bo'linmaydi, insight yo'q — "yo'q" deb hisoblanmaydi.
+        # Yozuvsiz oyna: hech narsa bo'linmaydi, insight yo'q — "yoʻq" deb hisoblanmaydi.
         assert (
             attendance_drop(
                 as_of=AS_OF, group=_group(recent_present=0, recent_absent=0, recent_excused=0)

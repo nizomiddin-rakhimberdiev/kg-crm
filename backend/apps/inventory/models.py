@@ -152,10 +152,10 @@ class MovementDirection(models.TextChoices):
 
 class MovementType(models.TextChoices):
     PURCHASE = "purchase", gettext_lazy("Xarid")
-    CONSUMPTION = "consumption", gettext_lazy("Iste'mol")
+    CONSUMPTION = "consumption", gettext_lazy("Isteʼmol")
     ADJUSTMENT = "adjustment", gettext_lazy("Tuzatish")
     WASTE = "waste", gettext_lazy("Yaroqsiz")
-    TRANSFER = "transfer", gettext_lazy("Ko'chirish")
+    TRANSFER = "transfer", gettext_lazy("Koʻchirish")
 
 
 class StockMovement(BranchScopedModel):

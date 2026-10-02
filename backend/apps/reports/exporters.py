@@ -92,9 +92,9 @@ def COLUMNS(report_type: str) -> list[Column]:  # noqa: N802 — jadval nomi kab
             ("date", gettext("Sana"), "date"),
             ("child", gettext("Bola"), "text"),
             ("invoice", gettext("Hisob-faktura"), "text"),
-            ("method", gettext("To'lov usuli"), "text"),
+            ("method", gettext("Toʻlov usuli"), "text"),
             ("amount", gettext("Summa"), "money"),
-            ("reference", gettext("Ma'lumotnoma"), "text"),
+            ("reference", gettext("Maʼlumotnoma"), "text"),
             ("received_by", gettext("Qabul qildi"), "text"),
             ("reversed", gettext("Qaytarilgan"), "text"),
         ]

@@ -30,12 +30,12 @@ interface SettingMeta {
  */
 const META: Record<string, SettingMeta> = {
   'general.default_language': {
-    label: t('Bog‘cha tili'),
-    help: t('Xodim o‘zi til tanlamagan bo‘lsa, tizim shu tilda ochiladi.'),
+    label: t('Bogʻcha tili'),
+    help: t('Xodim oʻzi til tanlamagan boʻlsa, tizim shu tilda ochiladi.'),
   },
   'finance.due_day': {
-    label: t("To'lov muddati (oy kuni)"),
-    help: t("Hisob-faktura shu kungacha to'lanishi kutiladi."),
+    label: t('Toʻlov muddati (oy kuni)'),
+    help: t('Hisob-faktura shu kungacha toʻlanishi kutiladi.'),
   },
   'finance.reminder_day': {
     label: t('Eslatma kuni'),
@@ -43,19 +43,19 @@ const META: Record<string, SettingMeta> = {
   },
   'notifications.sms_enabled': {
     label: t('Xabarnomalar'),
-    help: t("O'chirilsa hech qanday xabar yuborilmaydi — na Telegram, na SMS."),
+    help: t('Oʻchirilsa hech qanday xabar yuborilmaydi — na Telegram, na SMS.'),
   },
   'notifications.default_channel': {
     label: t('Asosiy kanal'),
     help: t('Telegram bepul; SMS har xabar uchun pul turadi va shlyuz shartnomasini talab qiladi.'),
   },
   'notifications.payment_receipt': {
-    label: t("To'lov haqida SMS"),
-    help: t("To'lov qabul qilinganda ota-onaga xabar ketadi."),
+    label: t('Toʻlov haqida SMS'),
+    help: t('Toʻlov qabul qilinganda ota-onaga xabar ketadi.'),
   },
   'notifications.send_from_hour': {
     label: t('Yuborishni boshlash (soat)'),
-    help: t('Bundan oldin tayyor bo‘lgan xabar navbatda turadi — tungi SMS yuborilmaydi.'),
+    help: t('Bundan oldin tayyor boʻlgan xabar navbatda turadi — tungi SMS yuborilmaydi.'),
   },
   'notifications.send_to_hour': {
     label: t('Yuborishni tugatish (soat)'),
@@ -67,10 +67,10 @@ const META: Record<string, SettingMeta> = {
   },
   'notifications.max_retries': {
     label: t('Qayta urinish soni'),
-    help: t('Xato bo‘lgan xabar shuncha marta qayta yuboriladi.'),
+    help: t('Xato boʻlgan xabar shuncha marta qayta yuboriladi.'),
   },
   'notifications.sms_price': {
-    label: t('Bitta SMS bo‘lagi narxi'),
+    label: t('Bitta SMS boʻlagi narxi'),
     help: t('Taxminiy xarajatni hisoblash uchun — provayder shartnomasidagi narx.'),
   },
   'attendance.auto_absent': {
@@ -109,7 +109,7 @@ export default function SettingsPage() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.settings(organizationId) })
     },
     onError: (err: unknown) =>
-      setError(err instanceof ApiError ? err.message : t("Saqlab bo'lmadi.")),
+      setError(err instanceof ApiError ? err.message : t('Saqlab boʻlmadi.')),
   })
 
   const settings = settingsQuery.data ?? {}
@@ -199,7 +199,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Sozlamalar')}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          {t("O'zgarish darhol saqlanadi va tashkilotning barcha filiallariga tegishli.")}
+          {t('Oʻzgarish darhol saqlanadi va tashkilotning barcha filiallariga tegishli.')}
         </p>
       </div>
 
@@ -209,7 +209,7 @@ export default function SettingsPage() {
 
       {!editable && (
         <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          {t("Sozlamalarni faqat ko'rishingiz mumkin.")}
+          {t('Sozlamalarni faqat koʻrishingiz mumkin.')}
         </div>
       )}
       {error && (

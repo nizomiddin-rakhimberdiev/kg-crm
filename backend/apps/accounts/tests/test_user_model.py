@@ -22,7 +22,7 @@ class TestEmailUniqueness:
         Bir odam ikki bog'chada ishlashi mumkin — bu haqiqiy stsenariy.
 
         Global unikallik buni jimgina bloklardi va ro'yxatdan o'tishda
-        "bu email boshqa tenant'da bor" faktini oshkor qilardi (docs/03 §10.6).
+        "bu email boshqa tenantʼda bor" faktini oshkor qilardi (docs/03 §10.6).
         """
         for org in (organization, other_organization):
             with organization_context(org.id):
@@ -90,7 +90,7 @@ class TestOrganizationImmutabilityTrigger:
                 User.objects.filter(pk=user.pk).update(organization=other_organization)
 
     def test_other_field_updates_still_work(self, organization):
-        """Trigger faqat organization_id ni qo'riqlaydi, qolganini to'smaydi."""
+        """Trigger faqat organization_id ni qoʻriqlaydi, qolganini toʻsmaydi."""
         with organization_context(organization.id):
             user = User.objects.create_user(
                 email="b@example.uz", password="x", full_name="B", organization=organization

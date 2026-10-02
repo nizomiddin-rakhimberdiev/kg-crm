@@ -55,7 +55,7 @@ class Holiday(TenantScopedModel):
 
 
 class ClaimKind(models.TextChoices):
-    MEDICAL = "medical", gettext_lazy("Shifokor ma'lumotnomasi")
+    MEDICAL = "medical", gettext_lazy("Shifokor maʼlumotnomasi")
     PARENTAL = "parental", gettext_lazy("Ota-ona arizasi")
 
 

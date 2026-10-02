@@ -28,10 +28,10 @@ const toCode = (name: string) =>
     .replace(/^_+|_+$/g, '')
 
 const ACTION_LABELS: Record<string, string> = {
-  read: t("Ko'rish"),
+  read: t('Koʻrish'),
   create: t('Yaratish'),
   update: t('Tahrirlash'),
-  delete: t("O'chirish"),
+  delete: t('Oʻchirish'),
   export: t('Eksport'),
   approve: t('Tasdiqlash'),
 }
@@ -94,7 +94,7 @@ export function RolesPanel() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.roles(organizationId) })
     },
     onError: (err) => {
-      setError(err instanceof ApiError ? err.message : t("Saqlab bo'lmadi."))
+      setError(err instanceof ApiError ? err.message : t('Saqlab boʻlmadi.'))
     },
   })
 
@@ -116,7 +116,7 @@ export function RolesPanel() {
       setError(null)
       void queryClient.invalidateQueries({ queryKey: queryKeys.roles(organizationId) })
     },
-    onError: (err) => setError(err instanceof ApiError ? err.message : t("O'chirib bo'lmadi.")),
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Oʻchirib boʻlmadi.')),
   })
 
   const toggle = (code: string) => {
@@ -197,7 +197,7 @@ export function RolesPanel() {
                     disabled={!newRoleName.trim() || createMutation.isPending}
                     className="flex-1 rounded-lg bg-brand-600 px-2 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
                   >
-                    {createMutation.isPending ? '…' : t("Qo'shish")}
+                    {createMutation.isPending ? '…' : t('Qoʻshish')}
                   </button>
                   <button
                     type="button"
@@ -225,9 +225,9 @@ export function RolesPanel() {
                 <p className="mt-0.5 text-xs text-slate-500">
                   {selectedRole.is_system
                     ? t(
-                        "Tizim roli — ruxsatlarini o'zgartirsangiz bo'ladi, faqat kodi qotib qoladi.",
+                        'Tizim roli — ruxsatlarini oʻzgartirsangiz boʻladi, faqat kodi qotib qoladi.',
                       )
-                    : t("Maxsus rol — ruxsatlari ham, o'zi ham to'liq sizning ixtiyoringizda.")}
+                    : t('Maxsus rol — ruxsatlari ham, oʻzi ham toʻliq sizning ixtiyoringizda.')}
                 </p>
               </div>
 
@@ -254,7 +254,7 @@ export function RolesPanel() {
                     disabled={deleteMutation.isPending}
                     onClick={() => deleteMutation.mutate(selectedRole.id)}
                     className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                    title={t("Rolni o'chirish")}
+                    title={t('Rolni oʻchirish')}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

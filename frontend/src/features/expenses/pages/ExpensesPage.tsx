@@ -28,7 +28,7 @@ const STATUS: Record<string, [string, string]> = {
   pending: [t('Kutilmoqda'), 'bg-amber-50 text-amber-700'],
   approved: [t('Tasdiqlangan'), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
   rejected: [t('Rad etilgan'), 'bg-red-50 text-red-700'],
-  paid: [t("To'langan"), 'bg-emerald-50 text-emerald-700'],
+  paid: [t('Toʻlangan'), 'bg-emerald-50 text-emerald-700'],
 }
 
 const monthRange = () => {
@@ -234,7 +234,7 @@ export default function ExpensesPage() {
                     <button
                       type="button"
                       onClick={() => removeCategory.mutate(c.id)}
-                      title={t("O'chirish")}
+                      title={t('Oʻchirish')}
                       className="rounded p-0.5 text-slate-300 transition hover:text-red-600 group-hover:text-slate-500"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -263,7 +263,7 @@ export default function ExpensesPage() {
                   type="submit"
                   className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
                 >
-                  {t("Qo'shish")}
+                  {t('Qoʻshish')}
                 </button>
               </form>
             </div>
@@ -333,7 +333,7 @@ export default function ExpensesPage() {
                   id="edesc"
                   maxLength={255}
                   value={form.description}
-                  placeholder={t('Masalan: kraska, konditsioner ta’miri')}
+                  placeholder={t('Masalan: kraska, konditsioner taʼmiri')}
                   onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
                 />
@@ -364,7 +364,7 @@ export default function ExpensesPage() {
                   disabled={create.isPending}
                   className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
                 >
-                  <Plus className="h-4 w-4" /> {t("Qo'shish")}
+                  <Plus className="h-4 w-4" /> {t('Qoʻshish')}
                 </button>
               </div>
             </form>
@@ -376,7 +376,7 @@ export default function ExpensesPage() {
         {expensesQuery.data?.items.length === 0 && (
           <div className="px-4 py-12 text-center">
             <Receipt className="mx-auto mb-3 h-10 w-10 text-slate-200" />
-            <p className="text-sm text-slate-500">{t("Chiqim yo'q.")}</p>
+            <p className="text-sm text-slate-500">{t('Chiqim yoʻq.')}</p>
           </div>
         )}
 
@@ -439,7 +439,7 @@ export default function ExpensesPage() {
                             onClick={() => decide.mutate({ id: e.id, action: 'markPaid' })}
                             className="rounded-lg px-2 py-1 text-xs font-medium text-brand-600 hover:bg-brand-50"
                           >
-                            {t("To'landi")}
+                            {t('Toʻlandi')}
                           </button>
                         )}
                       </td>
@@ -452,7 +452,7 @@ export default function ExpensesPage() {
                     icon={Receipt}
                     title={t('Chiqim yozilmagan')}
                     hint={t(
-                      "Bog'cha xarajatlari shu yerda qayd etiladi — oziq-ovqat, kommunal, ta'mir.",
+                      'Bogʻcha xarajatlari shu yerda qayd etiladi — oziq-ovqat, kommunal, taʼmir.',
                     )}
                   />
                 )}

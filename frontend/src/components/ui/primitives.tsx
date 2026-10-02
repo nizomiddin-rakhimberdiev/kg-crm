@@ -353,7 +353,7 @@ export function StatCard({
           <p className="mt-5 text-sm leading-relaxed text-slate-600">
             {detail?.description ??
               t(
-                "Bu ko'rsatkich real vaqt rejimida yangilanib turadi. To'liq ma'lumot uchun tegishli bo'limga o'ting.",
+                'Bu koʻrsatkich real vaqt rejimida yangilanib turadi. Toʻliq maʼlumot uchun tegishli boʻlimga oʻting.',
               )}
           </p>
 
@@ -388,7 +388,7 @@ export function StatCard({
                   navigate(detail.linkTo!)
                 }}
               >
-                {detail.linkLabel ?? t("Batafsil ko'rish")} →
+                {detail.linkLabel ?? t('Batafsil koʻrish')} →
               </Button>
             )}
           </div>

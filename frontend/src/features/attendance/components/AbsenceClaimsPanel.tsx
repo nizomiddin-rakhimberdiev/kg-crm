@@ -31,7 +31,7 @@ import { t } from '@/lib/i18n'
 // degan yarim tiyin ekranda ma'nosiz — ilovadagi qolgan pul
 // maydonlari ham butun songa yaxlitlaydi.
 const KIND_LABELS: Record<string, string> = {
-  medical: t("Shifokor ma'lumotnomasi"),
+  medical: t('Shifokor maʼlumotnomasi'),
   parental: t('Ota-ona arizasi'),
 }
 
@@ -117,7 +117,7 @@ export function AbsenceClaimsPanel() {
         </h2>
         <p className="mt-0.5 text-xs text-slate-500">
           {t(
-            "Faqat hujjat asosida: shifokor ma'lumotnomasi yoki ota-ona arizasi. Tasdiqlangach keyingi hisob-fakturaga minus qator bo'lib tushadi.",
+            'Faqat hujjat asosida: shifokor maʼlumotnomasi yoki ota-ona arizasi. Tasdiqlangach keyingi hisob-fakturaga minus qator boʻlib tushadi.',
           )}
         </p>
       </div>
@@ -206,7 +206,7 @@ export function AbsenceClaimsPanel() {
               disabled={create.isPending}
               className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
             >
-              <Plus className="h-4 w-4" /> {t("Qo'shish")}
+              <Plus className="h-4 w-4" /> {t('Qoʻshish')}
             </button>
           </div>
 
@@ -271,7 +271,7 @@ export function AbsenceClaimsPanel() {
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-slate-700">
                     {Number(claim.credit_amount) > 0
-                      ? t("{money} so'm", { money: money(claim.credit_amount) })
+                      ? t('{money} soʻm', { money: money(claim.credit_amount) })
                       : '—'}
                   </td>
                   <td className="px-4 py-3">
@@ -312,9 +312,9 @@ export function AbsenceClaimsPanel() {
                 <EmptyRow
                   colSpan={6}
                   icon={CalendarX2}
-                  title={t("Hujjatli kelmaslik yo'q")}
+                  title={t('Hujjatli kelmaslik yoʻq')}
                   hint={t(
-                    "Spravka yoki ariza keltirilganda shu yerga yoziladi — va tasdiqlangach to'lovdan ayriladi.",
+                    'Spravka yoki ariza keltirilganda shu yerga yoziladi — va tasdiqlangach toʻlovdan ayriladi.',
                   )}
                 />
               )}

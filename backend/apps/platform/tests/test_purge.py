@@ -23,7 +23,7 @@ pytestmark = pytest.mark.django_db
 
 
 def _prepare(tenant, *, cancelled: bool = True) -> None:
-    """Tashkilotni o'chirishga tayyorlaydi: ma'lumot + bekor qilingan holat."""
+    """Tashkilotni oʻchirishga tayyorlaydi: maʼlumot + bekor qilingan holat."""
     with organization_context(tenant.organization.id):
         Child.objects.create(
             organization=tenant.organization,
@@ -127,7 +127,7 @@ class TestPurge:
             organization_id=organization_id, confirm_slug=tenant_a.organization.slug
         )
 
-        assert deleted["audit_log"] >= 3, "mijozning audit qatorlari o'chirilmadi"
+        assert deleted["audit_log"] >= 3, "mijozning audit qatorlari oʻchirilmadi"
         with platform_context():
             assert not Organization.objects.filter(pk=organization_id).exists()
 
@@ -173,7 +173,7 @@ class TestPurge:
         assert entry.changes["deleted_rows"]["child"] == 1
 
     def test_force_skips_the_export_window(self, tenant_a):
-        """`force` — sud qarori yoki GDPR talabi uchun; jurnalda ko'rinadi."""
+        """`force` — sud qarori yoki GDPR talabi uchun; jurnalda koʻrinadi."""
         from apps.audit.models import AuditLog
 
         _prepare(tenant_a, cancelled=False)
@@ -217,6 +217,6 @@ class TestOrderIsComplete:
                 missing.append(label)
 
         assert not missing, (
-            f"Bu modellar `PURGE_ORDER` da yo'q: {sorted(missing)}. "
-            f"Ular o'chirilmay qolardi yoki FK cheklovini buzardi."
+            f"Bu modellar `PURGE_ORDER` da yoʻq: {sorted(missing)}. "
+            f"Ular oʻchirilmay qolardi yoki FK cheklovini buzardi."
         )

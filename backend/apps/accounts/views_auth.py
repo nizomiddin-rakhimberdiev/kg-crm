@@ -115,7 +115,7 @@ class LoginView(APIView):
                     "success": False,
                     "error": {
                         "code": "AUTHENTICATION_REQUIRED",
-                        "message": gettext("Email yoki parol noto'g'ri."),
+                        "message": gettext("Email yoki parol notoʻgʻri."),
                         "details": None,
                     },
                 },
@@ -196,7 +196,7 @@ class RefreshView(APIView):
     def post(self, request: Request) -> Response:
         raw = request.data.get("refresh")
         if not raw:
-            return _auth_error(gettext("Refresh token ko'rsatilmagan."))
+            return _auth_error(gettext("Refresh token koʻrsatilmagan."))
 
         # Refresh token — tenant hali noma'lum bo'lgan paytdagi qidiruv,
         # xuddi login kabi. Tor eshik shuning uchun `refresh_token` ni
@@ -402,7 +402,7 @@ class PasswordChangeView(APIView):
 
         user = request_user(request)
         if not check_password(serializer.validated_data["current_password"], user.password):
-            return _auth_error(gettext("Joriy parol noto'g'ri."))
+            return _auth_error(gettext("Joriy parol notoʻgʻri."))
 
         user.set_password(serializer.validated_data["new_password"])
         user.save(update_fields=["password"])

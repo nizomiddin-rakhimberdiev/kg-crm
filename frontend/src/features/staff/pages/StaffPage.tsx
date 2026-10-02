@@ -54,7 +54,7 @@ export default function StaffPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Xodimlar')}</h1>
         <p className="mt-1 text-sm text-slate-500">
-          {t("Xodimlar soni cheklanmagan — narx faqat bolalar soniga bog'liq.")}
+          {t('Xodimlar soni cheklanmagan — narx faqat bolalar soniga bogʻliq.')}
         </p>
       </div>
 

@@ -36,7 +36,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       {/* Brand */}
       <NavLink
         to="/organization"
-        title={t("Bog'cha profili")}
+        title={t('Bogʻcha profili')}
         onClick={onNavigate}
         className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-100 px-5 transition-colors hover:bg-slate-50 lg:px-6"
       >

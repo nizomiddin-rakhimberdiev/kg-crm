@@ -32,7 +32,7 @@ def _clear_throttle_cache():  # type: ignore[no-untyped-def]
 
 
 def test_repeated_failed_logins_are_throttled(api_client, tenant_a, monkeypatch):
-    """Ketma-ket muvaffaqiyatsiz urinishlar 429 bilan to'siladi."""
+    """Ketma-ket muvaffaqiyatsiz urinishlar 429 bilan toʻsiladi."""
     from rest_framework.throttling import SimpleRateThrottle
 
     # DRF `THROTTLE_RATES` ni **klass atributi** sifatida import paytida
@@ -46,7 +46,7 @@ def test_repeated_failed_logins_are_throttled(api_client, tenant_a, monkeypatch)
     payload = {"email": tenant_a.owner.email, "password": "noto-g-ri"}
     statuses = [api_client.post(url, payload, format="json").status_code for _ in range(5)]
 
-    assert statuses[0] == 401, "Birinchi urinish oddiy 401 bo'lishi kerak"
+    assert statuses[0] == 401, "Birinchi urinish oddiy 401 boʻlishi kerak"
     assert 429 in statuses, f"Login throttle ishlamadi: {statuses}"
     assert statuses[-1] == 429
 
@@ -95,14 +95,14 @@ def test_refresh_has_its_own_scope():
 
 
 def test_login_rate_fits_a_shared_office_ip():
-    """O'nlab xodim smena boshida birga kirsa, oxirgilari bloklanmasin."""
+    """Oʻnlab xodim smena boshida birga kirsa, oxirgilari bloklanmasin."""
     count = int(BASE_RATES["login"].split("/")[0])
     assert count >= 20
 
 
 @override_settings(REST_FRAMEWORK={**BASE_REST_FRAMEWORK, "DEFAULT_THROTTLE_RATES": {**BASE_RATES}})
 def test_many_refreshes_from_one_ip_are_not_blocked(tenant_a: Any, api_client: Any):
-    """Bitta IP dan 40 ta yangilash — bitta bog'chaning yarim kunlik ishi."""
+    """Bitta IP dan 40 ta yangilash — bitta bogʻchaning yarim kunlik ishi."""
     login = api_client.post(
         reverse("v1:auth-login"),
         {"email": tenant_a.owner.email, "password": tenant_a.password},

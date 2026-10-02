@@ -119,7 +119,7 @@ class TestHireMonthIsProrated:
             )
             item = PayrollItem.objects.get(payroll_run=may, employee=maftuna)
 
-        assert item.base_amount < SALARY, "ishga kirgan oyi to'liq emas"
+        assert item.base_amount < SALARY, "ishga kirgan oyi toʻliq emas"
 
 
 class TestWithholding:
@@ -204,7 +204,7 @@ class TestHireMonthNumbers:
 
 
 class TestEmployerSocialTax:
-    """Q10: ish beruvchi solig'i xodimga tegmaydi, xarajatni oshiradi."""
+    """Q10: ish beruvchi soligʻi xodimga tegmaydi, xarajatni oshiradi."""
 
     def test_social_tax_does_not_touch_the_employee(self, tenant_a, position):
         from apps.settings_app.services import set_setting

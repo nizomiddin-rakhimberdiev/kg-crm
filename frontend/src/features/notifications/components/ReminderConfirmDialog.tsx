@@ -60,7 +60,7 @@ export function ReminderConfirmDialog({ open, filters, busy, onConfirm, onCancel
             <ul className="space-y-1 text-tosh-600">
               {data.skipped_no_phone > 0 && (
                 <li>
-                  {t('{count} tasining telefon raqami yo‘q — ularga yuborilmaydi', {
+                  {t('{count} tasining telefon raqami yoʻq — ularga yuborilmaydi', {
                     count: data.skipped_no_phone,
                   })}
                 </li>
@@ -72,7 +72,7 @@ export function ReminderConfirmDialog({ open, filters, busy, onConfirm, onCancel
                   })}
                 </li>
               )}
-              <li>{t('{count} ta SMS bo‘lagi', { count: data.parts })}</li>
+              <li>{t('{count} ta SMS boʻlagi', { count: data.parts })}</li>
               {data.estimated_cost && (
                 <li>{t('Taxminiy xarajat: {cost}', { cost: money(data.estimated_cost) })}</li>
               )}

@@ -19,25 +19,25 @@ msgstr "The photo must be no larger than {v} MB."
 msgid "Faqat quyidagi formatlar: {allowed}."
 msgstr "Allowed formats: {allowed}."
 
-msgid "Kod lotin harflari va raqamlardan iborat bo'lsin."
+msgid "Kod lotin harflari va raqamlardan iborat boʻlsin."
 msgstr "The code must consist of Latin letters and digits."
 
 msgid "Bu kod tashkilotda allaqachon mavjud."
 msgstr "This code already exists in the organization."
 
-msgid "Tizim rolining kodini o'zgartirib bo'lmaydi."
+msgid "Tizim rolining kodini oʻzgartirib boʻlmaydi."
 msgstr "A system role’s code can’t be changed."
 
 msgid "Bu email tashkilotda allaqachon mavjud."
 msgstr "This email already exists in the organization."
 
-msgid "Org Owner'dan boshqa rollar uchun filial majburiy."
+msgid "Org Ownerʼdan boshqa rollar uchun filial majburiy."
 msgstr "A branch is required for every role except Org Owner."
 
 msgid "Parol majburiy."
 msgstr "Password is required."
 
-msgid "Manzil (slug) bo'sh bo'lishi mumkin emas."
+msgid "Manzil (slug) boʻsh boʻlishi mumkin emas."
 msgstr "The address (slug) can’t be empty."
 
 #, python-brace-format
@@ -54,27 +54,27 @@ msgstr "The role belongs to another organization."
 msgid "Filial boshqa tashkilotga tegishli."
 msgstr "The branch belongs to another organization."
 
-msgid "Org Owner'dan boshqa barcha rollar uchun filial ko'rsatilishi shart."
+msgid "Org Ownerʼdan boshqa barcha rollar uchun filial koʻrsatilishi shart."
 msgstr "A branch must be set for every role except Org Owner."
 
-msgid "Yangi parol ko'rsatilmagan."
+msgid "Yangi parol koʻrsatilmagan."
 msgstr "No new password provided."
 
 msgid "Bu maydon majburiy."
 msgstr "This field is required."
 
-msgid "Tizim rolini o'chirib bo'lmaydi."
+msgid "Tizim rolini oʻchirib boʻlmaydi."
 msgstr "A system role can’t be deleted."
 
 #, python-brace-format
 msgid ""
-"Tashkilot egasi rolidan quyidagi ruxsatlarni olib tashlab bo'lmaydi (aks "
+"Tashkilot egasi rolidan quyidagi ruxsatlarni olib tashlab boʻlmaydi (aks "
 "holda rollarni hech kim sozlay olmay qoladi): {join}."
 msgstr ""
 "These permissions can’t be removed from the owner role (otherwise nobody "
 "could manage roles): {join}."
 
-msgid "Email yoki parol noto'g'ri."
+msgid "Email yoki parol notoʻgʻri."
 msgstr "Incorrect email or password."
 
 msgid "Tanlov muddati tugadi. Qaytadan kiring."
@@ -83,13 +83,13 @@ msgstr "The selection window has expired. Sign in again."
 msgid "Tanlangan tashkilot mavjud emas."
 msgstr "The selected organization doesn’t exist."
 
-msgid "Refresh token ko'rsatilmagan."
+msgid "Refresh token koʻrsatilmagan."
 msgstr "No refresh token provided."
 
 msgid "Refresh token yaroqsiz."
 msgstr "The refresh token is invalid."
 
-msgid "Joriy parol noto'g'ri."
+msgid "Joriy parol notoʻgʻri."
 msgstr "The current password is incorrect."
 
 msgid "Keldi"
@@ -101,10 +101,10 @@ msgstr "Absent"
 msgid "Sababli"
 msgstr "Excused"
 
-msgid "Kelajakdagi kunga davomat belgilab bo'lmaydi."
+msgid "Kelajakdagi kunga davomat belgilab boʻlmaydi."
 msgstr "Attendance can’t be marked for a future date."
 
-msgid "Bitta so'rovda bir bola bir marta bo'lishi kerak."
+msgid "Bitta soʻrovda bir bola bir marta boʻlishi kerak."
 msgstr "A child may appear only once per request."
 
 msgid "Guruh boshqa tashkilotga tegishli."
@@ -115,7 +115,7 @@ msgid "Bola {child_id} bu guruhda faol emas."
 msgstr "Child {child_id} is not active in this group."
 
 #, python-brace-format
-msgid "Noma'lum holat: {status}"
+msgid "Nomaʼlum holat: {status}"
 msgstr "Unknown status: {status}"
 
 #, python-brace-format
@@ -123,7 +123,7 @@ msgid "`{field}` parametri majburiy."
 msgstr "The `{field}` parameter is required."
 
 #, python-brace-format
-msgid "`{field}` formati noto'g'ri (kutilgan: 2026-07-24)."
+msgid "`{field}` formati notoʻgʻri (kutilgan: 2026-07-24)."
 msgstr "Invalid `{field}` format (expected: 2026-07-24)."
 
 msgid "`group` parametri majburiy."
@@ -138,52 +138,52 @@ msgstr "The `month` parameter is required (e.g. 2026-07)."
 msgid "`month` formati: 2026-07"
 msgstr "`month` format: 2026-07"
 
-msgid "Ko'rsatilgan filial topilmadi."
+msgid "Koʻrsatilgan filial topilmadi."
 msgstr "The specified branch was not found."
 
-msgid "Tashkilotda bir nechta filial bor — `branch_id` ko'rsatilishi shart."
+msgid "Tashkilotda bir nechta filial bor — `branch_id` koʻrsatilishi shart."
 msgstr "The organization has several branches — `branch_id` is required."
 
-msgid "Filialda faol xodimlar bor — avval ularni ko'chiring yoki o'chiring."
+msgid "Filialda faol xodimlar bor — avval ularni koʻchiring yoki oʻchiring."
 msgstr "The branch has active staff — move or remove them first."
 
 msgid ""
-"Excel faylini o'qib bo'lmadi. Fayl to'liq yuklanganini va parol bilan "
+"Excel faylini oʻqib boʻlmadi. Fayl toʻliq yuklanganini va parol bilan "
 "himoyalanmaganini tekshiring."
 msgstr ""
 "Couldn’t read the Excel file. Check that it uploaded fully and isn’t "
 "password-protected."
 
-msgid "Faylni o'qib bo'lmadi (kodlash noma'lum)."
+msgid "Faylni oʻqib boʻlmadi (kodlash nomaʼlum)."
 msgstr "Couldn’t read the file (unknown encoding)."
 
-msgid "Fayl bo'sh."
+msgid "Fayl boʻsh."
 msgstr "The file is empty."
 
 #, python-brace-format
 msgid "Majburiy ustunlar topilmadi: {join}"
 msgstr "Required columns not found: {join}"
 
-msgid "Familiya bo'sh."
+msgid "Familiya boʻsh."
 msgstr "Last name is empty."
 
-msgid "Ism bo'sh."
+msgid "Ism boʻsh."
 msgstr "First name is empty."
 
-msgid "Sana o'qilmadi (kutilgan: 2020-05-14 yoki 14.05.2020)."
+msgid "Sana oʻqilmadi (kutilgan: 2020-05-14 yoki 14.05.2020)."
 msgstr "Couldn’t parse the date (expected: 2020-05-14 or 14.05.2020)."
 
-msgid "Tug'ilgan sana kelajakda bo'lishi mumkin emas."
+msgid "Tugʻilgan sana kelajakda boʻlishi mumkin emas."
 msgstr "Date of birth can’t be in the future."
 
 #, python-brace-format
 msgid "Jinsni tushunmadim: '{get}'."
 msgstr "Gender not recognised: ‘{get}’."
 
-msgid "Telefon bor, lekin ota-ona ismi yo'q."
+msgid "Telefon bor, lekin ota-ona ismi yoʻq."
 msgstr "There is a phone number but no parent name."
 
-msgid "O'g'il bola"
+msgid "Oʻgʻil bola"
 msgstr "Boy"
 
 msgid "Qiz bola"
@@ -195,7 +195,7 @@ msgstr "Prospect"
 msgid "Faol"
 msgstr "Active"
 
-msgid "To'xtatilgan"
+msgid "Toʻxtatilgan"
 msgstr "Paused"
 
 msgid "Bitirgan"
@@ -222,10 +222,10 @@ msgstr "Other"
 msgid "Tugagan"
 msgstr "Ended"
 
-msgid "Ko'chirilgan"
+msgid "Koʻchirilgan"
 msgstr "Transferred"
 
-msgid "Tug'ilgan sana o'tgan bo'lishi kerak."
+msgid "Tugʻilgan sana oʻtgan boʻlishi kerak."
 msgstr "Date of birth must be in the past."
 
 msgid "Vasiy boshqa tashkilotga tegishli."
@@ -238,7 +238,7 @@ msgid "Guruh boshqa filialga tegishli."
 msgstr "The group belongs to another branch."
 
 #, python-brace-format
-msgid "'{name}' guruhi to'lgan ({active_count}/{capacity})."
+msgid "'{name}' guruhi toʻlgan ({active_count}/{capacity})."
 msgstr "Group ‘{name}’ is full ({active_count}/{capacity})."
 
 msgid "Telefon raqami majburiy."
@@ -248,26 +248,26 @@ msgid "Fayl yuborilmagan."
 msgstr "No file was sent."
 
 #, python-brace-format
-msgid "Guruhda {active} ta faol bola bor — avval ularni ko'chiring."
+msgid "Guruhda {active} ta faol bola bor — avval ularni koʻchiring."
 msgstr "The group has {active} active children — move them first."
 
-msgid "Qo'llab-quvvatlash ruxsati amal qilmaydi."
+msgid "Qoʻllab-quvvatlash ruxsati amal qilmaydi."
 msgstr "The support grant is not valid."
 
 msgid "Ruxsat boshqa tashkilotga tegishli."
 msgstr "The grant belongs to another organization."
 
 msgid ""
-"Qo'llab-quvvatlash sessiyasi faqat o'qish uchun. O'zgartirishni bog'chaning "
-"o'zi bajarishi kerak."
+"Qoʻllab-quvvatlash sessiyasi faqat oʻqish uchun. Oʻzgartirishni bogʻchaning "
+"oʻzi bajarishi kerak."
 msgstr ""
 "The support session is read-only. Changes must be made by the kindergarten "
 "itself."
 
-msgid "Tokenda foydalanuvchi identifikatori yo'q."
+msgid "Tokenda foydalanuvchi identifikatori yoʻq."
 msgstr "The token has no user identifier."
 
-msgid "Tokenda tashkilot ko'rsatilmagan."
+msgid "Tokenda tashkilot koʻrsatilmagan."
 msgstr "The token has no organization."
 
 msgid "Foydalanuvchi topilmadi."
@@ -282,10 +282,10 @@ msgstr "The token’s organization doesn’t match the account."
 msgid "Bu amal biznes qoidasini buzadi."
 msgstr "This action violates a business rule."
 
-msgid "Obuna faol emas. Ma'lumotlarni o'qish mumkin, o'zgartirish mumkin emas."
+msgid "Obuna faol emas. Maʼlumotlarni oʻqish mumkin, oʻzgartirish mumkin emas."
 msgstr "The subscription is inactive. Data can be viewed but not changed."
 
-msgid "Yuborilgan ma'lumot noto'g'ri."
+msgid "Yuborilgan maʼlumot notoʻgʻri."
 msgstr "The submitted data is invalid."
 
 msgid "Autentifikatsiya talab qilinadi."
@@ -294,16 +294,16 @@ msgstr "Authentication required."
 msgid "Authenticator kodini kiriting."
 msgstr "Enter your authenticator code."
 
-msgid "Bu amalga ruxsat yo'q."
+msgid "Bu amalga ruxsat yoʻq."
 msgstr "You don’t have permission for this action."
 
-msgid "So'ralgan resurs topilmadi."
+msgid "Soʻralgan resurs topilmadi."
 msgstr "The requested resource was not found."
 
-msgid "Bu amal mavjud ma'lumot bilan ziddiyatga kirdi."
+msgid "Bu amal mavjud maʼlumot bilan ziddiyatga kirdi."
 msgstr "This action conflicts with existing data."
 
-msgid "So'rovlar soni chegaradan oshdi."
+msgid "Soʻrovlar soni chegaradan oshdi."
 msgstr "Too many requests."
 
 msgid "Kutilmagan xatolik yuz berdi."
@@ -325,14 +325,14 @@ msgstr "Approved"
 msgid "Rad etilgan"
 msgstr "Rejected"
 
-msgid "To'langan"
+msgid "Toʻlangan"
 msgstr "Paid"
 
 #, python-brace-format
 msgid "Chiqim '{status}' holatida — {action} mumkin emas."
 msgstr "The expense is ‘{status}’ — {action} is not possible."
 
-msgid "Faqat tasdiqlangan chiqimni to'langan deb belgilash mumkin."
+msgid "Faqat tasdiqlangan chiqimni toʻlangan deb belgilash mumkin."
 msgstr "Only an approved expense can be marked as paid."
 
 msgid "Faqat kutilayotgan chiqimni tahrirlash mumkin."
@@ -367,10 +367,10 @@ msgstr "Draft"
 msgid "Chiqarilgan"
 msgstr "Issued"
 
-msgid "Qisman to'langan"
+msgid "Qisman toʻlangan"
 msgstr "Partially paid"
 
-msgid "Muddati o'tgan"
+msgid "Muddati oʻtgan"
 msgstr "Overdue"
 
 msgid "Bekor qilingan"
@@ -382,7 +382,7 @@ msgstr "Cash"
 msgid "Karta"
 msgstr "Card"
 
-msgid "Bank o'tkazmasi"
+msgid "Bank oʻtkazmasi"
 msgstr "Bank transfer"
 
 msgid "Onlayn"
@@ -391,7 +391,7 @@ msgstr "Online"
 msgid "Hisoblangan"
 msgstr "Charge"
 
-msgid "To'lov"
+msgid "Toʻlov"
 msgstr "Payment"
 
 msgid "Chegirma"
@@ -412,52 +412,52 @@ msgstr "Credit"
 msgid "Hisob-faktura"
 msgstr "Invoice"
 
-msgid "Qo'lda"
+msgid "Qoʻlda"
 msgstr "Manual"
 
 msgid "Foizli chegirma 100 dan oshmasligi kerak."
 msgstr "A percentage discount can’t exceed 100."
 
-msgid "Ledger summasi musbat bo'lishi kerak."
+msgid "Ledger summasi musbat boʻlishi kerak."
 msgstr "The ledger amount must be positive."
 
 #, python-brace-format
-msgid "{full_name}: tarif biriktirilmagan — hisob-faktura chiqarib bo'lmaydi."
+msgid "{full_name}: tarif biriktirilmagan — hisob-faktura chiqarib boʻlmaydi."
 msgstr "{full_name}: no plan assigned — an invoice can’t be issued."
 
-msgid "Hisob-fakturani yaratib bo'lmadi."
+msgid "Hisob-fakturani yaratib boʻlmadi."
 msgstr "Couldn’t create the invoice."
 
 msgid ""
-"To'lov qilingan hisob-fakturani bekor qilib bo'lmaydi — avval to'lovni "
+"Toʻlov qilingan hisob-fakturani bekor qilib boʻlmaydi — avval toʻlovni "
 "qaytaring."
 msgstr "A paid invoice can’t be cancelled — refund the payment first."
 
-msgid "Oy 1–12 oralig'ida bo'lishi kerak."
+msgid "Oy 1–12 oraligʻida boʻlishi kerak."
 msgstr "The month must be between 1 and 12."
 
-msgid "To'lov summasi musbat bo'lishi kerak."
+msgid "Toʻlov summasi musbat boʻlishi kerak."
 msgstr "The payment amount must be positive."
 
 msgid "Hisob-faktura boshqa bolaga tegishli."
 msgstr "The invoice belongs to another child."
 
-msgid "Bekor qilingan hisob-fakturaga to'lov qabul qilinmaydi."
+msgid "Bekor qilingan hisob-fakturaga toʻlov qabul qilinmaydi."
 msgstr "Payments aren’t accepted for a cancelled invoice."
 
 #, python-brace-format
 msgid ""
-"Ortiqcha to'lov: qoldiq {outstanding}, kiritilgan {amount}. Ortiqcha summani "
+"Ortiqcha toʻlov: qoldiq {outstanding}, kiritilgan {amount}. Ortiqcha summani "
 "hisob-fakturasiz avans sifatida kiriting."
 msgstr ""
 "Overpayment: outstanding {outstanding}, entered {amount}. Enter the excess "
 "as an advance without an invoice."
 
-msgid "Bu to'lov allaqachon qaytarilgan."
+msgid "Bu toʻlov allaqachon qaytarilgan."
 msgstr "This payment has already been refunded."
 
 msgid ""
-"Bu tarifga biriktirilgan bolalar bor — avval ularni boshqa tarifga o'tkazing."
+"Bu tarifga biriktirilgan bolalar bor — avval ularni boshqa tarifga oʻtkazing."
 msgstr "Children are assigned to this plan — move them to another plan first."
 
 msgid "`child` parametri majburiy."
@@ -472,13 +472,13 @@ msgstr "`date` format: 2026-07-24"
 msgid "Ishlayapti"
 msgstr "Working"
 
-msgid "Ta'tilda"
+msgid "Taʼtilda"
 msgstr "On leave"
 
-msgid "Ishdan bo'shagan"
+msgid "Ishdan boʻshagan"
 msgstr "Terminated"
 
-msgid "To'lov kechikishi"
+msgid "Toʻlov kechikishi"
 msgstr "Payment delay"
 
 msgid "Davomat pasayishi"
@@ -493,13 +493,13 @@ msgstr "Critical"
 msgid "Yangi"
 msgstr "New"
 
-msgid "Ko'rilgan"
+msgid "Koʻrilgan"
 msgstr "Seen"
 
 msgid "Hal qilingan"
 msgstr "Resolved"
 
-msgid "O'zi hal bo'lgan"
+msgid "Oʻzi hal boʻlgan"
 msgstr "Auto-resolved"
 
 msgid "Filial"
@@ -532,20 +532,20 @@ msgstr "Out"
 msgid "Xarid"
 msgstr "Purchase"
 
-msgid "Iste'mol"
+msgid "Isteʼmol"
 msgstr "Consumption"
 
 msgid "Yaroqsiz"
 msgstr "Waste"
 
-msgid "Ko'chirish"
+msgid "Koʻchirish"
 msgstr "Transfer"
 
 msgid ""
-"Tuzatish harakati uchun yo'nalish ('in' yoki 'out') ko'rsatilishi shart."
+"Tuzatish harakati uchun yoʻnalish ('in' yoki 'out') koʻrsatilishi shart."
 msgstr "An adjustment needs a direction ('in' or 'out')."
 
-msgid "Miqdor musbat bo'lishi kerak."
+msgid "Miqdor musbat boʻlishi kerak."
 msgstr "The quantity must be positive."
 
 msgid "Ombor mahsulot bilan boshqa filialda."
@@ -553,7 +553,7 @@ msgstr "The warehouse and the product are in different branches."
 
 #, python-brace-format
 msgid ""
-"'{name}' uchun qoldiq yetarli emas: mavjud {available} {unit}, so'ralgan "
+"'{name}' uchun qoldiq yetarli emas: mavjud {available} {unit}, soʻralgan "
 "{quantity} {unit2}."
 msgstr ""
 "Not enough stock of ‘{name}’: available {available} {unit}, requested "
@@ -568,7 +568,7 @@ msgstr "Telegram"
 msgid "Email"
 msgstr "Email"
 
-msgid "To'lov qabul qilindi"
+msgid "Toʻlov qabul qilindi"
 msgstr "Payment received"
 
 msgid "Qarz eslatmasi"
@@ -600,7 +600,7 @@ msgid "'{code}' uchun shablon topilmadi."
 msgstr "No template found for ‘{code}’."
 
 #, python-brace-format
-msgid "'{status}' holatidagi xabarni yuborib bo'lmaydi."
+msgid "'{status}' holatidagi xabarni yuborib boʻlmaydi."
 msgstr "A message in the ‘{status}’ state can’t be sent."
 
 msgid "Vasiylar topilmadi."
@@ -614,7 +614,7 @@ msgstr "Finalised"
 
 #, python-brace-format
 msgid ""
-"Hisoblash '{status}' holatida — o'zgartirib bo'lmaydi. Tuzatishni keyingi "
+"Hisoblash '{status}' holatida — oʻzgartirib boʻlmaydi. Tuzatishni keyingi "
 "oyda bonus yoki ushlab qolish bilan kiriting."
 msgstr ""
 "The run is ‘{status}’ and can’t be changed. Enter the correction next month "
@@ -631,31 +631,31 @@ msgstr ""
 msgid "{employee}: avans ({advance}) yalpi maoshdan ({gross}) oshib ketdi."
 msgstr "{employee}: the advance ({advance}) exceeds gross pay ({gross})."
 
-msgid "Avans summasi musbat bo'lishi kerak."
+msgid "Avans summasi musbat boʻlishi kerak."
 msgstr "The advance amount must be positive."
 
-msgid "Bonus manfiy bo'lolmaydi."
+msgid "Bonus manfiy boʻlolmaydi."
 msgstr "A bonus can’t be negative."
 
-msgid "Ushlab qolish manfiy bo'lolmaydi."
+msgid "Ushlab qolish manfiy boʻlolmaydi."
 msgstr "A deduction can’t be negative."
 
 msgid ""
 "Ushlab qolish va avans yalpi maoshdan oshib ketdi ({deduction} > {gross}). "
-"Sof maosh manfiy bo'lolmaydi."
+"Sof maosh manfiy boʻlolmaydi."
 msgstr "Deductions and advances exceed gross pay ({deduction} > {gross}). Net pay can’t be negative."
 
 msgid "Faqat qoralama hisoblashni yakunlash mumkin."
 msgstr "Only a draft run can be finalised."
 
-msgid "Bo'sh hisoblashni yakunlab bo'lmaydi — xodimlar yo'q."
+msgid "Boʻsh hisoblashni yakunlab boʻlmaydi — xodimlar yoʻq."
 msgstr "An empty run can’t be finalised — there are no staff."
 
-msgid "Faqat yakunlangan hisoblashni to'langan deb belgilash mumkin."
+msgid "Faqat yakunlangan hisoblashni toʻlangan deb belgilash mumkin."
 msgstr "Only a finalised run can be marked as paid."
 
 msgid ""
-"Hisoblash to'g'ridan-to'g'ri tahrirlanmaydi — `finalize`, `mark-paid` yoki "
+"Hisoblash toʻgʻridan-toʻgʻri tahrirlanmaydi — `finalize`, `mark-paid` yoki "
 "`reopen` amallaridan foydalaning."
 msgstr ""
 "A run isn’t edited directly — use the `finalize`, `mark-paid` or `reopen` "
@@ -673,13 +673,13 @@ msgstr "Date"
 msgid "Bola"
 msgstr "Child"
 
-msgid "To'lov usuli"
+msgid "Toʻlov usuli"
 msgstr "Payment method"
 
 msgid "Summa"
 msgstr "Amount"
 
-msgid "Ma'lumotnoma"
+msgid "Maʼlumotnoma"
 msgstr "Reference"
 
 msgid "Qabul qildi"
@@ -769,10 +769,10 @@ msgstr "Ready"
 msgid "Xato"
 msgstr "Error"
 
-msgid "`group_by` noto'g'ri: {group_by!r}. Mumkin: {join}."
+msgid "`group_by` notoʻgʻri: {group_by!r}. Mumkin: {join}."
 msgstr "Invalid `group_by`: {group_by!r}. Allowed: {join}."
 
-msgid "Davr boshi oxiridan keyin bo'lishi mumkin emas."
+msgid "Davr boshi oxiridan keyin boʻlishi mumkin emas."
 msgstr "The period start can’t be after its end."
 
 msgid ""
@@ -786,7 +786,7 @@ msgid "ha"
 msgstr "yes"
 
 #, python-brace-format
-msgid "Sana formati noto'g'ri: {value}"
+msgid "Sana formati notoʻgʻri: {value}"
 msgstr "Invalid date format: {value}"
 
 #, python-brace-format
@@ -794,7 +794,7 @@ msgid "Butun son kutilgan: {value}"
 msgstr "An integer was expected: {value}"
 
 #, python-brace-format
-msgid "Qiymat {low}–{high} oralig'ida bo'lishi kerak: {parsed}"
+msgid "Qiymat {low}–{high} oraligʻida boʻlishi kerak: {parsed}"
 msgstr "The value must be between {low} and {high}: {parsed}"
 
 msgid "Eksport hali tayyor emas."
@@ -810,7 +810,7 @@ msgstr "Branch not found."
 msgid "Sinov davri"
 msgstr "Trial"
 
-msgid "To'lov kutilmoqda"
+msgid "Toʻlov kutilmoqda"
 msgstr "Awaiting payment"
 
 msgid "Yarim yillik"
@@ -822,7 +822,7 @@ msgstr "Annual"
 msgid "Kunlik eng yuqori"
 msgstr "Daily peak"
 
-msgid "Qo'lda tuzatish"
+msgid "Qoʻlda tuzatish"
 msgstr "Manual adjustment"
 
 msgid "Yozilgan"
@@ -835,39 +835,39 @@ msgstr "No active plan found for ‘{code}’."
 msgid "Bu tashkilotda allaqachon obuna bor."
 msgstr "This organization already has a subscription."
 
-msgid "Faqat sinov davridagi obunani o'tkazish mumkin."
+msgid "Faqat sinov davridagi obunani oʻtkazish mumkin."
 msgstr "Only a trial subscription can be converted."
 
 #, python-brace-format
-msgid "Noma'lum to'lov muddati: {payment_term}"
+msgid "Nomaʼlum toʻlov muddati: {payment_term}"
 msgstr "Unknown payment term: {payment_term}"
 
-msgid "Bu holatda muddatni o'zgartirib bo'lmaydi."
+msgid "Bu holatda muddatni oʻzgartirib boʻlmaydi."
 msgstr "The term can’t be changed in this state."
 
 msgid "Tuzatish uchun izoh majburiy."
 msgstr "A note is required for an adjustment."
 
-msgid "Yopilmagan o'lchovdan hisob yozib bo'lmaydi."
+msgid "Yopilmagan oʻlchovdan hisob yozib boʻlmaydi."
 msgstr "An invoice can’t be issued from an unclosed usage period."
 
-msgid "Bekor qilingan hisobga to'lov yozib bo'lmaydi."
+msgid "Bekor qilingan hisobga toʻlov yozib boʻlmaydi."
 msgstr "A payment can’t be recorded against a cancelled invoice."
 
-msgid "To'lov summasi noldan katta bo'lishi kerak."
+msgid "Toʻlov summasi noldan katta boʻlishi kerak."
 msgstr "The payment amount must be greater than zero."
 
 #, python-brace-format
-msgid "Ortiqcha to'lov: qoldiq {v}, kiritilgan {amount}."
+msgid "Ortiqcha toʻlov: qoldiq {v}, kiritilgan {amount}."
 msgstr "Overpayment: outstanding {v}, entered {amount}."
 
-msgid "Bu tashkilotda faol obuna yo'q."
+msgid "Bu tashkilotda faol obuna yoʻq."
 msgstr "This organization has no active subscription."
 
 msgid "Hisoblash allaqachon qoralama."
 msgstr "The run is already a draft."
 
-msgid "Qayta ochish sababini ko'rsating."
+msgid "Qayta ochish sababini koʻrsating."
 msgstr "State the reason for reopening."
 
 msgid "Avans: {employee}"
@@ -876,10 +876,10 @@ msgstr "Advance: {employee}"
 msgid "Bank hisobi"
 msgstr "Bank account"
 
-msgid "Bir qopdan o'ziga o'tkazib bo'lmaydi."
+msgid "Bir qopdan oʻziga oʻtkazib boʻlmaydi."
 msgstr "An account cannot be transferred to itself."
 
-msgid "Boshlang'ich qoldiq"
+msgid "Boshlangʻich qoldiq"
 msgstr "Opening balance"
 
 msgid "Elektron hamyon"
@@ -894,7 +894,7 @@ msgstr "That cash account belongs to another organization."
 msgid "Naqd kassa"
 msgstr "Cash till"
 
-msgid "O'tkazma"
+msgid "Oʻtkazma"
 msgstr "Bank transfer"
 
 msgid "Payme / Click"
@@ -903,28 +903,28 @@ msgstr "Payme / Click"
 msgid "Qoplar boshqa tashkilotga tegishli."
 msgstr "Those accounts belong to another organization."
 
-msgid "Qoplar orasida o'tkazma"
+msgid "Qoplar orasida oʻtkazma"
 msgstr "Transfer between accounts"
 
-msgid "Summa musbat bo'lishi kerak."
+msgid "Summa musbat boʻlishi kerak."
 msgstr "The amount must be positive."
 
 msgid "Terminal"
 msgstr "Terminal"
 
-msgid "To'lov qaytarildi"
+msgid "Toʻlov qaytarildi"
 msgstr "Payment reversed"
 
 msgid "avans bekor qilindi"
 msgstr "advance cancelled"
 
-msgid "to'lov qaytarildi"
+msgid "toʻlov qaytarildi"
 msgstr "payment reversed"
 
-msgid "Kamida bitta to'lov qatori kerak."
+msgid "Kamida bitta toʻlov qatori kerak."
 msgstr "At least one payment line is required."
 
-msgid "qop o'zgartirildi"
+msgid "qop oʻzgartirildi"
 msgstr "account changed"
 
 msgid "Kassa hisobi topilmadi."
@@ -936,28 +936,28 @@ msgstr "Payroll {period}: {employee}"
 msgid "Rasmiy (bank)"
 msgstr "Official (bank)"
 
-msgid "To'lanadigan summa yo'q."
+msgid "Toʻlanadigan summa yoʻq."
 msgstr "There is nothing to pay out."
 
 msgid "oylik qayta ochildi"
 msgstr "payroll run reopened"
 
-msgid "{employee}: to'lov summasi hisoblangandan oshib ketdi ({total} > {allowed})."
+msgid "{employee}: toʻlov summasi hisoblangandan oshib ketdi ({total} > {allowed})."
 msgstr "{employee}: the payout exceeds what was calculated ({total} > {allowed})."
 
-msgid "{employee}: ushlab qolish va avans ({taken}) naqd qismdan ({cash}) oshib ketdi. Rasmiy maoshni yoki avansni to'g'rilang."
+msgid "{employee}: ushlab qolish va avans ({taken}) naqd qismdan ({cash}) oshib ketdi. Rasmiy maoshni yoki avansni toʻgʻrilang."
 msgstr "{employee}: deductions and the advance ({taken}) exceed the cash part ({cash}). Adjust the official salary or the advance."
 
-msgid "Bu kunlar uchun da'vo allaqachon bor: {date_from} — {date_to}."
+msgid "Bu kunlar uchun daʼvo allaqachon bor: {date_from} — {date_to}."
 msgstr "A claim already covers these days: {date_from} — {date_to}."
 
-msgid "Bu oraliqda bog'cha ishlamagan (dam olish yoki bayram) — qaytariladigan kun yo'q."
+msgid "Bu oraliqda bogʻcha ishlamagan (dam olish yoki bayram) — qaytariladigan kun yoʻq."
 msgstr "The kindergarten was closed for this whole range (weekend or holiday) — nothing to credit."
 
-msgid "Da'vo '{status}' holatida — rad etib bo'lmaydi."
+msgid "Daʼvo '{status}' holatida — rad etib boʻlmaydi."
 msgstr "The claim is '{status}' — it cannot be rejected."
 
-msgid "Da'vo '{status}' holatida — tasdiqlab bo'lmaydi."
+msgid "Daʼvo '{status}' holatida — tasdiqlab boʻlmaydi."
 msgstr "The claim is '{status}' — it cannot be approved."
 
 msgid "Hisob-fakturaga tushdi"
@@ -969,22 +969,22 @@ msgstr "Credit for days missed: {days} days × {rate}"
 msgid "Ota-ona arizasi"
 msgstr "Parent's application"
 
-msgid "Shifokor ma'lumotnomasi"
+msgid "Shifokor maʼlumotnomasi"
 msgstr "Doctor's certificate"
 
-msgid "Tugash sanasi boshlanishdan oldin bo'lolmaydi."
+msgid "Tugash sanasi boshlanishdan oldin boʻlolmaydi."
 msgstr "The end date cannot be earlier than the start date."
 
-msgid "{full_name}: tarif ham, hisob-faktura ham yo'q."
+msgid "{full_name}: tarif ham, hisob-faktura ham yoʻq."
 msgstr "{full_name}: there is neither a tariff nor an invoice."
 
-msgid "{year}-{month:02d} oyida ish kuni yo'q — kalendarni tekshiring."
+msgid "{year}-{month:02d} oyida ish kuni yoʻq — kalendarni tekshiring."
 msgstr "{year}-{month:02d} has no working days — check the calendar."
 
-msgid "`period_year` va `period_month` butun son bo'lishi kerak."
+msgid "`period_year` va `period_month` butun son boʻlishi kerak."
 msgstr "`period_year` and `period_month` must be whole numbers."
 
-msgid "{full_name}: sozlamaga ko'ra birinchi hisob-faktura keyingi oydan yoziladi."
+msgid "{full_name}: sozlamaga koʻra birinchi hisob-faktura keyingi oydan yoziladi."
 msgstr "{full_name}: per the settings, the first invoice starts from next month."
 
 msgid "{month}, {total} ish kunidan {attended} kun"
@@ -1002,19 +1002,19 @@ msgstr "Enter the phone number as {hint}."
 msgid "24 soatdan eski yozuv"
 msgstr "record older than 24 hours"
 
-msgid "Bola yoshi {min}–{max} oralig'ida bo'lishi kerak."
+msgid "Bola yoshi {min}–{max} oraligʻida boʻlishi kerak."
 msgstr "The child's age must be between {min} and {max}."
 
-msgid "Bu bolani o'chirib bo'lmaydi ({reasons}). Uni ARXIVGA oling — ma'lumot saqlanadi, ro'yxatlardan chiqadi."
+msgid "Bu bolani oʻchirib boʻlmaydi ({reasons}). Uni ARXIVGA oling — maʼlumot saqlanadi, roʻyxatlardan chiqadi."
 msgstr "This child cannot be deleted ({reasons}). ARCHIVE them instead — the data is kept and they leave the lists."
 
-msgid "Holatni o'zgartirish uchun sabab yozing."
+msgid "Holatni oʻzgartirish uchun sabab yozing."
 msgstr "Give a reason for the status change."
 
-msgid "Noma'lum holat."
+msgid "Nomaʼlum holat."
 msgstr "Unknown status."
 
-msgid "Sana kelajakda bo'la olmaydi."
+msgid "Sana kelajakda boʻla olmaydi."
 msgstr "The date cannot be in the future."
 
 msgid "davomat"
@@ -1026,13 +1026,13 @@ msgstr "invoice"
 msgid "moliyaviy yozuv"
 msgstr "financial record"
 
-msgid "to'lov"
+msgid "toʻlov"
 msgstr "payment"
 
 msgid "Bu guruh sizga biriktirilmagan — davomatni belgilay olmaysiz."
 msgstr "This group is not assigned to you — you cannot mark its attendance."
 
-msgid "O'tgan kun davomatini o'zgartirish uchun sabab yozing."
+msgid "Oʻtgan kun davomatini oʻzgartirish uchun sabab yozing."
 msgstr "Give a reason for changing a past day's attendance."
 
 msgid "Tarbiyachi faqat oxirgi {days} kun davomatini belgilaydi. Eski kun uchun direktorga murojaat qiling."
@@ -1041,16 +1041,16 @@ msgstr "A teacher may only mark the last {days} day(s). For earlier days, ask th
 msgid "Test rejimi"
 msgstr "Test mode"
 
-msgid "Noto'g'ri raqam"
+msgid "Notoʻgʻri raqam"
 msgstr "Invalid number"
 
-msgid "Telefon raqami yo'q"
+msgid "Telefon raqami yoʻq"
 msgstr "No phone number"
 
-msgid "Noto'g'ri identifikator."
+msgid "Notoʻgʻri identifikator."
 msgstr "Invalid identifier."
 
-msgid "{field}: raqam noto'g'ri."
+msgid "{field}: raqam notoʻgʻri."
 msgstr "{field}: invalid number."
 
 msgid "Qiymat"
@@ -1062,7 +1062,7 @@ msgstr "Days"
 msgid "SMS provayderi sozlanmagan."
 msgstr "The SMS provider is not configured."
 
-msgid "O'zbekcha"
+msgid "Oʻzbekcha"
 msgstr "Uzbek"
 
 msgid "Ruscha"

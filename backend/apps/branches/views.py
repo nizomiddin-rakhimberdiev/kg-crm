@@ -43,7 +43,7 @@ class BranchViewSet(TenantViewSet):
     def perform_destroy(self, instance: Branch) -> None:
         if instance.users.filter(is_active=True).exists():
             raise BusinessRuleViolation(
-                gettext("Filialda faol xodimlar bor — avval ularni ko'chiring yoki o'chiring.")
+                gettext("Filialda faol xodimlar bor — avval ularni koʻchiring yoki oʻchiring.")
             )
         instance.is_active = False
         instance.save(update_fields=["is_active"])

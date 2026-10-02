@@ -19,7 +19,7 @@ import { t } from '@/lib/i18n'
 export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   cash: t('Naqd'),
   terminal: t('Terminal'),
-  bank_transfer: t("O'tkazma"),
+  bank_transfer: t('Oʻtkazma'),
   online: t('Payme / Click'),
 }
 

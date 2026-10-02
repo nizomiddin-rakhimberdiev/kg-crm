@@ -46,7 +46,7 @@ export function TestModeBanner() {
         className="flex items-start gap-2 rounded-xl border border-tosh-200 bg-tosh-50 px-3 py-2 text-sm text-tosh-700"
       >
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-        <p>{t('Xabar yuborish o‘chirilgan — Sozlamalarda yoqishingiz mumkin.')}</p>
+        <p>{t('Xabar yuborish oʻchirilgan — Sozlamalarda yoqishingiz mumkin.')}</p>
       </div>
     )
   }

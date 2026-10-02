@@ -175,7 +175,7 @@ class TestDismissSuppression:
         with organization_context(tenant_a.organization.id):
             _reconcile(tenant_a, [_draft(tenant_a)])
             row = self._dismiss_current(tenant_a)
-            # Oynani "o'tkazamiz".
+            # Oynani "oʻtkazamiz".
             Insight.objects.filter(id=row.id).update(
                 dismissed_until=timezone.now() - timedelta(seconds=1)
             )
@@ -269,7 +269,7 @@ class TestConcurrency:
         )
 
     def test_concurrent_generation_yields_one_row(self, tenant_a):
-        """Ikki thread bir vaqtda — baza to'xtatadi, yutqazgan refresh qiladi."""
+        """Ikki thread bir vaqtda — baza toʻxtatadi, yutqazgan refresh qiladi."""
         errors: list[BaseException] = []
         barrier = threading.Barrier(2)
 

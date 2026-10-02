@@ -88,7 +88,7 @@ class TestEndpoints:
         assert other["finance.due_day"] == 10  # koddagi default
 
     def test_director_can_read_but_not_write(self, tenant_a):
-        """Direktorda `settings` faqat o'qish (docs/02 §11.2)."""
+        """Direktorda `settings` faqat oʻqish (docs/02 §11.2)."""
         from rest_framework.test import APIClient
 
         from apps.accounts.authentication import issue_token_pair

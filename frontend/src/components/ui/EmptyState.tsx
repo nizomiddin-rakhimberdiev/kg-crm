@@ -53,10 +53,7 @@ export function EmptyState({
  * bo'lmaydi: brauzer uni jadvaldan TASHQARIGA ko'chiradi va natija
  * jadval ostida osilib qolgan matn bo'ladi.
  */
-export function EmptyRow({
-  colSpan,
-  ...props
-}: EmptyStateProps & { colSpan: number }) {
+export function EmptyRow({ colSpan, ...props }: EmptyStateProps & { colSpan: number }) {
   return (
     <tr>
       <td colSpan={colSpan} className="p-0">

@@ -17,7 +17,7 @@ import { t } from '@/lib/i18n'
 
 const STATUSES: Array<[Child['enrollment_status'], string]> = [
   ['active', t('Faol')],
-  ['paused', t("To'xtatilgan")],
+  ['paused', t('Toʻxtatilgan')],
   ['withdrawn', t('Chiqib ketgan')],
   ['graduated', t('Bitirgan')],
 ]
@@ -116,7 +116,7 @@ export function ChildStatusDialog({
               id="cs-reason"
               required
               maxLength={255}
-              placeholder={t("Masalan: oila boshqa shaharga ko'chdi")}
+              placeholder={t('Masalan: oila boshqa shaharga koʻchdi')}
               value={form.status_reason}
               onChange={(e) => setForm((p) => ({ ...p, status_reason: e.target.value }))}
               className={field}

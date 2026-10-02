@@ -37,7 +37,7 @@ pytestmark = [pytest.mark.django_db, pytest.mark.tenancy]
 
 
 def _sql(sql: str, params: list | None = None) -> list:
-    """Xom SQL — ORM'ni butunlay chetlab o'tib."""
+    """Xom SQL — ORMʼni butunlay chetlab oʻtib."""
     with connection.cursor() as cursor:
         cursor.execute(sql, params or [])
         return cursor.fetchall()
@@ -78,7 +78,7 @@ class TestPoliciesAreInstalled:
 
         expected = {*OPERATIONAL_TABLES, *METADATA_TABLES, *DERIVED_TABLES}
         missing = expected - protected
-        assert not missing, f"Bu jadvallarda RLS siyosati yo'q: {sorted(missing)}"
+        assert not missing, f"Bu jadvallarda RLS siyosati yoʻq: {sorted(missing)}"
 
     def test_the_table_list_matches_the_models(self):
         """
@@ -102,8 +102,8 @@ class TestPoliciesAreInstalled:
         known = {*OPERATIONAL_TABLES, *METADATA_TABLES, *CATALOGUE_TABLES}
         unlisted = model_tables - known
         assert not unlisted, (
-            f"Bu tenant modellar RLS ro'yxatiga qo'shilmagan: {sorted(unlisted)}. "
-            f"`apps/core/rls.py` ga qo'shing va migratsiya yozing."
+            f"Bu tenant modellar RLS roʻyxatiga qoʻshilmagan: {sorted(unlisted)}. "
+            f"`apps/core/rls.py` ga qoʻshing va migratsiya yozing."
         )
 
     def test_rls_is_enabled_AND_forced(self):
@@ -131,10 +131,10 @@ class TestPoliciesAreInstalled:
 
         for table in ("child", "payment", "child_ledger_entry", "user", "organization"):
             assert table in rows, f"{table}: RLS yoqilmagan"
-            assert rows[table], f"{table}: FORCE yo'q — egasi siyosatni chetlab o'tadi"
+            assert rows[table], f"{table}: FORCE yoʻq — egasi siyosatni chetlab oʻtadi"
 
     def test_the_generated_sql_forces_every_table(self):
-        """`check_rls --fix` va migratsiya bir xil SQL'dan foydalanadi."""
+        """`check_rls --fix` va migratsiya bir xil SQLʼdan foydalanadi."""
         from apps.core.rls import build_policy_sql
 
         sql = build_policy_sql()
@@ -200,7 +200,7 @@ class TestIsolation:
 
         rows = _sql("SELECT first_name FROM child")
         names = {row[0] for row in rows}
-        assert names == {"Ozimniki"}, f"Begona qator ko'rindi: {names}"
+        assert names == {"Ozimniki"}, f"Begona qator koʻrindi: {names}"
 
     def test_money_tables_are_isolated_too(self, tenant_a, tenant_b):
         from decimal import Decimal
@@ -247,7 +247,7 @@ class TestPlatformPlane:
     Vendor metama'lumotni ko'radi, operatsion ma'lumotni KO'RMAYDI.
 
     Bu ajratish siyosat darajasida, ilova darajasida emas — ya'ni
-    "platforma rejimini o'chirishni unutdim" degan xato bolalar
+    "platforma rejimini oʻchirishni unutdim" degan xato bolalar
     yozuvlarini ocholmaydi (docs/04 §19).
     """
 
@@ -266,7 +266,7 @@ class TestPlatformPlane:
         """
         Buzilgan platforma akkauntining ta'sir doirasi.
 
-        "Mijozlar ro'yxatini biladi" — ha. "Har bir bolaning yozuvini
+        "Mijozlar roʻyxatini biladi" — ha. "Har bir bolaning yozuvini
         o'qiydi" — yo'q, va buni baza ta'minlaydi.
         """
         _make_child(tenant_a, "Ali")
@@ -285,7 +285,7 @@ class TestPlatformPlane:
             ):
                 # Jadval nomi shu testdagi qat'iy ro'yxatdan, mijozdan emas.
                 count = _sql(f"SELECT count(*) FROM {table}")[0][0]  # noqa: S608
-                assert count == 0, f"Platforma rejimi `{table}` jadvalini ochib qo'ydi"
+                assert count == 0, f"Platforma rejimi `{table}` jadvalini ochib qoʻydi"
         finally:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT set_config('app.platform', '', false)")
@@ -360,7 +360,7 @@ class TestRequestBoundary:
     """
 
     def test_the_request_leaves_no_organization_behind(self, tenant_a):
-        """Eng to'g'ridan-to'g'ri tekshiruv: so'rovdan keyin GUC bo'sh."""
+        """Eng toʻgʻridan-toʻgʻri tekshiruv: soʻrovdan keyin GUC boʻsh."""
         response = tenant_a.client().get("/api/v1/children")
         assert response.status_code == 200
 
@@ -369,8 +369,8 @@ class TestRequestBoundary:
             leaked = cursor.fetchone()[0]
 
         assert leaked is None, (
-            f"So'rovdan keyin ulanishda {leaked} qolib ketdi. Bu ulanish "
-            "pulga shu holatda qaytadi va keyingi so'rov uni meros qilib oladi."
+            f"Soʻrovdan keyin ulanishda {leaked} qolib ketdi. Bu ulanish "
+            "pulga shu holatda qaytadi va keyingi soʻrov uni meros qilib oladi."
         )
 
     def test_a_reused_connection_shows_the_next_query_nothing(self, tenant_a, tenant_b):
@@ -393,8 +393,8 @@ class TestRequestBoundary:
         # So'rov tugadi. Endi AYNAN SHU ulanishda, kontekstsiz.
         visible = _sql("SELECT count(*) FROM child")[0][0]
         assert visible == 0, (
-            f"Kontekstsiz so'rov {visible} ta bolani ko'rdi. Kutilgan: 0. "
-            "Ulanishda oldingi so'rovning tashkiloti qolib ketgan."
+            f"Kontekstsiz soʻrov {visible} ta bolani koʻrdi. Kutilgan: 0. "
+            "Ulanishda oldingi soʻrovning tashkiloti qolib ketgan."
         )
 
     def test_the_boundary_also_closes_platform_mode(self, tenant_a):
@@ -413,7 +413,7 @@ class TestRequestBoundary:
         with connection.cursor() as cursor:
             cursor.execute("SELECT app_is_platform()")
             assert cursor.fetchone()[0] is False, (
-                "Platforma rejimi so'rovdan keyin ham ochiq qoldi."
+                "Platforma rejimi soʻrovdan keyin ham ochiq qoldi."
             )
 
     def test_clearing_the_tenant_must_not_close_platform_mode(self, tenant_a):
@@ -436,5 +436,5 @@ class TestRequestBoundary:
                 cursor.execute("SELECT app_is_platform()")
                 assert cursor.fetchone()[0] is True, (
                     "Ichki `organization_context` chiqishi tashqi platforma "
-                    "rejimini o'chirib yubordi — nesting buzilgan."
+                    "rejimini oʻchirib yubordi — nesting buzilgan."
                 )

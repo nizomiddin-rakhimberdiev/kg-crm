@@ -110,7 +110,7 @@ export function HolidaysPanel() {
                 required
                 maxLength={80}
                 value={form.name}
-                placeholder={t("Masalan: Navro'z")}
+                placeholder={t('Masalan: Navroʻz')}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
               />
@@ -121,7 +121,7 @@ export function HolidaysPanel() {
                 disabled={create.isPending}
                 className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
               >
-                <Plus className="h-4 w-4" /> {t("Qo'shish")}
+                <Plus className="h-4 w-4" /> {t('Qoʻshish')}
               </button>
             </div>
           </form>
@@ -140,7 +140,7 @@ export function HolidaysPanel() {
                 <button
                   type="button"
                   onClick={() => remove.mutate(holiday.id)}
-                  title={t("O'chirish")}
+                  title={t('Oʻchirish')}
                   className="rounded-lg p-1.5 text-slate-300 transition hover:bg-red-50 hover:text-red-600"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -150,7 +150,7 @@ export function HolidaysPanel() {
           ))}
           {holidays.length === 0 && !holidaysQuery.isPending && (
             <li className="py-4 text-center text-sm text-slate-400">
-              {t("Hali bayram kiritilmagan — qayta hisob barcha ish kunlarini to'liq sanaydi.")}
+              {t('Hali bayram kiritilmagan — qayta hisob barcha ish kunlarini toʻliq sanaydi.')}
             </li>
           )}
         </ul>

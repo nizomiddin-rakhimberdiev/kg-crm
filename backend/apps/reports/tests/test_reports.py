@@ -29,7 +29,7 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture(autouse=True)
 def clear_cache():
-    """Dashboard keshi testlar orasida oqib o'tmasin."""
+    """Dashboard keshi testlar orasida oqib oʻtmasin."""
     cache.clear()
     yield
     cache.clear()
@@ -97,7 +97,7 @@ class TestRevenue:
         assert report["basis"] == "cash"
 
     def test_unpaid_invoice_is_not_revenue(self, tenant_a):
-        """Yozilgan, lekin to'lanmagan hisob-faktura daromad EMAS."""
+        """Yozilgan, lekin toʻlanmagan hisob-faktura daromad EMAS."""
         child = _child(tenant_a)
         with organization_context(tenant_a.organization.id):
             tariff = TariffPlan.objects.create(

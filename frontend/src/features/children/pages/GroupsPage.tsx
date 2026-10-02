@@ -114,7 +114,7 @@ export default function GroupsPage() {
         <p className="mt-1 text-sm text-slate-500">
           {editing
             ? t('{name} — tahrirlash', { name: editing.name })
-            : t("Sig'im bo'sh qoldirilsa — cheklovsiz.")}
+            : t('Sigʻim boʻsh qoldirilsa — cheklovsiz.')}
         </p>
       </div>
 
@@ -150,7 +150,7 @@ export default function GroupsPage() {
               htmlFor="group-capacity"
               className="mb-1 block text-xs font-medium text-slate-600"
             >
-              {t("Sig'im")}
+              {t('Sigʻim')}
             </label>
             <input
               id="group-capacity"
@@ -170,7 +170,7 @@ export default function GroupsPage() {
               htmlFor="group-age-min"
               className="mb-1 block text-xs font-medium text-slate-600"
             >
-              {t('Yosh oralig‘i')}
+              {t('Yosh oraligʻi')}
             </label>
             <div className="flex items-center gap-1">
               <input
@@ -228,7 +228,7 @@ export default function GroupsPage() {
             className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
           >
             {editing ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-            {editing ? t('Saqlash') : t("Qo'shish")}
+            {editing ? t('Saqlash') : t('Qoʻshish')}
           </button>
           {editing && (
             <button
@@ -249,7 +249,7 @@ export default function GroupsPage() {
       {groupsQuery.data?.items.length === 0 && (
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-12 text-center">
           <Users2 className="mx-auto mb-3 h-10 w-10 text-slate-200" />
-          <p className="text-sm text-slate-500">{t("Hozircha guruh yo'q.")}</p>
+          <p className="text-sm text-slate-500">{t('Hozircha guruh yoʻq.')}</p>
         </div>
       )}
 
@@ -275,7 +275,7 @@ export default function GroupsPage() {
                   <button
                     type="button"
                     onClick={() => setOpenGroup({ id: group.id, name: group.name })}
-                    title={t("Guruh tarkibini ko'rish")}
+                    title={t('Guruh tarkibini koʻrish')}
                     className="flex min-w-0 flex-1 items-start gap-3 text-left"
                   >
                     <span
@@ -325,7 +325,7 @@ export default function GroupsPage() {
                         type="button"
                         onClick={() => removeMutation.mutate(group.id)}
                         className="rounded-lg p-1.5 text-slate-300 opacity-0 transition hover:bg-red-50 hover:text-red-600 focus:opacity-100 group-hover:opacity-100"
-                        title={t("O'chirish")}
+                        title={t('Oʻchirish')}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -342,7 +342,7 @@ export default function GroupsPage() {
                           full ? 'text-amber-700' : 'text-slate-500',
                         )}
                       >
-                        {full ? t("Guruh to'lgan") : t("{free} ta joy bo'sh", { free })}
+                        {full ? t('Guruh toʻlgan') : t('{free} ta joy boʻsh', { free })}
                       </span>
                       <span className="text-xs font-semibold tabular-nums text-slate-400">
                         {percent}%
@@ -360,7 +360,7 @@ export default function GroupsPage() {
                   </div>
                 ) : (
                   <p className="mt-4 inline-flex rounded-full bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500">
-                    {t("Sig'im cheklanmagan")}
+                    {t('Sigʻim cheklanmagan')}
                   </p>
                 )}
               </div>
