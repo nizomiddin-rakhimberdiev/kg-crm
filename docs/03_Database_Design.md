@@ -453,11 +453,21 @@ Authentication identity.
 |--------|------|-------------|-------|
 | `first_name` | `VARCHAR(80)` | `NOT NULL` | |
 | `last_name` | `VARCHAR(80)` | `NOT NULL` | |
-| `phone` | `VARCHAR(20)` | `NOT NULL` | Primary contact for SMS |
+| `phone` | `VARCHAR(20)` | `NOT NULL` | Contact number; also the SMS address |
 | `email` | `CITEXT` | `NULL` | Future email channel |
-| `search_vector` | `TSVECTOR` | generated | |
+| `language` | `VARCHAR(2)` | `NOT NULL DEFAULT ''` | Message language; blank = the kindergarten's default ([§17.1](#171-notification_template)) |
+| `telegram_chat_id` | `VARCHAR(32)` | `NOT NULL DEFAULT ''` | The primary message address (ADR-23). Blank = not connected |
+| `telegram_linked_at` | `TIMESTAMPTZ` | `NULL` | When the parent started the bot |
+| `telegram_code` | `VARCHAR(48)` | `NOT NULL DEFAULT ''` | Single-use invite payload; cleared on linking |
+| `search_key` | `VARCHAR(255)` | indexed | Name **and phone**, normalised (apostrophes, Cyrillic↔Latin) |
 
-**Constraint:** `uq_guardian_branch_phone` — `UNIQUE (branch_id, phone) WHERE is_active` (dedupe guardians per branch). **Future-proofing:** a `guardian` can later be linked 1–1 to a `user` for the Parent Portal (add nullable `user_id`).
+**Constraints:** `uq_guardian_branch_phone` — `UNIQUE (branch_id, phone) WHERE is_active` (dedupe guardians per branch); `uq_guardian_telegram_code` — `UNIQUE (telegram_code) WHERE telegram_code <> ''`; `uq_guardian_telegram_chat` — `UNIQUE (organization_id, telegram_chat_id) WHERE telegram_chat_id <> ''`.
+
+> **Why the chat is unique per organization and the code is unique globally.** The code is looked up by a webhook that has no tenant context, so it must be unambiguous everywhere — it is a random token, not customer data, and it carries the organization inside it (ADR-23). The chat, by contrast, is deliberately *not* globally unique: one parent may have children in two Radix kindergartens and must receive messages from both. A global constraint would have stopped the second one with an unexplained "the code did not work".
+
+> **`telegram_chat_id` cannot be issued by us.** It exists only after the parent starts the bot, which makes the link the consent record and "not connected" an ordinary state rather than a fault. Clearing the column is how both `/stop` and a staff-side disconnect work; the row itself is never deleted.
+
+**Future-proofing:** a `guardian` can later be linked 1–1 to a `user` for the Parent Portal (add nullable `user_id`).
 
 ### 11.3 `child_guardian` (bridge — carries the relationship semantics)
 
@@ -1034,6 +1044,7 @@ One dispatch record per recipient per message.
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
 | `template_id` | `UUID` | `NULL` FK → notification_template `ON DELETE SET NULL` | |
+| `template_code` | `VARCHAR(50)` | `NOT NULL DEFAULT ''` | The message **kind**, independent of the FK |
 | `guardian_id` | `UUID` | `NULL` FK → guardian `ON DELETE SET NULL` | Target (MVP: guardians) |
 | `channel` | `VARCHAR(12)` | `NOT NULL`, `CHECK (... IN ('sms','telegram','email'))` | |
 | `recipient_address` | `VARCHAR(120)` | `NOT NULL` | Phone/chat-id/email snapshot |
@@ -1046,6 +1057,8 @@ One dispatch record per recipient per message.
 | `sent_at` | `TIMESTAMPTZ` | `NULL` | |
 
 **Business rules:** status transitions `queued → sent → delivered` or `→ failed` (with retry/backoff in Celery); `cancelled` allowed from `queued` only.
+
+> **`template_code` exists because `template_id` is allowed to be `NULL`.** The FK is `SET_NULL`, and the body may come from the built-in default catalogue, so a row can legitimately have no template. The daily reminder cap asks "has this guardian already had a debt reminder today?" — a question that was silently unanswerable for such rows, which meant the cap stopped working exactly when a template was missing or deleted. The kind is therefore written on every row (`notifications/0006_backfill_template_code` filled the existing ones).
 
 > **`test_mode` is not a sixth flavour of success** (ADR-22). It is the honest answer when the configured provider is the console adapter: the row exists, the text is final, and nothing left the building. Before it existed the log read "Sent" — including for the number `12345` — and the kindergarten believed its reminders were working. Dispatch also refuses an unusable number outright (`failed` with a reason) and leaves a message `queued` outside the sending window rather than sending at 02:00; nothing is dropped in either case.
 

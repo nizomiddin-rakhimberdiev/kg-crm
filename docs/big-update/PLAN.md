@@ -235,20 +235,30 @@ modul×amal modelini **buzmasdan** qo'shiladi (yangi tekshiruv qatlami).
 - [x] **3.4** Shablon muharriri: o'zgaruvchi tugmalari, preview, belgi soni va SMS bo'laklari, uz/ru shablonlar
 - [x] **3.5** Qarzdorlar sahifasi: ustunlar, filtrlar, ommaviy eslatma (tasdiq bilan), Excel, jargonni olib tashlash
 - [x] **3.6** Yangi lid → Telegram guruh (+ `next_call_at`)
+- [x] **3.7** **Telegram — asosiy kanal** (egasining qarori, 2026-10-02): bot, ulash
+      havolasi, webhook, kanal bo'yicha provayder, qamrov ko'rsatkichi. SMS adapteri
+      joyida qoladi va bitta `.env` qatori bilan yoqiladi.
 
-Env: `ESKIZ_EMAIL`, `ESKIZ_PASSWORD`, `ESKIZ_FROM`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_LEADS_CHAT_ID`
+Env: `ESKIZ_EMAIL`, `ESKIZ_PASSWORD`, `ESKIZ_FROM`, `TELEGRAM_BOT_TOKEN`,
+`TELEGRAM_BOT_USERNAME`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_LEADS_CHAT_ID`
 
 Migratsiyalar: `notifications/0003_test_mode_status.py` (faqat `choices`),
 `notifications/0004_sms_language.py` (+`language`, unikal cheklov),
 `children/0009_sms_language.py` (+`guardian.language`),
-`platform/0004_lead_next_call.py` (+`lead.next_call_at`)
+`platform/0004_lead_next_call.py` (+`lead.next_call_at`),
+`children/0010_guardian_telegram.py` (+`chat_id`, `code`, `linked_at`),
+`notifications/0005_notification_kind.py` (+`template_code`),
+`notifications/0006_backfill_template_code.py` (mavjud qatorlarga tur)
 
-Buyruq: `seed_sms_templates --tenant <slug> [--dry-run]` — mavjud
-bog'chalarga ruscha shablon qo'shadi (migratsiya EMAS: shablon matni
-mijozning matni).
+Buyruqlar: `seed_templates --tenant <slug> [--dry-run]` — mavjud
+bog'chalarga yetishmayotgan kanal×til shablonlarini qo'shadi
+(migratsiya EMAS: shablon matni mijozning matni);
+`set_telegram_webhook --base-url https://… [--dry-run|--info|--delete]`.
 
-Yangi ADR: **ADR-22** — yetkazilmagan xabar "yuborildi" deb yozilmaydi;
-yuborish qoidalari sozlamada.
+Yangi ADR'lar: **ADR-22** — yetkazilmagan xabar "yuborildi" deb
+yozilmaydi, yuborish qoidalari sozlamada; **ADR-23** — Telegram asosiy
+kanal, SMS bitta `.env` qatori bilan yoqiladigan pullik variant,
+ulash kodi tashkilotni o'zida olib yuradi (RLS kengaytirilmaydi).
 
 ---
 

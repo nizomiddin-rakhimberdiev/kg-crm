@@ -39,6 +39,13 @@ Bajarilgani: [`docs/big-update/PROGRESS.md`](./docs/big-update/PROGRESS.md)
   tasdiq bilan. Yangi ariza sotuv Telegram chatiga tushadi, lead'da
   "keyingi qo'ng'iroq" sanasi.
 
+- **3.7 — Telegram asosiy kanal (ADR-23).** Ota-onalarga xabar
+  Telegram bot orqali ketadi: bepul, uzunlik cheklanmagan. Bola
+  kartasida har bir vasiyning ulanish holati va bir martalik ulash
+  havolasi. Bot `/start` va `/stop` ni biladi. Jurnalda kanal
+  ko'rinadi, narx faqat SMS uchun hisoblanadi. SMS adapteri joyida —
+  bitta `.env` qatori bilan yoqiladi.
+
 ### O'zgardi
 - Ortiqcha to'lov endi rad etilmaydi — ortig'i avansga aylanadi (Q1).
 - `payroll.income_tax_rate` va `payroll.pension_rate` sukut qiymati
@@ -59,6 +66,14 @@ Bajarilgani: [`docs/big-update/PROGRESS.md`](./docs/big-update/PROGRESS.md)
 - SMS matnidagi `ʻ` va `ʼ` oddiy `'` ga almashtiriladi (Q11): ular
   xabarni UCS-2 ga o'tkazib narxni ikki baravar qilardi.
 - Ko'chirmada `tuition`/`payment` kabi xom kodlar o'rniga odam tili.
+- **Sukut kanal — Telegram.** SMS faqat shlyuz haqiqatan ulangan
+  bo'lsa ishlatiladi; test rejimidagi SMS'ga "tushib qolish" yo'q.
+- Ulanmagan ota-onaga xabar jimgina o'tkazib yuborilmaydi — "Telegram
+  ulanmagan" sababi bilan jurnalda turadi.
+- Sozlamalarda "SMS xabarnomalar" → "Xabarnomalar", "SMS tili" →
+  "Xabar tili": kanal endi bittadan ko'p.
+- `seed_sms_templates` buyrug'i `seed_templates` deb nomlandi va
+  yetishmayotgan HAR QANDAY kanal×til shablonini qo'shadi.
 
 ---
 

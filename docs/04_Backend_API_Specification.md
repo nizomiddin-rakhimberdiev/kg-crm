@@ -761,6 +761,9 @@ Module: `notifications`. Channel-agnostic (SMS now; Telegram/Email later).
 | POST | `/notifications/send` | `notifications.create` | Send an ad-hoc message (template + recipients) |
 | POST | `/notifications/remind-debtors` | `notifications.create` | Queue debt reminders (same filters as the preview) |
 | POST | `/notifications/{id}/retry` | `notifications.create` | Retry a failed message |
+| POST | `/guardians/{id}/telegram-link` | `children.update` | Issue (or, with `rotate`, replace) the parent's bot invite link |
+| POST | `/guardians/{id}/telegram-unlink` | `children.update` | Disconnect the parent's chat from the kindergarten's side |
+| POST | `/public/telegram/webhook/{secret}` | — (secret path) | The bot's inbound updates; `/start <code>` and `/stop` only |
 | GET | `/notification-templates` | `notifications.read` | List templates (filters: `code`, `channel`, `language`) |
 | POST | `/notification-templates` | `notifications.create` | Create template |
 | POST | `/notification-templates/preview` | `notifications.read` | Render a draft with sample values; returns encoding, characters and SMS parts |
@@ -785,8 +788,17 @@ A malformed recipient never reaches the provider: `delivery_problem()` marks it 
 **`GET /notifications/status` — response**
 ```json
 {
-  "test_mode": true,
-  "provider": "console",
+  "default_channel": "telegram",
+  "test_mode": false,
+  "provider": "telegram",
+  "channels": {
+    "telegram": {
+      "configured": true,
+      "bot_username": "radix_kg_bot",
+      "reach": { "linked": 118, "total": 164 }
+    },
+    "sms": { "configured": false, "provider": "console" }
+  },
   "sms_enabled": true,
   "send_from_hour": 8,
   "send_to_hour": 21,
@@ -795,12 +807,19 @@ A malformed recipient never reaches the provider: `delivery_problem()` marks it 
   "usage": {
     "year": 2026, "month": 10,
     "total": 412, "sent": 380, "failed": 4, "queued": 0, "test_mode": 28,
-    "parts": 465, "price_per_part": "85", "estimated_cost": "39525"
+    "telegram": 402, "sms": 10,
+    "parts": 12, "price_per_part": "85", "estimated_cost": "1020"
   }
 }
 ```
 
-> `estimated_cost` is `null` when `notifications.sms_price` is unset — showing "0 so'm" would read as "SMS is free". Only `sent` messages are counted: a `test_mode` row went nowhere and costs nothing. Parts, not messages: a Cyrillic body crosses into a second part at 71 characters (`apps/notifications/segments.py`), so the same text costs twice as much in Russian.
+> `test_mode` answers the question **for the channel actually in use** (ADR-23): Telegram connected while SMS is not is a normal state, and a banner that complained about SMS would be noise. `reach` is the second half of the same question — a working bot nobody has joined delivers as little as a broken one, so the screen shows both numbers.
+
+> `estimated_cost` counts **only real `sent` SMS rows**: a `test_mode` row went nowhere, and Telegram is free — pricing its messages would show the kindergarten money it does not pay. It is `null` when `notifications.sms_price` is unset, because "0 so'm" would read as "SMS is free". Parts, not messages: a Cyrillic body crosses into a second part at 71 characters (`apps/notifications/segments.py`), so the same text costs twice as much in Russian.
+
+**`POST /guardians/{id}/telegram-link`** returns `{url, bot_username, linked}`. `url` is empty when `TELEGRAM_BOT_USERNAME` is unset — the screen then shows an explanation instead of a link, because handing out a link that cannot work is the worst outcome. `{"rotate": true}` replaces the code, which invalidates the previous link immediately: links get forwarded into family group chats, and the messages carry a child's name and balance.
+
+**`POST /public/telegram/webhook/{secret}`** is the only unauthenticated write endpoint. The secret is in the path and is also matched against `X-Telegram-Bot-Api-Secret-Token` when Telegram sends it; a mismatch — or an unconfigured deployment — answers `404`, never `403`. It always answers `200`, because Telegram redelivers an update for hours after any other status, and one of our exceptions would then become an infinite loop. `/start <code>` resolves the organization from the code itself and links inside that tenant's context ([02 §17.3](./02_Software_Architecture.md)); `/stop` clears the chat in every organization; anything else is ignored.
 
 **`GET /notifications/reminder-preview`** takes the same filters as `POST /notifications/remind-debtors` (`min_amount`, `min_days`, `group_id`, `child_ids`) and returns `{eligible, skipped_no_phone, skipped_already_sent, parts, estimated_cost}`. **One code path builds both lists** (`debt_reminder_targets()`): two separate queries would eventually show "48" and send 51.
 

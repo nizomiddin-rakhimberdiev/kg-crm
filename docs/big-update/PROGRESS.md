@@ -319,3 +319,99 @@ matnga tegmadi.
 
 4-bosqich: UI/UX, dizayn, tarjima. Egasining "davom et" signali
 kutilmoqda.
+
+---
+
+## 2026-10-02 — Bosqich 3.7: Telegram asosiy kanal
+
+**Branch:** `big-update/phase-3` · **Commitlar:** `4a53491`, `94fe86d`
+(+ shu yozuv)
+
+### Nega
+
+Egasining qarori: **hozircha SMS provayderi emas, faqat Telegram bot.**
+Sababi sof amaliy — SMS har xabar uchun pul turadi, shlyuz
+shartnomasini va tasdiqlangan jo'natuvchi nomini talab qiladi;
+Telegram bepul va O'zbekistonda deyarli har bir ota-onada bor.
+
+Eskiz adapteri **o'chirilmadi**: u joyida qoladi va bitta `.env`
+qatori bilan yoqiladi. Kanal tanlovi tijorat qarori, kod qarori emas —
+va 3.1–3.3 da qurilgan adapter aynan shu uchun qurilgan edi.
+
+| Ish | Natija |
+|---|---|
+| `TelegramProvider` | `chat_id` ga yuboradi, `parse_mode` siz; "bloklangan" va "chat topilmadi" odam tiliga o'giriladi |
+| Kanal bo'yicha provayder | Telegram tokendan, SMS `NOTIFICATION_PROVIDER` dan; `is_test_mode(channel)` |
+| `resolve_channel` | Telegram ulangan bo'lsa Telegram; SMS faqat HAQIQATAN ulangan bo'lsa |
+| Ulash havolasi | `t.me/<bot>?start=<kod>`, bir martalik, bola kartasidan |
+| Webhook | maxfiy yo'l + sarlavha, `/start` va `/stop`, har doim `200` |
+| `template_code` | kunlik chegara shablon FK'siga tayanmaydi; 105 qator to'ldirildi |
+| Qamrov | nechta ota-ona ulangan — bannerda va holat endpointida |
+| Narx | faqat SMS; Telegram "bepul" deb turadi |
+
+### Uchta qaror, sababi bilan
+
+**Ulash kodi tashkilotni O'ZIDA olib yuradi.** Bot `/start` ni
+tashkilot kontekstisiz oladi, ya'ni vasiyni topish uchun RLS
+chegarasidan chiqish kerak bo'lardi. Bu ishlamaydi ham: operatsion
+jadvallar uchun platforma rejimida chiqish yo'li ATAYLAB yo'q
+(ADR-10). Siyosatni kengaytirish — eng noto'g'ri yechim bo'lardi:
+qulaylik uchun eng kuchli izolyatsiya kafolatini almashtirish. Kodga
+tashkilot UUID'ini joylash savolni butunlay yo'q qildi — webhook
+kodni ochadi, to'g'ri kontekstni o'rnatadi va qidiruv shu chegara
+ichida bo'ladi. Soxta kod faqat o'zi ko'rsatgan tashkilotga tegishi
+mumkin, va u yerda 64 bitlik tasodifiy qismdan o'tolmaydi.
+
+**Zaxira kanal avtomatik EMAS.** Telegram ulanmagan ota-onaga SMS
+yuborish faqat SMS provayderi haqiqatan ulangan bo'lsa ma'noli. Test
+rejimidagi SMS'ga "tushib qolish" jurnalda xabar bordek ko'rsatib,
+bog'chani ota-onani botga ulash kerakligidan bexabar qoldirardi —
+ya'ni ADR-22 tuzatgan xatoning aynan o'zi, boshqa eshikdan.
+
+**Kod bir martalik.** Havola oilaviy guruhga tashlanishi mumkin,
+xabarlar ichida esa bolaning ismi va qarz summasi ketadi. Yangi
+havola bir bosishda yaratiladi va eskisi darhol ishlamay qoladi.
+
+### Sifat darvozalari
+
+| Tekshiruv | Natija |
+|---|---|
+| `pytest` | **1137 o'tdi** · 0 xato (45 ta yangi test) |
+| `ruff` / `ruff format` / `mypy` | toza (278 fayl) |
+| `tsc` / `eslint` / `vitest` / `build` | toza · **128 test** |
+| `check_rls` | 46 jadval (yangi jadval yo'q) |
+| `makemigrations --check` | o'zgarish yo'q |
+
+### Migratsiya repetitsiyasi
+
+Urug'langan nusxada (25 bola, 105 xabar, balans **12 919 000**):
+uchta migratsiya qo'llandi → raqamlar o'zgarmadi, 105 xabarning
+hammasiga turi yozildi (93 kvitansiya + 12 eslatma), turi bo'sh
+qolgan qator **0**; teskari qaytarildi — toza; qayta oldinga yurildi →
+o'sha raqamlar. `seed_templates --all --dry-run`: 6 ta Telegram
+shabloni qo'shilishini ko'rsatdi va hech narsa yozmadi.
+
+### Deployda e'tibor bering
+
+1. **`.env` ga to'rt kalit**: `TELEGRAM_BOT_TOKEN`,
+   `TELEGRAM_BOT_USERNAME`, `TELEGRAM_WEBHOOK_SECRET` (tasodifiy 32+
+   belgi), `TELEGRAM_LEADS_CHAT_ID`. `NOTIFICATION_PROVIDER` ni
+   `console` qoldiring — SMS o'chirilgan bo'ladi.
+2. **Webhook'ni ro'yxatdan o'tkazing**:
+   `python manage.py set_telegram_webhook --base-url https://radix-crm.uz`
+   (avval `--dry-run`, keyin `--info` bilan tekshiring).
+3. **Shablonlar**: `python manage.py seed_templates --tenant <slug>
+   --dry-run`, keyin haqiqiy ishga tushirish. Telegram matnlari
+   SMS'dan uzunroq — u yerda belgi bepul.
+4. **Ota-onalarni ulash** — bu bir martalik tashkiliy ish: har bir
+   bola kartasida "Ulash havolasi" tugmasi bor. Hech kim ulanmaguncha
+   bannerda qamrov 0/N bo'lib turadi va bu to'g'ri: xabar hech kimga
+   bormaydi.
+5. **SMS kerak bo'lsa** — `NOTIFICATION_PROVIDER=eskiz` + uchta
+   `ESKIZ_*` kaliti va Sozlamalarda "Asosiy kanal" ni `SMS` ga
+   o'tkazish. Kod o'zgarishi kerak emas.
+
+### Keyingi qadam
+
+4-bosqich: UI/UX, dizayn, tarjima. Egasining "davom et" signali
+kutilmoqda.
