@@ -19,7 +19,7 @@ import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { EmptyRow } from '@/components/ui/EmptyState'
-import { som } from '@/lib/format'
+import { som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
 const money = som
@@ -47,7 +47,9 @@ export default function ExpensesPage() {
   const [form, setForm] = useState({
     category_id: '',
     amount: '',
-    expense_date: '',
+    // Sukut — BUGUN (PLAN 4.7): chiqim deyarli har doim
+    // bugun kiritiladi, bo'sh maydon esa ortiqcha bosish.
+    expense_date: today(),
     description: '',
     // Qaysi puldan to'lanadi (ADR-17) — mijozning so'zi: "chiqim
     // kiritayotgan paytda qaysi puldan ketayotgani hisobga olinishi
@@ -92,7 +94,7 @@ export default function ExpensesPage() {
       setForm({
         category_id: '',
         amount: '',
-        expense_date: '',
+        expense_date: today(),
         description: '',
         cash_account_id: '',
       })
@@ -454,6 +456,17 @@ export default function ExpensesPage() {
                     hint={t(
                       'Bogʻcha xarajatlari shu yerda qayd etiladi — oziq-ovqat, kommunal, taʼmir.',
                     )}
+                    action={
+                      can('expenses.create') ? (
+                        <button
+                          type="button"
+                          onClick={() => document.getElementById('eamt')?.focus()}
+                          className="rounded-lg bg-nihol-600 px-4 py-2 text-sm font-semibold text-white hover:bg-nihol-700"
+                        >
+                          {t('Chiqim yozish')}
+                        </button>
+                      ) : undefined
+                    }
                   />
                 )}
               </tbody>

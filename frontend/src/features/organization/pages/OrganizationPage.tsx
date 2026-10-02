@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Save, Trash2 } from 'lucide-react'
 import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
+import { useToast } from '@/app/providers/ToastProvider'
 import { OrgMark } from '@/components/brand/OrgMark'
 import { organizationApi, type OrganizationInput } from '@/features/organization/api'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -45,6 +46,7 @@ export default function OrganizationPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const { toast } = useToast()
 
   const query = useQuery({
     queryKey: queryKeys.organization(organizationId),
@@ -80,6 +82,7 @@ export default function OrganizationPage() {
     onSuccess: () => {
       setError(null)
       setSaved(true)
+      toast(t('Saqlandi'))
       refreshBrand()
     },
     onError: (err: unknown) =>
@@ -91,6 +94,7 @@ export default function OrganizationPage() {
     onSuccess: () => {
       setError(null)
       setSaved(true)
+      toast(t('Saqlandi'))
       refreshBrand()
     },
     onError: (err: unknown) =>
@@ -103,6 +107,7 @@ export default function OrganizationPage() {
       setError(null)
       setFieldErrors({})
       setSaved(true)
+      toast(t('Saqlandi'))
       void queryClient.invalidateQueries({ queryKey: queryKeys.organization(organizationId) })
       // Nom yon panelda ham turadi — u `/auth/me` dan keladi.
       void refreshUser()

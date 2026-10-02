@@ -24,6 +24,7 @@ import { HolidaysPanel } from '@/features/attendance/components/HolidaysPanel'
 import { Modal } from '@/components/ui/Modal'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/app/providers/ToastProvider'
 import { t } from '@/lib/i18n'
 
 const STATUS_BUTTONS: Array<{
@@ -55,6 +56,9 @@ export default function AttendancePage() {
   const [reasonDraft, setReasonDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  // Saqlanganini TOAST aytadi (PLAN 4.7): kichkina kulrang "Saqlandi"
+  // yozuvini mudira koʻrmaydi va ikkinchi marta bosadi.
+  const { toast } = useToast()
 
   const groupsQuery = useQuery({
     queryKey: queryKeys.groups(organizationId),
@@ -105,6 +109,7 @@ export default function AttendancePage() {
       ),
     onSuccess: () => {
       setSaved(true)
+      toast(t('Davomat saqlandi'))
       setError(null)
       void queryClient.invalidateQueries({
         queryKey: queryKeys.attendanceDaily(organizationId, groupId, date),
@@ -342,7 +347,6 @@ export default function AttendancePage() {
                       key={value}
                       type="button"
                       disabled={!editable}
-                      title={label}
                       onClick={() => {
                         setDraft((prev) => ({ ...prev, [row.child_id]: value }))
                         setSaved(false)
@@ -356,16 +360,24 @@ export default function AttendancePage() {
                           setReasonFor({ childId: row.child_id, name: row.full_name })
                         }
                       }}
+                      aria-label={`${row.full_name}: ${label}`}
+                      aria-pressed={current === value}
+                      title={label}
                       className={cn(
-                        'flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition',
+                        'flex min-h-11 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium transition sm:min-h-0 sm:px-2.5',
                         current === value
                           ? active
                           : 'bg-slate-50 text-slate-500 hover:bg-slate-100',
                         !editable && 'cursor-not-allowed opacity-60',
                       )}
                     >
-                      <Icon className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">{label}</span>
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      {/* Yozuv MOBILDA ham koʻrinadi (PLAN 4.7):
+                          "Keldi / Sababli / Kelmadi" uchta ikonka
+                          bilan ajratilganda tarbiyachi ularni
+                          taxmin qilib bosardi — va davomat
+                          hisobotga ketadigan maʼlumot. */}
+                      <span>{label}</span>
                     </button>
                   ))}
                 </div>

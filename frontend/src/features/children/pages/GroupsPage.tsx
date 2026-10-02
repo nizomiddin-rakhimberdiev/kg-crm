@@ -288,7 +288,15 @@ export default function GroupsPage() {
                     </span>
 
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-semibold text-slate-900">
+                      {/* Nom QIRQILMAYDI (PLAN 4.7): "Quyoshli
+                          bolalar guruhi" bir qatorda "Quyoshli
+                          bola…" bo'lib qolardi va mudira ikki
+                          o'xshash guruhni ajrata olmasdi. Ikki
+                          qator + to'liq nom `title` da. */}
+                      <span
+                        title={group.name}
+                        className="line-clamp-2 block font-semibold leading-tight text-slate-900"
+                      >
                         {group.name}
                       </span>
                       <span className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
@@ -297,7 +305,10 @@ export default function GroupsPage() {
                         {limited && ` / ${group.capacity}`}
                       </span>
                       {group.teacher_name && (
-                        <span className="block truncate text-xs text-slate-500">
+                        <span
+                          title={group.teacher_name}
+                          className="block truncate text-xs text-slate-500"
+                        >
                           {group.teacher_name}
                         </span>
                       )}

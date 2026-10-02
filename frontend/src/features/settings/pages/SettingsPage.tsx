@@ -10,6 +10,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { useToast } from '@/app/providers/ToastProvider'
 import { Switch } from '@/components/ui/primitives'
 import { settingsApi } from '@/features/notifications/api'
 import { TestModeBanner } from '@/features/notifications/components/TestModeBanner'
@@ -137,6 +138,7 @@ export default function SettingsPage() {
 
   const [error, setError] = useState<string | null>(null)
   const [savedKey, setSavedKey] = useState<string | null>(null)
+  const { toast } = useToast()
 
   const settingsQuery = useQuery({
     queryKey: queryKeys.settings(organizationId),
@@ -149,6 +151,7 @@ export default function SettingsPage() {
     onSuccess: (result) => {
       setError(null)
       setSavedKey(result.key)
+      toast(t('Saqlandi'))
       void queryClient.invalidateQueries({ queryKey: queryKeys.settings(organizationId) })
     },
     onError: (err: unknown) =>

@@ -15,6 +15,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Product } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { t } from '@/lib/i18n'
 
 const UNITS = ['kg', 'g', 'l', 'ml', 'pcs', 'pack'] as const
@@ -243,9 +244,26 @@ export default function InventoryPage() {
       </div>
 
       {products.length === 0 && !productsQuery.isPending && (
-        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-12 text-center">
-          <Package className="mx-auto mb-3 h-10 w-10 text-slate-200" />
-          <p className="text-sm text-slate-500">{t('Hozircha mahsulot yoʻq.')}</p>
+        <div className="rounded-2xl border border-slate-200 bg-white">
+          {/* Boʻsh ekran KEYINGI QADAMNI aytadi (PLAN 4.7): "hozircha
+              yoʻq" degan yozuvning oʻzi foydalanuvchini nima
+              qilishini bilmagan holda qoldiradi. */}
+          <EmptyState
+            icon={Package}
+            title={t('Hozircha mahsulot yoʻq')}
+            hint={t('Oziq-ovqat, kanselyariya, tozalik — nima hisobga olinsa, shu yerda turadi.')}
+            action={
+              can('inventory.create') ? (
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('pname')?.focus()}
+                  className="rounded-lg bg-nihol-600 px-4 py-2 text-sm font-semibold text-white hover:bg-nihol-700"
+                >
+                  {t('Mahsulot qoʻshish')}
+                </button>
+              ) : undefined
+            }
+          />
         </div>
       )}
 

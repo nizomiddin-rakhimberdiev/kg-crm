@@ -239,7 +239,6 @@ export const messages: Record<string, string> = {
   'Hozircha guruh yoʻq.': 'No groups yet.',
   'Hozircha hisob yozilmagan.': 'No invoices issued yet.',
   'Hozircha hisoblash yoʻq.': 'No payroll runs yet.',
-  'Hozircha mahsulot yoʻq.': 'No products yet.',
   'Hozircha tarif yoʻq. Hisob-faktura chiqarish uchun avval tarif yarating va bolalarga biriktiring.':
     'No plans yet. To issue invoices, create a plan and assign it to children.',
   'Hozircha tizim hisobi yoʻq.': 'No system accounts yet.',
@@ -1037,4 +1036,10 @@ export const messages: Record<string, string> = {
   'Logotipni olib tashlash': 'Remove the logo',
   'Logotipni yuklab boʻlmadi.': 'The logo could not be uploaded.',
   'Bugun koʻrsatmaslik': 'Hide for today',
+  'Chiqim yozish': 'Record an expense',
+  'Hozircha mahsulot yoʻq': 'No products yet',
+  'Mahsulot qoʻshish': 'Add a product',
+  'Oziq-ovqat, kanselyariya, tozalik — nima hisobga olinsa, shu yerda turadi.':
+    'Food, stationery, cleaning supplies — whatever you track lives here.',
+  'Davomat saqlandi': 'Attendance saved',
 }
