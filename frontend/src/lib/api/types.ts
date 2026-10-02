@@ -106,6 +106,10 @@ export interface CurrentUser {
   organization: OrganizationSummary | null
   branch: BranchSummary | null
   permissions: string[]
+  /** Ikki bosqichli tasdiqlash yoqilganmi (PLAN 5.4). */
+  two_factor: boolean
+  /** Qolgan zaxira kodlari soni; 2FA oʻchiq boʻlsa `0`. */
+  backup_codes_left: number
 }
 
 export interface SubscriptionState {

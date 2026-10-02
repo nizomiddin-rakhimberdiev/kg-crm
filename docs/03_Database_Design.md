@@ -396,6 +396,9 @@ Authentication identity.
 | `branch_id` | `UUID` | `NULL` FK → branch | `NULL` only for Org Owner (cross-branch within their org) |
 | `is_staff` | `BOOLEAN` | `NOT NULL DEFAULT true` | Back-office user |
 | `last_login_at` | `TIMESTAMPTZ` | `NULL` | |
+| `totp_secret` | `VARCHAR(64)` | `NOT NULL DEFAULT ''` | Base32 TOTP key — **optional 2FA**, set by the user (ADR-24) |
+| `totp_confirmed_at` | `TIMESTAMPTZ` | `NULL` | 2FA is active only when this is set |
+| `totp_backup_codes` | `JSONB` | `NOT NULL DEFAULT '[]'` | SHA-256 hashes of single-use backup codes |
 
 **Constraint:** `uq_user_org_email` — `UNIQUE (organization_id, email)`.
 
@@ -407,6 +410,8 @@ Authentication identity.
 - `organization_id` is **immutable after insert** (trigger). Moving a user between tenants is not an update; it is a new account.
 - Deactivating a user (`is_active=false`) must invalidate their refresh tokens (app-level).
 - **Future-proofing:** to move from single-role to multi-role, add a `user_role` bridge; `role_id` stays as "primary role" during transition.
+
+> **Why 2FA lives in three columns on `user` and not in two tables of its own** (ADR-24). `totp_confirmed_at` is separate from the secret because generating a key is not the same as enabling 2FA: a person who sees the key, never adds it to their app and closes the tab would otherwise be locked out of their own account at the next sign-in. The backup codes are a `JSONB` array of hashes rather than a `user_backup_code` table because they are verified **during login**, before any tenant context exists — a new table would have had to be added to the narrow `auth_lookup_context()` door, and loosening an RLS policy for convenience is the one trade this schema does not make (ADR-10, [§6.3](#63-row-level-security)). A used code is removed from the array, so "used but still valid" cannot happen; the hash is plain SHA-256, not PBKDF2, because the codes are high-entropy values that no dictionary attack reaches — and verifying ten PBKDF2 hashes on every sign-in would cost seconds for nothing.
 
 ### 10.7 `refresh_token` (auth session tracking — optional but recommended)
 

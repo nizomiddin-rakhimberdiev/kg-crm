@@ -70,7 +70,9 @@ The split is what stops a single SQL-injection with owner rights from turning of
 
 > The role script runs only when the Postgres volume is first created. Applying it to an existing database is manual.
 
-**`PLATFORM_2FA_REQUIRED`** (default `false`, ADR-15) — whether the vendor console asks for an Authenticator code at sign-in. Off: email + password. On: every platform account needs a confirmed TOTP secret (`create_platform_user` prints it), and a login without a code gets `401 TOTP_REQUIRED`. Changing it needs only a restart of `web`.
+**`PLATFORM_2FA_REQUIRED`** (default `true`, ADR-24 — ADR-15 had it off) — whether the vendor console asks for an Authenticator code at sign-in. On: every platform account needs a confirmed TOTP secret, and a login without a code gets `401 TOTP_REQUIRED`. Off: email + password. Changing it needs only a restart of `web`.
+
+> `create_platform_user` prints the secret **and ten single-use backup codes**, once. Keep the codes away from the phone that holds the authenticator — otherwise the second factor is not a second factor. If both are lost, the way back in is on the server: `python manage.py create_platform_user --email … --update --new-2fa` issues a new secret and a new set of codes and leaves the password as it is (add `--password` to change that too). There is deliberately no endpoint for this.
 
 ---
 

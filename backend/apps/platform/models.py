@@ -66,10 +66,16 @@ class PlatformUser(models.Model):
     )
     is_active = models.BooleanField(default=True)
 
-    # 2FA MAJBURIY (ADR-10). `totp_secret` bo'sh bo'lsa kirish
-    # mumkin emas — "keyin yoqaman" degan holat yo'q.
+    # 2FA MAJBURIY (ADR-10, ADR-24: `PLATFORM_2FA_REQUIRED` sukut
+    # bo'yicha yoqilgan). `totp_secret` bo'sh bo'lsa kirish mumkin
+    # emas — "keyin yoqaman" degan holat yo'q.
     totp_secret = models.CharField(max_length=64, blank=True)
     totp_confirmed_at = models.DateTimeField(null=True, blank=True)
+    # Zaxira kodlari xeshi (`core/backup_codes.py`). Vendor uchun ular
+    # mijozdan ham muhimroq: telefon sinsa, platforma konsolini
+    # ochadigan boshqa yo'l yo'q va "serverga kirib tiklash" har doim
+    # qo'l ostida bo'lmaydi.
+    totp_backup_codes = models.JSONField(default=list, blank=True, editable=False)
     last_login_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:

@@ -1124,3 +1124,20 @@ msgstr "The link has expired or has already been used. Ask the vendor for a new 
 msgid "Parol oʻrnatildi. Endi kirishingiz mumkin."
 msgstr "Password set. You can sign in now."
 
+
+# Ikki bosqichli tasdiqlash (PLAN 5.4, ADR-24)
+msgid "Ikki bosqichli tasdiqlash oʻchirildi."
+msgstr "Two-factor authentication has been turned off."
+
+msgid "Ikki bosqichli tasdiqlash yoqilmagan."
+msgstr "Two-factor authentication is not enabled."
+
+msgid "Kod notoʻgʻri yoki eskirgan."
+msgstr "The code is wrong or has expired."
+
+msgid "Kod notoʻgʻri. Ilovadagi joriy kodni kiriting."
+msgstr "The code is wrong. Enter the current code from your app."
+
+msgid "Parol notoʻgʻri."
+msgstr "Wrong password."
+

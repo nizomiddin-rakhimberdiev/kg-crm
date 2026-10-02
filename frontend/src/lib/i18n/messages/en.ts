@@ -1067,6 +1067,40 @@ export const messages: Record<string, string> = {
   'Parol tiklash soʻraldi': 'Password reset requested',
   'Taklif qabul qilindi': 'Invitation accepted',
   Bloklanishlar: 'Blocks',
+  // Ikki bosqichli tasdiqlash (PLAN 5.4)
+  '2FA yoqildi': '2FA turned on',
+  '2FA oʻchirildi': '2FA turned off',
+  'Zaxira kodi ishlatildi': 'Backup code used',
+  'Zaxira kodlari yangilandi': 'Backup codes renewed',
+  'Zaxira kodlari': 'Backup codes',
+  Qolgani: 'Remaining',
+  Omil: 'Factor',
+  'Ikki bosqichli tasdiqlash': 'Two-factor authentication',
+  'Yoqilgan. Kirishda Authenticator kodi soʻraladi.':
+    'Enabled. Signing in asks for your Authenticator code.',
+  'Parol oʻgʻirlansa ham hisob yopiq qoladi: kirishda telefondagi kod soʻraladi.':
+    'Even a stolen password leaves the account closed: signing in asks for the code on your phone.',
+  Yoqish: 'Turn on',
+  'Authenticator ilovasini oching (Google Authenticator, Authy, 1Password).':
+    'Open your authenticator app (Google Authenticator, Authy, 1Password).',
+  'Quyidagi kalitni qoʻshing yoki havolani telefonda bosing:':
+    'Add this key, or open the link on your phone:',
+  'Ilovada ochish': 'Open in the app',
+  'Ilovada chiqqan olti xonali kodni kiriting:': 'Enter the six-digit code from the app:',
+  'Authenticator kodi': 'Authenticator code',
+  'Telefoningiz yoʻqolgan boʻlsa — zaxira kodidan birini kiriting.':
+    'If your phone is lost, enter one of your backup codes.',
+  'Zaxira kodlari — har biri BIR MARTA ishlaydi. Ularni hozir saqlab oling.':
+    'Backup codes — each one works ONCE. Save them now.',
+  'Hammasini nusxalash': 'Copy all',
+  'Telefoningizdan boshqa joyda saqlang — qogʻozda yoki parol menejerida.':
+    'Keep them away from your phone — on paper or in a password manager.',
+  'Qolgan zaxira kodlari: {count}': 'Backup codes left: {count}',
+  Parolingiz: 'Your password',
+  'Oʻchirish va kodlarni yangilash uchun parol kerak.':
+    'Turning it off and renewing the codes both need your password.',
+  'Yangi zaxira kodlari': 'New backup codes',
+  'Oʻchirilmoqda…': 'Turning off…',
   // Taklif havolasi (PLAN 5.5)
   'Bogʻchangiz tayyor': 'Your kindergarten is ready',
   'Parol oʻrnatildi. Endi kirishingiz mumkin.': 'Password set. You can sign in now.',

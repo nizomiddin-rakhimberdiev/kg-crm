@@ -21,6 +21,10 @@ __all__ = [
     "LoginSerializer",
     "SelectOrganizationSerializer",
     "PasswordChangeSerializer",
+    "PasswordResetConfirmSerializer",
+    "InviteAcceptSerializer",
+    "TwoFactorConfirmSerializer",
+    "TwoFactorPasswordSerializer",
     "ProfileUpdateSerializer",
     "ProfilePhotoSerializer",
     "UserSerializer",
@@ -42,14 +46,31 @@ def validate_password_strength(value: str) -> None:
 # --- Auth ---
 
 
+#: Authenticator kodi yoki zaxira kodi. Bir maydon ikki qiymat uchun:
+#: foydalanuvchi "qaysi maydonga yozaman?" degan savolni telefonini
+#: yo'qotgan paytda — eng yomon paytda — bermasligi kerak.
+#: `max_length` zaxira kodining `a1b2-c3d4` ko'rinishiga mo'ljallangan.
+_SecondFactorField = serializers.CharField(
+    max_length=20, required=False, allow_blank=True, trim_whitespace=True
+)
+
+
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+    # 2FA yoqilgan hisob uchun (PLAN 5.4). Maydon IXTIYORIY: server
+    # kod kerakligini `401 TOTP_REQUIRED` bilan aytadi, ya'ni mijoz
+    # kimda 2FA yoqilganini oldindan bilishi shart emas.
+    code = _SecondFactorField
 
 
 class SelectOrganizationSerializer(serializers.Serializer):
     pending_token = serializers.CharField()
     organization_id = serializers.UUIDField()
+    # Bir email ikki bog'chada bo'lsa 2FA tashkilot TANLANGANDAN
+    # keyin tekshiriladi: sir hisobga tegishli, hisob esa aynan
+    # shu bosqichda aniqlanadi.
+    code = _SecondFactorField
 
 
 class PasswordChangeSerializer(serializers.Serializer):
@@ -69,6 +90,24 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     uid = serializers.CharField(max_length=64)
     token = serializers.CharField(max_length=128)
     password = serializers.CharField(write_only=True, validators=[validate_password_strength])
+
+
+class TwoFactorConfirmSerializer(serializers.Serializer):
+    """Sozlashni yakunlash — ilovadagi haqiqiy kod (PLAN 5.4)."""
+
+    code = serializers.CharField(min_length=6, max_length=6, trim_whitespace=True)
+
+
+class TwoFactorPasswordSerializer(serializers.Serializer):
+    """
+    O'chirish va kodlarni yangilash uchun PAROL so'raladi.
+
+    O'g'irlangan sessiya (XSS, ochiq qolgan noutbuk) 2FA ni o'chirib
+    himoyani olib tashlamasligi kerak — aks holda ikkinchi omil
+    birinchisini himoya qilib, o'zini himoya qilmagan bo'lardi.
+    """
+
+    password = serializers.CharField(write_only=True)
 
 
 class InviteAcceptSerializer(serializers.Serializer):

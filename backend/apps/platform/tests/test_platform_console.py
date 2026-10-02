@@ -17,19 +17,27 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.children.models import Child
+from apps.core import backup_codes
 from apps.core.tenancy import organization_context, platform_context
+from apps.core.totp import current_code, generate_secret
 from apps.platform import services
 from apps.platform.authentication import issue_platform_token
 from apps.platform.models import PlatformRole, PlatformUser, SupportGrant
-from apps.platform.totp import current_code, generate_secret
 
 pytestmark = pytest.mark.django_db
 
 PASSWORD = "Platforma-Juda-Kuchli-2026"  # noqa: S105
 
 
+#: `_platform_user` yaratgan hisobning zaxira kodlari (PLAN 5.4) —
+#: `create_platform_user` buyrug'i ham xuddi shunday beradi.
+BACKUP_CODES: list[str] = []
+
+
 def _platform_user(role: str = PlatformRole.ADMIN, email: str = "admin@kg-crm.uz") -> PlatformUser:
     secret = generate_secret()
+    codes, hashes = backup_codes.generate()
+    BACKUP_CODES[:] = codes
     with platform_context():
         user = PlatformUser(
             email=email,
@@ -37,6 +45,7 @@ def _platform_user(role: str = PlatformRole.ADMIN, email: str = "admin@kg-crm.uz
             role=role,
             totp_secret=secret,
             totp_confirmed_at=timezone.now(),
+            totp_backup_codes=hashes,
         )
         user.set_password(PASSWORD)
         user.save()
@@ -63,11 +72,55 @@ def _add_children(tenant, count: int) -> None:
 
 
 class TestPlatformLoginWith2FA:
-    """`PLATFORM_2FA_REQUIRED=true` — uch omil (ADR-10, ADR-15)."""
+    """`PLATFORM_2FA_REQUIRED` — uch omil (ADR-10, ADR-15, ADR-24)."""
 
     @pytest.fixture(autouse=True)
     def _enable_2fa(self, settings):
         settings.PLATFORM_2FA_REQUIRED = True
+
+    def test_two_factor_is_on_by_default(self):
+        """
+        Sukut YOQILGAN (ADR-24) — ADR-15 dagi "o'chiq" qarorini
+        bekor qiladi.
+
+        Fikstura uni ataylab yoqadi, shuning uchun bu test sozlamaning
+        O'ZIDAN so'raydi: `.env` da qiymat bo'lmasa qanday ishlaydi.
+        """
+        from django.conf import settings as django_settings
+        from environ import Env
+
+        assert Env().bool("PLATFORM_2FA_REQUIRED", default=True) is True
+        assert isinstance(django_settings.PLATFORM_2FA_REQUIRED, bool)
+
+    def test_a_backup_code_gets_you_in_once(self, tenant_a):
+        """
+        Telefon sinsa — zaxira kodi (PLAN 5.4).
+
+        Vendor uchun bu mijozdan ham muhimroq: konsolga kiradigan
+        boshqa yo'l yo'q, va "serverga kirib sirni almashtirish" har
+        doim qo'l ostida bo'lmaydi.
+        """
+        user = _platform_user()
+        code = BACKUP_CODES[0]
+        client = APIClient()
+        url = "/api/v1/platform/auth/login"
+
+        assert (
+            client.post(url, {"email": user.email, "password": PASSWORD, "code": code}).status_code
+            == 200
+        )
+        # Bir martalik: ikkinchi urinish — 401.
+        assert (
+            client.post(url, {"email": user.email, "password": PASSWORD, "code": code}).status_code
+            == 401
+        )
+        # Qolgan kodlar ishlaydi.
+        assert (
+            client.post(
+                url, {"email": user.email, "password": PASSWORD, "code": BACKUP_CODES[1]}
+            ).status_code
+            == 200
+        )
 
     def test_login_requires_all_three_factors(self, tenant_a):
         user = _platform_user()
@@ -532,21 +585,21 @@ class TestTotp:
         "notoʻgʻri kod" deb ko'rsatish foydalanuvchini tizimdan
         chiqarib yuborardi.
         """
-        from apps.platform.totp import PERIOD, verify
+        from apps.core.totp import PERIOD, verify
 
         secret = generate_secret()
         now = timezone.now().timestamp()
         assert verify(secret, current_code(secret, at=now - PERIOD), at=now)
 
     def test_a_code_from_five_minutes_ago_is_rejected(self):
-        from apps.platform.totp import verify
+        from apps.core.totp import verify
 
         secret = generate_secret()
         now = timezone.now().timestamp()
         assert not verify(secret, current_code(secret, at=now - 300), at=now)
 
     def test_garbage_is_rejected(self):
-        from apps.platform.totp import verify
+        from apps.core.totp import verify
 
         secret = generate_secret()
         for value in ("", "abcdef", "12345", None):

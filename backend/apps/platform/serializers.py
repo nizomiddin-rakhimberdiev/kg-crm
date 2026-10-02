@@ -26,11 +26,20 @@ __all__ = [
 class PlatformLoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
-    # TOTP — `PLATFORM_2FA_REQUIRED` yoqilganda majburiy (ADR-15). Maydon
-    # ixtiyoriy, lekin talab qilinganda uning yo'qligi `TOTP_REQUIRED`
-    # bilan rad etiladi — "keyin yoqaman" holati serializer'da emas,
-    # autentifikatsiyada yopiladi.
-    code = serializers.CharField(min_length=6, max_length=6, required=False, allow_blank=True)
+    # TOTP — `PLATFORM_2FA_REQUIRED` yoqilganda majburiy (ADR-15,
+    # ADR-24: sukut bo'yicha yoqilgan). Maydon ixtiyoriy, lekin talab
+    # qilinganda uning yo'qligi `TOTP_REQUIRED` bilan rad etiladi —
+    # "keyin yoqaman" holati serializer'da emas, autentifikatsiyada
+    # yopiladi.
+    #
+    # Uzunlik QAT'IY EMAS: shu maydonga zaxira kodi ham kiritiladi
+    # (`a1b2-c3d4`, PLAN 5.4). Ilgari u `min_length=6, max_length=6`
+    # edi va zaxira kodi autentifikatsiyaga yetib bormasdan, `400`
+    # bilan rad etilardi — ya'ni telefoni sinagan odam "kod
+    # noto'g'ri" emas, "maydon noto'g'ri" degan javob olardi.
+    code = serializers.CharField(
+        max_length=20, required=False, allow_blank=True, trim_whitespace=True
+    )
 
 
 class ReasonSerializer(serializers.Serializer):

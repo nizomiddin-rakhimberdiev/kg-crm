@@ -19,7 +19,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken as JWTRefreshToken
 
-from apps.accounts import cookies, invite, lockout, password_reset, services
+from apps.accounts import cookies, invite, lockout, password_reset, services, two_factor
 from apps.accounts.authentication import (
     authenticate_candidates,
     hydrate_user,
@@ -36,6 +36,8 @@ from apps.accounts.serializers import (
     ProfilePhotoSerializer,
     ProfileUpdateSerializer,
     SelectOrganizationSerializer,
+    TwoFactorConfirmSerializer,
+    TwoFactorPasswordSerializer,
 )
 from apps.audit import services as audit
 from apps.core.exceptions import BusinessRuleViolation
@@ -44,6 +46,10 @@ from apps.core.typing import request_user
 
 __all__ = [
     "LoginView",
+    "TwoFactorSetupView",
+    "TwoFactorConfirmView",
+    "TwoFactorDisableView",
+    "TwoFactorBackupCodesView",
     "InviteAcceptView",
     "PasswordResetRequestView",
     "PasswordResetConfirmView",
@@ -177,6 +183,24 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
+        if len(candidates) == 1:
+            # Bitta nomzod — hisob aniq, ya'ni ikkinchi omilni
+            # SHU YERDA so'rash mumkin. Bir nechta nomzodda esa
+            # sir qaysi hisobga tegishli ekani hali ma'lum emas,
+            # shuning uchun tekshiruv tashkilot tanlangandan keyin
+            # (`SelectOrganizationView`).
+            #
+            # Tartib muhim: tekshiruv hisoblagich NOLGA TUSHIRILISHIDAN
+            # oldin. Aks holda to'g'ri parol har urinishda hisoblagichni
+            # tozalab, olti xonali kodni cheksiz terish imkonini
+            # berardi — ya'ni ikkinchi omil o'zini himoya qila olmay
+            # qolardi.
+            refused = _second_factor_error(
+                request, candidates[0], serializer.validated_data.get("code", "")
+            )
+            if refused is not None:
+                return refused
+
         # Muvaffaqiyat — hisoblagich nolga. Parolni unutib uch marta
         # xato tergan xodim to'g'ri kirgach jazolanmasligi kerak.
         lockout.reset(email=email, ip=ip)
@@ -215,6 +239,68 @@ class LoginView(APIView):
         }
 
 
+def _second_factor_error(request: Request, user: User, code: str) -> Response | None:
+    """
+    2FA yoqilgan hisob uchun kodni tekshiradi (PLAN 5.4).
+
+    `None` — yo'l ochiq (2FA yo'q yoki kod to'g'ri).
+
+    **Parol birinchi tekshiriladi, kod keyin.** Vendor tekisligida
+    teskari (ADR-15): u yerda 2FA hamma uchun yoqilgan, ya'ni "kod
+    kerak" javobi hech narsani oshkor qilmaydi. Mijoz tomonida esa
+    2FA ixtiyoriy — paroldan OLDIN kod so'ralsa, javobning o'zi
+    "bu hisobda 2FA yoqilgan" degan ma'lumotni har qanday begonaga
+    aytib qo'yardi. Parol to'g'ri bo'lgandan keyin aytish esa hech
+    narsa qo'shmaydi.
+    """
+    if not user.has_2fa:
+        return None
+
+    if not code:
+        return Response(
+            {
+                "success": False,
+                "error": {
+                    "code": "TOTP_REQUIRED",
+                    "message": gettext("Authenticator kodini kiriting."),
+                    "details": None,
+                },
+            },
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    kind = two_factor.check_second_factor(user, code)
+    if kind is None:
+        # Xato kod ham hisoblagichga tushadi: aks holda olti xonali
+        # kodni cheksiz terish mumkin bo'lardi.
+        email = user.email
+        ip = audit.client_ip(request._request) or ""
+        attempts = lockout.record_failure(email=email, ip=ip)
+        with organization_context(user.organization_id):
+            audit.record(
+                action="login_failed",
+                request=request._request,
+                actor=user,
+                changes={"attempts": attempts, "factor": "totp"},
+            )
+        return _auth_error(gettext("Kod notoʻgʻri yoki eskirgan."))
+
+    if kind == "backup":
+        # Zaxira kodi ishlatilgani — jurnalga tushadigan fakt: u
+        # "telefonim yo'q" degan holatning belgisi va kodlar
+        # tugayotganini ko'rsatadi.
+        with organization_context(user.organization_id):
+            audit.record(
+                action="two_factor_backup_used",
+                request=request._request,
+                actor=user,
+                entity_type="user",
+                entity_id=user.id,
+                changes={"remaining": len(user.totp_backup_codes or [])},
+            )
+    return None
+
+
 class SelectOrganizationView(APIView):
     """`POST /auth/select-organization` — pending token → to'liq tokenlar."""
 
@@ -242,6 +328,12 @@ class SelectOrganizationView(APIView):
             # Pending token to'g'ri, lekin tashkilot ro'yxatda yo'q edi.
             # Bir xil umumiy xato — mavjudlikni oshkor qilmaymiz.
             return _auth_error(gettext("Tanlangan tashkilot mavjud emas."))
+
+        # 2FA tekshiruvi SHU YERDA: hisob faqat endi aniq bo'ldi
+        # (`_second_factor_error` izohiga qarang).
+        refused = _second_factor_error(request, user, serializer.validated_data.get("code", ""))
+        if refused is not None:
+            return refused
 
         return _session_response(request, LoginView._complete_login(request, user))
 
@@ -658,3 +750,104 @@ class InviteAcceptView(APIView):
         lockout.reset(email=user.email, ip=audit.client_ip(request._request) or "")
 
         return Response({"detail": gettext("Parol oʻrnatildi. Endi kirishingiz mumkin.")})
+
+
+# --- Ikki bosqichli tasdiqlash (PLAN 5.4, ADR-24) ---
+#
+# To'rtta endpoint, hammasi O'Z hisobi uchun: ro'yxatda boshqa
+# foydalanuvchi yo'q va bo'lishi ham mumkin emas. 2FA — hisob egasining
+# qarori; uni boshqa odam (hatto ega ham) yoqib yoki o'chirib
+# qo'ymasligi kerak, chunki sir boshqa odamning telefonida.
+
+
+class TwoFactorSetupView(APIView):
+    """`POST /auth/2fa/setup` — sir yaratadi; 2FA hali ishlamaydi."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        user = request_user(request)
+        with organization_context(user.organization_id):
+            return Response(two_factor.start_setup(user))
+
+
+class TwoFactorConfirmView(APIView):
+    """`POST /auth/2fa/confirm` — kodni tekshirib yoqadi, zaxira kodlarini beradi."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        serializer = TwoFactorConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = request_user(request)
+
+        with organization_context(user.organization_id):
+            codes = two_factor.confirm(user=user, code=serializer.validated_data["code"])
+            if not codes:
+                raise BusinessRuleViolation(
+                    gettext("Kod notoʻgʻri. Ilovadagi joriy kodni kiriting.")
+                )
+            audit.record(
+                action="two_factor_enabled",
+                request=request._request,
+                actor=user,
+                entity_type="user",
+                entity_id=user.id,
+                changes={"backup_codes": len(codes)},
+            )
+
+        # Kodlar FAQAT shu javobda ko'rinadi: saqlangani — xeshi.
+        return Response({"backup_codes": codes})
+
+
+class TwoFactorDisableView(APIView):
+    """`POST /auth/2fa/disable` — parol bilan o'chiradi."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        serializer = TwoFactorPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = request_user(request)
+
+        if not user.check_password(serializer.validated_data["password"]):
+            raise BusinessRuleViolation(gettext("Parol notoʻgʻri."))
+
+        with organization_context(user.organization_id):
+            two_factor.disable(user)
+            audit.record(
+                action="two_factor_disabled",
+                request=request._request,
+                actor=user,
+                entity_type="user",
+                entity_id=user.id,
+            )
+        return Response({"detail": gettext("Ikki bosqichli tasdiqlash oʻchirildi.")})
+
+
+class TwoFactorBackupCodesView(APIView):
+    """`POST /auth/2fa/backup-codes` — yangi zaxira kodlari (eskilari o'ladi)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        serializer = TwoFactorPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = request_user(request)
+
+        if not user.check_password(serializer.validated_data["password"]):
+            raise BusinessRuleViolation(gettext("Parol notoʻgʻri."))
+        if not user.has_2fa:
+            raise BusinessRuleViolation(gettext("Ikki bosqichli tasdiqlash yoqilmagan."))
+
+        with organization_context(user.organization_id):
+            codes = two_factor.regenerate_backup_codes(user)
+            audit.record(
+                action="two_factor_codes_renewed",
+                request=request._request,
+                actor=user,
+                entity_type="user",
+                entity_id=user.id,
+                changes={"backup_codes": len(codes)},
+            )
+        return Response({"backup_codes": codes})

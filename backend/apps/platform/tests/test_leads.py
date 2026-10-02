@@ -9,9 +9,9 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.core.tenancy import platform_context
+from apps.core.totp import generate_secret
 from apps.platform.authentication import issue_platform_token
 from apps.platform.models import Lead, PlatformRole, PlatformUser
-from apps.platform.totp import generate_secret
 
 pytestmark = pytest.mark.django_db
 

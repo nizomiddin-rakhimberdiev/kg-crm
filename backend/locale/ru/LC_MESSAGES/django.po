@@ -1125,3 +1125,20 @@ msgstr "Ссылка устарела или уже использована. З
 msgid "Parol oʻrnatildi. Endi kirishingiz mumkin."
 msgstr "Пароль установлен. Теперь вы можете войти."
 
+
+# Ikki bosqichli tasdiqlash (PLAN 5.4, ADR-24)
+msgid "Ikki bosqichli tasdiqlash oʻchirildi."
+msgstr "Двухфакторная аутентификация отключена."
+
+msgid "Ikki bosqichli tasdiqlash yoqilmagan."
+msgstr "Двухфакторная аутентификация не включена."
+
+msgid "Kod notoʻgʻri yoki eskirgan."
+msgstr "Код неверный или устарел."
+
+msgid "Kod notoʻgʻri. Ilovadagi joriy kodni kiriting."
+msgstr "Код неверный. Введите текущий код из приложения."
+
+msgid "Parol notoʻgʻri."
+msgstr "Неверный пароль."
+

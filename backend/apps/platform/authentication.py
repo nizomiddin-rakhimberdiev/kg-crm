@@ -103,11 +103,37 @@ class TotpRequired(AuthenticationFailed):
     default_detail = "Authenticator kodini kiriting."
 
 
+def _second_factor_ok(user: PlatformUser, code: str) -> bool:
+    """
+    Authenticator kodi YOKI zaxira kodi (PLAN 5.4).
+
+    Zaxira kodi bir martalik: ishlatilgani ro'yxatdan o'chiriladi.
+    Telefon sinsa vendor konsoliga kiradigan boshqa yo'l yo'q —
+    serverga kirib sirni almashtirish har doim qo'l ostida
+    bo'lmaydi.
+    """
+    from apps.core import backup_codes
+    from apps.core.totp import verify
+
+    if verify(user.totp_secret, code):
+        return True
+
+    remaining = backup_codes.consume(list(user.totp_backup_codes or []), code)
+    if remaining is None:
+        return False
+
+    with platform_context():
+        PlatformUser.objects.filter(pk=user.pk).update(totp_backup_codes=remaining)
+    user.totp_backup_codes = remaining
+    return True
+
+
 def authenticate_platform_user(
     *, email: str, password: str, code: str | None = None
 ) -> PlatformUser:
     """
-    Email + parol, va `PLATFORM_2FA_REQUIRED` yoqilganda TOTP (ADR-15).
+    Email + parol, va `PLATFORM_2FA_REQUIRED` yoqilganda TOTP yoki
+    zaxira kodi (ADR-15, ADR-24 — sukut bo'yicha yoqilgan).
 
     Xato xabari HAR DOIM bir xil: qaysi omil noto'g'ri ekanini aytish
     hujumchiga qaysi bosqichda ekanini bildirardi.
@@ -129,10 +155,7 @@ def authenticate_platform_user(
     if two_factor:
         if not user.has_2fa:
             raise AuthenticationFailed("Ikki bosqichli tasdiqlash sozlanmagan.")
-
-        from apps.platform.totp import verify
-
-        if not verify(user.totp_secret, code or ""):
+        if not _second_factor_ok(user, code or ""):
             raise generic
 
     with platform_context():

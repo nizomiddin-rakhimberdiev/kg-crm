@@ -1064,6 +1064,40 @@ export const messages: Record<string, string> = {
   'Parol tiklash soʻraldi': 'Запрошен сброс пароля',
   'Taklif qabul qilindi': 'Приглашение принято',
   Bloklanishlar: 'Блокировки',
+  // Ikki bosqichli tasdiqlash (PLAN 5.4)
+  '2FA yoqildi': '2FA включена',
+  '2FA oʻchirildi': '2FA отключена',
+  'Zaxira kodi ishlatildi': 'Использован резервный код',
+  'Zaxira kodlari yangilandi': 'Резервные коды обновлены',
+  'Zaxira kodlari': 'Резервные коды',
+  Qolgani: 'Осталось',
+  Omil: 'Фактор',
+  'Ikki bosqichli tasdiqlash': 'Двухфакторная аутентификация',
+  'Yoqilgan. Kirishda Authenticator kodi soʻraladi.':
+    'Включена. При входе запрашивается код из Authenticator.',
+  'Parol oʻgʻirlansa ham hisob yopiq qoladi: kirishda telefondagi kod soʻraladi.':
+    'Даже если пароль украдут, вход закрыт: при входе запрашивается код с телефона.',
+  Yoqish: 'Включить',
+  'Authenticator ilovasini oching (Google Authenticator, Authy, 1Password).':
+    'Откройте приложение Authenticator (Google Authenticator, Authy, 1Password).',
+  'Quyidagi kalitni qoʻshing yoki havolani telefonda bosing:':
+    'Добавьте этот ключ или откройте ссылку на телефоне:',
+  'Ilovada ochish': 'Открыть в приложении',
+  'Ilovada chiqqan olti xonali kodni kiriting:': 'Введите шестизначный код из приложения:',
+  'Authenticator kodi': 'Код Authenticator',
+  'Telefoningiz yoʻqolgan boʻlsa — zaxira kodidan birini kiriting.':
+    'Если телефон потерян — введите один из резервных кодов.',
+  'Zaxira kodlari — har biri BIR MARTA ishlaydi. Ularni hozir saqlab oling.':
+    'Резервные коды — каждый работает ОДИН раз. Сохраните их сейчас.',
+  'Hammasini nusxalash': 'Скопировать все',
+  'Telefoningizdan boshqa joyda saqlang — qogʻozda yoki parol menejerida.':
+    'Храните отдельно от телефона — на бумаге или в менеджере паролей.',
+  'Qolgan zaxira kodlari: {count}': 'Осталось резервных кодов: {count}',
+  Parolingiz: 'Ваш пароль',
+  'Oʻchirish va kodlarni yangilash uchun parol kerak.':
+    'Для отключения и обновления кодов нужен пароль.',
+  'Yangi zaxira kodlari': 'Новые резервные коды',
+  'Oʻchirilmoqda…': 'Отключается…',
   // Taklif havolasi (PLAN 5.5)
   'Bogʻchangiz tayyor': 'Ваш садик готов',
   'Parol oʻrnatildi. Endi kirishingiz mumkin.': 'Пароль установлен. Теперь вы можете войти.',

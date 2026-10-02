@@ -1,15 +1,23 @@
 """
-TOTP (RFC 6238) — vendor kirishida majburiy ikkinchi omil (ADR-10).
+TOTP (RFC 6238) — ikkinchi omil algoritmi, **ikki tekislik uchun bitta**.
 
 Kutubxona qo'shilmadi: algoritm o'ttiz qatorda va u standart
 kutubxonadagi `hmac` bilan to'liq ifodalanadi. Bitta bog'liqlik kamayishi
 bu darajadagi kod uchun arziydi — ayniqsa u autentifikatsiya yo'lida
 turgan bog'liqlik bo'lsa.
 
-Bu **vendor** hisoblari uchun. Mijoz xodimlari uchun 2FA hozircha yo'q:
-bog'chada telefon almashinuvi tez-tez bo'ladi va majburiy 2FA ularni
-bitta umumiy telefonga o'tishga majburlardi — ya'ni audit izini
-buzardi (P7 bilan bir xil mantiq).
+Ilgari bu fayl `apps/platform/` da yashardi, chunki 2FA faqat vendor
+hisoblarida bor edi. Mijoz egasiga ham ixtiyoriy 2FA qo'shilgach
+(PLAN 5.4, ADR-24) u `core` ga ko'chdi: ikki nusxa algoritm — bu ikki
+xil xulq va bir kun ikkinchisida tuzatilmagan xato. Modulda MODEL
+yo'q, faqat matematika, ya'ni ADR-10 dagi tekisliklar ajratuvi
+buzilmaydi: har bir tekislik sirni o'z jadvalida saqlaydi.
+
+**Majburiylik har xil.** Vendor uchun 2FA — talab (`PLATFORM_2FA_REQUIRED`,
+sukut bo'yicha YOQILGAN, ADR-24). Mijoz xodimlari uchun esa MAJBURIY
+EMAS va bo'lmaydi ham: bog'chada telefon almashinuvi tez-tez bo'ladi va
+majburiy 2FA ularni bitta umumiy telefonga o'tishga majburlardi — ya'ni
+audit izini buzardi (P7 bilan bir xil mantiq).
 """
 
 from __future__ import annotations
@@ -20,6 +28,7 @@ import hmac
 import secrets
 import struct
 import time
+from urllib.parse import quote
 
 __all__ = ["generate_secret", "provisioning_uri", "verify", "current_code"]
 
@@ -66,9 +75,15 @@ def verify(secret: str, code: str, *, at: float | None = None) -> bool:
     )
 
 
-def provisioning_uri(secret: str, *, account: str, issuer: str = "KG-CRM") -> str:
-    """Authenticator ilovasi uchun `otpauth://` havolasi."""
+def provisioning_uri(secret: str, *, account: str, issuer: str = "Radix CRM") -> str:
+    """
+    Authenticator ilovasi uchun `otpauth://` havolasi.
+
+    `issuer` — ilovada ko'rinadigan nom, ya'ni ommaviy brend
+    (`Radix CRM`). U sirga ta'sir qilmaydi: nomi o'zgargani eski
+    yozuvlarni buzmaydi, faqat yangi yozuv boshqa nom bilan tushadi.
+    """
     return (
-        f"otpauth://totp/{issuer}:{account}?secret={secret}"
-        f"&issuer={issuer}&algorithm=SHA1&digits={DIGITS}&period={PERIOD}"
+        f"otpauth://totp/{quote(issuer)}:{quote(account)}?secret={secret}"
+        f"&issuer={quote(issuer)}&algorithm=SHA1&digits={DIGITS}&period={PERIOD}"
     )

@@ -513,13 +513,18 @@ if DEPLOYMENT_MODE not in ("saas", "standalone"):
     )
 
 # --- SaaS / obuna (docs/01 §4) ---
-# Platforma (vendor) konsolida ikkinchi omil — TOTP (ADR-15).
+# Platforma (vendor) konsolida ikkinchi omil — TOTP (ADR-15, ADR-24).
 #
-# Sukut O'CHIQ: egasining qarori (2026-09-22). Yoqilganda har bir vendor
-# hisobida Authenticator sozlangan bo'lishi shart va login `code`siz
-# `401 TOTP_REQUIRED` qaytaradi. Mexanizm o'chirilmagan, faqat kalit
-# bilan boshqariladi: bitta `.env` qatori bilan qaytariladi.
-PLATFORM_2FA_REQUIRED = env.bool("PLATFORM_2FA_REQUIRED", default=False)
+# Sukut YOQILGAN (ADR-24, 2026-10-02 — ADR-15 dagi "o'chiq" qarorini
+# bekor qiladi). Sabab o'zgardi: konsol bitta parol ortida butun mijoz
+# ro'yxatini, obunalarni va qo'llab-quvvatlash ruxsatlarini boshqaradi,
+# ya'ni u eng qimmatli bitta hisob. Zaxira kodlari (PLAN 5.4) qulflanib
+# qolish xavfini olib tashladi — ilgari aynan shu xavf "keyin yoqaman"
+# qarorining asosi edi.
+#
+# Kalit QOLADI: standalone o'rnatma yoki namoyish nusxasida uni
+# o'chirish kerak bo'lishi mumkin, va bu bitta `.env` qatori.
+PLATFORM_2FA_REQUIRED = env.bool("PLATFORM_2FA_REQUIRED", default=True)
 
 TRIAL_DAYS = env.int("TRIAL_DAYS", default=15)
 PAYMENT_GRACE_DAYS = env.int("PAYMENT_GRACE_DAYS", default=7)

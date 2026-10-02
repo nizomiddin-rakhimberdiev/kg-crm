@@ -15,6 +15,10 @@ from apps.accounts.views_auth import (
     ProfilePhotoView,
     RefreshView,
     SelectOrganizationView,
+    TwoFactorBackupCodesView,
+    TwoFactorConfirmView,
+    TwoFactorDisableView,
+    TwoFactorSetupView,
 )
 from apps.core.deployment import is_saas
 from apps.notifications.views_webhook import TelegramWebhookView
@@ -48,6 +52,15 @@ auth_patterns = [
     # (PLAN 5.5). Standalone nusxada ham kerak: u yerda ham birinchi
     # hisob shu yo'l bilan ochilishi mumkin.
     path("auth/invite/accept", InviteAcceptView.as_view(), name="auth-invite-accept"),
+    # Ikki bosqichli tasdiqlash — o'z hisobi uchun (PLAN 5.4, ADR-24).
+    path("auth/2fa/setup", TwoFactorSetupView.as_view(), name="auth-2fa-setup"),
+    path("auth/2fa/confirm", TwoFactorConfirmView.as_view(), name="auth-2fa-confirm"),
+    path("auth/2fa/disable", TwoFactorDisableView.as_view(), name="auth-2fa-disable"),
+    path(
+        "auth/2fa/backup-codes",
+        TwoFactorBackupCodesView.as_view(),
+        name="auth-2fa-backup-codes",
+    ),
 ]
 
 # Platforma kirishi ALOHIDA yo'lda (ADR-10): mijoz `/auth/login` ni,

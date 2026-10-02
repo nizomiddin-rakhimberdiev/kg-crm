@@ -23,9 +23,9 @@ class TestAuthAuditing:
         konsoliga ko'chdi, lekin talab o'zgarmadi: bog'cha o'z akkaunti
         qachon va kim tomonidan ochilganini ko'ra olishi kerak.
         """
+        from apps.core.totp import generate_secret
         from apps.platform import services as platform_services
         from apps.platform.models import PlatformRole, PlatformUser
-        from apps.platform.totp import generate_secret
 
         with platform_context():
             actor = PlatformUser(

@@ -129,10 +129,37 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     is_staff = models.BooleanField(default=False)
     last_login_at = models.DateTimeField(null=True, blank=True)
 
+    # --- Ikki bosqichli tasdiqlash (PLAN 5.4, ADR-24) ---
+    #
+    # Mijoz tomonida 2FA **IXTIYORIY** va har bir foydalanuvchi uni
+    # o'zi yoqadi. Majburiy qilish bog'chada ish bermaydi: smenada
+    # ishlaydigan tarbiyachida shaxsiy smartfon bo'lmasligi mumkin va
+    # majburiy kod ularni bitta umumiy telefonga o'tishga majburlardi
+    # — ya'ni audit izi "kim kirdi" degan savolga javob bermay
+    # qolardi.
+    #
+    # `totp_confirmed_at` ALOHIDA maydon: sir yaratilgani 2FA
+    # yoqilgani degani emas. Odam QR'ni ko'rib, ilovaga qo'shmasdan
+    # sahifani yopsa va biz sirni "yoqilgan" deb hisoblasak, u
+    # keyingi kirishda o'z hisobidan chiqib qolardi.
+    totp_secret = models.CharField(max_length=64, blank=True)
+    totp_confirmed_at = models.DateTimeField(null=True, blank=True)
+    # Zaxira kodlarining XESHLARI (`core/backup_codes.py`). Alohida
+    # jadval EMAS, va bu ataylab: kodni tekshirish kirish paytida,
+    # ya'ni tenant konteksti hali yo'q holatda bo'ladi
+    # (`auth_lookup_context()`). Yangi jadval uchun tor eshikni
+    # kengaytirish kerak bo'lardi — RLS siyosatini qulaylik uchun
+    # bo'shatish esa eng yomon almashuv (ADR-10).
+    totp_backup_codes = models.JSONField(default=list, blank=True, editable=False)
+
     objects = UserManager()
     # Faqat autentifikatsiya yo'li uchun: login tashkilot tanlanishidan
     # OLDIN bo'lgani sababli tenant konteksti hali mavjud emas (ADR-9).
     auth_objects = UnscopedManager()
+
+    @property
+    def has_2fa(self) -> bool:
+        return bool(self.totp_secret and self.totp_confirmed_at)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["full_name"]

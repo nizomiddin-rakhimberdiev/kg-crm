@@ -456,4 +456,10 @@ def user_payload(user: User) -> dict[str, Any]:
         ),
         "branch": ({"id": str(user.branch.id), "name": user.branch.name} if user.branch else None),
         "permissions": sorted(user.permission_codes()),
+        # 2FA holati (PLAN 5.4): sozlamalar ekrani buni ko'rsatishi
+        # kerak, va u ALOHIDA so'rov bilan olinmaydi — "yoqilganmi?"
+        # degan savol profil bilan birga keladi. Sir yoki kodlar
+        # javobga TUSHMAYDI: bu yerda faqat holat.
+        "two_factor": user.has_2fa,
+        "backup_codes_left": len(user.totp_backup_codes or []) if user.has_2fa else 0,
     }

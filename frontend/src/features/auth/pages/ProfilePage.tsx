@@ -14,6 +14,7 @@ import { useAuth } from '@/app/providers/AuthProvider'
 import { Avatar } from '@/components/ui/Avatar'
 import { authApi } from '@/features/auth/api'
 import { PasswordInput } from '@/components/ui/PasswordInput'
+import { TwoFactorCard } from '@/features/auth/components/TwoFactorCard'
 import { subscriptionStatusLabel } from '@/features/billing/status'
 import { ApiError } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
@@ -245,6 +246,9 @@ export default function ProfilePage() {
             </p>
           </div>
         </div>
+
+        {/* --- Ikki bosqichli tasdiqlash (PLAN 5.4) --- */}
+        <TwoFactorCard />
 
         {/* --- Parol --- */}
         <div className="rounded-2xl border border-slate-200 bg-white p-5">

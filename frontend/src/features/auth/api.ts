@@ -10,8 +10,16 @@ import type {
 } from '@/lib/api/types'
 
 export const authApi = {
-  login: (email: string, password: string) =>
-    api.post<LoginResult>('/auth/login', { email, password }),
+  /**
+   * Kirish. `code` — faqat server soʻraganda (PLAN 5.4).
+   *
+   * 2FA yoqilgan hisob uchun birinchi urinish `401 TOTP_REQUIRED`
+   * qaytaradi va sahifa shundagina kod maydonini koʻrsatadi: frontend
+   * kimda 2FA yoqilganini oldindan bilmaydi va bilishi ham shart emas
+   * (vendor login sahifasidagi naqsh bilan bir xil).
+   */
+  login: (email: string, password: string, code?: string) =>
+    api.post<LoginResult>('/auth/login', { email, password, ...(code ? { code } : {}) }),
 
   /**
    * Parolni tiklash havolasini soʻrash (PLAN 5.2).
@@ -37,10 +45,11 @@ export const authApi = {
   acceptInvite: (token: string, password: string) =>
     api.post<{ detail: string }>('/auth/invite/accept', { token, password }),
 
-  selectOrganization: (pendingToken: string, organizationId: string) =>
+  selectOrganization: (pendingToken: string, organizationId: string, code?: string) =>
     api.post<AuthSession>('/auth/select-organization', {
       pending_token: pendingToken,
       organization_id: organizationId,
+      ...(code ? { code } : {}),
     }),
 
   me: () =>
@@ -93,4 +102,22 @@ export const authApi = {
       current_password: currentPassword,
       new_password: newPassword,
     }),
+
+  // --- Ikki bosqichli tasdiqlash (PLAN 5.4, ADR-24) ---
+  //
+  // Yoqish IKKI qadam: `setup` sirni beradi, `confirm` esa ilovadagi
+  // haqiqiy kod bilan yoqadi. Bir qadamda qilinsa, QR'ni koʻrib
+  // ilovaga qoʻshmagan odam keyingi kirishda oʻz hisobidan chiqib
+  // qolardi.
+
+  twoFactorSetup: () => api.post<{ secret: string; otpauth_uri: string }>('/auth/2fa/setup', {}),
+
+  twoFactorConfirm: (code: string) =>
+    api.post<{ backup_codes: string[] }>('/auth/2fa/confirm', { code }),
+
+  twoFactorDisable: (password: string) =>
+    api.post<{ detail: string }>('/auth/2fa/disable', { password }),
+
+  twoFactorBackupCodes: (password: string) =>
+    api.post<{ backup_codes: string[] }>('/auth/2fa/backup-codes', { password }),
 }

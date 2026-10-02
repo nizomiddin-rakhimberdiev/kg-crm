@@ -37,6 +37,14 @@ class AuditLog(models.Model):
         # `password_reset` dan ALOHIDA: jurnalda "hisob jonlandi"
         # degan fakt "parolini unutdi" dan boshqa narsa.
         ("invite_accepted", "Taklif qabul qilindi"),
+        # Ikki bosqichli tasdiqlash (PLAN 5.4). Yoqish va o'chirish —
+        # hisob xavfsizligining o'zgarishi, ya'ni jurnalda ko'rinishi
+        # kerak; zaxira kodining ishlatilishi esa "telefonim yo'q"
+        # holatining belgisi.
+        ("two_factor_enabled", "2FA yoqildi"),
+        ("two_factor_disabled", "2FA o'chirildi"),
+        ("two_factor_backup_used", "Zaxira kodi ishlatildi"),
+        ("two_factor_codes_renewed", "Zaxira kodlari yangilandi"),
         ("logout", "Chiqish"),
         ("signup", "Ro'yxatdan o'tish"),
         ("password_change", "Parol o'zgardi"),

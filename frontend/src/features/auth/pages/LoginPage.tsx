@@ -4,6 +4,13 @@
  * Email tashkilot ichida unikal, shuning uchun bitta email bir nechta
  * bog'chaga mos kelishi mumkin. Bunday holda backend pending token va
  * tashkilotlar ro'yxatini qaytaradi va foydalanuvchi tanlaydi.
+ *
+ * **Authenticator kodi maydoni sukut bo'yicha YO'Q** (PLAN 5.4). 2FA
+ * mijoz tomonida ixtiyoriy, ya'ni u kimda yoqilganini sahifa oldindan
+ * bilmaydi — va bilmasligi kerak: maydonning ko'rinishi "bu hisobda
+ * 2FA bor" degan ma'lumotni har qanday begonaga aytib qo'yardi.
+ * Server `401 TOTP_REQUIRED` qaytargandan keyin maydon ochiladi
+ * (vendor login sahifasidagi naqsh bilan bir xil).
  */
 
 import { useState } from 'react'
@@ -24,6 +31,47 @@ type Stage =
   | { kind: 'choose-organization'; pendingToken: string; organizations: OrganizationSummary[] }
   | { kind: 'forgot' }
 
+/** `401 TOTP_REQUIRED` — xato emas, keyingi bosqich. */
+const asksForCode = (err: unknown) => err instanceof ApiError && err.code === 'TOTP_REQUIRED'
+
+const CODE_FIELD =
+  'w-full rounded-lg border border-slate-200 px-3 py-2 text-center font-mono text-base tracking-[0.3em] outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100'
+
+/** Kod maydoni — Authenticator kodi YOKI zaxira kodi (PLAN 5.4). */
+function CodeField({
+  id,
+  value,
+  onChange,
+}: {
+  id: string
+  value: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1 block text-sm font-medium text-slate-700">
+        {t('Authenticator kodi')}
+      </label>
+      <input
+        id={id}
+        required
+        inputMode="text"
+        autoComplete="one-time-code"
+        maxLength={20}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={CODE_FIELD}
+      />
+      {/* Bitta maydon ikki qiymat uchun: telefonini yoʻqotgan odam
+          "qaysi maydonga yozaman?" degan savolni eng yomon paytda
+          bermasligi kerak. */}
+      <p className="mt-1.5 text-xs text-tosh-500">
+        {t('Telefoningiz yoʻqolgan boʻlsa — zaxira kodidan birini kiriting.')}
+      </p>
+    </div>
+  )
+}
+
 export default function LoginPage() {
   const navigate = useNavigate()
   const { applySession } = useAuth()
@@ -31,6 +79,11 @@ export default function LoginPage() {
   const [stage, setStage] = useState<Stage>({ kind: 'credentials' })
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [code, setCode] = useState('')
+  // Kod SOʻRALGANMI — server aytgandan keyin. Tashkilot tanlash
+  // bosqichida esa qaysi tashkilot uchun soʻralgani ham muhim: bir
+  // bogʻchada 2FA yoqilgan, ikkinchisida yoʻq boʻlishi normal.
+  const [codeAsked, setCodeAsked] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -45,7 +98,7 @@ export default function LoginPage() {
     setError(null)
     setBusy(true)
     try {
-      const result = await authApi.login(email, password)
+      const result = await authApi.login(email, password, codeAsked ? code : undefined)
       if (isPendingChoice(result)) {
         setStage({
           kind: 'choose-organization',
@@ -57,6 +110,13 @@ export default function LoginPage() {
         navigate('/home', { replace: true })
       }
     } catch (err) {
+      if (asksForCode(err)) {
+        // Xato emas: hisobda 2FA yoqilgan. Maydonni ochamiz,
+        // foydalanuvchi kodni kiritib qayta yuboradi.
+        setCodeAsked('login')
+        setCode('')
+        return
+      }
       handleError(err)
     } finally {
       setBusy(false)
@@ -68,10 +128,21 @@ export default function LoginPage() {
     setError(null)
     setBusy(true)
     try {
-      const session = await authApi.selectOrganization(stage.pendingToken, organizationId)
+      const session = await authApi.selectOrganization(
+        stage.pendingToken,
+        organizationId,
+        codeAsked === organizationId ? code : undefined,
+      )
       applySession(session)
       navigate('/home', { replace: true })
     } catch (err) {
+      if (asksForCode(err)) {
+        // Tanlangan bogʻchada 2FA yoqilgan. Bosqich SAQLANADI —
+        // boshidan boshlash pending tokenni behuda yoʻqotardi.
+        setCodeAsked(organizationId)
+        setCode('')
+        return
+      }
       handleError(err)
       // Pending token 5 daqiqada tugaydi — muddati o'tsa boshidan boshlaymiz.
       setStage({ kind: 'credentials' })
@@ -131,12 +202,17 @@ export default function LoginPage() {
                 />
                 <button
                   type="button"
-                  onClick={() => setStage({ kind: 'forgot' })}
+                  onClick={() => {
+                    setCodeAsked(null)
+                    setStage({ kind: 'forgot' })
+                  }}
                   className="mt-1.5 text-xs text-tosh-500 underline-offset-2 hover:text-nihol-700 hover:underline"
                 >
                   {t('Parolni unutdingizmi?')}
                 </button>
               </div>
+
+              {codeAsked === 'login' && <CodeField id="totp" value={code} onChange={setCode} />}
 
               <button
                 type="submit"
@@ -159,25 +235,52 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              {stage.organizations.map((org) => (
-                <button
-                  key={org.id}
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void chooseOrganization(org.id)}
-                  className="flex w-full items-center gap-3 rounded-lg border border-slate-200 px-3 py-3 text-left transition hover:border-brand-300 hover:bg-brand-50 disabled:opacity-60"
-                >
-                  {/* Bogʻchaning belgisi (PLAN 4.6): ikki bogʻchada
-                      ishlaydigan xodim ularni nomidan ham tezroq
-                      logotipi bilan ajratadi. */}
-                  <OrgMark name={org.name} logoUrl={org.logo_url} size={28} />
-                  <span className="text-sm font-medium text-slate-800">{org.name}</span>
-                </button>
-              ))}
+              {stage.organizations.map((org) =>
+                codeAsked === org.id ? (
+                  <form
+                    key={org.id}
+                    className="space-y-3 rounded-lg border border-brand-200 bg-brand-50/50 p-3"
+                    onSubmit={(event) => {
+                      event.preventDefault()
+                      void chooseOrganization(org.id)
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <OrgMark name={org.name} logoUrl={org.logo_url} size={28} />
+                      <span className="text-sm font-medium text-slate-800">{org.name}</span>
+                    </div>
+                    <CodeField id={`totp-${org.id}`} value={code} onChange={setCode} />
+                    <button
+                      type="submit"
+                      disabled={busy}
+                      className="w-full rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
+                    >
+                      {busy ? t('Tekshirilmoqda…') : t('Kirish')}
+                    </button>
+                  </form>
+                ) : (
+                  <button
+                    key={org.id}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void chooseOrganization(org.id)}
+                    className="flex w-full items-center gap-3 rounded-lg border border-slate-200 px-3 py-3 text-left transition hover:border-brand-300 hover:bg-brand-50 disabled:opacity-60"
+                  >
+                    {/* Bogʻchaning belgisi (PLAN 4.6): ikki bogʻchada
+                        ishlaydigan xodim ularni nomidan ham tezroq
+                        logotipi bilan ajratadi. */}
+                    <OrgMark name={org.name} logoUrl={org.logo_url} size={28} />
+                    <span className="text-sm font-medium text-slate-800">{org.name}</span>
+                  </button>
+                ),
+              )}
 
               <button
                 type="button"
-                onClick={() => setStage({ kind: 'credentials' })}
+                onClick={() => {
+                  setCodeAsked(null)
+                  setStage({ kind: 'credentials' })
+                }}
                 className="w-full pt-1 text-center text-sm text-slate-500 hover:text-slate-700"
               >
                 {t('Orqaga')}
