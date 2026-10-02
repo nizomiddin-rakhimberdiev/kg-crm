@@ -129,6 +129,14 @@ class Notification(BranchScopedModel):
         null=True,
         blank=True,
     )
+    # Xabar TURI — shablon FK'sidan ALOHIDA.
+    #
+    # `template_id` `SET_NULL`: shablon o'chirilsa qator turini
+    # yo'qotadi. Va u `NULL` bo'lishi mumkin — matn koddagi sukut
+    # shablondan kelgan bo'lsa. Ikkala holatda ham "bu vasiyga bugun
+    # qarz eslatmasi ketganmi?" degan savolga javob bo'lmay qolardi,
+    # ya'ni kunlik chegara jimgina ishlamay qo'yardi (PLAN 3.7).
+    template_code = models.CharField(max_length=50, blank=True)
     channel = models.CharField(max_length=12, choices=Channel.choices)
     recipient_address = models.CharField(max_length=120)
     rendered_body = models.TextField()
@@ -150,6 +158,11 @@ class Notification(BranchScopedModel):
                 fields=["organization", "status", "-created_at"], name="ix_notification_org_status"
             ),
             models.Index(fields=["guardian", "-created_at"], name="ix_notification_guardian"),
+            # Kunlik chegara so'rovi: vasiy + tur + sana.
+            models.Index(
+                fields=["guardian", "template_code", "-created_at"],
+                name="ix_notification_kind",
+            ),
             # Dispatcher'ning ish ro'yxati — faqat navbatdagilar.
             models.Index(
                 fields=["scheduled_for"],

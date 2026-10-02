@@ -141,16 +141,37 @@ class Child(BranchScopedModel):
 
 
 class Guardian(BranchScopedModel):
-    """Ota-ona/vasiy — SMS oluvchi (docs/03 §11.2)."""
+    """Ota-ona/vasiy — xabar oluvchi (docs/03 §11.2)."""
 
     first_name = models.CharField(max_length=80)
     last_name = models.CharField(max_length=80)
     phone = models.CharField(max_length=20)
     email = models.EmailField(blank=True)
-    # SMS tili (PLAN 3.4). Bo'sh = bog'chaning sukut tili. Ruscha
-    # gaplashadigan oila o'zbekcha SMS olsa, u xabarni o'qimaydi va
-    # "SMS kelmadi" deb shikoyat qiladi.
+    # Xabar tili (PLAN 3.4). Bo'sh = bog'chaning sukut tili. Ruscha
+    # gaplashadigan oila o'zbekcha xabar olsa, u matnni o'qimaydi va
+    # "xabar kelmadi" deb shikoyat qiladi.
     language = models.CharField(max_length=2, blank=True)
+
+    # --- Telegram (PLAN 3.7, ADR-23) ---
+    #
+    # Asosiy kanal — Telegram bot: SMS har xabar uchun pul turadi va
+    # shlyuz shartnomasini talab qiladi, Telegram esa bepul va
+    # O'zbekistonda deyarli har bir ota-onada bor.
+    #
+    # `telegram_chat_id` — bot bilan suhbat identifikatori. Uni
+    # BIZ bera olmaymiz: faqat ota-onaning o'zi botni ishga
+    # tushirganda paydo bo'ladi. Shuning uchun u ruxsat DALILI ham:
+    # bo'sh bo'lsa, bu odam hali xabar olishga rozilik bermagan.
+    telegram_chat_id = models.CharField(max_length=32, blank=True)
+    telegram_linked_at = models.DateTimeField(null=True, blank=True)
+    # Havoladagi bir martalik kod: `t.me/<bot>?start=<code>`.
+    #
+    # Kod ichida TASHKILOT bor (`children/telegram.py:build_code`):
+    # bot `/start` ni tenantni bilmagan holda oladi, va kod o'zi
+    # kerakli kontekstni aytib beradi — RLS chegarasidan chiqishning
+    # hojati qolmaydi. Global unikal: mijoz ma'lumoti emas, tasodifiy
+    # 32 belgi.
+    telegram_code = models.CharField(max_length=48, blank=True)
 
     # Ism ham, TELEFON ham shu kalitga tushadi (PLAN 2.7): mudira
     # ko'pincha ota-onani raqami bo'yicha qidiradi.
@@ -166,6 +187,25 @@ class Guardian(BranchScopedModel):
                 fields=["branch", "phone"],
                 condition=models.Q(is_active=True),
                 name="uq_guardian_branch_phone",
+            ),
+            # Ulash kodi — tashkilotlar BO'YLAB unikal (yuqoridagi
+            # izohga qarang). Qisman: bo'sh qiymat takrorlanadi.
+            models.UniqueConstraint(
+                fields=["telegram_code"],
+                condition=~models.Q(telegram_code=""),
+                name="uq_guardian_telegram_code",
+            ),
+            # Bitta Telegram suhbati — tashkilot ichida bitta vasiy.
+            #
+            # ATAYLAB global emas: bir ota-onaning farzandlari ikki
+            # xil bog'chada bo'lishi mumkin va u ikkalasidan ham xabar
+            # olishi KERAK. Global cheklov esa ikkinchi bog'chaga
+            # ulanishni "kod ishlamadi" degan tushunarsiz xato bilan
+            # to'xtatardi.
+            models.UniqueConstraint(
+                fields=["organization", "telegram_chat_id"],
+                condition=~models.Q(telegram_chat_id=""),
+                name="uq_guardian_telegram_chat",
             ),
         ]
 

@@ -383,6 +383,11 @@ REST_FRAMEWORK = {
         # deploy konfiguratsisida qo'shilishi mumkin.
         "lead": env("LEAD_THROTTLE_RATE", default="5/hour"),
         "public_pricing": env("PUBLIC_PRICING_THROTTLE_RATE", default="120/min"),
+        # Telegram webhook: Telegram o'zi tezlikni ushlab turadi va
+        # bitta bog'cha uchun update'lar kam. Chegara ataylab keng —
+        # haqiqiy update'ni yo'qotish ota-onaning ulanmay qolishi
+        # degani, va u buni "ishlamadi" deb tushunadi.
+        "telegram_webhook": env("TELEGRAM_WEBHOOK_THROTTLE_RATE", default="600/min"),
     },
 }
 
@@ -472,8 +477,20 @@ ESKIZ_FROM = env("ESKIZ_FROM", default="")
 # ariza baribir saqlanadi: bildirishnoma qulaylik, ma'lumot esa
 # biznes. Chat ID manfiy bo'lishi mumkin (guruh) — shuning uchun u
 # satr sifatida o'qiladi.
+# Bitta bot ikki ish qiladi: sotuvga yangi ariza haqida xabar beradi
+# va ota-onalarga bog'cha xabarlarini yuboradi (ADR-23). Token bo'sh
+# bo'lsa ikkalasi ham jimgina o'chadi.
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default="")
 TELEGRAM_LEADS_CHAT_ID = env("TELEGRAM_LEADS_CHAT_ID", default="")
+
+# Bot nomi — ota-onaga beriladigan havola uchun (`t.me/<nom>?start=…`).
+# Bo'sh bo'lsa ekran havola emas, "bot sozlanmagan" deb ko'rsatadi:
+# ishlamaydigan havolani berib qo'yish eng yomon variant.
+TELEGRAM_BOT_USERNAME = env("TELEGRAM_BOT_USERNAME", default="")
+
+# Webhook URL'ining maxfiy qismi. Bo'sh bo'lsa endpoint `404` beradi —
+# ya'ni sozlanmagan o'rnatmada u umuman mavjud emas.
+TELEGRAM_WEBHOOK_SECRET = env("TELEGRAM_WEBHOOK_SECRET", default="")
 
 # Konsol provayderi xabar MATNINI log'ga yozsinmi.
 #

@@ -37,6 +37,18 @@ DEFAULTS: dict[str, Any] = {
     # yaratilgan kuniyoq kechikkan bo'lib qolmaydi.
     "finance.first_invoice_grace_days": 5,
     "notifications.sms_enabled": True,
+    # --- Asosiy kanal (PLAN 3.7, ADR-23) ---
+    #
+    # `telegram` yoki `sms`. Sukut — Telegram: u bepul, matn uzunligi
+    # cheklanmagan va O'zbekistonda deyarli har bir ota-onada bor.
+    # SMS'ga o'tish bitta sozlama, lekin u shlyuz shartnomasini talab
+    # qiladi va har xabar pul turadi.
+    #
+    # Zaxira kanal ATAYLAB avtomatik emas: Telegram ulanmagan
+    # ota-onaga SMS yuborish faqat SMS provayderi HAQIQATAN ulangan
+    # bo'lsa ma'noli. Aks holda xabar "test rejimi" bo'lib qolardi va
+    # bog'cha ota-onani botga ulash kerakligini bilmasdi.
+    "notifications.default_channel": "telegram",
     # --- Yuborish oynasi (Q9, PLAN 3.3) ---
     #
     # Soat 08:00 dan oldin yoki 21:00 dan keyin tayyor bo'lgan xabar

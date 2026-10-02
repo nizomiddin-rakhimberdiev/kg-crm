@@ -34,6 +34,7 @@ __all__ = [
 
 class GuardianSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(read_only=True)
+    telegram_linked = serializers.SerializerMethodField()
     # Q7: saqlashda normalizatsiya. Noto'g'ri raqam SMS'ni JIMGINA
     # yo'qotadi — bildirishnoma "yuborildi" bo'lib turadi, ota-ona esa
     # hech narsa olmaydi.
@@ -48,11 +49,19 @@ class GuardianSerializer(serializers.ModelSerializer):
             "full_name",
             "phone",
             "email",
-            # SMS tili (PLAN 3.4). Bo'sh = bog'chaning sukut tili.
+            # Xabar tili (PLAN 3.4). Bo'sh = bog'chaning sukut tili.
             "language",
+            # Telegram holati (PLAN 3.7). `chat_id` ning o'zi
+            # BERILMAYDI: ekranga faqat "ulanganmi" kerak, raqamning
+            # o'zi esa javobda ortiqcha ma'lumot.
+            "telegram_linked",
+            "telegram_linked_at",
             "is_active",
         ]
-        read_only_fields = ["id", "full_name"]
+        read_only_fields = ["id", "full_name", "telegram_linked", "telegram_linked_at"]
+
+    def get_telegram_linked(self, obj: Guardian) -> bool:
+        return bool((obj.telegram_chat_id or "").strip())
 
 
 class GroupSerializer(serializers.ModelSerializer):

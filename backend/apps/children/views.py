@@ -391,9 +391,68 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
 
 class GuardianViewSet(BranchCreateMixin, BranchScopedMixin, TenantViewSet):
     permission_module = "children"
+    permission_action_map = {"telegram_link": "update", "telegram_unlink": "update"}
     model = Guardian
     serializer_class = GuardianSerializer
     search_fields = ["first_name", "last_name", "phone"]
+
+    @action(detail=True, methods=["post"], url_path="telegram-link")
+    def telegram_link(self, request: Request, pk: str | None = None) -> Response:
+        """
+        `POST /guardians/{id}/telegram-link` — ota-onaga beriladigan havola.
+
+        `rotate=true` eski havolani darhol ishlamas qiladi. Bu kerak,
+        chunki havola oilaviy guruhga tashlanishi mumkin va xabarlar
+        ichida bolaning ismi bilan qarz summasi ketadi.
+
+        Javobda `url` bo'sh bo'lishi mumkin — bot sozlanmagan. Ekran
+        o'shanda havola emas, izoh ko'rsatadi: ishlamaydigan havolani
+        berib qo'yish eng yomon variant.
+        """
+        from apps.children import telegram as links
+
+        guardian = self.get_object()
+        rotate = str(request.data.get("rotate") or "").lower() in ("true", "1", "yes")
+        url = links.link_url(guardian, rotate=rotate)
+        guardian.refresh_from_db()
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="guardian",
+            entity_id=guardian.id,
+            changes={"telegram": "link_issued"},
+        )
+        return Response(
+            {
+                "url": url,
+                "bot_username": links.bot_username(),
+                "linked": links.is_linked(guardian),
+            }
+        )
+
+    @action(detail=True, methods=["post"], url_path="telegram-unlink")
+    def telegram_unlink(self, request: Request, pk: str | None = None) -> Response:
+        """
+        Bog'lanishni bog'cha tomonidan uzadi.
+
+        Kerak bo'ladigan holat: raqam boshqa odamga o'tdi yoki ota-ona
+        "menga kelmayapti" deb murojaat qildi va qayta ulanish kerak.
+        Ota-onaning o'zi esa botda `/stop` yuboradi.
+        """
+        guardian = self.get_object()
+        guardian.telegram_chat_id = ""
+        guardian.telegram_linked_at = None
+        guardian.save(update_fields=["telegram_chat_id", "telegram_linked_at", "updated_at"])
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="guardian",
+            entity_id=guardian.id,
+            changes={"telegram": "unlinked"},
+        )
+        return Response(GuardianSerializer(guardian).data)
 
 
 class GroupViewSet(BranchScopedMixin, TenantViewSet):

@@ -77,6 +77,7 @@ class TestTemplates:
                 branch=tenant_a.branch,
                 guardian=guardian,
                 code="debt_reminder",
+                channel="sms",
             )
         assert notification.rendered_body == "Filialga xos matn"
 
@@ -120,6 +121,7 @@ class TestQueueing:
                 branch=tenant_a.branch,
                 guardian=guardian,
                 code="debt_reminder",
+                channel="sms",
                 variables={
                     "guardian": "Nodira",
                     "child": "Ali",
@@ -154,6 +156,7 @@ class TestQueueing:
                     branch=tenant_a.branch,
                     guardian=silent,
                     code="debt_reminder",
+                    channel="sms",
                 )
                 is None
             )
@@ -167,6 +170,7 @@ class TestDispatch:
                 branch=tenant_a.branch,
                 guardian=guardian,
                 code="debt_reminder",
+                channel="sms",
             )
             services.dispatch_notification(notification, now_time=time(10, 0))
             notification.refresh_from_db()
@@ -191,6 +195,7 @@ class TestDispatch:
                 branch=tenant_a.branch,
                 guardian=guardian,
                 code="debt_reminder",
+                channel="sms",
             )
             services.dispatch_notification(notification, now_time=time(10, 0))
             notification.refresh_from_db()
@@ -206,6 +211,7 @@ class TestDispatch:
                 branch=tenant_a.branch,
                 guardian=guardian,
                 code="debt_reminder",
+                channel="sms",
             )
             services.dispatch_notification(notification, now_time=time(10, 0))
             with pytest.raises(BusinessRuleViolation, match="yuborib bo'lmaydi"):
@@ -316,6 +322,7 @@ class TestEndpoints:
                 branch=tenant_a.branch,
                 guardian=guardian,
                 code="debt_reminder",
+                channel="sms",
             )
         client = tenant_a.client()
         url = reverse("v1:notification-detail", args=[notification.id])

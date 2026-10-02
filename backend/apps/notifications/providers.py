@@ -6,22 +6,30 @@ qamrov), va Telegram/Email keyin qo'shiladi. Provayder chaqiruvi kod
 bo'ylab sochilgan bo'lsa, almashtirish butun tizimga tegadigan ish
 bo'lardi. Bu yerda esa u bitta sinf.
 
-MVP'da haqiqiy provayder ulanmagan: `ConsoleProvider` xabarni log'ga
-yozadi. Bu ongli qaror — real SMS shlyuzi shartnoma va to'lov talab
-qiladi, va uni birinchi mijozgacha kechiktirish mumkin. Muhimi, qolgan
-hamma narsa (navbat, qayta urinish, yetkazish jurnali) allaqachon
-ishlaydi va provayder ulanganda faqat bitta sinf qo'shiladi.
+**Asosiy kanal — Telegram** (ADR-23). SMS har xabar uchun pul turadi
+va shlyuz shartnomasini talab qiladi; Telegram bepul va O'zbekistonda
+deyarli har bir ota-onada bor. Eskiz adapteri joyida qoladi va bitta
+`.env` qatori bilan yoqiladi — kanal tanlovi tijorat qarori, kod
+qarori emas.
+
+Provayder ulanmagan kanalda `ConsoleProvider` turadi: xabar log'ga
+yoziladi va jurnalda **"Test rejimi"** deb belgilanadi — "Yuborildi"
+deb emas (ADR-22).
 """
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
 from django.conf import settings
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.translation import gettext
+
+from apps.notifications.models import Channel
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +38,10 @@ __all__ = [
     "NotificationProvider",
     "ConsoleProvider",
     "EskizProvider",
+    "TelegramProvider",
     "get_provider",
     "is_test_mode",
+    "provider_name",
     "mask_phone",
 ]
 
@@ -94,18 +104,91 @@ class ConsoleProvider:
     U ATAYLAB sozlama: buni yoqish ongli qaror bo'lsin, sukut emas.
     """
 
-    channel = "sms"
+    def __init__(self, channel: str = "sms") -> None:
+        # Kanal konstruktordan: bitta o'rinbosar sinf SMS ham,
+        # Telegram ham ulanmagan holatni qoplaydi va log'da qaysi
+        # kanal ekani ko'rinib turadi.
+        self.channel = channel
 
     def send(self, *, address: str, body: str, subject: str = "") -> SendResult:
+        label = self.channel.upper()
         if getattr(settings, "NOTIFICATION_LOG_BODY", False):
-            logger.info("[SMS→%s] %s", address, body)
+            logger.info("[%s→%s] %s", label, address, body)
         else:
-            logger.info("[SMS→%s] %s belgi", mask_phone(address), len(body))
+            logger.info("[%s→%s] %s belgi", label, mask_phone(address), len(body))
         return SendResult(
             success=True,
             provider_message_id=f"console-{abs(hash(body)) % 10**10}",
             test_mode=True,
         )
+
+
+class TelegramProvider:
+    """
+    Telegram bot — **asosiy kanal** (PLAN 3.7, ADR-23).
+
+    Nega SMS'dan oldin: SMS har xabar uchun pul turadi, shlyuz
+    shartnomasini va tasdiqlangan jo'natuvchi nomini talab qiladi.
+    Telegram bepul, matn uzunligi cheklanmagan (160 belgi muammosi
+    yo'q) va O'zbekistonda deyarli har bir ota-onada bor.
+
+    **Manzil — `chat_id`, telefon emas.** Uni biz bera olmaymiz: u
+    faqat ota-onaning o'zi botni ishga tushirganda paydo bo'ladi.
+    Ya'ni bog'lanishning o'zi rozilik dalili — va shu sababli
+    "ulanmagan" holati xato emas, oddiy holat.
+
+    **Matn `parse_mode` siz ketadi.** Bola ismidagi `<` yoki `_`
+    belgisi HTML/Markdown rejimida butun xabarni yiqitadi yoki
+    kesadi; bezak esa bu yerda hech narsa qo'shmaydi.
+    """
+
+    channel = "telegram"
+
+    API_URL = "https://api.telegram.org"
+    TIMEOUT = 15
+
+    def __init__(self) -> None:
+        self.token = getattr(settings, "TELEGRAM_BOT_TOKEN", "")
+        if not self.token:
+            raise ImproperlyConfigured("Telegram uchun TELEGRAM_BOT_TOKEN kerak.")
+
+    def send(self, *, address: str, body: str, subject: str = "") -> SendResult:
+        import requests
+
+        if not address.strip():
+            return SendResult(success=False, error=gettext("Telegram ulanmagan"))
+
+        try:
+            response = requests.post(
+                f"{self.API_URL}/bot{self.token}/sendMessage",
+                json={
+                    "chat_id": address,
+                    "text": body,
+                    "disable_web_page_preview": True,
+                },
+                timeout=self.TIMEOUT,
+            )
+        except requests.RequestException as exc:
+            return SendResult(success=False, error=f"Tarmoq xatosi: {exc}"[:500])
+
+        payload: dict[str, Any] = {}
+        with contextlib.suppress(ValueError):
+            payload = response.json()
+
+        if response.status_code < 400 and payload.get("ok"):
+            message_id = str((payload.get("result") or {}).get("message_id") or "")
+            return SendResult(success=True, provider_message_id=message_id)
+
+        # Telegram sababni matn bilan aytadi; eng ko'p uchraydigan
+        # ikkitasini odam tiliga o'giramiz, chunki ular XATO emas —
+        # ota-onaning harakati.
+        description = str(payload.get("description") or response.text)[:400]
+        lowered = description.lower()
+        if "blocked" in lowered:
+            return SendResult(success=False, error=gettext("Ota-ona botni bloklagan"))
+        if "chat not found" in lowered or "chat_id is empty" in lowered:
+            return SendResult(success=False, error=gettext("Telegram ulanmagan"))
+        return SendResult(success=False, error=f"Telegram: {description}"[:500])
 
 
 class EskizProvider:
@@ -217,31 +300,51 @@ _REGISTRY: dict[str, type] = {
     "console": ConsoleProvider,
     "failing": FailingProvider,
     "eskiz": EskizProvider,
+    "telegram": TelegramProvider,
 }
 
 #: Haqiqatan xabar yuboradigan provayderlar. Qolganlari test rejimi.
-_LIVE_PROVIDERS = frozenset({"eskiz"})
+_LIVE_PROVIDERS = frozenset({"eskiz", "telegram"})
 
 
-def is_test_mode() -> bool:
+def provider_name(channel: str = "sms") -> str:
     """
-    Haqiqiy provayder ulanganmi?
+    Shu kanal qaysi provayder bilan ishlaydi.
 
-    Ekran shu savolga qarab sariq banner ko'rsatadi: "SMS test
-    rejimida — xabarlar haqiqatda yuborilmayapti" (PLAN 3.2).
+    **Telegram sozlamadan emas, TOKENDAN aniqlanadi.** Bitta bot
+    bitta token bilan ishlaydi va tanlashga hech narsa yo'q: token
+    bor — kanal tirik, token yo'q — konsol (test rejimi). SMS esa
+    almashtiriladigan shlyuzlar to'plami, shuning uchun u
+    `NOTIFICATION_PROVIDER` bilan tanlanadi.
     """
-    name = getattr(settings, "NOTIFICATION_PROVIDER", "console")
-    return name not in _LIVE_PROVIDERS
+    if channel == Channel.TELEGRAM:
+        return "telegram" if getattr(settings, "TELEGRAM_BOT_TOKEN", "") else "console"
+    return str(getattr(settings, "NOTIFICATION_PROVIDER", "console"))
+
+
+def is_test_mode(channel: str = "sms") -> bool:
+    """
+    Shu kanalda haqiqiy provayder ulanganmi?
+
+    Ekran shu savolga qarab sariq banner ko'rsatadi: "xabarlar
+    haqiqatda yuborilmayapti" (PLAN 3.2). Savol KANAL bo'yicha:
+    Telegram ulangan, SMS esa ulanmagan holat normal va banner
+    faqat ishlatilayotgan kanal haqida gapirishi kerak.
+    """
+    return provider_name(channel) not in _LIVE_PROVIDERS
 
 
 def get_provider(channel: str = "sms") -> NotificationProvider:
     """
-    Sozlamadagi provayderni qaytaradi.
+    Kanalning provayderini qaytaradi.
 
     Yangi provayder qo'shish: sinf yozib, `_REGISTRY` ga qo'shish va
-    `.env` da `NOTIFICATION_PROVIDER` ni o'zgartirish. Boshqa hech qayerda
-    o'zgarish kerak emas — bu adapterning butun maqsadi.
+    `.env` ni to'ldirish. Boshqa hech qayerda o'zgarish kerak emas —
+    bu adapterning butun maqsadi.
     """
-    name = getattr(settings, "NOTIFICATION_PROVIDER", "console")
+    name = provider_name(channel)
     provider_class = _REGISTRY.get(name, ConsoleProvider)
+    if provider_class is ConsoleProvider:
+        # Konsol o'rinbosari qaysi kanal o'rnida turganini bilsin.
+        return ConsoleProvider(channel=channel)  # type: ignore[return-value]
     return provider_class()  # type: ignore[return-value]

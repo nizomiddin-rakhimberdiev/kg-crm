@@ -15,16 +15,20 @@ from typing import Any
 
 from django.db.models import Count, Max, Q
 
-from apps.notifications.models import Notification, NotificationStatus
+from apps.notifications.models import Channel, Notification, NotificationStatus
 from apps.notifications.providers import is_test_mode
 from apps.notifications.segments import parts_for
 
-__all__ = ["monthly_usage", "sms_status", "last_reminders"]
+__all__ = ["monthly_usage", "sms_status", "last_reminders", "telegram_reach"]
 
 
 def monthly_usage(*, year: int, month: int, branch_id: Any = None) -> dict[str, Any]:
     """
     Bir oyning yuborish hisobi: soni, bo'laklari va taxminiy narxi.
+
+    **Narx faqat SMS uchun.** Telegram bepul, shuning uchun uning
+    xabarlari bo'laklarga ham sanalmaydi — aks holda ekran bog'chaga
+    to'lamaydigan pulni ko'rsatardi (ADR-23).
 
     Bo'laklar Python'da sanaladi, SQL'da emas: hisob alifboga bog'liq
     (lotin 160, kirill 70) va uni SQL'da takrorlash ikkita haqiqat
@@ -43,11 +47,13 @@ def monthly_usage(*, year: int, month: int, branch_id: Any = None) -> dict[str, 
         failed=Count("id", filter=Q(status=NotificationStatus.FAILED)),
         queued=Count("id", filter=Q(status=NotificationStatus.QUEUED)),
         test_mode=Count("id", filter=Q(status=NotificationStatus.TEST_MODE)),
+        telegram=Count("id", filter=Q(channel=Channel.TELEGRAM)),
+        sms=Count("id", filter=Q(channel=Channel.SMS)),
     )
 
-    # Narx faqat HAQIQATAN ketgan xabarlar uchun: test rejimidagi
-    # xabar hech qayerga bormagan va hech narsa turmaydi.
-    billable = queryset.filter(status=NotificationStatus.SENT).values_list(
+    # Narx faqat HAQIQATAN ketgan SMS'lar uchun: test rejimidagi
+    # xabar hech qayerga bormagan, Telegram esa bepul.
+    billable = queryset.filter(status=NotificationStatus.SENT, channel=Channel.SMS).values_list(
         "rendered_body", flat=True
     )
     parts = sum(parts_for(body) for body in billable)
@@ -65,22 +71,57 @@ def monthly_usage(*, year: int, month: int, branch_id: Any = None) -> dict[str, 
     }
 
 
+def telegram_reach(*, branch_id: Any = None) -> dict[str, Any]:
+    """
+    Nechta ota-ona botga ulangan (PLAN 3.7).
+
+    Bu asosiy kanalning qamrovi: ulanmagan ota-ona hech qanday xabar
+    olmaydi va bog'cha buni RAQAM bilan ko'rishi kerak — "nega
+    hech kim to'lamadi?" degan savolning javobi ko'pincha shu yerda.
+    """
+    from apps.children.models import Guardian
+
+    queryset = Guardian.objects.filter(is_active=True)
+    if branch_id:
+        queryset = queryset.filter(branch_id=branch_id)
+    total = queryset.count()
+    linked = queryset.exclude(telegram_chat_id="").count()
+    return {"linked": linked, "total": total}
+
+
 def sms_status(*, branch: Any = None, today: date | None = None) -> dict[str, Any]:
     """
     Bildirishnomalar sahifasining bosh holati — banner shunga qaraydi.
 
-    `test_mode` eng muhim maydon: haqiqiy provayder ulanmaguncha hech
-    bir xabar ota-onaga bormaydi, va ekran buni ochiq aytishi kerak
-    (PLAN 3.2).
+    `test_mode` eng muhim maydon: **ishlatilayotgan kanalda** haqiqiy
+    provayder ulanmaguncha hech bir xabar ota-onaga bormaydi, va ekran
+    buni ochiq aytishi kerak (PLAN 3.2). Savol kanal bo'yicha: Telegram
+    ulangan, SMS esa ulanmagan holat normal (ADR-23).
     """
-    from django.conf import settings
 
+    from apps.children.telegram import bot_username
+    from apps.notifications.providers import provider_name
     from apps.settings_app.services import get_setting
 
     today = today or date.today()
+    default_channel = str(
+        get_setting(key="notifications.default_channel", branch=branch) or Channel.TELEGRAM
+    )
     return {
-        "test_mode": is_test_mode(),
-        "provider": getattr(settings, "NOTIFICATION_PROVIDER", "console"),
+        "default_channel": default_channel,
+        "test_mode": is_test_mode(default_channel),
+        "provider": provider_name(default_channel),
+        "channels": {
+            "telegram": {
+                "configured": not is_test_mode(Channel.TELEGRAM),
+                "bot_username": bot_username(),
+                "reach": telegram_reach(branch_id=getattr(branch, "id", None)),
+            },
+            "sms": {
+                "configured": not is_test_mode(Channel.SMS),
+                "provider": provider_name(Channel.SMS),
+            },
+        },
         "sms_enabled": bool(get_setting(key="notifications.sms_enabled", branch=branch)),
         "send_from_hour": int(get_setting(key="notifications.send_from_hour", branch=branch) or 0),
         "send_to_hour": int(get_setting(key="notifications.send_to_hour", branch=branch) or 24),
@@ -112,7 +153,7 @@ def last_reminders(*, guardian_ids: list[Any]) -> dict[Any, Any]:
     rows = (
         Notification.objects.filter(
             guardian_id__in=guardian_ids,
-            template__code="debt_reminder",
+            template_code="debt_reminder",
         )
         .values("guardian_id")
         .annotate(last_at=Max("created_at"))

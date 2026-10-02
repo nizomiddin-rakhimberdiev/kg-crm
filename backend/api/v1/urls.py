@@ -14,6 +14,7 @@ from apps.accounts.views_auth import (
     SelectOrganizationView,
 )
 from apps.core.deployment import is_saas
+from apps.notifications.views_webhook import TelegramWebhookView
 from apps.organizations.views import OrganizationView
 from apps.platform.views import PlatformLoginView
 from apps.platform.views_leads import PublicLeadCreateView, PublicPricingView
@@ -59,6 +60,13 @@ urlpatterns = [
 if is_saas():
     urlpatterns += [
         path("public/leads", PublicLeadCreateView.as_view(), name="public-lead-create"),
+        # Telegram webhook: maxfiy qism YO'LDA, chunki Telegram
+        # ixtiyoriy sarlavha qo'yadi va eski botlar uni yubormaydi.
+        path(
+            "public/telegram/webhook/<str:secret>",
+            TelegramWebhookView.as_view(),
+            name="telegram-webhook",
+        ),
         path("public/pricing", PublicPricingView.as_view(), name="public-pricing"),
         *platform_patterns,
     ]

@@ -38,11 +38,14 @@ def _guardian(tenant_a, phone: str) -> Guardian:
 
 
 def _queue(tenant_a, guardian):
+    # Kanal ATAYLAB ko'rsatilgan: shu fayl SMS mexanikasini sinaydi.
+    # Sukut kanal — Telegram (ADR-23), va u boshqa yo'ldan boradi.
     return services.queue_notification(
         organization=tenant_a.organization,
         branch=tenant_a.branch,
         guardian=guardian,
         code="debt_reminder",
+        channel="sms",
         variables={"child": "Ali", "amount": "1 500 000", "days": "15"},
     )
 
@@ -53,7 +56,10 @@ class TestTestModeIsVisible:
         with organization_context(tenant_a.organization.id):
             notification = _queue(tenant_a, guardian)
             assert notification is not None
-            services.dispatch_notification(notification)
+            # Soat ATAYLAB berilgan: test tunda ishga tushsa, yuborish
+            # oynasi (Q9) xabarni navbatda qoldiradi va test
+            # tekshirmoqchi bo'lgan narsa umuman sinovdan o'tmaydi.
+            services.dispatch_notification(notification, now_time=time(10, 0))
             notification.refresh_from_db()
 
         # "Yuborildi" — bu yolg'on: hech qayerga ketmadi.
@@ -68,7 +74,10 @@ class TestInvalidRecipient:
         with organization_context(tenant_a.organization.id):
             notification = _queue(tenant_a, guardian)
             assert notification is not None
-            services.dispatch_notification(notification)
+            # Soat ATAYLAB berilgan: test tunda ishga tushsa, yuborish
+            # oynasi (Q9) xabarni navbatda qoldiradi va test
+            # tekshirmoqchi bo'lgan narsa umuman sinovdan o'tmaydi.
+            services.dispatch_notification(notification, now_time=time(10, 0))
             notification.refresh_from_db()
 
         assert notification.status == NotificationStatus.FAILED

@@ -61,6 +61,7 @@ class TestSegments:
                 branch=tenant_a.branch,
                 guardian=guardian,
                 code="debt_reminder",
+                channel="sms",
                 body_override="Toʻlov: ${amount}",
                 variables={"amount": "500 000"},
             )
@@ -78,6 +79,7 @@ class TestSendingWindow:
                 branch=tenant_a.branch,
                 guardian=guardian,
                 code="debt_reminder",
+                channel="sms",
             )
             assert notification is not None
             services.dispatch_notification(notification, now_time=time(23, 30))
@@ -118,12 +120,14 @@ class TestDailyLimit:
                 branch=tenant_a.branch,
                 guardian=guardian,
                 code="debt_reminder",
+                channel="sms",
             )
             second = services.queue_notification(
                 organization=tenant_a.organization,
                 branch=tenant_a.branch,
                 guardian=guardian,
                 code="debt_reminder",
+                channel="sms",
             )
         assert first is not None
         assert second is None
@@ -137,12 +141,14 @@ class TestDailyLimit:
                 branch=tenant_a.branch,
                 guardian=guardian,
                 code="debt_reminder",
+                channel="sms",
             )
             receipt = services.queue_notification(
                 organization=tenant_a.organization,
                 branch=tenant_a.branch,
                 guardian=guardian,
                 code="payment_received",
+                channel="sms",
                 variables={"amount": "100 000"},
             )
         assert receipt is not None
@@ -162,6 +168,7 @@ class TestUsageAndCost:
                 branch=tenant_a.branch,
                 guardian=guardian,
                 code="debt_reminder",
+                channel="sms",
             )
             assert notification is not None
             services.dispatch_notification(notification, now_time=time(10, 0))
@@ -191,17 +198,32 @@ class TestStatusEndpoint:
         assert data["send_from_hour"] == 8
         assert data["send_to_hour"] == 21
 
-    def test_a_live_provider_turns_the_banner_off(self, tenant_a, settings):
+    def test_a_connected_telegram_bot_turns_the_banner_off(self, tenant_a, settings):
         # `override_settings` dekoratori `settings` fixture bilan birga
         # ishlatilmaydi: dekorator test qaytgach o'chadi, fixture esa
-        # undan KEYIN tiklaydi va natijada qiymat butun sessiyaga
-        # sizib qoladi (shu sababdan boshqa fayldagi test yiqilgan edi).
+        # undan KEYIN tiklaydi va qiymat butun sessiyaga sizib qoladi.
+        settings.TELEGRAM_BOT_TOKEN = "123:ABC"  # noqa: S105 — test qiymati
+        response = tenant_a.client().get(reverse("v1:notification-sms-status"))
+        data = response.json()["data"]
+        assert data["default_channel"] == "telegram"
+        assert data["test_mode"] is False
+        assert data["channels"]["telegram"]["configured"] is True
+
+    def test_a_live_sms_gateway_does_not_silence_the_telegram_warning(self, tenant_a, settings):
+        """
+        Asosiy kanal Telegram bo'lsa, banner SMS haqida gapirmaydi.
+
+        Aks holda ekran "hammasi joyida" deb turardi, holbuki
+        ota-onalar botga ulanmagan va hech qanday xabar olmaydi.
+        """
         settings.NOTIFICATION_PROVIDER = "eskiz"
         settings.ESKIZ_EMAIL = "a@b.uz"
         settings.ESKIZ_PASSWORD = "secret"  # noqa: S105 — test qiymati
         settings.ESKIZ_FROM = "4546"
         response = tenant_a.client().get(reverse("v1:notification-sms-status"))
-        assert response.json()["data"]["test_mode"] is False
+        data = response.json()["data"]
+        assert data["test_mode"] is True, "Telegram ulanmagan — banner qolishi kerak"
+        assert data["channels"]["sms"]["configured"] is True
 
     @pytest.mark.tenancy
     def test_usage_counts_only_my_own_organization(self, tenant_a, tenant_b):
@@ -296,6 +318,7 @@ class TestLanguage:
                 branch=tenant_a.branch,
                 guardian=guardian,
                 code="debt_reminder",
+                channel="sms",
                 variables={"guardian": "Иван", "child": "Аня", "amount": "500 000"},
             )
         assert notification is not None
@@ -310,6 +333,7 @@ class TestLanguage:
                 branch=tenant_a.branch,
                 guardian=guardian,
                 code="debt_reminder",
+                channel="sms",
                 variables={"guardian": "Olim", "child": "Ali", "amount": "500 000"},
             )
         assert notification is not None
@@ -327,6 +351,7 @@ class TestLanguage:
                 branch=tenant_a.branch,
                 guardian=guardian,
                 code="debt_reminder",
+                channel="sms",
                 variables={"guardian": "John", "child": "Ann", "amount": "500 000"},
             )
         assert notification is not None
@@ -369,21 +394,21 @@ class TestTemplateEditor:
 
 
 class TestSeedCommand:
-    """`seed_sms_templates` — mavjud bog'chalarga ruscha shablon (PLAN 3.4)."""
+    """`seed_templates` — mavjud bog'chalarga yetishmayotgan shablon (PLAN 3.4, 3.7)."""
 
     @pytest.fixture(autouse=True)
     def _old_tenant(self, tenant_a):
         """
-        O'zgarishdan OLDIN ochilgan bog'cha: faqat o'zbekcha shablon.
+        O'zgarishdan OLDIN ochilgan bog'cha: faqat o'zbekcha SMS.
 
-        Yangi bog'cha ikkala tilni ro'yxatdan o'tishda oladi; buyruq
-        esa aynan eskilari uchun.
+        Yangi bog'cha hamma kanal va tilni ro'yxatdan o'tishda oladi;
+        buyruq esa aynan eskilari uchun.
         """
         from apps.notifications.models import NotificationTemplate
 
         with organization_context(tenant_a.organization.id):
             services.seed_default_templates(tenant_a.organization)
-            NotificationTemplate.objects.filter(language="ru").delete()
+            NotificationTemplate.objects.exclude(language="uz", channel="sms").delete()
 
     def test_dry_run_writes_nothing(self, tenant_a):
         from io import StringIO
@@ -392,7 +417,7 @@ class TestSeedCommand:
 
         out = StringIO()
         call_command(
-            "seed_sms_templates", tenant=tenant_a.organization.slug, dry_run=True, stdout=out
+            "seed_templates", tenant=tenant_a.organization.slug, dry_run=True, stdout=out
         )
         with organization_context(tenant_a.organization.id):
             from apps.notifications.models import NotificationTemplate
@@ -407,13 +432,14 @@ class TestSeedCommand:
 
         from apps.notifications.models import NotificationTemplate
 
-        call_command("seed_sms_templates", tenant=tenant_a.organization.slug, stdout=StringIO())
+        call_command("seed_templates", tenant=tenant_a.organization.slug, stdout=StringIO())
         with organization_context(tenant_a.organization.id):
-            first = NotificationTemplate.objects.filter(language="ru").count()
-        call_command("seed_sms_templates", tenant=tenant_a.organization.slug, stdout=StringIO())
+            first = NotificationTemplate.objects.count()
+        call_command("seed_templates", tenant=tenant_a.organization.slug, stdout=StringIO())
         with organization_context(tenant_a.organization.id):
-            assert NotificationTemplate.objects.filter(language="ru").count() == first
-        assert first == 3
+            assert NotificationTemplate.objects.count() == first
+        # Uchta kod × (SMS uz/ru + Telegram uz/ru) = 12.
+        assert first == 12
 
     def test_an_edited_uzbek_template_is_left_alone(self, tenant_a):
         from io import StringIO
@@ -423,12 +449,14 @@ class TestSeedCommand:
         from apps.notifications.models import NotificationTemplate
 
         with organization_context(tenant_a.organization.id):
-            NotificationTemplate.objects.filter(code="debt_reminder", language="uz").update(
-                body="Mening o'z matnim"
-            )
-        call_command("seed_sms_templates", tenant=tenant_a.organization.slug, stdout=StringIO())
+            NotificationTemplate.objects.filter(
+                code="debt_reminder", language="uz", channel="sms"
+            ).update(body="Mening o'z matnim")
+        call_command("seed_templates", tenant=tenant_a.organization.slug, stdout=StringIO())
         with organization_context(tenant_a.organization.id):
-            kept = NotificationTemplate.objects.get(code="debt_reminder", language="uz")
+            kept = NotificationTemplate.objects.get(
+                code="debt_reminder", language="uz", channel="sms"
+            )
         assert kept.body == "Mening o'z matnim"
 
     def test_without_a_target_it_refuses(self):
@@ -438,4 +466,4 @@ class TestSeedCommand:
         from django.core.management.base import CommandError
 
         with pytest.raises(CommandError):
-            call_command("seed_sms_templates", stdout=StringIO())
+            call_command("seed_templates", stdout=StringIO())

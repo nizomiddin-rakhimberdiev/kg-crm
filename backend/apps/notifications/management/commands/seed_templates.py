@@ -1,26 +1,29 @@
 """
-Mavjud bog'chalarga ruscha SMS shablonlarini qo'shadi (PLAN 3.4).
+Mavjud bog'chalarga yetishmayotgan xabar shablonlarini qo'shadi.
+
+Shablonlar to'plami kanal × tilga ko'payib boradi: dastlab faqat
+o'zbekcha SMS bor edi, keyin ruscha (PLAN 3.4), keyin Telegram
+(PLAN 3.7). Yangi bog'cha hammasini ro'yxatdan o'tishda oladi
+(`seed_default_templates`), bu buyruq esa AVVALDAN mavjud bog'chalar
+uchun.
 
 **Nega migratsiya emas.** Shablon matni — MIJOZNING matni, bizniki
 emas: bog'cha uni tahrirlaydi va o'z nomi bilan yuboradi. Migratsiya
-uni jimgina, egasidan so'ramasdan qo'shardi. Yangi bog'chalar buni
-ro'yxatdan o'tishda oladi (`seed_default_templates`); bu buyruq esa
-AVVALDAN mavjud bog'chalar uchun.
+uni jimgina, egasidan so'ramasdan qo'shardi.
 
-Mavjud shablonlarga TEGMAYDI: faqat yetishmaydigan tilni qo'shadi.
-Ya'ni bog'cha o'z o'zbekcha matnini tahrirlagan bo'lsa, u o'z joyida
-qoladi.
+Mavjud shablonlarga TEGMAYDI — faqat yetishmayotganini qo'shadi.
+Ya'ni bog'cha o'z matnini tahrirlagan bo'lsa, u o'z joyida qoladi.
 
 Ishlatish::
 
     # Avval KO'RISH — hech narsa yozilmaydi
-    python manage.py seed_sms_templates --tenant oriental-kinderland --dry-run
+    python manage.py seed_templates --tenant oriental-kinderland --dry-run
 
     # Ro'yxat to'g'ri bo'lsa, qo'llash
-    python manage.py seed_sms_templates --tenant oriental-kinderland
+    python manage.py seed_templates --tenant oriental-kinderland
 
     # Hamma bog'cha uchun (ataylab ALOHIDA bayroq)
-    python manage.py seed_sms_templates --all --dry-run
+    python manage.py seed_templates --all --dry-run
 """
 
 from __future__ import annotations
@@ -31,13 +34,12 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from apps.core.tenancy import organization_context, platform_context
-from apps.notifications.models import Channel, NotificationTemplate, TemplateLanguage
-from apps.notifications.services import DEFAULT_TEMPLATES_RU
+from apps.notifications.services import seed_default_templates
 from apps.organizations.models import Organization
 
 
 class Command(BaseCommand):
-    help = "Mavjud tashkilotlarga ruscha SMS shablonlarini qo'shadi."
+    help = "Mavjud tashkilotlarga yetishmayotgan xabar shablonlarini qo'shadi."
 
     def add_arguments(self, parser: Any) -> None:
         parser.add_argument("--tenant", help="Tashkilot slug'i")
@@ -56,7 +58,7 @@ class Command(BaseCommand):
     def handle(self, *args: Any, **options: Any) -> None:
         tenant = options.get("tenant")
         all_tenants = options.get("all_tenants")
-        dry_run = options.get("dry_run")
+        dry_run = bool(options.get("dry_run"))
 
         if not tenant and not all_tenants:
             raise CommandError("`--tenant <slug>` yoki `--all` ko'rsating.")
@@ -72,37 +74,26 @@ class Command(BaseCommand):
 
         total = 0
         for organization in organizations:
-            created = self._seed(organization, dry_run=bool(dry_run))
+            created = self._seed(organization, dry_run=dry_run)
             total += created
             self.stdout.write(f"{organization.slug}: {created} ta shablon")
 
         verb = "qo'shiladi" if dry_run else "qo'shildi"
-        self.stdout.write(self.style.SUCCESS(f"Jami {total} ta ruscha shablon {verb}."))
+        self.stdout.write(self.style.SUCCESS(f"Jami {total} ta shablon {verb}."))
         if dry_run:
             self.stdout.write("DRY-RUN — hech narsa yozilmadi.")
 
     def _seed(self, organization: Organization, *, dry_run: bool) -> int:
-        created = 0
+        """
+        Yetishmayotganini sanaydi va (dry-run bo'lmasa) yozadi.
+
+        Sanash uchun AYNAN yozish yo'li ishlatiladi va dry-run'da
+        tranzaksiya qaytariladi: alohida "nima yetishmayapti" so'rovi
+        yozish mantiqidan ajralib ketardi va buyruq boshqa narsani
+        ko'rsatib, boshqa narsani yozardi.
+        """
         with organization_context(organization.id), transaction.atomic():
-            for code, body in DEFAULT_TEMPLATES_RU.items():
-                exists = NotificationTemplate.objects.filter(
-                    code=code,
-                    channel=Channel.SMS,
-                    language=TemplateLanguage.RU,
-                    branch__isnull=True,
-                ).exists()
-                if exists:
-                    continue
-                created += 1
-                if not dry_run:
-                    NotificationTemplate.objects.create(
-                        organization=organization,
-                        branch=None,
-                        code=code,
-                        channel=Channel.SMS,
-                        language=TemplateLanguage.RU,
-                        body=body,
-                    )
+            created = seed_default_templates(organization)
             if dry_run:
                 transaction.set_rollback(True)
         return created

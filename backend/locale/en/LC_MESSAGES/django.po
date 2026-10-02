@@ -1070,3 +1070,9 @@ msgstr "Russian"
 
 msgid "Inglizcha"
 msgstr "English"
+
+msgid "Telegram ulanmagan"
+msgstr "Telegram is not connected"
+
+msgid "Ota-ona botni bloklagan"
+msgstr "The parent has blocked the bot"

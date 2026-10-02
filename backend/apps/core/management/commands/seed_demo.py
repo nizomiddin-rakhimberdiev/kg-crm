@@ -755,12 +755,24 @@ class Command(BaseCommand):
         self.stdout.write(f"  chiqimlar: {created}")
 
     def _notifications(self, organization: Any) -> None:
-        """Qarzdorlarga eslatma — jurnalda yozuv paydo bo'lsin."""
+        """
+        Qarzdorlarga eslatma — jurnalda yozuv paydo bo'lsin.
+
+        Soat ATAYLAB berilgan: demo kechqurun yoki tunda yaratilsa,
+        yuborish oynasi (Q9) xabarlarni navbatda qoldirardi va demo
+        jurnali bo'sh ko'rinardi.
+
+        Demo vasiylari Telegramga ULANMAGAN — ataylab: aynan shu
+        holat yangi bog'chada bo'ladi va ekran uni qanday ko'rsatishi
+        demoda ko'rinishi kerak.
+        """
+        from datetime import time
+
         from apps.notifications.services import dispatch_notification, queue_debt_reminders
 
         queued = queue_debt_reminders(organization=organization)
         for notification in queued[:12]:
-            dispatch_notification(notification)
+            dispatch_notification(notification, now_time=time(10, 0))
         self.stdout.write(f"  bildirishnomalar: {len(queued)} (12 tasi yuborilgan)")
 
     # --- Xulosa ---

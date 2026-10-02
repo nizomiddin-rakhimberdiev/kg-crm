@@ -35,6 +35,8 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "seed_default_templates",
+    "resolve_channel",
+    "recipient_for",
     "guardian_language",
     "TEMPLATE_VARIABLES",
     "preview_debt_reminders",
@@ -94,19 +96,71 @@ DEFAULT_TEMPLATES_RU: dict[str, str] = {
 }
 
 
+#: Telegram matnlari (PLAN 3.7).
+#:
+#: SMS'da har belgi pul turadi, shuning uchun u qisqa. Telegramda
+#: uzunlik bepul — matn to'liqroq va muloyimroq bo'lishi mumkin, va
+#: aynan shu narsa ota-onaning taassurotiga ta'sir qiladi.
+TELEGRAM_TEMPLATES: dict[str, str] = {
+    TemplateCode.PAYMENT_RECEIVED: (
+        "Hurmatli ${guardian}!\n\n"
+        "${child} uchun ${amount} so'm to'lov qabul qilindi. Rahmat!\n\n"
+        "${organization}"
+    ),
+    TemplateCode.DEBT_REMINDER: (
+        "Hurmatli ${guardian}!\n\n"
+        "${child} bo'yicha ${amount} so'm qarzdorlik mavjud.\n"
+        "Iltimos, to'lovni amalga oshiring.\n\n"
+        "Savollar bo'lsa, bog'chaga murojaat qiling.\n"
+        "${organization}"
+    ),
+    TemplateCode.ABSENCE_NOTICE: (
+        "Hurmatli ${guardian}!\n\n${child} bugun bog'chaga kelmadi.\n\n${organization}"
+    ),
+}
+
+TELEGRAM_TEMPLATES_RU: dict[str, str] = {
+    TemplateCode.PAYMENT_RECEIVED: (
+        "Уважаемый(ая) ${guardian}!\n\n"
+        "Оплата ${amount} сум за ${child} принята. Спасибо!\n\n"
+        "${organization}"
+    ),
+    TemplateCode.DEBT_REMINDER: (
+        "Уважаемый(ая) ${guardian}!\n\n"
+        "По ${child} числится задолженность ${amount} сум.\n"
+        "Просим произвести оплату.\n\n"
+        "Если есть вопросы, обратитесь в детский сад.\n"
+        "${organization}"
+    ),
+    TemplateCode.ABSENCE_NOTICE: (
+        "Уважаемый(ая) ${guardian}!\n\n"
+        "${child} сегодня не пришёл(ла) в детский сад.\n\n"
+        "${organization}"
+    ),
+}
+
+
 def seed_default_templates(organization: Any) -> int:
-    """Tashkilot uchun boshlang'ich shablonlarni yaratadi (idempotent)."""
+    """
+    Tashkilot uchun boshlang'ich shablonlarni yaratadi (idempotent).
+
+    Ikki kanal × ikki til. Telegram matni SMS'dan farq qiladi: u
+    uzunlik bilan cheklanmagan, shuning uchun unda bog'cha nomi va
+    muddat ham bor — SMS'da esa har belgi pul turadi (ADR-23).
+    """
     created = 0
     catalogues = (
-        (TemplateLanguage.UZ, DEFAULT_TEMPLATES),
-        (TemplateLanguage.RU, DEFAULT_TEMPLATES_RU),
+        (Channel.SMS, TemplateLanguage.UZ, DEFAULT_TEMPLATES),
+        (Channel.SMS, TemplateLanguage.RU, DEFAULT_TEMPLATES_RU),
+        (Channel.TELEGRAM, TemplateLanguage.UZ, TELEGRAM_TEMPLATES),
+        (Channel.TELEGRAM, TemplateLanguage.RU, TELEGRAM_TEMPLATES_RU),
     )
-    for language, bodies in catalogues:
+    for channel, language, bodies in catalogues:
         for code, body in bodies.items():
             _, was_created = NotificationTemplate.all_objects.get_or_create(
                 organization=organization,
                 code=code,
-                channel=Channel.SMS,
+                channel=channel,
                 language=language,
                 branch=None,
                 defaults={"body": body},
@@ -183,20 +237,26 @@ def queue_notification(
     guardian: Any,
     code: str,
     variables: dict[str, Any] | None = None,
-    channel: str = Channel.SMS,
+    channel: str | None = None,
     body_override: str | None = None,
     scheduled_for: Any = None,
 ) -> Notification | None:
     """
     Xabarni navbatga qo'yadi.
 
-    Vasiy telefonsiz bo'lsa `None` qaytaradi — bu xato emas, oddiy holat
-    (import qilingan bola vasiysiz bo'lishi mumkin). Istisno ko'tarish
-    to'lov qabul qilishni yiqitardi, holbuki to'lovning o'zi muvaffaqiyatli.
+    `channel` berilmasa — ota-onaga qarab tanlanadi (`resolve_channel`):
+    Telegram ulangan bo'lsa Telegram, aks holda tirik SMS provayderi.
+
+    Vasiyga umuman yetib bo'lmasa (telefon ham yo'q, Telegram ham
+    ulanmagan) `None` qaytaradi — bu xato emas, oddiy holat (import
+    qilingan bola vasiysiz bo'lishi mumkin). Istisno ko'tarish to'lov
+    qabul qilishni yiqitardi, holbuki to'lovning o'zi muvaffaqiyatli.
     """
-    address = (getattr(guardian, "phone", "") or "").strip()
-    if not address:
-        logger.info("Bildirishnoma o'tkazib yuborildi: vasiyda telefon yo'q")
+    channel = channel or resolve_channel(guardian, branch)
+    address = recipient_for(guardian, channel)
+    if not address and not (getattr(guardian, "phone", "") or "").strip():
+        # Na telefon, na Telegram — yozib qo'yish uchun hech narsa yo'q.
+        logger.info("Bildirishnoma o'tkazib yuborildi: vasiyga yetib bo'lmaydi")
         return None
 
     # Kunlik chegara (PLAN 3.3) — faqat qarz eslatmasiga. To'lov
@@ -212,7 +272,11 @@ def queue_notification(
     template = _resolve_template(
         organization=organization, code=code, channel=channel, branch=branch, language=language
     )
-    fallback = (DEFAULT_TEMPLATES_RU if language == "ru" else DEFAULT_TEMPLATES).get(code, "")
+    if channel == Channel.TELEGRAM:
+        catalogue = TELEGRAM_TEMPLATES_RU if language == "ru" else TELEGRAM_TEMPLATES
+    else:
+        catalogue = DEFAULT_TEMPLATES_RU if language == "ru" else DEFAULT_TEMPLATES
+    fallback = catalogue.get(code, "")
     body = body_override or (template.body if template else fallback)
     if not body:
         raise BusinessRuleViolation(gettext("'{code}' uchun shablon topilmadi.").format(code=code))
@@ -221,6 +285,8 @@ def queue_notification(
         organization=organization,
         branch=branch,
         template=template,
+        # Tur HAR DOIM yoziladi, shablon qatori bo'lmasa ham.
+        template_code=code,
         guardian=guardian,
         channel=channel,
         # Manzil va matn SNAPSHOT: vasiy telefonini keyin o'zgartirsa ham
@@ -262,16 +328,59 @@ def within_sending_window(at_time: time | None = None, branch: Any = None) -> bo
     return start <= at_time.hour < end
 
 
-def delivery_problem(address: str) -> str:
+def resolve_channel(guardian: Any, branch: Any = None) -> str:
     """
-    Raqam bilan bog'liq muammo — bo'sh satr bo'lsa hammasi joyida.
+    Shu ota-onaga qaysi kanal bilan yozamiz (PLAN 3.7, ADR-23).
 
-    Noto'g'ri raqamga urinish ma'nosiz: provayder uni qabul qilishi
+    Tartib qasddan shunday:
+
+    1. **Telegram** — agar ota-ona botni ishga tushirgan bo'lsa. Bu
+       bepul va matn uzunligi cheklanmagan.
+    2. **SMS** — faqat provayder HAQIQATAN ulangan bo'lsa. Test
+       rejimidagi SMS'ga "tushib qolish" eng yomon variant: jurnalda
+       xabar bordek ko'rinadi, ota-ona esa hech narsa olmaydi va
+       bog'cha uni botga ulash kerakligini bilmaydi.
+    3. Aks holda — afzal kanalning o'zi qaytariladi va xabar sababi
+       bilan `failed` bo'lib jurnalda turadi ("Telegram ulanmagan").
+       Bu ko'rinadigan muammo, jimgina yo'qolgan xabardan yaxshiroq.
+    """
+    from apps.notifications.providers import is_test_mode
+
+    preferred = str(_rule("notifications.default_channel", branch) or Channel.TELEGRAM)
+
+    if preferred == Channel.TELEGRAM and (getattr(guardian, "telegram_chat_id", "") or "").strip():
+        return Channel.TELEGRAM
+    if (getattr(guardian, "phone", "") or "").strip() and not is_test_mode(Channel.SMS):
+        return Channel.SMS
+    return preferred
+
+
+def recipient_for(guardian: Any, channel: str) -> str:
+    """Kanalning manzili: Telegram uchun `chat_id`, SMS uchun telefon."""
+    if channel == Channel.TELEGRAM:
+        return (getattr(guardian, "telegram_chat_id", "") or "").strip()
+    return (getattr(guardian, "phone", "") or "").strip()
+
+
+def delivery_problem(address: str, channel: str = Channel.SMS) -> str:
+    """
+    Manzil bilan bog'liq muammo — bo'sh satr bo'lsa hammasi joyida.
+
+    Noto'g'ri manzilga urinish ma'nosiz: provayder uni qabul qilishi
     ham mumkin va o'shanda jurnalda "yuborildi" deb turadi, ota-ona
     esa hech narsa olmaydi. Auditda aynan shunday bo'lgan — "12345"
     raqamiga yuborilgan xabar "Yuborildi" holatida edi.
+
+    Telegram uchun tekshiriladigan narsa bitta: suhbat bormi. `chat_id`
+    ning o'zini tekshirib bo'lmaydi va kerak ham emas — u bizda faqat
+    ota-ona botni ishga tushirgani uchun bor.
     """
     from apps.core.phone import is_valid_phone
+
+    if channel == Channel.TELEGRAM:
+        if not address.strip():
+            return gettext("Telegram ulanmagan")
+        return ""
 
     if not address.strip():
         return gettext("Telefon raqami yo'q")
@@ -285,7 +394,7 @@ def reminders_sent_today(*, guardian_id: Any, on_date: date | None = None) -> in
     day = on_date or timezone.localdate()
     return Notification.objects.filter(
         guardian_id=guardian_id,
-        template__code=TemplateCode.DEBT_REMINDER,
+        template_code=TemplateCode.DEBT_REMINDER,
         created_at__date=day,
     ).count()
 
@@ -324,7 +433,7 @@ def dispatch_notification(
     # 1. Raqam (PLAN 3.1). Noto'g'ri raqamga URINILMAYDI ham: provayder
     #    uni qabul qilishi mumkin va o'shanda jurnal "yuborildi" deb
     #    turadi, ota-ona esa hech narsa olmaydi.
-    problem = delivery_problem(notification.recipient_address)
+    problem = delivery_problem(notification.recipient_address, notification.channel)
     if problem:
         notification.status = NotificationStatus.FAILED
         notification.error = problem
@@ -536,7 +645,7 @@ def queue_debt_reminders(
     today = timezone.localdate()
     already_reminded = set(
         Notification.objects.filter(
-            template__code=TemplateCode.DEBT_REMINDER,
+            template_code=TemplateCode.DEBT_REMINDER,
             created_at__date=today,
         ).values_list("guardian_id", flat=True)
     )

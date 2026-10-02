@@ -72,6 +72,9 @@ class NotificationSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "template",
+            # Xabar turi — shablon o'chirilgan bo'lsa ham jurnalda
+            # ko'rinib turishi kerak (PLAN 3.7).
+            "template_code",
             "guardian",
             "guardian_name",
             "channel",
