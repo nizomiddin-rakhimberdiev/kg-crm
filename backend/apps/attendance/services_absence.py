@@ -129,10 +129,17 @@ def daily_rate_for(*, child: Any, on_date: date) -> tuple[Decimal, int]:
         .exclude(status=InvoiceStatus.CANCELLED)
         .first()
     )
-    base = invoice.amount_due if invoice is not None else getattr(child.tariff, "amount", None)
+    if invoice is not None:
+        base = invoice.amount_due
+    else:
+        # Narx manbai — tarif YOKI individual narx (`child_monthly_price`).
+        from apps.finance.selectors import child_monthly_price
+
+        price = child_monthly_price(child)
+        base = price.amount if price is not None else None
     if base is None:
         raise BusinessRuleViolation(
-            gettext("{full_name}: tarif ham, hisob-faktura ham yo'q.").format(
+            gettext("{full_name}: narx ham, hisob-faktura ham yo'q.").format(
                 full_name=child.full_name
             )
         )

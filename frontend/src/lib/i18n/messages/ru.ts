@@ -551,7 +551,6 @@ export const messages: Record<string, string> = {
   Tarif: 'Тариф',
   'Tarif nomi': 'Название тарифа',
   Tariflar: 'Тарифы',
-  'Tarifsiz bolaga hisob-faktura chiqarilmaydi.': 'Ребёнку без тарифа счёт не выставляется.',
   Tasdiqlangan: 'Подтверждён',
   Tasdiqlash: 'Подтвердить',
   Tashkilot: 'Организация',
@@ -731,7 +730,6 @@ export const messages: Record<string, string> = {
   "{money} so'm qabul qilish": 'Принять {money} сум',
   '{name} — harakatlar': '{name} — движения',
   '{name} — tahrirlash': '{name} — редактирование',
-  "{name} — {toLocaleString} so'm": '{name} — {toLocaleString} сум',
   '{periodLabel} uchun hisoblash': 'Расчёт за {periodLabel}',
   '{period} — qoralamaga qaytariladi va yana tahrirlanadi.':
     '{period} — вернётся в черновик и снова станет редактируемым.',
@@ -771,4 +769,22 @@ export const messages: Record<string, string> = {
   'Sizda bu ruxsat yo‘q — uni bera olmaysiz.': 'У вас нет этого права — вы не можете его выдать.',
   'Tushum va tasdiqlangan chiqimlar, davr bo‘yicha':
     'Поступления и подтверждённые расходы по периодам',
+
+  // --- Individual narx (2026-10) ---
+  'Har oy {v} hisob-faktura chiqariladi.': 'Каждый месяц будет выставляться счёт на {v}.',
+  'Individual narx': 'Индивидуальная цена',
+  'Individual narx: {v}': 'Индивидуальная цена: {v}',
+  "Individual narxni kiriting (so'mda, 0 dan katta).":
+    'Введите индивидуальную цену (в сумах, больше 0).',
+  'Masalan, 1 200 000': 'Например, 1 200 000',
+  'Narx turi': 'Тип цены',
+  'Narxsiz bolaga hisob-faktura chiqarilmaydi.': 'Ребёнку без цены счёт не выставляется.',
+  'Oylik narx': 'Ежемесячная цена',
+  "Oylik narx (so'm)": 'Ежемесячная цена (сум)',
+  'Shu bola uchun kelishilgan oylik summa — tarifsiz.':
+    'Сумма, согласованная для этого ребёнка, — без тарифа.',
+  "so'm": 'сум',
+  "Tarif bo'yicha": 'По тарифу',
+  "Tarif yo'q — individual narxni tanlang yoki avval tarif yarating.":
+    'Тарифов нет — выберите индивидуальную цену или сначала создайте тариф.',
 }

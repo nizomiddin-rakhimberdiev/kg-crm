@@ -437,6 +437,7 @@ Authentication identity.
 | `enrollment_status` | `VARCHAR(20)` | `NOT NULL DEFAULT 'active'`, `CHECK (... IN ('prospect','active','paused','graduated','withdrawn'))` | Lifecycle |
 | `enrolled_on` | `DATE` | `NULL` | |
 | `tariff_id` | `UUID` | `NULL` FK → tariff_plan `ON DELETE RESTRICT` | Current billing plan |
+| `monthly_fee` | `NUMERIC(12,2)` | `NULL`, `CHECK (monthly_fee IS NULL OR monthly_fee > 0)` | **Individual** monthly price — instead of a tariff (2026-10) |
 | `photo_path` | `VARCHAR(255)` | `NULL` | Private storage key |
 | `balance` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0` | **Cached** from ledger (§8.2) |
 | `notes` | `TEXT` | `NULL` | |
@@ -444,7 +445,9 @@ Authentication identity.
 
 **Business rules:**
 - `date_of_birth` must be in the past → `ck_child_dob_past CHECK (date_of_birth < CURRENT_DATE)`.
-- A child in `active` status should have a `tariff_id` (enforced at billing time; warned in app).
+- A child in `active` status should have a price: a `tariff_id` **or** an individual `monthly_fee` (enforced at billing time; warned in app).
+- **One price source** → `ck_child_one_price_source CHECK (tariff_id IS NULL OR monthly_fee IS NULL)`. Private kindergartens often agree a price per family instead of a standard plan, so a child may carry an individual `monthly_fee` with no tariff; both at once would leave it ambiguous which one is billed. The API clears the other source when one is set. `apps/finance/selectors.child_monthly_price()` is the single place that answers "what does this child pay" — the invoice, the absence day rate and the screens all read it.
+- The invoice **copies** the amount (`invoice.amount_due`, the first `invoice_line`); with an individual price `invoice.tariff_id` is `NULL` and the line reads "Individual narx — MM/YYYY". Changing the price later never rewrites issued invoices — the same rule as a tariff.
 - Soft delete only; a child with financial history is never hard-deleted.
 
 ### 11.2 `guardian`

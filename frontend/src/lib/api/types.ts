@@ -207,6 +207,8 @@ export interface Child {
   enrolled_on: string | null
   tariff: string | null
   tariff_name: string | null
+  /** Individual oylik narx — tarifsiz. `null` bo'lsa narx tarifdan. */
+  monthly_fee: string | null
   balance: string
   notes: string
   guardians: GuardianLink[]

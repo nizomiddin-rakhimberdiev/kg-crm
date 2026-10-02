@@ -254,3 +254,45 @@ class TestLegitimateDelegationStillWorks:
 
         owner_rows = tenant_a.client().get("/api/v1/roles").json()["data"]
         assert all(row["can_assign"] and row["can_edit"] for row in owner_rows)
+
+
+class TestBranchBoundWrites:
+    """Filialga bog'langan xodim faqat o'z filialida yaratadi (ADR-25)."""
+
+    def test_manager_cannot_create_in_another_branch(self, tenant_a, manager):
+        with organization_context(tenant_a.organization.id):
+            other = Branch.objects.create(
+                organization=tenant_a.organization, name="Ikkinchi", code="SECOND"
+            )
+        response = _client(tenant_a, manager).post(
+            "/api/v1/groups", {"name": "Begona guruh", "branch_id": str(other.id)}, format="json"
+        )
+        assert response.status_code == 403
+
+    def test_manager_creates_in_her_own_branch(self, tenant_a, manager):
+        _grant(tenant_a, "manager", {"children.create"})
+        response = _client(tenant_a, manager).post(
+            "/api/v1/groups",
+            {"name": "O'z guruhi", "branch_id": str(tenant_a.branch.id)},
+            format="json",
+        )
+        assert response.status_code == 201, response.json()
+
+    def test_owner_picks_any_branch(self, tenant_a):
+        with organization_context(tenant_a.organization.id):
+            other = Branch.objects.create(
+                organization=tenant_a.organization, name="Ikkinchi", code="SECOND"
+            )
+        response = tenant_a.client().post(
+            "/api/v1/groups", {"name": "Gorkiy guruhi", "branch_id": str(other.id)}, format="json"
+        )
+        assert response.status_code == 201, response.json()
+
+    def test_owner_with_two_branches_and_no_choice_gets_a_clear_message(self, tenant_a):
+        with organization_context(tenant_a.organization.id):
+            Branch.objects.create(
+                organization=tenant_a.organization, name="Ikkinchi", code="SECOND"
+            )
+        response = tenant_a.client().post("/api/v1/groups", {"name": "Qaysi?"}, format="json")
+        assert response.status_code == 422
+        assert "filial tanlovidan" in response.json()["error"]["message"]

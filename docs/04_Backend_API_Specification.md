@@ -230,7 +230,7 @@ Module: `users` (backed by `accounts`). Managed by **Org Owner** (Director read-
 ```
 **Errors:** `409 CONFLICT` (email exists), `422 BUSINESS_RULE_VIOLATION` (non-super-admin without branch), `403 PERMISSION_DENIED` (delegation rule — below).
 
-**Delegation rule (ADR-25).** `users.*` alone is not enough to hand out power. A caller who is not the Org Owner gets `403` when they try to: assign a role whose permissions are not a subset of their own (the Owner role always counts as wider); create an account outside their own branch; edit, deactivate or reset the password of an account whose role is wider than theirs, of the Owner, or of themselves (own details go through `/auth/me`); or edit, delete or re-permission the Owner role, their own role, or a role wider than theirs. The check runs before payload validation. `GET /roles` adds `can_assign` and `can_edit` (booleans, computed for the caller) so the client can hide what would be refused.
+**Delegation rule (ADR-25).** `users.*` alone is not enough to hand out power. A caller who is not the Org Owner gets `403` when they try to: assign a role whose permissions are not a subset of their own (the Owner role always counts as wider); create an account outside their own branch; edit, deactivate or reset the password of an account whose role is wider than theirs, of the Owner, or of themselves (own details go through `/auth/me`); or edit, delete or re-permission the Owner role, their own role, or a role wider than theirs. The same rule covers every **create** that takes `branch_id`: a branch-bound caller passing another branch gets `403` (reads were already branch-scoped). An owner of a multi-branch organization who sends no `branch_id` gets `422` asking them to pick a branch. The check runs before payload validation. `GET /roles` adds `can_assign` and `can_edit` (booleans, computed for the caller) so the client can hide what would be refused.
 
 ---
 
@@ -260,6 +260,7 @@ Module: `children`. Sub-domains: children, guardians, groups, enrollment.
   "date_of_birth": "2021-05-14",
   "gender": "male",
   "tariff_id": "<uuid>",
+  "monthly_fee": null,
   "group_id": "<uuid>",
   "guardians": [
     { "guardian_id": "<uuid>", "relation": "mother", "is_primary": true, "can_pickup": true }
@@ -268,6 +269,8 @@ Module: `children`. Sub-domains: children, guardians, groups, enrollment.
 ```
 **Response `201`** — the created child with `balance: "0.00"`, `enrollment_status: "active"`.
 **Errors:** `422` (dob not in past), `409` (child already has an open enrollment for that group), `400` (validation).
+
+**Price: tariff or individual (`monthly_fee`).** A child's monthly price comes from **one** source — `tariff_id`, or `monthly_fee` (a decimal string in so'm, `> 0`) for a price agreed with that family. Sending one clears the other (`PATCH {"monthly_fee": "1200000"}` drops the tariff; `PATCH {"tariff_id": "<uuid>"}` drops the individual price); sending both non-null is `400` on `monthly_fee`. Read responses carry `tariff`, `tariff_name` and `monthly_fee`. A child with neither is skipped by the monthly invoice run (`skipped_no_tariff` — name kept for compatibility) and refused by a single `issue_invoice` with `422`.
 
 ### 7.2 Guardians
 | Method | Path | Auth | Description |

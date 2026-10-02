@@ -553,8 +553,6 @@ export const messages: Record<string, string> = {
   Tarif: 'Plan',
   'Tarif nomi': 'Plan name',
   Tariflar: 'Plans',
-  'Tarifsiz bolaga hisob-faktura chiqarilmaydi.':
-    'No invoice is issued for a child without a plan.',
   Tasdiqlangan: 'Approved',
   Tasdiqlash: 'Approve',
   Tashkilot: 'Organization',
@@ -733,7 +731,6 @@ export const messages: Record<string, string> = {
   "{money} so'm qabul qilish": 'Receive {money} UZS',
   '{name} — harakatlar': '{name} — movements',
   '{name} — tahrirlash': '{name} — edit',
-  "{name} — {toLocaleString} so'm": '{name} — {toLocaleString} UZS',
   '{periodLabel} uchun hisoblash': 'Payroll for {periodLabel}',
   '{period} — qoralamaga qaytariladi va yana tahrirlanadi.':
     '{period} — returns to draft and becomes editable again.',
@@ -773,4 +770,23 @@ export const messages: Record<string, string> = {
   'Sizda bu ruxsat yo‘q — uni bera olmaysiz.':
     'You do not have this permission, so you cannot grant it.',
   'Tushum va tasdiqlangan chiqimlar, davr bo‘yicha': 'Revenue and approved expenses, by period',
+
+  // --- Individual narx (2026-10) ---
+  'Har oy {v} hisob-faktura chiqariladi.': 'An invoice for {v} will be issued every month.',
+  'Individual narx': 'Individual price',
+  'Individual narx: {v}': 'Individual price: {v}',
+  "Individual narxni kiriting (so'mda, 0 dan katta).":
+    "Enter the individual price (in so'm, greater than 0).",
+  'Masalan, 1 200 000': 'For example, 1 200 000',
+  'Narx turi': 'Price type',
+  'Narxsiz bolaga hisob-faktura chiqarilmaydi.':
+    'No invoice is issued for a child without a price.',
+  'Oylik narx': 'Monthly price',
+  "Oylik narx (so'm)": "Monthly price (so'm)",
+  'Shu bola uchun kelishilgan oylik summa — tarifsiz.':
+    'The monthly amount agreed for this child — without a tariff.',
+  "so'm": 'UZS',
+  "Tarif bo'yicha": 'By tariff',
+  "Tarif yo'q — individual narxni tanlang yoki avval tarif yarating.":
+    'No tariffs yet — choose an individual price or create a tariff first.',
 }

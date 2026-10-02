@@ -50,6 +50,15 @@ class Child(BranchScopedModel):
         null=True,
         blank=True,
     )
+    # Individual oylik narx — tarifSIZ (docs/03 §11.1, 2026-10).
+    #
+    # Xususiy bog'chada standart narx bo'lmasligi mumkin: har bir oila
+    # bilan alohida kelishiladi. Narx manbai BITTA — yo tarif, yo shu
+    # summa (`ck_child_one_price_source`); ikkalasi birga bo'lsa, qaysi
+    # biri hisob-fakturaga tushishi noaniq qolardi. Hisob-faktura
+    # summani chiqarilgan paytdagi qiymat bilan NUSXALAYDI — keyin narx
+    # o'zgarsa, o'tgan oylar o'zgarmaydi (tarif bilan bir xil qoida).
+    monthly_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
 
     photo_path = models.CharField(max_length=255, blank=True)
     notes = models.TextField(blank=True)
@@ -67,6 +76,14 @@ class Child(BranchScopedModel):
             models.CheckConstraint(
                 condition=models.Q(date_of_birth__lt=models.functions.Now()),
                 name="ck_child_dob_past",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(monthly_fee__isnull=True) | models.Q(monthly_fee__gt=0),
+                name="ck_child_monthly_fee_positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(tariff__isnull=True) | models.Q(monthly_fee__isnull=True),
+                name="ck_child_one_price_source",
             ),
         ]
         indexes = [

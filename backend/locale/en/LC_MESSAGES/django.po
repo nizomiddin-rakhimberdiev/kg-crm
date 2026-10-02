@@ -1021,3 +1021,20 @@ msgstr "Only the organization owner can change the owner role."
 
 msgid "Tashkilot egasining hisobini faqat egasi boshqara oladi."
 msgstr "Only the owner can manage the organization owner's account."
+
+# --- Individual narx (2026-10) ---
+
+msgid "Individual narx"
+msgstr "Individual price"
+
+msgid "Tarif yoki individual narx — faqat bittasini tanlang."
+msgstr "Tariff or individual price — choose only one."
+
+msgid "{full_name}: narx belgilanmagan (tarif ham, individual narx ham yo'q) — hisob-faktura chiqarib bo'lmaydi."
+msgstr "{full_name}: no price set (neither a tariff nor an individual price) — an invoice cannot be issued."
+
+msgid "{full_name}: narx ham, hisob-faktura ham yo'q."
+msgstr "{full_name}: there is neither a price nor an invoice."
+
+msgid "Faqat o'z filialingizda yozuv yarata olasiz."
+msgstr "You can only create records in your own branch."

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any
 
 from django.utils.translation import gettext
@@ -95,6 +96,7 @@ class ChildSerializer(serializers.ModelSerializer):
             "enrolled_on",
             "tariff",
             "tariff_name",
+            "monthly_fee",
             "balance",
             "notes",
             "guardians",
@@ -122,6 +124,16 @@ class ChildWriteSerializer(serializers.ModelSerializer):
     tariff_id = TenantPrimaryKeyRelatedField(
         model=TariffPlan, source="tariff", required=False, allow_null=True
     )
+    # Individual narx — tarif o'rniga (docs/03 §11.1). `min_value` bazadagi
+    # `ck_child_monthly_fee_positive` ning API'dagi ko'zgusi: 0 so'm "narx
+    # yo'q" bilan adashmasin, narxsiz bola uchun maydon bo'sh qoladi.
+    monthly_fee = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+        allow_null=True,
+        min_value=Decimal("1"),
+    )
 
     class Meta:
         model = Child
@@ -137,8 +149,32 @@ class ChildWriteSerializer(serializers.ModelSerializer):
             "notes",
             "branch_id",
             "tariff_id",
+            "monthly_fee",
         ]
         read_only_fields = ["id"]
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        """
+        Narx manbai BITTA: tarif yoki individual narx.
+
+        Bittasini qo'ygan so'rov ikkinchisini o'zi tozalaydi — mijoz
+        "tarifdan individual narxga o'tish" uchun ikkala maydonni ham
+        yuborishi shart emas. Ikkalasi ham qiymat bilan kelsa — bu
+        noaniqlik, `400` (baza baribir `ck_child_one_price_source` bilan
+        to'sadi, lekin u `409` — foydalanuvchi nima noto'g'riligini
+        bilmaydi).
+        """
+        has_tariff = attrs.get("tariff") is not None
+        has_fee = attrs.get("monthly_fee") is not None
+        if has_tariff and has_fee:
+            raise serializers.ValidationError(
+                {"monthly_fee": [gettext("Tarif yoki individual narx — faqat bittasini tanlang.")]}
+            )
+        if has_tariff:
+            attrs["monthly_fee"] = None
+        elif has_fee:
+            attrs["tariff"] = None
+        return attrs
 
     def validate_date_of_birth(self, value: Any) -> Any:
         from django.utils import timezone

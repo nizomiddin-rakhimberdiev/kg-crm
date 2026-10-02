@@ -1,4 +1,5 @@
 import { api } from '@/lib/api/client'
+import { withBranch } from '@/lib/branchScope'
 import type { EmployeeAdvance, PayrollItem, PayrollRun } from '@/lib/api/types'
 
 // Xodimlar va lavozimlar API'si `features/staff/api.ts` da — ular
@@ -9,10 +10,10 @@ export const payrollApi = {
   getRun: (id: string) => api.get<PayrollRun>(`/payroll/runs/${id}`),
 
   createRun: (periodYear: number, periodMonth: number) =>
-    api.post<PayrollRun>('/payroll/runs', {
-      period_year: periodYear,
-      period_month: periodMonth,
-    }),
+    api.post<PayrollRun>(
+      '/payroll/runs',
+      withBranch({ period_year: periodYear, period_month: periodMonth }),
+    ),
 
   updateItem: (
     runId: string,

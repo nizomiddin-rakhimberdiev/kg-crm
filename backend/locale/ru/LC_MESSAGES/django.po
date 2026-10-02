@@ -1022,3 +1022,20 @@ msgstr "Роль владельца организации может измен
 
 msgid "Tashkilot egasining hisobini faqat egasi boshqara oladi."
 msgstr "Учётной записью владельца организации может управлять только владелец."
+
+# --- Individual narx (2026-10) ---
+
+msgid "Individual narx"
+msgstr "Индивидуальная цена"
+
+msgid "Tarif yoki individual narx — faqat bittasini tanlang."
+msgstr "Тариф или индивидуальная цена — выберите только одно."
+
+msgid "{full_name}: narx belgilanmagan (tarif ham, individual narx ham yo'q) — hisob-faktura chiqarib bo'lmaydi."
+msgstr "{full_name}: цена не задана (нет ни тарифа, ни индивидуальной цены) — счёт выставить нельзя."
+
+msgid "{full_name}: narx ham, hisob-faktura ham yo'q."
+msgstr "{full_name}: нет ни цены, ни счёта."
+
+msgid "Faqat o'z filialingizda yozuv yarata olasiz."
+msgstr "Вы можете создавать записи только в своём филиале."

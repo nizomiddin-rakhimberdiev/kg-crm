@@ -38,6 +38,7 @@ from apps.finance.models import (
     Payment,
     SourceType,
 )
+from apps.finance.selectors import child_monthly_price
 
 __all__ = [
     "child_balance",
@@ -246,10 +247,12 @@ def issue_invoice(
     kafolatlanadi — ilova qatlamidagi tekshiruv poyga holatida yetarli
     emas (docs/03 §26).
     """
-    if child.tariff_id is None:
+    price = child_monthly_price(child)
+    if price is None:
         raise BusinessRuleViolation(
             gettext(
-                "{full_name}: tarif biriktirilmagan — hisob-faktura chiqarib bo'lmaydi."
+                "{full_name}: narx belgilanmagan (tarif ham, individual narx ham yo'q) — "
+                "hisob-faktura chiqarib bo'lmaydi."
             ).format(full_name=child.full_name)
         )
 
@@ -268,10 +271,8 @@ def issue_invoice(
     if due_date < issued:
         due_date = issued
 
-    tariff = child.tariff
-    assert tariff is not None  # yuqoridagi `tariff_id is None` tekshiruvi kafolati
     discount = applicable_discount(child, issued)
-    amount_due, discount_amount = apply_discount(tariff.amount, discount)
+    amount_due, discount_amount = apply_discount(price.amount, discount)
 
     try:
         invoice = Invoice.objects.create(
@@ -279,7 +280,9 @@ def issue_invoice(
             branch=child.branch,
             number=_next_invoice_number(child.branch, period_year, period_month),
             child=child,
-            tariff=tariff,
+            # Individual narxda `None` — hujjat qaysi tarifdan emasligini
+            # ochiq ko'rsatadi; summa `amount_due` va qatorda nusxalangan.
+            tariff=price.tariff,
             period_year=period_year,
             period_month=period_month,
             amount_due=amount_due,
@@ -302,10 +305,10 @@ def issue_invoice(
 
     InvoiceLine.objects.create(
         invoice=invoice,
-        description=f"{tariff.name} — {period_month:02d}/{period_year}",
+        description=f"{price.label} — {period_month:02d}/{period_year}"[:255],
         quantity=Decimal("1"),
-        unit_amount=tariff.amount,
-        line_total=tariff.amount,
+        unit_amount=price.amount,
+        line_total=price.amount,
     )
     if discount_amount > 0 and discount is not None:
         InvoiceLine.objects.create(
@@ -438,7 +441,9 @@ def generate_monthly_invoices(
         children = children.filter(branch=branch)
 
     for child in children:
-        if child.tariff_id is None:
+        # Narxi yo'q bola (tarif ham, individual narx ham yo'q) — o'tkaziladi.
+        # Maydon nomi API muvofiqligi uchun `skipped_no_tariff` bo'lib qoldi.
+        if child.tariff_id is None and child.monthly_fee is None:
             result.skipped_no_tariff.append(child.full_name)
             continue
 
