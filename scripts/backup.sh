@@ -22,7 +22,7 @@
 #   ./scripts/backup.sh --no-verify     # tekshiruvsiz (tavsiya etilmaydi)
 #   ./scripts/backup.sh --out /mnt/nas  # boshqa katalogga
 #
-# Kunlik avtomatik ishlatish uchun: docs/backup-restore.md §3
+# Kunlik avtomatik ishlatish uchun: docs/ops/backup.md §3
 
 set -euo pipefail
 
@@ -169,4 +169,4 @@ DELETED=$(find "$OUT_DIR" -maxdepth 1 -name 'kg-crm-*' -type f -mtime "+$RETAIN_
 ok "$DELETED ta eski fayl o'chirildi · jami: $(find "$OUT_DIR" -maxdepth 1 -name 'kg-crm-*.dump*' | wc -l | tr -d ' ') ta zaxira"
 
 printf '\n%sZAXIRA TAYYOR%s  %s%s%s\n' "$GREEN$BOLD" "$OFF" "$DIM" "$OUT_DIR/kg-crm-$STAMP.*" "$OFF"
-printf '%s  Server TASHQARISIGA nusxalashni unutmang — docs/backup-restore.md §4%s\n' "$DIM" "$OFF"
+printf '%s  Server TASHQARISIGA nusxalashni unutmang — docs/ops/backup.md §4%s\n' "$DIM" "$OFF"

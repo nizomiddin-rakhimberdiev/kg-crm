@@ -1,6 +1,6 @@
 # Backup and Restore
 
-Operational document. Companion to [`deployment.md`](./deployment.md).
+Operational document. Companion to [`deployment.md`](../deployment.md).
 
 > A backup that has never been restored is not a backup. Everything below was executed end-to-end before it was written; §7 records what the rehearsal measured.
 
@@ -60,13 +60,20 @@ The manifest is deliberately left unencrypted — it contains counts, no persona
 > below is a launch-blocking step, and `scripts/backup-check.sh` is there
 > so the question can be answered in one command from then on.
 
-Nightly, on the server, via the host's crontab:
+Nightly, on the server, via the host's crontab — one command installs it, and running it twice adds nothing:
+
+```bash
+./scripts/install-backup-cron.sh          # dry-run: prints the line
+./scripts/install-backup-cron.sh --apply  # writes it to the crontab
+```
+
+The line it writes:
 
 ```cron
 30 2 * * *  cd /srv/kg-crm && ./scripts/backup.sh >> /var/log/kg-crm-backup.log 2>&1
 ```
 
-02:30 sits between the nightly Celery jobs (invoice generation runs at 02:00, overdue marking at 03:00 — [`02 §18`](./02_Software_Architecture.md)), so a backup never captures a half-finished billing run.
+02:30 sits between the nightly Celery jobs (invoice generation runs at 02:00, overdue marking at 03:00 — [`02 §18`](../02_Software_Architecture.md)), so a backup never captures a half-finished billing run.
 
 **Check the log.** A cron job that has been failing for three weeks looks exactly like one that has been working, until you look. The script exits non-zero on every failure, so wire it to whatever will actually reach you.
 

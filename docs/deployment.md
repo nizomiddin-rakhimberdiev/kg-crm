@@ -209,7 +209,7 @@ Verified afterwards, on the running stack: the application role cannot `ALTER TA
 
 Honest list — these are open, not implied:
 
-- **Off-server copy of backups.** `scripts/backup.sh` and `scripts/restore.sh` exist and the restore has been rehearsed against a destroyed database ([`backup-restore.md`](./backup-restore.md)). What is still manual: scheduling the nightly cron on the server and copying the encrypted files somewhere other than that server.
+- **Off-server copy of backups.** `scripts/backup.sh` and `scripts/restore.sh` exist and the restore has been rehearsed against a destroyed database ([`ops/backup.md`](./ops/backup.md)). What is still manual: scheduling the nightly cron on the server and copying the encrypted files somewhere other than that server.
 - **Error tracking and log aggregation.** Every response and log line now carries a request id (§6), but logs still only go to stdout on one machine: there is no aggregation, no search across restarts, and no alerting. A crash at 02:00 is found by looking, not by being told.
 - **A real SMS gateway.** `NOTIFICATION_PROVIDER=console` writes messages to the log.
 - **Three known vulnerabilities in frontend dev tooling** (vite dev-server path traversal; Vitest UI RCE). Neither runs in production, and the CI gate audits shipped dependencies (`--omit=dev`), which are clean. Fixing them needs a major upgrade that is currently blocked by a peer-dependency deadlock: `@vitejs/plugin-react` supports vite ≤ 7, vitest 5 requires vite ≥ 6.4, and npm refuses the combination. Revisit when `@vitejs/plugin-react` adds vite 8 support.

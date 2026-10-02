@@ -155,7 +155,7 @@ for _ in $(seq 1 30); do
     if curl -s "http://localhost:${PORT}/api/v1/health" 2>/dev/null | grep -q '"status":"ok"'; then
         ok "health javob berdi"
         printf '\n%sTIKLASH TUGADI%s\n' "$GREEN$BOLD" "$OFF"
-        printf '%s  Kritik oqimlarni qo'"'"'lda tekshiring — docs/backup-restore.md §6%s\n' "$DIM" "$OFF"
+        printf '%s  Kritik oqimlarni qo'"'"'lda tekshiring — docs/ops/backup.md §6%s\n' "$DIM" "$OFF"
         exit 0
     fi
     sleep 2

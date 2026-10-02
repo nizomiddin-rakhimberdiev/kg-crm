@@ -292,7 +292,7 @@ Yangi qo'riqchi testlar: `lib/i18n/__tests__/apostrophes` (Q11),
 - [x] **5.6** Nginx: CSP, Permissions-Policy, `/` → 301 `/uz` (ru brauzer → `/ru`), noma'lum yo'l → 404
 - [x] **5.7** Landing: bitta shrift, aloqa bloki, demo javobi, mijozlar fikri joyi, 12px, mobil
 - [x] **5.8** Huquqiy sahifalar (uz/ru/en) qayta yozish
-- [ ] **5.9** Zaxira nusxa: `docs/ops/backup.md`, kunlik `pg_dump`, 14 kun
+- [x] **5.9** Zaxira nusxa: `docs/ops/backup.md`, kunlik `pg_dump`, 14 kun (cron o'rnatish — deploy qadami)
 - [ ] **5.10** Demo tenant seed (`/t/demo`) — boshqa tenantlarga tegmaydi
 - [ ] **5.11** Test yozuvlarni tozalash command (`--dry-run`, audit izi bilan)
 - [ ] **5.12** Platforma konsoli: tarjima, grant tarixi, tarif o'zgartirish, faollik
