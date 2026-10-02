@@ -10,12 +10,11 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Check, Send, ShieldCheck } from 'lucide-react'
 import { telegramUrl } from '@/config/contact'
+import { POLICY_VERSION } from '@/features/marketing/legal'
 import { marketingApi } from '@/features/marketing/api'
 import { ApiError } from '@/lib/api/types'
 import { copy, type Locale } from '../content'
 import { Reveal } from '../motion'
-
-const POLICY_VERSION = '2026-09'
 
 const newSubmissionId = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto

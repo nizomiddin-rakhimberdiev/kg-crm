@@ -77,6 +77,13 @@ for (const page of entry.prerenderPages()) {
   if (/Golos|JetBrains/.test(html)) {
     throw new Error(`prerender: ${page.path} da ilova shrifti qoldi (Golos/JetBrains)`)
   }
+  // Huquqiy sahifada toʻldirilmagan rekvizit (PLAN 5.8) — build
+  // yiqilmaydi (lokal build'da `.env` boʻsh), lekin baland ogohlantirish:
+  // productionga `{{STIR}}` bilan chiqish — ongli qaror boʻlishi kerak.
+  const unfilled = [...new Set(html.match(/\{\{[A-Z_]+\}\}/g) ?? [])]
+  if (unfilled.length) {
+    console.warn(`prerender: ⚠️  ${page.path} — toʻldirilmagan: ${unfilled.join(', ')} (VITE_LEGAL_*)`)
+  }
   const dir = path.join(dist, page.path)
   await mkdir(dir, { recursive: true })
   await writeFile(path.join(dir, 'index.html'), html)

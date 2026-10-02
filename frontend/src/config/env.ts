@@ -65,6 +65,8 @@ export const env = {
    */
   legalTin: import.meta.env.VITE_LEGAL_TIN ?? '',
   legalAddress: import.meta.env.VITE_LEGAL_ADDRESS ?? '',
+  /** Serverlar joylashuvi — maxfiylik siyosati uchun (PLAN 5.8). */
+  serverLocation: import.meta.env.VITE_SERVER_LOCATION ?? '',
   /**
    * Obuna to'lovi rekvizitlari (PLAN 1.12).
    *

@@ -180,6 +180,10 @@ services:
         # ko'rsatilmaydi.
         VITE_LEGAL_TIN: ${LEGAL_TIN:-}
         VITE_LEGAL_ADDRESS: ${LEGAL_ADDRESS:-}
+        # Serverlar joylashuvi — maxfiylik siyosatida (PLAN 5.8). Bu
+        # ishga tushirish shartining o'zi (docs/01 §10): mamlakat aniq
+        # bo'lmaguncha siyosat to'liq emas.
+        VITE_SERVER_LOCATION: ${SERVER_LOCATION:-}
         # Backend bilan BIR XIL qiymat (ADR-13). Ilgari bu yerda yo'q
         # edi va standalone o'rnatmaning frontendi SaaS rejimida
         # yig'ilardi.

@@ -8,7 +8,7 @@
 import { Link, Navigate } from 'react-router-dom'
 import { env } from '@/config/env'
 import { Brand } from '../components/Brand'
-import { legal, type Locale } from '../legal'
+import { fillLegal, legal, type Locale } from '../legal'
 import { LegalSeo } from '../seo'
 
 /**
@@ -58,7 +58,15 @@ export function LegalPage({ locale, page }: { locale: Locale; page: 'privacy' | 
             {sections.map((section) => (
               <section key={section.title}>
                 <h2 className="text-lg font-bold text-slate-900">{section.title}</h2>
-                <p className="mt-2 leading-7 text-slate-600">{section.text}</p>
+                {/* Xatboshilar `\n` bilan; `{{…}}` belgilari `.env` dan
+                    toʻldiriladi (PLAN 5.8, `legal.ts` izohi). */}
+                {fillLegal(section.text)
+                  .split('\n')
+                  .map((paragraph) => (
+                    <p key={paragraph} className="mt-2 leading-7 text-slate-600">
+                      {paragraph}
+                    </p>
+                  ))}
               </section>
             ))}
           </div>
