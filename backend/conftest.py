@@ -16,6 +16,25 @@ from apps.organizations.models import Organization
 
 
 @pytest.fixture(autouse=True)
+def _clean_cache():  # type: ignore[no-untyped-def]
+    """
+    Kesh testlar orasida QOLMAYDI.
+
+    `LocMemCache` jarayon bo'ylab yashaydi, ya'ni bitta testning
+    yozgani keyingisiga o'tadi. Aniq misol: kirish urinishlari
+    chegarasi (PLAN 5.3) `owner@alfa.uz` uchun o'nta xato urinishni
+    sanaydi, va keyingi testdagi NORMAL kirish `429` oladi — sababi
+    o'z testida emas, boshqasida. Bunday xato tartibga bog'liq
+    bo'ladi va uni qidirish qimmat.
+    """
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
+@pytest.fixture(autouse=True)
 def _neutral_providers(settings):  # type: ignore[no-untyped-def]
     """
     Testlar ishlab chiquvchining `.env` iga BOG'LIQ BO'LMASIN.
