@@ -227,7 +227,6 @@ export const messages: Record<string, string> = {
   'Hisoblash yaratilgan paytda ishlayotgan xodim topilmadi. Xodimlar sahifasida ularni kiriting va yangi davr oching.':
     'На момент создания расчёта работающих сотрудников не найдено. Добавьте их на странице сотрудников и откройте новый период.',
   'Hisoblashni qayta ochish': 'Открыть расчёт заново',
-  'Hisobni koʻrish': 'Открыть счёт',
   Hisobotlar: 'Отчёты',
   Holat: 'Статус',
   'Holat:': 'Статус:',
@@ -1035,4 +1034,5 @@ export const messages: Record<string, string> = {
   Logotip: 'Логотип',
   'Logotipni olib tashlash': 'Удалить логотип',
   'Logotipni yuklab boʻlmadi.': 'Не удалось загрузить логотип.',
+  'Bugun koʻrsatmaslik': 'Не показывать сегодня',
 }

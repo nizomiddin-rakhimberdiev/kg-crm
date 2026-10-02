@@ -13,6 +13,7 @@ from datetime import timedelta
 from typing import Any
 
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext
@@ -379,8 +380,11 @@ def subscription_payload(organization: Any) -> dict[str, Any]:
     """
     from apps.subscriptions.models import Subscription, SubscriptionStatus
 
+    empty = {"status": None, "read_only": False, "trial_ends_at": None, "amount_due": None}
     if organization is None:
-        return {"status": None, "read_only": False, "trial_ends_at": None}
+        return empty
+
+    from apps.subscriptions.models import SubscriptionInvoice, SubscriptionInvoiceStatus
 
     with organization_context(organization.id):
         subscription = (
@@ -388,8 +392,19 @@ def subscription_payload(organization: Any) -> dict[str, Any]:
             .only("status", "trial_ends_at")
             .first()
         )
-    if subscription is None:
-        return {"status": None, "read_only": False, "trial_ends_at": None}
+        if subscription is None:
+            return empty
+
+        # To'lanmagan hisoblarning SUMMASI (PLAN 4.9). Banner "to'lov
+        # kutilmoqda" deb aytib, qancha ekanini aytmasa, mijoz
+        # baribir boshqa ekranga o'tishi kerak bo'ladi — ya'ni
+        # banner ishini bajarmagan bo'ladi.
+        unpaid = SubscriptionInvoice.objects.filter(
+            status__in=[
+                SubscriptionInvoiceStatus.ISSUED,
+                SubscriptionInvoiceStatus.OVERDUE,
+            ]
+        ).aggregate(total=Sum("total_amount"))["total"]
 
     return {
         "status": subscription.status,
@@ -397,6 +412,9 @@ def subscription_payload(organization: Any) -> dict[str, Any]:
         "trial_ends_at": (
             subscription.trial_ends_at.isoformat() if subscription.trial_ends_at else None
         ),
+        # Satr sifatida: pul JSON'da `float` bo'lib ketmasligi kerak
+        # (CLAUDE.md, invariant 3).
+        "amount_due": str(unpaid) if unpaid else None,
     }
 
 

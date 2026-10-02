@@ -112,6 +112,8 @@ export interface SubscriptionState {
   status: 'trialing' | 'pending_payment' | 'active' | 'past_due' | 'suspended' | 'cancelled'
   read_only: boolean
   trial_ends_at?: string | null
+  /** Toʻlanmagan hisoblarning summasi — satr (pul `float` boʻlmaydi). */
+  amount_due?: string | null
 }
 
 export interface AuthSession {

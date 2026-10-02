@@ -5,9 +5,11 @@
  * — u faqat o'qish rejimiga o'tadi va o'z moliyaviy tarixini ko'ra oladi.
  */
 
-import { AlertTriangle, Clock, CreditCard } from 'lucide-react'
+import { useState } from 'react'
+import { AlertTriangle, Clock, CreditCard, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/app/providers/AuthProvider'
+import { som } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { useCan } from '@/lib/rbac/useCan'
 
@@ -18,26 +20,82 @@ const daysLeft = (iso: string | null | undefined) => {
 }
 
 /**
- * Obuna havolasi — faqat uni ocha oladiganga.
+ * "Qanday toʻlash" — faqat uni ocha oladiganga (PLAN 4.9).
  *
- * `/billing` tashkilot egasiga tegishli (docs/02 §11.2), boshqa rol uni
- * bossa boshqaruv paneliga qaytariladi. Ya'ni havola tarbiyachi uchun
- * "bosaman — hech narsa bo'lmaydi" degan o'lik tugma edi. Banner matni
- * hammaga qoladi: sinov muddati butun jamoa bilishi kerak bo'lgan fakt.
+ * `/billing` tashkilot egasiga va direktorga tegishli (docs/02
+ * §11.2), boshqa rol uni bossa boshqaruv paneliga qaytariladi —
+ * yaʼni havola tarbiyachi uchun "bosaman, hech narsa boʻlmaydi"
+ * degan oʻlik tugma edi.
  */
 function BillingLink({ label }: { label: string }) {
-  const { can } = useCan()
-  if (!can('billing.read')) return null
   return (
-    <Link to="/billing" className="ml-auto shrink-0 font-semibold underline">
+    <Link
+      to="/billing"
+      className="ml-auto shrink-0 rounded-lg bg-white/70 px-3 py-1 text-xs font-semibold underline-offset-2 hover:underline"
+    >
       {label}
     </Link>
   )
 }
 
+/**
+ * Yopilgan banner KUNIGA BIR MARTA qaytadi (PLAN 4.9).
+ *
+ * Yopilmaydigan banner har ekranda joy egallab turadi va odam uni
+ * oʻqimay qoʻyadi; butunlay yopiladigani esa toʻlov esdan chiqishiga
+ * olib keladi. Kun — shu ikkisi orasidagi muvozanat.
+ *
+ * `localStorage` ataylab: bu bitta brauzerdagi qulaylik, serverda
+ * saqlanadigan holat emas. Oʻqish/yozish `try` ichida — maxfiy
+ * rejimda u istisno koʻtaradi.
+ */
+const DISMISS_KEY = 'radix.subscription-banner-dismissed'
+
+function useDailyDismiss(): [boolean, () => void] {
+  const today = new Date().toISOString().slice(0, 10)
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return localStorage.getItem(DISMISS_KEY) === today
+    } catch {
+      return false
+    }
+  })
+  const dismiss = () => {
+    try {
+      localStorage.setItem(DISMISS_KEY, today)
+    } catch {
+      // Maxfiy rejim — banner shu sessiyada yopiladi, xolos.
+    }
+    setDismissed(true)
+  }
+  return [dismissed, dismiss]
+}
+
+function DismissButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={t('Bugun koʻrsatmaslik')}
+      title={t('Bugun koʻrsatmaslik')}
+      className="shrink-0 rounded-md p-1 opacity-60 transition hover:bg-black/5 hover:opacity-100"
+    >
+      <X className="h-4 w-4" />
+    </button>
+  )
+}
+
 export function SubscriptionBanner() {
   const { subscription } = useAuth()
-  if (!subscription) return null
+  const { can } = useCan()
+  const [dismissed, dismiss] = useDailyDismiss()
+
+  // **Faqat egasi va direktorga** (PLAN 4.9). Ilgari matn hammaga
+  // koʻrinardi — "sinov muddati butun jamoa bilishi kerak" degan
+  // mulohaza bilan. Egasining qarori boshqa: toʻlov holati
+  // tarbiyachining ishi emas va unga qoʻshimcha tashvish beradi.
+  if (!subscription || !can('billing.read')) return null
+  if (dismissed && !subscription.read_only) return null
 
   if (subscription.read_only) {
     return (
@@ -47,7 +105,9 @@ export function SubscriptionBanner() {
           {t('Obuna toʻxtatilgan — maʼlumotlarni')} <strong>{t('koʻrish')}</strong>{' '}
           {t('mumkin, oʻzgartirish mumkin emas. Hisobingiz va tariximiz saqlanib turibdi.')}
         </span>
-        <BillingLink label={t('Hisobni koʻrish')} />
+        {/* Toʻxtatilgan obuna yopilmaydi: u ish oqimini toʻxtatib
+            turgan holat, eslatma emas. */}
+        <BillingLink label={t('Qanday toʻlash')} />
       </div>
     )
   }
@@ -63,6 +123,7 @@ export function SubscriptionBanner() {
           {t('. Yoqmasa, hech qanday toʻlov olinmaydi.')}
         </span>
         <BillingLink label={t('Rejani tanlash')} />
+        <DismissButton onClick={dismiss} />
       </div>
     )
   }
@@ -79,8 +140,15 @@ export function SubscriptionBanner() {
           {isPending
             ? t('Hisob yozildi — toʻlov kutilmoqda. Kirish toʻliq ochiq.')
             : t('Hisob muddati oʻtdi. Kirish hozircha toʻliq ochiq.')}
+          {/* SUMMA ham shu yerda (PLAN 4.9): "toʻlov kutilmoqda" deb
+              aytib, qancha ekanini aytmaslik mijozni boshqa ekranga
+              yuboradi — yaʼni banner ishini bajarmaydi. */}
+          {subscription.amount_due && (
+            <strong className="ml-1">{som(subscription.amount_due)}</strong>
+          )}
         </span>
-        <BillingLink label={t('Hisobni koʻrish')} />
+        <BillingLink label={t('Qanday toʻlash')} />
+        <DismissButton onClick={dismiss} />
       </div>
     )
   }
