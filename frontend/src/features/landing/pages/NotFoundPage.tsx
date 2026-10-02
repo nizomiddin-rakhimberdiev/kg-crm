@@ -22,12 +22,12 @@ const ORDER: Locale[] = ['uz', 'ru', 'en']
 
 export function NotFoundPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-sut px-5 py-16">
+    <div className="marketing flex min-h-screen items-center justify-center bg-sut px-5 py-16">
       <main className="w-full max-w-lg">
         <a href="/uz" aria-label="Radix CRM" className="inline-block">
           <Logo height={36} />
         </a>
-        <p className="mt-10 font-mono text-sm text-tosh-500">404</p>
+        <p className="mt-10 text-sm font-semibold tabular-nums text-tosh-500">404</p>
 
         <div className="mt-4 space-y-8">
           {ORDER.map((locale) => {

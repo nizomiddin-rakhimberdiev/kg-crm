@@ -8,7 +8,8 @@
 
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Check, ShieldCheck } from 'lucide-react'
+import { ArrowRight, Check, Send, ShieldCheck } from 'lucide-react'
+import { telegramUrl } from '@/config/contact'
 import { marketingApi } from '@/features/marketing/api'
 import { ApiError } from '@/lib/api/types'
 import { copy, type Locale } from '../content'
@@ -100,6 +101,20 @@ export function Lead({ locale }: { locale: Locale }) {
                     <Check className="h-7 w-7" strokeWidth={2.5} />
                   </span>
                   <p className="mt-5 text-lg font-bold text-slate-900">{t.success}</p>
+                  {/* Qachon bog'lanishimiz ANIQ aytiladi (PLAN 5.7):
+                      "tez orada" kutishni noaniq qiladi va odam ertasi
+                      kuni boshqa CRM'ga yozadi. Kutishni xohlamaganga —
+                      Telegram. */}
+                  <p className="mt-2 text-[15px] text-slate-600">{t.successNext}</p>
+                  <a
+                    href={telegramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-5 inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-brand-600 px-5 text-[15px] font-semibold text-white transition hover:bg-brand-700"
+                  >
+                    <Send aria-hidden="true" className="h-4 w-4" />
+                    {t.telegram}
+                  </a>
                 </div>
               </div>
             ) : (

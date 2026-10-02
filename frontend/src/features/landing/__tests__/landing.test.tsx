@@ -73,7 +73,13 @@ describe('content', () => {
   })
 
   it('uydirma ijtimoiy dalil yo‘q: sharh, mijoz logosi, mukofot', () => {
-    const all = JSON.stringify(copy).toLowerCase()
+    // `testimonials` — faqat JOY (PLAN 5.7): sarlavhasi bor, mazmuni
+    // yo‘q. Uning o‘z nomi tekshiruvdan chetda; mazmuni esa pastdagi
+    // testda — bo‘sh bo‘lishi SHART.
+    const withoutSlot = Object.fromEntries(
+      Object.entries(copy).map(([locale, c]) => [locale, { ...c, testimonials: undefined }]),
+    )
+    const all = JSON.stringify(withoutSlot).toLowerCase()
     for (const banned of [
       'award',
       'mukofot',
@@ -84,6 +90,16 @@ describe('content', () => {
       'клиентов',
     ]) {
       expect(all).not.toContain(banned)
+    }
+  })
+
+  it('“Mijozlar fikri” bloki bo‘sh — haqiqiy fikr qo‘shish ONGLI qaror', () => {
+    // Bu test ataylab qattiq: fikr qo‘shilganda u yiqiladi va uni
+    // o‘zgartirgan odam shu savolga javob beradi — "bu haqiqiy
+    // mijozning, ruxsat bilan olingan so‘zimi?". Uydirma iqtibos butun
+    // saytga ishonchni yo‘qotadi.
+    for (const locale of ['uz', 'ru', 'en'] as const) {
+      expect(copy[locale].testimonials.items).toEqual([])
     }
   })
 })

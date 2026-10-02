@@ -176,6 +176,10 @@ services:
         # to'g'ri ishlaydi.
         VITE_PUBLIC_HOST: ${DOMAIN:-radix-crm.uz}
         VITE_LEGAL_ENTITY_NAME: ${LEGAL_ENTITY_NAME:-}
+        # Yuridik shaxs: STIR va manzil (PLAN 5.7). Bo'sh bo'lsa saytda
+        # ko'rsatilmaydi.
+        VITE_LEGAL_TIN: ${LEGAL_TIN:-}
+        VITE_LEGAL_ADDRESS: ${LEGAL_ADDRESS:-}
         # Backend bilan BIR XIL qiymat (ADR-13). Ilgari bu yerda yo'q
         # edi va standalone o'rnatmaning frontendi SaaS rejimida
         # yig'ilardi.

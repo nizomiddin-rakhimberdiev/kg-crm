@@ -12,6 +12,7 @@ import { env } from '@/config/env'
 import { Brand } from '@/features/marketing/components/Brand'
 import { copy, type Locale } from '../content'
 import { basePath } from '../paths'
+import { ContactList, HeaderContacts } from '../ui/Contacts'
 
 const LOCALES = ['uz', 'ru', 'en'] as const satisfies readonly Locale[]
 
@@ -116,6 +117,9 @@ export function Nav({ locale }: { locale: Locale }) {
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex">
+          {/* Aloqa — header'da (PLAN 5.7): raqam keng ekranda matn
+              bilan, torroqda belgi; Telegram har doim belgi. */}
+          <HeaderContacts locale={locale} />
           <LangSwitch locale={locale} className="mr-2" />
           <a
             href={env.loginUrl}
@@ -175,6 +179,8 @@ export function Nav({ locale }: { locale: Locale }) {
               {t.login}
             </a>
           </div>
+          {/* Telefonda header'ga joy yo'q — aloqa menyuning oxirida. */}
+          <ContactList locale={locale} className="mt-8 border-t border-slate-100 px-4 pt-6" />
         </div>
       )}
     </header>

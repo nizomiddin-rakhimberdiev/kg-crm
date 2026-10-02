@@ -23,7 +23,7 @@ import {
 import { RadixMark } from '@/components/brand/Logo'
 import { BRAND } from '@/lib/brand'
 import { copy, type Locale } from '../content'
-import { useCompact, useScene, useStatic } from '../motion'
+import { useCompact, useScene, useStaticScene } from '../motion'
 
 const ICONS = [UserRound, Wallet, CalendarCheck, Users, Boxes, Receipt, BarChart3]
 // Yetti modul — besh brend rangining tiniqlik darajalarida.
@@ -79,7 +79,7 @@ function Tile({
         <Icon className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
       </span>
       <span
-        className={`truncate font-semibold text-slate-800 ${compact ? 'text-[11px] lg:text-[10px]' : 'text-[12px]'}`}
+        className={`truncate font-semibold text-slate-800 ${compact ? 'text-[12px]' : 'text-[12px]'}`}
       >
         {label}
       </span>
@@ -159,7 +159,7 @@ function Panel({ locale, factor }: { locale: Locale; factor: number }) {
           <RadixMark size={24} />
           <span className="text-[12px] font-semibold text-slate-800">{t.demo.org}</span>
         </div>
-        <span className="text-[12px] lg:text-[11px] text-slate-400">{t.demo.today}</span>
+        <span className="text-[12px] text-slate-400">{t.demo.today}</span>
       </div>
       <div className={`mt-3 grid gap-2 ${factor < 1 ? 'grid-cols-2' : 'grid-cols-4'}`}>
         {t.oneSystem.modules.map((label, i) => (
@@ -179,7 +179,7 @@ function Panel({ locale, factor }: { locale: Locale; factor: number }) {
         {t.oneSystem.links.map(([cause, effect]) => (
           <li
             key={cause}
-            className="flex items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-2 text-[12px] lg:text-[11px]"
+            className="flex items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-2 text-[12px]"
           >
             <span className="text-slate-600">{cause}</span>
             <ArrowRight className="h-3 w-3 shrink-0 text-brand-600" />
@@ -196,7 +196,7 @@ export function OneSystem({ locale }: { locale: Locale }) {
   const ref = useRef<HTMLElement>(null)
   const progress = useScene(ref)
   const compact = useCompact()
-  const isStatic = useStatic()
+  const isStatic = useStaticScene()
   const factor = compact ? 0.48 : 1
 
   const panelOpacity = useTransform(progress, [0.7, 0.85], [0, 1])

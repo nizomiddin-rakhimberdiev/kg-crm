@@ -10,14 +10,14 @@ import { useRef, useState } from 'react'
 import { useMotionValueEvent, useTransform } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { copy, type Locale } from '../content'
-import { Reveal, useCompact, useScene, useStatic } from '../motion'
+import { Reveal, useCompact, useScene, useStaticScene } from '../motion'
 
 export function Faq({ locale }: { locale: Locale }) {
   const t = copy[locale].faq
   const ref = useRef<HTMLElement>(null)
   const progress = useScene(ref)
   const compact = useCompact()
-  const isStatic = useStatic()
+  const isStatic = useStaticScene()
   const steps = t.items.length
   const [step, setStep] = useState(0)
   const [manual, setManual] = useState<number | null>(null)

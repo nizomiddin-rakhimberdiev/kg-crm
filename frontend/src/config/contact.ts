@@ -1,0 +1,31 @@
+/**
+ * Sotuv aloqalari — public saytdagi YAGONA manba (PLAN 5.7).
+ *
+ * Header, mobil menyu, footer va demo forma shu fayldan oʻqiydi: raqam
+ * bir joyda oʻzgaradi. Sirlar emas, ochiq biznes aloqalari — shuning
+ * uchun `.env` da emas, kodda (sayt build paytida prerender qilinadi).
+ *
+ * Yuridik shaxs maʼlumotlari (nomi, STIR, manzili) esa `.env` da
+ * (`VITE_LEGAL_*`, `config/env.ts`): ular hali toʻldirilmagan va boʻsh
+ * boʻlsa saytda koʻrinmaydi — `{{STIR}}` degan yozuv chiqmasligi kerak.
+ *
+ * Brief'dagi ikkinchi raqam `+999047267726` ATAYLAB yoʻq: u Oʻzbekiston
+ * raqami boʻla olmaydi (kod +998, "04" operator kodi mavjud emas).
+ * Notoʻgʻri raqamni ochiq saytga qoʻyish — mijozni begona odamga
+ * qoʻngʻiroq qildirish. Tasdiqlangach shu roʻyxatga qoʻshiladi.
+ */
+
+export const CONTACT = {
+  /** E.164 (Q7). Birinchisi — header'dagi asosiy raqam. */
+  phones: ['+998950767726'],
+  telegram: 'nizomiddin_rakhimberdiev',
+  email: 'ranizomiddin@gmail.com',
+} as const
+
+/** `+998950767726` → `+998 95 076 77 26`. */
+export function formatPhone(e164: string): string {
+  const match = /^\+998(\d{2})(\d{3})(\d{2})(\d{2})$/.exec(e164)
+  return match ? `+998 ${match[1]} ${match[2]} ${match[3]} ${match[4]}` : e164
+}
+
+export const telegramUrl = `https://t.me/${CONTACT.telegram}`

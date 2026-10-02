@@ -5,9 +5,11 @@
  * kechmi qaytadi: ular koʻzga tashlanmaydi va hech qanday testni
  * yiqitmaydi. Shuning uchun ular SHU testda.
  *
- * Landing sahifasi chetda: undagi 10–11px yozuvlar namunaviy ekran
- * TASVIRINING bir qismi (`ui/Mock.tsx`) — oʻqiladigan matn emas, va
- * ularni kattalashtirish tasvirni buzadi.
+ * Public sayt (`features/landing`, `features/marketing`) qolgan
+ * tekshiruvlardan chetda, lekin 12px qoidasi unga HAM tegishli (PLAN
+ * 5.7): avval namunaviy ekranlardagi 10–11px yozuvlar "tasvirning bir
+ * qismi" deb chetda qoldirilgan edi, lekin ularni odam oʻqiydi —
+ * aynan shu ekranlar mahsulotni koʻrsatadi.
  */
 
 import { readFileSync, readdirSync, statSync } from 'node:fs'
@@ -53,16 +55,34 @@ function openTags(source: string, tag: string): string[] {
 
 const files = walk(SRC)
 
+/** 12px qoidasi uchun — public sayt bilan birga. */
+function publicFiles(): string[] {
+  const out: string[] = []
+  for (const part of ['features/landing', 'features/marketing']) {
+    const walkAll = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const full = join(dir, entry)
+        if (entry === '__tests__') continue
+        if (statSync(full).isDirectory()) walkAll(full)
+        else if (full.endsWith('.tsx')) out.push(full)
+      }
+    }
+    walkAll(join(SRC, part))
+  }
+  return out
+}
+
 describe('a11y', () => {
   it('12px dan kichik matn yoʻq', () => {
     // Bogʻcha mudirasi 40+ yoshda boʻlishi odatiy hol va u ekranga
     // qoʻl uzunligida qaraydi; 10px yozuv oʻqilmaydi.
     const offenders: string[] = []
-    for (const file of files) {
+    for (const file of [...files, ...publicFiles()]) {
       const text = readFileSync(file, 'utf8')
-      const found = text.match(/text-\[(\d+)px\]/g) ?? []
+      // `10.5px` ham — kasr oʻlcham avval qoidadan sirgʻalib oʻtardi.
+      const found = text.match(/text-\[(\d+(?:\.\d+)?)px\]/g) ?? []
       for (const match of found) {
-        const size = Number(/\d+/.exec(match)?.[0] ?? 0)
+        const size = Number(/\d+(?:\.\d+)?/.exec(match)?.[0] ?? 0)
         if (size < 12) offenders.push(`${file.replace(SRC, '')}: ${match}`)
       }
     }

@@ -109,7 +109,7 @@ export function Pricing({ locale }: { locale: Locale }) {
                 onPointerDown={() => setTouched(true)}
                 className="mt-5 h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-brand-600"
               />
-              <div className="mt-1 flex justify-between text-[11px] text-slate-400">
+              <div className="mt-1 flex justify-between text-[12px] text-slate-400">
                 <span>10</span>
                 <span>300</span>
               </div>
@@ -130,7 +130,7 @@ export function Pricing({ locale }: { locale: Locale }) {
                   >
                     {t[k]}
                     {k === 'annual' && (
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[12px] font-bold text-emerald-700">
                         {t.annualBadge}
                       </span>
                     )}
@@ -233,7 +233,7 @@ export function Pricing({ locale }: { locale: Locale }) {
           <Reveal delay={0.12} className="lg:col-span-2">
             <div className="flex flex-col gap-4 rounded-[28px] border border-ildiz-800 bg-ildiz-900 p-6 text-white sm:flex-row sm:items-center sm:justify-between sm:p-8">
               <div>
-                <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-slate-200">
+                <span className="rounded-full bg-white/10 px-2.5 py-1 text-[12px] font-semibold uppercase tracking-wider text-slate-200">
                   {t.standalone.badge}
                 </span>
                 <p className="mt-3 text-xl font-bold tracking-tight">{t.standalone.title}</p>

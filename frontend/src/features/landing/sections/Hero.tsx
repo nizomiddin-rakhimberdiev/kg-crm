@@ -111,13 +111,13 @@ export function Hero({ locale }: { locale: Locale }) {
                 </div>
                 <div className="mt-3 grid gap-3 sm:grid-cols-[1.5fr_1fr]">
                   <div className="rounded-xl border border-slate-200/80 p-3">
-                    <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
+                    <p className="text-[12px] font-semibold text-slate-800">
                       {t.demo.chartTitle}
                     </p>
                     <Bars values={TREND} labels={t.demo.months} className="mt-2" />
                   </div>
                   <div className="hidden rounded-xl border border-slate-200/80 p-3 sm:block">
-                    <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
+                    <p className="text-[12px] font-semibold text-slate-800">
                       {t.demo.sidebar[4]}
                     </p>
                     <div className="mt-1.5 space-y-0.5">
@@ -144,7 +144,7 @@ export function Hero({ locale }: { locale: Locale }) {
 
             {/* Chuqurlikdagi qatlamlar — panel tepasida suzadi. */}
             <div className="rx-rise [animation-delay:420ms] absolute -bottom-10 -left-6 hidden w-64 rounded-xl border border-slate-200 bg-white p-3 shadow-[0_24px_60px_-20px_rgba(18,53,47,0.35)] sm:block lg:-left-10 [transform:translateZ(60px)]">
-              <div className="flex items-center gap-1.5 text-[11px] lg:text-[10px] font-semibold uppercase tracking-wider text-brand-600">
+              <div className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wider text-brand-600">
                 <Sparkles className="h-3 w-3" /> Radix AI
               </div>
               <p className="mt-1.5 text-[12px] font-semibold leading-snug text-slate-900">
@@ -156,7 +156,7 @@ export function Hero({ locale }: { locale: Locale }) {
               </div>
             </div>
             <div className="rx-rise [animation-delay:520ms] absolute -right-2 -top-5 hidden rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-[0_24px_60px_-20px_rgba(18,53,47,0.3)] sm:block lg:-right-8 [transform:translateZ(90px)]">
-              <p className="text-[11px] lg:text-[10px] font-medium text-slate-500">
+              <p className="text-[12px] font-medium text-slate-500">
                 {t.demo.kpis[1].label}
               </p>
               <p className="text-lg font-bold tabular-nums text-slate-950">

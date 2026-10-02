@@ -9,7 +9,7 @@
 import { useRef, useState } from 'react'
 import { motion, useMotionValue, useMotionValueEvent, useTransform } from 'framer-motion'
 import { copy, type Locale } from '../content'
-import { Reveal, useCompact, useScene, useStatic } from '../motion'
+import { Reveal, useCompact, useScene, useStaticScene } from '../motion'
 import { Frame, Pill, Row } from '../ui/Mock'
 import { AttendanceUi, PaymentsUi, ReportsUi, StaffUi } from './Modules'
 
@@ -27,7 +27,7 @@ function GroupsUi({ locale }: { locale: Locale }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <div className="rounded-xl border border-slate-200/80 p-3">
-        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{ui.groups}</p>
+        <p className="text-[12px] font-semibold text-slate-800">{ui.groups}</p>
         {[
           ['Quyosh', '20 / 20', 'neutral'],
           ['Yulduzcha', '19 / 20', 'ok'],
@@ -44,15 +44,15 @@ function GroupsUi({ locale }: { locale: Locale }) {
         ))}
       </div>
       <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
-        <p className="text-[11px] lg:text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+        <p className="text-[12px] font-semibold uppercase tracking-wider text-emerald-700">
           {ui.newChild}
         </p>
         <p className="mt-1 text-[12px] font-bold text-slate-900">Nazarova Madina</p>
-        <p className="text-[11px] lg:text-[10px] text-slate-500">{ui.enrolled}</p>
+        <p className="text-[12px] text-slate-500">{ui.enrolled}</p>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-emerald-100">
           <div className="h-full w-[95%] rounded-full bg-emerald-500" />
         </div>
-        <p className="mt-1 text-[11px] lg:text-[10px] text-slate-500">{ui.capacity}</p>
+        <p className="mt-1 text-[12px] text-slate-500">{ui.capacity}</p>
       </div>
     </div>
   )
@@ -63,7 +63,7 @@ export function Workflow({ locale }: { locale: Locale }) {
   const ref = useRef<HTMLElement>(null)
   const progress = useScene(ref)
   const compact = useCompact()
-  const isStatic = useStatic()
+  const isStatic = useStaticScene()
   const one = useMotionValue(1)
 
   const minutes = useTransform(progress, [0.06, 0.9], [START, END], { clamp: true })
@@ -153,7 +153,7 @@ export function Workflow({ locale }: { locale: Locale }) {
               {t.workflow.steps.map((s, i) => (
                 <li
                   key={s.time}
-                  className={`text-[12px] lg:text-[11px] font-semibold tabular-nums transition-colors ${i === step ? 'text-brand-700' : 'text-slate-400'}`}
+                  className={`text-[12px] font-semibold tabular-nums transition-colors ${i === step ? 'text-brand-700' : 'text-slate-400'}`}
                 >
                   {s.time}
                 </li>

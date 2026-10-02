@@ -32,8 +32,7 @@ const FONT_HREF =
 // log'ini to'ldiradi. Boshqa xatolar avvalgidek ko'rinadi.
 const originalError = console.error
 console.error = (...args) => {
-  if (typeof args[0] === 'string' && args[0].includes('useLayoutEffect does nothing on the server'))
-    return
+  if (typeof args[0] === 'string' && args[0].includes('useLayoutEffect does nothing on the server')) return
   originalError(...args)
 }
 
@@ -48,8 +47,15 @@ const preload = landingChunk ? `<link rel="modulepreload" href="/assets/${landin
 
 // Qobiqdagi sukut meta (title, description, og:*) olib tashlanadi — sahifa
 // o'zinikini qo'yadi; ikkita <title> bo'lmasin.
+//
+// Ilova shriftlari (Golos Text, JetBrains Mono) ham olib tashlanadi —
+// public sayt BITTA shriftda (PLAN 5.7), uning havolasi `FONT_HREF`.
 const stripDefaultMeta = (html) =>
   html
+    .replace(
+      /\s*<link\s+href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"\s+rel="stylesheet"\s*\/?>/,
+      '',
+    )
     .replace(/\s*<title>[^<]*<\/title>/, '')
     .replace(/\s*<meta name="description"[^>]*>/, '')
     .replace(/\s*<meta name="robots"[^>]*>/, '')
@@ -66,14 +72,16 @@ for (const page of entry.prerenderPages()) {
       `    ${page.head}\n    <link rel="stylesheet" href="${FONT_HREF}" />\n    ${preload}\n  </head>`,
     )
     .replace('<div id="root"></div>', `<div id="root">${page.body}</div>`)
+  // Bitta shrift (PLAN 5.7): ilova shriftining havolasi qolib ketsa,
+  // brauzer uni baribir yuklaydi — jimgina, sahifa tezligi hisobiga.
+  if (/Golos|JetBrains/.test(html)) {
+    throw new Error(`prerender: ${page.path} da ilova shrifti qoldi (Golos/JetBrains)`)
+  }
   const dir = path.join(dist, page.path)
   await mkdir(dir, { recursive: true })
   await writeFile(path.join(dir, 'index.html'), html)
   count += 1
-  const words = page.body
-    .replace(/<[^>]+>/g, ' ')
-    .split(/\s+/)
-    .filter(Boolean).length
+  const words = page.body.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length
   console.log(`prerender: ${page.path.padEnd(12)} ${String(words).padStart(5)} so‘z`)
 }
 // --- 404 (PLAN 5.6) ---
@@ -84,10 +92,17 @@ for (const page of entry.prerenderPages()) {
 const notFound = entry.notFoundPage()
 const notFoundHtml = stripDefaultMeta(template)
   .replace(/\s*<script type="module"[^>]*><\/script>/, '')
-  .replace('</head>', `    ${notFound.head}\n  </head>`)
+  .replace(
+    '</head>',
+    `    ${notFound.head}\n    <link rel="stylesheet" href="${FONT_HREF}" />\n  </head>`,
+  )
   .replace('<div id="root"></div>', `<div id="root">${notFound.body}</div>`)
 if (notFoundHtml.includes('type="module"')) {
   throw new Error('prerender: 404.html ichida SPA skripti qoldi')
+}
+// Bitta shrift (PLAN 5.7) — ilova shriftlari public sahifaga tushmasin.
+for (const family of ['Golos', 'JetBrains']) {
+  if (notFoundHtml.includes(family)) throw new Error(`prerender: 404.html da ${family} qoldi`)
 }
 await writeFile(path.join(dist, '404.html'), notFoundHtml)
 count += 1

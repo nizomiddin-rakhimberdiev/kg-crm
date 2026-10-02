@@ -70,8 +70,23 @@
 }
 
 @layer components {
+  /*
+   * Public sayt — BITTA shrift (PLAN 5.7): Onest, sarlavha ham, matn ham.
+   * Ilova (CRM) brendbuk 05 dagidek qoladi: sarlavha Onest, matn Golos
+   * Text. Saytda ikkinchi va uchinchi shrift faqat birinchi ekranni
+   * sekinlashtirardi — har biri alohida so'rov va alohida fayl, va
+   * mobil internetda bu sezilarli.
+   */
   .marketing {
+    font-family: theme("fontFamily.display");
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Raqamlar ham shu shriftda: `.num` ilovada JetBrains Mono'ni oladi,
+     saytda esa u uchinchi shriftni yuklatib qo'yardi. Ustun tekisligi
+     `tabular-nums` bilan saqlanadi. */
+  .marketing .num {
+    font-family: inherit;
   }
 
   .marketing :focus-visible {

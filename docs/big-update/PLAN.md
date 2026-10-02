@@ -290,7 +290,7 @@ Yangi qo'riqchi testlar: `lib/i18n/__tests__/apostrophes` (Q11),
 - [x] **5.4** 2FA: platforma uchun majburiy, tenant egasi uchun ixtiyoriy, zaxira kodlar
 - [x] **5.5** Yangi bog'cha: 72 soatlik taklif havolasi, slug validatsiyasi
 - [x] **5.6** Nginx: CSP, Permissions-Policy, `/` → 301 `/uz` (ru brauzer → `/ru`), noma'lum yo'l → 404
-- [ ] **5.7** Landing: bitta shrift, aloqa bloki, demo javobi, mijozlar fikri joyi, 12px, mobil
+- [x] **5.7** Landing: bitta shrift, aloqa bloki, demo javobi, mijozlar fikri joyi, 12px, mobil
 - [ ] **5.8** Huquqiy sahifalar (uz/ru/en) qayta yozish
 - [ ] **5.9** Zaxira nusxa: `docs/ops/backup.md`, kunlik `pg_dump`, 14 kun
 - [ ] **5.10** Demo tenant seed (`/t/demo`) — boshqa tenantlarga tegmaydi

@@ -193,6 +193,18 @@ export interface Copy {
     standalone: { badge: string; title: string; text: string; points: string[]; cta: string }
   }
   faq: { eyebrow: string; title: string; items: { q: string; a: string }[] }
+  /**
+   * Mijozlar fikri (PLAN 5.7). `items` BO'SH ekan — blok umuman
+   * chizilmaydi: to'qima iqtibos ishonchni buzadi, bo'sh joy esa
+   * tugallanmagan sayt kabi ko'rinadi.
+   */
+  testimonials: {
+    eyebrow: string
+    title: string
+    items: { quote: string; name: string; role: string }[]
+  }
+  /** Aloqa bloki — header va footer (PLAN 5.7). */
+  contact: { title: string; telegram: string; email: string; tin: string; call: string }
   lead: {
     eyebrow: string
     title: string
@@ -208,6 +220,10 @@ export interface Copy {
     submit: string
     sending: string
     success: string
+    /** Yuborilgandan keyin: qachon bog'lanishimiz (PLAN 5.7). */
+    successNext: string
+    /** Kutishni xohlamaganlar uchun — Telegram tugmasi. */
+    telegram: string
     error: string
   }
   final: { title: string; text: string; cta: string; secondary: string }
@@ -522,7 +538,9 @@ const uz: Copy = {
     privacy: 'Maxfiylik siyosati',
     submit: 'Demo olish',
     sending: 'Yuborilmoqda…',
-    success: 'Rahmat. Soʻrovingiz qabul qilindi — tez orada bogʻlanamiz.',
+    success: 'Rahmat! Soʻrovingiz qabul qilindi.',
+    successNext: '24 soat ichida bogʻlanamiz.',
+    telegram: 'Telegramda yozish',
     error: 'Soʻrovni yuborib boʻlmadi. Maydonlarni tekshirib, qayta urinib koʻring.',
   },
   final: {
@@ -536,6 +554,14 @@ const uz: Copy = {
     terms: 'Foydalanish shartlari',
     login: 'CRMʼga kirish',
     copyright: '© 2026 Radix CRM',
+  },
+  testimonials: { eyebrow: 'Mijozlar fikri', title: 'Radix bilan ishlayotgan bogʻchalar', items: [] },
+  contact: {
+    title: 'Aloqa',
+    telegram: 'Telegram',
+    email: 'Email',
+    tin: 'STIR',
+    call: 'Qoʻngʻiroq qilish',
   },
   notFound: {
     title: 'Bu sahifa topilmadi',
@@ -935,7 +961,9 @@ const ru: Copy = {
     privacy: 'Политика конфиденциальности',
     submit: 'Получить демо',
     sending: 'Отправляем…',
-    success: 'Спасибо. Заявка принята — скоро свяжемся.',
+    success: 'Спасибо! Заявка принята.',
+    successNext: 'Свяжемся с вами в течение 24 часов.',
+    telegram: 'Написать в Telegram',
     error: 'Не удалось отправить. Проверьте поля и попробуйте ещё раз.',
   },
   final: {
@@ -949,6 +977,14 @@ const ru: Copy = {
     terms: 'Условия использования',
     login: 'Войти в CRM',
     copyright: '© 2026 Radix CRM',
+  },
+  testimonials: { eyebrow: 'Отзывы', title: 'Детские сады, которые работают с Radix', items: [] },
+  contact: {
+    title: 'Контакты',
+    telegram: 'Telegram',
+    email: 'Email',
+    tin: 'ИНН',
+    call: 'Позвонить',
   },
   notFound: {
     title: 'Страница не найдена',
@@ -1341,7 +1377,9 @@ const en: Copy = {
     privacy: 'Privacy Policy',
     submit: 'Get a demo',
     sending: 'Sending…',
-    success: 'Thank you. Your request has been received — we’ll be in touch shortly.',
+    success: 'Thank you! Your request has been received.',
+    successNext: 'We will contact you within 24 hours.',
+    telegram: 'Message us on Telegram',
     error: 'Couldn’t send the request. Check the fields and try again.',
   },
   final: {
@@ -1355,6 +1393,14 @@ const en: Copy = {
     terms: 'Terms of Use',
     login: 'Sign in to CRM',
     copyright: '© 2026 Radix CRM',
+  },
+  testimonials: { eyebrow: 'Testimonials', title: 'Kindergartens that work with Radix', items: [] },
+  contact: {
+    title: 'Contact',
+    telegram: 'Telegram',
+    email: 'Email',
+    tin: 'TIN',
+    call: 'Call',
   },
   notFound: {
     title: 'Page not found',

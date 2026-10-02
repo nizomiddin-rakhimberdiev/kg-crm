@@ -58,9 +58,7 @@ export function Frame({
           <aside className="hidden w-44 shrink-0 border-r border-slate-100 bg-slate-50/70 p-3 sm:block">
             <div className="flex items-center gap-2 px-2 py-1.5">
               <RadixMark size={24} />
-              <span className="truncate text-[12px] lg:text-[11px] font-semibold text-slate-800">
-                {demo.org}
-              </span>
+              <span className="truncate text-[12px] font-semibold text-slate-800">{demo.org}</span>
             </div>
             <ul className="mt-3 space-y-0.5">
               {demo.sidebar.map((item, index) => {
@@ -69,7 +67,7 @@ export function Frame({
                 return (
                   <li
                     key={item}
-                    className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-[12px] lg:text-[11px] ${
+                    className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-[12px] ${
                       on ? 'bg-brand-50 font-semibold text-brand-700' : 'text-slate-500'
                     }`}
                   >
@@ -85,10 +83,10 @@ export function Frame({
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
             <div className="h-6 w-40 max-w-[50%] rounded-md bg-slate-100" />
             <div className="flex items-center gap-2">
-              <span className="hidden whitespace-nowrap text-[12px] lg:text-[11px] text-slate-400 sm:block">
+              <span className="hidden whitespace-nowrap text-[12px] text-slate-400 sm:block">
                 {demo.today}
               </span>
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-amber-100 text-[11px] lg:text-[10px] font-bold text-amber-800">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-amber-100 text-[12px] font-bold text-amber-800">
                 DR
               </span>
             </div>
@@ -138,8 +136,11 @@ export function Kpi({
         {valueNode ?? (money ? groupThousands(kpi.value) : kpi.value)}
         {kpi.suffix ?? ''}
       </p>
-      <p className="truncate text-[12px] lg:text-[11px] font-medium text-slate-600">{kpi.label}</p>
-      <p className="truncate text-[11px] lg:text-[10px] text-slate-400">{kpi.hint}</p>
+      {/* Ikki qatorgacha, `truncate` emas (PLAN 5.7): 12px da
+          "120 / 128 belgilangan" bir qatorga sig'masdi va "belgila…"
+          bo'lib kesilardi — ya'ni raqamning ma'nosi yo'qolardi. */}
+      <p className="line-clamp-2 text-[12px] font-medium leading-4 text-slate-600">{kpi.label}</p>
+      <p className="mt-0.5 line-clamp-2 text-[12px] leading-4 text-slate-400">{kpi.hint}</p>
     </div>
   )
 }
@@ -171,7 +172,7 @@ export function Bars({
                 }}
               />
             </div>
-            <span className="text-[11px] lg:text-[10px] text-slate-400">{labels[i]}</span>
+            <span className="text-[12px] text-slate-400">{labels[i]}</span>
           </div>
         ))}
       </div>
@@ -194,7 +195,7 @@ export function Pill({
   }[tone]
   return (
     <span
-      className={`inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] lg:text-[10px] font-semibold ${cls}`}
+      className={`inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-semibold ${cls}`}
     >
       {children}
     </span>
@@ -219,7 +220,7 @@ export function Row({
       className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 ${active ? 'bg-brand-50' : ''}`}
     >
       {avatar && (
-        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-slate-100 text-[10px] lg:text-[9px] font-bold text-slate-600">
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-slate-100 text-[12px] font-bold text-slate-600">
           {name
             .split(' ')
             .map((p) => p[0])
@@ -228,8 +229,8 @@ export function Row({
         </span>
       )}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[12px] lg:text-[11px] font-semibold text-slate-800">{name}</p>
-        {meta && <p className="truncate text-[11px] lg:text-[10px] text-slate-400">{meta}</p>}
+        <p className="truncate text-[12px] font-semibold text-slate-800">{name}</p>
+        {meta && <p className="truncate text-[12px] text-slate-400">{meta}</p>}
       </div>
       {right}
     </div>

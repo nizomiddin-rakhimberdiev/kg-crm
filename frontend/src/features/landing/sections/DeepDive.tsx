@@ -11,7 +11,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { motion, useMotionValueEvent, useTransform } from 'framer-motion'
 import { Sparkles } from 'lucide-react'
 import { copy, groupThousands, type Locale } from '../content'
-import { CountUp, easeInOut, Reveal, useCompact, useScene, useStatic } from '../motion'
+import { CountUp, easeInOut, Reveal, useCompact, useScene, useStaticScene } from '../motion'
 import { Bars, Frame, Kpi, Pill, Row } from '../ui/Mock'
 
 const TREND = [61, 68, 72, 70, 79, 86]
@@ -73,7 +73,7 @@ export function DeepDive({ locale }: { locale: Locale }) {
   const frameShift = useRef<Point>({ x: 0, y: 0 })
   const progress = useScene(ref)
   const compact = useCompact()
-  const isStatic = useStatic()
+  const isStatic = useStaticScene()
   const [step, setStep] = useState(0)
 
   useLayoutEffect(() => {
@@ -162,10 +162,8 @@ export function DeepDive({ locale }: { locale: Locale }) {
               className={`rounded-xl border p-3 transition-colors ${pinned && step === 3 ? 'border-brand-300 ring-4 ring-brand-500/10' : 'border-slate-200/80'}`}
             >
               <div className="flex items-center justify-between">
-                <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
-                  {t.demo.chartTitle}
-                </p>
-                <span className="text-[11px] lg:text-[10px] text-slate-400">{ui.last6}</span>
+                <p className="text-[12px] font-semibold text-slate-800">{t.demo.chartTitle}</p>
+                <span className="text-[12px] text-slate-400">{ui.last6}</span>
               </div>
               <Bars values={TREND} labels={t.demo.months} className="mt-2" />
             </div>
@@ -174,9 +172,7 @@ export function DeepDive({ locale }: { locale: Locale }) {
               className={`hidden rounded-xl border p-3 transition-colors sm:block ${pinned && !compact && step === 2 ? 'border-brand-300 ring-4 ring-brand-500/10' : 'border-slate-200/80'}`}
             >
               <div className="flex items-center justify-between">
-                <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
-                  {t.demo.sidebar[4]}
-                </p>
+                <p className="text-[12px] font-semibold text-slate-800">{t.demo.sidebar[4]}</p>
                 <Pill tone="debt">9</Pill>
               </div>
               <div className="mt-1.5 space-y-0.5">
@@ -200,10 +196,10 @@ export function DeepDive({ locale }: { locale: Locale }) {
           </div>
           <div className="mt-3 flex items-center gap-2 rounded-xl border border-l-4 border-slate-200/80 border-l-red-500 px-3 py-2">
             <Sparkles className="h-3.5 w-3.5 text-brand-600" />
-            <p className="truncate text-[12px] lg:text-[11px] font-semibold text-slate-800">
-              {ui.alert}
-            </p>
-            <span className="ml-auto whitespace-nowrap text-[11px] lg:text-[10px] font-semibold text-brand-700">
+            {/* Ogohlantirish — gap, nom emas: telefonda ikki qatorga
+                o'tadi, "kechik…" bo'lib kesilmaydi (PLAN 5.7). */}
+            <p className="line-clamp-2 text-[12px] font-semibold text-slate-800">{ui.alert}</p>
+            <span className="ml-auto whitespace-nowrap text-[12px] font-semibold text-brand-700">
               {ui.why}
             </span>
           </div>
@@ -255,7 +251,7 @@ export function DeepDive({ locale }: { locale: Locale }) {
           {t.deepDive.steps.map((label, i) => (
             <span
               key={label}
-              className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] lg:text-[11px] font-semibold transition-colors duration-300 lg:px-3 lg:text-[12px] ${
+              className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-semibold transition-colors duration-300 lg:px-3 ${
                 step === i ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-500'
               }`}
             >

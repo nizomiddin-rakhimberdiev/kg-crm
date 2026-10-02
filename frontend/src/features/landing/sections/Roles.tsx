@@ -9,7 +9,7 @@
 import { useRef, useState } from 'react'
 import { useMotionValueEvent, useTransform } from 'framer-motion'
 import { copy, type Locale, type RoleCopy } from '../content'
-import { centerInStrip, Reveal, useCompact, useScene, useStatic } from '../motion'
+import { centerInStrip, Reveal, useCompact, useScene, useStaticScene } from '../motion'
 import { Bars, Frame, Kpi, Pill, Row } from '../ui/Mock'
 
 const STEPS = 4
@@ -28,7 +28,7 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-slate-200/80 p-3">
-            <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{ui.branches}</p>
+            <p className="text-[12px] font-semibold text-slate-800">{ui.branches}</p>
             <Row
               name={ui.chilonzor}
               meta="68 · 94 %"
@@ -43,7 +43,7 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
             />
           </div>
           <div className="hidden rounded-xl border border-slate-200/80 p-3 sm:block">
-            <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
+            <p className="text-[12px] font-semibold text-slate-800">
               {t.chartTitle}
             </p>
             <Bars values={[61, 68, 72, 70, 79, 86]} labels={t.months} className="mt-2" />
@@ -61,7 +61,7 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
           ))}
         </div>
         <div className="mt-3 rounded-xl border border-slate-200/80 p-3">
-          <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{ui.tasks}</p>
+          <p className="text-[12px] font-semibold text-slate-800">{ui.tasks}</p>
           <Row name={ui.attendanceMissing} right={<Pill tone="wait">08:40</Pill>} avatar={false} />
           <Row
             name={ui.newChildren}
@@ -83,7 +83,7 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
             [ui.debt, '12 450 000', 'text-red-700'],
           ].map(([l, v, c]) => (
             <div key={l} className="min-w-0 rounded-xl border border-slate-200/80 p-2.5">
-              <p className="truncate text-[11px] lg:text-[10px] text-slate-500">{l}</p>
+              <p className="truncate text-[12px] text-slate-500">{l}</p>
               <p
                 className={`whitespace-nowrap text-[12px] font-bold tabular-nums sm:text-[13px] ${c}`}
               >
@@ -93,7 +93,7 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
           ))}
         </div>
         <div className="mt-3 rounded-xl border border-slate-200/80 p-3">
-          <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
+          <p className="text-[12px] font-semibold text-slate-800">
             {ui.acceptPayment}
           </p>
           <Row
@@ -124,13 +124,13 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
           [ui.marked, '5 / 6'],
         ].map(([l, v]) => (
           <div key={l} className="min-w-0 rounded-xl border border-slate-200/80 p-2.5">
-            <p className="truncate text-[11px] lg:text-[10px] text-slate-500">{l}</p>
+            <p className="truncate text-[12px] text-slate-500">{l}</p>
             <p className="text-[13px] font-bold tabular-nums text-slate-900">{v}</p>
           </div>
         ))}
       </div>
       <div className="mt-3 rounded-xl border border-slate-200/80 p-3">
-        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{ui.groups}</p>
+        <p className="text-[12px] font-semibold text-slate-800">{ui.groups}</p>
         {[
           ['Quyosh', '20 / 20', 'ok'],
           ['Yulduzcha', '19 / 20', 'ok'],
@@ -154,7 +154,7 @@ export function Roles({ locale }: { locale: Locale }) {
   const ref = useRef<HTMLElement>(null)
   const progress = useScene(ref)
   const compact = useCompact()
-  const isStatic = useStatic()
+  const isStatic = useStaticScene()
   const [step, setStep] = useState(0)
   const [hover, setHover] = useState<RoleCopy['id'] | null>(null)
 
@@ -184,12 +184,12 @@ export function Roles({ locale }: { locale: Locale }) {
   const panel = (
     <Frame demo={t.demo} compact={compact} active={SIDEBAR[role]} className="rx-fade" key={role}>
       <div className="mb-3 flex items-center gap-2">
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-amber-100 text-[11px] lg:text-[10px] font-bold text-amber-800">
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-amber-100 text-[12px] font-bold text-amber-800">
           {active.title.slice(0, 1)}
         </span>
         <div className="min-w-0">
           <p className="text-[12px] font-bold text-slate-900">{active.title}</p>
-          <p className="truncate text-[11px] lg:text-[10px] text-slate-500">{active.focus}</p>
+          <p className="truncate text-[12px] text-slate-500">{active.focus}</p>
         </div>
       </div>
       <RoleView role={role} locale={locale} />
@@ -226,7 +226,7 @@ export function Roles({ locale }: { locale: Locale }) {
                 {item.title}
               </p>
               <span
-                className={`text-[12px] lg:text-[11px] font-semibold tabular-nums ${on ? 'text-slate-900' : 'text-slate-300'}`}
+                className={`text-[12px] font-semibold tabular-nums ${on ? 'text-slate-900' : 'text-slate-300'}`}
               >
                 0{i + 1}
               </span>

@@ -19,6 +19,7 @@ import { OneSystem } from '../sections/OneSystem'
 import { Pricing } from '../sections/Pricing'
 import { Problem } from '../sections/Problem'
 import { Roles } from '../sections/Roles'
+import { Testimonials } from '../sections/Testimonials'
 import { Workflow } from '../sections/Workflow'
 import { LandingSeo } from '../seo'
 import '../landing.css'
@@ -39,6 +40,8 @@ export function LandingPage({ locale }: { locale: Locale }) {
         <Workflow locale={locale} />
         <Finance locale={locale} />
         <Pricing locale={locale} />
+        {/* Ma'lumot qo'shilmaguncha hech narsa chizmaydi (PLAN 5.7). */}
+        <Testimonials locale={locale} />
         <Faq locale={locale} />
         <Lead locale={locale} />
       </main>

@@ -22,7 +22,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import { copy, type Copy, type FragmentCopy, type Locale } from '../content'
-import { useCompact, useScene, useStatic } from '../motion'
+import { useCompact, useScene, useStaticScene } from '../motion'
 import { Frame, Pill, Row } from '../ui/Mock'
 
 const POSES: { x: number; y: number; r: number }[] = [
@@ -72,13 +72,13 @@ function Paper({
     <div
       className={`rounded-lg border p-3 text-left shadow-[0_18px_40px_-18px_rgba(18,53,47,0.35)] ${compact ? 'w-40' : 'w-56'} ${SKIN[kind] ?? SKIN.note} ${className}`}
     >
-      <div className="flex items-center gap-1.5 text-[12px] lg:text-[11px] font-semibold">
+      <div className="flex items-center gap-1.5 text-[12px] font-semibold">
         <Icon className="h-3.5 w-3.5 opacity-70" />
         <span className="truncate">{fragment.title}</span>
       </div>
-      <ul className="mt-2 space-y-1 text-[12px] lg:text-[11px] leading-snug opacity-90">
+      <ul className="mt-2 space-y-1 text-[12px] leading-snug opacity-90">
         {fragment.lines.map((line) => (
-          <li key={line} className="truncate">
+          <li key={line} className="line-clamp-2">
             {line}
           </li>
         ))}
@@ -127,7 +127,7 @@ function Resolved({ locale, compact }: { locale: Locale; compact: boolean }) {
     <Frame demo={t.demo} active={0} compact={compact} className="w-full">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-slate-200/80 p-3">
-          <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{f[4].title}</p>
+          <p className="text-[12px] font-semibold text-slate-800">{f[4].title}</p>
           <Row
             name={f[4].lines[0].split(' · ')[0]}
             meta={t.demo.today}
@@ -142,17 +142,13 @@ function Resolved({ locale, compact }: { locale: Locale; compact: boolean }) {
           />
         </div>
         <div className="rounded-xl border border-slate-200/80 p-3">
-          <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
-            {t.demo.sidebar[3]}
-          </p>
+          <p className="text-[12px] font-semibold text-slate-800">{t.demo.sidebar[3]}</p>
           <Row name="Karimov A." meta="1 500 000" right={<Pill tone="wait">{ui.wait}</Pill>} />
           <Row name="Rasulova M." meta="1 500 000" right={<Pill tone="ok">{ui.paid}</Pill>} />
           <Row name="Yusupov S." meta="600 000" right={<Pill tone="debt">{ui.debt}</Pill>} />
         </div>
         <div className="hidden rounded-xl border border-slate-200/80 p-3 sm:block">
-          <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
-            {t.demo.sidebar[6]}
-          </p>
+          <p className="text-[12px] font-semibold text-slate-800">{t.demo.sidebar[6]}</p>
           <Row
             name={f[5].lines[0].split(' · ')[0]}
             meta={f[5].lines[1]}
@@ -167,12 +163,13 @@ function Resolved({ locale, compact }: { locale: Locale; compact: boolean }) {
           />
         </div>
         <div className="hidden rounded-xl border border-slate-200/80 p-3 sm:block">
-          <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
-            {t.demo.sidebar[7]}
-          </p>
+          <p className="text-[12px] font-semibold text-slate-800">{t.demo.sidebar[7]}</p>
+          {/* Nom va summa ALOHIDA qatorda (PLAN 5.7): 12px da
+              "Oziq-ovqat · 2 300 000" tor ustunga sig'masdi va summa
+              — qatorning butun ma'nosi — kesilib qolardi. */}
           <Row
-            name={f[6].lines[0]}
-            meta={f[3].lines[1].split(' · ')[0]}
+            name={f[6].lines[0].split(' · ')[0]}
+            meta={`${f[6].lines[0].split(' · ')[1]} · ${f[3].lines[1].split(' · ')[0]}`}
             right={<Pill tone="neutral">{ui.receiptAttached}</Pill>}
             avatar={false}
           />
@@ -187,7 +184,7 @@ export function Problem({ locale }: { locale: Locale }) {
   const ref = useRef<HTMLElement>(null)
   const progress = useScene(ref)
   const compact = useCompact()
-  const isStatic = useStatic()
+  const isStatic = useStaticScene()
   const factor = compact ? 0.38 : 1
 
   const windowOpacity = useTransform(progress, [0.5, 0.72], [0, 1])

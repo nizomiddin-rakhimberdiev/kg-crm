@@ -60,6 +60,12 @@ export const env = {
   publicHost: import.meta.env.VITE_PUBLIC_HOST ?? 'radix-crm.uz',
   legalEntityName: import.meta.env.VITE_LEGAL_ENTITY_NAME ?? '',
   /**
+   * Yuridik shaxs: STIR va manzil (PLAN 5.7). Boʻsh boʻlsa saytda
+   * koʻrsatilmaydi — "{{STIR}}" kabi toʻldirilmagan yozuv chiqmasin.
+   */
+  legalTin: import.meta.env.VITE_LEGAL_TIN ?? '',
+  legalAddress: import.meta.env.VITE_LEGAL_ADDRESS ?? '',
+  /**
    * Obuna to'lovi rekvizitlari (PLAN 1.12).
    *
    * Auditda obuna sahifasida to'lash yo'li umuman yo'q edi: mijoz

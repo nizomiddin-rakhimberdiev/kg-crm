@@ -35,6 +35,21 @@ ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 ARG VITE_DEPLOYMENT_MODE=saas
 ENV VITE_DEPLOYMENT_MODE=${VITE_DEPLOYMENT_MODE}
 
+# Public sayt qiymatlari (PLAN 5.7). `compose.prod.yaml` ularni build
+# argumenti sifatida uzatadi — lekin Docker `ARG` bilan e'lon qilinMAGAN
+# argumentni JIMGINA tashlab yuboradi. Ilgari `VITE_PUBLIC_HOST` va
+# `VITE_LEGAL_ENTITY_NAME` aynan shunday yo'qolardi: `.env` da yozilgan
+# yuridik nom saytga hech qachon chiqmasdi, xost esa koddagi sukut
+# qiymatga tasodifan mos kelgani uchun ishlardi.
+ARG VITE_PUBLIC_HOST=radix-crm.uz
+ARG VITE_LEGAL_ENTITY_NAME=
+ARG VITE_LEGAL_TIN=
+ARG VITE_LEGAL_ADDRESS=
+ENV VITE_PUBLIC_HOST=${VITE_PUBLIC_HOST} \
+    VITE_LEGAL_ENTITY_NAME=${VITE_LEGAL_ENTITY_NAME} \
+    VITE_LEGAL_TIN=${VITE_LEGAL_TIN} \
+    VITE_LEGAL_ADDRESS=${VITE_LEGAL_ADDRESS}
+
 RUN npm run build
 
 

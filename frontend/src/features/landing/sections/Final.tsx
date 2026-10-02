@@ -10,6 +10,7 @@ import { copy, type Locale } from '../content'
 import { Reveal } from '../motion'
 import { Bars, Frame, Kpi } from '../ui/Mock'
 import { basePath } from '../paths'
+import { ContactList, LegalLine } from '../ui/Contacts'
 
 export function Final({ locale }: { locale: Locale }) {
   const t = copy[locale]
@@ -47,7 +48,7 @@ export function Final({ locale }: { locale: Locale }) {
                 ))}
               </div>
               <div className="mt-3 rounded-xl border border-slate-200/80 p-3">
-                <p className="text-[11px] font-semibold text-slate-800">{t.demo.chartTitle}</p>
+                <p className="text-[12px] font-semibold text-slate-800">{t.demo.chartTitle}</p>
                 <Bars values={[61, 68, 72, 70, 79, 86]} labels={t.demo.months} className="mt-2" />
               </div>
             </Frame>
@@ -61,10 +62,14 @@ export function Final({ locale }: { locale: Locale }) {
 
       <footer className="relative border-t border-slate-200 bg-white">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6 px-5 py-10 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div className="flex items-center gap-4">
+          <div className="grid gap-5">
             <Link to={basePath(locale)} aria-label="Radix CRM">
               <Brand />
             </Link>
+            {/* Aloqa bloki (PLAN 5.7) — yuridik qator faqat to'ldirilgan
+                qismlardan, bo'sh bo'lsa yo'q. */}
+            <ContactList locale={locale} />
+            <LegalLine locale={locale} />
           </div>
           <nav
             className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600"

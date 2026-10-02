@@ -4,14 +4,18 @@
  * Chap ustunda ro'yxat, o'ngda panel. Har bir modul uchun ekran balandligi
  * bitta "qadam": qadam ichida (local 0 → 1) UI o'z hikoyasini ko'rsatadi —
  * ro'yxat filtrlanadi, to'lov holati o'zgaradi, davomat to'ladi, ombor
- * kamayadi. Mobil: ham pinned — chip qatori + panel + matn.
+ * kamayadi. Planshet: ham pinned — chip qatori + panel + matn.
+ *
+ * Telefon (PLAN 5.7): pinned EMAS va oltita panel ketma-ket ham EMAS —
+ * bitta panel, chiplar bosiladi. Oltita mock ekranni ustma-ust qo'yish
+ * telefonda ~4 000 px edi: bir xil ramka olti marta takrorlanardi.
  */
 
 import { useRef, useState, type ReactNode } from 'react'
 import { useMotionValue, useMotionValueEvent, useTransform, type MotionValue } from 'framer-motion'
 import { Check, ChevronRight } from 'lucide-react'
 import { copy, groupThousands, type Locale, type ModuleCopy } from '../content'
-import { centerInStrip, Reveal, useCompact, useScene, useStatic } from '../motion'
+import { centerInStrip, Reveal, useCompact, usePhone, useScene, useStaticScene } from '../motion'
 import { Bars, Frame, Kpi, Pill, Row } from '../ui/Mock'
 import { Num } from '../ui/Num'
 
@@ -48,7 +52,7 @@ export function ChildrenUi({ local, locale, compact = false }: UiProps) {
           {groups.map((g, i) => (
             <span
               key={g}
-              className={`rounded-full px-2.5 py-1 text-[11px] lg:text-[10px] font-semibold transition-colors duration-300 ${
+              className={`rounded-full px-2.5 py-1 text-[12px] font-semibold transition-colors duration-300 ${
                 (phase >= 1 ? i === 1 : i === 0)
                   ? 'bg-slate-950 text-white'
                   : 'bg-slate-100 text-slate-600'
@@ -86,15 +90,15 @@ export function ChildrenUi({ local, locale, compact = false }: UiProps) {
         }}
       >
         <div className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-950 text-[12px] lg:text-[11px] font-bold text-white">
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-slate-950 text-[12px] font-bold text-white">
             KA
           </span>
           <div>
             <p className="text-[12px] font-bold text-slate-900">Karimov Ali</p>
-            <p className="text-[11px] lg:text-[10px] text-slate-500">Quyosh · 4 {ui.age}</p>
+            <p className="text-[12px] text-slate-500">Quyosh · 4 {ui.age}</p>
           </div>
         </div>
-        <dl className="mt-3 grid grid-cols-2 gap-x-2 gap-y-1.5 text-[11px] lg:text-[10px]">
+        <dl className="mt-3 grid grid-cols-2 gap-x-2 gap-y-1.5 text-[12px]">
           <dt className="text-slate-500">{ui.tariff}</dt>
           <dd className="font-semibold text-slate-800">1 500 000</dd>
           <dt className="text-slate-500">{ui.guardian}</dt>
@@ -131,7 +135,7 @@ export function PaymentsUi({ local, locale }: UiProps) {
           [L.debt, debt, 'text-red-700'],
         ].map(([label, value, cls]) => (
           <div key={String(label)} className="rounded-xl border border-slate-200/80 p-2.5">
-            <p className="text-[11px] lg:text-[10px] capitalize text-slate-500">{label}</p>
+            <p className="text-[12px] capitalize text-slate-500">{label}</p>
             <Num value={Number(value)} className={`text-[13px] font-bold tabular-nums ${cls}`} />
           </div>
         ))}
@@ -160,14 +164,14 @@ export function AttendanceUi({ local, locale }: UiProps) {
   return (
     <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
       <div>
-        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">
+        <p className="text-[12px] font-semibold text-slate-800">
           Quyosh · {ui.today}
         </p>
         <div className="mt-2 grid grid-cols-10 gap-1.5">
           {Array.from({ length: 20 }).map((_, i) => (
             <span
               key={i}
-              className={`grid aspect-square place-items-center rounded-md text-[10px] lg:text-[9px] font-bold transition-colors duration-300 ${
+              className={`grid aspect-square place-items-center rounded-md text-[12px] font-bold transition-colors duration-300 ${
                 i < present
                   ? 'bg-emerald-500 text-white'
                   : i === 19 && present >= 19
@@ -187,11 +191,11 @@ export function AttendanceUi({ local, locale }: UiProps) {
         </div>
       </div>
       <div className="rounded-xl border border-slate-200/80 p-3 sm:w-36">
-        <p className="text-[11px] lg:text-[10px] text-slate-500">{ui.title}</p>
+        <p className="text-[12px] text-slate-500">{ui.title}</p>
         <p className="text-2xl font-bold tabular-nums text-slate-950">
           <Num value={pct} format={(v) => String(Math.round(v))} duration={0.3} />%
         </p>
-        <p className="text-[11px] lg:text-[10px] text-slate-500">
+        <p className="text-[12px] text-slate-500">
           {present} / 20 · {ui.present}
         </p>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
@@ -218,9 +222,9 @@ export function StaffUi({ local, locale }: UiProps) {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{ui.title}</p>
+        <p className="text-[12px] font-semibold text-slate-800">{ui.title}</p>
         <span
-          className="text-[11px] lg:text-[10px] text-slate-500 transition-opacity duration-500"
+          className="text-[12px] text-slate-500 transition-opacity duration-500"
           style={{ opacity: phase >= 1 ? 1 : 0 }}
         >
           {ui.payroll}
@@ -236,7 +240,7 @@ export function StaffUi({ local, locale }: UiProps) {
               <div className="flex items-center gap-1.5">
                 {phase === 2 && i === 4 && <Pill tone="wait">{ui.advance}</Pill>}
                 <span
-                  className="text-[12px] lg:text-[11px] font-semibold tabular-nums text-slate-800 transition-opacity duration-500"
+                  className="text-[12px] font-semibold tabular-nums text-slate-800 transition-opacity duration-500"
                   style={{ opacity: phase >= 1 ? 1 : 0 }}
                 >
                   {groupThousands(salary)}
@@ -250,7 +254,7 @@ export function StaffUi({ local, locale }: UiProps) {
         className="mt-2 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 transition-opacity duration-500"
         style={{ opacity: phase === 2 ? 1 : 0 }}
       >
-        <span className="text-[11px] lg:text-[10px] text-slate-500">{ui.total}</span>
+        <span className="text-[12px] text-slate-500">{ui.total}</span>
         <Num value={31_500_000} className="text-[12px] font-bold tabular-nums text-slate-900" />
       </div>
     </div>
@@ -274,13 +278,13 @@ export function InventoryUi({ local, locale, compact = false }: UiProps) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <div className="rounded-xl border border-slate-200/80 p-3">
-        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{ui.stock}</p>
+        <p className="text-[12px] font-semibold text-slate-800">{ui.stock}</p>
         <ul className="mt-2 space-y-2">
           {stock.slice(0, compact ? 3 : 4).map(([name, unit, from, to]) => {
             const value = phase === 0 ? from : phase === 1 ? Math.round((from + to) / 2) : to
             return (
               <li key={name}>
-                <div className="flex justify-between text-[11px] lg:text-[10px]">
+                <div className="flex justify-between text-[12px]">
                   <span className="text-slate-600">{name}</span>
                   <span className="font-semibold tabular-nums text-slate-800">
                     <Num value={value} format={(v) => String(Math.round(v))} duration={0.5} />{' '}
@@ -299,12 +303,12 @@ export function InventoryUi({ local, locale, compact = false }: UiProps) {
         </ul>
       </div>
       <div className="rounded-xl border border-slate-200/80 p-3">
-        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{ui.expenses}</p>
+        <p className="text-[12px] font-semibold text-slate-800">{ui.expenses}</p>
         <ul className="mt-2 space-y-1">
           {expenses.map(([name, amount], i) => (
             <li
               key={name}
-              className="flex items-center justify-between rounded-lg px-2 py-1.5 text-[12px] lg:text-[11px] transition-all duration-500"
+              className="flex items-center justify-between rounded-lg px-2 py-1.5 text-[12px] transition-all duration-500"
               style={{
                 opacity: i <= phase ? 1 : 0,
                 transform: i <= phase ? 'none' : 'translateY(6px)',
@@ -347,7 +351,7 @@ export function ReportsUi({ local, locale, compact = false }: UiProps) {
         className="mt-3 rounded-xl border border-slate-200/80 p-3 transition-opacity duration-500"
         style={{ opacity: phase >= 1 ? 1 : 0.35 }}
       >
-        <p className="text-[12px] lg:text-[11px] font-semibold text-slate-800">{t.chartTitle}</p>
+        <p className="text-[12px] font-semibold text-slate-800">{t.chartTitle}</p>
         <Bars
           values={[61, 68, 72, 70, 79, 86]}
           labels={t.months}
@@ -373,7 +377,7 @@ export function Modules({ locale }: { locale: Locale }) {
   const ref = useRef<HTMLElement>(null)
   const progress = useScene(ref)
   const compact = useCompact()
-  const isStatic = useStatic()
+  const isStatic = useStaticScene()
 
   const activeMv = useTransform(progress, (p) => Math.min(STEPS - 1, Math.floor(p * STEPS)))
   const local = useTransform(progress, (p) => {
@@ -383,6 +387,58 @@ export function Modules({ locale }: { locale: Locale }) {
   const [active, setActive] = useState(0)
   useMotionValueEvent(activeMv, 'change', (v) => setActive(v))
   const one = useMotionValue(1)
+  const phone = usePhone()
+  const [picked, setPicked] = useState(0)
+
+  if (isStatic && phone) {
+    const item = t.modules.items[picked]
+    const Ui = UI[item.id]
+    return (
+      <section ref={ref} id="capabilities" className="bg-slate-50 py-14">
+        <div className="px-5">
+          <Reveal>
+            <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
+              {t.modules.eyebrow}
+            </p>
+            <h2 className="mt-2 text-balance text-[1.6rem] font-bold !leading-[1.12] tracking-[-0.03em] text-slate-950">
+              {t.modules.title}
+            </h2>
+          </Reveal>
+          {/* Chiplar — tugma: telefonda scroll emas, bosish modulni almashtiradi. */}
+          <div
+            role="tablist"
+            aria-label={t.modules.title}
+            className="-mx-5 mt-5 flex gap-1.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]"
+          >
+            {t.modules.items.map((m, i) => (
+              <button
+                key={m.id}
+                type="button"
+                role="tab"
+                aria-selected={i === picked}
+                onClick={() => setPicked(i)}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-[13px] font-semibold transition-colors ${
+                  i === picked
+                    ? 'bg-slate-950 text-white'
+                    : 'bg-white text-slate-600 ring-1 ring-slate-200'
+                }`}
+              >
+                0{i + 1} · {m.title}
+              </button>
+            ))}
+          </div>
+          <div className="mt-3" role="tabpanel">
+            <Frame demo={t.demo} compact className="rx-fade" key={item.id}>
+              <Ui local={one} locale={locale} compact />
+            </Frame>
+          </div>
+          <h3 className="mt-4 text-lg font-bold tracking-tight text-slate-950">{item.title}</h3>
+          <p className="mt-1 text-[15px] leading-6 text-slate-600">{item.text}</p>
+          <p className="mt-2 text-[12px] text-slate-500">{item.caption}</p>
+        </div>
+      </section>
+    )
+  }
 
   if (isStatic) {
     return (

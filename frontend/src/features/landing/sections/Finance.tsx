@@ -12,7 +12,7 @@ import { useRef } from 'react'
 import { motion, useTransform, type MotionValue } from 'framer-motion'
 import { ArrowDown, ArrowRight } from 'lucide-react'
 import { copy, groupThousands, money, type Locale } from '../content'
-import { CountUp, Reveal, useCompact, useScene, useStatic } from '../motion'
+import { CountUp, Reveal, useCompact, useScene, useStaticScene } from '../motion'
 
 type Tone = 'in' | 'out' | 'warn' | 'neutral'
 const TEXT: Record<Tone, string> = {
@@ -94,7 +94,7 @@ export function Finance({ locale }: { locale: Locale }) {
   const ref = useRef<HTMLElement>(null)
   const progress = useScene(ref)
   const compact = useCompact()
-  const isStatic = useStatic()
+  const isStatic = useStaticScene()
   const byId = Object.fromEntries(t.metrics.map((m) => [m.id, m]))
   const payments = byId.payments.value
   const parts = [byId.expenses, byId.salaries, byId.balance]
@@ -166,7 +166,7 @@ export function Finance({ locale }: { locale: Locale }) {
           <div className="mt-4 grid gap-2 lg:mt-12 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:gap-4">
             {/* Kirim */}
             <Appear progress={progress} at={0.02} className={card}>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400">
                 {ui.inflow}
               </p>
               <div className={compact ? 'mt-2 grid grid-cols-3 gap-2' : ''}>
@@ -194,7 +194,7 @@ export function Finance({ locale }: { locale: Locale }) {
 
             {/* Chiqim */}
             <Appear progress={progress} at={0.38} className={card}>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400">
                 {ui.outflow}
               </p>
               <div className={compact ? 'mt-2 grid grid-cols-2 gap-2' : ''}>
@@ -225,7 +225,7 @@ export function Finance({ locale }: { locale: Locale }) {
               at={0.6}
               className="rounded-2xl border border-brand-400/40 bg-brand-500/10 p-3.5 lg:p-6"
             >
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-300">
+              <p className="text-[12px] font-semibold uppercase tracking-wider text-brand-300">
                 {byId.balance.label}
               </p>
               <p className="mt-2 num text-3xl font-bold tracking-tight text-white lg:mt-4 lg:text-4xl">
