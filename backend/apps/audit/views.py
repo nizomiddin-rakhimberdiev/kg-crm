@@ -18,6 +18,7 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from apps.audit import labels
 from apps.audit.models import AuditLog
 from apps.audit.serializers import AuditLogSerializer
 from apps.core.permissions import HasModulePermission
@@ -35,6 +36,26 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     filterset_fields = ["action", "entity_type", "entity_id", "actor"]
     ordering_fields = ["created_at"]
     ordering = ["-created_at"]
+
+    def get_serializer(self, *args: Any, **kwargs: Any) -> Any:
+        """
+        Nomlarni BIR MARTA yig'adi — ko'rsatilayotgan qatorlar uchun
+        (PLAN 4.4).
+
+        Serializer'ning o'zida qilinsa, har bir qator uchun alohida
+        so'rov ketardi: 50 qatorli sahifa 50 ta so'rovga aylanadi va
+        jurnal sekinlashadi — aynan shu sahifa esa ko'p qator bilan
+        ishlatiladi.
+
+        `get_serializer` da (va `get_serializer_context` da emas),
+        chunki qatorlar ro'yxati shu yerda — sahifalash yoqilgan
+        yoki yo'qligidan qat'i nazar.
+        """
+        rows = args[0] if args else kwargs.get("instance")
+        batch = list(rows) if isinstance(rows, (list, tuple)) else ([rows] if rows else [])
+        kwargs.setdefault("context", self.get_serializer_context())
+        kwargs["context"]["labels"] = labels.resolve_labels(batch)
+        return super().get_serializer(*args, **kwargs)
 
     def get_queryset(self) -> Any:
         # `organization_id` — YAGONA chegara. `AuditLog.objects` oddiy

@@ -6,7 +6,7 @@ import { LogOut, X } from 'lucide-react'
 import { RadixMark } from '@/components/brand/Logo'
 import { Avatar } from '@/components/ui/Avatar'
 import { useAuth } from '@/app/providers/AuthProvider'
-import { navItems, type NavItem } from '@/config/navigation'
+import { SECTION_LABEL, SECTION_ORDER, navItems, type NavItem } from '@/config/navigation'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { BranchSwitcher } from './BranchSwitcher'
@@ -50,46 +50,61 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <p className="truncate text-sm font-bold text-tosh-900">
             {user?.organization?.name ?? t('Radix CRM')}
           </p>
-          <p className="text-[11px] font-medium tracking-wide text-tosh-400">
-            {t('Boshqaruv Tizimi')}
-          </p>
+          <p className="text-xs font-medium tracking-wide text-tosh-400">{t('Boshqaruv Tizimi')}</p>
         </div>
       </NavLink>
 
       {/* Filial — faqat drawer'da: Topbar'da u `sm` dan pastda yashirin. */}
       <BranchSwitcher variant="drawer" />
 
-      {/* Nav */}
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 scrollbar-thin">
-        {visibleItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            data-sound="nav"
-            onClick={onNavigate}
-            className={({ isActive }) =>
-              cn(
-                // Sensorli ekranda 44px balandlik — barmoq uchun minimal nishon.
-                'flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:min-h-0',
-                isActive
-                  ? 'bg-brand-50 text-brand-700'
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900',
-              )
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <item.icon
-                  className={cn(
-                    'h-[18px] w-[18px]',
-                    isActive ? 'text-brand-600' : 'text-slate-400',
-                  )}
-                />
-                {item.label}
-              </>
-            )}
-          </NavLink>
-        ))}
+      {/* Nav — boʻlimlarga ajratilgan (PLAN 4.5). Ruxsati yoʻq
+          boʻlim butunlay koʻrinmaydi: bitta ham punkti qolmagan
+          sarlavha faqat shovqin. */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 scrollbar-thin">
+        {SECTION_ORDER.map((section) => {
+          const items = visibleItems.filter((item) => item.section === section)
+          if (items.length === 0) return null
+          return (
+            <div key={section} className="mb-4 last:mb-0">
+              {SECTION_LABEL[section] && (
+                <p className="mb-1 px-3 text-xs font-semibold tracking-wide text-tosh-400">
+                  {SECTION_LABEL[section]}
+                </p>
+              )}
+              <div className="space-y-1">
+                {items.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    data-sound="nav"
+                    onClick={onNavigate}
+                    className={({ isActive }) =>
+                      cn(
+                        // Sensorli ekranda 44px balandlik — barmoq uchun minimal nishon.
+                        'flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:min-h-0',
+                        isActive
+                          ? 'bg-brand-50 text-brand-700'
+                          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900',
+                      )
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <item.icon
+                          className={cn(
+                            'h-[18px] w-[18px]',
+                            isActive ? 'text-brand-600' : 'text-slate-400',
+                          )}
+                        />
+                        {item.label}
+                      </>
+                    )}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          )
+        })}
       </nav>
 
       {/* Profile footer */}

@@ -797,6 +797,10 @@ export interface ReportExport {
 }
 
 export interface AuditLog {
+  /** Obyektning NOMI — UUID oʻrniga (PLAN 4.4). Topilmasa boʻsh satr. */
+  entity_label: string
+  /** `changes` ichidagi UUID'lar nomlari: `{child: "Ali Karimov"}`. */
+  changes_labels: Record<string, string>
   id: string
   created_at: string
   actor: string | null

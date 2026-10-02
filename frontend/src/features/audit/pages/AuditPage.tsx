@@ -29,6 +29,18 @@ const ACTION: Record<string, [string, string]> = {
 
 const ENTITY: Record<string, string> = {
   child: t('Bola'),
+  enrollment: t('Guruhga biriktirish'),
+  group: t('Guruh'),
+  guardian: t('Vasiy'),
+  employee: t('Xodim'),
+  product: t('Mahsulot'),
+  tariff: t('Tarif'),
+  cash_account: t('Kassa'),
+  absence_claim: t('Kelmagan kun daʼvosi'),
+  notification: t('Bildirishnoma'),
+  notification_template: t('Xabar shabloni'),
+  subscription: t('Obuna'),
+  support_grant: t('Qoʻllab-quvvatlash ruxsati'),
   child_import: t('Bolalar importi'),
   payment: t('Toʻlov'),
   invoice: t('Hisob-faktura'),
@@ -42,6 +54,79 @@ const ENTITY: Record<string, string> = {
   branch: t('Filial'),
   organization: t('Tashkilot'),
   payroll_run: t('Oylik hisoblash'),
+}
+
+/**
+ * Oʻzgargan maydonning nomi — odam tilida (PLAN 4.4).
+ *
+ * Auditda bu ustun `status: "archived", reason: "…"` koʻrinishida
+ * edi: inglizcha kalit va JSON. Jurnalni mudira oʻqiydi, va u
+ * maydon nomlarini bilishi kerak emas.
+ */
+const FIELD: Record<string, string> = {
+  status: t('Holat'),
+  reason: t('Sabab'),
+  amount: t('Summa'),
+  name: t('Nomi'),
+  from: t('Nimadan'),
+  to: t('Nimaga'),
+  before: t('Oldin'),
+  after: t('Keyin'),
+  child: t('Bola'),
+  group: t('Guruh'),
+  guardian: t('Vasiy'),
+  employee: t('Xodim'),
+  product: t('Mahsulot'),
+  tariff: t('Tarif'),
+  invoice: t('Hisob-faktura'),
+  payment: t('Toʻlov'),
+  cash_account: t('Kassa'),
+  role: t('Rol'),
+  method: t('Usul'),
+  direction: t('Yoʻnalish'),
+  movement_type: t('Harakat turi'),
+  fields: t('Maydonlar'),
+  permissions: t('Ruxsatlar'),
+  archived: t('Arxivlangan'),
+  reactivated: t('Qayta faollashtirilgan'),
+  reversed: t('Qaytarilgan'),
+  revoked: t('Bekor qilingan'),
+  suspended: t('Toʻxtatilgan'),
+  forced: t('Majburan'),
+  days: t('Kunlar'),
+  until: t('Qachongacha'),
+  expires_at: t('Amal qilish muddati'),
+  total_net: t('Sof summa'),
+  payouts: t('Toʻlovlar soni'),
+  created: t('Yaratildi'),
+  skipped: t('Oʻtkazib yuborildi'),
+  recalculated: t('Qayta hisoblandi'),
+  email: t('Email'),
+  slug: t('Manzil nomi'),
+  severity: t('Jiddiylik'),
+  kind: t('Turi'),
+  type: t('Turi'),
+  telegram: t('Telegram'),
+  self_profile: t('Oʻz profili'),
+  sessions_closed: t('Yopilgan sessiyalar'),
+  password_reset: t('Parol tiklandi'),
+  trial_extended_days: t('Sinov uzaytirildi (kun)'),
+  n: t('Soni'),
+  batch: t('Partiya'),
+  credit: t('Kredit'),
+  movement: t('Harakat'),
+  id: t('Identifikator'),
+  key: t('Kalit'),
+  reopened_from: t('Qaytib ochildi'),
+}
+
+/** JSON emas, odam oʻqiydigan qiymat. */
+function fieldValue(value: unknown): string {
+  if (value === null || value === undefined) return '—'
+  if (typeof value === 'boolean') return value ? t('ha') : t('yoʻq')
+  if (Array.isArray(value)) return value.map((item) => fieldValue(item)).join(', ')
+  if (typeof value === 'object') return JSON.stringify(value)
+  return String(value)
 }
 
 const FILTERS: Array<[string, string]> = [
@@ -185,14 +270,24 @@ export default function AuditPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-600">
-                      {ENTITY[row.entity_type] ?? row.entity_type ?? '—'}
+                      <p>{ENTITY[row.entity_type] ?? row.entity_type ?? '—'}</p>
+                      {/* UUID emas, NOM (PLAN 4.4): "kim nima qildi?"
+                          degan savolga javob shu ustunda boʻlishi
+                          kerak, qidirishga yuboradigan havola emas. */}
+                      {row.entity_label && (
+                        <p className="text-xs text-slate-400">{row.entity_label}</p>
+                      )}
                     </td>
                     <td className="max-w-sm px-4 py-3 text-xs text-slate-500">
                       {changes.length === 0
                         ? '—'
                         : changes
-                            .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
-                            .join(', ')}
+                            .map(([key, value]) => {
+                              const label = FIELD[key] ?? key
+                              const named = row.changes_labels?.[key]
+                              return `${label}: ${named ?? fieldValue(value)}`
+                            })
+                            .join(' · ')}
                     </td>
                   </tr>
                 )
