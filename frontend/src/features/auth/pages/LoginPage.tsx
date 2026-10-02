@@ -8,8 +8,9 @@
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building2, LogIn } from 'lucide-react'
+import { LogIn } from 'lucide-react'
 import { Logo } from '@/components/brand/Logo'
+import { OrgMark } from '@/components/brand/OrgMark'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { authApi } from '@/features/auth/api'
 import { ApiError, isPendingChoice, type OrganizationSummary } from '@/lib/api/types'
@@ -157,7 +158,10 @@ export default function LoginPage() {
                   onClick={() => void chooseOrganization(org.id)}
                   className="flex w-full items-center gap-3 rounded-lg border border-slate-200 px-3 py-3 text-left transition hover:border-brand-300 hover:bg-brand-50 disabled:opacity-60"
                 >
-                  <Building2 className="h-4 w-4 shrink-0 text-slate-400" />
+                  {/* Bogʻchaning belgisi (PLAN 4.6): ikki bogʻchada
+                      ishlaydigan xodim ularni nomidan ham tezroq
+                      logotipi bilan ajratadi. */}
+                  <OrgMark name={org.name} logoUrl={org.logo_url} size={28} />
                   <span className="text-sm font-medium text-slate-800">{org.name}</span>
                 </button>
               ))}

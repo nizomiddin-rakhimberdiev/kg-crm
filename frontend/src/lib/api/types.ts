@@ -65,6 +65,8 @@ export interface OrganizationSummary {
   id: string
   name: string
   slug: string
+  /** Bogʻcha logotipi; `null` — bosh harf koʻrsatiladi (PLAN 4.6). */
+  logo_url?: string | null
 }
 
 /** Tashkilotning to'liq profili — `/organization` (docs/04 §16). */
@@ -78,6 +80,7 @@ export interface Organization {
   contact_phone: string
   country: string
   locale: string
+  logo_url: string | null
   onboarded_at: string | null
   created_at: string
 }

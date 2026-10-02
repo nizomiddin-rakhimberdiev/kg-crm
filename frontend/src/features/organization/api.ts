@@ -16,4 +16,24 @@ export interface OrganizationInput {
 export const organizationApi = {
   get: () => api.get<Organization>('/organization'),
   update: (payload: OrganizationInput) => api.patch<Organization>('/organization', payload),
+
+  /**
+   * Logotip — ALOHIDA endpoint (PLAN 4.6).
+   *
+   * `multipart/form-data` talab qiladi, qolgan maydonlar esa JSON.
+   * Bitta endpointda ikki format aralashsa, faylsiz `PATCH`
+   * logotipni oʻchirib yuborishi oson boʻlardi.
+   */
+  uploadLogo: async (file: File) => {
+    const { httpClient } = await import('@/lib/api/client')
+    const form = new FormData()
+    form.append('logo', file)
+    const response = await httpClient.put('/organization/logo', form)
+    return (response.data as { data: Organization }).data
+  },
+  removeLogo: async () => {
+    const { httpClient } = await import('@/lib/api/client')
+    const response = await httpClient.delete('/organization/logo')
+    return (response.data as { data: Organization }).data
+  },
 }

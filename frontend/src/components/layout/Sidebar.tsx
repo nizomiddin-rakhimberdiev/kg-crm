@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { LogOut, X } from 'lucide-react'
-import { RadixMark } from '@/components/brand/Logo'
+import { OrgMark } from '@/components/brand/OrgMark'
 import { Avatar } from '@/components/ui/Avatar'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { SECTION_LABEL, SECTION_ORDER, navItems, type NavItem } from '@/config/navigation'
@@ -41,11 +41,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-100 px-5 transition-colors hover:bg-slate-50 lg:px-6"
       >
         {/*
-          Belgi yolg'iz — brendbuk 02 da ruxsat etilgan holat (ikonka
-          o'rni). Yonidagi yozuv bog'chaning o'z nomi, brend yozuvi emas:
-          mudira kun bo'yi o'z bog'chasining nomini ko'rib turadi.
+          Belgi — BOG'CHANING logotipi yoki bosh harfi (PLAN 4.6).
+          Yonidagi yozuv ham bog'chaning o'z nomi: mudira kun bo'yi
+          o'z ishxonasini ko'rib turadi, mahsulot namoyishini emas.
         */}
-        <RadixMark size={36} className="shrink-0" />
+        <OrgMark name={user?.organization?.name} logoUrl={user?.organization?.logo_url} size={36} />
         <div className="min-w-0 leading-tight">
           <p className="truncate text-sm font-bold text-tosh-900">
             {user?.organization?.name ?? t('Radix CRM')}
@@ -143,11 +143,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             type="button"
             onClick={() => void logout()}
             title={t('Chiqish')}
+            aria-label={t('Chiqish')}
             className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
           >
             <LogOut className="h-4 w-4" />
           </button>
         </div>
+
+        {/* Mahsulot nomi PASTDA va kichik (PLAN 4.6): sarlavhada
+            bogʻchaning brendi turadi, bizning nomimiz esa shu
+            yerda — koʻrinadigan, lekin daʼvo qilmaydigan joyda. */}
+        <p className="mt-3 text-center text-xs text-tosh-300">{t('Radix CRM')}</p>
       </div>
     </>
   )

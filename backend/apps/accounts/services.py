@@ -415,6 +415,12 @@ def user_payload(user: User) -> dict[str, Any]:
                 "id": str(user.organization.id),
                 "name": user.organization.name,
                 "slug": user.organization.slug,
+                # Logotip SHU YERDA (PLAN 4.6): u har sahifaning
+                # sarlavhasida ko'rinadi, `/organization` esa
+                # `settings.read` talab qiladi — tarbiyachi uni
+                # o'qiy olmaydi va belgi faqat ba'zi rollarda
+                # ko'rinardi.
+                "logo_url": (user.organization.logo.url if user.organization.logo else None),
             }
             if user.organization
             else None

@@ -22,12 +22,18 @@ class OrganizationSerializer(serializers.ModelSerializer):
     o'zgartirish bo'lardi.
     """
 
+    # Logotip URL'i — fayl yo'li emas (PLAN 4.6). Yuklash alohida
+    # endpoint orqali (`PUT /organization/logo`), chunki u
+    # `multipart/form-data` talab qiladi va qolgan maydonlar JSON.
+    logo_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Organization
         fields = [
             "id",
             "name",
             "slug",
+            "logo_url",
             "legal_name",
             "tax_id",
             "contact_email",
@@ -37,4 +43,11 @@ class OrganizationSerializer(serializers.ModelSerializer):
             "onboarded_at",
             "created_at",
         ]
-        read_only_fields = ["id", "slug", "onboarded_at", "created_at"]
+        read_only_fields = ["id", "slug", "logo_url", "onboarded_at", "created_at"]
+
+    def get_logo_url(self, obj: Organization) -> str | None:
+        if not obj.logo:
+            return None
+        request = self.context.get("request")
+        url = obj.logo.url
+        return request.build_absolute_uri(url) if request else url

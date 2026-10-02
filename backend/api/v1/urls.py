@@ -15,7 +15,7 @@ from apps.accounts.views_auth import (
 )
 from apps.core.deployment import is_saas
 from apps.notifications.views_webhook import TelegramWebhookView
-from apps.organizations.views import OrganizationView
+from apps.organizations.views import OrganizationLogoView, OrganizationView
 from apps.platform.views import PlatformLoginView
 from apps.platform.views_leads import PublicLeadCreateView, PublicPricingView
 
@@ -59,6 +59,7 @@ urlpatterns = [
 # lekin javob beradigan yo'l — bu o'sha yo'lning ochiq qolgani.
 if is_saas():
     urlpatterns += [
+        path("organization/logo", OrganizationLogoView.as_view(), name="organization-logo"),
         path("public/leads", PublicLeadCreateView.as_view(), name="public-lead-create"),
         # Telegram webhook: maxfiy qism YO'LDA, chunki Telegram
         # ixtiyoriy sarlavha qo'yadi va eski botlar uni yubormaydi.

@@ -1032,4 +1032,7 @@ export const messages: Record<string, string> = {
   ha: 'да',
   yoʻq: 'нет',
   Tizim: 'Система',
+  Logotip: 'Логотип',
+  'Logotipni olib tashlash': 'Удалить логотип',
+  'Logotipni yuklab boʻlmadi.': 'Не удалось загрузить логотип.',
 }

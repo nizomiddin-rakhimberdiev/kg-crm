@@ -1034,4 +1034,7 @@ export const messages: Record<string, string> = {
   ha: 'yes',
   yoʻq: 'no',
   Tizim: 'System',
+  Logotip: 'Logo',
+  'Logotipni olib tashlash': 'Remove the logo',
+  'Logotipni yuklab boʻlmadi.': 'The logo could not be uploaded.',
 }

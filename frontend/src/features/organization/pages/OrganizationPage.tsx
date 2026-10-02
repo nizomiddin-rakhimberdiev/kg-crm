@@ -8,8 +8,9 @@
 
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Building2, Save } from 'lucide-react'
+import { Save, Trash2 } from 'lucide-react'
 import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
+import { OrgMark } from '@/components/brand/OrgMark'
 import { organizationApi, type OrganizationInput } from '@/features/organization/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
@@ -62,6 +63,40 @@ export default function OrganizationPage() {
     })
   }, [query.data])
 
+  /**
+   * Logotip (PLAN 4.6).
+   *
+   * Muvaffaqiyatdan keyin `auth/me` ham yangilanadi: sarlavhadagi
+   * belgi shu soʻrovdan keladi va u yangilanmasa, logotip faqat
+   * sahifani qayta yuklagandan keyin koʻrinardi.
+   */
+  const refreshBrand = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.organization(organizationId) })
+    void refreshUser()
+  }
+
+  const uploadLogo = useMutation({
+    mutationFn: (file: File) => organizationApi.uploadLogo(file),
+    onSuccess: () => {
+      setError(null)
+      setSaved(true)
+      refreshBrand()
+    },
+    onError: (err: unknown) =>
+      setError(err instanceof ApiError ? err.message : t('Logotipni yuklab boʻlmadi.')),
+  })
+
+  const removeLogo = useMutation({
+    mutationFn: () => organizationApi.removeLogo(),
+    onSuccess: () => {
+      setError(null)
+      setSaved(true)
+      refreshBrand()
+    },
+    onError: (err: unknown) =>
+      setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
+  })
+
   const save = useMutation({
     mutationFn: () => organizationApi.update(form),
     onSuccess: () => {
@@ -103,18 +138,48 @@ export default function OrganizationPage() {
         </p>
       </div>
 
-      <div className="max-w-2xl rounded-2xl border border-slate-200 bg-white p-5">
+      <div className="max-w-2xl space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
         <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-brand-600 text-white">
-            <Building2 className="h-5 w-5" />
-          </div>
-          <div>
+          {/* Bogʻchaning OʻZ belgisi — umumiy ikonka emas (PLAN 4.6). */}
+          <OrgMark name={query.data?.name} logoUrl={query.data?.logo_url} size={44} />
+          <div className="min-w-0 flex-1">
             <p className="font-semibold text-slate-900">{query.data?.name}</p>
             <p className="text-xs text-slate-400">
               {t('Identifikator: {slug} · Roʻyxatdan oʻtgan:', { slug: query.data?.slug })}{' '}
               {query.data ? formatDate(query.data.created_at) : '—'}
             </p>
           </div>
+          {editable && (
+            <div className="flex shrink-0 items-center gap-1.5">
+              <label className="cursor-pointer rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="sr-only"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0]
+                    // Maydon tozalanadi: bir xil faylni qayta
+                    // tanlaganda `change` hodisasi otilmasligi mumkin.
+                    event.target.value = ''
+                    if (file) uploadLogo.mutate(file)
+                  }}
+                />
+                {uploadLogo.isPending ? t('Yuklanmoqda…') : t('Logotip')}
+              </label>
+              {query.data?.logo_url && (
+                <button
+                  type="button"
+                  onClick={() => removeLogo.mutate()}
+                  disabled={removeLogo.isPending}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-orik-50 hover:text-orik-700"
+                  aria-label={t('Logotipni olib tashlash')}
+                  title={t('Logotipni olib tashlash')}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         <form
