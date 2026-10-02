@@ -567,6 +567,11 @@ class Command(BaseCommand):
                         attendance_date=day,
                         records=records,
                         recorded_by=owner,
+                        # O'tgan kunni belgilash SABAB talab qiladi
+                        # (tahrirlash oynasi). Sababsiz har bir o'tgan kun
+                        # jimgina rad etilib, faqat ogohlantirish qolardi —
+                        # demo davomati bitta kundan iborat bo'lib chiqardi.
+                        reason="Demo maʼlumoti",
                     )
                     marked += len(records)
                 except Exception as exc:

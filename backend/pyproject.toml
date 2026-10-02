@@ -25,6 +25,7 @@ ignore = [
 "config/settings/*.py" = ["F403", "F405"]  # sozlamalarda star-import qasddan
 # Demo seed'da `random` — ko'rsatish ma'lumoti uchun, kriptografiya emas.
 "apps/core/management/commands/seed_demo.py" = ["S311"]
+"apps/core/management/commands/seed_demo_tenant.py" = ["S311"]
 
 [tool.mypy]
 python_version = "3.13"
