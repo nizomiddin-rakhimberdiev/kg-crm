@@ -200,3 +200,37 @@ class TestWorkerContext:
             export.refresh_from_db()
         assert export.completed_at is not None
         assert export.completed_at <= timezone.now()
+
+
+class TestExportFilename:
+    """Fayl nomi so'rov tilida (PLAN 4.2)."""
+
+    def test_the_name_says_what_the_file_is(self):
+        from apps.reports.exporters import export_filename
+
+        assert export_filename("revenue", language="uz", stamp="2026-10-02") == (
+            "tushum_2026-10-02.xlsx"
+        )
+        assert export_filename("debtors", language="ru", stamp="2026-10-02") == (
+            "dolzhniki_2026-10-02.xlsx"
+        )
+        assert export_filename("payroll", language="en", stamp="2026-10-02") == (
+            "payroll_2026-10-02.xlsx"
+        )
+
+    def test_an_unknown_type_falls_back_to_its_code(self):
+        from apps.reports.exporters import export_filename
+
+        # Yangi hisobot turi qo'shilsa, nom tarjimasiz ham ishlaydi —
+        # eksport "nomi yo'q" degan sababdan yiqilmasligi kerak.
+        assert export_filename("new-thing", language="uz", stamp="x") == "new-thing_x.xlsx"
+
+    def test_the_date_stays_iso_so_the_folder_sorts_itself(self):
+        from apps.reports.exporters import export_filename
+
+        names = sorted(
+            export_filename("revenue", stamp=stamp)
+            for stamp in ("2026-10-02", "2026-09-30", "2026-10-01")
+        )
+        assert names[0].endswith("2026-09-30.xlsx")
+        assert names[-1].endswith("2026-10-02.xlsx")

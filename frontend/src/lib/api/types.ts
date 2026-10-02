@@ -789,6 +789,8 @@ export interface ReportExport {
   row_count: number
   error: string
   is_ready: boolean
+  /** Saqlanadigan fayl nomi — so'rov tilida (PLAN 4.2). */
+  filename: string
   requested_by_name: string | null
   completed_at: string | null
   created_at: string

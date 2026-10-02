@@ -619,7 +619,10 @@ export default function ReportsPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            void reportsApi.downloadExport(job.id, `${job.report_type}.xlsx`)
+                            void reportsApi.downloadExport(
+                              job.id,
+                              job.filename || `${job.report_type}.xlsx`,
+                            )
                           }
                           className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-brand-700"
                         >

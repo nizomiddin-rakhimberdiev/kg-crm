@@ -28,7 +28,41 @@ from typing import Any
 
 from django.utils.translation import gettext
 
-__all__ = ["COLUMNS", "rows_for", "to_csv", "to_xlsx"]
+__all__ = ["COLUMNS", "rows_for", "to_csv", "to_xlsx", "export_filename"]
+
+#: Fayl nomi — TILGA mos (PLAN 4.2).
+#:
+#: Avval fayl `revenue-20261002-1030.xlsx` deb saqlanardi. Buxgalter
+#: yuklab olgan papkasida o'nta shunday fayl bo'lsa, qaysi biri nima
+#: ekanini faqat ochib ko'rib bilish mumkin — va u fayllarni
+#: buxgalteriyaga uzatadi, ya'ni nom boshqa odam uchun ham ma'noli
+#: bo'lishi kerak.
+#:
+#: Nom ASCII emas: lotin o'zbek va kirill rus harflari fayl tizimida
+#: ham, pochtada ham muammosiz ishlaydi. Faqat bo'shliq va `/` dan
+#: qochiladi.
+FILENAME_BY_TYPE: dict[str, dict[str, str]] = {
+    "revenue": {"uz": "tushum", "ru": "vyruchka", "en": "revenue"},
+    "expenses": {"uz": "chiqimlar", "ru": "rashody", "en": "expenses"},
+    "payroll": {"uz": "oylik", "ru": "zarplata", "en": "payroll"},
+    "attendance": {"uz": "davomat", "ru": "poseshchaemost", "en": "attendance"},
+    "debtors": {"uz": "qarzdorlar", "ru": "dolzhniki", "en": "debtors"},
+    "profit-loss": {"uz": "foyda-zarar", "ru": "pribyl-ubytok", "en": "profit-loss"},
+}
+
+
+def export_filename(report_type: str, *, language: str = "uz", stamp: str = "") -> str:
+    """
+    `tushum_2026-10-02.xlsx` — hisobot nomi va sana.
+
+    Sana ISO shaklda qoladi (`2026-10-02`), `dd.mm.yyyy` emas: fayl
+    nomida ISO alifbo bo'yicha ham xronologik tartibda saqlanadi, ya'ni
+    papkadagi ro'yxat o'zi vaqt bo'yicha tiziladi.
+    """
+    names = FILENAME_BY_TYPE.get(report_type, {})
+    base = names.get(language) or names.get("uz") or report_type
+    return f"{base}_{stamp}.xlsx" if stamp else f"{base}.xlsx"
+
 
 Row = dict[str, Any]
 

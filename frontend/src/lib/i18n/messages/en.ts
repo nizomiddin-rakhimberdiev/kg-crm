@@ -950,4 +950,45 @@ export const messages: Record<string, string> = {
     "{linked} of {total} parents are connected to Telegram. The other {missing} get nothing — send the link from the child's card.",
   'Kalendardan tanlash': 'Pick from the calendar',
   'kk.oo.yyyy': 'dd.mm.yyyy',
+
+  // --- Sozlamalar nomlari va hafta kunlari (PLAN 4.2) ---
+  Du: 'Mon',
+  Se: 'Tue',
+  Ch: 'Wed',
+  Pa: 'Thu',
+  Ju: 'Fri',
+  Sh: 'Sat',
+  Ya: 'Sun',
+  Dushanba: 'Monday',
+  Seshanba: 'Tuesday',
+  Chorshanba: 'Wednesday',
+  Payshanba: 'Thursday',
+  Juma: 'Friday',
+  Shanba: 'Saturday',
+  Yakshanba: 'Sunday',
+  'Ish kunlari': 'Working days',
+  'Kunlik toʻlov shu kunlar boʻyicha hisoblanadi — shanba ishlaydigan bogʻcha uchun ham.':
+    'The day rate is counted over these days — including a kindergarten open on Saturday.',
+  'Birinchi oy hisobi': 'First month billing',
+  'Oy oʻrtasida qabul qilingan bola uchun: toʻliq oy, ish kunlari boʻyicha yoki keyingi oydan.':
+    'For a child enrolled mid-month: the full month, pro rata by working days, or from next month.',
+  'Birinchi faktura muddati (kun)': 'First invoice grace (days)',
+  'Qabul sanasidan kamida shuncha kun keyin — bola kelgan kuniyoq qarzdor boʻlib qolmasin.':
+    'At least this many days after enrolment — so a child is not a debtor on day one.',
+  'Tarbiyachi necha kun orqaga belgilaydi': 'How many days back a teacher may mark',
+  '1 = bugun va kecha. Eski kunlarni faqat direktor sabab bilan oʻzgartiradi.':
+    '1 = today and yesterday. Earlier days only a director may change, with a reason.',
+  'Eng kichik yosh': 'Minimum age',
+  'Bu yoshdan kichik bola qoʻshilmaydi — xato yozilgan tugʻilgan sana shunda ushlanadi.':
+    'A younger child is refused — this is how a mistyped birth date gets caught.',
+  'Eng katta yosh': 'Maximum age',
+  'Bogʻchalar turlicha: baʼzilari 7 yoshgacha oladi.':
+    'Kindergartens differ: some take children up to 7.',
+  'Daromad soligʻi (%)': 'Income tax (%)',
+  'Pensiya jamgʻarmasi (%)': 'Pension fund (%)',
+  'Xodim maoshidan ushlanadi. 0 — ushlanmaydi.':
+    "Withheld from the employee's salary. 0 — not withheld.",
+  'Ijtimoiy soliq (%)': 'Social tax (%)',
+  'Bogʻcha ustiga toʻlaydi — xodim maoshidan ushlanmaydi.':
+    'The kindergarten pays it on top — not withheld from the salary.',
 }

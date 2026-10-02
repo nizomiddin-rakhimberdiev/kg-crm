@@ -34,8 +34,9 @@ export function useExcelExport(reportType: string) {
         const rows = await reportsApi.listExports()
         const current = rows.find((row) => row.id === job.id)
         if (current?.status === 'ready') {
-          const stamp = new Date().toISOString().slice(0, 10)
-          await reportsApi.downloadExport(current.id, `${reportType}-${stamp}.xlsx`)
+          // Nom serverdan (`filename`) — u so'rov tilida va sana
+          // ISO shaklda, ya'ni papkada o'zi xronologik tiziladi.
+          await reportsApi.downloadExport(current.id, current.filename || `${reportType}.xlsx`)
           setBusy(false)
           return
         }

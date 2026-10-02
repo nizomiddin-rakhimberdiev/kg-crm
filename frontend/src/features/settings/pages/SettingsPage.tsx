@@ -13,6 +13,7 @@ import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { Switch } from '@/components/ui/primitives'
 import { settingsApi } from '@/features/notifications/api'
 import { TestModeBanner } from '@/features/notifications/components/TestModeBanner'
+import { WeekdayPicker } from '@/features/settings/components/WeekdayPicker'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type SettingValue } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
@@ -73,6 +74,48 @@ const META: Record<string, SettingMeta> = {
     label: t('Bitta SMS boʻlagi narxi'),
     help: t('Taxminiy xarajatni hisoblash uchun — provayder shartnomasidagi narx.'),
   },
+  'finance.first_month_mode': {
+    label: t('Birinchi oy hisobi'),
+    help: t(
+      'Oy oʻrtasida qabul qilingan bola uchun: toʻliq oy, ish kunlari boʻyicha yoki keyingi oydan.',
+    ),
+  },
+  'finance.first_invoice_grace_days': {
+    label: t('Birinchi faktura muddati (kun)'),
+    help: t(
+      'Qabul sanasidan kamida shuncha kun keyin — bola kelgan kuniyoq qarzdor boʻlib qolmasin.',
+    ),
+  },
+  'attendance.teacher_edit_days': {
+    label: t('Tarbiyachi necha kun orqaga belgilaydi'),
+    help: t('1 = bugun va kecha. Eski kunlarni faqat direktor sabab bilan oʻzgartiradi.'),
+  },
+  'attendance.working_weekdays': {
+    label: t('Ish kunlari'),
+    help: t(
+      'Kunlik toʻlov shu kunlar boʻyicha hisoblanadi — shanba ishlaydigan bogʻcha uchun ham.',
+    ),
+  },
+  'children.min_age': {
+    label: t('Eng kichik yosh'),
+    help: t('Bu yoshdan kichik bola qoʻshilmaydi — xato yozilgan tugʻilgan sana shunda ushlanadi.'),
+  },
+  'children.max_age': {
+    label: t('Eng katta yosh'),
+    help: t('Bogʻchalar turlicha: baʼzilari 7 yoshgacha oladi.'),
+  },
+  'payroll.income_tax_rate': {
+    label: t('Daromad soligʻi (%)'),
+    help: t('Xodim maoshidan ushlanadi. 0 — ushlanmaydi.'),
+  },
+  'payroll.pension_rate': {
+    label: t('Pensiya jamgʻarmasi (%)'),
+    help: t('Xodim maoshidan ushlanadi. 0 — ushlanmaydi.'),
+  },
+  'payroll.social_tax_rate': {
+    label: t('Ijtimoiy soliq (%)'),
+    help: t('Bogʻcha ustiga toʻlaydi — xodim maoshidan ushlanmaydi.'),
+  },
   'attendance.auto_absent': {
     label: t('Avtomatik "kelmadi"'),
     help: t('Belgilanmagan bolalar kun oxirida kelmagan deb yoziladi.'),
@@ -118,6 +161,18 @@ export default function SettingsPage() {
   const renderControl = (key: string, value: SettingValue) => {
     // Til — ro'yxatdan tanlanadi. Erkin matn maydoni bo'lsa, xato yozilgan
     // kod ("рус") jimgina ishlamay qo'yardi.
+    // Ish kunlari — katakchalar (PLAN 4.2). Erkin matnda bitta xato
+    // belgi kunlik to'lov hisobini jimgina buzardi (ADR-19).
+    if (key === 'attendance.working_weekdays') {
+      return (
+        <WeekdayPicker
+          value={value}
+          disabled={!editable || save.isPending}
+          onChange={(next) => save.mutate({ key, value: next })}
+        />
+      )
+    }
+
     // Asosiy kanal — ro'yxatdan. Erkin matn bo'lsa, xato yozilgan
     // qiymat ("telegramm") jimgina SMS'ga qaytarardi.
     if (key === 'notifications.default_channel') {

@@ -108,6 +108,17 @@ jobs:
           python manage.py migrate --noinput
           python manage.py check_rls
 
+      - name: Tarjima to'liqligi
+        # ALOHIDA va to'plamdan OLDIN (PLAN 4.2): yetishmayotgan
+        # tarjima kaliti — eng arzon xato va eng tez signal. To'plam
+        # ichida u yuzta boshqa natija orasida ko'rinmay ketardi, bu
+        # yerda esa darvoza aniq nom bilan qizaradi.
+        #
+        # Shu test apostroflarni ham qo'riqlaydi (Q11): ASCII `'`
+        # bilan yozilgan kalit ko'zga ko'rinmaydi, lekin u BOSHQA
+        # satr va xabar ruscha ilovada o'zbekcha chiqib qoladi.
+        run: pytest apps/core/tests/test_i18n.py -q
+
       - name: Testlar
         # Redis ATAYLAB yo'q: test sozlamalari `LocMemCache` va
         # `CELERY_TASK_ALWAYS_EAGER` ishlatadi, ya'ni to'plam tashqi

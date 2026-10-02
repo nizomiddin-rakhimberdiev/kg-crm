@@ -73,6 +73,12 @@ jobs:
       - name: Type-check (tsc)
         run: npm run typecheck
 
+      - name: Tarjima to'liqligi
+        # ALOHIDA va to'plamdan OLDIN (PLAN 4.2) — backend bilan bir
+        # xil sabab: yetishmayotgan kalit yoki ASCII apostrof (Q11)
+        # ko'zga ko'rinmaydi, lekin satrni butunlay boshqa qiladi.
+        run: npx vitest run src/lib/i18n
+
       - name: Testlar (vitest)
         run: npm test
 

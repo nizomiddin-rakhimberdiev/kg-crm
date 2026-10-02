@@ -165,8 +165,19 @@ def generate_export(export_id: str, organization_id: str | None = None) -> str:
                 rows = _detail_rows(export.report_type, export.organization_id, params)
                 content = exporters.to_xlsx(export.report_type, rows, title=export.report_type)
 
-            stamp = timezone.localtime().strftime("%Y%m%d-%H%M")
-            export.file.save(f"{export.report_type}-{stamp}.xlsx", ContentFile(content), save=False)
+            # Fayl nomi SO'ROV tilida (PLAN 4.2): buxgalter uni
+            # papkasida nomi bo'yicha topadi va boshqa odamga
+            # uzatadi, ya'ni nom unga ham ma'noli bo'lishi kerak.
+            stamp = timezone.localtime().strftime("%Y-%m-%d_%H-%M")
+            export.file.save(
+                exporters.export_filename(
+                    export.report_type,
+                    language=params.get("language") or settings.LANGUAGE_CODE,
+                    stamp=stamp,
+                ),
+                ContentFile(content),
+                save=False,
+            )
             export.row_count = len(rows)
             export.status = ExportStatus.READY
             export.error = ""

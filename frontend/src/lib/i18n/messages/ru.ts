@@ -948,4 +948,45 @@ export const messages: Record<string, string> = {
     'К Telegram подключены {linked} из {total} родителей. Остальные {missing} не получат сообщений — отправьте ссылку из карточки ребёнка.',
   'Kalendardan tanlash': 'Выбрать из календаря',
   'kk.oo.yyyy': 'дд.мм.гггг',
+
+  // --- Sozlamalar nomlari va hafta kunlari (PLAN 4.2) ---
+  Du: 'Пн',
+  Se: 'Вт',
+  Ch: 'Ср',
+  Pa: 'Чт',
+  Ju: 'Пт',
+  Sh: 'Сб',
+  Ya: 'Вс',
+  Dushanba: 'Понедельник',
+  Seshanba: 'Вторник',
+  Chorshanba: 'Среда',
+  Payshanba: 'Четверг',
+  Juma: 'Пятница',
+  Shanba: 'Суббота',
+  Yakshanba: 'Воскресенье',
+  'Ish kunlari': 'Рабочие дни',
+  'Kunlik toʻlov shu kunlar boʻyicha hisoblanadi — shanba ishlaydigan bogʻcha uchun ham.':
+    'Дневная плата считается по этим дням — в том числе для садика, работающего в субботу.',
+  'Birinchi oy hisobi': 'Расчёт первого месяца',
+  'Oy oʻrtasida qabul qilingan bola uchun: toʻliq oy, ish kunlari boʻyicha yoki keyingi oydan.':
+    'Для ребёнка, принятого в середине месяца: полный месяц, по рабочим дням или со следующего месяца.',
+  'Birinchi faktura muddati (kun)': 'Срок первого счёта (дней)',
+  'Qabul sanasidan kamida shuncha kun keyin — bola kelgan kuniyoq qarzdor boʻlib qolmasin.':
+    'Не раньше чем через столько дней после приёма — чтобы ребёнок не стал должником в первый же день.',
+  'Tarbiyachi necha kun orqaga belgilaydi': 'На сколько дней назад отмечает воспитатель',
+  '1 = bugun va kecha. Eski kunlarni faqat direktor sabab bilan oʻzgartiradi.':
+    '1 = сегодня и вчера. Более ранние дни меняет только директор, с указанием причины.',
+  'Eng kichik yosh': 'Минимальный возраст',
+  'Bu yoshdan kichik bola qoʻshilmaydi — xato yozilgan tugʻilgan sana shunda ushlanadi.':
+    'Ребёнок младше не добавляется — так отлавливается неверная дата рождения.',
+  'Eng katta yosh': 'Максимальный возраст',
+  'Bogʻchalar turlicha: baʼzilari 7 yoshgacha oladi.':
+    'Садики разные: некоторые принимают до 7 лет.',
+  'Daromad soligʻi (%)': 'НДФЛ (%)',
+  'Pensiya jamgʻarmasi (%)': 'Пенсионный фонд (%)',
+  'Xodim maoshidan ushlanadi. 0 — ushlanmaydi.':
+    'Удерживается из зарплаты сотрудника. 0 — не удерживается.',
+  'Ijtimoiy soliq (%)': 'Социальный налог (%)',
+  'Bogʻcha ustiga toʻlaydi — xodim maoshidan ushlanmaydi.':
+    'Платит садик сверху — из зарплаты сотрудника не удерживается.',
 }

@@ -35,10 +35,16 @@ export const reportsApi = {
     const response = await httpClient.get(`/reports/exports/${id}/download`, {
       responseType: 'blob',
     })
+    // Nomni SERVER beradi va u so'rov tilida ("tushum_2026-10-02.xlsx",
+    // PLAN 4.2). Mijoz tomonidagi nom faqat zaxira: ikkita nom bo'lsa,
+    // foydalanuvchi papkasida ikki xil uslubdagi fayl paydo bo'lardi.
+    const disposition = String(response.headers?.['content-disposition'] ?? '')
+    const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition)
+    const name = match ? decodeURIComponent(match[1]) : filename
     const url = URL.createObjectURL(response.data as Blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = filename
+    link.download = name
     link.click()
     URL.revokeObjectURL(url)
   },
