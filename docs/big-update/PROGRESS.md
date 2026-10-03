@@ -566,3 +566,37 @@ tashkilot o'zgarmadi.
 ### Keyingi qadam
 
 6-bosqich faqat "6-bosqichni boshla" buyrug'i bilan (dizayn hujjati).
+
+---
+
+## 2026-10-03 — 5-bosqichdan keyingi ish (egasining ruxsati bilan)
+
+Egasi: "qolgan barcha ishlarni amalga oshir, qarorlarni o'zing qabul
+qil". Qarorlar jadvali — `PLAN.md` §5.
+
+**Bajarildi**
+
+* Ikkinchi telefon `+998947267726`; shriftlar o'z serverimizdan
+  (`@fontsource`) — CSP tashqi manbasiz, siyosatdan Google bandi olindi.
+* D6 — `pin_legacy_payroll_rates` (sukut dry-run).
+* **Yakuniy qabul ssenariysi** (brief §6) — to'qqiz qadam API orqali,
+  `apps/core/tests/test_acceptance_scenario.py`. U to'rtta haqiqiy
+  xatoni topdi, har biri qizil testdan keyin tuzatildi:
+  1. bola kartasidan qo'shilgan vasiy telefoni tekshirilmasdi (Q7);
+  2. 1-sanadan chiqib ketgan bolaga o'sha oy uchun faktura yozilardi
+     (`is_billable_for`: `>=` → `>`);
+  3. orqaga sanalgan chiqish guruh a'zoligi bilan 409 berardi;
+  4. dashboard keshi hech qachon bekor qilinmasdi — to'lovdan keyin 2
+     daqiqa eski qarz; endi ledger/kassa/ombor/davomat yozish
+     nuqtalaridan `on_commit` bilan.
+  Shu bilan `/ledger/balance?child=<begona>` endi 404 (invariant 2).
+* Tungi vazifalar testlari (0 % → 97 % / 89 %).
+* 7-bo'lim: moliyaviy kod qamrovi **94 %**; 375 va 1280px — landing va
+  16 ta ilova sahifasi haqiqiy login bilan (gorizontal scroll 0, konsol
+  xatosi 0); topilgani: grafik o'qi 11px, to'lovlar doskasida kesilgan
+  ismlar — tuzatildi, a11y qo'riqchisi `fontSize` propini ham ko'radi.
+
+**Playwright E2E** — qilinmadi (qaror): brauzer tekshiruvi headless
+Chrome + CDP bilan bajarildi, bu esa CI'ga yangi og'ir bog'liqlik
+(brauzer yuklash) qo'shmaydi. Ssenariyning o'zi backend integratsion
+testida.

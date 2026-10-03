@@ -326,22 +326,34 @@ almashtiriladi, keyin o'chiriladi.
 
 ## 5. "Qaror kerak" — ochiq savollar
 
-| # | Savol | Xavfsiz sukut (tanlandi) |
-|---|---|---|
-| D1 | Kvitansiya PDF uchun kutubxona (WeasyPrint / ReportLab)? | Avval HTML + brauzer print; PDF alohida |
-| D2 | `apply_open_credits` real ishga tushishi — qaysi tenantlarda? | Faqat `--tenant` bilan, bittalab, egasi qaroriga ko'ra |
-| D3 | Eskiz.uz hisobi bormi va `from` nomi tasdiqlanganmi? | Env bo'sh bo'lsa console provayder + "test rejimi" banneri |
-| D4 | Yuridik nom, STIR, manzil, server joylashuvi (5.8 shablonlari) | `{{...}}` o'rinbosar qoldiriladi |
-| D5 | Telegram lid guruhi chat id | Env bo'sh bo'lsa xabar yuborilmaydi, log'ga yoziladi |
+Egasi 2026-10-03 da ruxsat berdi: "o'zing qabul qila oladigan qarorlarni
+o'zing qabul qil". Quyidagi jadval — kim va nima qaror qildi.
+
+| # | Savol | Qaror | Kim |
+|---|---|---|---|
+| D1 | Kvitansiya PDF kutubxonasi | **Kutubxona yo'q** — HTML + brauzer "PDF sifatida saqlash" (A4 va 80 mm allaqachon). WeasyPrint Docker tasviriga tizim kutubxonalarini olib kirardi, foyda esa yo'q | Claude |
+| D2/D7 | `apply_open_credits` qaysi tenantlarda | Har bir tenantda, **bittalab**, avval `--dry-run`; ishga tushirish — deploy qadami | Claude (ishga tushirish — egasi) |
+| D3 | Eskiz hisobi | Yopildi — Telegram asosiy kanal (ADR-23) | Egasi |
+| D4 | Yuridik nom, STIR, manzil, server joylashuvi | `.env` (`LEGAL_*`, `SERVER_LOCATION`) — **qiymatlar egasidan** | Egasi |
+| D5 | Telegram lid guruhi chat id | `.env` — egasidan | Egasi |
+| D6 | Oylik soliq sukuti 0 ga tushdi | `pin_legacy_payroll_rates` — eski 12 % / 0,1 % ga tayangan tashkilotda ochiq yozadi (sukut dry-run) | Claude |
+| D8 | To'lov rekvizitlari | `.env` — egasidan | Egasi |
+| D9 | Tarbiyachilarni guruhga biriktirish | Kod emas — bog'chaning o'z sozlamasi (Guruh → tarbiyachi). Biriktirilmaguncha cheklov inert (ADR-21) | Claude |
+| D10 | Tarbiyachi davomat oynasi | **1 kun** qoladi (bugun + kecha); sozlama orqali o'zgaradi | Claude |
+| D11 | Ikkinchi telefon | `+998947267726` | Egasi |
+| D12 | Huquqiy matn raqamlari (12 oy, 30 kun, 3 oy) | Tasdiqlandi | Egasi |
+| D13 | Google Fonts | O'z serverimizga ko'chirildi | Egasi |
+| D14 | HSTS `preload` | **Qo'shilmaydi** — undan chiqish oylab cho'ziladi, foydasi `max-age` dan ozgina ortiq | Claude |
+| D15 | Ildizdagi `/login`, `/reset-password`, `/invite` | 404 emas, SPA — email havolalari va landing'dagi kirish tugmasi shu yerga olib boradi | Claude |
 
 ---
 
 ## 6. Tayyorlik mezonlari (7-bo'lim)
 
-- [ ] Barcha testlar yashil; yangi moliyaviy kodda qamrov ≥90%
-- [ ] Invariant testlar bor va ishlaydi
-- [ ] uz/ru/en to'liq; yetishmayotgan kalit CI'da ushlanadi
-- [ ] Migratsiyalar toza va seed bazada ishladi; rollback tekshirildi
-- [ ] 1-bo'limdagi mavjud funksiyalar buzilmadi
-- [ ] 375px va 1280px kengliklarda tekshirildi
-- [ ] `CHANGELOG.md` yangilandi
+- [x] Barcha testlar yashil; yangi moliyaviy kodda qamrov ≥90% (o'lchandi: **94 %**)
+- [x] Invariant testlar bor va ishlaydi
+- [x] uz/ru/en to'liq; yetishmayotgan kalit CI'da ushlanadi
+- [x] Migratsiyalar toza va seed bazada ishladi; rollback tekshirildi
+- [x] 1-bo'limdagi mavjud funksiyalar buzilmadi
+- [x] 375px va 1280px kengliklarda tekshirildi (landing + 16 ilova sahifasi, haqiqiy login bilan)
+- [x] `CHANGELOG.md` yangilandi

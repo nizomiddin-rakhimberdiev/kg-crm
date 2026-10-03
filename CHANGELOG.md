@@ -76,6 +76,14 @@ Bajarilgani: [`docs/big-update/PROGRESS.md`](./docs/big-update/PROGRESS.md)
   faollik, taxminiy oylik. Zaxira cron o'rnatuvchisi.
 
 ### Tuzatildi
+- **Dashboard pul harakatidan keyin 2 daqiqa eski qarzni ko'rsatardi** —
+  kesh hech qachon bekor qilinmasdi.
+- **1-sanadan chiqib ketgan bolaga o'sha oy uchun faktura yozilardi.**
+- Bola kartasidan qo'shilgan vasiy telefoni tekshirilmasdi va
+  normalizatsiya qilinmasdi (Q7).
+- Orqaga sanalgan "chiqib ketdi" holati 409 xato berardi.
+- Begona bolaning balansiga so'rov 422 o'rniga 404 qaytaradi.
+- Hisobotlar grafigi 11px; telefonda to'lovlar doskasida ismlar kesilardi.
 - **Tashkilotni o'chirish (offboarding) tarifi bor bolada yiqilardi** —
   `TariffPlan` o'chirish tartibida bolalardan oldin turardi.
 - `seed_demo` davomati faqat bugungi kunni yozardi (o'tgan kun sabab
@@ -85,6 +93,7 @@ Bajarilgani: [`docs/big-update/PROGRESS.md`](./docs/big-update/PROGRESS.md)
   o'rnatmaning frontendi SaaS rejimida yig'ilardi.
 
 ### O'zgardi
+- Shriftlar o'z serverimizdan — Google Fonts yo'q; ikkinchi telefon raqami.
 - **`PLATFORM_2FA_REQUIRED` sukut bo'yicha `True`** (ADR-24, ADR-15 dagi
   `False` o'rniga).
 - Vendor yangi bog'cha ochganda parol YOZMAYDI.
