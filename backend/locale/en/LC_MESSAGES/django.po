@@ -1224,3 +1224,29 @@ msgstr "Employee not found."
 
 msgid "{full_name} {date} kuni ishlamagan (ishga kirish/boʻshash sanasi)."
 msgstr "{full_name} was not employed on {date} (hire/termination date)."
+
+# Online payments (PLAN 6.1)
+msgid "Yaratildi"
+msgstr "Created"
+
+msgid "Toʻlandi"
+msgstr "Paid"
+
+msgid "Qaytarildi"
+msgstr "Refunded"
+
+msgid "Hisob-faktura topilmadi."
+msgstr "Invoice not found."
+
+msgid "Bu hisob-fakturada toʻlanadigan qoldiq yoʻq."
+msgstr "Nothing is left to pay on this invoice."
+
+msgid "Onlayn toʻlov ulanmagan: Sozlamalarda Payme yoki Click kalitini kiriting."
+msgstr ""
+"Online payment is not connected: enter a Payme or Click key in Settings."
+
+msgid ""
+"Server sozlanmagan: kalitni saqlab boʻlmaydi. Administratorga murojaat qiling."
+msgstr ""
+"The server is not configured: the key cannot be saved. Contact the "
+"administrator."

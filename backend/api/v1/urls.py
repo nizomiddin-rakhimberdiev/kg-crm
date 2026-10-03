@@ -22,6 +22,14 @@ from apps.accounts.views_auth import (
 )
 from apps.core.deployment import is_saas
 from apps.notifications.views_webhook import TelegramWebhookView
+from apps.online_payments.views import (
+    ClickWebhookView,
+    MerchantCredentialListView,
+    MerchantCredentialView,
+    PaymentLinkCreateView,
+    PaymeWebhookView,
+    PublicPayLinkView,
+)
 from apps.organizations.views import OrganizationLogoView, OrganizationView
 from apps.platform.views import PlatformLoginView
 from apps.platform.views_leads import PublicLeadCreateView, PublicPricingView
@@ -77,6 +85,30 @@ urlpatterns = [
     path("organization", OrganizationView.as_view(), name="organization"),
     path("organization/logo", OrganizationLogoView.as_view(), name="organization-logo"),
     *auth_patterns,
+    # Online payments (PLAN 6.1, ADR-26). In BOTH deployment modes: a
+    # standalone kindergarten takes Payme / Click into its own account too.
+    path(
+        "public/pay/payme/<uuid:organization_id>",
+        PaymeWebhookView.as_view(),
+        name="payme-webhook",
+    ),
+    path(
+        "public/pay/click/<uuid:organization_id>",
+        ClickWebhookView.as_view(),
+        name="click-webhook",
+    ),
+    path("public/pay/link/<str:token>", PublicPayLinkView.as_view(), name="pay-link"),
+    path("online-payments/links", PaymentLinkCreateView.as_view(), name="payment-link-create"),
+    path(
+        "online-payments/credentials",
+        MerchantCredentialListView.as_view(),
+        name="merchant-credentials",
+    ),
+    path(
+        "online-payments/credentials/<str:provider>",
+        MerchantCredentialView.as_view(),
+        name="merchant-credential",
+    ),
     *router.urls,
 ]
 

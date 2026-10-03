@@ -1225,3 +1225,28 @@ msgstr "Сотрудник не найден."
 
 msgid "{full_name} {date} kuni ishlamagan (ishga kirish/boʻshash sanasi)."
 msgstr "{full_name} не работал(а) {date} (дата приёма/увольнения)."
+
+# Online payments (PLAN 6.1)
+msgid "Yaratildi"
+msgstr "Создана"
+
+msgid "Toʻlandi"
+msgstr "Оплачена"
+
+msgid "Qaytarildi"
+msgstr "Возвращена"
+
+msgid "Hisob-faktura topilmadi."
+msgstr "Счёт не найден."
+
+msgid "Bu hisob-fakturada toʻlanadigan qoldiq yoʻq."
+msgstr "По этому счёту нечего оплачивать."
+
+msgid "Onlayn toʻlov ulanmagan: Sozlamalarda Payme yoki Click kalitini kiriting."
+msgstr ""
+"Онлайн-оплата не подключена: укажите ключ Payme или Click в настройках."
+
+msgid ""
+"Server sozlanmagan: kalitni saqlab boʻlmaydi. Administratorga murojaat qiling."
+msgstr ""
+"Сервер не настроен: ключ нельзя сохранить. Обратитесь к администратору."

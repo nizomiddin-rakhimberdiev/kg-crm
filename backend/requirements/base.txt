@@ -33,3 +33,6 @@ Pillow==12.3.0
 # kodlashni buzadi — shuning uchun bu yerda `cp1251` bilan ishlash ham
 # kerak bo'lgan. Bitta bog'liqlik shu ishqalanishni butunlay yo'qotadi.
 openpyxl==3.1.5
+
+# Encryption of merchant (Payme/Click) secrets at rest — PLAN 6.1.
+cryptography==46.0.3

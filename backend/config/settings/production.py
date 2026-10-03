@@ -69,3 +69,9 @@ DATABASES["default"]["OPTIONS"] = {  # noqa: F405
     **DATABASES["default"].get("OPTIONS", {}),  # noqa: F405
     "sslmode": env("POSTGRES_SSLMODE", default="prefer"),
 }
+
+
+# Online payments (PLAN 6.1): merchant secrets need their own key in
+# production — never one derived from SECRET_KEY (rotating that would
+# silently make every stored merchant key unreadable).
+MERCHANT_KEY_REQUIRED = True

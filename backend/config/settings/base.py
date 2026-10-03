@@ -66,6 +66,7 @@ LOCAL_APPS = [
     "apps.subscriptions",
     "apps.platform",
     "apps.intelligence",
+    "apps.online_payments",
     "apps.audit",
 ]
 
@@ -525,6 +526,17 @@ if DEPLOYMENT_MODE not in ("saas", "standalone"):
 # Kalit QOLADI: standalone o'rnatma yoki namoyish nusxasida uni
 # o'chirish kerak bo'lishi mumkin, va bu bitta `.env` qatori.
 PLATFORM_2FA_REQUIRED = env.bool("PLATFORM_2FA_REQUIRED", default=True)
+
+# --- Online payments (PLAN 6.1, ADR-26) ---
+#
+# Fernet key that encrypts kindergartens' Payme / Click secrets at rest.
+# Generate: see the MERCHANT_SECRET_KEY note in .env.example.
+# In development an empty value falls back to a key derived from SECRET_KEY;
+# in production (`MERCHANT_KEY_REQUIRED`) saving a merchant key without it
+# is refused — the server still boots, so a missing value cannot take the
+# whole site down on deploy.
+MERCHANT_SECRET_KEY = env("MERCHANT_SECRET_KEY", default="")
+MERCHANT_KEY_REQUIRED = env.bool("MERCHANT_KEY_REQUIRED", default=False)
 
 TRIAL_DAYS = env.int("TRIAL_DAYS", default=15)
 PAYMENT_GRACE_DAYS = env.int("PAYMENT_GRACE_DAYS", default=7)
