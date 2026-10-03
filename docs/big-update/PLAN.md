@@ -307,6 +307,28 @@ almashtiriladi, keyin o'chiriladi.
 
 - [x] `docs/big-update/phase-6-design.md` — texnik dizayn, **kod yo'q** (2026-10-03; ADR-26…28 taklif, 5 ta egasining qarori)
 
+Implementation started 2026-10-03 on the owner's "6-bosqichni boshla",
+branch `big-update/phase-6-code` (based on `big-update/merge-main`).
+Notes from here on are in English (owner's request).
+
+Decisions taken under the owner's standing permission (design §7.3):
+
+| # | Question | Decision |
+|---|---|---|
+| P6-1 | Whose merchant account receives parent payments? | Each kindergarten's own (ADR-26). Radix never holds customer money |
+| P6-2 | Who pays the provider commission? | The kindergarten — the parent pays exactly the invoice amount, no surcharge |
+| P6-3 | Radix's own merchant account (subscriptions) | `.env` (`RADIX_PAYME_*`, `RADIX_CLICK_*`); empty = button hidden |
+| P6-4 | Self-signup and unconverted trials (ADR-28) | Tenant only after e-mail verification; purge of unconverted trials is a `--dry-run` command the owner runs |
+| P6-5 | "Your child is absent today" message | Off by default (`notifications.absence_alert`) |
+
+- [ ] **6.1** Payme / Click — parent online payment (ADR-26)
+- [ ] **6.2** Parent bot — balance, invoices, pay button, receipts
+- [ ] **6.3** Bot linking by shared phone number (ADR-27)
+- [ ] **6.4** Subscription online payment
+- [ ] **6.5** Contract templates
+- [ ] **6.6** Kitchen / menu → stock consumption
+- [ ] **6.7** Self-signup with a 14-day trial (ADR-28)
+
 ---
 
 ## 4. Xavflar registri
