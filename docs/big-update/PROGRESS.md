@@ -617,8 +617,9 @@ phase branch.** Details and conflict resolutions are in the merge commit
 - Backend 1319 passed, frontend 220 passed; migration check clean.
 - QA rehearsal: forward, reverse merge nodes, reapply — balance unchanged,
   `check_rls` 47 tables.
-- New production migrations on deploy: `children/0004_child_monthly_fee`
-  and `attendance/0006_staff_attendance` are **already applied in
-  production** (they shipped with the hotfixes); Django will skip them and
-  apply the big-update migrations plus the merge nodes.
+- On deploy: `children/0004_child_monthly_fee` is already applied in
+  production (it shipped with hotfix feb68c0) and will be skipped.
+  `attendance/0006_staff_attendance` is skipped too if 11da61a was deployed,
+  otherwise it applies now. Either way Django then applies the big-update
+  migrations and the merge nodes; run `check_rls` (expect 47).
 - Phase-6 ADR proposals renumbered to ADR-26…28 (ADR-25 is main's).
