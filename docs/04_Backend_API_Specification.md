@@ -669,6 +669,18 @@ Module: `inventory` (Kitchen & Warehouse). **Stock levels derived from movements
 
 ---
 
+### 12.1 Kitchen — dishes and the daily menu (PLAN 6.6)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET / POST / PUT / DELETE | `/dishes[/{id}]` | `inventory.*` | `{name, portion_grams?, ingredients: [{product_id, quantity}]}` — quantities per ONE portion in the product's unit; the list is replaced as a whole. Read adds `cost_per_portion` (latest purchase prices, `null` if one is unknown). Delete = switch off |
+| GET | `/menu-days?from=&to=` | `inventory.read` | Planned / served days |
+| POST | `/menu-days/plan` | `inventory.create` | `{menu_date, warehouse_id, items: [{dish_id, meal}]}` — creates or replaces a day's plan; a served day is closed (`422`) |
+| GET | `/menu-days/{id}/preview?staff_portions=` | `inventory.read` | Portions = children marked **present** that day + staff; per product: needed / available / short, `has_shortage` |
+| POST | `/menu-days/{id}/serve` | `inventory.create` | `{staff_portions}` — one `stock_movement(consumption)` per product, all or nothing. Refused: already served, a future day, zero portions, **any shortage** (`422` naming the products) |
+| POST | `/menu-days/{id}/unserve` | `inventory.update` | Counter-movements (`adjustment`, in) for that serving; the day returns to draft |
+
+The design note proposed letting stock go negative on serving ("the food is already eaten"); the inventory rule — no stock-out beyond what is on hand — is the documented one and wins. Owner's decision pending (PROGRESS, "Qaror kerak").
+
 ## 13. Expenses
 
 Module: `expenses`.

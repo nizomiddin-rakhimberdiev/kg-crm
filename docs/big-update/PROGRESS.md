@@ -704,3 +704,20 @@ phase branch.** Details and conflict resolutions are in the merge commit
   cursor); child card → contracts (make, view, print, sign, terminate).
 - Tests: backend 17 (incl. cross-tenant 404 for child, template, contract;
   DB refuses a text edit), frontend 2 (print writes text, not markup).
+
+### 6.6 Kitchen / menu → stock consumption
+
+- New app `kitchen`: `dish`, `dish_ingredient` (per portion, product unit),
+  `menu_day`, `menu_item`. `check_rls` **58**.
+- Serving: portions = present children (register) + staff portions;
+  preview first (needed / available / short per product), then one
+  `consumption` movement per product, all or nothing. Undo writes
+  `adjustment` counter-movements; each serving has its own reference.
+- **Deviation (Qaror kerak):** a shortage *refuses* serving instead of letting
+  stock go negative as the design note proposed — the inventory module's
+  documented rule wins until the owner decides.
+- Dish cost per portion at the latest purchase prices.
+- `attendance/selectors.py`, `inventory/selectors.py` added (invariant 1).
+- UI: Inventory page → "Oshxona" tab (dishes, daily menu, preview, served /
+  undo). The Store tab's markup only moved one indentation level.
+- Tests: 14 backend (+ sweep factories for the four new endpoints).

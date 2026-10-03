@@ -33,6 +33,7 @@ from apps.inventory.views import (
     SupplierViewSet,
     WarehouseViewSet,
 )
+from apps.kitchen.views import DishViewSet, MenuDayViewSet
 from apps.notifications.views import NotificationTemplateViewSet, NotificationViewSet
 from apps.payroll.views import EmployeeAdvanceViewSet, PayrollRunViewSet
 from apps.platform.views import PlatformConsoleViewSet
@@ -51,6 +52,9 @@ router.register("guardians", GuardianViewSet, basename="guardian")
 # Contracts (PLAN 6.5): templates are settings, contracts belong to the child.
 router.register("contract-templates", ContractTemplateViewSet, basename="contract-template")
 router.register("contracts", ContractViewSet, basename="contract")
+# Kitchen (PLAN 6.6).
+router.register("dishes", DishViewSet, basename="dish")
+router.register("menu-days", MenuDayViewSet, basename="menu-day")
 router.register("groups", GroupViewSet, basename="group")
 router.register("cash-accounts", CashAccountViewSet, basename="cash-account")
 router.register("attendance", AttendanceViewSet, basename="attendance")

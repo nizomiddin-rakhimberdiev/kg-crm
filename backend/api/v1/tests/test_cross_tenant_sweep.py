@@ -363,6 +363,35 @@ def _create_row(tenant: Any, basename: str) -> Any:
                 gender="male",
             )
             return create_contract(child=child, template=template)
+        # Kitchen (PLAN 6.6).
+        if basename in {"dish", "menu-day"}:
+            from apps.kitchen.services import save_dish, set_menu
+
+            warehouse = Warehouse.objects.create(
+                organization=tenant.organization, branch=tenant.branch, name="Oshxona"
+            )
+            product = Product.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                name="Guruch",
+                unit="kg",
+            )
+            dish = save_dish(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                dish=None,
+                name="Palov",
+                ingredients=[{"product_id": product.id, "quantity": "0.1"}],
+            )
+            if basename == "dish":
+                return dish
+            return set_menu(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                menu_date=date(2026, 7, 1),
+                warehouse=warehouse,
+                items=[{"dish_id": dish.id, "meal": "lunch"}],
+            )
     raise AssertionError(
         f"'{basename}' uchun test ma'lumoti yaratilmagan. Yangi endpoint "
         f"qo'shgan bo'lsangiz, bu funksiyaga uni ham qo'shing — sweep "

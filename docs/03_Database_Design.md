@@ -1414,6 +1414,21 @@ Operational tables — standard guards and RLS policy; `check_rls` expects **54*
 
 ---
 
+## 20e. Schema Domain: Kitchen (PLAN 6.6)
+
+Operational tables, standard guards and RLS; `check_rls` expects **58** tables. Stock never changes here: serving writes `stock_movement` rows (invariant 3).
+
+| Table | Key columns | Constraints |
+|---|---|---|
+| `dish` | `branch_id`, `name`, `portion_grams`, `note`, `is_active` | `uq_dish_name (branch, name) WHERE is_active` |
+| `dish_ingredient` | `dish_id` (`RESTRICT`), `product_id` (`RESTRICT`), `quantity_per_portion NUMERIC(10,3)` | `uq_dish_ingredient (dish, product)`, `ck_dish_ingredient_quantity > 0` |
+| `menu_day` | `branch_id`, `menu_date`, `warehouse_id` (`RESTRICT`), `status`, `children_portions`, `staff_portions`, `served_at`, `served_by` | `uq_menu_day_branch_date`, `ck_menu_day_status (draft, served)`, `ck_menu_day_served_at` (served ⇔ `served_at`) |
+| `menu_item` | `menu_day_id`, `dish_id` (both `RESTRICT`), `meal` | `uq_menu_item (menu_day, dish, meal)`, `ck_menu_item_meal` |
+
+Each serving's movements carry `reference = "menu:<day id>:<served_at µs>"`, so serve → undo → serve → undo reverses exactly one serving each time. The purge job deletes the four tables before `stock_movement`, products and warehouses.
+
+---
+
 ## 21. Referential Integrity — ON DELETE Matrix
 
 `ON DELETE` behavior is chosen per relationship by **what should happen to children when a parent is removed**. Because most master data is soft-deleted, `RESTRICT`/`SET NULL` dominate; `CASCADE` is reserved for true ownership.

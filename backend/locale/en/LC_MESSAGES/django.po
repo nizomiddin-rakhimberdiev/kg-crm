@@ -1288,3 +1288,66 @@ msgstr "Could not reserve a contract number; please try again."
 
 msgid "Vasiy topilmadi."
 msgstr "Guardian not found."
+
+# Kitchen (PLAN 6.6)
+msgid "Berildi"
+msgstr "Served"
+
+msgid "Bitta mahsulot taomda ikki marta boʻlishi mumkin emas."
+msgstr "A product cannot appear twice in one dish."
+
+msgid "Bu kun allaqachon berilgan."
+msgstr "This day has already been served."
+
+msgid "Bu kun allaqachon berilgan. Oʻzgartirish uchun avval «Berildi»ni bekor qiling."
+msgstr "This day has already been served. To change it, undo “served” first."
+
+msgid "Bu kun hali berilmagan."
+msgstr "This day has not been served yet."
+
+msgid "Kechki ovqat"
+msgstr "Dinner"
+
+msgid "Kelajakdagi kunni «berildi» qilib boʻlmaydi."
+msgstr "A future day cannot be marked as served."
+
+msgid "Mahsulot topilmadi yoki boshqa filialda."
+msgstr "Product not found or in another branch."
+
+msgid "Menyu bekor qilindi"
+msgstr "Menu undone"
+
+#, python-brace-format
+msgid "Menyu {date}"
+msgstr "Menu {date}"
+
+msgid "Menyuda taom yoʻq."
+msgstr "The menu has no dishes."
+
+msgid "Nonushta"
+msgstr "Breakfast"
+
+msgid "Ombor boshqa filialda."
+msgstr "The store is in another branch."
+
+msgid "Ombor topilmadi."
+msgstr "Store not found."
+
+#, python-brace-format
+msgid "Omborda yetmaydi: {items}. Avval kirim yoki tuzatish kiriting."
+msgstr "Not enough in store: {items}. Record a purchase or an adjustment first."
+
+msgid "Poldnik"
+msgstr "Afternoon snack"
+
+msgid "Porsiya soni nol: avval shu kun davomatini belgilang."
+msgstr "Zero portions: mark this day's register first."
+
+msgid "Reja"
+msgstr "Planned"
+
+msgid "Taom topilmadi."
+msgstr "Dish not found."
+
+msgid "Tushlik"
+msgstr "Lunch"

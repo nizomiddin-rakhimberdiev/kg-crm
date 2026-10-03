@@ -69,6 +69,7 @@ LOCAL_APPS = [
     "apps.online_payments",
     "apps.parent_bot",
     "apps.contracts",
+    "apps.kitchen",
     "apps.audit",
 ]
 

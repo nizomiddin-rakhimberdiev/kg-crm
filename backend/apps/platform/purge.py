@@ -89,6 +89,12 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.payroll.EmployeeAdvance",
     "apps.hr.Employee",
     "apps.hr.Position",
+    # Kitchen (PLAN 6.6): menus point at dishes, dishes at products — all
+    # before the products and warehouses they reference.
+    "apps.kitchen.MenuItem",
+    "apps.kitchen.MenuDay",
+    "apps.kitchen.DishIngredient",
+    "apps.kitchen.Dish",
     "apps.inventory.StockMovement",
     "apps.inventory.Product",
     "apps.inventory.ProductCategory",

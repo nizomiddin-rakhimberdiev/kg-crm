@@ -1288,3 +1288,66 @@ msgstr "Не удалось занять номер договора, попро
 
 msgid "Vasiy topilmadi."
 msgstr "Опекун не найден."
+
+# Kitchen (PLAN 6.6)
+msgid "Berildi"
+msgstr "Выдано"
+
+msgid "Bitta mahsulot taomda ikki marta boʻlishi mumkin emas."
+msgstr "Один продукт не может быть в блюде дважды."
+
+msgid "Bu kun allaqachon berilgan."
+msgstr "Этот день уже выдан."
+
+msgid "Bu kun allaqachon berilgan. Oʻzgartirish uchun avval «Berildi»ni bekor qiling."
+msgstr "Этот день уже выдан. Чтобы изменить, сначала отмените «Выдано»."
+
+msgid "Bu kun hali berilmagan."
+msgstr "Этот день ещё не выдан."
+
+msgid "Kechki ovqat"
+msgstr "Ужин"
+
+msgid "Kelajakdagi kunni «berildi» qilib boʻlmaydi."
+msgstr "Нельзя отметить будущий день как выданный."
+
+msgid "Mahsulot topilmadi yoki boshqa filialda."
+msgstr "Продукт не найден или в другом филиале."
+
+msgid "Menyu bekor qilindi"
+msgstr "Меню отменено"
+
+#, python-brace-format
+msgid "Menyu {date}"
+msgstr "Меню {date}"
+
+msgid "Menyuda taom yoʻq."
+msgstr "В меню нет блюд."
+
+msgid "Nonushta"
+msgstr "Завтрак"
+
+msgid "Ombor boshqa filialda."
+msgstr "Склад в другом филиале."
+
+msgid "Ombor topilmadi."
+msgstr "Склад не найден."
+
+#, python-brace-format
+msgid "Omborda yetmaydi: {items}. Avval kirim yoki tuzatish kiriting."
+msgstr "На складе не хватает: {items}. Сначала внесите приход или корректировку."
+
+msgid "Poldnik"
+msgstr "Полдник"
+
+msgid "Porsiya soni nol: avval shu kun davomatini belgilang."
+msgstr "Порций ноль: сначала отметьте посещаемость за этот день."
+
+msgid "Reja"
+msgstr "План"
+
+msgid "Taom topilmadi."
+msgstr "Блюдо не найдено."
+
+msgid "Tushlik"
+msgstr "Обед"
