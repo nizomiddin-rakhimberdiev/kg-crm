@@ -600,3 +600,25 @@ qil". Qarorlar jadvali — `PLAN.md` §5.
 Chrome + CDP bilan bajarildi, bu esa CI'ga yangi og'ir bog'liqlik
 (brauzer yuklash) qo'shmaydi. Ssenariyning o'zi backend integratsion
 testida.
+
+---
+
+## 2026-10-03 — origin/main merged into the big-update line
+
+From here on, working notes are written in English (owner's request).
+
+Branch `big-update/merge-main` (from `big-update/phase-6`) merges the three
+production hotfixes that were only on `main` — ADR-25 delegation rule,
+individual child price, staff attendance — so deploying this line no longer
+reverts them. **Deploy from `big-update/merge-main`, not from an earlier
+phase branch.** Details and conflict resolutions are in the merge commit
+`0cc4740`.
+
+- Backend 1319 passed, frontend 220 passed; migration check clean.
+- QA rehearsal: forward, reverse merge nodes, reapply — balance unchanged,
+  `check_rls` 47 tables.
+- New production migrations on deploy: `children/0004_child_monthly_fee`
+  and `attendance/0006_staff_attendance` are **already applied in
+  production** (they shipped with the hotfixes); Django will skip them and
+  apply the big-update migrations plus the merge nodes.
+- Phase-6 ADR proposals renumbered to ADR-26…28 (ADR-25 is main's).
