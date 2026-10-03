@@ -248,7 +248,14 @@ def change_status(
     # ro'yxatida turishi tarbiyachini chalkashtiradi.
     if status in CLOSED_STATUSES:
         for enrollment in child.enrollments.filter(status=EnrollmentState.ACTIVE):
-            end_enrollment(enrollment=enrollment, end_date=on_date)
+            # Holat sanasi guruhga qo'shilgan kundan OLDIN bo'lishi
+            # mumkin (orqaga sanab yozilgan chiqish). Bola guruhdan
+            # qo'shilmasdan oldin chiqa olmaydi — a'zolik boshlangan
+            # kunida yopiladi. Aks holda `ck_enrollment_dates` buzilib,
+            # foydalanuvchi ma'nosiz 409 ko'rardi. Hisob-faktura
+            # qarori bola holatining sanasidan (`is_billable_for`), bu
+            # yerdan emas — ya'ni pulga ta'siri yo'q.
+            end_enrollment(enrollment=enrollment, end_date=max(on_date, enrollment.start_date))
 
     return child
 

@@ -349,3 +349,47 @@ class TestGuardianLink:
             reverse("v1:child-guardian-link", args=[child.id, linked])
         )
         assert response.status_code == 404
+
+
+@pytest.mark.big_update
+def test_a_backdated_withdrawal_before_the_group_start_does_not_conflict(tenant_a):
+    """
+    Holat sanasi guruhga qo'shilgan kundan OLDIN bo'lsa (masalan, egasi
+    chiqib ketishni orqaga sanab yozdi), guruhdagi a'zolik o'sha
+    sanada yopilardi va `ck_enrollment_dates` buzilib, foydalanuvchi
+    ma'nosiz "ma'lumot bilan ziddiyat" (409) ko'rardi. Yakuniy qabul
+    ssenariysi (brief §6, 5-qadam) topdi. Bola guruhdan qo'shilgan
+    kunidan oldin chiqa olmaydi — a'zolik boshlangan kunida yopiladi.
+    """
+    from datetime import date, timedelta
+
+    from django.utils import timezone
+
+    from apps.children.models import Child, Enrollment, Group
+    from apps.children.services import change_status, enroll_child
+    from apps.core.tenancy import organization_context
+
+    today = timezone.localdate()
+    with organization_context(tenant_a.organization.id):
+        group = Group.objects.create(
+            organization=tenant_a.organization, branch=tenant_a.branch, name="G", capacity=5
+        )
+        child = Child.objects.create(
+            organization=tenant_a.organization,
+            branch=tenant_a.branch,
+            first_name="Ali",
+            last_name="Valiyev",
+            date_of_birth=date(2022, 1, 1),
+            gender="male",
+        )
+        enroll_child(child=child, group=group)
+        change_status(
+            child=child,
+            status="withdrawn",
+            on_date=today - timedelta(days=3),
+            reason="Orqaga sanab yozildi",
+        )
+        enrollment = Enrollment.objects.get(child=child)
+        assert enrollment.end_date == enrollment.start_date
+        child.refresh_from_db()
+        assert child.status_changed_on == today - timedelta(days=3)
