@@ -1196,4 +1196,9 @@ export const messages: Record<string, string> = {
   'Kelmagani haqida xabar': 'Absence message',
   'Bola bugun «kelmadi» deb belgilansa, ota-onaga xabar ketadi. Pulga taʼsir qilmaydi.':
     'When a child is marked “absent” today, the parent gets a message. It does not affect fees.',
+  // Subscription online payment (PLAN 6.4)
+  'Onlayn toʻlash': 'Pay online',
+  'Onlayn toʻlov yoʻq — bank orqali toʻlang.': 'No online payment — please pay by bank transfer.',
+  'Toʻlov tekshirilmoqda — hisob holati bir necha soniyada yangilanadi.':
+    'Checking the payment — the invoice status will update in a few seconds.',
 }

@@ -1238,10 +1238,24 @@ Settlement against a subscription invoice. Append-only.
 | `organization_id` | `UUID` | `NOT NULL` FK → organization `ON DELETE RESTRICT` | |
 | `subscription_invoice_id` | `UUID` | `NOT NULL` FK → subscription_invoice `ON DELETE RESTRICT` | |
 | `amount` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (amount > 0)` | |
-| `method` | `VARCHAR(20)` | `NOT NULL`, `CHECK (method IN ('bank_transfer','card','cash'))` | `bank_transfer` is the MVP default |
+| `method` | `VARCHAR(20)` | `NOT NULL`, `ck_sub_payment_method` — `IN ('bank_transfer','card','cash','online')` | `bank_transfer` is the MVP default; `online` = Radix's Payme / Click merchant (PLAN 6.4). The CHECK was documented here from the start but only created in `subscriptions.0005` |
 | `reference` | `VARCHAR(80)` | `NULL` | Bank reference / payment order no. |
 | `received_at` | `TIMESTAMPTZ` | `NOT NULL` | |
 | `recorded_by` | `UUID` | `NULL` FK → user `ON DELETE SET NULL` | Platform actor |
+
+### 20.5a `subscription_online_transaction` (PLAN 6.4)
+Provider-side record of a Payme / Click payment on **Radix's own merchant** for a subscription invoice. Same columns and state numbers as `online_transaction` (§20b.3) — the protocol code is shared — but its own table, because subscription billing and tuition never share tables (invariant 9). Metadata RLS policy (the callback finds the invoice by its global `number` under `platform_context()`); `check_rls` expects **52** tables.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `organization_id` | `UUID` | `NOT NULL` FK `RESTRICT` | |
+| `subscription_invoice_id` | `UUID` | `NOT NULL` FK `RESTRICT` | Payme `account.invoice` / Click `merchant_trans_id` = the invoice **number** |
+| `provider`, `provider_txn_id` | `VARCHAR` | `uq_sub_online_txn_provider_id`, `ck_sub_online_txn_provider` | |
+| `amount` | `NUMERIC(12,2)` | `ck_sub_online_txn_amount` (`> 0`) | |
+| `state`, `reason`, `provider_time`, `performed_at`, `cancelled_at` | | | As §20b.3 |
+| `payment_id` | `UUID` | FK → `subscription_payment` `RESTRICT` | Set when performed |
+
+A cancellation **after** payment is refused (Payme `-31007`): `subscription_payment` is append-only and a refund is a person's decision.
 
 ### 20.6 Subscription lifecycle
 

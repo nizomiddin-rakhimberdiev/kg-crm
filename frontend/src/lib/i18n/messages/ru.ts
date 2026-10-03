@@ -1191,4 +1191,9 @@ export const messages: Record<string, string> = {
   'Kelmagani haqida xabar': 'Сообщение об отсутствии',
   'Bola bugun «kelmadi» deb belgilansa, ota-onaga xabar ketadi. Pulga taʼsir qilmaydi.':
     'Если ребёнок отмечен как «не пришёл» сегодня, родителю уходит сообщение. На оплату не влияет.',
+  // Subscription online payment (PLAN 6.4)
+  'Onlayn toʻlash': 'Оплатить онлайн',
+  'Onlayn toʻlov yoʻq — bank orqali toʻlang.': 'Онлайн-оплаты нет — оплатите банковским переводом.',
+  'Toʻlov tekshirilmoqda — hisob holati bir necha soniyada yangilanadi.':
+    'Проверяем оплату — статус счёта обновится через несколько секунд.',
 }

@@ -9,28 +9,34 @@ Amounts arrive in TIYIN (integer); they become so'm as `Decimal(amount) / 100`
 — never a float (brief, rule 4). Times are milliseconds since the epoch.
 
 Authentication: `Authorization: Basic base64("Paycom:" + key)`, compared in
-constant time with the kindergarten's own key. A wrong key is answered
-before anything else is looked at (`-32504`).
+constant time with the merchant's key. A wrong key is answered before
+anything else is looked at (`-32504`).
+
+What is being paid comes from the `ledger` (`merchant.py`): a kindergarten's
+invoice (PLAN 6.1) or Radix's subscription invoice (PLAN 6.4).
 """
 
 from __future__ import annotations
 
 import base64
 import hmac
-import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 
-from apps.finance.models import Invoice
-from apps.online_payments import services
-from apps.online_payments.models import MerchantCredential, OnlineTransaction, Provider, TxnState
+from apps.online_payments.ledger import TUITION
+from apps.online_payments.merchant import CannotCancel, Ledger
+from apps.online_payments.models import Provider, TxnState
 
-__all__ = ["PaymeError", "authorised", "handle"]
+__all__ = ["PaymeError", "authorised", "handle", "TXN_TIMEOUT"]
 
 ACCOUNT_FIELD = "invoice"
+
+#: Payme cancels an unperformed transaction after 12 hours (reason 4).
+TXN_TIMEOUT = timedelta(hours=12)
 
 
 class PaymeError(Exception):
@@ -80,16 +86,28 @@ def _busy() -> PaymeError:
     )
 
 
-def authorised(header: str, credential: MerchantCredential) -> bool:
-    if not header.startswith("Basic "):
+def _cannot_cancel() -> PaymeError:
+    return PaymeError(
+        -31007,
+        "Buyurtma bajarilgan, bekor qilib boʻlmaydi",
+        "Заказ выполнен, отменить транзакцию невозможно",
+        "The order is completed; the transaction cannot be cancelled",
+    )
+
+
+def authorised(header: str, secret: str) -> bool:
+    if not header.startswith("Basic ") or not secret:
         return False
     try:
         decoded = base64.b64decode(header[6:]).decode()
     except (ValueError, UnicodeDecodeError):
         return False
     login, _, key = decoded.partition(":")
-    expected = services.secret_for(credential)
-    return login == "Paycom" and hmac.compare_digest(key.encode(), expected.encode())
+    return login == "Paycom" and hmac.compare_digest(key.encode(), secret.encode())
+
+
+def _expired(txn: Any) -> bool:
+    return txn.state == TxnState.CREATED and timezone.now() - txn.created_at > TXN_TIMEOUT
 
 
 def _ms(moment: datetime | None) -> int:
@@ -108,33 +126,29 @@ def _amount(params: dict[str, Any]) -> Decimal:
     return (Decimal(tiyin) / Decimal(100)).quantize(Decimal("0.01"))
 
 
-def _invoice(params: dict[str, Any]) -> Invoice:
-    raw = str((params.get("account") or {}).get(ACCOUNT_FIELD, ""))
-    try:
-        invoice_id = uuid.UUID(raw)
-    except ValueError as exc:
-        raise _not_found() from exc
-    # Tenant context is already set: another kindergarten's invoice is
-    # simply not there (RLS) — "not found", never "forbidden".
-    invoice = Invoice.objects.select_related("child").filter(pk=invoice_id).first()
-    if invoice is None:
+def _target(ledger: Ledger, params: dict[str, Any]) -> Any:
+    raw = str((params.get("account") or {}).get(ledger.account_field, ""))
+    # The tenant context (tuition) or the subscription domain (Radix) is
+    # already set: anything outside it is simply not there — "not found".
+    target = ledger.find(raw) if raw else None
+    if target is None:
         raise _not_found()
-    return invoice
+    return target
 
 
-def _check(params: dict[str, Any]) -> tuple[Invoice, Decimal]:
-    invoice = _invoice(params)
+def _check(ledger: Ledger, params: dict[str, Any]) -> tuple[Any, Decimal]:
+    target = _target(ledger, params)
     amount = _amount(params)
-    payable = services.payable_amount(invoice)
+    payable = ledger.payable(target)
     if payable is None:
         raise _not_found()
     if amount > payable:
         raise _wrong_amount()
-    return invoice, amount
+    return target, amount
 
 
-def _txn(params: dict[str, Any], *, lock: bool = False) -> OnlineTransaction:
-    queryset = OnlineTransaction.objects.filter(
+def _txn(ledger: Ledger, params: dict[str, Any], *, lock: bool = False) -> Any:
+    queryset = ledger.txns().filter(
         provider=Provider.PAYME, provider_txn_id=str(params.get("id", ""))
     )
     if lock:
@@ -145,7 +159,7 @@ def _txn(params: dict[str, Any], *, lock: bool = False) -> OnlineTransaction:
     return txn
 
 
-def _txn_result(txn: OnlineTransaction) -> dict[str, Any]:
+def _txn_result(txn: Any) -> dict[str, Any]:
     return {
         "create_time": txn.provider_time or _ms(txn.created_at),
         "perform_time": _ms(txn.performed_at),
@@ -156,24 +170,26 @@ def _txn_result(txn: OnlineTransaction) -> dict[str, Any]:
     }
 
 
+def _expire(ledger: Ledger, txn: Any) -> None:
+    ledger.cancel(txn, reason=4)
+
+
 # --- Methods ---
 
 
-def check_perform(params: dict[str, Any]) -> dict[str, Any]:
-    _check(params)
+def check_perform(ledger: Ledger, params: dict[str, Any]) -> dict[str, Any]:
+    _check(ledger, params)
     return {"allow": True}
 
 
-def create(params: dict[str, Any]) -> dict[str, Any]:
+def create(ledger: Ledger, params: dict[str, Any]) -> dict[str, Any]:
     provider_id = str(params.get("id", ""))
-    existing = OnlineTransaction.objects.filter(
-        provider=Provider.PAYME, provider_txn_id=provider_id
-    ).first()
+    existing = ledger.txns().filter(provider=Provider.PAYME, provider_txn_id=provider_id).first()
     if existing is not None:
         if existing.state != TxnState.CREATED:
             raise _cannot_perform()
-        if services.is_expired(existing):
-            services.cancel(existing, reason=4)
+        if _expired(existing):
+            _expire(ledger, existing)
             raise _cannot_perform()
         return {
             "create_time": existing.provider_time,
@@ -181,66 +197,69 @@ def create(params: dict[str, Any]) -> dict[str, Any]:
             "state": existing.state,
         }
 
-    invoice, amount = _check(params)
-    pending = OnlineTransaction.objects.filter(invoice=invoice, state=TxnState.CREATED)
+    target, amount = _check(ledger, params)
+    pending = ledger.txns().filter(**{ledger.target_field: target}, state=TxnState.CREATED)
     for other in pending:
-        if services.is_expired(other):
-            services.cancel(other, reason=4)
+        if _expired(other):
+            _expire(ledger, other)
         else:
             raise _busy()
 
     try:
         with transaction.atomic():
-            txn = OnlineTransaction.objects.create(
-                organization_id=invoice.organization_id,
-                branch_id=invoice.branch_id,
+            txn = ledger.create_txn(
+                target,
                 provider=Provider.PAYME,
                 provider_txn_id=provider_id,
-                invoice=invoice,
                 amount=amount,
                 provider_time=int(params.get("time") or 0) or None,
             )
     except IntegrityError:
         # A concurrent retry of the same call won — answer with its row.
-        txn = _txn(params)
+        txn = _txn(ledger, params)
     return {"create_time": txn.provider_time, "transaction": str(txn.id), "state": txn.state}
 
 
-def perform(params: dict[str, Any]) -> dict[str, Any]:
-    txn = _txn(params, lock=True)
+def perform(ledger: Ledger, params: dict[str, Any]) -> dict[str, Any]:
+    txn = _txn(ledger, params, lock=True)
     if txn.state == TxnState.CREATED:
-        if services.is_expired(txn):
-            services.cancel(txn, reason=4)
+        if _expired(txn):
+            _expire(ledger, txn)
             raise _cannot_perform()
-        services.perform(txn)
+        ledger.perform(txn)
     elif txn.state != TxnState.PERFORMED:
         raise _cannot_perform()
     return {"transaction": str(txn.id), "perform_time": _ms(txn.performed_at), "state": txn.state}
 
 
-def cancel(params: dict[str, Any]) -> dict[str, Any]:
-    txn = _txn(params, lock=True)
+def cancel(ledger: Ledger, params: dict[str, Any]) -> dict[str, Any]:
+    txn = _txn(ledger, params, lock=True)
     reason = params.get("reason")
-    services.cancel(txn, reason=int(reason) if reason is not None else None)
+    try:
+        ledger.cancel(txn, reason=int(reason) if reason is not None else None)
+    except CannotCancel as exc:
+        raise _cannot_cancel() from exc
     return {"transaction": str(txn.id), "cancel_time": _ms(txn.cancelled_at), "state": txn.state}
 
 
-def check(params: dict[str, Any]) -> dict[str, Any]:
-    return _txn_result(_txn(params))
+def check(ledger: Ledger, params: dict[str, Any]) -> dict[str, Any]:
+    return _txn_result(_txn(ledger, params))
 
 
-def statement(params: dict[str, Any]) -> dict[str, Any]:
+def statement(ledger: Ledger, params: dict[str, Any]) -> dict[str, Any]:
     start, end = int(params.get("from") or 0), int(params.get("to") or 0)
-    rows = OnlineTransaction.objects.filter(
-        provider=Provider.PAYME, provider_time__gte=start, provider_time__lte=end
-    ).order_by("provider_time")
+    rows = (
+        ledger.txns()
+        .filter(provider=Provider.PAYME, provider_time__gte=start, provider_time__lte=end)
+        .order_by("provider_time")
+    )
     return {
         "transactions": [
             {
                 "id": txn.provider_txn_id,
                 "time": txn.provider_time,
                 "amount": int(txn.amount * 100),
-                "account": {ACCOUNT_FIELD: str(txn.invoice_id)},
+                "account": {ledger.account_field: ledger.account_of(txn)},
                 **_txn_result(txn),
             }
             for txn in rows
@@ -259,14 +278,14 @@ METHODS = {
 
 
 @transaction.atomic
-def handle(body: dict[str, Any]) -> dict[str, Any]:
-    """One JSON-RPC call inside the tenant context; returns the response body."""
+def handle(body: dict[str, Any], ledger: Ledger = TUITION) -> dict[str, Any]:
+    """One JSON-RPC call (already authorised); returns the response body."""
     request_id = body.get("id")
     method = METHODS.get(str(body.get("method", "")))
     try:
         if method is None:
             raise PaymeError(-32601, "Metod topilmadi", "Метод не найден", "Method not found")
-        return {"id": request_id, "result": method(body.get("params") or {})}
+        return {"id": request_id, "result": method(ledger, body.get("params") or {})}
     except PaymeError as error:
         return {
             "id": request_id,

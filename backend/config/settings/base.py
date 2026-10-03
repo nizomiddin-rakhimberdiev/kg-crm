@@ -544,6 +544,15 @@ MERCHANT_KEY_REQUIRED = env.bool("MERCHANT_KEY_REQUIRED", default=False)
 # `python manage.py rebuild_contact_index --apply`.
 CONTACT_INDEX_KEY = env("CONTACT_INDEX_KEY", default="")
 
+# Radix's OWN merchant for subscription invoices (PLAN 6.4, P6-3). Empty =
+# the "pay online" button is hidden and bank transfer stays the way to pay.
+RADIX_PAYME_MERCHANT_ID = env("RADIX_PAYME_MERCHANT_ID", default="")
+RADIX_PAYME_KEY = env("RADIX_PAYME_KEY", default="")
+RADIX_PAYME_SANDBOX = env.bool("RADIX_PAYME_SANDBOX", default=False)
+RADIX_CLICK_MERCHANT_ID = env("RADIX_CLICK_MERCHANT_ID", default="")
+RADIX_CLICK_SERVICE_ID = env("RADIX_CLICK_SERVICE_ID", default="")
+RADIX_CLICK_SECRET = env("RADIX_CLICK_SECRET", default="")
+
 TRIAL_DAYS = env.int("TRIAL_DAYS", default=15)
 PAYMENT_GRACE_DAYS = env.int("PAYMENT_GRACE_DAYS", default=7)
 CHURN_EXPORT_RETENTION_DAYS = env.int("CHURN_EXPORT_RETENTION_DAYS", default=30)

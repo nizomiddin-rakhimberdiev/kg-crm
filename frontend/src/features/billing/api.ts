@@ -11,6 +11,11 @@ export const billingApi = {
   usage: () => api.get<BillingUsage>('/billing/usage'),
   usageHistory: () => api.get<UsageSnapshot[]>('/billing/usage/history'),
   invoices: () => api.get<SubscriptionInvoice[]>('/billing/invoices'),
+  /** Payme / Click pages for one open invoice (PLAN 6.4); `{}` when not set up. */
+  payLinks: (invoiceId: string) =>
+    api.get<{ providers: Partial<Record<'payme' | 'click', string>> }>(
+      `/billing/invoices/${invoiceId}/pay`,
+    ),
 
   acceptTrial: (paymentTerm: string) =>
     api.post<SubscriptionInvoice>('/billing/accept-trial', { payment_term: paymentTerm }),

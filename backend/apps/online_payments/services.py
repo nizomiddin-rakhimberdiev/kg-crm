@@ -31,7 +31,6 @@ import uuid
 from datetime import timedelta
 from decimal import Decimal
 from typing import Any
-from urllib.parse import urlencode
 
 from django.conf import settings
 from django.db import transaction
@@ -39,17 +38,16 @@ from django.utils import timezone
 
 from apps.finance.models import Invoice, InvoiceStatus, PaymentMethod
 from apps.online_payments import crypto
+from apps.online_payments.merchant import Merchant, checkout_url
 from apps.online_payments.models import (
     MerchantCredential,
     OnlineTransaction,
     PaymentLink,
-    Provider,
     TxnState,
 )
 
 __all__ = [
     "LINK_TTL",
-    "TXN_TIMEOUT",
     "build_token",
     "organization_from_token",
     "create_link",
@@ -57,6 +55,7 @@ __all__ = [
     "secret_for",
     "save_credential",
     "payable_amount",
+    "merchant_for",
     "checkout_urls",
     "public_url",
     "public_return_url",
@@ -66,9 +65,6 @@ __all__ = [
 
 #: How long a payment link stays usable. A month covers the billing cycle.
 LINK_TTL = timedelta(days=30)
-
-#: Payme cancels an unperformed transaction after 12 hours (reason 4).
-TXN_TIMEOUT = timedelta(hours=12)
 
 _RANDOM_BYTES = 24
 
@@ -175,34 +171,37 @@ def payable_amount(invoice: Invoice) -> Decimal | None:
     return outstanding if outstanding > 0 else None
 
 
+def merchant_for(credential: MerchantCredential) -> Merchant:
+    """A stored credential as the protocol layer's `Merchant` (secret decrypted)."""
+    return Merchant(
+        provider=credential.provider,
+        merchant_id=credential.merchant_id,
+        secret=secret_for(credential),
+        service_id=credential.service_id,
+        sandbox=credential.sandbox,
+    )
+
+
 def checkout_urls(*, invoice: Invoice, amount: Decimal, return_url: str) -> dict[str, str]:
     """
     Provider checkout pages for this invoice — a REDIRECT, no script of
     theirs on our page, so the CSP stays as it is.
     """
-    urls: dict[str, str] = {}
-    credentials = active_credentials()
-
-    payme = credentials.get(Provider.PAYME)
-    if payme is not None:
-        tiyin = int((amount * 100).to_integral_value())
-        params = f"m={payme.merchant_id};ac.invoice={invoice.id};a={tiyin};c={return_url}"
-        host = "https://checkout.test.paycom.uz" if payme.sandbox else "https://checkout.paycom.uz"
-        urls[Provider.PAYME] = f"{host}/{base64.b64encode(params.encode()).decode()}"
-
-    click = credentials.get(Provider.CLICK)
-    if click is not None:
-        query = urlencode(
-            {
-                "service_id": click.service_id,
-                "merchant_id": click.merchant_id,
-                "amount": f"{amount:.2f}",
-                "transaction_param": str(invoice.id),
-                "return_url": return_url,
-            }
+    return {
+        provider: checkout_url(
+            Merchant(
+                provider=provider,
+                merchant_id=credential.merchant_id,
+                secret="",  # not needed to build a URL — never decrypted here
+                service_id=credential.service_id,
+                sandbox=credential.sandbox,
+            ),
+            account=str(invoice.id),
+            amount=amount,
+            return_url=return_url,
         )
-        urls[Provider.CLICK] = f"https://my.click.uz/services/pay?{query}"
-    return urls
+        for provider, credential in active_credentials().items()
+    }
 
 
 def public_url(link: PaymentLink) -> str:
@@ -264,7 +263,3 @@ def cancel(txn: OnlineTransaction, *, reason: int | None) -> OnlineTransaction:
     txn.cancelled_at = timezone.now()
     txn.save(update_fields=["state", "reason", "cancelled_at", "updated_at"])
     return txn
-
-
-def is_expired(txn: OnlineTransaction) -> bool:
-    return txn.state == TxnState.CREATED and timezone.now() - txn.created_at > TXN_TIMEOUT

@@ -33,6 +33,10 @@ from apps.online_payments.views import (
 from apps.organizations.views import OrganizationLogoView, OrganizationView
 from apps.platform.views import PlatformLoginView
 from apps.platform.views_leads import PublicLeadCreateView, PublicPricingView
+from apps.subscriptions.views_online import (
+    SubscriptionClickWebhookView,
+    SubscriptionPaymeWebhookView,
+)
 
 app_name = "v1"
 
@@ -129,5 +133,16 @@ if is_saas():
             name="telegram-webhook",
         ),
         path("public/pricing", PublicPricingView.as_view(), name="public-pricing"),
+        # Radix's own merchant — subscription invoices (PLAN 6.4).
+        path(
+            "public/pay/subscription/payme",
+            SubscriptionPaymeWebhookView.as_view(),
+            name="subscription-payme-webhook",
+        ),
+        path(
+            "public/pay/subscription/click",
+            SubscriptionClickWebhookView.as_view(),
+            name="subscription-click-webhook",
+        ),
         *platform_patterns,
     ]

@@ -934,6 +934,7 @@ Module: `subscriptions`. **Org Owner only** ([02 §11.2](./02_Software_Architect
 | GET | `/billing/usage/history` | `billing.read` | Past `usage_snapshot` rows — the evidence behind each invoice |
 | GET | `/billing/invoices` | `billing.read` | Subscription invoices (filters: `status`, date range) |
 | GET | `/billing/invoices/{id}` | `billing.read` | Detail with base/overage/discount breakdown |
+| GET | `/billing/invoices/{id}/pay` | `billing.read` | Payme / Click checkout URLs for an open invoice (`{providers: {payme?, click?}}`, empty when Radix's merchant keys are not set). A **GET with a read permission** on purpose: a `suspended` organization must always be able to pay (invariant 11). Another organization's invoice is `404` (PLAN 6.4) |
 | GET | `/billing/invoices/{id}/document` | `billing.read` | Download invoice / act (PDF) |
 | POST | `/billing/accept-trial` | `billing.update` | Convert the trial → issues the first invoice, enters `pending_payment` |
 | POST | `/billing/payment-term` | `billing.update` | Request a term change (monthly / semiannual / annual) |
@@ -966,6 +967,8 @@ Module: `subscriptions`. **Org Owner only** ([02 §11.2](./02_Software_Architect
 **`POST /billing/export`** must work in **every** subscription status, including `cancelled`. A customer's own operational data is never held hostage to a billing dispute.
 
 ---
+
+**Radix's merchant callbacks (PLAN 6.4).** `POST /public/pay/subscription/payme` and `POST /public/pay/subscription/click` — SaaS only, one URL each for every customer. Same protocols and error codes as the tuition callbacks (§9.8), authenticated with Radix's keys from `.env` (`RADIX_PAYME_*`, `RADIX_CLICK_*`); the account is the subscription invoice **number**, so a kindergarten's tuition invoice id is "not found" here. A performed payment is `record_subscription_payment(method="online")`, which also moves `suspended` → `active`. A cancellation after payment answers Payme `-31007` / Click `-4`.
 
 ## 18a. Idempotency
 

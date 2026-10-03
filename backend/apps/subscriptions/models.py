@@ -28,6 +28,7 @@ from apps.core.models import BaseModel, TenantScopedModel
 
 __all__ = [
     "SubscriptionPlan",
+    "SubscriptionOnlineTransaction",
     "SubscriptionStatus",
     "PaymentTerm",
     "Subscription",
@@ -373,6 +374,8 @@ class SubscriptionPaymentMethod(models.TextChoices):
     BANK_TRANSFER = "bank_transfer", gettext_lazy("Bank oʻtkazmasi")
     CARD = "card", gettext_lazy("Karta")
     CASH = "cash", gettext_lazy("Naqd")
+    # Paid by the kindergarten through Radix's own Payme / Click merchant (PLAN 6.4).
+    ONLINE = "online", gettext_lazy("Payme / Click")
 
 
 class SubscriptionPayment(TenantScopedModel):
@@ -404,7 +407,64 @@ class SubscriptionPayment(TenantScopedModel):
             models.CheckConstraint(
                 condition=models.Q(amount__gt=Decimal("0")), name="ck_sub_payment_amount"
             ),
+            # docs/03 §20.5 always promised this CHECK; it arrived with
+            # `online` (PLAN 6.4). Every existing row uses one of these.
+            models.CheckConstraint(
+                condition=models.Q(method__in=["bank_transfer", "card", "cash", "online"]),
+                name="ck_sub_payment_method",
+            ),
         ]
 
     def __str__(self) -> str:
         return f"{self.amount} ({self.method})"
+
+
+class SubscriptionOnlineTransaction(TenantScopedModel):
+    """
+    A Payme / Click transaction on Radix's merchant for a subscription
+    invoice (PLAN 6.4). The provider-side record; the money itself is the
+    `SubscriptionPayment` it points to once performed.
+
+    Same state numbers as the tuition side (`online_payments.TxnState`), and
+    the same protocol code — but its own table: subscription billing and
+    tuition never share tables (invariant 9). Metadata plane: the webhook
+    finds the invoice by its global number under `platform_context()`.
+    """
+
+    subscription_invoice = models.ForeignKey(
+        SubscriptionInvoice, on_delete=models.RESTRICT, related_name="online_transactions"
+    )
+    provider = models.CharField(max_length=10)
+    provider_txn_id = models.CharField(max_length=64)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    state = models.SmallIntegerField(default=1)
+    reason = models.SmallIntegerField(null=True, blank=True)
+    payment = models.ForeignKey(
+        SubscriptionPayment,
+        on_delete=models.RESTRICT,
+        related_name="online_transactions",
+        null=True,
+        blank=True,
+    )
+    provider_time = models.BigIntegerField(null=True, blank=True)
+    performed_at = models.DateTimeField(null=True, blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "subscription_online_transaction"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["provider", "provider_txn_id"], name="uq_sub_online_txn_provider_id"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=Decimal("0")), name="ck_sub_online_txn_amount"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(provider__in=["payme", "click"]),
+                name="ck_sub_online_txn_provider",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.provider}:{self.provider_txn_id} ({self.state})"

@@ -48,6 +48,7 @@ class BillingViewSet(viewsets.ViewSet):
         "usage_history": "read",
         "invoices": "read",
         "invoice_detail": "read",
+        "invoice_pay": "read",
         "accept_trial": "update",
         "payment_term": "update",
     }
@@ -106,6 +107,28 @@ class BillingViewSet(viewsets.ViewSet):
         if invoice is None:
             raise Http404
         return Response(SubscriptionInvoiceSerializer(invoice).data)
+
+    @action(detail=False, methods=["get"], url_path=r"invoices/(?P<invoice_id>[0-9a-f-]{36})/pay")
+    def invoice_pay(self, request: Request, invoice_id: str = "") -> Response:
+        """
+        Payme / Click pages for one open invoice (PLAN 6.4).
+
+        A GET and a READ permission on purpose: paying must keep working for
+        a suspended organization (invariant 11), and nothing is written
+        here — the provider's callback records the payment.
+        """
+        from django.conf import settings
+
+        from apps.subscriptions.online import checkout_links
+
+        invoice = SubscriptionInvoice.objects.filter(pk=invoice_id).first()
+        if invoice is None:
+            raise Http404
+        organization = request_user(request).organization
+        base = str(getattr(settings, "FRONTEND_URL", "")).rstrip("/")
+        slug = getattr(organization, "slug", "")
+        return_url = f"{base}/t/{slug}/billing?paid=1" if slug else f"{base}/billing?paid=1"
+        return Response({"providers": checkout_links(invoice, return_url=return_url)})
 
     @action(detail=False, methods=["post"], url_path="accept-trial")
     def accept_trial(self, request: Request) -> Response:

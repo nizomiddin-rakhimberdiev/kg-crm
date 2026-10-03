@@ -669,3 +669,21 @@ phase branch.** Details and conflict resolutions are in the merge commit
   today, only on a change to absent, once per child per day; never moves money.
 - Tests: 29 (bot 24, absence 5). QA: `parent_bot.0001` forward → zero →
   forward, `check_rls` **51**; rebuild dry run +70 → apply → second dry run +0.
+
+### 6.4 Subscription online payment (P6-3)
+
+- Payme / Click protocol code now takes a `Merchant` (whose keys) and a
+  `Ledger` (what is paid) — `online_payments/merchant.py`. Tuition is one
+  ledger (unchanged behaviour, all 6.1 tests green), subscriptions the second.
+- Radix's merchant from `.env` (`RADIX_PAYME_*`, `RADIX_CLICK_*`); empty = no
+  button, bank transfer as before. Callbacks `/public/pay/subscription/{payme,
+  click}` (SaaS only) find the tenant by invoice number in the metadata plane.
+  Perform → `record_subscription_payment(method="online")` → `suspended` →
+  `active`. Refund after payment refused (`-31007`).
+- `subscription_online_transaction` (metadata RLS) and the long-documented
+  `ck_sub_payment_method` CHECK — `subscriptions.0005`. `check_rls` **52**.
+- Billing page: "Pay online" per open invoice; `?paid=1` return re-reads the
+  invoices for a minute.
+- Tests: 14. QA: `0005` forward → back → forward.
+- Deploy: if `migrate` fails on `ck_sub_payment_method`, some row has a method
+  outside the four — report it, do not edit it (rule 5).

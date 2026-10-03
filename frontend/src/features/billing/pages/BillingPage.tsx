@@ -11,11 +11,13 @@
  */
 
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, FileText, TrendingUp, Users } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { env } from '@/config/env'
 import { billingApi } from '@/features/billing/api'
+import { PayOnlineButton } from '@/features/billing/components/PayOnlineButton'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { SUBSCRIPTION_STATUS } from '@/features/billing/status'
 import { ApiError } from '@/lib/api/types'
@@ -59,9 +61,14 @@ export default function BillingPage() {
     queryKey: queryKeys.billingUsage(organizationId),
     queryFn: billingApi.usage,
   })
+  // Back from Payme / Click (`?paid=1`): the callback may land a few seconds
+  // after the redirect, so the invoices are re-read for about a minute.
+  const [params] = useSearchParams()
+  const returnedFromPayment = params.get('paid') === '1'
   const invoicesQuery = useQuery({
     queryKey: queryKeys.billingInvoices(organizationId),
     queryFn: billingApi.invoices,
+    refetchInterval: (q) => (returnedFromPayment && q.state.dataUpdateCount < 12 ? 5000 : false),
   })
   const historyQuery = useQuery({
     queryKey: queryKeys.billingUsageHistory(organizationId),
@@ -298,6 +305,12 @@ export default function BillingPage() {
         </section>
       )}
 
+      {returnedFromPayment && (
+        <p className="rounded-lg bg-ildiz-50 px-3 py-2 text-sm text-ildiz-900">
+          {t('Toʻlov tekshirilmoqda — hisob holati bir necha soniyada yangilanadi.')}
+        </p>
+      )}
+
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         <h2 className="border-b border-slate-100 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-900">
           {t('Hisob-fakturalar')}
@@ -338,10 +351,13 @@ export default function BillingPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-slate-600">{day(invoice.due_at)}</td>
-                    <td className="px-4 py-3">
+                    <td className="space-y-1.5 px-4 py-3">
                       <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}>
                         {label}
                       </span>
+                      {(invoice.status === 'issued' || invoice.status === 'overdue') && (
+                        <PayOnlineButton invoiceId={invoice.id} />
+                      )}
                     </td>
                   </tr>
                 )

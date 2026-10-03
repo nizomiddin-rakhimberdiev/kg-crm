@@ -89,7 +89,8 @@ class PaymeWebhookView(APIView):
         with organization_context(organization.id):
             credential = _credential(Provider.PAYME)
             header = request.headers.get("Authorization", "")
-            if credential is None or not payme.authorised(header, credential):
+            secret = services.secret_for(credential) if credential is not None else ""
+            if not payme.authorised(header, secret):
                 return JsonResponse(payme.auth_error(body.get("id")))
             try:
                 return JsonResponse(payme.handle(body))
@@ -117,7 +118,7 @@ class ClickWebhookView(APIView):
             if credential is None:
                 return JsonResponse(click._reply(data, click.SIGN_FAILED))
             try:
-                return JsonResponse(click.handle(data, credential))
+                return JsonResponse(click.handle(data, services.merchant_for(credential)))
             except Exception:  # noqa: BLE001 — Click gets an error code, we get the log
                 logger.exception("Click call failed: org=%s", organization.id)
                 return JsonResponse(click._reply(data, click.BAD_REQUEST))

@@ -48,6 +48,7 @@ EXPORT_WINDOW_DAYS = 30
 # yetarli emas.
 PURGE_ORDER: tuple[str, ...] = (
     # Moliyaviy tarix — eng chuqur bog'liqliklar
+    "apps.subscriptions.SubscriptionOnlineTransaction",
     "apps.subscriptions.SubscriptionPayment",
     "apps.subscriptions.SubscriptionInvoice",
     "apps.subscriptions.UsageSnapshot",

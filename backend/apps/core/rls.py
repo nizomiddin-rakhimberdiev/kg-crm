@@ -124,6 +124,8 @@ METADATA_TABLES: tuple[str, ...] = (
     "usage_snapshot",
     # Parent bot routing (ADR-27): HMAC digests only, no phone or chat id.
     "contact_index",
+    # Radix's merchant transactions for subscription invoices (PLAN 6.4).
+    "subscription_online_transaction",
 )
 
 # `organization_id` ustuni YO'Q, lekin ota-jadval orqali bog'langan.
