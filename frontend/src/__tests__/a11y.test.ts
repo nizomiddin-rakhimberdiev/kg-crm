@@ -80,7 +80,12 @@ describe('a11y', () => {
     for (const file of [...files, ...publicFiles()]) {
       const text = readFileSync(file, 'utf8')
       // `10.5px` ham — kasr oʻlcham avval qoidadan sirgʻalib oʻtardi.
-      const found = text.match(/text-\[(\d+(?:\.\d+)?)px\]/g) ?? []
+      // Grafik o'qlari ham: Recharts `fontSize={11}` Tailwind klassi emas va
+      // avval bu tekshiruvdan o'tib ketardi (Hisobotlar sahifasi).
+      const found = [
+        ...(text.match(/text-\[(\d+(?:\.\d+)?)px\]/g) ?? []),
+        ...(text.match(/fontSize(?:=\{|: ?)\d+(?:\.\d+)?/g) ?? []),
+      ]
       for (const match of found) {
         const size = Number(/\d+(?:\.\d+)?/.exec(match)?.[0] ?? 0)
         if (size < 12) offenders.push(`${file.replace(SRC, '')}: ${match}`)

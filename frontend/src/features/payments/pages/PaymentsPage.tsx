@@ -454,7 +454,11 @@ export default function PaymentsPage() {
                       )}
                     >
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium text-slate-900">
+                        {/* Ikki qatorgacha, `truncate` emas: telefonda ism uchun
+                            ~100px qoladi va "Abdullayeva Fotima Anvar…" kabi
+                            kesilgan ismlar bir-biridan ajralmay qolardi —
+                            kassir noto'g'ri bolaga to'lov yozishi mumkin. */}
+                        <span className="line-clamp-2 font-medium text-slate-900">
                           {row.child_name}
                         </span>
                         <span className="block truncate text-xs text-slate-400">

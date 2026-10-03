@@ -325,14 +325,14 @@ export default function ReportsPage() {
                       dataKey="label"
                       tickLine={false}
                       axisLine={false}
-                      fontSize={11}
+                      fontSize={12}
                       interval="preserveStartEnd"
                       minTickGap={16}
                     />
                     <YAxis
                       tickLine={false}
                       axisLine={false}
-                      fontSize={11}
+                      fontSize={12}
                       width={56}
                       tickFormatter={(v: number) => compactUZS(v)}
                     />
