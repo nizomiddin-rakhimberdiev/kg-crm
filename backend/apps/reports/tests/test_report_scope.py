@@ -184,3 +184,55 @@ def test_cash_balance_needs_all_three_permissions(tenant_a: Any):
             .json()["data"]
         )
         assert "cash" not in data, role_code
+
+
+class TestBranchScope:
+    """
+    Filialga bog'langan xodim hisobotda faqat O'Z filialini ko'radi —
+    Dashboard bilan bir xil qoida. Avval `?branch=` bo'lmasa butun
+    tashkilot qaytardi (Paddington: MAIN menejeri Gorkiy tushumini ko'rardi).
+    """
+
+    def _pay(self, tenant: Any, branch: Any, amount: str) -> None:
+        from datetime import date
+        from decimal import Decimal
+
+        from apps.children.models import Child
+        from apps.finance import services as finance
+
+        with organization_context(tenant.organization.id):
+            child = Child.objects.create(
+                organization=tenant.organization,
+                branch=branch,
+                first_name="Bola",
+                last_name=branch.name,
+                date_of_birth=date(2021, 3, 14),
+                gender="male",
+            )
+            finance.record_payment(child=child, amount=Decimal(amount), method="cash")
+
+    def test_branch_bound_reader_sees_only_her_branch(self, tenant_a: Any) -> None:
+        from apps.branches.models import Branch
+
+        with organization_context(tenant_a.organization.id):
+            gorkiy = Branch.objects.create(
+                organization=tenant_a.organization, name="Gorkiy", code="SECOND"
+            )
+        self._pay(tenant_a, tenant_a.branch, "100000")
+        self._pay(tenant_a, gorkiy, "900000")
+
+        cashier = _client_for(tenant_a, "cashier", "kassir-scope@alfa.uz")
+        own = cashier.get("/api/v1/reports/revenue").json()["data"]["total"]
+        # Boshqa filialni so'rasa ham — o'zinikini oladi.
+        asked = cashier.get("/api/v1/reports/revenue", {"branch": str(gorkiy.id)})
+        assert own == "100000.00"
+        assert asked.json()["data"]["total"] == "100000.00"
+
+        owner_all = tenant_a.client().get("/api/v1/reports/revenue").json()["data"]["total"]
+        owner_gorkiy = (
+            tenant_a.client()
+            .get("/api/v1/reports/revenue", {"branch": str(gorkiy.id)})
+            .json()["data"]["total"]
+        )
+        assert owner_all == "1000000.00"
+        assert owner_gorkiy == "900000.00"

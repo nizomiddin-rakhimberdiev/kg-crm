@@ -166,6 +166,12 @@ export interface Role {
   is_system: boolean
   branch: string | null
   permissions: string[]
+  /**
+   * Joriy foydalanuvchi bu rolni bera oladimi / tahrirlay oladimi
+   * (ADR-25). Backend hisoblaydi — UI faqat tugmani yashiradi.
+   */
+  can_assign?: boolean
+  can_edit?: boolean
 }
 
 export interface StaffUser {
@@ -215,6 +221,8 @@ export interface Child {
   enrolled_on: string | null
   tariff: string | null
   tariff_name: string | null
+  /** Individual oylik narx — tarifsiz. `null` bo'lsa narx tarifdan. */
+  monthly_fee: string | null
   balance: string
   notes: string
   /** Allergiya — oshxona va tarbiyachiga kerak (PLAN 2.1). */
@@ -760,6 +768,16 @@ export interface RevenueReport {
   by_method: Array<{ method: string; total: string; count: number }>
 }
 
+export interface ExpenseReport {
+  date_from: string
+  date_to: string
+  group_by: ReportGroupBy
+  total: string
+  /** Uzluksiz davrlar — bo'sh davr ham nol bilan bor (docs/04 §14.2). */
+  by_period: Array<{ period: string; total: string }>
+  by_category: Array<{ category: string; total: string }>
+}
+
 export interface ProfitLoss {
   basis: 'cash'
   date_from: string
@@ -986,4 +1004,44 @@ export interface EmployeeAdvance {
   paid_on: string
   note: string
   created_at: string
+}
+
+// --- Xodimlar davomati (tabel), docs/04 §8.3 ---
+
+export type StaffAttendanceStatus = 'present' | 'absent' | 'sick' | 'leave'
+
+export interface StaffDailyRow {
+  employee_id: string
+  full_name: string
+  position: string | null
+  branch: string
+  /** Xodim kartasida "ta'tilda" — UI "Ta'tilda" ni oldindan taklif qiladi. */
+  on_leave: boolean
+  status: StaffAttendanceStatus | null
+  note: string
+}
+
+export interface StaffTimesheetRow {
+  employee_id: string
+  full_name: string
+  position: string | null
+  branch: string
+  /** Kun raqami → holat; belgilanmagan kun kalitda yo'q. */
+  days: Record<string, StaffAttendanceStatus>
+  working_days: number
+  /** Bugungacha bo'lgan, hali belgilanmagan ish kunlari. */
+  unmarked: number
+  present: number
+  absent: number
+  sick: number
+  leave: number
+}
+
+export interface StaffTimesheet {
+  year: number
+  month: number
+  days_in_month: number
+  working_dates: string[]
+  employees: StaffTimesheetRow[]
+  totals: Record<StaffAttendanceStatus, number>
 }

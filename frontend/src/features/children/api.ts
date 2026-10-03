@@ -1,4 +1,5 @@
 import { api, httpClient } from '@/lib/api/client'
+import { withBranch } from '@/lib/branchScope'
 import type { Child, Envelope, Group, ImportReport, TelegramLink } from '@/lib/api/types'
 
 /** Guruh maydonlari — yosh oralig'i ixtiyoriy (`null` = cheklanmagan). */
@@ -23,6 +24,8 @@ export interface ChildInput {
   medical_notes?: string
   branch_id?: string | null
   tariff_id?: string | null
+  /** Individual oylik narx (so'm) — tarif o'rniga; ikkalasi birga bo'lmaydi. */
+  monthly_fee?: string | null
 }
 
 /**
@@ -119,7 +122,7 @@ export const guardiansApi = {
 
 export const groupsApi = {
   list: () => api.list<Group>('/groups'),
-  create: (payload: GroupInput) => api.post<Group>('/groups', payload),
+  create: (payload: GroupInput) => api.post<Group>('/groups', withBranch(payload)),
   update: (id: string, payload: Partial<GroupInput>) => api.patch<Group>(`/groups/${id}`, payload),
   remove: (id: string) => api.delete(`/groups/${id}`),
 

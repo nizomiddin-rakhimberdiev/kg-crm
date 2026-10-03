@@ -1141,3 +1141,86 @@ msgstr "The code is wrong. Enter the current code from your app."
 msgid "Parol notoʻgʻri."
 msgstr "Wrong password."
 
+# --- ADR-25: delegatsiya qoidasi, filial tanlovi ---
+
+msgid "Bu bogʻchada bir nechta filial bor — avval yuqoridagi filial tanlovidan kerakli filialni tanlang."
+msgstr "This kindergarten has several branches — first choose the branch in the selector at the top."
+
+msgid "Bu rolda sizda yoʻq ruxsatlar bor, shuning uchun uni bera olmaysiz: {codes}."
+msgstr "This role includes permissions you do not have, so you cannot assign it: {codes}."
+
+msgid "Faqat oʻz filialingizga xodim qoʻsha olasiz."
+msgstr "You can only add staff to your own branch."
+
+msgid "Oʻz hisobingizni Profil sahifasida tahrirlang."
+msgstr "Edit your own account on the Profile page."
+
+msgid "Oʻz rolingizning ruxsatlarini oʻzgartira olmaysiz."
+msgstr "You cannot change the permissions of your own role."
+
+msgid "Rol kodini yaratilgandan keyin oʻzgartirib boʻlmaydi."
+msgstr "A role's code cannot be changed after it is created."
+
+msgid "Sizda yoʻq ruxsatlarni bera olmaysiz: {codes}."
+msgstr "You cannot grant permissions you do not have: {codes}."
+
+msgid "Sizdan kengroq huquqli rolni oʻzgartira olmaysiz."
+msgstr "You cannot change a role with broader permissions than yours."
+
+msgid "Sizdan kengroq huquqli xodimning hisobini boshqara olmaysiz."
+msgstr "You cannot manage the account of a staff member with broader permissions than yours."
+
+msgid "Tashkilot egasi rolini faqat tashkilot egasi bera oladi."
+msgstr "Only the organization owner can assign the owner role."
+
+msgid "Tashkilot egasi rolini faqat tashkilot egasi oʻzgartira oladi."
+msgstr "Only the organization owner can change the owner role."
+
+msgid "Tashkilot egasining hisobini faqat egasi boshqara oladi."
+msgstr "Only the owner can manage the organization owner's account."
+
+# --- Individual narx (2026-10) ---
+
+msgid "Individual narx"
+msgstr "Individual price"
+
+msgid "Tarif yoki individual narx — faqat bittasini tanlang."
+msgstr "Tariff or individual price — choose only one."
+
+msgid "{full_name}: narx belgilanmagan (tarif ham, individual narx ham yoʻq) — hisob-faktura chiqarib boʻlmaydi."
+msgstr "{full_name}: no price set (neither a tariff nor an individual price) — an invoice cannot be issued."
+
+msgid "{full_name}: narx ham, hisob-faktura ham yoʻq."
+msgstr "{full_name}: there is neither a price nor an invoice."
+
+msgid "Faqat oʻz filialingizda yozuv yarata olasiz."
+msgstr "You can only create records in your own branch."
+
+# --- Xodimlar davomati / tabel (2026-10) ---
+
+msgid "B"
+msgstr "S"
+
+msgid "K"
+msgstr "P"
+
+msgid "T"
+msgstr "L"
+
+msgid "Y"
+msgstr "A"
+
+msgid "Ish kunlari"
+msgstr "Working days"
+
+msgid "Kasal"
+msgstr "Sick"
+
+msgid "Kelmadi"
+msgstr "Absent"
+
+msgid "Xodim topilmadi."
+msgstr "Employee not found."
+
+msgid "{full_name} {date} kuni ishlamagan (ishga kirish/boʻshash sanasi)."
+msgstr "{full_name} was not employed on {date} (hire/termination date)."

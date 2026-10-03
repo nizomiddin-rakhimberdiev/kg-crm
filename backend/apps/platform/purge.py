@@ -69,6 +69,8 @@ PURGE_ORDER: tuple[str, ...] = (
     # u ikkalasidan ham OLDIN o'chadi.
     "apps.attendance.AbsenceClaim",
     "apps.attendance.AttendanceRecord",
+    # Xodimlar tabeli — `employee` ga RESTRICT, ya'ni xodimdan OLDIN.
+    "apps.attendance.StaffAttendance",
     # To'lov qatori hisoblash va satrga `RESTRICT` bilan bog'langan —
     # u ikkalasidan ham OLDIN o'chadi.
     "apps.payroll.PayrollPayout",

@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarCheck, Check, Save, X } from 'lucide-react'
 import { DateInput } from '@/components/ui/DateInput'
@@ -21,6 +22,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type AttendanceStatus } from '@/lib/api/types'
 import { AbsenceClaimsPanel } from '@/features/attendance/components/AbsenceClaimsPanel'
 import { HolidaysPanel } from '@/features/attendance/components/HolidaysPanel'
+import { StaffAttendancePanel } from '@/features/attendance/components/StaffAttendancePanel'
 import { Modal } from '@/components/ui/Modal'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
@@ -40,7 +42,7 @@ const STATUS_BUTTONS: Array<{
 
 const today = () => new Date().toISOString().slice(0, 10)
 
-export default function AttendancePage() {
+function ChildrenAttendance() {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
   const { can } = useCan()
@@ -204,12 +206,9 @@ export default function AttendancePage() {
         </form>
       </Modal>
 
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Davomat')}</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {t('Guruhni tanlang va butun kunni bitta bosishda saqlang.')}
-        </p>
-      </div>
+      <p className="text-sm text-slate-500">
+        {t('Guruhni tanlang va butun kunni bitta bosishda saqlang.')}
+      </p>
 
       {error && (
         <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -399,6 +398,48 @@ export default function AttendancePage() {
           bo'lsa, qayta hisob bayramni ham ish kuni deb sanaydi va
           bog'cha ishlamagan kun uchun pul qaytarib yuboradi. */}
       <HolidaysPanel />
+    </div>
+  )
+}
+
+/**
+ * Davomat — ikki bo'lim: bolalar va xodimlar (tabel).
+ *
+ * Bo'lim URL'da (`?tab=staff`) — yangilash yoki havola berish uni
+ * yo'qotmaydi. Ikkalasi ham `attendance` ruxsati bilan.
+ */
+export default function AttendancePage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tab = searchParams.get('tab') === 'staff' ? 'staff' : 'children'
+
+  return (
+    <div className="space-y-5">
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Davomat')}</h1>
+      <div className="flex gap-1 border-b border-slate-200">
+        {(
+          [
+            ['children', t('Bolalar')],
+            ['staff', t('Xodimlar')],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() =>
+              setSearchParams(key === 'staff' ? { tab: 'staff' } : {}, { replace: true })
+            }
+            className={cn(
+              '-mb-px border-b-2 px-4 py-2 text-sm font-medium transition',
+              tab === key
+                ? 'border-brand-600 text-brand-700'
+                : 'border-transparent text-slate-500 hover:text-slate-800',
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {tab === 'staff' ? <StaffAttendancePanel /> : <ChildrenAttendance />}
     </div>
   )
 }

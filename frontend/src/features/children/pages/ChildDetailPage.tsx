@@ -12,6 +12,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Archive, ArrowLeft, Pencil, Phone, Star, Unlink, UserPlus } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { childrenApi, groupsApi } from '@/features/children/api'
+import { PricePicker } from '@/features/children/components/PricePicker'
+import { priceFromChild, priceToPayload, type PriceValue } from '@/features/children/price'
 import { tariffsApi } from '@/features/payments/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
@@ -23,7 +25,7 @@ import { ChildTabs } from '@/features/children/components/ChildTabs'
 import { TelegramLinkButton } from '@/features/children/components/TelegramLinkButton'
 import { GroupOptions } from '@/features/children/components/GroupOptions'
 import { useCan } from '@/lib/rbac/useCan'
-import { cn, formatDate } from '@/lib/utils'
+import { cn, formatDate, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
 const RELATIONS: Array<[string, string]> = [
@@ -70,15 +72,16 @@ export default function ChildDetailPage() {
   const [guardianForm, setGuardianForm] = useState(EMPTY_GUARDIAN)
   const [showGuardianForm, setShowGuardianForm] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // Guruh va tarif TASDIQ bilan o'zgaradi (PLAN 1.4): sichqoncha
-  // g'ildiragining bitta aylanishi bolani boshqa guruhga ko'chirib
-  // yuborardi, tarif esa keyingi hisob-fakturaning summasini
-  // o'zgartiradi (Q4).
+  // Guruh TASDIQ bilan o'zgaradi (PLAN 1.4): sichqoncha g'ildiragining
+  // bitta aylanishi bolani boshqa guruhga ko'chirib yuborardi. Narx esa
+  // aniq "Saqlash" tugmasi bilan (PricePicker) — u ham tasdiq.
   const [pendingGroup, setPendingGroup] = useState<string | null>(null)
-  const [pendingTariff, setPendingTariff] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
   const [changingStatus, setChangingStatus] = useState(false)
   const [archiving, setArchiving] = useState(false)
+  // Narx qoralamasi: `null` — tahrirlanmagan, serverdagi qiymat ko'rsatiladi.
+  // Summa yozilayotganda har harfda saqlamaslik uchun qoralama + "Saqlash".
+  const [priceDraft, setPriceDraft] = useState<PriceValue | null>(null)
 
   const childQuery = useQuery({
     queryKey: queryKeys.child(organizationId, childId),
@@ -112,9 +115,14 @@ export default function ChildDetailPage() {
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
-  const setTariff = useMutation({
-    mutationFn: (tariffId: string) => childrenApi.update(childId, { tariff_id: tariffId || null }),
-    onSuccess: invalidate,
+  const savePrice = useMutation({
+    mutationFn: (payload: { tariff_id: string | null; monthly_fee: string | null }) =>
+      childrenApi.update(childId, payload),
+    onSuccess: () => {
+      setPriceDraft(null)
+      setError(null)
+      invalidate()
+    },
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
@@ -182,17 +190,6 @@ export default function ChildDetailPage() {
         onConfirm={() => {
           if (pendingGroup) enroll.mutate(pendingGroup)
           setPendingGroup(null)
-        }}
-      />
-      <ConfirmDialog
-        open={pendingTariff !== null}
-        title={t('Tarifni oʻzgartirish')}
-        body={t('Yangi tarif KEYINGI hisob-fakturadan kuchga kiradi. Joriy hujjat oʻzgarmaydi.')}
-        busy={setTariff.isPending}
-        onCancel={() => setPendingTariff(null)}
-        onConfirm={() => {
-          if (pendingTariff !== null) setTariff.mutate(pendingTariff)
-          setPendingTariff(null)
         }}
       />
 
@@ -297,32 +294,68 @@ export default function ChildDetailPage() {
           )}
         </div>
 
-        {/* Tarif */}
+        {/* Oylik narx — tarif yoki individual summa */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">{t('Tarif')}</h2>
+          <h2 className="mb-3 text-sm font-semibold text-slate-900">{t('Oylik narx')}</h2>
           {can('payments.update') ? (
-            <select
-              aria-label={t('Tarif')}
-              value={child.tariff ?? ''}
-              onChange={(e) => setPendingTariff(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-            >
-              <option value="">{t('— tarifsiz —')}</option>
-              {tariffsQuery.data?.items.map((tariff) => (
-                <option key={tariff.id} value={tariff.id}>
-                  {t('{name} — {toLocaleString} soʻm', {
-                    name: tariff.name,
-                    toLocaleString: Number(tariff.amount).toLocaleString('uz-UZ'),
-                  })}
-                </option>
-              ))}
-            </select>
+            (() => {
+              const current = priceFromChild(child)
+              const shown = priceDraft ?? current
+              const dirty =
+                priceDraft !== null &&
+                (priceDraft.tariffId !== current.tariffId ||
+                  priceDraft.monthlyFee !== current.monthlyFee)
+              return (
+                <>
+                  <PricePicker
+                    idPrefix="child"
+                    value={shown}
+                    onChange={setPriceDraft}
+                    disabled={savePrice.isPending}
+                    tariffs={tariffsQuery.data?.items ?? []}
+                  />
+                  {dirty && (
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        disabled={savePrice.isPending}
+                        onClick={() => {
+                          const { payload, error: priceError } = priceToPayload(shown)
+                          if (priceError) {
+                            setError(priceError)
+                            return
+                          }
+                          savePrice.mutate(payload)
+                        }}
+                        className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
+                      >
+                        {savePrice.isPending ? t('Saqlanmoqda…') : t('Saqlash')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPriceDraft(null)}
+                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                      >
+                        {t('Bekor qilish')}
+                      </button>
+                    </div>
+                  )}
+                  {dirty && (
+                    // Q4: narx keyingi hujjatdan — joriy faktura o'zgarmaydi.
+                    <p className="mt-2 text-xs text-slate-500">
+                      {t(
+                        'Yangi tarif KEYINGI hisob-fakturadan kuchga kiradi. Joriy hujjat oʻzgarmaydi.',
+                      )}
+                    </p>
+                  )}
+                </>
+              )
+            })()
           ) : (
-            <p className="text-sm text-slate-600">{child.tariff_name ?? '—'}</p>
-          )}
-          {!child.tariff && (
-            <p className="mt-2 text-xs text-amber-700">
-              {t('Tarifsiz bolaga hisob-faktura chiqarilmaydi.')}
+            <p className="text-sm text-slate-600">
+              {child.monthly_fee !== null
+                ? t('Individual narx: {v}', { v: formatUZS(Number(child.monthly_fee)) })
+                : (child.tariff_name ?? '—')}
             </p>
           )}
         </div>

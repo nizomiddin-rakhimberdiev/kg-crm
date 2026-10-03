@@ -1,4 +1,5 @@
 import { api } from '@/lib/api/client'
+import { withBranch } from '@/lib/branchScope'
 import type { Expense, ExpenseCategory, ExpenseSummary } from '@/lib/api/types'
 
 export const expensesApi = {
@@ -10,7 +11,7 @@ export const expensesApi = {
     description?: string
     /** Qaysi puldan to'lanadi (ADR-17) — bo'sh bo'lsa naqd kassa. */
     cash_account_id?: string
-  }) => api.post<Expense>('/expenses', payload),
+  }) => api.post<Expense>('/expenses', withBranch(payload)),
   /** Tasdiqlash — pul aynan shu yerda kassadan chiqadi (ADR-17). */
   approve: (id: string, note = '', cashAccountId?: string) =>
     api.post<Expense>(`/expenses/${id}/approve`, {
@@ -23,7 +24,7 @@ export const expensesApi = {
 
   categories: () => api.list<ExpenseCategory>('/expense-categories'),
   createCategory: (payload: { name: string }) =>
-    api.post<ExpenseCategory>('/expense-categories', payload),
+    api.post<ExpenseCategory>('/expense-categories', withBranch(payload)),
   updateCategory: (id: string, payload: { name: string }) =>
     api.patch<ExpenseCategory>(`/expense-categories/${id}`, payload),
   removeCategory: (id: string) => api.delete(`/expense-categories/${id}`),

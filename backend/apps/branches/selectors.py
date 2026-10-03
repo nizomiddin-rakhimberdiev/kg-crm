@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from django.utils.translation import gettext
+from rest_framework.exceptions import PermissionDenied
 
 from apps.branches.models import Branch
 from apps.core.exceptions import BusinessRuleViolation
@@ -32,6 +33,14 @@ def resolve_branch(user: Any, explicit_id: Any = None) -> Branch:
         branch = Branch.objects.filter(pk=explicit_id, is_active=True).first()
         if branch is None:
             raise BusinessRuleViolation(gettext("Koʻrsatilgan filial topilmadi."))
+        # Filialga bog'langan xodim faqat O'Z filialida yozuv yaratadi
+        # (ADR-25). O'qish allaqachon shunday cheklangan
+        # (`BranchScopedMixin`); yozish ochiq qolsa, u boshqa filialga
+        # yozuv qo'shar, lekin uni o'zi ham ko'rmas edi.
+        if not getattr(user, "is_org_owner", False) and branch.id != getattr(
+            user, "branch_id", None
+        ):
+            raise PermissionDenied(gettext("Faqat oʻz filialingizda yozuv yarata olasiz."))
         return branch
 
     if getattr(user, "branch_id", None):
@@ -42,5 +51,11 @@ def resolve_branch(user: Any, explicit_id: Any = None) -> Branch:
         return candidates[0]
 
     raise BusinessRuleViolation(
-        gettext("Tashkilotda bir nechta filial bor — `branch_id` koʻrsatilishi shart.")
+        # Egasi "Barcha filiallar" tanlangan holda yangi yozuv yaratsa shu
+        # xato chiqadi. Avval matn `branch_id` deb texnik maydon nomini
+        # aytardi — egasi nima qilishni bilmasdi. Endi qadamni aytadi.
+        gettext(
+            "Bu bogʻchada bir nechta filial bor — avval yuqoridagi filial tanlovidan "
+            "kerakli filialni tanlang."
+        )
     )

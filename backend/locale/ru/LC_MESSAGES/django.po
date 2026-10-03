@@ -1142,3 +1142,86 @@ msgstr "Код неверный. Введите текущий код из пр�
 msgid "Parol notoʻgʻri."
 msgstr "Неверный пароль."
 
+# --- ADR-25: delegatsiya qoidasi, filial tanlovi ---
+
+msgid "Bu bogʻchada bir nechta filial bor — avval yuqoridagi filial tanlovidan kerakli filialni tanlang."
+msgstr "В этом детском саду несколько филиалов — сначала выберите нужный филиал в переключателе вверху."
+
+msgid "Bu rolda sizda yoʻq ruxsatlar bor, shuning uchun uni bera olmaysiz: {codes}."
+msgstr "В этой роли есть права, которых нет у вас, поэтому вы не можете её назначить: {codes}."
+
+msgid "Faqat oʻz filialingizga xodim qoʻsha olasiz."
+msgstr "Вы можете добавлять сотрудников только в свой филиал."
+
+msgid "Oʻz hisobingizni Profil sahifasida tahrirlang."
+msgstr "Редактируйте свою учётную запись на странице «Профиль»."
+
+msgid "Oʻz rolingizning ruxsatlarini oʻzgartira olmaysiz."
+msgstr "Вы не можете изменять права своей собственной роли."
+
+msgid "Rol kodini yaratilgandan keyin oʻzgartirib boʻlmaydi."
+msgstr "Код роли нельзя изменить после создания."
+
+msgid "Sizda yoʻq ruxsatlarni bera olmaysiz: {codes}."
+msgstr "Вы не можете выдавать права, которых нет у вас: {codes}."
+
+msgid "Sizdan kengroq huquqli rolni oʻzgartira olmaysiz."
+msgstr "Вы не можете изменять роль с более широкими правами, чем у вас."
+
+msgid "Sizdan kengroq huquqli xodimning hisobini boshqara olmaysiz."
+msgstr "Вы не можете управлять учётной записью сотрудника с более широкими правами, чем у вас."
+
+msgid "Tashkilot egasi rolini faqat tashkilot egasi bera oladi."
+msgstr "Роль владельца организации может назначить только владелец организации."
+
+msgid "Tashkilot egasi rolini faqat tashkilot egasi oʻzgartira oladi."
+msgstr "Роль владельца организации может изменять только владелец организации."
+
+msgid "Tashkilot egasining hisobini faqat egasi boshqara oladi."
+msgstr "Учётной записью владельца организации может управлять только владелец."
+
+# --- Individual narx (2026-10) ---
+
+msgid "Individual narx"
+msgstr "Индивидуальная цена"
+
+msgid "Tarif yoki individual narx — faqat bittasini tanlang."
+msgstr "Тариф или индивидуальная цена — выберите только одно."
+
+msgid "{full_name}: narx belgilanmagan (tarif ham, individual narx ham yoʻq) — hisob-faktura chiqarib boʻlmaydi."
+msgstr "{full_name}: цена не задана (нет ни тарифа, ни индивидуальной цены) — счёт выставить нельзя."
+
+msgid "{full_name}: narx ham, hisob-faktura ham yoʻq."
+msgstr "{full_name}: нет ни цены, ни счёта."
+
+msgid "Faqat oʻz filialingizda yozuv yarata olasiz."
+msgstr "Вы можете создавать записи только в своём филиале."
+
+# --- Xodimlar davomati / tabel (2026-10) ---
+
+msgid "B"
+msgstr "Б"
+
+msgid "K"
+msgstr "Я"
+
+msgid "T"
+msgstr "О"
+
+msgid "Y"
+msgstr "Н"
+
+msgid "Ish kunlari"
+msgstr "Рабочие дни"
+
+msgid "Kasal"
+msgstr "Болен"
+
+msgid "Kelmadi"
+msgstr "Не пришёл"
+
+msgid "Xodim topilmadi."
+msgstr "Сотрудник не найден."
+
+msgid "{full_name} {date} kuni ishlamagan (ishga kirish/boʻshash sanasi)."
+msgstr "{full_name} не работал(а) {date} (дата приёма/увольнения)."

@@ -231,7 +231,7 @@ Module: `users` (backed by `accounts`). Managed by **Org Owner** (Director read-
 | POST | `/users/{id}/reset-password` | `users.update` | Admin password reset |
 | GET | `/roles` | `users.read` | List roles |
 | POST | `/roles` | `users.create` | Create role |
-| PATCH | `/roles/{id}` | `users.update` | Update role (not system roles) |
+| PATCH | `/roles/{id}` | `users.update` | Update role name/description — `code` is immutable after creation |
 | GET | `/roles/{id}/permissions` | `users.read` | Role's permissions |
 | PUT | `/roles/{id}/permissions` | `users.update` | Replace role's permission set |
 | GET | `/permissions` | `users.read` | List all permissions (reference) |
@@ -247,7 +247,9 @@ Module: `users` (backed by `accounts`). Managed by **Org Owner** (Director read-
   "phone": "+998901234567"
 }
 ```
-**Errors:** `409 CONFLICT` (email exists), `422 BUSINESS_RULE_VIOLATION` (non-super-admin without branch).
+**Errors:** `409 CONFLICT` (email exists), `422 BUSINESS_RULE_VIOLATION` (non-super-admin without branch), `403 PERMISSION_DENIED` (delegation rule — below).
+
+**Delegation rule (ADR-25).** `users.*` alone is not enough to hand out power. A caller who is not the Org Owner gets `403` when they try to: assign a role whose permissions are not a subset of their own (the Owner role always counts as wider); create an account outside their own branch; edit, deactivate or reset the password of an account whose role is wider than theirs, of the Owner, or of themselves (own details go through `/auth/me`); or edit, delete or re-permission the Owner role, their own role, or a role wider than theirs. The same rule covers every **create** that takes `branch_id`: a branch-bound caller passing another branch gets `403` (reads were already branch-scoped). An owner of a multi-branch organization who sends no `branch_id` gets `422` asking them to pick a branch. The check runs before payload validation. `GET /roles` adds `can_assign` and `can_edit` (booleans, computed for the caller) so the client can hide what would be refused.
 
 ---
 
@@ -277,6 +279,7 @@ Module: `children`. Sub-domains: children, guardians, groups, enrollment.
   "date_of_birth": "2021-05-14",
   "gender": "male",
   "tariff_id": "<uuid>",
+  "monthly_fee": null,
   "group_id": "<uuid>",
   "guardians": [
     { "guardian_id": "<uuid>", "relation": "mother", "is_primary": true, "can_pickup": true }
@@ -285,6 +288,8 @@ Module: `children`. Sub-domains: children, guardians, groups, enrollment.
 ```
 **Response `201`** — the created child with `balance: "0.00"`, `enrollment_status: "active"`.
 **Errors:** `422` (dob not in past), `409` (child already has an open enrollment for that group), `400` (validation).
+
+**Price: tariff or individual (`monthly_fee`).** A child's monthly price comes from **one** source — `tariff_id`, or `monthly_fee` (a decimal string in so'm, `> 0`) for a price agreed with that family. Sending one clears the other (`PATCH {"monthly_fee": "1200000"}` drops the tariff; `PATCH {"tariff_id": "<uuid>"}` drops the individual price); sending both non-null is `400` on `monthly_fee`. Read responses carry `tariff`, `tariff_name` and `monthly_fee`. A child with neither is skipped by the monthly invoice run (`skipped_no_tariff` — name kept for compatibility) and refused by a single `issue_invoice` with `422`.
 
 ### 7.2 Guardians
 | Method | Path | Auth | Description |
@@ -381,6 +386,19 @@ There is no `PATCH` and no `DELETE` on a claim: once approved it has produced a 
 **Errors:** `422` (overlapping claim — the database also refuses it with `EXCLUDE USING gist`; a range with no working days in it; `date_to` before `date_from`), `404` (another organization's child).
 
 **Withholding rates and the working calendar live in `system_setting`**: `payroll.income_tax_rate` (12), `payroll.pension_rate` (0.1), `attendance.working_weekdays` (`1,2,3,4,5`). They change by decree, so they are configuration, not code (ADR-18).
+
+### 8.4 Staff attendance (timesheet, 2026-10)
+
+Permission module `attendance` — whoever keeps the children's register keeps the staff one; responses carry names and positions, never salaries. Scope follows the role: the Org Owner sees all branches or `?branch=`; anyone else only their own branch, whatever they ask for.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/staff-attendance/daily?date=&branch=` | `attendance.read` | Every employee employed that day, `status: null` if unmarked, `on_leave` from the employee card |
+| POST | `/staff-attendance/bulk` | `attendance.create` | `{attendance_date, records: [{employee_id, status, note?}], branch_id?}` — upsert; `status ∈ present/absent/sick/leave` |
+| GET | `/staff-attendance/timesheet?month=YYYY-MM&branch=` | `attendance.read` | Employee × day grid (`days: {"1": "present", …}`), counts per status, `working_days` per employee, `unmarked` up to today, `working_dates` for the header |
+| POST | `/reports/staff-attendance/export` | `reports.export` + `attendance.read` | Excel timesheet: employee, position, branch, day 1…31 codes (K/Y/B/T — translated), totals. `params: {year, month, branch_id?}` |
+
+**Errors:** `422` future date or a day the employee was not employed; `404` an employee outside the caller's tenant **or branch** (existence is not disclosed); `402` on `bulk` when the subscription is suspended.
 
 ## 9. Finance
 
@@ -713,6 +731,8 @@ A reversed payment is also excluded from `/reports/revenue` and its `by_method` 
 - Exports (`POST /reports/{type}/export`) accept the same `group_by` in `params`, so the CSV matches what was on screen (header column `period`).
 | POST | `/reports/{type}/export` | `reports.export` | Queue an Excel/PDF export → returns `job_id` |
 | GET | `/reports/exports/{jobId}` | `reports.read` | Poll export status / download link |
+
+**Branch scope (2026-10).** Report reads and exports follow the role, like `/dashboard`: the Org Owner gets the whole organization or `?branch=` / `params.branch_id`; a branch-bound caller always gets **their own branch**, whatever they send. Before this a manager of one branch could read another branch's revenue by leaving `branch` out.
 
 > Report reads may route to a replica; heavy aggregations are served from materialized views ([03 §25](./03_Database_Design.md)).
 

@@ -9,6 +9,7 @@ from rest_framework import serializers
 
 from apps.attendance.models import AttendanceRecord, AttendanceStatus
 from apps.attendance.models_absence import AbsenceClaim, ClaimKind, Holiday
+from apps.attendance.models_staff import StaffAttendanceStatus
 from apps.children.models import Child, Group
 from apps.core.fields import TenantPrimaryKeyRelatedField
 
@@ -146,3 +147,20 @@ class AbsenceClaimWriteSerializer(serializers.Serializer):
     date_to = serializers.DateField()
     document_no = serializers.CharField(required=False, allow_blank=True, max_length=60)
     note = serializers.CharField(required=False, allow_blank=True, max_length=255)
+
+
+# --- Xodimlar davomati (tabel) ---
+
+
+class StaffAttendanceRowSerializer(serializers.Serializer):
+    employee_id = serializers.UUIDField()
+    status = serializers.ChoiceField(choices=StaffAttendanceStatus.choices)
+    note = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
+
+
+class StaffAttendanceBulkSerializer(serializers.Serializer):
+    """`POST /staff-attendance/bulk` — bir kun, ko'p xodim."""
+
+    attendance_date = serializers.DateField()
+    branch_id = serializers.UUIDField(required=False, allow_null=True)
+    records = StaffAttendanceRowSerializer(many=True, allow_empty=False)

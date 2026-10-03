@@ -20,6 +20,8 @@ import { useBranchScope } from '@/app/providers/BranchProvider'
 import { Pagination } from '@/components/ui/primitives'
 import { childrenApi, groupsApi, type ChildInput } from '@/features/children/api'
 import { ImportWizard } from '@/features/children/components/ImportWizard'
+import { PricePicker } from '@/features/children/components/PricePicker'
+import { priceFromChild, priceToPayload, type PriceValue } from '@/features/children/price'
 import { tariffsApi } from '@/features/payments/api'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { usePageState } from '@/hooks/usePageState'
@@ -28,7 +30,7 @@ import { ApiError, type Child } from '@/lib/api/types'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { GroupOptions } from '@/features/children/components/GroupOptions'
 import { useCan } from '@/lib/rbac/useCan'
-import { avatarTone, cn, formatUZS, initials } from '@/lib/utils'
+import { avatarTone, cn, initials } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -89,6 +91,8 @@ export default function ChildrenPage() {
   // vasiyni ikkinchi ekranda qo'shish kerak edi va ko'pincha
   // unutilardi — vasiysiz bola esa SMS olmaydigan bola.
   const [guardian, setGuardian] = useState<GuardianDraft>(EMPTY_GUARDIAN_DRAFT)
+  // Narx — tarif yoki individual summa (PricePicker).
+  const [price, setPrice] = useState<PriceValue>({ tariffId: null, monthlyFee: null })
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
 
@@ -96,6 +100,7 @@ export default function ChildrenPage() {
     setShowForm(false)
     setEditing(null)
     setForm(EMPTY_FORM)
+    setPrice({ tariffId: null, monthlyFee: null })
     setFormGroupId('')
     setGuardian(EMPTY_GUARDIAN_DRAFT)
     setFieldErrors({})
@@ -106,6 +111,7 @@ export default function ChildrenPage() {
     if (showForm && !editing) return closeForm()
     setEditing(null)
     setForm(EMPTY_FORM)
+    setPrice({ tariffId: null, monthlyFee: null })
     setFormGroupId('')
     setGuardian(EMPTY_GUARDIAN_DRAFT)
     setFieldErrors({})
@@ -121,8 +127,8 @@ export default function ChildrenPage() {
       middle_name: child.middle_name ?? '',
       date_of_birth: child.date_of_birth,
       gender: child.gender,
-      tariff_id: child.tariff ?? null,
     })
+    setPrice(priceFromChild(child))
     setFormGroupId(child.current_group?.id ?? '')
     setFieldErrors({})
     setError(null)
@@ -257,11 +263,18 @@ export default function ChildrenPage() {
   const saving = createMutation.isPending || updateMutation.isPending
 
   const submitForm = () => {
+    const { payload: pricePayload, error: priceError } = priceToPayload(price)
+    if (priceError) {
+      setError(priceError)
+      setFieldErrors((prev) => ({ ...prev, monthly_fee: priceError }))
+      return
+    }
+    const body = { ...form, ...pricePayload }
     if (editing) {
-      updateMutation.mutate({ id: editing.id, payload: form, groupId: formGroupId })
+      updateMutation.mutate({ id: editing.id, payload: body, groupId: formGroupId })
     } else {
       createMutation.mutate({
-        ...form,
+        ...body,
         branch_id: selectedBranchId,
         groupId: formGroupId,
         guardian: guardian.phone ? guardian : undefined,
@@ -513,26 +526,18 @@ export default function ChildrenPage() {
           </div>
 
           <div>
-            <label htmlFor="form-tariff" className="mb-1 block text-xs font-medium text-slate-600">
-              {t('Tarif')}
-            </label>
-            <select
-              id="form-tariff"
-              value={form.tariff_id ?? ''}
-              onChange={(e) => setForm((p) => ({ ...p, tariff_id: e.target.value || null }))}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-            >
-              <option value="">{t('— tarifsiz —')}</option>
-              {tariffsQuery.data?.items.map((tariff) => (
-                <option key={tariff.id} value={tariff.id}>
-                  {tariff.name} — {formatUZS(Number(tariff.amount))}
-                </option>
-              ))}
-            </select>
-            {(tariffsQuery.data?.items.length ?? 0) === 0 && (
-              <p className="mt-1 text-xs text-slate-400">
-                {t('Tarifsiz bolaga hisob-faktura chiqarilmaydi.')}
-              </p>
+            <p className="mb-1 block text-xs font-medium text-slate-600">{t('Oylik narx')}</p>
+            <PricePicker
+              idPrefix="form"
+              value={price}
+              onChange={(next) => {
+                setPrice(next)
+                setFieldErrors(({ monthly_fee: _drop, ...rest }) => rest)
+              }}
+              tariffs={tariffsQuery.data?.items ?? []}
+            />
+            {fieldErrors.monthly_fee && (
+              <p className="mt-1 text-xs text-red-600">{fieldErrors.monthly_fee}</p>
             )}
           </div>
 

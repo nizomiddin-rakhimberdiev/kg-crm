@@ -10,6 +10,7 @@ haqiqatdan ajralmaydi.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import timedelta
 from decimal import Decimal
 from typing import Any
@@ -36,6 +37,8 @@ from apps.finance import balance
 from apps.finance.models import Invoice, InvoiceStatus
 
 __all__ = [
+    "ChildPrice",
+    "child_monthly_price",
     "debtor_queryset",
     "debtor_rows",
     "child_statement",
@@ -398,3 +401,39 @@ def month_board_summary(
         "without_invoice": children - with_invoice,
         "debtors": debtors,
     }
+
+
+@dataclass(frozen=True)
+class ChildPrice:
+    """Bolaning oylik narxi va uning manbai."""
+
+    amount: Decimal
+    #: Tarif bo'yicha bo'lsa — tarif; individual narx bo'lsa — `None`.
+    tariff: Any
+    #: Hisob-faktura qatoridagi nom: tarif nomi yoki "Individual narx".
+    label: str
+
+
+def child_monthly_price(child: Any) -> ChildPrice | None:
+    """
+    Bola oyiga qancha to'laydi — YAGONA javob beradigan joy.
+
+    Narx manbai ikkita bo'lishi mumkin: tarif yoki individual summa
+    (`child.monthly_fee`). Baza ikkalasini birga qo'ymaydi
+    (`ck_child_one_price_source`). Hech biri bo'lmasa — `None`: bunday
+    bolaga hisob-faktura chiqarilmaydi.
+
+    Hisob-faktura, kelmagan kunlar uchun kunlik stavka va ro'yxatlar shu
+    funksiyani o'qiydi — narx qoidasi bir necha joyda takrorlansa, bir
+    kun ular ajralib ketadi.
+    """
+    from django.utils.translation import gettext
+
+    if child.monthly_fee is not None:
+        return ChildPrice(
+            amount=Decimal(child.monthly_fee), tariff=None, label=gettext("Individual narx")
+        )
+    if child.tariff_id is not None:
+        tariff = child.tariff
+        return ChildPrice(amount=Decimal(tariff.amount), tariff=tariff, label=tariff.name)
+    return None

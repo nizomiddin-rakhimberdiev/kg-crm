@@ -10,7 +10,8 @@
  * ustiga qo'llaydi. Begona filial ID'si bo'sh natija beradi, xato emas.
  */
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { branchScope } from '@/lib/branchScope'
 
 interface BranchContextValue {
   /** `null` = barcha filiallar. */
@@ -22,6 +23,12 @@ const BranchContext = createContext<BranchContextValue | null>(null)
 
 export function BranchProvider({ children }: { children: ReactNode }) {
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null)
+
+  // API modullari (`withBranch`) tanlovni React'dan tashqarida o'qiydi.
+  useEffect(() => {
+    branchScope.set(selectedBranchId)
+    return () => branchScope.set(null)
+  }, [selectedBranchId])
 
   const value = useMemo(() => ({ selectedBranchId, setSelectedBranchId }), [selectedBranchId])
 

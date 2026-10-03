@@ -45,6 +45,7 @@ from apps.finance.models import (
     PaymentMethod,
     SourceType,
 )
+from apps.finance.selectors import child_monthly_price
 
 __all__ = [
     "child_balance",
@@ -368,10 +369,12 @@ def issue_invoice(
     kafolatlanadi — ilova qatlamidagi tekshiruv poyga holatida yetarli
     emas (docs/03 §26).
     """
-    if child.tariff_id is None:
+    price = child_monthly_price(child)
+    if price is None:
         raise BusinessRuleViolation(
             gettext(
-                "{full_name}: tarif biriktirilmagan — hisob-faktura chiqarib boʻlmaydi."
+                "{full_name}: narx belgilanmagan (tarif ham, individual narx ham yoʻq) — "
+                "hisob-faktura chiqarib boʻlmaydi."
             ).format(full_name=child.full_name)
         )
 
@@ -409,10 +412,8 @@ def issue_invoice(
     if due_date < issued:
         due_date = issued
 
-    tariff = child.tariff
-    assert tariff is not None  # yuqoridagi `tariff_id is None` tekshiruvi kafolati
     discount = applicable_discount(child, issued)
-    amount_due, discount_amount = apply_discount(tariff.amount, discount)
+    amount_due, discount_amount = apply_discount(price.amount, discount)
 
     # Proporsional birinchi oy (Q2): faqat bolaning ish kunlari.
     share = first_month_share(child=child, period_year=period_year, period_month=period_month)
@@ -432,7 +433,9 @@ def issue_invoice(
             branch=child.branch,
             number=_next_invoice_number(child.branch, period_year, period_month),
             child=child,
-            tariff=tariff,
+            # Individual narxda `None` — hujjat qaysi tarifdan emasligini
+            # ochiq ko'rsatadi; summa `amount_due` va qatorda nusxalangan.
+            tariff=price.tariff,
             period_year=period_year,
             period_month=period_month,
             amount_due=amount_due,
@@ -458,14 +461,16 @@ def issue_invoice(
     # mudiraga ham bir qarashda hamma narsani aytadi.
     InvoiceLine.objects.create(
         invoice=invoice,
+        # Narx manbai — tarif YOKI individual narx (`child_monthly_price`);
+        # proporsiya bo'lsa, satr summasi va izohi shuni aytadi.
         description=(
-            f"{tariff.name} — {prorated_note}"
+            f"{price.label} — {prorated_note}"
             if prorated_note
-            else f"{tariff.name} — {period_month:02d}/{period_year}"
-        ),
+            else f"{price.label} — {period_month:02d}/{period_year}"
+        )[:255],
         quantity=Decimal("1"),
-        unit_amount=amount_due if prorated_note else tariff.amount,
-        line_total=amount_due if prorated_note else tariff.amount,
+        unit_amount=amount_due if prorated_note else price.amount,
+        line_total=amount_due if prorated_note else price.amount,
     )
     if discount_amount > 0 and discount is not None:
         InvoiceLine.objects.create(
@@ -686,7 +691,11 @@ def preview_monthly_invoices(
     for child in _billing_candidates(
         period_year=period_year, period_month=period_month, branch=branch
     ):
-        if child.tariff_id is None:
+        # Narx — `issue_invoice` bilan BIR XIL manbadan (tarif yoki
+        # individual narx). Aks holda preview individual narxli bolani
+        # "tarifsiz" deb ko'rsatib, generatsiya esa unga faktura yozardi.
+        price = child_monthly_price(child)
+        if price is None:
             preview.skipped_no_tariff.append(child.full_name)
             continue
 
@@ -706,12 +715,10 @@ def preview_monthly_invoices(
             preview.skipped_next_month.append(child.full_name)
             continue
 
-        assert child.tariff is not None  # yuqoridagi `tariff_id is None` tekshiruvi kafolati
-
         issued = date(period_year, period_month, 1)
         if child.enrolled_on is not None and _is_first_period(child, period_year, period_month):
             issued = max(issued, child.enrolled_on)
-        amount, _discount = apply_discount(child.tariff.amount, applicable_discount(child, issued))
+        amount, _discount = apply_discount(price.amount, applicable_discount(child, issued))
 
         note = ""
         share = first_month_share(child=child, period_year=period_year, period_month=period_month)
@@ -772,7 +779,9 @@ def generate_monthly_invoices(
     for child in _billing_candidates(
         period_year=period_year, period_month=period_month, branch=branch
     ):
-        if child.tariff_id is None:
+        # Narxi yo'q bola (tarif ham, individual narx ham yo'q) — o'tkaziladi.
+        # Maydon nomi API muvofiqligi uchun `skipped_no_tariff` bo'lib qoldi.
+        if child.tariff_id is None and child.monthly_fee is None:
             result.skipped_no_tariff.append(child.full_name)
             continue
 

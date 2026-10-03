@@ -532,8 +532,6 @@ export const messages: Record<string, string> = {
   Tarif: 'Plan',
   'Tarif nomi': 'Plan name',
   Tariflar: 'Plans',
-  'Tarifsiz bolaga hisob-faktura chiqarilmaydi.':
-    'No invoice is issued for a child without a plan.',
   Tasdiqlangan: 'Approved',
   Tasdiqlash: 'Approve',
   Tashkilot: 'Organization',
@@ -710,7 +708,6 @@ export const messages: Record<string, string> = {
   '{money} soʻm qabul qilish': 'Receive {money} UZS',
   '{name} — harakatlar': '{name} — movements',
   '{name} — tahrirlash': '{name} — edit',
-  '{name} — {toLocaleString} soʻm': '{name} — {toLocaleString} UZS',
   '{periodLabel} uchun hisoblash': 'Payroll for {periodLabel}',
   '{period} — qoralamaga qaytariladi va yana tahrirlanadi.':
     '{period} — returns to draft and becomes editable again.',
@@ -782,7 +779,6 @@ export const messages: Record<string, string> = {
   'Savol boʻlsa: {contact}': 'Questions: {contact}',
   'Guruhni oʻzgartirish': 'Change group',
   guruhsiz: 'no group',
-  'Tarifni oʻzgartirish': 'Change tariff',
   'Yangi tarif KEYINGI hisob-fakturadan kuchga kiradi. Joriy hujjat oʻzgarmaydi.':
     'The new tariff applies from the NEXT invoice. The current one is unchanged.',
   '{name}: {from} guruhidan {to} guruhiga': '{name}: from {from} to {to}',
@@ -1108,4 +1104,58 @@ export const messages: Record<string, string> = {
     'You create the password yourself — we do not know it and will never ask for it.',
   'Parolni koʻrsatish': 'Show the password',
   'Parolni yashirish': 'Hide the password',
+
+  // --- ADR-25: rol delegatsiyasi, ruxsatga mos hisobotlar ---
+  'Bu rolni oʻzgartira olmaysiz: u sizning rolingiz, tashkilot egasi roli yoki sizdan kengroq huquqli rol.':
+    'You cannot change this role: it is your own role, the owner role, or a role with broader permissions than yours.',
+  'Moliyaviy hisobotlarni koʻrish uchun toʻlovlar yoki chiqimlar boʻlimiga ruxsat kerak. Pastdagi eksportdan foydalanishingiz mumkin.':
+    'Viewing financial reports requires access to payments or expenses. You can use the export below.',
+  'Oylik maosh va sof natija bu koʻrinishda yoʻq — ular «Oylik» boʻlimiga ruxsati bor xodimga koʻrinadi.':
+    'Payroll and net result are not shown here — they are visible to staff with access to the Payroll section.',
+  'qabul qilingan pul': 'money received',
+  'Sizda bu ruxsat yoʻq — uni bera olmaysiz.':
+    'You do not have this permission, so you cannot grant it.',
+  'Tushum va tasdiqlangan chiqimlar, davr boʻyicha': 'Revenue and approved expenses, by period',
+
+  // --- Individual narx (2026-10) ---
+  'Har oy {v} hisob-faktura chiqariladi.': 'An invoice for {v} will be issued every month.',
+  'Individual narx': 'Individual price',
+  'Individual narx: {v}': 'Individual price: {v}',
+  'Individual narxni kiriting (soʻmda, 0 dan katta).':
+    "Enter the individual price (in so'm, greater than 0).",
+  'Masalan, 1 200 000': 'For example, 1 200 000',
+  'Narx turi': 'Price type',
+  'Narxsiz bolaga hisob-faktura chiqarilmaydi.':
+    'No invoice is issued for a child without a price.',
+  'Oylik narx': 'Monthly price',
+  'Oylik narx (soʻm)': "Monthly price (so'm)",
+  'Shu bola uchun kelishilgan oylik summa — tarifsiz.':
+    'The monthly amount agreed for this child — without a tariff.',
+  soʻm: 'UZS',
+  'Tarif boʻyicha': 'By tariff',
+  'Tarif yoʻq — individual narxni tanlang yoki avval tarif yarating.':
+    'No tariffs yet — choose an individual price or create a tariff first.',
+
+  // --- Xodimlar davomati / tabel (2026-10) ---
+  '«Ish kuni» — xodimning shu oydagi ish kunlari (ishga kirgan/ketgan sanasi, dam olish kunlari va bayramlar hisobga olingan). «Belgisiz» — bugungacha hali belgilanmagan ish kunlari.':
+    "“Work days” — the employee's working days this month (accounting for hire/termination date, weekends and holidays). “Unmarked” — working days up to today not yet marked.",
+  '{n} ta xodim · belgilanmagan: {u}': '{n} employees · unmarked: {u}',
+  B: 'S',
+  K: 'P',
+  T: 'L',
+  Y: 'A',
+  Belgisiz: 'Unmarked',
+  'Bu kuni ishlaydigan xodim yoʻq. Xodimlarni «Xodimlar» boʻlimida kiriting.':
+    'No employees work on this day. Add employees in the Staff section.',
+  'Bu oyda ishlagan xodim yoʻq.': 'No employees worked this month.',
+  'dam olish / bayram': 'day off / holiday',
+  'Excelʼga yuklash': 'Export to Excel',
+  'Ish kuni': 'Work days',
+  'kartada: taʼtilda': 'card: on leave',
+  Kasal: 'Sick',
+  Kelmadi: 'Absent',
+  'Kunlik belgilash': 'Daily marking',
+  'Oylik tabel': 'Monthly timesheet',
+  'Qolganlar keldi': 'Everyone else present',
+  'Saqlash ({v})': 'Save ({v})',
 }

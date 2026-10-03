@@ -2,6 +2,7 @@ import { api } from '@/lib/api/client'
 import type {
   AuditLog,
   DashboardKpis,
+  ExpenseReport,
   ProfitLoss,
   ReportExport,
   ReportGroupBy,
@@ -15,6 +16,10 @@ export const dashboardApi = {
 export const reportsApi = {
   revenue: (from: string, to: string, groupBy: ReportGroupBy = 'month') =>
     api.get<RevenueReport>('/reports/revenue', { from, to, group_by: groupBy }),
+  // Chiqimlar alohida — foyda-zararga ruxsati yo'q (oylik maoshni ko'rmaydigan)
+  // foydalanuvchi uchun hisobot sahifasi shundan yig'iladi.
+  expenses: (from: string, to: string, groupBy: ReportGroupBy = 'month') =>
+    api.get<ExpenseReport>('/reports/expenses', { from, to, group_by: groupBy }),
   profitLoss: (from: string, to: string, groupBy: ReportGroupBy = 'month') =>
     api.get<ProfitLoss>('/reports/profit-loss', { from, to, group_by: groupBy }),
 

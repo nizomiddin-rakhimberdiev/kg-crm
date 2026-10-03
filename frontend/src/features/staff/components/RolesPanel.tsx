@@ -11,7 +11,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Lock, Plus, Save, ShieldCheck, Trash2 } from 'lucide-react'
-import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { rolesApi } from '@/features/staff/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Permission } from '@/lib/api/types'
@@ -40,6 +40,10 @@ export function RolesPanel() {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
   const { can } = useCan()
+  const { user } = useAuth()
+  const isOwner = user?.role?.code === 'org_owner'
+  // Delegatsiya (ADR-25): o'zida yo'q ruxsatni bera olmaydi.
+  const grantable = (code: string) => isOwner || Boolean(user?.permissions.includes(code))
 
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null)
   const [draft, setDraft] = useState<Set<string>>(new Set())
@@ -129,7 +133,9 @@ export function RolesPanel() {
     setSaved(false)
   }
 
-  const editable = Boolean(selectedRole && can('users.update'))
+  // `can_edit` — backend hukmi: o'z roli, egasi roli va sizdan kengroq rol
+  // tahrirlanmaydi.
+  const editable = Boolean(selectedRole && can('users.update') && selectedRole.can_edit !== false)
   const dirty =
     selectedRole &&
     (draft.size !== selectedRole.permissions.length ||
@@ -228,6 +234,13 @@ export function RolesPanel() {
                     ? t('Tizim roli: ruxsatlarini oʻzgartirish mumkin, nomi va kodi oʻzgarmaydi.')
                     : t('Maxsus rol — ruxsatlari ham, oʻzi ham toʻliq sizning ixtiyoringizda.')}
                 </p>
+                {selectedRole.can_edit === false && (
+                  <p className="mt-1 text-xs text-amber-700">
+                    {t(
+                      'Bu rolni oʻzgartira olmaysiz: u sizning rolingiz, tashkilot egasi roli yoki sizdan kengroq huquqli rol.',
+                    )}
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
@@ -247,7 +260,7 @@ export function RolesPanel() {
                     {saveMutation.isPending ? t('Saqlanmoqda…') : t('Saqlash')}
                   </button>
                 )}
-                {!selectedRole.is_system && can('users.delete') && (
+                {!selectedRole.is_system && can('users.delete') && editable && (
                   <button
                     type="button"
                     disabled={deleteMutation.isPending}
@@ -285,6 +298,8 @@ export function RolesPanel() {
                   <div className="flex flex-wrap gap-2">
                     {permissions.map((permission) => {
                       const active = draft.has(permission.code)
+                      // Faol bo'lmagan va sizda yo'q ruxsatni yoqib bo'lmaydi.
+                      const locked = !editable || (!active && !grantable(permission.code))
                       return (
                         <label
                           key={permission.code}
@@ -293,14 +308,19 @@ export function RolesPanel() {
                             active
                               ? 'border-brand-200 bg-brand-50 text-brand-700'
                               : 'border-slate-200 text-slate-500',
-                            !editable && 'cursor-not-allowed opacity-70',
+                            locked && 'cursor-not-allowed opacity-70',
                           )}
+                          title={
+                            editable && locked
+                              ? t('Sizda bu ruxsat yoʻq — uni bera olmaysiz.')
+                              : undefined
+                          }
                         >
                           <input
                             type="checkbox"
                             className="sr-only"
                             checked={active}
-                            disabled={!editable}
+                            disabled={locked}
                             onChange={() => toggle(permission.code)}
                           />
                           {ACTION_LABELS[permission.action] ?? permission.action}

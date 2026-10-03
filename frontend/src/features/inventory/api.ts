@@ -1,4 +1,5 @@
 import { api } from '@/lib/api/client'
+import { withBranch } from '@/lib/branchScope'
 import type { Product, ProductCategory, StockMovement, Supplier, Warehouse } from '@/lib/api/types'
 
 export const inventoryApi = {
@@ -8,18 +9,19 @@ export const inventoryApi = {
     unit: string
     min_stock?: string
     category_id?: string | null
-  }) => api.post<Product>('/products', payload),
+  }) => api.post<Product>('/products', withBranch(payload)),
 
   warehouses: () => api.list<Warehouse>('/warehouses'),
-  createWarehouse: (payload: { name: string }) => api.post<Warehouse>('/warehouses', payload),
+  createWarehouse: (payload: { name: string }) =>
+    api.post<Warehouse>('/warehouses', withBranch(payload)),
 
   categories: () => api.list<ProductCategory>('/product-categories'),
   createCategory: (payload: { name: string }) =>
-    api.post<ProductCategory>('/product-categories', payload),
+    api.post<ProductCategory>('/product-categories', withBranch(payload)),
 
   suppliers: () => api.list<Supplier>('/suppliers'),
   createSupplier: (payload: { name: string; phone?: string }) =>
-    api.post<Supplier>('/suppliers', payload),
+    api.post<Supplier>('/suppliers', withBranch(payload)),
 
   movements: (params?: Record<string, unknown>) =>
     api.list<StockMovement>('/stock-movements', params),

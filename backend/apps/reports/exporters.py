@@ -173,6 +173,19 @@ def COLUMNS(report_type: str) -> list[Column]:  # noqa: N802 — jadval nomi kab
             ("status", gettext("Holat"), "text"),
             ("reason", gettext("Sabab"), "text"),
         ]
+    if report_type == "staff-attendance":
+        # Qog'oz tabel ko'rinishi: xodim, 1…31 kun belgisi, jami.
+        return [
+            ("employee", gettext("Xodim"), "text"),
+            ("position", gettext("Lavozim"), "text"),
+            ("branch", gettext("Filial"), "text"),
+            *[(f"d{day}", str(day), "text") for day in range(1, 32)],
+            ("present", gettext("Keldi"), "number"),
+            ("absent", gettext("Kelmadi"), "number"),
+            ("sick", gettext("Kasal"), "number"),
+            ("leave", gettext("Taʼtilda"), "number"),
+            ("working_days", gettext("Ish kunlari"), "number"),
+        ]
     if report_type == "profit-loss":
         return [
             ("period", gettext("Davr"), "text"),

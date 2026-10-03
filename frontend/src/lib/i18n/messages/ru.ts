@@ -530,7 +530,6 @@ export const messages: Record<string, string> = {
   Tarif: 'Тариф',
   'Tarif nomi': 'Название тарифа',
   Tariflar: 'Тарифы',
-  'Tarifsiz bolaga hisob-faktura chiqarilmaydi.': 'Ребёнку без тарифа счёт не выставляется.',
   Tasdiqlangan: 'Подтверждён',
   Tasdiqlash: 'Подтвердить',
   Tashkilot: 'Организация',
@@ -708,7 +707,6 @@ export const messages: Record<string, string> = {
   '{money} soʻm qabul qilish': 'Принять {money} сум',
   '{name} — harakatlar': '{name} — движения',
   '{name} — tahrirlash': '{name} — редактирование',
-  '{name} — {toLocaleString} soʻm': '{name} — {toLocaleString} сум',
   '{periodLabel} uchun hisoblash': 'Расчёт за {periodLabel}',
   '{period} — qoralamaga qaytariladi va yana tahrirlanadi.':
     '{period} — вернётся в черновик и снова станет редактируемым.',
@@ -780,7 +778,6 @@ export const messages: Record<string, string> = {
   'Savol boʻlsa: {contact}': 'Вопросы: {contact}',
   'Guruhni oʻzgartirish': 'Сменить группу',
   guruhsiz: 'без группы',
-  'Tarifni oʻzgartirish': 'Сменить тариф',
   'Yangi tarif KEYINGI hisob-fakturadan kuchga kiradi. Joriy hujjat oʻzgarmaydi.':
     'Новый тариф вступает в силу со СЛЕДУЮЩЕГО счёта. Текущий документ не меняется.',
   '{name}: {from} guruhidan {to} guruhiga': '{name}: из группы {from} в группу {to}',
@@ -1105,4 +1102,57 @@ export const messages: Record<string, string> = {
     'Пароль вы создаёте сами — мы его не знаем и никогда не спросим.',
   'Parolni koʻrsatish': 'Показать пароль',
   'Parolni yashirish': 'Скрыть пароль',
+
+  // --- ADR-25: rol delegatsiyasi, ruxsatga mos hisobotlar ---
+  'Bu rolni oʻzgartira olmaysiz: u sizning rolingiz, tashkilot egasi roli yoki sizdan kengroq huquqli rol.':
+    'Вы не можете изменить эту роль: это ваша роль, роль владельца организации или роль с более широкими правами, чем у вас.',
+  'Moliyaviy hisobotlarni koʻrish uchun toʻlovlar yoki chiqimlar boʻlimiga ruxsat kerak. Pastdagi eksportdan foydalanishingiz mumkin.':
+    'Для просмотра финансовых отчётов нужен доступ к разделу платежей или расходов. Вы можете воспользоваться экспортом ниже.',
+  'Oylik maosh va sof natija bu koʻrinishda yoʻq — ular «Oylik» boʻlimiga ruxsati bor xodimga koʻrinadi.':
+    'Зарплата и чистый результат здесь не показаны — их видит сотрудник с доступом к разделу «Зарплата».',
+  'qabul qilingan pul': 'полученные деньги',
+  'Sizda bu ruxsat yoʻq — uni bera olmaysiz.': 'У вас нет этого права — вы не можете его выдать.',
+  'Tushum va tasdiqlangan chiqimlar, davr boʻyicha':
+    'Поступления и подтверждённые расходы по периодам',
+
+  // --- Individual narx (2026-10) ---
+  'Har oy {v} hisob-faktura chiqariladi.': 'Каждый месяц будет выставляться счёт на {v}.',
+  'Individual narx': 'Индивидуальная цена',
+  'Individual narx: {v}': 'Индивидуальная цена: {v}',
+  'Individual narxni kiriting (soʻmda, 0 dan katta).':
+    'Введите индивидуальную цену (в сумах, больше 0).',
+  'Masalan, 1 200 000': 'Например, 1 200 000',
+  'Narx turi': 'Тип цены',
+  'Narxsiz bolaga hisob-faktura chiqarilmaydi.': 'Ребёнку без цены счёт не выставляется.',
+  'Oylik narx': 'Ежемесячная цена',
+  'Oylik narx (soʻm)': 'Ежемесячная цена (сум)',
+  'Shu bola uchun kelishilgan oylik summa — tarifsiz.':
+    'Сумма, согласованная для этого ребёнка, — без тарифа.',
+  soʻm: 'сум',
+  'Tarif boʻyicha': 'По тарифу',
+  'Tarif yoʻq — individual narxni tanlang yoki avval tarif yarating.':
+    'Тарифов нет — выберите индивидуальную цену или сначала создайте тариф.',
+
+  // --- Xodimlar davomati / tabel (2026-10) ---
+  '«Ish kuni» — xodimning shu oydagi ish kunlari (ishga kirgan/ketgan sanasi, dam olish kunlari va bayramlar hisobga olingan). «Belgisiz» — bugungacha hali belgilanmagan ish kunlari.':
+    '«Раб. дни» — рабочие дни сотрудника в этом месяце (с учётом даты приёма/увольнения, выходных и праздников). «Без отметки» — рабочие дни до сегодняшнего дня, ещё не отмеченные.',
+  '{n} ta xodim · belgilanmagan: {u}': 'Сотрудников: {n} · без отметки: {u}',
+  B: 'Б',
+  K: 'Я',
+  T: 'О',
+  Y: 'Н',
+  Belgisiz: 'Без отметки',
+  'Bu kuni ishlaydigan xodim yoʻq. Xodimlarni «Xodimlar» boʻlimida kiriting.':
+    'В этот день нет работающих сотрудников. Добавьте сотрудников в разделе «Сотрудники».',
+  'Bu oyda ishlagan xodim yoʻq.': 'В этом месяце нет работавших сотрудников.',
+  'dam olish / bayram': 'выходной / праздник',
+  'Excelʼga yuklash': 'Выгрузить в Excel',
+  'Ish kuni': 'Раб. дни',
+  'kartada: taʼtilda': 'в карточке: в отпуске',
+  Kasal: 'Болен',
+  Kelmadi: 'Не пришёл',
+  'Kunlik belgilash': 'Ежедневная отметка',
+  'Oylik tabel': 'Табель за месяц',
+  'Qolganlar keldi': 'Остальные пришли',
+  'Saqlash ({v})': 'Сохранить ({v})',
 }

@@ -224,6 +224,8 @@ Why it matters: the safe destination used to be a literal `/dashboard` in six pl
 | **PublicLayout** | login, forgot-password | Centered card, branding, no nav. |
 | **AppLayout** | all authenticated pages | Persistent **Sidebar** (nav filtered by permissions), **Topbar** (user menu, **branch selector** — Org Owner sees all their branches, notifications bell, theme toggle), a **trial/read-only banner** when the subscription requires one, and `<Outlet/>` content area. |
 
+**The selected branch travels with creates.** `BranchProvider` mirrors the topbar choice into `lib/branchScope.ts`, and every create of a branch-bound record wraps its body in `withBranch(payload)` — explicitly at the call site, not in an interceptor, so it is visible which requests carry it. With "all branches" selected nothing is added and the backend decides (single branch, or a branch-bound user); a multi-branch owner gets a message to pick a branch.
+
 Navigation items come from `config/navigation.ts`, each tagged with the permission required to show it — the sidebar renders only what the user can access (driven by `useCan`). An item may list several permissions; any one of them shows it (e.g. *Xodimlar* needs `payroll.read` **or** `users.read`).
 
 **Responsive rule.** The shell is phone-first below `lg` (1024px): the sidebar becomes a **drawer** opened from a hamburger in the Topbar (`MobileSidebar` — same `SidebarContent` as the desktop aside, so a new nav item can never be missing on mobile), the branch selector moves into the drawer, and the layout height is `dvh` so iOS Safari's address bar never hides the bottom of a page. Pages follow three rules: the body never scrolls horizontally; every `<table>` lives in an `overflow-x-auto` container with a `min-w`; and the two lists people work in all day (children, employees) render **cards below `md`** and a table above it — a horizontally scrolled six-column table is not usable with a thumb.
@@ -249,7 +251,7 @@ Path constants live in `config/routes.ts`. Each route maps to a feature page and
 | `/invoices` | InvoicesPage | `payments.read` |
 | `/invoices/:id` | InvoiceDetailPage | `payments.read` |
 | `/debtors` | DebtorsPage | `debtors.read` |
-| `/attendance` | AttendancePage | `attendance.read` |
+| `/attendance` | AttendancePage — tabs *Bolalar* / *Xodimlar* (`?tab=staff`); staff tab: daily marking and monthly timesheet grid with Excel export (`features/attendance/components/StaffAttendancePanel`) | `attendance.read` |
 | `/payroll` | PayrollRunsPage | `payroll.read` |
 | `/payroll/:id` | PayrollRunDetailPage | `payroll.read` |
 | `/staff` | StaffPage — tabs: *Xodimlar* (HR employees, `payroll.read`), *Tizim hisoblari* (login accounts, `users.read`), *Rollar* (`users.read`); tab in `?tab=` | any of `payroll.read`, `users.read` |
@@ -257,7 +259,7 @@ Path constants live in `config/routes.ts`. Each route maps to a feature page and
 | `/inventory/movements` | StockMovementsPage | `inventory.read` |
 | `/inventory/suppliers` | SuppliersPage | `inventory.read` |
 | `/expenses` | ExpensesPage | `expenses.read` |
-| `/reports` | ReportsPage — period picker (day / week / month / quarter / year / custom, with ◀ ▶), grouping derived one step finer than the preset (`features/reports/period.ts`) | `reports.read` |
+| `/reports` | ReportsPage — period picker (day / week / month / quarter / year / custom, with ◀ ▶), grouping derived one step finer than the preset (`features/reports/period.ts`). Sections follow the backend's per-report scope (`REPORT_SCOPE`): profit-and-loss needs `payroll.read`, so a caller without it gets revenue and expenses from their own endpoints, no payroll or net figure, and a line saying why — the page never requests a report the role cannot read | `reports.read` |
 | `/notifications` | NotificationsPage | `notifications.read` |
 | `/settings` | SettingsPage | `settings.read` |
 | `/users`, `/users/roles` | folded into `/staff` tabs (above) | — |

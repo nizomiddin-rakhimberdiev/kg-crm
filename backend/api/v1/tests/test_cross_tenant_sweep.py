@@ -41,6 +41,10 @@ UNCOVERED: dict[str, str] = {
     ),
     "setting": "Kalit-qiymat ViewSet, qator emas. Qo'lda test: apps/settings_app/tests.",
     "dashboard": "Agregat, qator emas. Qo'lda test: apps/reports/tests/test_reports.py.",
+    "staff-attendance": (
+        "Kunlik jurnal va tabel — agregat, qator CRUD emas. Qo'lda test: "
+        "apps/attendance/tests/test_staff_attendance.py (begona xodim → 404)."
+    ),
     "report": "Agregat, qator emas. Qo'lda test: apps/reports/tests/test_reports.py.",
     "audit-log": "Tashkilot filtri QO'LDA yozilgan. Qo'lda test: apps/audit/tests.",
     "platform": (

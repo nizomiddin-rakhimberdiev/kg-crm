@@ -1,4 +1,5 @@
 import { api } from '@/lib/api/client'
+import { withBranch } from '@/lib/branchScope'
 import type {
   BillingRunResult,
   ChildStatement,
@@ -11,7 +12,8 @@ import type {
 
 export const tariffsApi = {
   list: () => api.list<TariffPlan>('/tariffs'),
-  create: (payload: { name: string; amount: string }) => api.post<TariffPlan>('/tariffs', payload),
+  create: (payload: { name: string; amount: string }) =>
+    api.post<TariffPlan>('/tariffs', withBranch(payload)),
   remove: (id: string) => api.delete(`/tariffs/${id}`),
 }
 
