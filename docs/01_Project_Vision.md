@@ -132,7 +132,7 @@ Worked examples: 50 children → 400 000 · 80 children → 550 000 · 150 child
 
 **15-day risk-free trial** — no card, no upfront payment.
 
-- **Two ways to open an account.** Vendor staff create the organization from the platform console ([04 §19](./04_Backend_API_Specification.md)) — the sales-led path, 15-day trial. **Since PLAN 6.7 (ADR-28) a kindergarten can also sign up itself** — a **14-day** trial (the owner's brief) — but the tenant is created only after the e-mailed link is opened and a password set; an unconfirmed request leaves no tenant and is removed after 7 days, and one e-mail gets one self-signup trial. *The two trial lengths differ until the owner decides to unify them.*
+- **Two ways to open an account.** Vendor staff create the organization from the platform console ([04 §19](./04_Backend_API_Specification.md)) — the sales-led path, 15-day trial. **Since PLAN 6.7 (ADR-28) a kindergarten can also sign up itself** — the same **15-day** trial (owner's decision, 2026-10-03) — but the tenant is created only after the e-mailed link is opened and a password set; an unconfirmed request leaves no tenant and is removed after 7 days, and one e-mail gets one self-signup trial.
 - **The trial clock starts when the account is created**, so an account should be opened when the customer is ready to begin — not weeks earlier.
 - If the customer converts, the **first monthly payment is dated from the trial start**, i.e. the paid month absorbs the trial period. This is disclosed **in the offer**, never at the end of the trial.
 - If the customer declines, they pay **nothing**.

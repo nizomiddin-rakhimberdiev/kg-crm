@@ -724,6 +724,7 @@ phase branch.** Details and conflict resolutions are in the merge commit
 
 ### 6.7 Self-signup with a 14-day trial (ADR-28)
 
+- (Trial unified to **15 days** on 2026-10-03 — see "Owner's decisions" below.)
 - `POST /public/signup` writes a `platform_signup_request` (token as SHA-256,
   24 h) and a `Lead` (`self_signup`) — no tenant. `POST /public/signup/confirm`
   with a password runs `register_organization(trial_days=14)`. One
@@ -737,3 +738,19 @@ phase branch.** Details and conflict resolutions are in the merge commit
 - UI: `/signup`, `/signup/confirm` (SaaS only, nginx whitelist), link on the
   login page. uz/ru/en.
 - Tests: 17 backend, 1 frontend.
+
+### Owner's decisions on the phase-6 report (2026-10-03)
+
+1. Kitchen — **frozen**: no customer wants it yet.
+2. Trial — **15 days** everywhere; the self-signup's 14-day parameter was
+   removed (one trial length, one code path).
+3. "What does purge mean?" — answered in chat; policy decision still open.
+4. Absence alert stays off; parents are reached by Telegram only.
+5. Contracts — **frozen** too.
+
+Implementation: `apps/core/features.py` — `FEATURE_CONTRACTS`,
+`FEATURE_KITCHEN` (default off). Off means: endpoints not registered, screens
+hidden (the frontend reads `user.features` from `/auth/me`, so one switch
+drives both). Tables and migrations stay; the test suite runs with both on so
+the code stays ready.
+

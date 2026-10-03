@@ -134,9 +134,6 @@ TERM_MONTHS: dict[str, int] = {
 }
 
 TRIAL_DAYS = 15
-# Self-signup (PLAN 6.7, ADR-28): the brief asks for 14 days. The vendor-
-# opened trial stays at TRIAL_DAYS until the owner decides to unify them.
-SELF_SIGNUP_TRIAL_DAYS = 14
 # To'lov ko'chib kelguncha kutish muddati. Mijozlar yuridik shaxs va
 # bank o'tkazmasi kunlab ketadi — kirish o'rtada uzilib qolmasligi kerak
 # (docs/01 §4.4).

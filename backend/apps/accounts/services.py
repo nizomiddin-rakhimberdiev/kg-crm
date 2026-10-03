@@ -30,6 +30,7 @@ from apps.accounts.models import Permission, RefreshToken, Role, RolePermission,
 from apps.branches.models import Branch
 from apps.core.deployment import is_saas
 from apps.core.exceptions import BusinessRuleViolation
+from apps.core.features import enabled_features
 from apps.core.tenancy import organization_context, platform_context
 from apps.organizations.models import Organization
 
@@ -140,7 +141,6 @@ def register_organization(
     contact_phone: str = "",
     branch_name: str | None = None,
     slug: str | None = None,
-    trial_days: int | None = None,
 ) -> RegistrationResult:
     """
     Yangi mijozni ro'yxatdan o'tkazadi: tashkilot + birinchi filial +
@@ -214,10 +214,7 @@ def register_organization(
         if is_saas():
             from apps.subscriptions.services import start_trial
 
-            if trial_days is None:
-                start_trial(organization=organization)
-            else:
-                start_trial(organization=organization, trial_days=trial_days)
+            start_trial(organization=organization)
 
     return RegistrationResult(organization=organization, branch=branch, owner=owner)
 
@@ -466,4 +463,7 @@ def user_payload(user: User) -> dict[str, Any]:
         # javobga TUSHMAYDI: bu yerda faqat holat.
         "two_factor": user.has_2fa,
         "backup_codes_left": len(user.totp_backup_codes or []) if user.has_2fa else 0,
+        # Switched-on product modules (apps/core/features.py) — the screens
+        # follow the same switch as the endpoints.
+        "features": enabled_features(),
     }

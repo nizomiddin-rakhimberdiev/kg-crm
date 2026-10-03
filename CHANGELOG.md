@@ -83,8 +83,10 @@ Bajarilgani: [`docs/big-update/PROGRESS.md`](./docs/big-update/PROGRESS.md)
   index (ADR-27). Subscription invoices can be paid online to Radix's own
   merchant (same protocol code, separate ledger). Contract templates with
   frozen, printable contracts. Kitchen: dishes, daily menu, serving writes
-  stock consumption. Self-signup with a 14-day trial; the tenant appears
-  only after the e-mail link is opened (ADR-28). "Your child is absent
+  stock consumption. Self-signup with the usual 15-day trial; the tenant
+  appears only after the e-mail link is opened (ADR-28). Contracts and the
+  kitchen are built but frozen (`FEATURE_CONTRACTS`, `FEATURE_KITCHEN`, off
+  by default). "Your child is absent
   today" message, off by default.
 
 ### Tuzatildi

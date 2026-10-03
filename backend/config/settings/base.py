@@ -546,6 +546,11 @@ MERCHANT_KEY_REQUIRED = env.bool("MERCHANT_KEY_REQUIRED", default=False)
 # Parent bot contact index (ADR-27): HMAC key for phone / chat digests.
 # Empty = derived from SECRET_KEY. Changing it (or SECRET_KEY) requires
 # `python manage.py rebuild_contact_index --apply`.
+# Frozen product modules (apps/core/features.py): built and tested, switched
+# off until a customer needs them. Tables exist either way.
+FEATURE_CONTRACTS = env.bool("FEATURE_CONTRACTS", default=False)
+FEATURE_KITCHEN = env.bool("FEATURE_KITCHEN", default=False)
+
 CONTACT_INDEX_KEY = env("CONTACT_INDEX_KEY", default="")
 
 # Radix's OWN merchant for subscription invoices (PLAN 6.4, P6-3). Empty =

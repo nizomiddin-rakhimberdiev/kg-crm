@@ -55,7 +55,7 @@ export default function SignupConfirmPage() {
             <div className="space-y-4 text-center">
               <CheckCircle2 className="mx-auto h-9 w-9 text-nihol-600" />
               <p className="text-sm text-tosh-700">
-                {t('Bogʻchangiz ochildi — 14 kunlik sinov boshlandi. Endi kiring.')}
+                {t('Bogʻchangiz ochildi — 15 kunlik sinov boshlandi. Endi kiring.')}
               </p>
               <button
                 type="button"

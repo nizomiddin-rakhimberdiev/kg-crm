@@ -1,5 +1,6 @@
 """
-Self-signup with a 14-day trial (PLAN 6.7, ADR-28).
+Self-signup with a 15-day trial (PLAN 6.7, ADR-28) — the same trial as a
+vendor-opened account (owner's decision, 2026-10-03).
 
 The open `/auth/signup` was removed on purpose (docs/04 §5): a random visit
 created a tenant that stayed in the database forever. This brings signup
@@ -9,7 +10,7 @@ back with that reason closed:
    24-hour link. No tenant yet; unconfirmed rows go after 7 days.
 2. Opening the link with a chosen password runs the SAME
    `register_organization()` the vendor console uses — one way to create a
-   tenant — with a 14-day trial.
+   tenant, one trial length.
 3. One self-signup trial per e-mail: the free trial is not a renewable
    resource. A second kindergarten for the same owner goes through sales.
 
@@ -111,7 +112,6 @@ def request_signup(*, data: dict[str, Any]) -> SignupRequest:
 def confirm_signup(*, token: str, password: str) -> Any:
     """Creates the tenant. Returns the organization."""
     from apps.accounts.services import register_organization
-    from apps.subscriptions.models import SELF_SIGNUP_TRIAL_DAYS
 
     request = (
         SignupRequest.objects.select_for_update()
@@ -137,7 +137,6 @@ def confirm_signup(*, token: str, password: str) -> Any:
         full_name=request.full_name,
         password=password,
         contact_phone=request.phone,
-        trial_days=SELF_SIGNUP_TRIAL_DAYS,
     )
     request.confirmed_at = timezone.now()
     request.organization = result.organization

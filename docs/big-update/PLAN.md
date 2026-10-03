@@ -319,15 +319,17 @@ Decisions taken under the owner's standing permission (design §7.3):
 | P6-2 | Who pays the provider commission? | The kindergarten — the parent pays exactly the invoice amount, no surcharge |
 | P6-3 | Radix's own merchant account (subscriptions) | `.env` (`RADIX_PAYME_*`, `RADIX_CLICK_*`); empty = button hidden |
 | P6-4 | Self-signup and unconverted trials (ADR-28) | Tenant only after e-mail verification; purge of unconverted trials is a `--dry-run` command the owner runs |
-| P6-5 | "Your child is absent today" message | Off by default (`notifications.absence_alert`) |
+| P6-5 | "Your child is absent today" message | Off by default (`notifications.absence_alert`) — confirmed by the owner 2026-10-03; Telegram only |
+| P6-6 | Trial length (owner, 2026-10-03) | **15 days** for self-signup too — one trial length |
+| P6-7 | Contracts and kitchen (owner, 2026-10-03) | **Frozen**: built and tested, switched off by `FEATURE_CONTRACTS` / `FEATURE_KITCHEN` (default off); no customer needs them yet |
 
 - [x] **6.1** Payme / Click — parent online payment (ADR-26)
 - [x] **6.2** Parent bot — balance, invoices, pay button, receipts (+ absence alert, P6-5)
 - [x] **6.3** Bot linking by shared phone number (ADR-27)
 - [x] **6.4** Subscription online payment
-- [x] **6.5** Contract templates
-- [x] **6.6** Kitchen / menu → stock consumption
-- [x] **6.7** Self-signup with a 14-day trial (ADR-28)
+- [x] **6.5** Contract templates — **frozen** (P6-7)
+- [x] **6.6** Kitchen / menu → stock consumption — **frozen** (P6-7)
+- [x] **6.7** Self-signup with a trial (ADR-28) — 15 days, owner 2026-10-03
 
 ---
 

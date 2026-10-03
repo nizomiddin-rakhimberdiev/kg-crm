@@ -100,7 +100,7 @@ export default function SignupPage() {
           <form onSubmit={submit} className="space-y-4">
             <div>
               <h1 className="text-xl font-bold text-tosh-900">
-                {t('14 kunlik sinov — mos kelmasa, hech narsa toʻlamaysiz')}
+                {t('15 kunlik sinov — mos kelmasa, hech narsa toʻlamaysiz')}
               </h1>
               <p className="mt-1 text-sm text-tosh-500">
                 {t(

@@ -14,6 +14,7 @@ from apps.branches.views import BranchViewSet
 from apps.cash.views import CashAccountViewSet
 from apps.children.views import ChildViewSet, GroupViewSet, GuardianViewSet
 from apps.contracts.views import ContractTemplateViewSet, ContractViewSet
+from apps.core import features
 from apps.core.deployment import is_saas
 from apps.expenses.views import ExpenseCategoryViewSet, ExpenseViewSet
 from apps.finance.views import (
@@ -49,12 +50,14 @@ router.register("permissions", PermissionViewSet, basename="permission")
 router.register("branches", BranchViewSet, basename="branch")
 router.register("children", ChildViewSet, basename="child")
 router.register("guardians", GuardianViewSet, basename="guardian")
-# Contracts (PLAN 6.5): templates are settings, contracts belong to the child.
-router.register("contract-templates", ContractTemplateViewSet, basename="contract-template")
-router.register("contracts", ContractViewSet, basename="contract")
-# Kitchen (PLAN 6.6).
-router.register("dishes", DishViewSet, basename="dish")
-router.register("menu-days", MenuDayViewSet, basename="menu-day")
+# Contracts (PLAN 6.5) and kitchen (PLAN 6.6) — frozen by the owner
+# (2026-10-03): registered only when switched on (apps/core/features.py).
+if features.enabled(features.CONTRACTS):
+    router.register("contract-templates", ContractTemplateViewSet, basename="contract-template")
+    router.register("contracts", ContractViewSet, basename="contract")
+if features.enabled(features.KITCHEN):
+    router.register("dishes", DishViewSet, basename="dish")
+    router.register("menu-days", MenuDayViewSet, basename="menu-day")
 router.register("groups", GroupViewSet, basename="group")
 router.register("cash-accounts", CashAccountViewSet, basename="cash-account")
 router.register("attendance", AttendanceViewSet, basename="attendance")

@@ -44,3 +44,8 @@ CELERY_TASK_EAGER_PROPAGATES = True
 # Testlar yozgan fayllar loyihaga tushib qolmasin — vaqtinchalik papka
 # har bir ishga tushishda tozalanadi.
 MEDIA_ROOT = Path(tempfile.mkdtemp(prefix="kg-crm-test-media-"))
+
+# Frozen modules stay TESTED: the suite runs with them switched on, so the
+# code is ready the day a customer asks (apps/core/features.py).
+FEATURE_CONTRACTS = True
+FEATURE_KITCHEN = True

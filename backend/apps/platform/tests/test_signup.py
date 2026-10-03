@@ -1,5 +1,5 @@
 """
-Self-signup with a 14-day trial (PLAN 6.7, ADR-28).
+Self-signup with a 15-day trial (PLAN 6.7, ADR-28).
 
 The reason open signup was removed — a random visit leaving a tenant in
 the database forever — must stay closed: no tenant before the e-mail link
@@ -105,7 +105,7 @@ class TestRequest:
 
 
 class TestConfirm:
-    def test_the_link_opens_a_14_day_trial(self, api_client):
+    def test_the_link_opens_the_same_15_day_trial(self, api_client):
         token = _signup(api_client)
         response = api_client.post(CONFIRM, {"token": token, "password": PASSWORD}, format="json")
         assert response.status_code == 201, response.json()
@@ -115,7 +115,7 @@ class TestConfirm:
             subscription = Subscription.all_objects.get(organization=organization)
         assert subscription.status == SubscriptionStatus.TRIALING
         days = (subscription.trial_ends_at - subscription.trial_started_at).days
-        assert days == 14
+        assert days == 15
         login = api_client.post(
             "/api/v1/auth/login", {"email": "egasi@quyosh.uz", "password": PASSWORD}, format="json"
         )

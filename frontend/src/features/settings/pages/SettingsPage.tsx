@@ -19,6 +19,7 @@ import { TestModeBanner } from '@/features/notifications/components/TestModeBann
 import { WeekdayPicker } from '@/features/settings/components/WeekdayPicker'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type SettingValue } from '@/lib/api/types'
+import { useFeature } from '@/lib/features'
 import { useCan } from '@/lib/rbac/useCan'
 import { APP_LOCALES, t } from '@/lib/i18n'
 
@@ -141,6 +142,7 @@ export default function SettingsPage() {
   const queryClient = useQueryClient()
   const { can } = useCan()
   const editable = can('settings.update')
+  const contractsOn = useFeature('contracts')
 
   const [error, setError] = useState<string | null>(null)
   const [savedKey, setSavedKey] = useState<string | null>(null)
@@ -315,7 +317,7 @@ export default function SettingsPage() {
 
       <OnlinePaymentSettings />
 
-      <ContractTemplatesSettings />
+      {contractsOn && <ContractTemplatesSettings />}
     </div>
   )
 }

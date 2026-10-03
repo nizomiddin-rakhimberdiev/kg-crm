@@ -11,6 +11,7 @@ import { AlertTriangle, ArrowDownRight, ArrowUpRight, Package, Plus } from 'luci
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { inventoryApi } from '@/features/inventory/api'
 import { KitchenPanel } from '@/features/kitchen/components/KitchenPanel'
+import { useFeature } from '@/lib/features'
 import { invalidateMoney } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Product } from '@/lib/api/types'
@@ -35,6 +36,7 @@ export default function InventoryPage() {
 
   // Store or kitchen (PLAN 6.6) — one page, one permission module.
   const [tab, setTab] = useState<'store' | 'kitchen'>('store')
+  const kitchenOn = useFeature('kitchen')
   const [moving, setMoving] = useState<Product | null>(null)
   const [moveForm, setMoveForm] = useState({
     movement_type: 'purchase',
@@ -128,34 +130,36 @@ export default function InventoryPage() {
         )}
       </div>
 
-      <div role="tablist" className="flex gap-1 border-b border-slate-200">
-        {(
-          [
-            ['store', t('Ombor')],
-            ['kitchen', t('Oshxona')],
-          ] as const
-        ).map(([code, label]) => (
-          <button
-            key={code}
-            type="button"
-            role="tab"
-            aria-selected={tab === code}
-            onClick={() => setTab(code)}
-            className={cn(
-              '-mb-px border-b-2 px-3 py-2 text-sm font-medium transition',
-              tab === code
-                ? 'border-brand-600 text-brand-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800',
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {kitchenOn && (
+        <div role="tablist" className="flex gap-1 border-b border-slate-200">
+          {(
+            [
+              ['store', t('Ombor')],
+              ['kitchen', t('Oshxona')],
+            ] as const
+          ).map(([code, label]) => (
+            <button
+              key={code}
+              type="button"
+              role="tab"
+              aria-selected={tab === code}
+              onClick={() => setTab(code)}
+              className={cn(
+                '-mb-px border-b-2 px-3 py-2 text-sm font-medium transition',
+                tab === code
+                  ? 'border-brand-600 text-brand-700'
+                  : 'border-transparent text-slate-500 hover:text-slate-800',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {tab === 'kitchen' && <KitchenPanel />}
+      {kitchenOn && tab === 'kitchen' && <KitchenPanel />}
 
-      {tab === 'store' && (
+      {(tab === 'store' || !kitchenOn) && (
         <>
           {error && (
             <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">

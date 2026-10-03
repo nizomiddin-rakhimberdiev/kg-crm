@@ -231,7 +231,7 @@ export default function LoginPage() {
               {!env.isStandalone && (
                 <p className="text-center text-sm text-tosh-500">
                   <Link to="/signup" className="hover:text-nihol-700 hover:underline">
-                    {t('Bogʻchangiz hali yoʻqmi? 14 kunlik sinovni boshlang')}
+                    {t('Bogʻchangiz hali yoʻqmi? 15 kunlik sinovni boshlang')}
                   </Link>
                 </p>
               )}

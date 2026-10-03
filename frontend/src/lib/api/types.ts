@@ -110,6 +110,12 @@ export interface CurrentUser {
   two_factor: boolean
   /** Qolgan zaxira kodlari soni; 2FA oʻchiq boʻlsa `0`. */
   backup_codes_left: number
+  /**
+   * Switched-on product modules (backend `apps/core/features.py`):
+   * `contracts`, `kitchen`. Frozen modules are hidden; optional so an
+   * older session payload reads as "none".
+   */
+  features?: string[]
 }
 
 export interface SubscriptionState {

@@ -180,7 +180,7 @@ Public (no token) except `/me`, `/logout`, `/password/change`.
 >
 > **The vendor never knows a customer's password** (PLAN 5.5). `POST /platform/organizations/create` takes no `password`: the owner account is created with an *unusable* password and the owner receives a 72-hour invite link (`/invite?token=…`) by e-mail, where they set the first password themselves. The link is signed, not stored — the token carries the user id and a short fingerprint of the password hash, so setting a password changes the fingerprint and the link dies by itself (same mechanism as password reset, no table and no cleanup job). Why 72 hours and not 30 minutes: a reset is asked for *now*, an invitation arrives after a sales conversation and may be opened on Monday. An expired, used or malformed link gets one and the same answer — telling them apart would describe the token's structure. A `password` field sent to the create endpoint is ignored, and a test proves the owner still cannot be logged into.
 >
-> **Self-signup (PLAN 6.7, ADR-28)** — `POST /public/signup` `{name, email, phone, kindergarten_name, children_count, city, language, consent, privacy_policy_version, submission_id, website(honeypot)}` → `202 {sent: true}` always (no e-mail oracle; throttle `signup`, 5/hour); it writes a `signup_request` + `Lead`, no tenant. `POST /public/signup/confirm` `{token, password}` → `201 {slug}`: creates the tenant through `register_organization()` with a 14-day trial; `422` for an expired/used link or a second trial for the same e-mail, `400` for a weak password. SaaS only. The history below explains why the old form was removed and what this one closes.
+> **Self-signup (PLAN 6.7, ADR-28)** — `POST /public/signup` `{name, email, phone, kindergarten_name, children_count, city, language, consent, privacy_policy_version, submission_id, website(honeypot)}` → `202 {sent: true}` always (no e-mail oracle; throttle `signup`, 5/hour); it writes a `signup_request` + `Lead`, no tenant. `POST /public/signup/confirm` `{token, password}` → `201 {slug}`: creates the tenant through `register_organization()` with the usual 15-day trial; `422` for an expired/used link or a second trial for the same e-mail, `400` for a weak password. SaaS only. The history below explains why the old form was removed and what this one closes.
 >
 > **There was no public signup.** `POST /auth/signup` was removed. Accounts are opened by vendor staff through the platform console — `POST /platform/organizations/create` (§19) — because every signup creates a real tenant (RLS policies, a subscription, seeded roles) and tenant data is never deleted (ADR-11). A door open to the internet meant strangers leaving permanent rows in the database. It also matched the commercial model badly: customers are legal entities who pay by bank transfer, so the tenant should exist *after* the sales conversation, not before it.
 
@@ -335,7 +335,10 @@ Module: `children`. Sub-domains: children, guardians, groups, enrollment.
 
 Phone numbers are normalised to `+998XXXXXXXXX` on every write — guardian, employee, user, branch, lead. Existing bad numbers are reported, never rewritten: `python manage.py report_bad_phones [--tenant]`.
 
-### 7.9 Contracts (PLAN 6.5)
+### 7.9 Contracts (PLAN 6.5) — frozen
+
+> **Switched off** (owner, 2026-10-03): these endpoints are registered only with `FEATURE_CONTRACTS=True`; the screens follow `user.features` from `/auth/me`. Tables exist either way.
+
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/contract-templates` | `settings.read` | Active templates |
@@ -671,7 +674,10 @@ Module: `inventory` (Kitchen & Warehouse). **Stock levels derived from movements
 
 ---
 
-### 12.1 Kitchen — dishes and the daily menu (PLAN 6.6)
+### 12.1 Kitchen — dishes and the daily menu (PLAN 6.6) — frozen
+
+> **Switched off** (owner, 2026-10-03): registered only with `FEATURE_KITCHEN=True`; no customer uses a kitchen module yet. The shortage question below is therefore parked, not open.
+
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET / POST / PUT / DELETE | `/dishes[/{id}]` | `inventory.*` | `{name, portion_grams?, ingredients: [{product_id, quantity}]}` — quantities per ONE portion in the product's unit; the list is replaced as a whole. Read adds `cost_per_portion` (latest purchase prices, `null` if one is unknown). Delete = switch off |

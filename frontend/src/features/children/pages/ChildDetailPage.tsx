@@ -24,6 +24,7 @@ import { ChildStatusDialog } from '@/features/children/components/ChildStatusDia
 import { ChildTabs } from '@/features/children/components/ChildTabs'
 import { TelegramLinkButton } from '@/features/children/components/TelegramLinkButton'
 import { ContractsCard } from '@/features/contracts/components/ContractsCard'
+import { useFeature } from '@/lib/features'
 import { GroupOptions } from '@/features/children/components/GroupOptions'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate, formatUZS } from '@/lib/utils'
@@ -65,6 +66,7 @@ const EMPTY_GUARDIAN = {
 }
 
 export default function ChildDetailPage() {
+  const contractsOn = useFeature('contracts')
   const { childId = '' } = useParams()
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
@@ -529,7 +531,7 @@ export default function ChildDetailPage() {
       </div>
 
       {/* Contracts (PLAN 6.5) — next to the guardians they are made with. */}
-      <ContractsCard childId={childId} />
+      {contractsOn && <ContractsCard childId={childId} />}
 
       {/* Hisob-fakturalar, to'lovlar va tarix — mudiraning savollari
           endi bitta kartada, boshqa ekranga o'tmasdan (PLAN 2.1). */}
