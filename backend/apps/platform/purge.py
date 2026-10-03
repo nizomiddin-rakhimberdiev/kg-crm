@@ -64,6 +64,9 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.online_payments.MerchantCredential",
     # Taqsimot to'lovga ham, hisob-fakturaga ham `RESTRICT` bilan
     # bog'langan — u ikkalasidan ham OLDIN o'chadi.
+    # Contracts point at child, guardian and template with RESTRICT (PLAN 6.5).
+    "apps.contracts.Contract",
+    "apps.contracts.ContractTemplate",
     "apps.finance.PaymentAllocation",
     "apps.finance.Payment",
     "apps.finance.ChildLedgerEntry",

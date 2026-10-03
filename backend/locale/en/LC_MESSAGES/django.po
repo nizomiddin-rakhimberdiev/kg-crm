@@ -1250,3 +1250,41 @@ msgid ""
 msgstr ""
 "The server is not configured: the key cannot be saved. Contact the "
 "administrator."
+
+# Contracts (PLAN 6.5)
+msgid "Arxivdagi bolaga shartnoma tuzib boʻlmaydi."
+msgstr "A contract cannot be made for an archived child."
+
+msgid "Bekor qilish sanasi imzolash sanasidan oldin boʻlishi mumkin emas."
+msgstr "The termination date cannot be before the signing date."
+
+msgid "Bu shablon oʻchirilgan."
+msgstr "This template is switched off."
+
+msgid "Bu vasiy shu bolaga bogʻlanmagan."
+msgstr "This guardian is not linked to the child."
+
+msgid "Faqat qoralama shartnoma imzolanadi."
+msgstr "Only a draft contract can be signed."
+
+msgid "Imzolangan"
+msgstr "Signed"
+
+msgid "Imzolash sanasi kelajakda boʻlishi mumkin emas."
+msgstr "The signing date cannot be in the future."
+
+#, python-brace-format
+msgid "Nomaʼlum maydonlar: {names}."
+msgstr "Unknown fields: {names}."
+
+msgid "Shablon topilmadi."
+msgstr "Template not found."
+
+msgid "Shartnoma allaqachon bekor qilingan."
+msgstr "The contract is already terminated."
+
+msgid "Shartnoma raqamini band qilib boʻlmadi, qayta urining."
+msgstr "Could not reserve a contract number; please try again."
+
+msgid "Vasiy topilmadi."
+msgstr "Guardian not found."

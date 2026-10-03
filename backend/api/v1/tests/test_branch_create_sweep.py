@@ -32,6 +32,7 @@ CUSTOM_CREATE = {
     "payroll-advance": "record_advance() servisi filialni xodimdan oladi",
     "attendance": "mark_bulk() servisi filialni guruhdan oladi",
     "absence-claim": "create_claim() servisi filialni bolasidan oladi",
+    "contract": "create_contract() takes the branch from the child (PLAN 6.5)",
 }
 
 

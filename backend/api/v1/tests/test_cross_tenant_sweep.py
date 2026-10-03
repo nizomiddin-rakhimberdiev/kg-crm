@@ -342,6 +342,27 @@ def _create_row(tenant: Any, basename: str) -> Any:
                     child=child, amount=Decimal("100000"), method="cash", invoice=invoice
                 )
             return child.ledger_entries.first()
+        # Contracts (PLAN 6.5).
+        if basename in {"contract-template", "contract"}:
+            from apps.contracts.services import create_contract, save_template
+
+            template = save_template(
+                organization=tenant.organization,
+                template=None,
+                name="Shablon",
+                body="{{bola.fio}}",
+            )
+            if basename == "contract-template":
+                return template
+            child = Child.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                first_name="Shartnoma",
+                last_name="Bolasi",
+                date_of_birth=date(2021, 3, 14),
+                gender="male",
+            )
+            return create_contract(child=child, template=template)
     raise AssertionError(
         f"'{basename}' uchun test ma'lumoti yaratilmagan. Yangi endpoint "
         f"qo'shgan bo'lsangiz, bu funksiyaga uni ham qo'shing — sweep "

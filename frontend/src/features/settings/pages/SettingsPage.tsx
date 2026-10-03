@@ -13,6 +13,7 @@ import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { useToast } from '@/app/providers/ToastProvider'
 import { Switch } from '@/components/ui/primitives'
 import { settingsApi } from '@/features/notifications/api'
+import { ContractTemplatesSettings } from '@/features/contracts/components/ContractTemplatesSettings'
 import { OnlinePaymentSettings } from '@/features/online-payments/components/OnlinePaymentSettings'
 import { TestModeBanner } from '@/features/notifications/components/TestModeBanner'
 import { WeekdayPicker } from '@/features/settings/components/WeekdayPicker'
@@ -313,6 +314,8 @@ export default function SettingsPage() {
       })}
 
       <OnlinePaymentSettings />
+
+      <ContractTemplatesSettings />
     </div>
   )
 }

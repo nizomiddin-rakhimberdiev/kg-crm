@@ -333,6 +333,20 @@ Module: `children`. Sub-domains: children, guardians, groups, enrollment.
 
 Phone numbers are normalised to `+998XXXXXXXXX` on every write — guardian, employee, user, branch, lead. Existing bad numbers are reported, never rewritten: `python manage.py report_bad_phones [--tenant]`.
 
+### 7.9 Contracts (PLAN 6.5)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/contract-templates` | `settings.read` | Active templates |
+| GET | `/contract-templates/placeholders` | `settings.read` | The closed placeholder list (`bola.fio`, `vasiy.fio`, `tarif.summa`, `bogcha.stir`, `shartnoma.raqam` …) |
+| POST / PATCH | `/contract-templates[/{id}]` | `settings.create` / `settings.update` | `{name, language, body}`. An unknown placeholder → `422` naming it. A change of `body` bumps `version` |
+| DELETE | `/contract-templates/{id}` | `settings.delete` | Switches the template off; contracts made from it stay |
+| GET | `/contracts?child=` | `children.read` | Contracts, branch- and row-scoped (ADR-21) |
+| POST | `/contracts` | `children.create` | `{child_id, template_id, guardian_id?}` → fills the template **now** and freezes the text and values; number `SH-<year>-<nnnn>` per organization. Guardian defaults to the primary one |
+| POST | `/contracts/{id}/sign` | `children.update` | `{signed_on}` — draft only, not in the future |
+| POST | `/contracts/{id}/terminate` | `children.update` | `{terminated_on, reason}` — not before the signing date |
+
+There is no update or delete of a contract: changing terms means a new contract. A placeholder with no value prints as `__________` to fill in by hand. Permissions reuse `settings` and `children` deliberately — a new module would change every role in production for a screen that fits the existing two. Another organization's child, guardian, template or contract is `404`.
+
 ## 8. Attendance
 
 Module: `attendance`.

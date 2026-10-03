@@ -1384,6 +1384,36 @@ The purge job deletes `online_transaction`, `payment_link`, `merchant_credential
 
 ---
 
+## 20d. Schema Domain: Contracts (PLAN 6.5)
+
+Operational tables — standard guards and RLS policy; `check_rls` expects **54** tables.
+
+### 20d.1 `contract_template`
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `organization_id` | `UUID` | `NOT NULL` FK `RESTRICT` | |
+| `name` | `VARCHAR(150)` | `uq_contract_template_name` (per org, active) | |
+| `language` | `VARCHAR(2)` | `ck_contract_template_language` | `uz` \| `ru` \| `en` — tenant text, never translated (ADR-16) |
+| `body` | `TEXT` | `NOT NULL` | Placeholders `{{group.key}}` from a closed list, checked on save |
+| `version` | `INT` | `NOT NULL DEFAULT 1` | Grows on every change of `body` |
+| `is_active` | `BOOLEAN` | | Delete = switch off (contracts point at it with `RESTRICT`) |
+
+### 20d.2 `contract`
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `organization_id`, `branch_id` | `UUID` | `NOT NULL` FK `RESTRICT` | |
+| `number` | `VARCHAR(30)` | `uq_contract_number (organization_id, number)` | `SH-<year>-<nnnn>` |
+| `child_id` / `guardian_id` / `template_id` | `UUID` | FK `RESTRICT` (`guardian_id` nullable) | |
+| `template_version` | `INT` | `NOT NULL` | |
+| `values` | `JSONB` | `NOT NULL` | Placeholder → value at creation |
+| `rendered_text` | `TEXT` | `NOT NULL` | Plain text, printed by the browser (D1) — never HTML |
+| `status` | `VARCHAR(12)` | `ck_contract_status`, `ck_contract_signed_on`, `ck_contract_terminated_on` | `draft` → `signed` → `terminated`; dates required by status |
+| `signed_on`, `terminated_on`, `termination_reason` | | | |
+
+**`trg_contract_frozen`** (`kg_guard_contract_frozen()`): `BEFORE UPDATE` raises if `rendered_text`, `values`, `number`, `child_id`, `guardian_id`, `template_id` or `template_version` change — the invoice principle, held by the database: a tariff change next month does not rewrite what was signed. The purge job deletes `contract` and `contract_template` before the finance and children rows they reference.
+
+---
+
 ## 21. Referential Integrity — ON DELETE Matrix
 
 `ON DELETE` behavior is chosen per relationship by **what should happen to children when a parent is removed**. Because most master data is soft-deleted, `RESTRICT`/`SET NULL` dominate; `CASCADE` is reserved for true ownership.

@@ -80,6 +80,8 @@ OPERATIONAL_TABLES: tuple[str, ...] = (
     "child",
     "child_guardian",
     "child_ledger_entry",
+    "contract",
+    "contract_template",
     "discount",
     "employee",
     "enrollment",

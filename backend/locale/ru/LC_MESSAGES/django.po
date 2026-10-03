@@ -1250,3 +1250,41 @@ msgid ""
 "Server sozlanmagan: kalitni saqlab boʻlmaydi. Administratorga murojaat qiling."
 msgstr ""
 "Сервер не настроен: ключ нельзя сохранить. Обратитесь к администратору."
+
+# Contracts (PLAN 6.5)
+msgid "Arxivdagi bolaga shartnoma tuzib boʻlmaydi."
+msgstr "Нельзя заключить договор с ребёнком из архива."
+
+msgid "Bekor qilish sanasi imzolash sanasidan oldin boʻlishi mumkin emas."
+msgstr "Дата расторжения не может быть раньше даты подписания."
+
+msgid "Bu shablon oʻchirilgan."
+msgstr "Этот шаблон отключён."
+
+msgid "Bu vasiy shu bolaga bogʻlanmagan."
+msgstr "Этот опекун не привязан к ребёнку."
+
+msgid "Faqat qoralama shartnoma imzolanadi."
+msgstr "Подписать можно только черновик договора."
+
+msgid "Imzolangan"
+msgstr "Подписан"
+
+msgid "Imzolash sanasi kelajakda boʻlishi mumkin emas."
+msgstr "Дата подписания не может быть в будущем."
+
+#, python-brace-format
+msgid "Nomaʼlum maydonlar: {names}."
+msgstr "Неизвестные поля: {names}."
+
+msgid "Shablon topilmadi."
+msgstr "Шаблон не найден."
+
+msgid "Shartnoma allaqachon bekor qilingan."
+msgstr "Договор уже расторгнут."
+
+msgid "Shartnoma raqamini band qilib boʻlmadi, qayta urining."
+msgstr "Не удалось занять номер договора, попробуйте ещё раз."
+
+msgid "Vasiy topilmadi."
+msgstr "Опекун не найден."

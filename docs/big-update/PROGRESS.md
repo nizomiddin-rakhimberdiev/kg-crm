@@ -687,3 +687,20 @@ phase branch.** Details and conflict resolutions are in the merge commit
 - Tests: 14. QA: `0005` forward → back → forward.
 - Deploy: if `migrate` fails on `ck_sub_payment_method`, some row has a method
   outside the four — report it, do not edit it (rule 5).
+
+### 6.5 Contract templates
+
+- New app `contracts`: `contract_template` (closed placeholder list checked
+  on save, `version` grows with the text) and `contract` (number
+  `SH-<year>-<nnnn>`, values and text frozen at creation; the database
+  refuses edits — `trg_contract_frozen`). `check_rls` **54**.
+- Deviation from the design note: the frozen text is **plain text**, not
+  `rendered_html` — a value typed into a child's card can never become markup
+  on a print-out; the browser prints it (D1).
+- Permissions reuse `settings.*` (templates) and `children.*` (contracts);
+  row scope (ADR-21) applies. `children/selectors.py` added so the contracts
+  view never imports children models (invariant 1).
+- UI: Settings → contract templates (placeholder buttons insert at the
+  cursor); child card → contracts (make, view, print, sign, terminate).
+- Tests: backend 17 (incl. cross-tenant 404 for child, template, contract;
+  DB refuses a text edit), frontend 2 (print writes text, not markup).

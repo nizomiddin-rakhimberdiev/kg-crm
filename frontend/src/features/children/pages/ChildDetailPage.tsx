@@ -23,6 +23,7 @@ import { ChildEditDialog } from '@/features/children/components/ChildEditDialog'
 import { ChildStatusDialog } from '@/features/children/components/ChildStatusDialog'
 import { ChildTabs } from '@/features/children/components/ChildTabs'
 import { TelegramLinkButton } from '@/features/children/components/TelegramLinkButton'
+import { ContractsCard } from '@/features/contracts/components/ContractsCard'
 import { GroupOptions } from '@/features/children/components/GroupOptions'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate, formatUZS } from '@/lib/utils'
@@ -526,6 +527,9 @@ export default function ChildDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Contracts (PLAN 6.5) — next to the guardians they are made with. */}
+      <ContractsCard childId={childId} />
 
       {/* Hisob-fakturalar, to'lovlar va tarix — mudiraning savollari
           endi bitta kartada, boshqa ekranga o'tmasdan (PLAN 2.1). */}

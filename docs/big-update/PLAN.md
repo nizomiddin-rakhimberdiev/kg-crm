@@ -325,7 +325,7 @@ Decisions taken under the owner's standing permission (design §7.3):
 - [x] **6.2** Parent bot — balance, invoices, pay button, receipts (+ absence alert, P6-5)
 - [x] **6.3** Bot linking by shared phone number (ADR-27)
 - [x] **6.4** Subscription online payment
-- [ ] **6.5** Contract templates
+- [x] **6.5** Contract templates
 - [ ] **6.6** Kitchen / menu → stock consumption
 - [ ] **6.7** Self-signup with a 14-day trial (ADR-28)
 

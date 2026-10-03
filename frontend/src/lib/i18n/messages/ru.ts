@@ -1196,4 +1196,26 @@ export const messages: Record<string, string> = {
   'Onlayn toʻlov yoʻq — bank orqali toʻlang.': 'Онлайн-оплаты нет — оплатите банковским переводом.',
   'Toʻlov tekshirilmoqda — hisob holati bir necha soniyada yangilanadi.':
     'Проверяем оплату — статус счёта обновится через несколько секунд.',
+  // Contracts (PLAN 6.5)
+  'Avval Sozlamalarda shartnoma shablonini yarating.':
+    'Сначала создайте шаблон договора в настройках.',
+  'Bekor qilingan: {date}': 'Расторгнут: {date}',
+  'Bekor qilish sababi': 'Причина расторжения',
+  Imzolandi: 'Подписан',
+  Imzolangan: 'Подписан',
+  'Imzolangan: {date}': 'Подписан: {date}',
+  Inglizcha: 'Английский',
+  'Matn tuzilgan paytdagi qiymatlar bilan saqlanadi: tarif keyin oʻzgarsa ham shartnoma oʻzgarmaydi.':
+    'Текст хранится со значениями на момент составления: даже если тариф изменится, договор останется прежним.',
+  'Maydon qoʻshish (kursor turgan joyga):': 'Вставить поле (в позицию курсора):',
+  Shablon: 'Шаблон',
+  'Shablon hali yoʻq.': 'Шаблонов пока нет.',
+  'Shablonni oʻchirasizmi? Tuzilgan shartnomalar qoladi.':
+    'Удалить шаблон? Составленные договоры останутся.',
+  'Shartnoma hali tuzilmagan.': 'Договор ещё не составлен.',
+  'Shartnoma shablonlari': 'Шаблоны договоров',
+  'Shartnoma tuzish': 'Составить договор',
+  Shartnomalar: 'Договоры',
+  'versiya {v}': 'версия {v}',
+  'Yangi shablon': 'Новый шаблон',
 }
