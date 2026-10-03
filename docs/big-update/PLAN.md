@@ -303,9 +303,9 @@ almashtiriladi, keyin o'chiriladi.
 
 ---
 
-### Bosqich 6 — FAQAT alohida buyruq bilan `[ ]`
+### Bosqich 6 — FAQAT alohida buyruq bilan `[x]` (dizayn)
 
-- [ ] `docs/big-update/phase-6-design.md` — texnik dizayn, **kod yo'q**
+- [x] `docs/big-update/phase-6-design.md` — texnik dizayn, **kod yo'q** (2026-10-03; ADR-25…27 taklif, 5 ta egasining qarori)
 
 ---
 
