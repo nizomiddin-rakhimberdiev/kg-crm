@@ -9,15 +9,13 @@
  * (`VITE_LEGAL_*`, `config/env.ts`): ular hali toʻldirilmagan va boʻsh
  * boʻlsa saytda koʻrinmaydi — `{{STIR}}` degan yozuv chiqmasligi kerak.
  *
- * Brief'dagi ikkinchi raqam `+999047267726` ATAYLAB yoʻq: u Oʻzbekiston
- * raqami boʻla olmaydi (kod +998, "04" operator kodi mavjud emas).
- * Notoʻgʻri raqamni ochiq saytga qoʻyish — mijozni begona odamga
- * qoʻngʻiroq qildirish. Tasdiqlangach shu roʻyxatga qoʻshiladi.
+ * Ikkala raqam egasi tasdiqlagan (2026-10-03): brief'da birinchisi
+ * `+999…` deb xato yozilgan edi, to'g'risi `+998947267726`.
  */
 
 export const CONTACT = {
   /** E.164 (Q7). Birinchisi — header'dagi asosiy raqam. */
-  phones: ['+998950767726'],
+  phones: ['+998947267726', '+998950767726'],
   telegram: 'nizomiddin_rakhimberdiev',
   email: 'ranizomiddin@gmail.com',
 } as const

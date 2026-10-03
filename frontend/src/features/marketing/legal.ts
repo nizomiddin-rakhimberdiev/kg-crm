@@ -44,7 +44,7 @@ export interface LegalCopy {
  * versiya ham oʻzgaradi, aks holda kim qaysi matnga rozi boʻlgani
  * aniqlanmaydi.
  */
-export const POLICY_VERSION = '2026-10'
+export const POLICY_VERSION = '2026-10-03'
 
 /** `{{…}}` belgilarini toʻldiradi; qiymat yoʻq boʻlsa belgini qoldiradi. */
 export function fillLegal(text: string): string {
@@ -71,7 +71,7 @@ export const legal: Record<Locale, LegalCopy> = {
   uz: {
     privacy: 'Maxfiylik siyosati',
     terms: 'Foydalanish shartlari',
-    updated: 'Oxirgi yangilanish: 02.10.2026',
+    updated: 'Oxirgi yangilanish: 03.10.2026',
     back: 'Bosh sahifaga qaytish',
     operator: 'Radix CRM operatori',
     privacySections: [
@@ -105,7 +105,7 @@ export const legal: Record<Locale, LegalCopy> = {
       },
       {
         title: '8. Uchinchi shaxslar',
-        text: 'Hosting provayderi — serverlar va zaxira nusxalar uchun.\nTelegram — ota-ona bogʻcha botiga oʻzi ulangan boʻlsa, xabarlar shu orqali yetkaziladi.\nSMS provayder (Eskiz.uz) — faqat bogʻcha SMS kanalini yoqqan boʻlsa.\nEmail yetkazish xizmati — parolni tiklash va taklif xatlari uchun.\nGoogle Fonts — sayt shriftini yuklashda brauzeringiz IP manzilini Google serveriga yuboradi.\nBoshqa analitika yoki reklama xizmatlari ishlatilmaydi.',
+        text: 'Hosting provayderi — serverlar va zaxira nusxalar uchun.\nTelegram — ota-ona bogʻcha botiga oʻzi ulangan boʻlsa, xabarlar shu orqali yetkaziladi.\nSMS provayder (Eskiz.uz) — faqat bogʻcha SMS kanalini yoqqan boʻlsa.\nEmail yetkazish xizmati — parolni tiklash va taklif xatlari uchun.\nBoshqa analitika yoki reklama xizmatlari ishlatilmaydi.',
       },
       {
         title: '9. Sizning huquqlaringiz',
@@ -174,7 +174,7 @@ export const legal: Record<Locale, LegalCopy> = {
   ru: {
     privacy: 'Политика конфиденциальности',
     terms: 'Условия использования',
-    updated: 'Последнее обновление: 02.10.2026',
+    updated: 'Последнее обновление: 03.10.2026',
     back: 'Вернуться на главную',
     operator: 'Оператор Radix CRM',
     privacySections: [
@@ -208,7 +208,7 @@ export const legal: Record<Locale, LegalCopy> = {
       },
       {
         title: '8. Третьи лица',
-        text: 'Хостинг-провайдер — серверы и резервные копии.\nTelegram — если родитель сам подключился к боту сада, сообщения доставляются через него.\nSMS-провайдер (Eskiz.uz) — только если сад включил SMS.\nСервис доставки e-mail — письма для сброса пароля и приглашения.\nGoogle Fonts — при загрузке шрифта сайта браузер передаёт ваш IP-адрес серверу Google.\nДругие сервисы аналитики или рекламы не используются.',
+        text: 'Хостинг-провайдер — серверы и резервные копии.\nTelegram — если родитель сам подключился к боту сада, сообщения доставляются через него.\nSMS-провайдер (Eskiz.uz) — только если сад включил SMS.\nСервис доставки e-mail — письма для сброса пароля и приглашения.\nДругие сервисы аналитики или рекламы не используются.',
       },
       {
         title: '9. Ваши права',
@@ -277,7 +277,7 @@ export const legal: Record<Locale, LegalCopy> = {
   en: {
     privacy: 'Privacy Policy',
     terms: 'Terms of Use',
-    updated: 'Last updated: 02.10.2026',
+    updated: 'Last updated: 03.10.2026',
     back: 'Back to the home page',
     operator: 'Radix CRM operator',
     privacySections: [
@@ -311,7 +311,7 @@ export const legal: Record<Locale, LegalCopy> = {
       },
       {
         title: '8. Third parties',
-        text: 'Hosting provider — servers and backups.\nTelegram — if a parent joined the kindergarten’s bot themselves, messages are delivered through it.\nSMS provider (Eskiz.uz) — only if the kindergarten has switched SMS on.\nE-mail delivery service — password-reset and invitation e-mails.\nGoogle Fonts — loading the website font sends your browser’s IP address to Google.\nNo other analytics or advertising services are used.',
+        text: 'Hosting provider — servers and backups.\nTelegram — if a parent joined the kindergarten’s bot themselves, messages are delivered through it.\nSMS provider (Eskiz.uz) — only if the kindergarten has switched SMS on.\nE-mail delivery service — password-reset and invitation e-mails.\nNo other analytics or advertising services are used.',
       },
       {
         title: '9. Your rights',

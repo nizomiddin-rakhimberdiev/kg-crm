@@ -23,8 +23,6 @@ if (process.env.VITE_DEPLOYMENT_MODE === 'standalone') {
   process.exit(0)
 }
 
-const FONT_HREF =
-  'https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap'
 
 // React 18: «useLayoutEffect does nothing on the server» — Reveal/DeepDive
 // shu hook'ni brauzer uchun ishlatadi, serverda u shunchaki o'tkazib
@@ -47,15 +45,8 @@ const preload = landingChunk ? `<link rel="modulepreload" href="/assets/${landin
 
 // Qobiqdagi sukut meta (title, description, og:*) olib tashlanadi — sahifa
 // o'zinikini qo'yadi; ikkita <title> bo'lmasin.
-//
-// Ilova shriftlari (Golos Text, JetBrains Mono) ham olib tashlanadi —
-// public sayt BITTA shriftda (PLAN 5.7), uning havolasi `FONT_HREF`.
 const stripDefaultMeta = (html) =>
   html
-    .replace(
-      /\s*<link\s+href="https:\/\/fonts\.googleapis\.com\/css2[^"]*"\s+rel="stylesheet"\s*\/?>/,
-      '',
-    )
     .replace(/\s*<title>[^<]*<\/title>/, '')
     .replace(/\s*<meta name="description"[^>]*>/, '')
     .replace(/\s*<meta name="robots"[^>]*>/, '')
@@ -69,13 +60,13 @@ for (const page of entry.prerenderPages()) {
     .replace('<html lang="uz">', `<html lang="${page.lang}">`)
     .replace(
       '</head>',
-      `    ${page.head}\n    <link rel="stylesheet" href="${FONT_HREF}" />\n    ${preload}\n  </head>`,
+      `    ${page.head}\n    ${preload}\n  </head>`,
     )
     .replace('<div id="root"></div>', `<div id="root">${page.body}</div>`)
-  // Bitta shrift (PLAN 5.7): ilova shriftining havolasi qolib ketsa,
-  // brauzer uni baribir yuklaydi — jimgina, sahifa tezligi hisobiga.
-  if (/Golos|JetBrains/.test(html)) {
-    throw new Error(`prerender: ${page.path} da ilova shrifti qoldi (Golos/JetBrains)`)
+  // Shriftlar o'z serverimizdan: tashqi shrift xizmati qaytib kelsa,
+  // tashrif ma'lumoti yana uchinchi shaxsga keta boshlaydi.
+  if (/fonts\.googleapis|fonts\.gstatic/.test(html)) {
+    throw new Error(`prerender: ${page.path} da tashqi shrift havolasi bor`)
   }
   // Huquqiy sahifada toʻldirilmagan rekvizit (PLAN 5.8) — build
   // yiqilmaydi (lokal build'da `.env` boʻsh), lekin baland ogohlantirish:
@@ -99,17 +90,13 @@ for (const page of entry.prerenderPages()) {
 const notFound = entry.notFoundPage()
 const notFoundHtml = stripDefaultMeta(template)
   .replace(/\s*<script type="module"[^>]*><\/script>/, '')
-  .replace(
-    '</head>',
-    `    ${notFound.head}\n    <link rel="stylesheet" href="${FONT_HREF}" />\n  </head>`,
-  )
+  .replace('</head>', `    ${notFound.head}\n  </head>`)
   .replace('<div id="root"></div>', `<div id="root">${notFound.body}</div>`)
 if (notFoundHtml.includes('type="module"')) {
   throw new Error('prerender: 404.html ichida SPA skripti qoldi')
 }
-// Bitta shrift (PLAN 5.7) — ilova shriftlari public sahifaga tushmasin.
-for (const family of ['Golos', 'JetBrains']) {
-  if (notFoundHtml.includes(family)) throw new Error(`prerender: 404.html da ${family} qoldi`)
+if (/fonts\.googleapis|fonts\.gstatic/.test(notFoundHtml)) {
+  throw new Error('prerender: 404.html da tashqi shrift havolasi bor')
 }
 await writeFile(path.join(dist, '404.html'), notFoundHtml)
 count += 1

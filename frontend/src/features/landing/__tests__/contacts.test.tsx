@@ -17,8 +17,12 @@ vi.mock('@/features/marketing/api', () => ({
 describe('aloqa', () => {
   it('raqam oʻqiladigan koʻrinishda va bosilganda qoʻngʻiroq qiladi', () => {
     render(<ContactList locale="uz" />)
-    const phone = screen.getByText('+998 95 076 77 26')
-    expect(phone.closest('a')).toHaveAttribute('href', 'tel:+998950767726')
+    const phone = screen.getByText('+998 94 726 77 26')
+    expect(phone.closest('a')).toHaveAttribute('href', 'tel:+998947267726')
+    expect(screen.getByText('+998 95 076 77 26').closest('a')).toHaveAttribute(
+      'href',
+      'tel:+998950767726',
+    )
     expect(screen.getByText(`@${CONTACT.telegram}`).closest('a')).toHaveAttribute(
       'href',
       telegramUrl,
@@ -30,8 +34,8 @@ describe('aloqa', () => {
   })
 
   it('faqat Oʻzbekiston formatidagi raqamlar chiqadi', () => {
-    // Brief'dagi `+999…` raqami tasdiqlanmaguncha yoʻq: notoʻgʻri
-    // raqam mijozni begona odamga qoʻngʻiroq qildiradi.
+    // Format xatosi (`+999…`) ochiq saytga chiqmasin: notoʻgʻri raqam
+    // mijozni begona odamga qoʻngʻiroq qildiradi.
     for (const phone of CONTACT.phones) {
       expect(phone).toMatch(/^\+998\d{9}$/)
     }

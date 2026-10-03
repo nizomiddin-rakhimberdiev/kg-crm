@@ -1,5 +1,6 @@
 import ReactDOM from 'react-dom/client'
 import { initI18n } from './lib/i18n'
+import './fonts'
 import './index.css'
 
 const rootEl = document.getElementById('root')!
