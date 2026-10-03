@@ -88,6 +88,7 @@ const NotificationsPage = lazy(() => import('./features/notifications/pages/Noti
 const AuditPage = lazy(() => import('./features/audit/pages/AuditPage'))
 const BillingPage = lazy(() => import('./features/billing/pages/BillingPage'))
 const SettingsPage = lazy(() => import('./features/settings/pages/SettingsPage'))
+const PayPage = lazy(() => import('./features/online-payments/pages/PayPage'))
 
 /**
  * Marshrutlar (docs/05 §9).
@@ -200,6 +201,23 @@ const saasOnlyRoutes = env.isStandalone
  */
 export const routes: RouteObject[] = [
   ...saasOnlyRoutes,
+  // The parent's payment page (PLAN 6.1). Outside both `PublicOnlyRoute`
+  // (a logged-in cashier opening the link must see it, not be redirected)
+  // and the CRM tree; present in both deployment modes.
+  {
+    path: '/pay/:token',
+    element: (
+      <Suspense
+        fallback={
+          <div className="grid min-h-screen place-items-center text-sm text-slate-400">
+            {t('Yuklanmoqda…')}
+          </div>
+        }
+      >
+        <PayPage />
+      </Suspense>
+    ),
+  },
   {
     element: <PublicOnlyRoute />,
     children: [

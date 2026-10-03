@@ -1158,4 +1158,38 @@ export const messages: Record<string, string> = {
   'Oylik tabel': 'Monthly timesheet',
   'Qolganlar keldi': 'Everyone else present',
   'Saqlash ({v})': 'Save ({v})',
+  // Online payments (PLAN 6.1)
+  '{period} uchun toʻlov': 'Payment for {period}',
+  '{provider} orqali toʻlash': 'Pay with {provider}',
+  '{provider} orqali toʻlovni oʻchirasizmi?': 'Turn off payments with {provider}?',
+  'Birozdan keyin sahifani qayta oching.': 'Open the page again a little later.',
+  'Bogʻchadan yangi toʻlov havolasini soʻrang.': 'Ask the kindergarten for a new payment link.',
+  'Havola {date} gacha ishlaydi.': 'The link works until {date}.',
+  'Havola eskirgan yoki notoʻgʻri': 'The link has expired or is invalid',
+  'Hisob-faktura: {money}': 'Invoice: {money}',
+  'Kalitni almashtirish': 'Replace key',
+  'Kassa ID (merchant)': 'Cashbox ID (merchant)',
+  'Maxfiy kalit': 'Secret key',
+  'Merchant ID': 'Merchant ID',
+  'Onlayn toʻlov': 'Online payment',
+  'Onlayn toʻlov havolasi (Payme / Click)': 'Online payment link (Payme / Click)',
+  'Onlayn toʻlov hozircha mavjud emas. Bogʻcha bilan bogʻlaning.':
+    'Online payment is not available yet. Contact the kindergarten.',
+  'Ota-onaga yuboring — toʻlov oʻzi yoziladi': 'Send it to the parent — the payment records itself',
+  'Ota-onalar Payme yoki Click orqali toʻlaydi, pul toʻgʻridan-toʻgʻri bogʻchangiz hisobiga tushadi va toʻlov tizimga oʻzi yoziladi. Kalitlarni toʻlov tizimining kabinetidan oling.':
+    "Parents pay with Payme or Click, the money goes straight to your kindergarten's account and the payment is recorded automatically. Take the keys from the payment system's merchant cabinet.",
+  'Pul toʻgʻridan-toʻgʻri bogʻchaning hisobiga tushadi. Karta maʼlumotlari faqat toʻlov tizimi sahifasida kiritiladi.':
+    "The money goes straight to the kindergarten's account. Card details are entered only on the payment system's page.",
+  'Rahmat! Bogʻcha toʻlovni koʻradi.': 'Thank you! The kindergarten will see the payment.',
+  'Service ID': 'Service ID',
+  'sinov rejimi': 'test mode',
+  'Sinov rejimi (sandbox)': 'Test mode (sandbox)',
+  'Telegramda yuborish': 'Send via Telegram',
+  'Toʻlov tekshirilmoqda — sahifa oʻzi yangilanadi.':
+    'Checking the payment — the page will update by itself.',
+  'Toʻlov tizimi kabinetiga kiritiladigan manzil':
+    "Address for the payment system's merchant cabinet",
+  'Ulangan · kalit …{hint}': 'Connected · key …{hint}',
+  Ulanmagan: 'Not connected',
+  Ulash: 'Connect',
 }

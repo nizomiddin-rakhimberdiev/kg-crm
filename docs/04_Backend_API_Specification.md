@@ -557,6 +557,21 @@ Row: `{child_id, child_name, group_name, invoice_id, invoice_number, charged, pa
 
 ---
 
+### 9.8 Online payments — Payme / Click (ADR-26, PLAN 6.1)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/online-payments/links` | `payments.create` + write gate | `{invoice_id}` → `201 {url, expires_at}`. Reuses an unexpired link. `404` for another tenant's invoice; `422` when nothing is left to pay or no provider is connected |
+| GET | `/online-payments/credentials` | `settings.read` | One row per provider: `{provider, configured, merchant_id, service_id, secret_hint, sandbox, webhook_url}` — the secret never comes back |
+| PUT | `/online-payments/credentials/{payme\|click}` | `settings.update` + write gate | `{merchant_id, service_id (Click), secret, sandbox}`; audited **without** the secret |
+| DELETE | `/online-payments/credentials/{provider}` | `settings.delete` + write gate | Switches the provider off (row deactivated, not deleted) |
+| GET | `/public/pay/link/{token}` | none (anon throttle) | The parent's page: `{kindergarten, logo_url, child ("Ali V."), invoice, period, amount_due, payable, is_paid, providers: {payme?: url, click?: url}}`. `404` for an unknown, expired or forged token |
+| POST | `/public/pay/payme/{organization_id}` | Basic `Paycom:<key>` | Payme Merchant API (JSON-RPC): `CheckPerformTransaction`, `CreateTransaction`, `PerformTransaction`, `CancelTransaction`, `CheckTransaction`, `GetStatement`. Answers in **Payme's** format, always HTTP 200 |
+| POST | `/public/pay/click/{organization_id}` | MD5 `sign_string` | Click SHOP-API `action=0` (prepare) / `action=1` (complete). Answers in **Click's** format |
+
+The two provider endpoints are the documented exception to the response envelope (§2): the provider dictates the shape. The tenant comes from the URL, the call runs inside that organization's context, and an invoice of another kindergarten is answered as "not found" (Payme `-31050`, Click `-5`). Payme amounts are in tiyin; Payme's 12-hour limit on an unperformed transaction cancels it with reason `4`. A cancellation after payment reverses the payment (counter-entries); a retried perform/complete returns the same result and never records money twice.
+
+---
+
 ## 10. Debtors
 
 Module: `debtors` — **derived view over the finance ledger** ([03 §13.7](./03_Database_Design.md)). Read-only.

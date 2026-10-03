@@ -623,3 +623,29 @@ phase branch.** Details and conflict resolutions are in the merge commit
   otherwise it applies now. Either way Django then applies the big-update
   migrations and the merge nodes; run `check_rls` (expect 47).
 - Phase-6 ADR proposals renumbered to ADR-26…28 (ADR-25 is main's).
+
+---
+
+## 2026-10-03 — Phase 6 (branch `big-update/phase-6-code`, from `merge-main`)
+
+### 6.1 Payme / Click — parent online payment (ADR-26)
+
+- New app `online_payments`: `merchant_credential` (Fernet-encrypted secret,
+  `MERCHANT_SECRET_KEY`), `payment_link` (30 days, token embeds the org),
+  `online_transaction` (`UNIQUE (provider, provider_txn_id)`).
+- Payme Merchant API (all six methods, 12-hour timeout → reason 4) and Click
+  SHOP-API (prepare/complete, MD5 sign). Tenant from the URL, everything in
+  `organization_context`; RLS not widened. Perform → `record_payment(method=
+  online)` — ledger, allocation, cash movement into the "Payme / Click" pot in
+  one transaction; cancel after perform → `reverse_payment`.
+- Staff: "Online payment link" in the cashier's payment window (copy / send to
+  Telegram); Settings → Online payment (keys, sandbox, callback URL to paste
+  into the merchant cabinet). Parent: public `/pay/:token` page (uz/ru/en),
+  added to the nginx SPA whitelist.
+- Tests: 37 backend (Payme 15, Click 9, endpoints 13 — incl. cross-tenant 404
+  for invoice, token and Payme/Click calls) + 3 frontend.
+- QA rehearsal: `online_payments.0001` forward → zero → forward, `check_rls`
+  **50**.
+- Deploy: set `MERCHANT_SECRET_KEY` in `.env` **before** the first kindergarten
+  saves keys (production refuses to save without it; never change it later).
+  `cryptography` added to requirements → image rebuild.

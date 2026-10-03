@@ -27,6 +27,7 @@ import {
   paymentMethodIcon,
   paymentMethodLabel,
 } from '@/features/payments/methods'
+import { PaymentLinkButton } from '@/features/online-payments/components/PaymentLinkButton'
 import { invalidateMoney } from '@/lib/api/invalidate'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
@@ -465,6 +466,15 @@ export function TakePaymentModal({
               )}
             </ul>
           </div>
+        )}
+
+        {/* Online payment link (PLAN 6.1) — for the document the money
+            would settle first: the chosen one, otherwise the oldest. */}
+        {openInvoices.length > 0 && can('payments.create') && tenders.length === 0 && (
+          <PaymentLinkButton
+            key={preferred ?? openInvoices[0].id}
+            invoiceId={preferred ?? openInvoices[0].id}
+          />
         )}
 
         {/* Hisob-fakturani bekor qilish — shu oynada, chunki faktura

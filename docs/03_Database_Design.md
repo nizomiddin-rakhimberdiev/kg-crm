@@ -1310,6 +1310,53 @@ The RLS policy is applied by the app's own migration (`intelligence.0001`) throu
 
 ---
 
+## 20b. Schema Domain: Online Payments (ADR-26, PLAN 6.1)
+
+Three tenant tables, all with the standard guards: immutable `organization_id`, `ON DELETE RESTRICT`, and a `FORCE`d RLS policy applied by the app's own migration (`online_payments.0001`) — `check_rls` expects **50** tables. The money itself is **not** stored here: a performed transaction writes an ordinary `payment` (§ finance), ledger credit, allocation and `cash_movement`; these rows are the provider-side record that links to it.
+
+### 20b.1 `merchant_credential`
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `organization_id` | `UUID` | `NOT NULL`, FK `RESTRICT` | Keys belong to the organization, not a branch |
+| `provider` | `VARCHAR(10)` | `NOT NULL` | `payme` \| `click` |
+| `merchant_id` | `VARCHAR(64)` | `NOT NULL` | Payme cashbox id / Click merchant id |
+| `service_id` | `VARCHAR(32)` | | Click only (required there) |
+| `secret_encrypted` | `TEXT` | `NOT NULL` | Fernet token under `MERCHANT_SECRET_KEY`; never returned by the API |
+| `secret_hint` | `VARCHAR(4)` | | Last four characters, for the settings screen |
+| `sandbox` | `BOOLEAN` | `NOT NULL DEFAULT false` | Payme test checkout |
+| `is_active` | `BOOLEAN` | | Replacing a key deactivates the old row (history kept) |
+
+`uq_merchant_credential_active` — `UNIQUE (organization_id, provider) WHERE is_active`.
+
+### 20b.2 `payment_link`
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `organization_id`, `branch_id` | `UUID` | `NOT NULL`, FK `RESTRICT` | Branch of the invoice |
+| `invoice_id` | `UUID` | `NOT NULL`, FK `RESTRICT` | |
+| `token` | `VARCHAR(64)` | `UNIQUE` | `base64url(org uuid + random bytes)` — the organization is recoverable without a lookup, so the public page needs no RLS exit |
+| `expires_at` | `TIMESTAMPTZ` | `NOT NULL` | 30 days; asking again reuses an unexpired link |
+| `created_by` | `UUID` | FK → `user` `SET NULL` | |
+
+### 20b.3 `online_transaction`
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `organization_id`, `branch_id` | `UUID` | `NOT NULL`, FK `RESTRICT` | |
+| `provider` | `VARCHAR(10)` | `NOT NULL` | |
+| `provider_txn_id` | `VARCHAR(64)` | `NOT NULL` | Payme `id` / Click `click_trans_id` |
+| `invoice_id` | `UUID` | `NOT NULL`, FK `RESTRICT` | Payme `account.invoice` / Click `merchant_trans_id` |
+| `amount` | `NUMERIC(12,2)` | `ck_online_txn_amount` (`> 0`) | So'm; Payme's tiyin are converted with `Decimal`, never float |
+| `state` | `SMALLINT` | `NOT NULL DEFAULT 1` | Payme's states: `1` created, `2` performed, `-1` cancelled before, `-2` cancelled after payment |
+| `reason` | `SMALLINT` | | Provider's cancel reason (`4` = our 12-hour timeout) |
+| `payment_id` | `UUID` | FK → `payment` `RESTRICT` | Set when performed |
+| `provider_time` | `BIGINT` | | Provider's own timestamp (ms), echoed back |
+| `performed_at`, `cancelled_at` | `TIMESTAMPTZ` | | |
+
+`uq_online_txn_provider_id` — `UNIQUE (provider, provider_txn_id)`: a retried callback finds the same row, so money is recorded once. The payment's idempotency key is `provider:provider_txn_id` as a second guard.
+
+The purge job deletes `online_transaction`, `payment_link`, `merchant_credential` right after `cash_movement`.
+
+---
+
 ## 21. Referential Integrity — ON DELETE Matrix
 
 `ON DELETE` behavior is chosen per relationship by **what should happen to children when a parent is removed**. Because most master data is soft-deleted, `RESTRICT`/`SET NULL` dominate; `CASCADE` is reserved for true ownership.
