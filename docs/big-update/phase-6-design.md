@@ -1,6 +1,6 @@
 # 6-bosqich — texnik dizayn (kod YO'Q)
 
-Holat: **dizayn**, 2026-10-03. Brief: "Hozircha faqat shu hujjatga
+Holat: **dizayn**, 2026-10-03. ADR-25 `main` da band (RBAC delegatsiya tuzatishi), shuning uchun takliflar ADR-26 dan boshlanadi. Brief: "Hozircha faqat shu hujjatga
 texnik dizayn yoz, kod yozma." Har bir bo'lim mavjud arxitekturaga
 tayanadi — yangi qarorlar ADR sifatida belgilangan va kod yozilishidan
 oldin `docs/02 §2` ga ko'chiriladi.
@@ -48,7 +48,7 @@ yuk. Demak:
   va merchant kalitlarini Sozlamalarga kiritadi;
 - Radix faqat integratsiyani beradi: to'lov havolasi, webhook, ledger.
 
-**ADR-25 (taklif):** *Onlayn to'lov — bog'chaning o'z merchant hisobi
+**ADR-26 (taklif):** *Onlayn to'lov — bog'chaning o'z merchant hisobi
 orqali; Radix pulni ushlab turmaydi.*
 
 ### 1.2 Oqim
@@ -204,7 +204,7 @@ Muammo: raqam bo'yicha vasiyni qidirish **tenantlar bo'ylab** qidiruv,
 webhook esa tenant kontekstisiz. RLS'ni kengaytirmaslik uchun
 (ADR-23 dagi tamoyil):
 
-**ADR-26 (taklif):** `guardian_phone_index` — platforma tekisligidagi
+**ADR-27 (taklif):** `guardian_phone_index` — platforma tekisligidagi
 tor indeks jadvali: `(phone_hmac CHAR(64), organization_id)`. Vasiy
 saqlanganda servis uni yangilaydi. Ochiq raqam YO'Q — faqat
 `HMAC-SHA256(PHONE_INDEX_KEY, normalised_phone)`; bu jadvaldan
@@ -308,7 +308,7 @@ olib tashlangan (docs/04 §5) — sababi tasodifiy tashrif bazada abadiy
 qoladigan tenant yaratardi. Qaytarishdan oldin o'sha sababni yopish
 kerak.
 
-**ADR-27 (taklif):** *Mustaqil ro'yxatdan o'tish — email tasdiqlangandan
+**ADR-28 (taklif):** *Mustaqil ro'yxatdan o'tish — email tasdiqlangandan
 keyingina tenant yaratiladi; tasdiqlanmagan va to'lovga o'tmagan sinov
 eksport oynasidan keyin audit bilan o'chiriladi.*
 
@@ -328,7 +328,7 @@ eksport oynasidan keyin audit bilan o'chiriladi.*
    oynasi → `purge_organization` (PLAN 5.10 da tuzatilgan tartib bilan).
    Bu ADR-11 dagi "ma'lumot o'chirilmaydi" bilan ziddiyat emas: u
    **to'lovchi** mijoz haqida; hech qachon to'lamagan sinov tenant —
-   alohida holat va uni egasi ADR-27 da tasdiqlashi kerak.
+   alohida holat va uni egasi ADR-28 da tasdiqlashi kerak.
 6. Har ro'yxatdan o'tish sotuv konsolida lead sifatida ham ko'rinadi
    (mavjud `Lead`, manba `self_signup`).
 
@@ -344,11 +344,11 @@ eksport oynasidan keyin audit bilan o'chiriladi.*
 |---|---|---|---|
 | 6.1 | Payme/Click — ota-ona to'lovi | — | katta |
 | 6.2 | Telegram bot — balans, fakturalar, to'lash | 6.1 (to'lash tugmasi) | o'rta |
-| 6.3 | Telefon orqali ulanish (ADR-26) | 6.2 | kichik |
+| 6.3 | Telefon orqali ulanish (ADR-27) | 6.2 | kichik |
 | 6.4 | Obuna onlayn to'lovi | 6.1 adapterlari | kichik |
 | 6.5 | Shartnoma shablonlari | — | o'rta |
 | 6.6 | Oshxona / menyu | — | o'rta |
-| 6.7 | Mustaqil ro'yxatdan o'tish (ADR-27) | egasining qarori | o'rta |
+| 6.7 | Mustaqil ro'yxatdan o'tish (ADR-28) | egasining qarori | o'rta |
 
 Sabab: 6.1 — pul olib keladigan va eng ko'p so'raladigan; 6.2/6.3
 uning ustiga quriladi; 6.7 eng oxirida, chunki u mavjud qarorni bekor
@@ -368,10 +368,10 @@ qiladi.
 ### 7.3 Egasining qarori kerak (kod boshlanishidan oldin)
 
 1. **Payme va Click shartnomalari** — har bog'cha o'zi tuzadimi
-   (tavsiya — ha, ADR-25), yoki Radix bitta umumiy hisob ochadimi?
+   (tavsiya — ha, ADR-26), yoki Radix bitta umumiy hisob ochadimi?
 2. Provayder komissiyasini kim to'laydi — bog'cha yoki ota-ona
    (summa ustiga qo'shiladimi)?
 3. Obuna uchun Radix'ning o'z Payme/Click merchant hisobi.
-4. **ADR-27** — ochiq ro'yxatdan o'tishni qaytarish va to'lamagan
+4. **ADR-28** — ochiq ro'yxatdan o'tishni qaytarish va to'lamagan
    sinovlarni o'chirish siyosati.
 5. Ota-onaga "kelmadi" xabari sukut bo'yicha o'chiq qolsinmi.
