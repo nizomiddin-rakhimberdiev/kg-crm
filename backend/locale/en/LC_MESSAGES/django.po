@@ -1351,3 +1351,31 @@ msgstr "Dish not found."
 
 msgid "Tushlik"
 msgstr "Lunch"
+
+# Self-signup (PLAN 6.7)
+msgid "Radix CRM — bogʻchangizni ochish"
+msgstr "Radix CRM — open your kindergarten"
+
+#, python-brace-format
+msgid ""
+"Assalomu alaykum, {name}!\n"
+"\n"
+"«{kindergarten}» uchun Radix CRM sinovini ochish uchun havolani bosing va parolingizni oʻrnating:\n"
+"\n"
+"{link}\n"
+"\n"
+"Havola 24 soat ishlaydi. Agar siz soʻramagan boʻlsangiz, bu xatni eʼtiborsiz qoldiring — hech narsa yaratilmaydi."
+msgstr ""
+"Hello, {name}!\n"
+"\n"
+"To open the Radix CRM trial for “{kindergarten}”, follow the link and set your password:\n"
+"\n"
+"{link}\n"
+"\n"
+"The link works for 24 hours. If you did not ask for this, ignore this e-mail — nothing will be created."
+
+msgid "Havola eskirgan yoki ishlatilgan. Roʻyxatdan oʻtishni qaytadan boshlang."
+msgstr "The link has expired or was already used. Please start the sign-up again."
+
+msgid "Bu email bilan sinov allaqachon ochilgan. Kirish sahifasidan kiring yoki ikkinchi bogʻcha uchun biz bilan bogʻlaning."
+msgstr "A trial has already been opened with this e-mail. Sign in, or contact us about a second kindergarten."

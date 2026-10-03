@@ -14,7 +14,7 @@
  */
 
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { LogIn, MailCheck } from 'lucide-react'
 import { Logo } from '@/components/brand/Logo'
 import { OrgMark } from '@/components/brand/OrgMark'
@@ -25,6 +25,7 @@ import { ApiError, isPendingChoice, type OrganizationSummary } from '@/lib/api/t
 import { cn } from '@/lib/utils'
 import { LanguageSwitch } from '@/components/layout/LanguageSwitch'
 import { t } from '@/lib/i18n'
+import { env } from '@/config/env'
 
 type Stage =
   | { kind: 'credentials' }
@@ -225,6 +226,15 @@ export default function LoginPage() {
                 <LogIn className="h-4 w-4" />
                 {busy ? t('Tekshirilmoqda…') : t('Kirish')}
               </button>
+
+              {/* Self-signup (PLAN 6.7): only where there is a subscription. */}
+              {!env.isStandalone && (
+                <p className="text-center text-sm text-tosh-500">
+                  <Link to="/signup" className="hover:text-nihol-700 hover:underline">
+                    {t('Bogʻchangiz hali yoʻqmi? 14 kunlik sinovni boshlang')}
+                  </Link>
+                </p>
+              )}
             </form>
           ) : (
             <div className="space-y-3">

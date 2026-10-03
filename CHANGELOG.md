@@ -75,7 +75,21 @@ Bajarilgani: [`docs/big-update/PROGRESS.md`](./docs/big-update/PROGRESS.md)
   tarjima, ruxsatlar tarixi, reja va to'lov davrini o'zgartirish,
   faollik, taxminiy oylik. Zaxira cron o'rnatuvchisi.
 
+- **Phase 6 — payments, parent bot, contracts, kitchen, self-signup.**
+  Parents pay invoices with Payme / Click into the kindergarten's own
+  merchant (ADR-26) from a link or the Telegram bot; the payment is
+  recorded like a cashier's. The bot shows balance, invoices, receipts and a
+  pay button, and links by a shared phone number through an HMAC contact
+  index (ADR-27). Subscription invoices can be paid online to Radix's own
+  merchant (same protocol code, separate ledger). Contract templates with
+  frozen, printable contracts. Kitchen: dishes, daily menu, serving writes
+  stock consumption. Self-signup with a 14-day trial; the tenant appears
+  only after the e-mail link is opened (ADR-28). "Your child is absent
+  today" message, off by default.
+
 ### Tuzatildi
+- **`subscription_payment.method` CHECK** — documented in 03 §20.5 from the
+  start, but never created; added with the `online` method.
 - **Dashboard pul harakatidan keyin 2 daqiqa eski qarzni ko'rsatardi** —
   kesh hech qachon bekor qilinmasdi.
 - **1-sanadan chiqib ketgan bolaga o'sha oy uchun faktura yozilardi.**

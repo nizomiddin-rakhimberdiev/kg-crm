@@ -1260,4 +1260,24 @@ export const messages: Record<string, string> = {
   Tushlik: 'Lunch',
   'Xodimlar porsiyasi': 'Staff portions',
   'Yangi taom': 'New dish',
+  // Self-signup (PLAN 6.7)
+  '{email} manziliga havola yubordik. Uni 24 soat ichida oching va parol oʻrnating — bogʻchangiz shundan keyin ochiladi.':
+    'We sent a link to {email}. Open it within 24 hours and set a password — your kindergarten opens after that.',
+  'Bogʻchangiz ochildi — 14 kunlik sinov boshlandi. Endi kiring.':
+    'Your kindergarten is open — the 14-day trial has started. Sign in now.',
+  'Bogʻchani ochish': 'Open the kindergarten',
+  'Bolalar soni': 'Number of children',
+  'Hisobingiz bormi? Kirish': 'Already have an account? Sign in',
+  Ismingiz: 'Your name',
+  'maxfiylik siyosati': 'privacy policy',
+  'Parol oʻrnating': 'Set a password',
+  'Pochtangizni tekshiring': 'Check your e-mail',
+  Shahar: 'City',
+  'Shaxsiy maʼlumotlarga ishlov berishga roziman': 'I agree to the processing of my personal data',
+  '14 kunlik sinov — mos kelmasa, hech narsa toʻlamaysiz':
+    "14-day trial — pay nothing if it isn't for you",
+  'Bogʻchangiz hali yoʻqmi? 14 kunlik sinovni boshlang':
+    'No kindergarten yet? Start a 14-day trial',
+  'Karta soʻralmaydi. Davom ettirsangiz, birinchi toʻlangan oy sinov boshlangan kundan hisoblanadi. Davom ettirmasangiz — hech narsa toʻlamaysiz, maʼlumotlaringiz 30 kun yuklab olish uchun saqlanadi.':
+    'No card needed. If you continue, the first paid month counts from the start of the trial. If not, you pay nothing and your data stays available for export for 30 days.',
 }

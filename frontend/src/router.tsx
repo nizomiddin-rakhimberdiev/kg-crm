@@ -89,6 +89,8 @@ const AuditPage = lazy(() => import('./features/audit/pages/AuditPage'))
 const BillingPage = lazy(() => import('./features/billing/pages/BillingPage'))
 const SettingsPage = lazy(() => import('./features/settings/pages/SettingsPage'))
 const PayPage = lazy(() => import('./features/online-payments/pages/PayPage'))
+const SignupPage = lazy(() => import('./features/signup/pages/SignupPage'))
+const SignupConfirmPage = lazy(() => import('./features/signup/pages/SignupConfirmPage'))
 
 /**
  * Marshrutlar (docs/05 §9).
@@ -154,6 +156,9 @@ const saasOnlyRoutes = env.isStandalone
           { path: '/uz/terms', element: <LegalPage locale="uz" page="terms" /> },
           { path: '/ru/terms', element: <LegalPage locale="ru" page="terms" /> },
           { path: '/en/terms', element: <LegalPage locale="en" page="terms" /> },
+          // Self-signup with a 14-day trial (PLAN 6.7) — SaaS only.
+          { path: '/signup', element: <SignupPage /> },
+          { path: '/signup/confirm', element: <SignupConfirmPage /> },
           // Sinov davridagi havolalar — bosh sahifaga.
           { path: '/test-redesign', element: <Navigate replace to="/uz" /> },
           { path: '/test-redesign/ru', element: <Navigate replace to="/ru" /> },

@@ -54,6 +54,7 @@ def create_lead(*, data: dict[str, Any]) -> tuple[Lead, bool]:
                 consented_at=timezone.now(),
                 privacy_policy_version=data["privacy_policy_version"],
                 submission_id=submission_id,
+                source=data.get("source", "website"),
             )
         # Sotuvga darhol xabar (PLAN 3.6). `transaction.on_commit`:
         # ariza BAZAGA tushgandan keyin yuboriladi, aks holda

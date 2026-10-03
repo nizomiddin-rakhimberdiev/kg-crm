@@ -132,13 +132,13 @@ Worked examples: 50 children → 400 000 · 80 children → 550 000 · 150 child
 
 **15-day risk-free trial** — no card, no upfront payment.
 
-- **Accounts are opened by us, not by the customer.** There is no public signup: vendor staff create the organization from the platform console ([04 §19](./04_Backend_API_Specification.md)). This follows the model rather than restricting it — customers are legal entities who buy after a conversation and pay by bank transfer, and every account created is a permanent tenant whose data is never deleted (ADR-11).
+- **Two ways to open an account.** Vendor staff create the organization from the platform console ([04 §19](./04_Backend_API_Specification.md)) — the sales-led path, 15-day trial. **Since PLAN 6.7 (ADR-28) a kindergarten can also sign up itself** — a **14-day** trial (the owner's brief) — but the tenant is created only after the e-mailed link is opened and a password set; an unconfirmed request leaves no tenant and is removed after 7 days, and one e-mail gets one self-signup trial. *The two trial lengths differ until the owner decides to unify them.*
 - **The trial clock starts when the account is created**, so an account should be opened when the customer is ready to begin — not weeks earlier.
 - If the customer converts, the **first monthly payment is dated from the trial start**, i.e. the paid month absorbs the trial period. This is disclosed **in the offer**, never at the end of the trial.
 - If the customer declines, they pay **nothing**.
 - Marketing must never describe the trial as "100 % free". The accurate claim is *"15-day trial — pay nothing if it isn't for you."*
 - Because customers are legal entities, a bank transfer takes days to clear. A converting organization enters a **`pending_payment` grace state with full access** (7 days) once the invoice is issued — access is never cut off mid-transfer.
-- A declining organization keeps **read-only access + data export for 30 days**, then the data is purged.
+- A declining organization keeps **read-only access + data export for 30 days**, then the data is purged. For self-signup trials that never paid, this is `purge_unconverted_trials` (dry run by default; the owner runs it with `--apply`). Vendor-opened and paying organizations are never touched by it.
 
 ### 4.5 What is never metered
 

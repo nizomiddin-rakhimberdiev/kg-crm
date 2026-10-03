@@ -327,7 +327,7 @@ Decisions taken under the owner's standing permission (design §7.3):
 - [x] **6.4** Subscription online payment
 - [x] **6.5** Contract templates
 - [x] **6.6** Kitchen / menu → stock consumption
-- [ ] **6.7** Self-signup with a 14-day trial (ADR-28)
+- [x] **6.7** Self-signup with a 14-day trial (ADR-28)
 
 ---
 

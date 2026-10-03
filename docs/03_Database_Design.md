@@ -1429,6 +1429,20 @@ Each serving's movements carry `reference = "menu:<day id>:<served_at µs>"`, so
 
 ---
 
+## 20f. Platform plane: `platform_signup_request` (PLAN 6.7, ADR-28)
+
+Like `platform_lead`, not a tenant table: no organization exists when it is written.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `email`, `full_name`, `kindergarten_name`, `phone`, `language` | | From the form |
+| `token_hash` | `VARCHAR(64) UNIQUE` | SHA-256 of the e-mailed token; the token itself is never stored |
+| `expires_at` | `TIMESTAMPTZ` | 24 hours |
+| `confirmed_at` | `TIMESTAMPTZ NULL` | |
+| `organization_id` | `UUID NULL` FK `RESTRICT` | The tenant it created — how the purge command recognises a self-signup trial; deleted by `purge_organization` |
+
+---
+
 ## 21. Referential Integrity — ON DELETE Matrix
 
 `ON DELETE` behavior is chosen per relationship by **what should happen to children when a parent is removed**. Because most master data is soft-deleted, `RESTRICT`/`SET NULL` dominate; `CASCADE` is reserved for true ownership.

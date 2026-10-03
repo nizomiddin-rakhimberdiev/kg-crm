@@ -1351,3 +1351,31 @@ msgstr "Блюдо не найдено."
 
 msgid "Tushlik"
 msgstr "Обед"
+
+# Self-signup (PLAN 6.7)
+msgid "Radix CRM — bogʻchangizni ochish"
+msgstr "Radix CRM — откройте ваш садик"
+
+#, python-brace-format
+msgid ""
+"Assalomu alaykum, {name}!\n"
+"\n"
+"«{kindergarten}» uchun Radix CRM sinovini ochish uchun havolani bosing va parolingizni oʻrnating:\n"
+"\n"
+"{link}\n"
+"\n"
+"Havola 24 soat ishlaydi. Agar siz soʻramagan boʻlsangiz, bu xatni eʼtiborsiz qoldiring — hech narsa yaratilmaydi."
+msgstr ""
+"Здравствуйте, {name}!\n"
+"\n"
+"Чтобы открыть пробный период Radix CRM для «{kindergarten}», перейдите по ссылке и задайте пароль:\n"
+"\n"
+"{link}\n"
+"\n"
+"Ссылка действует 24 часа. Если вы этого не запрашивали, просто проигнорируйте письмо — ничего не будет создано."
+
+msgid "Havola eskirgan yoki ishlatilgan. Roʻyxatdan oʻtishni qaytadan boshlang."
+msgstr "Ссылка устарела или уже использована. Начните регистрацию заново."
+
+msgid "Bu email bilan sinov allaqachon ochilgan. Kirish sahifasidan kiring yoki ikkinchi bogʻcha uchun biz bilan bogʻlaning."
+msgstr "С этим email пробный период уже открыт. Войдите на странице входа или свяжитесь с нами по поводу второго садика."

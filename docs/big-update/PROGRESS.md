@@ -721,3 +721,19 @@ phase branch.** Details and conflict resolutions are in the merge commit
 - UI: Inventory page → "Oshxona" tab (dishes, daily menu, preview, served /
   undo). The Store tab's markup only moved one indentation level.
 - Tests: 14 backend (+ sweep factories for the four new endpoints).
+
+### 6.7 Self-signup with a 14-day trial (ADR-28)
+
+- `POST /public/signup` writes a `platform_signup_request` (token as SHA-256,
+  24 h) and a `Lead` (`self_signup`) — no tenant. `POST /public/signup/confirm`
+  with a password runs `register_organization(trial_days=14)`. One
+  self-signup trial per e-mail; same answer for every address.
+- `purge_unconverted_trials` (dry run by default): unconfirmed requests > 7
+  days; self-signup tenants cancelled at trial end, never paid, trial ended >
+  30 days ago → `purge_organization`. Vendor-opened tenants are never
+  candidates (no signup request points at them).
+- 01 §4.4 updated (it said "there is no public signup"); copy follows its
+  rule — no "free", conversion terms disclosed on the form.
+- UI: `/signup`, `/signup/confirm` (SaaS only, nginx whitelist), link on the
+  login page. uz/ru/en.
+- Tests: 17 backend, 1 frontend.

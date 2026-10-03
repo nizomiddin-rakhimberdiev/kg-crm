@@ -105,9 +105,12 @@ def add_months(value: date, months: int) -> date:
 
 
 @transaction.atomic
-def start_trial(*, organization: Any, plan: SubscriptionPlan | None = None) -> Subscription:
+def start_trial(
+    *, organization: Any, plan: SubscriptionPlan | None = None, trial_days: int = TRIAL_DAYS
+) -> Subscription:
     """
-    Ro'yxatdan o'tgan tashkilotga 15 kunlik sinov obunasi ochadi.
+    Ro'yxatdan o'tgan tashkilotga sinov obunasi ochadi (vendor: 15 kun,
+    mustaqil ro'yxatdan o'tish: 14 kun — PLAN 6.7).
 
     Karta so'ralmaydi va oldindan to'lov olinmaydi (docs/01 §4.4).
     """
@@ -129,7 +132,7 @@ def start_trial(*, organization: Any, plan: SubscriptionPlan | None = None) -> S
         payment_term=PaymentTerm.MONTHLY,
         discount_percent=Decimal("0"),
         trial_started_at=now,
-        trial_ends_at=now + timedelta(days=TRIAL_DAYS),
+        trial_ends_at=now + timedelta(days=trial_days),
         current_period_start=today,
         current_period_end=_month_end(today)
         if _month_end(today) > today

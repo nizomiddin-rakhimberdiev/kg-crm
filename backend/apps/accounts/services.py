@@ -140,6 +140,7 @@ def register_organization(
     contact_phone: str = "",
     branch_name: str | None = None,
     slug: str | None = None,
+    trial_days: int | None = None,
 ) -> RegistrationResult:
     """
     Yangi mijozni ro'yxatdan o'tkazadi: tashkilot + birinchi filial +
@@ -213,7 +214,10 @@ def register_organization(
         if is_saas():
             from apps.subscriptions.services import start_trial
 
-            start_trial(organization=organization)
+            if trial_days is None:
+                start_trial(organization=organization)
+            else:
+                start_trial(organization=organization, trial_days=trial_days)
 
     return RegistrationResult(organization=organization, branch=branch, owner=owner)
 

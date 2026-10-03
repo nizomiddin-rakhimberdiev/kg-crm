@@ -33,6 +33,7 @@ from apps.online_payments.views import (
 from apps.organizations.views import OrganizationLogoView, OrganizationView
 from apps.platform.views import PlatformLoginView
 from apps.platform.views_leads import PublicLeadCreateView, PublicPricingView
+from apps.platform.views_signup import SignupConfirmView, SignupRequestView
 from apps.subscriptions.views_online import (
     SubscriptionClickWebhookView,
     SubscriptionPaymeWebhookView,
@@ -133,6 +134,9 @@ if is_saas():
             name="telegram-webhook",
         ),
         path("public/pricing", PublicPricingView.as_view(), name="public-pricing"),
+        # Self-signup with a 14-day trial (PLAN 6.7, ADR-28).
+        path("public/signup", SignupRequestView.as_view(), name="public-signup"),
+        path("public/signup/confirm", SignupConfirmView.as_view(), name="public-signup-confirm"),
         # Radix's own merchant — subscription invoices (PLAN 6.4).
         path(
             "public/pay/subscription/payme",

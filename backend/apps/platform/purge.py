@@ -158,7 +158,7 @@ def purge_organization(
     """
     from apps.audit.models import AuditLog
     from apps.organizations.models import Organization
-    from apps.platform.models import SupportGrant
+    from apps.platform.models import SignupRequest, SupportGrant
 
     with platform_context():
         organization = Organization.objects.filter(pk=organization_id).first()
@@ -217,6 +217,11 @@ def purge_organization(
         # `support_grant` — vendor tekisligining jadvali, shuning uchun
         # u platforma rejimida o'chiriladi.
         deleted["support_grant"] = SupportGrant.objects.filter(
+            organization_id=organization.id
+        ).delete()[0]
+        # The self-signup that created this tenant (PLAN 6.7): personal data,
+        # and it points at the organization with RESTRICT.
+        deleted["platform_signup_request"] = SignupRequest.objects.filter(
             organization_id=organization.id
         ).delete()[0]
 

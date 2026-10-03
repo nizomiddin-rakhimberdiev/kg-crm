@@ -31,6 +31,7 @@ __all__ = [
     "SupportGrant",
     "LeadStatus",
     "Lead",
+    "SignupRequest",
     "GRANT_MAX_HOURS",
 ]
 
@@ -212,3 +213,44 @@ class Lead(models.Model):
     def __str__(self) -> str:
         # Telefonni admin/loglarda tasodifan ko'rsatmaslik uchun qaytarmaymiz.
         return f"{self.kindergarten_name} — {self.status}"
+
+
+class SignupRequest(models.Model):
+    """
+    A self-signup waiting for its e-mail to be confirmed (PLAN 6.7, ADR-28).
+
+    No tenant exists until the link is opened: a random visit, a typo'd
+    address or a bot leaves only this row, which `purge_unconverted_trials`
+    removes after 7 days. Platform plane, like `Lead` — there is no
+    organization to scope it to yet. The token is stored only as its
+    SHA-256; the e-mail carries the token itself.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    email = models.EmailField(db_index=True)
+    full_name = models.CharField(max_length=150)
+    kindergarten_name = models.CharField(max_length=200)
+    phone = models.CharField(max_length=13)
+    language = models.CharField(max_length=2, default="uz")
+    token_hash = models.CharField(max_length=64, unique=True)
+    expires_at = models.DateTimeField()
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    # Set on confirmation: the tenant this signup created. Also how the
+    # purge command tells a self-signup trial from a vendor-opened one.
+    organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.RESTRICT,
+        related_name="signup_requests",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "platform_signup_request"
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.email} ({'confirmed' if self.confirmed_at else 'pending'})"

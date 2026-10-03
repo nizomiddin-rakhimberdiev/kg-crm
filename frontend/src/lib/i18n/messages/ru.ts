@@ -1255,4 +1255,24 @@ export const messages: Record<string, string> = {
   Tushlik: 'Обед',
   'Xodimlar porsiyasi': 'Порции для сотрудников',
   'Yangi taom': 'Новое блюдо',
+  // Self-signup (PLAN 6.7)
+  '{email} manziliga havola yubordik. Uni 24 soat ichida oching va parol oʻrnating — bogʻchangiz shundan keyin ochiladi.':
+    'Мы отправили ссылку на {email}. Откройте её в течение 24 часов и задайте пароль — после этого садик откроется.',
+  'Bogʻchangiz ochildi — 14 kunlik sinov boshlandi. Endi kiring.':
+    'Садик открыт — 14-дневный пробный период начался. Теперь войдите.',
+  'Bogʻchani ochish': 'Открыть садик',
+  'Bolalar soni': 'Число детей',
+  'Hisobingiz bormi? Kirish': 'Уже есть аккаунт? Войти',
+  Ismingiz: 'Ваше имя',
+  'maxfiylik siyosati': 'политика конфиденциальности',
+  'Parol oʻrnating': 'Задайте пароль',
+  'Pochtangizni tekshiring': 'Проверьте почту',
+  Shahar: 'Город',
+  'Shaxsiy maʼlumotlarga ishlov berishga roziman': 'Согласен(на) на обработку персональных данных',
+  '14 kunlik sinov — mos kelmasa, hech narsa toʻlamaysiz':
+    '14-дневный пробный период — если не подойдёт, вы ничего не платите',
+  'Bogʻchangiz hali yoʻqmi? 14 kunlik sinovni boshlang':
+    'Ещё нет садика в системе? Начните 14-дневный пробный период',
+  'Karta soʻralmaydi. Davom ettirsangiz, birinchi toʻlangan oy sinov boshlangan kundan hisoblanadi. Davom ettirmasangiz — hech narsa toʻlamaysiz, maʼlumotlaringiz 30 kun yuklab olish uchun saqlanadi.':
+    'Карта не нужна. Если продолжите, первый оплачиваемый месяц считается с начала пробного периода. Если нет — вы ничего не платите, а данные 30 дней доступны для выгрузки.',
 }

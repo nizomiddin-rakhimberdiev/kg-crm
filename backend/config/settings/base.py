@@ -386,6 +386,8 @@ REST_FRAMEWORK = {
         # operator vaqtini himoya qiladi; CAPTCHA keyingi qatlam sifatida
         # deploy konfiguratsisida qo'shilishi mumkin.
         "lead": env("LEAD_THROTTLE_RATE", default="5/hour"),
+        # Self-signup (PLAN 6.7): every request sends an e-mail.
+        "signup": env("SIGNUP_THROTTLE_RATE", default="5/hour"),
         "public_pricing": env("PUBLIC_PRICING_THROTTLE_RATE", default="120/min"),
         # Telegram webhook: Telegram o'zi tezlikni ushlab turadi va
         # bitta bog'cha uchun update'lar kam. Chegara ataylab keng —
