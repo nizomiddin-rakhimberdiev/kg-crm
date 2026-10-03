@@ -91,6 +91,26 @@ class GroupSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "enrolled_count", "created_at"]
 
 
+class AddGuardianSerializer(serializers.Serializer):
+    """
+    Bola kartasidan vasiy qo'shish (`POST /children/{id}/guardians`).
+
+    Telefon `PhoneField` dan o'tadi (Q7) — alohida `/guardians` bilan
+    BIR XIL qoida. Ilgari bu yo'l xom satrni yozardi: "12345" qabul
+    qilinar, "+998 90 123 45 67" esa normalizatsiyasiz saqlanib, o'sha
+    ota-ona bo'yicha qidiruvda topilmasdi (yakuniy qabul ssenariysi).
+    """
+
+    phone = PhoneField()
+    first_name = serializers.CharField(max_length=80, required=False, allow_blank=True)
+    last_name = serializers.CharField(max_length=80, required=False, allow_blank=True)
+    email = serializers.EmailField(required=False, allow_blank=True)
+    language = serializers.CharField(max_length=2, required=False, allow_blank=True)
+    relation = serializers.CharField(max_length=20, required=False, default="other")
+    is_primary = serializers.BooleanField(required=False, default=False)
+    can_pickup = serializers.BooleanField(required=False, default=True)
+
+
 class ChildGuardianSerializer(serializers.ModelSerializer):
     guardian = GuardianSerializer(read_only=True)
 

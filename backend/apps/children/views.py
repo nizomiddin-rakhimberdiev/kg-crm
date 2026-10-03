@@ -21,6 +21,7 @@ from apps.children import importer, scope, services
 from apps.children.importer import import_children
 from apps.children.models import Child, Enrollment, Group, Guardian
 from apps.children.serializers import (
+    AddGuardianSerializer,
     ChildGuardianSerializer,
     ChildSerializer,
     ChildStatusSerializer,
@@ -258,26 +259,26 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
     def add_guardian(self, request: Request, pk: str | None = None) -> Response:
         """Vasiyni topadi/yaratadi va bolaga bog'laydi."""
         child = self.get_object()
-        phone = (request.data.get("phone") or "").strip()
-        if not phone:
-            raise BusinessRuleViolation(gettext("Telefon raqami majburiy."))
+        serializer = AddGuardianSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
         guardian = services.upsert_guardian(
             organization=child.organization,
             branch=child.branch,
-            phone=phone,
-            first_name=(request.data.get("first_name") or "").strip(),
-            last_name=(request.data.get("last_name") or "").strip(),
-            email=(request.data.get("email") or "").strip(),
+            phone=data["phone"],
+            first_name=data.get("first_name", "").strip(),
+            last_name=data.get("last_name", "").strip(),
+            email=data.get("email", "").strip(),
             # SMS tili (PLAN 3.4). Bo'sh — bog'chaning sukut tili.
-            language=(request.data.get("language") or "").strip()[:2],
+            language=data.get("language", "").strip()[:2],
         )
         link = services.attach_guardian(
             child=child,
             guardian=guardian,
-            relation=request.data.get("relation", "other"),
-            is_primary=bool(request.data.get("is_primary", False)),
-            can_pickup=bool(request.data.get("can_pickup", True)),
+            relation=data["relation"],
+            is_primary=data["is_primary"],
+            can_pickup=data["can_pickup"],
         )
         return Response(ChildGuardianSerializer(link).data, status=status.HTTP_201_CREATED)
 
