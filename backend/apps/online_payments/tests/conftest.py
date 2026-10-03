@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import uuid
 from datetime import date
 from decimal import Decimal
 
@@ -21,7 +22,10 @@ def make_invoice(tenant, amount: str = "1500000"):
 
     with organization_context(tenant.organization.id):
         tariff = TariffPlan.objects.create(
-            organization=tenant.organization, branch=tenant.branch, name="T", amount=Decimal(amount)
+            organization=tenant.organization,
+            branch=tenant.branch,
+            name=f"T-{uuid.uuid4().hex[:8]}",
+            amount=Decimal(amount),
         )
         child = Child.objects.create(
             organization=tenant.organization,

@@ -1357,6 +1357,19 @@ The purge job deletes `online_transaction`, `payment_link`, `merchant_credential
 
 ---
 
+## 20c. Schema Domain: Parent Bot (ADR-27, PLAN 6.2 / 6.3)
+
+### 20c.1 `contact_index` (metadata, derived)
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `organization_id` | `UUID` | `NOT NULL`, FK `RESTRICT` | |
+| `kind` | `VARCHAR(5)` | `ck_contact_index_kind` | `phone` \| `chat` |
+| `digest` | `VARCHAR(64)` | `NOT NULL` | `HMAC-SHA256(CONTACT_INDEX_KEY, "<kind>:<value>")`, hex; phones in canonical `+998…` form |
+
+`uq_contact_index_entry (kind, digest, organization_id)`, `ix_contact_index_lookup (kind, digest)`. RLS: the **metadata** policy (own organization, or platform mode) — the one cross-tenant read is the bot's "which organizations know this digest?" under `platform_context()`. `check_rls` expects **51** tables. Derived: `rebuild_contact_index` recreates it from `guardian`; the purge job deletes it with the organization.
+
+---
+
 ## 21. Referential Integrity — ON DELETE Matrix
 
 `ON DELETE` behavior is chosen per relationship by **what should happen to children when a parent is removed**. Because most master data is soft-deleted, `RESTRICT`/`SET NULL` dominate; `CASCADE` is reserved for true ownership.

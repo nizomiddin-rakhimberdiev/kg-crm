@@ -95,6 +95,7 @@ PURGE_ORDER: tuple[str, ...] = (
     # Chiqim qopga `RESTRICT` bilan bog'langan — qop chiqimdan KEYIN.
     "apps.cash.CashAccount",
     "apps.notifications.Notification",
+    "apps.parent_bot.ContactIndex",
     "apps.notifications.NotificationTemplate",
     "apps.reports.ReportExport",
     "apps.attendance.Holiday",

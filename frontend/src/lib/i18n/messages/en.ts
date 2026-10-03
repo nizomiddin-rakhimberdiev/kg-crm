@@ -1192,4 +1192,8 @@ export const messages: Record<string, string> = {
   'Ulangan · kalit …{hint}': 'Connected · key …{hint}',
   Ulanmagan: 'Not connected',
   Ulash: 'Connect',
+  // Absence alert (PLAN 6.2, P6-5)
+  'Kelmagani haqida xabar': 'Absence message',
+  'Bola bugun «kelmadi» deb belgilansa, ota-onaga xabar ketadi. Pulga taʼsir qilmaydi.':
+    'When a child is marked “absent” today, the parent gets a message. It does not affect fees.',
 }

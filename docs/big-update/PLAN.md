@@ -322,8 +322,8 @@ Decisions taken under the owner's standing permission (design §7.3):
 | P6-5 | "Your child is absent today" message | Off by default (`notifications.absence_alert`) |
 
 - [x] **6.1** Payme / Click — parent online payment (ADR-26)
-- [ ] **6.2** Parent bot — balance, invoices, pay button, receipts
-- [ ] **6.3** Bot linking by shared phone number (ADR-27)
+- [x] **6.2** Parent bot — balance, invoices, pay button, receipts (+ absence alert, P6-5)
+- [x] **6.3** Bot linking by shared phone number (ADR-27)
 - [ ] **6.4** Subscription online payment
 - [ ] **6.5** Contract templates
 - [ ] **6.6** Kitchen / menu → stock consumption

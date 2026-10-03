@@ -649,3 +649,23 @@ phase branch.** Details and conflict resolutions are in the merge commit
 - Deploy: set `MERCHANT_SECRET_KEY` in `.env` **before** the first kindergarten
   saves keys (production refuses to save without it; never change it later).
   `cryptography` added to requirements → image rebuild.
+
+### 6.2 Parent bot + 6.3 phone linking (ADR-27)
+
+- `contact_index` (new app `parent_bot`): HMAC digests of guardian phones and
+  linked chats → organization ids. Metadata RLS policy; the bot's one
+  cross-tenant read is under `platform_context()`. Kept current by a
+  `post_save` signal on `Guardian`; `/stop` removes the chat rows.
+  `rebuild_contact_index` (dry run by default, `--apply`, `--tenant`) rebuilds
+  it — **must be run once after deploy** (existing guardians have no rows).
+- Bot menu for a linked chat: Balance / Invoices / Pay / Receipts (uz/ru/en,
+  matched in any language). Pay = a payment link per child (6.1) as an inline
+  button, or "pay at the office" when no merchant is connected. One chat in
+  two kindergartens sees both, under their names.
+- `/start` without a code offers "share my phone"; only the sender's own
+  contact links (`contact.user_id == from.id`); legacy unnormalised phones are
+  matched in canonical form.
+- Absence alert (P6-5): `notifications.absence_alert`, off by default; only
+  today, only on a change to absent, once per child per day; never moves money.
+- Tests: 29 (bot 24, absence 5). QA: `parent_bot.0001` forward → zero →
+  forward, `check_rls` **51**; rebuild dry run +70 → apply → second dry run +0.

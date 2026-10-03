@@ -152,20 +152,31 @@ class TelegramProvider:
         if not self.token:
             raise ImproperlyConfigured("Telegram uchun TELEGRAM_BOT_TOKEN kerak.")
 
-    def send(self, *, address: str, body: str, subject: str = "") -> SendResult:
+    def send(
+        self,
+        *,
+        address: str,
+        body: str,
+        subject: str = "",
+        reply_markup: dict[str, Any] | None = None,
+    ) -> SendResult:
+        """`reply_markup` — the parent bot's buttons (PLAN 6.2); other channels have none."""
         import requests
 
         if not address.strip():
             return SendResult(success=False, error=gettext("Telegram ulanmagan"))
 
+        message: dict[str, Any] = {
+            "chat_id": address,
+            "text": body,
+            "disable_web_page_preview": True,
+        }
+        if reply_markup:
+            message["reply_markup"] = reply_markup
         try:
             response = requests.post(
                 f"{self.API_URL}/bot{self.token}/sendMessage",
-                json={
-                    "chat_id": address,
-                    "text": body,
-                    "disable_web_page_preview": True,
-                },
+                json=message,
                 timeout=self.TIMEOUT,
             )
         except requests.RequestException as exc:

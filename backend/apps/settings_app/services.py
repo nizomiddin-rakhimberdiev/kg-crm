@@ -49,6 +49,12 @@ DEFAULTS: dict[str, Any] = {
     # bo'lsa ma'noli. Aks holda xabar "test rejimi" bo'lib qolardi va
     # bog'cha ota-onani botga ulash kerakligini bilmasdi.
     "notifications.default_channel": "telegram",
+    # "Your child did not come today" (design §3.3, P6-5). OFF by default:
+    # a kindergarten that marks the register late in the morning would
+    # otherwise alarm parents whose child simply arrived after 9. The
+    # message never moves money — fee credits come only from an approved
+    # absence claim (ADR-19).
+    "notifications.absence_alert": False,
     # --- Yuborish oynasi (Q9, PLAN 3.3) ---
     #
     # Soat 08:00 dan oldin yoki 21:00 dan keyin tayyor bo'lgan xabar

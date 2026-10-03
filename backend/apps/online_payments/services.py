@@ -58,6 +58,8 @@ __all__ = [
     "save_credential",
     "payable_amount",
     "checkout_urls",
+    "public_url",
+    "public_return_url",
     "perform",
     "cancel",
 ]
@@ -201,6 +203,12 @@ def checkout_urls(*, invoice: Invoice, amount: Decimal, return_url: str) -> dict
         )
         urls[Provider.CLICK] = f"https://my.click.uz/services/pay?{query}"
     return urls
+
+
+def public_url(link: PaymentLink) -> str:
+    """The parent's page for this link (`/pay/<token>`)."""
+    base = str(getattr(settings, "FRONTEND_URL", "")).rstrip("/")
+    return f"{base}/pay/{link.token}"
 
 
 def public_return_url(link: PaymentLink) -> str:

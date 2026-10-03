@@ -40,6 +40,7 @@ __all__ = [
     "build_policy_sql",
     "build_policy_teardown_sql",
     "policy_sql_for",
+    "metadata_policy_sql_for",
     "teardown_sql_for",
     "AUTH_TABLES",
     "OPERATIONAL_TABLES",
@@ -121,6 +122,8 @@ METADATA_TABLES: tuple[str, ...] = (
     "subscription_invoice",
     "subscription_payment",
     "usage_snapshot",
+    # Parent bot routing (ADR-27): HMAC digests only, no phone or chat id.
+    "contact_index",
 )
 
 # `organization_id` ustuni YO'Q, lekin ota-jadval orqali bog'langan.
@@ -353,6 +356,11 @@ OPERATIONAL_EXPRESSION = "organization_id = app_current_org()"
 def policy_sql_for(table: str) -> str:
     """Bitta operatsion jadval uchun siyosat — kech qo'shilgan app migratsiyasi uchun."""
     return _policy(table, OPERATIONAL_EXPRESSION)
+
+
+def metadata_policy_sql_for(table: str) -> str:
+    """Policy for a late-added METADATA table: own organization, or platform mode."""
+    return _policy(table, "organization_id = app_current_org() OR app_is_platform()")
 
 
 def teardown_sql_for(table: str) -> str:

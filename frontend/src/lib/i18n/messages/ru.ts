@@ -1187,4 +1187,8 @@ export const messages: Record<string, string> = {
   'Ulangan · kalit …{hint}': 'Подключено · ключ …{hint}',
   Ulanmagan: 'Не подключено',
   Ulash: 'Подключить',
+  // Absence alert (PLAN 6.2, P6-5)
+  'Kelmagani haqida xabar': 'Сообщение об отсутствии',
+  'Bola bugun «kelmadi» deb belgilansa, ota-onaga xabar ketadi. Pulga taʼsir qilmaydi.':
+    'Если ребёнок отмечен как «не пришёл» сегодня, родителю уходит сообщение. На оплату не влияет.',
 }

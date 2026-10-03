@@ -50,6 +50,9 @@ __all__ = [
     "link_from_start",
     "unlink_chat",
     "is_linked",
+    "guardians_for_chat",
+    "children_of",
+    "link_by_phone",
 ]
 
 #: Kodning tasodifiy qismi. 8 bayt = 64 bit: taxmin qilib bo'lmaydi.
@@ -210,3 +213,83 @@ def unlink_chat(chat_id: str) -> int:
                 )
             )
     return cleared
+
+
+# --- Parent bot (PLAN 6.2 / 6.3) ---
+#
+# Everything below runs INSIDE one organization's context; the bot finds
+# which organizations to visit through the contact index (ADR-27).
+
+
+def guardians_for_chat(chat_id: str) -> list[Guardian]:
+    """Active guardians of the current organization linked to this chat."""
+    chat = (chat_id or "").strip()
+    if not chat:
+        return []
+    return list(Guardian.objects.filter(telegram_chat_id=chat, is_active=True))
+
+
+def children_of(guardian: Guardian) -> list[Any]:
+    """The guardian's children that are still on the books (not archived)."""
+    from apps.children.models import Child
+
+    return list(
+        Child.objects.filter(
+            guardian_links__guardian=guardian,
+            guardian_links__is_active=True,
+            archived_at__isnull=True,
+        )
+        .distinct()
+        .order_by("first_name")
+    )
+
+
+def link_by_phone(*, phone: str, chat_id: str) -> Guardian | None:
+    """
+    Links the chat to the guardian with this phone in the CURRENT organization.
+
+    The phone comes from Telegram's own contact button, and the caller has
+    already checked that it is the sender's own number — it is as strong a
+    proof as the one-time code. A guardian can be registered in two branches
+    with one number; the chat can belong to one guardian per organization
+    (the database says so), so the most recently updated one wins, like
+    "the parent's last action wins" in `link_from_start`.
+    """
+    from apps.core.phone import PhoneFormatError, normalise_phone
+
+    chat = (chat_id or "").strip()
+    try:
+        normalised = normalise_phone(phone)
+    except PhoneFormatError:
+        return None
+    if not chat or not normalised:
+        return None
+
+    guardian = (
+        Guardian.objects.filter(phone=normalised, is_active=True).order_by("-updated_at").first()
+    )
+    if guardian is None:
+        # Rows saved before phones were normalised (Q7) may read "90 123 45 67".
+        # A rare event on a small table: compare in canonical form.
+        for candidate in Guardian.objects.filter(is_active=True).order_by("-updated_at"):
+            try:
+                if normalise_phone(candidate.phone) == normalised:
+                    guardian = candidate
+                    break
+            except PhoneFormatError:
+                continue
+    if guardian is None:
+        return None
+    if guardian.telegram_chat_id == chat:
+        return guardian
+
+    Guardian.objects.filter(telegram_chat_id=chat).exclude(pk=guardian.pk).update(
+        telegram_chat_id="", telegram_linked_at=None
+    )
+    guardian.telegram_chat_id = chat
+    guardian.telegram_linked_at = timezone.now()
+    guardian.telegram_code = ""
+    guardian.save(
+        update_fields=["telegram_chat_id", "telegram_linked_at", "telegram_code", "updated_at"]
+    )
+    return guardian

@@ -52,6 +52,10 @@ const META: Record<string, SettingMeta> = {
     label: t('Asosiy kanal'),
     help: t('Telegram bepul; SMS har xabar uchun pul turadi va shlyuz shartnomasini talab qiladi.'),
   },
+  'notifications.absence_alert': {
+    label: t('Kelmagani haqida xabar'),
+    help: t('Bola bugun «kelmadi» deb belgilansa, ota-onaga xabar ketadi. Pulga taʼsir qilmaydi.'),
+  },
   'notifications.payment_receipt': {
     label: t('Toʻlov haqida SMS'),
     help: t('Toʻlov qabul qilinganda ota-onaga xabar ketadi.'),

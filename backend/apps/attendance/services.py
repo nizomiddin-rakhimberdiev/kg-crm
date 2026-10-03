@@ -53,6 +53,14 @@ def mark_bulk(
 
     valid_statuses = set(AttendanceStatus.values)
     saved: list[AttendanceRecord] = []
+    # What the register said before — the absence alert goes only on a
+    # change TO absent, never on a re-save of the same answer (P6-5).
+    before = dict(
+        AttendanceRecord.objects.filter(attendance_date=attendance_date, group=group).values_list(
+            "child_id", "status"
+        )
+    )
+    newly_absent: list[Any] = []
 
     for row in records:
         child_id = row.get("child_id")
@@ -80,6 +88,17 @@ def mark_bulk(
             },
         )
         saved.append(record)
+        if status == AttendanceStatus.ABSENT and before.get(child_id) != AttendanceStatus.ABSENT:
+            newly_absent.append(child_id)
+
+    if newly_absent:
+        from django.db import transaction
+
+        from apps.notifications.services import notify_absence
+
+        transaction.on_commit(
+            lambda: notify_absence(child_ids=newly_absent, on_date=attendance_date)
+        )
 
     # Oylik davomat foizi dashboardda — kesh eskirdi.
     from apps.reports.services import invalidate_dashboard_on_commit

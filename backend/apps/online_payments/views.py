@@ -203,9 +203,8 @@ class PaymentLinkCreateView(APIView):
                 gettext("Onlayn toʻlov ulanmagan: Sozlamalarda Payme yoki Click kalitini kiriting.")
             )
         link = services.create_link(invoice=invoice, created_by=request_user(request))
-        base = str(getattr(settings, "FRONTEND_URL", "")).rstrip("/")
         return Response(
-            {"url": f"{base}/pay/{link.token}", "expires_at": link.expires_at.isoformat()},
+            {"url": services.public_url(link), "expires_at": link.expires_at.isoformat()},
             status=201,
         )
 

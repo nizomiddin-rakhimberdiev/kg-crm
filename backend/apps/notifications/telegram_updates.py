@@ -65,7 +65,7 @@ STOPPED = {
 }
 
 
-def reply(chat_id: str, text: str) -> None:
+def reply(chat_id: str, text: str, markup: dict[str, Any] | None = None) -> None:
     """
     Botning javobi. Yuborilmasa ham bog'lanish SAQLANADI.
 
@@ -75,7 +75,7 @@ def reply(chat_id: str, text: str) -> None:
     from apps.notifications.providers import TelegramProvider
 
     try:
-        TelegramProvider().send(address=chat_id, body=text)
+        TelegramProvider().send(address=chat_id, body=text, reply_markup=markup)
     except Exception:  # noqa: BLE001 — javob bermaslik bog'lanishni buzmaydi
         logger.exception("Telegram javobi yuborilmadi")
 
@@ -84,36 +84,66 @@ def handle_update(update: dict[str, Any]) -> str:
     """
     Bitta update. Javob — nima bo'lgani (log va test uchun).
 
-    **Faqat ikki buyruq**: `/start <kod>` va `/stop`. Qolgan hamma
-    narsa jimgina tashlab yuboriladi: bot suhbat quradigan joy emas
-    va ota-onaning yozgan matni bizda saqlanmaydi.
+    Buyruqlar: `/start <kod>`, `/stop`, telefon raqamini ulashish
+    (PLAN 6.3) va ota-ona menyusining to'rt tugmasi (PLAN 6.2,
+    `apps/parent_bot/bot.py`). Ulanmagan suhbatning yozgan matni
+    jimgina tashlab yuboriladi: bot suhbat quradigan joy emas va
+    ota-onaning yozgan matni bizda saqlanmaydi.
     """
     message = update.get("message") or update.get("edited_message") or {}
     chat_id = str(((message.get("chat") or {}).get("id")) or "").strip()
     text = str(message.get("text") or "").strip()
-    if not chat_id or not text:
+    contact = message.get("contact") if isinstance(message.get("contact"), dict) else None
+    sender = message.get("from") or {}
+    language_hint = str(sender.get("language_code") or "")
+    if not chat_id or not (text or contact):
         return "ignored"
 
     from apps.children import telegram as links
+    from apps.parent_bot import bot
+
+    if contact is not None:
+        answer = bot.link_contact(
+            chat_id=chat_id,
+            contact=contact,
+            sender_id=sender.get("id"),
+            fallback_language=language_hint,
+        )
+        reply(chat_id, answer.body, answer.markup)
+        return answer.outcome
 
     if text.startswith("/start"):
         code = text[len("/start") :].strip()
         if not code:
-            reply(chat_id, START_HELP["uz"])
-            return "help"
+            answer = bot.menu(chat_id, language_hint)
+            reply(chat_id, answer.body, answer.markup)
+            return answer.outcome
         guardian = links.link_from_start(code=code, chat_id=chat_id)
         if guardian is None:
             reply(chat_id, UNKNOWN_CODE["uz"])
             return "unknown_code"
         language = (guardian.language or "uz") if guardian.language in LINKED else "uz"
-        reply(chat_id, LINKED[language].format(name=guardian.first_name or ""))
+        reply(
+            chat_id,
+            LINKED[language].format(name=guardian.first_name or ""),
+            bot.menu(chat_id).markup,
+        )
         logger.info("Telegram bog'landi: vasiy=%s", guardian.id)
         return "linked"
 
     if text.startswith("/stop"):
+        from apps.parent_bot.index import chat_digest, forget_chat, organizations_for
+        from apps.parent_bot.models import ContactKind
+
+        organization_ids = organizations_for(ContactKind.CHAT, chat_digest(chat_id))
         removed = links.unlink_chat(chat_id)
-        reply(chat_id, STOPPED["uz"])
+        forget_chat(chat_id, organization_ids=organization_ids)
+        reply(chat_id, STOPPED["uz"], {"remove_keyboard": True})
         logger.info("Telegram uzildi: %s qator", removed)
         return "stopped"
 
-    return "ignored"
+    response = bot.answer(chat_id, text)
+    if response is None:
+        return "ignored"
+    reply(chat_id, response.body, response.markup)
+    return response.outcome

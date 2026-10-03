@@ -45,6 +45,7 @@ __all__ = [
     "queue_notification",
     "dispatch_notification",
     "notify_payment_received",
+    "notify_absence",
     "queue_debt_reminders",
 ]
 
@@ -522,6 +523,60 @@ def notify_payment_received(*, payment: Any) -> Notification | None:
     except Exception:  # noqa: BLE001 — to'lov bildirishnoma tufayli yiqilmasin
         logger.exception("To'lov bildirishnomasini navbatga qo'yib bo'lmadi")
         return None
+
+
+def notify_absence(*, child_ids: list[Any], on_date: Any) -> int:
+    """
+    "Your child did not come today" to the primary guardian (P6-5).
+
+    Only when the kindergarten switched `notifications.absence_alert` on,
+    only for today, and once per child per day — a register corrected
+    back and forth must not send the same message twice. Returns how many
+    messages were queued. Like the receipt, it never raises: the register
+    is already saved.
+    """
+    from django.utils import timezone
+
+    from apps.children.models import Child
+    from apps.settings_app.services import get_setting
+
+    if not child_ids or on_date != timezone.localdate():
+        return 0
+
+    queued = 0
+    for child in Child.objects.filter(id__in=child_ids).select_related("organization", "branch"):
+        if not get_setting(key="notifications.absence_alert", branch=child.branch):
+            continue
+        try:
+            link = (
+                child.guardian_links.filter(is_primary=True).select_related("guardian").first()
+                or child.guardian_links.select_related("guardian").first()
+            )
+            if link is None:
+                continue
+            already = Notification.objects.filter(
+                guardian=link.guardian,
+                template_code=TemplateCode.ABSENCE_NOTICE,
+                created_at__date=on_date,
+                rendered_body__contains=child.full_name,
+            ).exists()
+            if already:
+                continue
+            sent = queue_notification(
+                organization=child.organization,
+                branch=child.branch,
+                guardian=link.guardian,
+                code=TemplateCode.ABSENCE_NOTICE,
+                variables={
+                    "guardian": link.guardian.full_name,
+                    "child": child.full_name,
+                    "organization": child.organization.name,
+                },
+            )
+            queued += int(sent is not None)
+        except Exception:  # noqa: BLE001 — the register is saved; a message must not undo it
+            logger.exception("Absence notice not queued for child %s", child.id)
+    return queued
 
 
 def debt_reminder_targets(

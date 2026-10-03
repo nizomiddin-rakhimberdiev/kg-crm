@@ -47,6 +47,9 @@ __all__ = [
     "month_board_summary",
     "board_row",
     "BOARD_STATUSES",
+    "recent_invoices",
+    "recent_payments",
+    "open_invoices_fifo",
 ]
 
 
@@ -437,3 +440,33 @@ def child_monthly_price(child: Any) -> ChildPrice | None:
         tariff = child.tariff
         return ChildPrice(amount=Decimal(tariff.amount), tariff=tariff, label=tariff.name)
     return None
+
+
+# --- The parent's view (PLAN 6.2) ---
+#
+# What the parent bot shows. Kept here so the bot never imports finance
+# models (invariant 1); the debt itself always comes from `balance.py`.
+
+
+def recent_invoices(child: Any, *, limit: int = 6) -> list[Invoice]:
+    """The child's latest invoices, newest period first, cancelled ones included."""
+    newest_first = ("-period_year", "-period_month", "-created_at")
+    return list(Invoice.objects.filter(child=child).order_by(*newest_first)[:limit])
+
+
+def recent_payments(child: Any, *, limit: int = 5) -> list[Any]:
+    """The child's latest payments, reversed ones included (they are marked)."""
+    from apps.finance.models import Payment
+
+    return list(Payment.objects.filter(child=child).order_by("-paid_at", "-created_at")[:limit])
+
+
+def open_invoices_fifo(child: Any) -> list[Invoice]:
+    """Invoices still carrying an amount, in the order money settles them (ADR-20)."""
+    return [
+        invoice
+        for invoice in Invoice.objects.filter(child=child)
+        .exclude(status__in=[InvoiceStatus.PAID, InvoiceStatus.CANCELLED])
+        .order_by("due_date", "created_at")
+        if invoice.amount_paid < invoice.amount_due
+    ]

@@ -67,6 +67,7 @@ LOCAL_APPS = [
     "apps.platform",
     "apps.intelligence",
     "apps.online_payments",
+    "apps.parent_bot",
     "apps.audit",
 ]
 
@@ -537,6 +538,11 @@ PLATFORM_2FA_REQUIRED = env.bool("PLATFORM_2FA_REQUIRED", default=True)
 # whole site down on deploy.
 MERCHANT_SECRET_KEY = env("MERCHANT_SECRET_KEY", default="")
 MERCHANT_KEY_REQUIRED = env.bool("MERCHANT_KEY_REQUIRED", default=False)
+
+# Parent bot contact index (ADR-27): HMAC key for phone / chat digests.
+# Empty = derived from SECRET_KEY. Changing it (or SECRET_KEY) requires
+# `python manage.py rebuild_contact_index --apply`.
+CONTACT_INDEX_KEY = env("CONTACT_INDEX_KEY", default="")
 
 TRIAL_DAYS = env.int("TRIAL_DAYS", default=15)
 PAYMENT_GRACE_DAYS = env.int("PAYMENT_GRACE_DAYS", default=7)
