@@ -120,6 +120,24 @@ class TestBillingAfterLeaving:
             )
             assert services.is_billable_for(child, period_year=2026, period_month=9)
 
+    def test_leaving_from_the_first_day_of_a_month_is_not_billed_for_it(self, tenant_a, child):
+        """
+        Brief §6, 5-qadam: "keyingi oyning 1-kunidan Chiqib ketgan" — o'sha
+        oy uchun faktura YOZILMAYDI. Holat sanasi — bola bog'chada BO'LMAGAN
+        birinchi kun; 1-oktabrdan ketgan bola oktabrning birorta kunida
+        ham bog'chada bo'lmagan. Ilgari `>=` bilan solishtirilib, oktabr
+        uchun to'liq oylik faktura yozilardi.
+        """
+        with organization_context(tenant_a.organization.id):
+            services.change_status(
+                child=child,
+                status=EnrollmentStatus.WITHDRAWN,
+                on_date=date(2026, 10, 1),
+                reason="Ketdi",
+            )
+            assert not services.is_billable_for(child, period_year=2026, period_month=10)
+            assert services.is_billable_for(child, period_year=2026, period_month=9)
+
     def test_an_active_child_is_always_billable(self, tenant_a, child):
         with organization_context(tenant_a.organization.id):
             assert services.is_billable_for(child, period_year=2026, period_month=10)

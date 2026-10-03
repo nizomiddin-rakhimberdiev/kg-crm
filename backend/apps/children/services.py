@@ -273,7 +273,11 @@ def is_billable_for(child: Child, *, period_year: int, period_month: int) -> boo
         return True
     if child.status_changed_on is None:
         return False
-    return child.status_changed_on >= date(period_year, period_month, 1)
+    # Holat sanasi — bola bog'chada BO'LMAGAN birinchi kun. 1-sanadan
+    # ketgan bola o'sha oyning birorta kunida ham bo'lmagan, shuning
+    # uchun qat'iy `>`: ilgari `>=` edi va "1-oktabrdan chiqib ketgan"
+    # bolaga oktabr uchun to'liq oylik yozilardi (brief §6, 5-qadam).
+    return child.status_changed_on > date(period_year, period_month, 1)
 
 
 @transaction.atomic
