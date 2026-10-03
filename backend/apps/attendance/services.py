@@ -81,6 +81,10 @@ def mark_bulk(
         )
         saved.append(record)
 
+    # Oylik davomat foizi dashboardda — kesh eskirdi.
+    from apps.reports.services import invalidate_dashboard_on_commit
+
+    invalidate_dashboard_on_commit(organization_id=organization.id)
     return saved
 
 

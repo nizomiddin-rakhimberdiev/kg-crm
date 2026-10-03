@@ -22,7 +22,13 @@ from apps.finance.models import Payment
 from apps.inventory.services import low_stock_products
 from apps.reports import selectors
 
-__all__ = ["dashboard_kpis", "invalidate_dashboard", "DASHBOARD_SECTIONS", "DASHBOARD_TTL"]
+__all__ = [
+    "dashboard_kpis",
+    "invalidate_dashboard",
+    "invalidate_dashboard_on_commit",
+    "DASHBOARD_SECTIONS",
+    "DASHBOARD_TTL",
+]
 
 # Qisqa TTL ataylab: dashboard "hozir nima bo'lyapti" degan savolga javob
 # beradi, va bir soatlik eski raqam bu savolga javob emas. Uzun TTL
@@ -86,6 +92,25 @@ def invalidate_dashboard(*, organization_id: Any, branch_id: Any = None) -> None
     except ValueError:
         # Kalit hali yo'q (yoki kesh tozalangan) — birinchi avloddan boshlaymiz.
         cache.set(key, 1, None)
+
+
+def invalidate_dashboard_on_commit(*, organization_id: Any) -> None:
+    """
+    Pul, stok yoki davomat yozilganda keshni TRANZAKSIYA tugagach bekor qiladi.
+
+    `invalidate_dashboard()` avval mavjud edi, lekin uni hech kim
+    chaqirmasdi: to'lov yoki qaytarishdan keyin 120 soniya davomida
+    dashboard eski qarzni, qarzdorlar ro'yxati esa yangisini ko'rsatardi.
+    Endi u har bir ledger yozish nuqtasidan chaqiriladi — yangi endpoint
+    uni "unutib" qo'ya olmaydi.
+
+    `on_commit` — commit'dan OLDIN bekor qilinsa, parallel so'rov eski
+    qiymatni qayta hisoblab yana keshga yozib qo'yishi mumkin edi.
+    Tranzaksiyadan tashqarida darhol bajariladi.
+    """
+    from django.db import transaction
+
+    transaction.on_commit(lambda: invalidate_dashboard(organization_id=organization_id))
 
 
 def dashboard_kpis(

@@ -135,7 +135,7 @@ def post_movement(
     if amount <= 0:
         raise BusinessRuleViolation(gettext("Summa musbat boʻlishi kerak."))
 
-    return CashMovement.objects.create(
+    movement = CashMovement.objects.create(
         organization=account.organization,
         branch=account.branch,
         cash_account=account,
@@ -148,6 +148,11 @@ def post_movement(
         description=description[:255],
         created_by=created_by,
     )
+    # Tushum va kassa qoldig'i dashboardda — kesh eskirdi.
+    from apps.reports.services import invalidate_dashboard_on_commit
+
+    invalidate_dashboard_on_commit(organization_id=account.organization_id)
+    return movement
 
 
 def reverse_movements_for(

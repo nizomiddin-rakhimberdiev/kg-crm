@@ -120,7 +120,7 @@ def post_ledger_entry(
     if amount <= 0:
         raise BusinessRuleViolation(gettext("Ledger summasi musbat boʻlishi kerak."))
 
-    return ChildLedgerEntry.objects.create(
+    entry = ChildLedgerEntry.objects.create(
         organization=child.organization,
         branch=child.branch,
         child=child,
@@ -133,6 +133,11 @@ def post_ledger_entry(
         description=description[:255],
         created_by=created_by,
     )
+    # Qarz o'zgardi — dashboard keshi eskirdi (yozish nuqtasi YAGONA).
+    from apps.reports.services import invalidate_dashboard_on_commit
+
+    invalidate_dashboard_on_commit(organization_id=child.organization_id)
+    return entry
 
 
 def recompute_child_balance(child: Child) -> Decimal:

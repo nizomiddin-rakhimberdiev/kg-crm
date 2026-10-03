@@ -497,7 +497,8 @@ class TestEndpoints:
                 gender="male",
             )
         response = tenant_a.client().get(reverse("v1:ledger-balance"), {"child": str(foreign.id)})
-        assert response.status_code == 422
+        # 404 — 422 emas (CLAUDE.md, invariant 2): begona qator "mavjud emas".
+        assert response.status_code == 404
         assert "topilmadi" in response.json()["error"]["message"]
 
     def test_cashier_can_generate_invoices(self, tenant_a, child):

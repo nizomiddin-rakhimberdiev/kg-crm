@@ -247,6 +247,10 @@ def record_movement(
         expense=expense,
     )
     recompute_product_stock(product)
+    # "Kam qolgan mahsulot" dashboardda — kesh eskirdi.
+    from apps.reports.services import invalidate_dashboard_on_commit
+
+    invalidate_dashboard_on_commit(organization_id=product.organization_id)
     return movement
 
 

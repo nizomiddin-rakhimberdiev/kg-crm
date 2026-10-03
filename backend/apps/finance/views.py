@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.utils.translation import gettext
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -225,9 +226,12 @@ class LedgerViewSet(BranchScopedMixin, TenantReadOnlyViewSet):
         from apps.children.models import Child
 
         # `Child.objects` tenant bilan cheklangan — begona bola "topilmadi".
+        # `404`, `422` EMAS (invariant 2): boshqa tenantning qatoriga
+        # urinish "mavjud emas" deb javob oladi, biznes qoidasi xatosi
+        # emas. Yakuniy qabul ssenariysi (9-qadam) topdi.
         child = Child.objects.filter(pk=child_id).first()
         if child is None:
-            raise BusinessRuleViolation(gettext("Bola topilmadi."))
+            raise NotFound(gettext("Bola topilmadi."))
 
         detail = balance.child_balance(child)
         # Ochiq hujjatlar FIFO tartibida — kassir ekranidagi taqsimot
