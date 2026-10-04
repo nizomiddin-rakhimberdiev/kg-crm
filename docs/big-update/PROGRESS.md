@@ -769,3 +769,41 @@ customers; it is also the first document that describes the bot end to end
 (setup, connecting a parent, the four buttons, what the kindergarten sends,
 the log, limits).
 
+### Local bot run and a migration finding (2026-10-04)
+
+The owner asked for the terminal work to be done here. Done locally, nothing
+touched in production:
+
+* Local `.env` got `MERCHANT_SECRET_KEY` and `CONTACT_INDEX_KEY` (generated;
+  `.env` is gitignored). The bot token, username and webhook secret were
+  already there.
+* `@radix_crm_bot` verified through `getMe`; no webhook is set on the bot, so
+  long polling is free. The bot now runs detached against `kg_crm_qa`
+  (`backend/.run/telegram-bot.log`, pid in `.run/telegram-bot.pid`).
+* Whole chain exercised against the seeded QA data, not fresh test tenants:
+  `/start <code>` → the four buttons (real balances, invoices, receipts) →
+  `/stop` → phone linking → reconnect. The pay button picked the oldest open
+  invoice (FIFO) and produced a link; locally `FRONTEND_URL` is
+  `http://localhost:5173`, so the reply falls back to a text link, because
+  Telegram refuses a non-https button URL. In production it is a button.
+
+**`finance.0006` now checks the data before adding the constraint.** The local
+scratch database has 51 `payment.method = 'transfer'` rows — a value that
+never existed in any version of the code (the choices were always `cash`,
+`card`, `bank_transfer`, `online`), so they were written by hand at some
+point. The constraint failed with nothing but *"check constraint
+ck_payment_method_known is violated by some row"*: no table, no value, no
+count — and under RLS a plain `SELECT` returns nothing, so there was no thread
+to pull during a deploy. The migration now reports the value, the row count
+and what to do, and still refuses to rewrite an unknown method on its own
+(a money row is not guessed at). Red test first:
+`apps/finance/tests/test_method_guard.py`.
+
+**Production risk from this: none that we can see.** Production can only hold
+what the code wrote, and `0006` maps `card` → `terminal` itself. The local
+rows are scratch data. The guard is there so that if a hand-edited row does
+exist somewhere, the deploy says which one instead of stopping blind.
+
+The local `kg_crm` database was left alone (it is stale scratch — finance
+migrations stop at 0005 and it holds 27 leaked test organizations).
+
