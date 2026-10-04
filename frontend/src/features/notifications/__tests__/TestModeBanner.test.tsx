@@ -101,6 +101,9 @@ describe('TestModeBanner', () => {
     )
     show()
     await waitFor(() => expect(screen.getByText(/Qolgan 3 tasi/)).toBeInTheDocument())
+    // Raqamlar TARTIBI: "4 ota-onadan 1 tasi", teskarisi emas — oldin
+    // jumla "1 ota-onadan 4 tasi ulangan" deb bema'ni gap aytardi.
+    expect(screen.getByText(/4 ota-onadan 1 tasi Telegramga ulangan/)).toBeInTheDocument()
   })
 
   it('xabar yuborish butunlay oʻchirilgan bo‘lsa buni ham aytadi', async () => {

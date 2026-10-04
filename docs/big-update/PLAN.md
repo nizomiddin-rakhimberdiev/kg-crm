@@ -322,6 +322,7 @@ Decisions taken under the owner's standing permission (design §7.3):
 | P6-5 | "Your child is absent today" message | Off by default (`notifications.absence_alert`) — confirmed by the owner 2026-10-03; Telegram only |
 | P6-6 | Trial length (owner, 2026-10-03) | **15 days** for self-signup too — one trial length |
 | P6-7 | Contracts and kitchen (owner, 2026-10-03) | **Frozen**: built and tested, switched off by `FEATURE_CONTRACTS` / `FEATURE_KITCHEN` (default off); no customer needs them yet |
+| P6-8 | Unconverted self-signup trials (owner, 2026-10-04) | **As built**: full deletion 30 days after the trial ends, and only when the owner runs `purge_unconverted_trials --apply`. ADR-28 closed |
 
 - [x] **6.1** Payme / Click — parent online payment (ADR-26)
 - [x] **6.2** Parent bot — balance, invoices, pay button, receipts (+ absence alert, P6-5)

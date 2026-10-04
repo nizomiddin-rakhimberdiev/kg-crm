@@ -80,7 +80,7 @@ export function TestModeBanner() {
         <Send className="mt-0.5 h-4 w-4 shrink-0 text-nihol-600" />
         <p>
           {t(
-            '{linked} ota-onadan {total} tasi Telegramga ulangan. Qolgan {missing} tasi xabar olmaydi — bola kartasidan ulash havolasini yuboring.',
+            '{total} ota-onadan {linked} tasi Telegramga ulangan. Qolgan {missing} tasi xabar olmaydi — bola kartasidan ulash havolasini yuboring.',
             { linked: reach.linked, total: reach.total, missing },
           )}
         </p>

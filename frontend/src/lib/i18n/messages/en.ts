@@ -556,7 +556,6 @@ export const messages: Record<string, string> = {
   'Toʻlanishi kerak:': 'Amount due:',
   Toʻlanmagan: 'Unpaid',
   Toʻlov: 'Payment',
-  'Toʻlov haqida SMS': 'Payment SMS',
   'Toʻlov kutilmoqda': 'Awaiting payment',
   'Toʻlov muddati': 'Due date',
   'Toʻlov muddati (oy kuni)': 'Due date (day of month)',
@@ -891,8 +890,6 @@ export const messages: Record<string, string> = {
   '{name} uchun eslatma yuborish': 'Send a reminder for {name}',
   '· kirill alifbosi: bitta SMS 70 belgi': '· Cyrillic: one SMS is 70 characters',
   'Yuborishni boshlash (soat)': 'Sending starts (hour)',
-  'Bundan oldin tayyor boʻlgan xabar navbatda turadi — tungi SMS yuborilmaydi.':
-    'A message ready before this waits in the queue — no night-time SMS.',
   'Yuborishni tugatish (soat)': 'Sending ends (hour)',
   'Shu soatdan keyin xabar yuborilmaydi, ertalab ketadi.':
     'After this hour nothing is sent; it goes out in the morning.',
@@ -937,7 +934,7 @@ export const messages: Record<string, string> = {
   'Yangi havola — eskisi ishlamay qoladi': 'New link — the old one stops working',
   bepul: 'free',
   '{characters} belgi': '{characters} characters',
-  '{linked} ota-onadan {total} tasi Telegramga ulangan. Qolgan {missing} tasi xabar olmaydi — bola kartasidan ulash havolasini yuboring.':
+  '{total} ota-onadan {linked} tasi Telegramga ulangan. Qolgan {missing} tasi xabar olmaydi — bola kartasidan ulash havolasini yuboring.':
     "{linked} of {total} parents are connected to Telegram. The other {missing} get nothing — send the link from the child's card.",
   'Kalendardan tanlash': 'Pick from the calendar',
   'kk.oo.yyyy': 'dd.mm.yyyy',
@@ -1280,4 +1277,8 @@ export const messages: Record<string, string> = {
     'No kindergarten yet? Start a 15-day trial',
   'Karta soʻralmaydi. Davom ettirsangiz, birinchi toʻlangan oy sinov boshlangan kundan hisoblanadi. Davom ettirmasangiz — hech narsa toʻlamaysiz, maʼlumotlaringiz 30 kun yuklab olish uchun saqlanadi.':
     'No card needed. If you continue, the first paid month counts from the start of the trial. If not, you pay nothing and your data stays available for export for 30 days.',
+  // Notifications: channel-neutral labels (Telegram is primary, ADR-23)
+  'Toʻlov haqida xabar': 'Payment message',
+  'Bundan oldin tayyor boʻlgan xabar navbatda turadi — tungi xabar yuborilmaydi.':
+    'A message ready before this hour waits in the queue — nothing is sent at night.',
 }

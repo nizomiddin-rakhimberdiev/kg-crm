@@ -59,12 +59,12 @@ const META: Record<string, SettingMeta> = {
     help: t('Bola bugun «kelmadi» deb belgilansa, ota-onaga xabar ketadi. Pulga taʼsir qilmaydi.'),
   },
   'notifications.payment_receipt': {
-    label: t('Toʻlov haqida SMS'),
+    label: t('Toʻlov haqida xabar'),
     help: t('Toʻlov qabul qilinganda ota-onaga xabar ketadi.'),
   },
   'notifications.send_from_hour': {
     label: t('Yuborishni boshlash (soat)'),
-    help: t('Bundan oldin tayyor boʻlgan xabar navbatda turadi — tungi SMS yuborilmaydi.'),
+    help: t('Bundan oldin tayyor boʻlgan xabar navbatda turadi — tungi xabar yuborilmaydi.'),
   },
   'notifications.send_to_hour': {
     label: t('Yuborishni tugatish (soat)'),

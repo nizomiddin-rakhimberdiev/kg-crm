@@ -554,7 +554,6 @@ export const messages: Record<string, string> = {
   'Toʻlanishi kerak:': 'К оплате:',
   Toʻlanmagan: 'Не оплачено',
   Toʻlov: 'Платёж',
-  'Toʻlov haqida SMS': 'SMS о платеже',
   'Toʻlov kutilmoqda': 'Ожидает оплаты',
   'Toʻlov muddati': 'Срок оплаты',
   'Toʻlov muddati (oy kuni)': 'Срок оплаты (день месяца)',
@@ -890,8 +889,6 @@ export const messages: Record<string, string> = {
   '{name} uchun eslatma yuborish': 'Отправить напоминание: {name}',
   '· kirill alifbosi: bitta SMS 70 belgi': '· кириллица: одна SMS — 70 символов',
   'Yuborishni boshlash (soat)': 'Начало отправки (час)',
-  'Bundan oldin tayyor boʻlgan xabar navbatda turadi — tungi SMS yuborilmaydi.':
-    'Сообщение, готовое раньше, ждёт в очереди — ночные SMS не отправляются.',
   'Yuborishni tugatish (soat)': 'Конец отправки (час)',
   'Shu soatdan keyin xabar yuborilmaydi, ertalab ketadi.':
     'После этого часа сообщения не отправляются — уйдут утром.',
@@ -936,7 +933,7 @@ export const messages: Record<string, string> = {
   'Yangi havola — eskisi ishlamay qoladi': 'Новая ссылка — старая перестанет работать',
   bepul: 'бесплатно',
   '{characters} belgi': '{characters} символов',
-  '{linked} ota-onadan {total} tasi Telegramga ulangan. Qolgan {missing} tasi xabar olmaydi — bola kartasidan ulash havolasini yuboring.':
+  '{total} ota-onadan {linked} tasi Telegramga ulangan. Qolgan {missing} tasi xabar olmaydi — bola kartasidan ulash havolasini yuboring.':
     'К Telegram подключены {linked} из {total} родителей. Остальные {missing} не получат сообщений — отправьте ссылку из карточки ребёнка.',
   'Kalendardan tanlash': 'Выбрать из календаря',
   'kk.oo.yyyy': 'дд.мм.гггг',
@@ -1275,4 +1272,8 @@ export const messages: Record<string, string> = {
     'Ещё нет садика в системе? Начните 15-дневный пробный период',
   'Karta soʻralmaydi. Davom ettirsangiz, birinchi toʻlangan oy sinov boshlangan kundan hisoblanadi. Davom ettirmasangiz — hech narsa toʻlamaysiz, maʼlumotlaringiz 30 kun yuklab olish uchun saqlanadi.':
     'Карта не нужна. Если продолжите, первый оплачиваемый месяц считается с начала пробного периода. Если нет — вы ничего не платите, а данные 30 дней доступны для выгрузки.',
+  // Notifications: channel-neutral labels (Telegram is primary, ADR-23)
+  'Toʻlov haqida xabar': 'Сообщение об оплате',
+  'Bundan oldin tayyor boʻlgan xabar navbatda turadi — tungi xabar yuborilmaydi.':
+    'Сообщение, готовое раньше этого часа, ждёт в очереди — ночью не отправляется.',
 }

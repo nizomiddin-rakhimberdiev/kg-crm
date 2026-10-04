@@ -744,7 +744,9 @@ phase branch.** Details and conflict resolutions are in the merge commit
 1. Kitchen — **frozen**: no customer wants it yet.
 2. Trial — **15 days** everywhere; the self-signup's 14-day parameter was
    removed (one trial length, one code path).
-3. "What does purge mean?" — answered in chat; policy decision still open.
+3. Unconverted trials — **as built** (confirmed 2026-10-04): 30 days after the
+   trial ends the organization is deleted in full, and only when the owner runs
+   `purge_unconverted_trials --apply`. ADR-28 is closed.
 4. Absence alert stays off; parents are reached by Telegram only.
 5. Contracts — **frozen** too.
 
@@ -753,4 +755,17 @@ Implementation: `apps/core/features.py` — `FEATURE_CONTRACTS`,
 hidden (the frontend reads `user.features` from `/auth/me`, so one switch
 drives both). Tables and migrations stay; the test suite runs with both on so
 the code stays ready.
+
+Also on 2026-10-04: the "Toʻlov haqida SMS" setting label became "Toʻlov haqida
+xabar" (and the sending-window help lost its "SMS") — the switch has governed
+Telegram as well since ADR-23, and the Telegram guide would have had to
+contradict the screen.
+
+### Telegram bot guide (2026-10-04)
+
+`docs/guides/telegram-bot.md` — written for kindergarten staff, in Uzbek, from
+the shipped screens and bot replies. The owner asked for it to hand to
+customers; it is also the first document that describes the bot end to end
+(setup, connecting a parent, the four buttons, what the kindergarten sends,
+the log, limits).
 

@@ -21,6 +21,13 @@ This folder is the **single source of truth** for the project. Read the document
 | 06 | **[06_Development_Roadmap](./06_Development_Roadmap.md)** | *In what order* do we build it? | Before planning a sprint or picking up work. |
 | 07 | **[07_Radix_Intelligence](./07_Radix_Intelligence.md)** | *What* does Radix AI compute, from which rows, with what evidence — and what it deliberately is not? | Before touching insights, the nightly engine, or any "AI" claim in marketing. |
 
+**Operator and customer guides** (not design docs — they describe what is already shipped):
+
+| File | For whom |
+|---|---|
+| [guides/telegram-bot.md](./guides/telegram-bot.md) | Kindergarten staff: the parent bot — connecting parents, the four buttons, what gets sent, the log (Uzbek) |
+| [ops/backup.md](./ops/backup.md) | Us: backup and restore |
+
 ---
 
 ## Document Dependency Map

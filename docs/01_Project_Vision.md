@@ -138,7 +138,7 @@ Worked examples: 50 children → 400 000 · 80 children → 550 000 · 150 child
 - If the customer declines, they pay **nothing**.
 - Marketing must never describe the trial as "100 % free". The accurate claim is *"15-day trial — pay nothing if it isn't for you."*
 - Because customers are legal entities, a bank transfer takes days to clear. A converting organization enters a **`pending_payment` grace state with full access** (7 days) once the invoice is issued — access is never cut off mid-transfer.
-- A declining organization keeps **read-only access + data export for 30 days**, then the data is purged. For self-signup trials that never paid, this is `purge_unconverted_trials` (dry run by default; the owner runs it with `--apply`). Vendor-opened and paying organizations are never touched by it.
+- A declining organization keeps **read-only access + data export for 30 days**, then the data is purged. For self-signup trials that never paid, this is `purge_unconverted_trials` (dry run by default; the owner runs it with `--apply`). Vendor-opened and paying organizations are never touched by it. **The owner confirmed this policy on 2026-10-04**, choosing full deletion after the 30-day window over keeping the tenant forever or keeping anonymised counters: a never-paid trial is not a customer, and keeping a family's names and phone numbers with no contract behind them is the worse outcome. Backups still hold the data for their 14-day rotation.
 
 ### 4.5 What is never metered
 
