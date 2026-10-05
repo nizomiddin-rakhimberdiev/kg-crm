@@ -43,6 +43,10 @@ x-django-env: &django-env
   # merchant kalitlari o'qilmaydi, indeks esa qayta qurishni talab qiladi.
   MERCHANT_SECRET_KEY: ${MERCHANT_SECRET_KEY:-}
   CONTACT_INDEX_KEY: ${CONTACT_INDEX_KEY:-}
+  # Platforma konsoli 2FA — DEPLOY KALITI (ADR-15, ADR-24). Egasi
+  # 2026-10-05 da uni yana o'chirdi: konsolda yagona vendor xodimi bor
+  # va har kirishda Authenticator kodi unga keraksiz ishqalanish.
+  PLATFORM_2FA_REQUIRED: ${PLATFORM_2FA_REQUIRED:-True}
   # Muzlatilgan modullar (egasining qarori 2026-10-03).
   FEATURE_CONTRACTS: ${FEATURE_CONTRACTS:-False}
   FEATURE_KITCHEN: ${FEATURE_KITCHEN:-False}
