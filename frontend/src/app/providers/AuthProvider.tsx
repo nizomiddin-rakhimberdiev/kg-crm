@@ -151,11 +151,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       try {
         const { user: me, subscription: sub, organization_settings } = await authApi.me()
-        if (!cancelled) {
-          setUser(me)
-          setSubscription(sub)
-          applyOrganizationLocale(organization_settings?.default_language)
+        if (cancelled) return
+
+        // Manzildagi bog'cha sessiyadagidan boshqa bo'lsa — o'z
+        // manziliga qaytaramiz (2026-10-05).
+        //
+        // Bitta brauzerda refresh cookie BITTA: ikkinchi bog'chaga
+        // kirish birinchi sessiyani almashtiradi, eski yorliqdagi
+        // manzil esa o'zgarmay qoladi. Natijada URL `/t/paddington/…`
+        // deb turadi, ekranda esa boshqa bog'chaning ma'lumoti.
+        //
+        // Bu sizib chiqish EMAS — tashkilot tokendan olinadi va RLS
+        // bazada ushlab turadi (ADR-9). Lekin bu XATO QILDIRADI:
+        // xodim o'zini boshqa bog'chada deb o'ylab davomat belgilashi
+        // yoki to'lov yozishi mumkin. Kirishdagi bilan bir xil
+        // to'g'rilash, faqat endi sessiya tiklanganda ham.
+        const slug = me.organization?.slug ?? null
+        if (slug && shouldLandOnTenantAddress(slug)) {
+          window.location.replace(tenantPath(slug))
+          return
         }
+
+        setUser(me)
+        setSubscription(sub)
+        applyOrganizationLocale(organization_settings?.default_language)
       } catch {
         if (!cancelled) clearSession()
       } finally {
