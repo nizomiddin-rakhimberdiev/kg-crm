@@ -807,3 +807,46 @@ exist somewhere, the deploy says which one instead of stopping blind.
 The local `kg_crm` database was left alone (it is stale scratch — finance
 migrations stop at 0005 and it holds 27 leaked test organizations).
 
+## 2026-10-05 — deployed to production
+
+The owner asked for the big update to go live. Deployed from
+`big-update/phase-6-code`; both stacks (SaaS and `/private`) now run it,
+`check_rls` reports **58** tables on each.
+
+Before touching anything: `./scripts/backup.sh`, which takes the dump, restores
+it into a scratch database and compares row counts (1122 rows, exact match).
+The archive stays on the server — copying it to a laptop was refused, correctly,
+because it holds children's and parents' data.
+
+**Migrations.** All applied, including `finance.0009_backfill_allocations` over
+real money. Verified afterwards for Oriental Kinderland: `invoice.amount_paid`
+summed to 333 600 000, the allocation rows summed to the same, outstanding debt
+84 880 000. The backfill moved the link into its own table and changed no
+figure, which is what it promised.
+
+**Three faults found and fixed during the deploy, each invisible from a test
+run:**
+
+1. `FRONTEND_URL` was never set on the server and defaults to
+   `http://localhost:5173`. Every Telegram invite link and payment link would
+   have been built correctly and pointed at the deployer's laptop. Production
+   now derives it from `PUBLIC_BASE_URL`, and an empty `FRONTEND_URL=` line
+   falls back the same way.
+2. `requests` was used in five production paths (Telegram, Eskiz, lead alerts,
+   two commands) and declared nowhere; locally it arrived through
+   `djangorestframework-stubs`. Every message send in production would have
+   raised `ModuleNotFoundError`. `apps/core/tests/test_dependencies.py` now
+   walks every import in `apps/`, including the ones inside functions — which
+   is how this one stayed hidden.
+3. `compose.prod.yaml` forwards environment variables by explicit allow-list,
+   so every phase-6 key sat in `.env` unseen. The Telegram token read as empty;
+   `rebuild_contact_index` quietly used the `SECRET_KEY` fallback and wrote 41
+   digests that the real key would never have matched (the rebuild afterwards
+   reported `+41 −41`).
+
+**After the deploy.** Contact index built for 41 guardians across 3
+organizations (idempotent on a second run). Telegram webhook set and accepted;
+a wrong secret answers `404`. Contracts and kitchen answer `404` while live
+modules answer `401`, so the feature switch does what it claims. The local
+polling bot was stopped first — Telegram refuses polling and a webhook at once.
+
