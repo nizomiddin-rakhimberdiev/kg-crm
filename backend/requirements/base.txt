@@ -22,6 +22,15 @@ django-redis==6.0.0
 celery==5.6.3
 django-celery-beat==2.9.0
 
+# HTTP mijoz — Telegram, Eskiz SMS va sotuv xabarnomalari (ADR-22, ADR-23).
+#
+# Ilgari e'lon qilinmagan edi: lokalda u `djangorestframework-stubs`
+# (dev bog'liqlik) orqali tasodifan o'rnatilgan, shuning uchun hamma
+# narsa ishlardi. Production image'ida esa yo'q edi va har bir xabar
+# yuborish `ModuleNotFoundError` bilan tugardi — buni deploy paytida
+# bilib qoldik (`apps/core/tests/test_dependencies.py` endi qo'riqlaydi).
+requests==2.34.2
+
 # Rasm validatsiyasi (ImageField) — profil rasmi (docs/02 §16.3)
 Pillow==12.3.0
 
