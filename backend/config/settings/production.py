@@ -1,7 +1,7 @@
 """Ishlab chiqarish (production) sozlamalari."""
 
 from .base import *  # noqa: F403
-from .base import DATABASES, env
+from .base import DATABASES, PUBLIC_BASE_URL, env
 
 DEBUG = False
 
@@ -75,3 +75,15 @@ DATABASES["default"]["OPTIONS"] = {  # noqa: F405
 # production — never one derived from SECRET_KEY (rotating that would
 # silently make every stored merchant key unreadable).
 MERCHANT_KEY_REQUIRED = True
+
+# Ulash havolalari (`t.me/<bot>?start=…`) va to'lov havolalari
+# `FRONTEND_URL` dan quriladi. Bu o'rnatmada ilova va ommaviy sayt bitta
+# hostda, shuning uchun u `PUBLIC_BASE_URL` ga tenglashtiriladi.
+#
+# Sukut qiymat (`http://localhost:5173`) productionda jimgina ishlardi:
+# havola yasalaveradi, lekin ota-ona uni ochganda hech qayerga bormaydi —
+# va buni faqat ota-ona aytganda bilib qolardik.
+# `or` — chunki `.env` da `FRONTEND_URL=` (bo'sh) yozib qo'yish namunalardagi
+# eng tabiiy xato, va u `default` ni ishga tushirmaydi: qiymat BERILGAN,
+# shunchaki bo'sh. Natijada havola hostsiz chiqardi.
+FRONTEND_URL = env("FRONTEND_URL", default="") or PUBLIC_BASE_URL
