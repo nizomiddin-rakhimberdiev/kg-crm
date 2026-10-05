@@ -881,3 +881,20 @@ Still true by design: two kindergartens cannot be open at once in one browser
 profile. A second profile or a private window is the way, and the app now
 makes the mismatch impossible to miss instead of showing it silently.
 
+### Platform console 2FA switched off again (2026-10-05)
+
+After the deploy the console started asking for an Authenticator code: ADR-24
+made `PLATFORM_2FA_REQUIRED` default to on and production had never set it.
+The owner asked for it off, so `.env` now says `False` — **and the variable had
+to be added to the compose allow-list**, which is the third time that list has
+hidden a setting during this deploy.
+
+Verified: the setting reads `False` in the container, and a sign-in attempt now
+answers "credentials wrong" instead of `TOTP_REQUIRED` (tested with a
+deliberately wrong password, so the real one was never needed). The login page
+needs no change — it only shows the code field after the server asks for one.
+
+Worth remembering: that account has **0 backup codes**. If 2FA is ever turned
+back on and the phone is lost, the way in is `create_platform_user --email …
+--update --new-2fa` on the server.
+
