@@ -32,6 +32,30 @@ x-django-env: &django-env
   REDIS_URL: redis://redis:6379/0
   CELERY_BROKER_URL: redis://redis:6379/1
   CELERY_RESULT_BACKEND: redis://redis:6379/2
+  # Telegram — ota-onalar bilan asosiy kanal (ADR-23). Bo'sh bo'lsa bot
+  # o'chiq: webhook `404` beradi va xabarlar "test rejimi" bo'lib qoladi.
+  TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+  TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+  TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+  TELEGRAM_LEADS_CHAT_ID: ${TELEGRAM_LEADS_CHAT_ID:-}
+  # Onlayn to'lov kalitlarini shifrlash (PLAN 6.1) va bot kontakt
+  # indeksi (ADR-27). Ikkalasi ham O'ZGARMAS: o'zgarsa saqlangan
+  # merchant kalitlari o'qilmaydi, indeks esa qayta qurishni talab qiladi.
+  MERCHANT_SECRET_KEY: ${MERCHANT_SECRET_KEY:-}
+  CONTACT_INDEX_KEY: ${CONTACT_INDEX_KEY:-}
+  # Muzlatilgan modullar (egasining qarori 2026-10-03).
+  FEATURE_CONTRACTS: ${FEATURE_CONTRACTS:-False}
+  FEATURE_KITCHEN: ${FEATURE_KITCHEN:-False}
+  # Radix'ning o'z merchant hisobi — obuna to'lovi (PLAN 6.4).
+  RADIX_PAYME_MERCHANT_ID: ${RADIX_PAYME_MERCHANT_ID:-}
+  RADIX_PAYME_KEY: ${RADIX_PAYME_KEY:-}
+  RADIX_CLICK_MERCHANT_ID: ${RADIX_CLICK_MERCHANT_ID:-}
+  RADIX_CLICK_SERVICE_ID: ${RADIX_CLICK_SERVICE_ID:-}
+  RADIX_CLICK_SECRET: ${RADIX_CLICK_SECRET:-}
+  # Eskiz SMS — hozircha o'chiq (ADR-23), yoqilganda to'ldiriladi.
+  ESKIZ_EMAIL: ${ESKIZ_EMAIL:-}
+  ESKIZ_PASSWORD: ${ESKIZ_PASSWORD:-}
+  ESKIZ_FROM: ${ESKIZ_FROM:-}
 
 services:
   db:
