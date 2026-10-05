@@ -850,3 +850,34 @@ a wrong secret answers `404`. Contracts and kitchen answer `404` while live
 modules answer `401`, so the feature switch does what it claims. The local
 polling bot was stopped first — Telegram refuses polling and a webhook at once.
 
+### "Is multi-tenancy broken?" — no, but the address lied (2026-10-05)
+
+The owner signed into Paddington and Oriental Kinderland in one browser and
+found `/t/paddington/attendance` showing Oriental Kinderland in the header and
+the group **Quyoshcha** in the picker. Checked against production:
+
+| Organization | Address | Groups |
+|---|---|---|
+| Oriental Kinderland | `/t/toshkent-qamarniso-kochasi-9/` | Quyoshcha, Yulduzcha, nimadir |
+| Paddington | `/t/paddington/` | Angels, Aqua, Genius, Little Dino |
+
+So the screen held **Oriental Kinderland's own** groups, not Paddington's.
+Nothing crossed the boundary: the organization comes from the token
+(`core/middleware.py` reads `user.organization_id`, never the URL) and RLS
+enforces it in the database. The slug is a router basename, nothing more.
+
+What actually happened: one browser holds one refresh cookie, so the second
+sign-in replaced the first session. Each tab keeps its own access token in
+memory, which is why the mix-up only appears after a reload — then the older
+tab restores the newer session while keeping its old URL.
+
+Login already redirected to the session's own address; **session restore did
+not**, so the address stayed wrong. Fixed, with a red test first
+(`app/providers/__tests__/tenantAddress.test.tsx`). Not a leak, but it invites
+a real mistake: marking attendance or taking a payment while believing you are
+in the other kindergarten.
+
+Still true by design: two kindergartens cannot be open at once in one browser
+profile. A second profile or a private window is the way, and the app now
+makes the mismatch impossible to miss instead of showing it silently.
+
