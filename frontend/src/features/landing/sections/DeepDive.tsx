@@ -11,12 +11,11 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { motion, useMotionValueEvent, useTransform } from 'framer-motion'
 import { Sparkles } from 'lucide-react'
 import { copy, groupThousands, type Locale } from '../content'
-import { CountUp, easeInOut, Reveal, useCompact, useScene, useStaticScene } from '../motion'
+import { CountUp, easeInOut, Reveal, useScene, useStaticScene } from '../motion'
 import { Bars, Frame, Kpi, Pill, Row } from '../ui/Mock'
 
 const TREND = [61, 68, 72, 70, 79, 86]
 const ZOOM_DESKTOP = 1.7
-const ZOOM_COMPACT = 1.3
 
 type Point = { x: number; y: number }
 
@@ -72,7 +71,6 @@ export function DeepDive({ locale }: { locale: Locale }) {
   // o'rtasiga kelishi uchun shu ham qo'shiladi.
   const frameShift = useRef<Point>({ x: 0, y: 0 })
   const progress = useScene(ref)
-  const compact = useCompact()
   const isStatic = useStaticScene()
   const [step, setStep] = useState(0)
 
@@ -91,14 +89,14 @@ export function DeepDive({ locale }: { locale: Locale }) {
     measure()
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
-  }, [compact])
+  }, [])
 
   // Bosqich i uchun (scale, x, y): 0 — umumiy (1, 0, 0); qolganlari —
   // nishon markazga kelsin: translate = −markaz × scale.
   const pose = (i: number) => {
     if (i === 0 || i >= STOPS.length) return { s: 1, x: 0, y: 0 }
     const c = points.current[i]
-    const zoom = compact ? ZOOM_COMPACT : ZOOM_DESKTOP
+    const zoom = ZOOM_DESKTOP
     return { s: zoom, x: -c.x * zoom - frameShift.current.x, y: -c.y * zoom - frameShift.current.y }
   }
   const mix = (p: number, key: 's' | 'x' | 'y') => {
@@ -126,25 +124,14 @@ export function DeepDive({ locale }: { locale: Locale }) {
         style={pinned ? { scale, x, y } : undefined}
         className="origin-center will-change-transform"
       >
-        <Frame demo={t.demo} compact={compact}>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+        <Frame demo={t.demo}>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
             {t.demo.kpis.map((kpi, i) => (
-              <div
-                key={kpi.label}
-                ref={
-                  i === 1
-                    ? (el) => (targets.current[1] = el)
-                    : i === 2 && compact
-                      ? (el) => (targets.current[2] = el)
-                      : undefined
-                }
-              >
+              <div key={kpi.label} ref={i === 1 ? (el) => (targets.current[1] = el) : undefined}>
                 <Kpi
                   kpi={kpi}
                   index={i}
-                  emphasis={
-                    pinned && ((step === 1 && i === 1) || (compact && step === 2 && i === 2))
-                  }
+                  emphasis={pinned && step === 1 && i === 1}
                   valueNode={
                     <CountUp
                       to={kpi.value}
@@ -168,8 +155,8 @@ export function DeepDive({ locale }: { locale: Locale }) {
               <Bars values={TREND} labels={t.demo.months} className="mt-2" />
             </div>
             <div
-              ref={compact ? undefined : (el) => (targets.current[2] = el)}
-              className={`hidden rounded-xl border p-3 transition-colors sm:block ${pinned && !compact && step === 2 ? 'border-brand-300 ring-4 ring-brand-500/10' : 'border-slate-200/80'}`}
+              ref={(el) => (targets.current[2] = el)}
+              className={`hidden rounded-xl border p-3 transition-colors sm:block ${pinned && step === 2 ? 'border-brand-300 ring-4 ring-brand-500/10' : 'border-slate-200/80'}`}
             >
               <div className="flex items-center justify-between">
                 <p className="text-[12px] font-semibold text-slate-800">{t.demo.sidebar[4]}</p>
@@ -224,7 +211,7 @@ export function DeepDive({ locale }: { locale: Locale }) {
 
   if (!pinned) {
     return (
-      <section ref={ref} className="bg-white py-16 lg:py-24">
+      <section ref={ref} className="bg-white py-14 lg:py-24">
         <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
           <Reveal>{heading}</Reveal>
           <Reveal delay={0.08} className="mt-8">
@@ -237,11 +224,7 @@ export function DeepDive({ locale }: { locale: Locale }) {
   }
 
   return (
-    <section
-      ref={ref}
-      className="relative bg-white"
-      style={{ height: compact ? '280vh' : '320vh' }}
-    >
+    <section ref={ref} className="relative bg-white" style={{ height: '320vh' }}>
       <div
         ref={stickyRef}
         className="sticky top-0 flex h-screen flex-col overflow-hidden pt-[76px]"

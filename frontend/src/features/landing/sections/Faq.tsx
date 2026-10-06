@@ -10,13 +10,12 @@ import { useRef, useState } from 'react'
 import { useMotionValueEvent, useTransform } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { copy, type Locale } from '../content'
-import { Reveal, useCompact, useScene, useStaticScene } from '../motion'
+import { Reveal, useScene, useStaticScene } from '../motion'
 
 export function Faq({ locale }: { locale: Locale }) {
   const t = copy[locale].faq
   const ref = useRef<HTMLElement>(null)
   const progress = useScene(ref)
-  const compact = useCompact()
   const isStatic = useStaticScene()
   const steps = t.items.length
   const [step, setStep] = useState(0)
@@ -84,7 +83,7 @@ export function Faq({ locale }: { locale: Locale }) {
 
   if (isStatic) {
     return (
-      <section ref={ref} id="faq" className="scroll-mt-16 bg-slate-50 py-20 lg:py-32">
+      <section ref={ref} id="faq" className="scroll-mt-16 bg-slate-50 py-14 lg:py-32">
         <div className="mx-auto grid max-w-[1280px] gap-10 px-5 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:px-8">
           <Reveal>{heading}</Reveal>
           <Reveal delay={0.06}>{list}</Reveal>
@@ -98,7 +97,7 @@ export function Faq({ locale }: { locale: Locale }) {
       ref={ref}
       id="faq"
       className="relative bg-slate-50"
-      style={{ height: `${steps * (compact ? 42 : 45)}vh` }}
+      style={{ height: `${steps * 45}vh` }}
     >
       <div className="sticky top-0 flex h-screen flex-col overflow-hidden pt-[76px]">
         <div className="mx-auto grid w-full max-w-[1280px] flex-1 content-center gap-5 px-5 py-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-10 lg:px-8">

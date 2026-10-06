@@ -80,8 +80,16 @@ export function Frame({
           </aside>
         )}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
-            <div className="h-6 w-40 max-w-[50%] rounded-md bg-slate-100" />
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-2.5">
+            {/*
+              Ilgari bu yerda bo'sh kulrang to'rtburchak turardi va u
+              telefonda "yuklanmagan skelет" bo'lib ko'rinardi —
+              mahsulot tayyor emasdek. Endi oyna sarlavhasi: qaysi
+              ekran ochiq ekani yoziladi.
+            */}
+            <p className="truncate text-[13px] font-semibold text-slate-800">
+              {demo.sidebar[active] ?? demo.sidebar[0]}
+            </p>
             <div className="flex items-center gap-2">
               <span className="hidden whitespace-nowrap text-[12px] text-slate-400 sm:block">
                 {demo.today}
@@ -132,7 +140,7 @@ export function Kpi({
       <span className={`grid h-7 w-7 place-items-center rounded-lg ${TONES[index] ?? TONES[0]}`}>
         <Icon className="h-3.5 w-3.5" />
       </span>
-      <p className="num mt-2.5 whitespace-nowrap text-[14px] font-bold tracking-tight text-slate-950 sm:text-[15px]">
+      <p className="num mt-2.5 truncate text-[14px] font-bold tracking-tight text-slate-950 sm:text-[15px]">
         {valueNode ?? (money ? groupThousands(kpi.value) : kpi.value)}
         {kpi.suffix ?? ''}
       </p>

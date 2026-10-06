@@ -9,7 +9,7 @@
 import { useRef, useState } from 'react'
 import { useMotionValueEvent, useTransform } from 'framer-motion'
 import { copy, type Locale, type RoleCopy } from '../content'
-import { centerInStrip, Reveal, useCompact, useScene, useStaticScene } from '../motion'
+import { Reveal, useScene, useStaticScene } from '../motion'
 import { Bars, Frame, Kpi, Pill, Row } from '../ui/Mock'
 
 const STEPS = 4
@@ -43,9 +43,7 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
             />
           </div>
           <div className="hidden rounded-xl border border-slate-200/80 p-3 sm:block">
-            <p className="text-[12px] font-semibold text-slate-800">
-              {t.chartTitle}
-            </p>
+            <p className="text-[12px] font-semibold text-slate-800">{t.chartTitle}</p>
             <Bars values={[61, 68, 72, 70, 79, 86]} labels={t.months} className="mt-2" />
           </div>
         </div>
@@ -93,9 +91,7 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
           ))}
         </div>
         <div className="mt-3 rounded-xl border border-slate-200/80 p-3">
-          <p className="text-[12px] font-semibold text-slate-800">
-            {ui.acceptPayment}
-          </p>
+          <p className="text-[12px] font-semibold text-slate-800">{ui.acceptPayment}</p>
           <Row
             name="Karimov Ali"
             meta={ui.septemberInvoice}
@@ -153,7 +149,6 @@ export function Roles({ locale }: { locale: Locale }) {
   const t = copy[locale]
   const ref = useRef<HTMLElement>(null)
   const progress = useScene(ref)
-  const compact = useCompact()
   const isStatic = useStaticScene()
   const [step, setStep] = useState(0)
   const [hover, setHover] = useState<RoleCopy['id'] | null>(null)
@@ -182,7 +177,7 @@ export function Roles({ locale }: { locale: Locale }) {
   )
 
   const panel = (
-    <Frame demo={t.demo} compact={compact} active={SIDEBAR[role]} className="rx-fade" key={role}>
+    <Frame demo={t.demo} active={SIDEBAR[role]} className="rx-fade" key={role}>
       <div className="mb-3 flex items-center gap-2">
         <span className="grid h-7 w-7 place-items-center rounded-full bg-amber-100 text-[12px] font-bold text-amber-800">
           {active.title.slice(0, 1)}
@@ -210,11 +205,10 @@ export function Roles({ locale }: { locale: Locale }) {
             role="tab"
             aria-selected={on}
             type="button"
-            onMouseEnter={() => !compact && setHover(item.id)}
-            onMouseLeave={() => !compact && setHover(null)}
+            onMouseEnter={() => setHover(item.id)}
+            onMouseLeave={() => setHover(null)}
             onFocus={() => setHover(item.id)}
             onClick={() => setHover(item.id)}
-            ref={(el) => compact && on && centerInStrip(el)}
             className={`min-w-[200px] shrink-0 snap-start rounded-2xl border p-3 text-left transition-all duration-300 lg:min-w-0 lg:p-5 ${
               on
                 ? 'border-slate-950 bg-white shadow-[0_20px_50px_-30px_rgba(18,53,47,0.35)]'
@@ -247,12 +241,18 @@ export function Roles({ locale }: { locale: Locale }) {
 
   if (isStatic) {
     return (
-      <section ref={ref} className="bg-slate-50 py-16 lg:py-28">
+      <section ref={ref} className="bg-slate-50 py-14 lg:py-28">
         <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
           <Reveal>{heading}</Reveal>
+          {/*
+            `min-w-0` — grid bolasining standart `min-width: auto` si
+            uni ICHIDAGI eng uzun so'zdan kichik qilolmaydi. Ruscha
+            yorliqlar uzunroq, shuning uchun panel 390 px ekranda
+            425 px bo'lib, butun sahifani yon tomonga surardi.
+          */}
           <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-10">
             {tabs}
-            <div>{panel}</div>
+            <div className="min-w-0">{panel}</div>
           </div>
         </div>
       </section>
@@ -260,23 +260,14 @@ export function Roles({ locale }: { locale: Locale }) {
   }
 
   return (
-    <section
-      ref={ref}
-      className="relative bg-slate-50"
-      style={{ height: compact ? `${STEPS * 60}vh` : `${STEPS * 70}vh` }}
-    >
+    <section ref={ref} className="relative bg-slate-50" style={{ height: `${STEPS * 70}vh` }}>
       <div className="sticky top-0 flex h-screen flex-col overflow-hidden pt-[76px]">
         <div className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col px-5 pt-4 lg:justify-center lg:px-8 lg:pt-0">
           {heading}
           <div className="mt-4 grid gap-4 lg:mt-8 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-10">
             {tabs}
-            <div>{panel}</div>
+            <div className="min-w-0">{panel}</div>
           </div>
-          {compact && (
-            <p className="mt-3 text-[13px] leading-5 text-slate-500 [@media(max-height:780px)]:hidden">
-              {active.focus}
-            </p>
-          )}
         </div>
       </div>
     </section>

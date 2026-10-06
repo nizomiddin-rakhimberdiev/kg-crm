@@ -13,6 +13,7 @@ import { telegramUrl } from '@/config/contact'
 import { POLICY_VERSION } from '@/features/marketing/legal'
 import { marketingApi } from '@/features/marketing/api'
 import { ApiError } from '@/lib/api/types'
+import { env } from '@/config/env'
 import { copy, type Locale } from '../content'
 import { Reveal } from '../motion'
 
@@ -68,7 +69,7 @@ export function Lead({ locale }: { locale: Locale }) {
   ] as const
 
   return (
-    <section id="demo" className="relative scroll-mt-16 overflow-hidden bg-white py-20 lg:py-32">
+    <section id="demo" className="relative scroll-mt-16 overflow-hidden bg-white py-14 lg:py-32">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -left-40 top-1/3 h-[560px] w-[560px] rounded-full bg-[radial-gradient(closest-side,rgba(46,158,107,0.12),transparent)]"
@@ -82,10 +83,17 @@ export function Lead({ locale }: { locale: Locale }) {
             {t.title}
           </h2>
           <p className="mt-4 max-w-md text-base leading-7 text-slate-600 lg:text-lg">{t.text}</p>
-          <div className="mt-8 flex items-start gap-3 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+          <div className="mt-6 flex items-start gap-3 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600 lg:mt-8">
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-            {copy[locale].faq.items[6].a}
+            {t.assurance}
           </div>
+          <a
+            href={env.signupUrl}
+            className="mt-3 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 text-[15px] font-semibold text-slate-800 transition hover:border-slate-300 hover:bg-slate-50"
+          >
+            {copy[locale].nav.trial}
+            <ArrowRight className="h-4 w-4" />
+          </a>
         </Reveal>
 
         <Reveal delay={0.08}>

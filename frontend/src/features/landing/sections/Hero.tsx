@@ -10,8 +10,9 @@
 import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowDown, ArrowRight, Sparkles } from 'lucide-react'
+import { env } from '@/config/env'
 import { copy, groupThousands, type Locale } from '../content'
-import { CountUp, useCompact, useStatic } from '../motion'
+import { CountUp, useStaticScene } from '../motion'
 import { Bars, Frame, Kpi, Pill, Row } from '../ui/Mock'
 
 const TREND = [61, 68, 72, 70, 79, 86]
@@ -20,14 +21,17 @@ export function Hero({ locale }: { locale: Locale }) {
   const t = copy[locale]
   const ui = t.ui.hero
   const ref = useRef<HTMLElement>(null)
-  const compact = useCompact()
-  const isStatic = useStatic()
+  // Telefonda va planshetda panel scroll bilan HARAKATLANMAYDI: 3D
+  // o'girish va miqyos har kadrda qayta chizishni talab qiladi va
+  // sekin telefonda bu silliq scroll'ni yeb qo'yadi. Harakat —
+  // desktopning ortiqchasi, mobilning narxi emas.
+  const isStatic = useStaticScene()
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] })
 
-  const scale = useTransform(scrollYProgress, [0, 1], [1, compact ? 1.06 : 1.22])
-  const y = useTransform(scrollYProgress, [0, 1], [0, compact ? -30 : -90])
-  const rotateY = useTransform(scrollYProgress, [0, 0.6], [compact ? 0 : -7, 0])
-  const rotateX = useTransform(scrollYProgress, [0, 0.6], [compact ? 0 : 5, 0])
+  const scale = useTransform(scrollYProgress, [0, 1], [1, 1.22])
+  const y = useTransform(scrollYProgress, [0, 1], [0, -90])
+  const rotateY = useTransform(scrollYProgress, [0, 0.6], [-7, 0])
+  const rotateX = useTransform(scrollYProgress, [0, 0.6], [5, 0])
   const opacity = useTransform(scrollYProgress, [0.6, 0.98], [1, 0])
   const textY = useTransform(scrollYProgress, [0, 1], [0, -50])
   const textOpacity = useTransform(scrollYProgress, [0.3, 0.8], [1, 0])
@@ -35,7 +39,11 @@ export function Hero({ locale }: { locale: Locale }) {
   const motionStyle = isStatic ? undefined : { scale, y, rotateY, rotateX, opacity }
 
   return (
-    <section ref={ref} id="product" className="relative overflow-hidden bg-sut pt-[76px]">
+    <section
+      ref={ref}
+      id="product"
+      className="relative overflow-hidden bg-sut pt-[68px] lg:pt-[76px]"
+    >
       {/* Fon: juda och ko'k nur va nozik nuqta-to'r — "aniq panjara" hissi. */}
       <div
         aria-hidden="true"
@@ -52,35 +60,49 @@ export function Hero({ locale }: { locale: Locale }) {
         hero tepada bo'sh joy qoldirardi. 720 px da esa keyingi
         bo'lim chekkadan ko'rinib, pastga tushishga chorlaydi.
       */}
-      <div className="relative mx-auto grid min-h-[calc(100svh-76px)] max-w-[1280px] items-center gap-10 px-5 py-12 lg:min-h-[720px] lg:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] lg:gap-10 lg:px-8 lg:py-16">
+      {/*
+        Balandlik EKRANGA emas, mazmunga o'lchanadi — ikkala o'lchamda
+        ham. Telefonda `100svh` majburlanganda sarlavha bilan panel
+        orasida 150 px bo'sh joy qolardi va panelning faqat chekkasi
+        ko'rinardi: birinchi ekran "yarim yuklangan" taassurot berardi.
+      */}
+      <div className="relative mx-auto grid max-w-[1280px] items-center gap-8 px-5 py-10 sm:py-12 lg:min-h-[720px] lg:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] lg:gap-10 lg:px-8 lg:py-16">
         <motion.div style={isStatic ? undefined : { y: textY, opacity: textOpacity }}>
           <p className="rx-rise inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-[13px] font-semibold text-brand-700">
             <Sparkles className="h-3.5 w-3.5" />
             {t.hero.eyebrow}
           </p>
-          <h1 className="rx-rise [animation-delay:80ms] mt-6 text-balance text-[2.25rem] font-bold !leading-[1.06] tracking-[-0.03em] text-tosh-900 sm:text-[2.75rem] lg:text-5xl">
+          <h1 className="rx-rise [animation-delay:80ms] mt-5 text-balance text-[2rem] font-bold !leading-[1.08] tracking-[-0.03em] text-tosh-900 sm:text-[2.5rem] lg:mt-6 lg:text-5xl">
             {t.hero.title}
           </h1>
-          <p className="rx-rise [animation-delay:160ms] mt-6 max-w-xl text-lg leading-8 text-slate-600 sm:text-xl">
+          <p className="rx-rise [animation-delay:160ms] mt-4 max-w-xl text-[17px] leading-7 text-slate-600 sm:text-lg sm:leading-8 lg:mt-6 lg:text-xl">
             {t.hero.subtitle}
           </p>
-          <div className="rx-rise [animation-delay:240ms] mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+          {/*
+            Birinchi tugma — sinov (ADR-28): mahsulot tayyor, va odam
+            uni koʻrish uchun sotuvchini kutishi shart emas. Demo
+            yonida qoladi — baʼzilar baribir koʻrsatilishini xohlaydi.
+          */}
+          <div className="rx-rise [animation-delay:240ms] mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
             <a
-              href="#demo"
+              href={env.signupUrl}
               className="group inline-flex min-h-[54px] items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 text-base font-semibold text-white transition hover:bg-brand-700"
             >
-              {t.hero.cta}
+              {t.hero.trial}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>
             <a
-              href="#one-system"
+              href="#demo"
               className="inline-flex min-h-[54px] items-center justify-center gap-2 rounded-xl border border-slate-200 px-6 text-base font-semibold text-slate-800 transition hover:border-slate-300 hover:bg-slate-50"
             >
-              {t.hero.secondary}
+              {t.hero.cta}
             </a>
           </div>
-          <p className="rx-rise [animation-delay:320ms] mt-5 text-sm font-medium text-slate-500">
-            <span className="font-semibold text-slate-900">{t.hero.priceFrom}</span>
+          <p className="rx-rise [animation-delay:320ms] mt-4 text-[13px] leading-5 text-slate-500 sm:text-sm">
+            {t.hero.trustLine}
+          </p>
+          <p className="rx-rise [animation-delay:360ms] mt-1.5 text-sm font-semibold text-slate-900">
+            {t.hero.priceFrom}
           </p>
         </motion.div>
 
@@ -111,15 +133,11 @@ export function Hero({ locale }: { locale: Locale }) {
                 </div>
                 <div className="mt-3 grid gap-3 sm:grid-cols-[1.5fr_1fr]">
                   <div className="rounded-xl border border-slate-200/80 p-3">
-                    <p className="text-[12px] font-semibold text-slate-800">
-                      {t.demo.chartTitle}
-                    </p>
+                    <p className="text-[12px] font-semibold text-slate-800">{t.demo.chartTitle}</p>
                     <Bars values={TREND} labels={t.demo.months} className="mt-2" />
                   </div>
                   <div className="hidden rounded-xl border border-slate-200/80 p-3 sm:block">
-                    <p className="text-[12px] font-semibold text-slate-800">
-                      {t.demo.sidebar[4]}
-                    </p>
+                    <p className="text-[12px] font-semibold text-slate-800">{t.demo.sidebar[4]}</p>
                     <div className="mt-1.5 space-y-0.5">
                       <Row
                         name="Karimov Ali"
@@ -156,9 +174,7 @@ export function Hero({ locale }: { locale: Locale }) {
               </div>
             </div>
             <div className="rx-rise [animation-delay:520ms] absolute -right-2 -top-5 hidden rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-[0_24px_60px_-20px_rgba(18,53,47,0.3)] sm:block lg:-right-8 [transform:translateZ(90px)]">
-              <p className="text-[12px] font-medium text-slate-500">
-                {t.demo.kpis[1].label}
-              </p>
+              <p className="text-[12px] font-medium text-slate-500">{t.demo.kpis[1].label}</p>
               <p className="text-lg font-bold tabular-nums text-slate-950">
                 <CountUp to={94} duration={1400} />%
               </p>

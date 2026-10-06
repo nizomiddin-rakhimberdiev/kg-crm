@@ -1,8 +1,11 @@
 /**
  * Yopishqoq navigatsiya — scroll'dan keyin ixchamlashadi.
  *
- * Shaffof yuza + blur faqat scroll'dan keyin: birinchi ekranda u sof oq,
- * chunki hero'ning o'zi oq va blur hech narsani yaxshilamaydi.
+ * Telefonda panelda uchta narsa turadi: brend, BITTA haqiqiy chaqiriq va
+ * menyu tugmasi. Ilgari u yerda til tanlagich (UZ RU EN) turardi va
+ * panelning qariyb yarmini egallardi — ya'ni eng qimmat joy hech kim
+ * bosmaydigan tugmaga berilgandi. Til endi menyu ichida, u yerda
+ * ko'rinadigan joyi ham, nomi ham bor.
  */
 
 import { useEffect, useState } from 'react'
@@ -33,15 +36,21 @@ export function Nav({ locale }: { locale: Locale }) {
   // panel ham to'qlashadi — oq matn oq yuzada yo'qolmasin, to'q bo'lim
   // ustida och yuza "yopishtirilgan" ko'rinmasin. Kuzatuv maydoni —
   // faqat ekranning yuqori 60px chizig'i.
+  //
+  // Nishonlar RO'YXATI ham qayta yig'iladi (`MutationObserver`): bo'limlar
+  // ekran o'lchamiga qarab boshqa daraxt chizadi, ya'ni kuzatilayotgan
+  // element DOM'dan chiqib ketishi mumkin. Avval shu sabab to'q bo'lim
+  // ustida panel oq bo'lib qolardi.
   useEffect(() => {
     if (typeof IntersectionObserver === 'undefined') return
-    const targets = Array.from(document.querySelectorAll<HTMLElement>('[data-nav-dark]'))
-    if (targets.length === 0) return
     let observer: IntersectionObserver | null = null
     const overlapping = new Set<Element>()
     const arm = () => {
       observer?.disconnect()
       overlapping.clear()
+      setDark(false)
+      const targets = Array.from(document.querySelectorAll<HTMLElement>('[data-nav-dark]'))
+      if (targets.length === 0) return
       observer = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
@@ -55,9 +64,20 @@ export function Nav({ locale }: { locale: Locale }) {
       targets.forEach((el) => observer?.observe(el))
     }
     arm()
-    window.addEventListener('resize', arm)
+
+    let pending = 0
+    const rearm = () => {
+      window.clearTimeout(pending)
+      pending = window.setTimeout(arm, 120)
+    }
+    const mutations = new MutationObserver(rearm)
+    const main = document.querySelector('main')
+    if (main) mutations.observe(main, { childList: true, subtree: true })
+    window.addEventListener('resize', rearm)
     return () => {
-      window.removeEventListener('resize', arm)
+      window.clearTimeout(pending)
+      window.removeEventListener('resize', rearm)
+      mutations.disconnect()
       observer?.disconnect()
     }
   }, [])
@@ -76,6 +96,7 @@ export function Nav({ locale }: { locale: Locale }) {
   const links = [
     ['#product', t.product],
     ['#capabilities', t.capabilities],
+    ['#parents', t.parents],
     ['#pricing', t.pricing],
     ['#faq', t.faq],
   ] as const
@@ -85,23 +106,30 @@ export function Nav({ locale }: { locale: Locale }) {
       data-dark={dark || undefined}
       className={`group/nav fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow,backdrop-filter] duration-300 ${
         dark
-          ? 'bg-ildiz-900/90 text-white backdrop-blur-md'
-          : scrolled
-            ? 'bg-white/85 shadow-[0_1px_0_0_rgba(27,36,33,0.06)] backdrop-blur-md'
+          ? 'bg-ildiz-900/95 text-white backdrop-blur-md'
+          : scrolled || open
+            ? 'bg-white/95 shadow-[0_1px_0_0_rgba(27,36,33,0.06)] backdrop-blur-md'
             : 'bg-transparent'
       }`}
     >
       <div
-        className={`mx-auto flex max-w-[1280px] items-center justify-between px-5 transition-[height] duration-300 lg:px-8 ${
-          scrolled ? 'h-[60px]' : 'h-[76px]'
+        className={`mx-auto flex max-w-[1280px] items-center justify-between gap-2 px-5 transition-[height] duration-300 lg:px-8 ${
+          scrolled ? 'h-[60px]' : 'h-[68px] lg:h-[76px]'
         }`}
       >
         {/*
           Logotipning rangi CSS bilan bo'yalmaydi — brendbuk buni taqiqlaydi.
           To'q bo'lim ustida B varianti (Nihol kvadrat, oq yozuv) chiziladi.
         */}
+        {/*
+          Balandlik 34 px dan PAST tushmaydi: brendbuk qoidasi bo'yicha
+          undan kichik joyda `Logo` yozuvni olib tashlab, faqat belgini
+          chizadi (`MIN_FULL_HEIGHT`) — ya'ni 32 px da sayt nomsiz
+          qolardi. Chaqiriq esa qisqaradi: ruscha "Попробовать"
+          panelni 35 px ga toshirgan edi.
+        */}
         <Link to={basePath(locale)} aria-label="Radix CRM" className="shrink-0">
-          <Brand variant={dark ? 'dark' : 'light'} height={scrolled ? 34 : 38} />
+          <Brand variant={dark ? 'dark' : 'light'} height={scrolled ? 34 : 36} />
         </Link>
 
         <nav aria-label={t.menu} className="hidden items-center gap-1 lg:flex">
@@ -109,7 +137,7 @@ export function Nav({ locale }: { locale: Locale }) {
             <a
               key={href}
               href={href}
-              className="rounded-lg px-3.5 py-2 text-[15px] font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 group-data-[dark]/nav:text-slate-300 group-data-[dark]/nav:hover:bg-white/10 group-data-[dark]/nav:hover:text-white"
+              className="rounded-lg px-3 py-2 text-[15px] font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 group-data-[dark]/nav:text-slate-300 group-data-[dark]/nav:hover:bg-white/10 group-data-[dark]/nav:hover:text-white"
             >
               {label}
             </a>
@@ -123,21 +151,28 @@ export function Nav({ locale }: { locale: Locale }) {
           <LangSwitch locale={locale} className="mr-2" />
           <a
             href={env.loginUrl}
-            className="inline-flex items-center gap-1 rounded-lg px-3.5 py-2 text-[15px] font-semibold text-slate-800 transition hover:bg-slate-100 group-data-[dark]/nav:text-white group-data-[dark]/nav:hover:bg-white/10"
+            className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-[15px] font-semibold text-slate-800 transition hover:bg-slate-100 group-data-[dark]/nav:text-white group-data-[dark]/nav:hover:bg-white/10"
           >
             {t.login}
             <ArrowUpRight className="h-4 w-4 text-slate-400" />
           </a>
           <a
-            href="#demo"
+            href={env.signupUrl}
             className="inline-flex items-center rounded-lg bg-brand-600 px-4 py-2 text-[15px] font-semibold text-white transition hover:bg-brand-700"
           >
-            {t.demo}
+            {t.trial}
           </a>
         </div>
 
-        <div className="flex items-center gap-2 lg:hidden">
-          <LangSwitch locale={locale} compact />
+        {/* Telefon: bitta chaqiriq + menyu. Til menyuning ichida.
+            Yozuv qisqa shaklda — toʻlig'i 390 px panelni toshirardi. */}
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2 lg:hidden">
+          <a
+            href={env.signupUrl}
+            className="inline-flex h-10 min-w-0 max-w-[46vw] shrink items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap rounded-lg bg-brand-600 px-3 text-[14px] font-semibold text-white"
+          >
+            {t.trialShort}
+          </a>
           <button
             type="button"
             aria-expanded={open}
@@ -151,7 +186,11 @@ export function Nav({ locale }: { locale: Locale }) {
       </div>
 
       {open && (
-        <div className="fixed inset-x-0 bottom-0 top-[60px] z-40 overflow-y-auto bg-white px-5 pb-8 pt-4 lg:hidden">
+        // `100dvh` emas, `inset-0` + `top` — brauzer paneli yig'ilganda
+        // menyu ekrandan chiqib ketmasin; pastda esa barmoq uchun joy
+        // (`safe-area`), aks holda oxirgi havola iPhone chizig'i ostida
+        // qolardi.
+        <div className="fixed inset-x-0 bottom-0 top-[60px] z-40 overflow-y-auto overscroll-contain bg-white px-5 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-4 lg:hidden">
           <nav className="grid gap-1" aria-label={t.menu}>
             {links.map(([href, label]) => (
               <a
@@ -166,21 +205,29 @@ export function Nav({ locale }: { locale: Locale }) {
           </nav>
           <div className="mt-6 grid gap-3">
             <a
+              href={env.signupUrl}
+              className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-brand-600 text-base font-semibold text-white"
+            >
+              {t.trial}
+            </a>
+            <a
               href="#demo"
               onClick={() => setOpen(false)}
-              className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-brand-600 text-base font-semibold text-white"
+              className="inline-flex min-h-[52px] items-center justify-center rounded-xl border border-slate-200 text-base font-semibold text-slate-800"
             >
               {t.demo}
             </a>
             <a
               href={env.loginUrl}
-              className="inline-flex min-h-[52px] items-center justify-center rounded-xl border border-slate-200 text-base font-semibold text-slate-800"
+              className="inline-flex min-h-[52px] items-center justify-center gap-1 rounded-xl text-base font-semibold text-slate-600"
             >
               {t.login}
+              <ArrowUpRight className="h-4 w-4 text-slate-400" />
             </a>
           </div>
+          <LangSwitch locale={locale} className="mt-6 w-full justify-between" />
           {/* Telefonda header'ga joy yo'q — aloqa menyuning oxirida. */}
-          <ContactList locale={locale} className="mt-8 border-t border-slate-100 px-4 pt-6" />
+          <ContactList locale={locale} className="mt-8 border-t border-slate-100 px-1 pt-6" />
         </div>
       )}
     </header>
@@ -188,27 +235,17 @@ export function Nav({ locale }: { locale: Locale }) {
 }
 
 /**
- * Til tanlagich — uch til bitta guruhda. Mobilda ham shu: «boshqa til»
- * tugmasi ikki tilda tushunarli edi, uchtada esa qaysi biriga o'tishini
- * bildirmaydi. Havola (`<Link>`), tugma emas — har til o'z manzilida
- * (`/uz`, `/ru`, `/en`), qidiruv tizimi ham shu havolalarni ko'radi.
+ * Til tanlagich — uch til bitta guruhda. Havola (`<Link>`), tugma emas:
+ * har til o'z manzilida (`/uz`, `/ru`, `/en`) va qidiruv tizimi ham shu
+ * havolalarni ko'radi. Telefonda u menyu ichida, to'liq enlikda —
+ * barmoq uchun 44px dan baland.
  */
-function LangSwitch({
-  locale,
-  compact = false,
-  className = '',
-}: {
-  locale: Locale
-  compact?: boolean
-  className?: string
-}) {
+function LangSwitch({ locale, className = '' }: { locale: Locale; className?: string }) {
   const t = copy[locale].nav
   return (
     <nav
       aria-label={t.language}
-      className={`flex items-center rounded-lg border border-slate-200 p-0.5 text-[13px] font-semibold group-data-[dark]/nav:border-white/20 ${
-        compact ? 'h-11' : ''
-      } ${className}`}
+      className={`flex items-center rounded-lg border border-slate-200 p-0.5 text-[13px] font-semibold group-data-[dark]/nav:border-white/20 ${className}`}
     >
       {LOCALES.map((l) => (
         <Link
@@ -216,9 +253,7 @@ function LangSwitch({
           to={basePath(l)}
           hrefLang={l}
           aria-current={l === locale ? 'page' : undefined}
-          className={`grid place-items-center rounded-md transition ${
-            compact ? 'h-full min-w-9 px-1.5' : 'px-2.5 py-1'
-          } ${
+          className={`grid min-h-[44px] flex-1 place-items-center rounded-md px-2.5 transition lg:min-h-0 lg:flex-none lg:py-1 ${
             l === locale
               ? 'bg-slate-950 text-white group-data-[dark]/nav:bg-white group-data-[dark]/nav:text-slate-950'
               : 'text-slate-500 hover:text-slate-950 group-data-[dark]/nav:text-slate-300 group-data-[dark]/nav:hover:text-white'

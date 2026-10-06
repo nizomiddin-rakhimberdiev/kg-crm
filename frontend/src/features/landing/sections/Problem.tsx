@@ -22,7 +22,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import { copy, type Copy, type FragmentCopy, type Locale } from '../content'
-import { useCompact, useScene, useStaticScene } from '../motion'
+import { useScene, useStaticScene } from '../motion'
 import { Frame, Pill, Row } from '../ui/Mock'
 
 const POSES: { x: number; y: number; r: number }[] = [
@@ -183,32 +183,33 @@ export function Problem({ locale }: { locale: Locale }) {
   const t = copy[locale].problem
   const ref = useRef<HTMLElement>(null)
   const progress = useScene(ref)
-  const compact = useCompact()
   const isStatic = useStaticScene()
-  const factor = compact ? 0.38 : 1
+  const factor = 1
 
   const windowOpacity = useTransform(progress, [0.5, 0.72], [0, 1])
   const windowScale = useTransform(progress, [0.5, 0.75], [0.92, 1])
   const windowY = useTransform(progress, [0.5, 0.75], [40, 0])
   const labelOpacity = useTransform(progress, [0.72, 0.85], [0, 1])
-  const headY = useTransform(progress, [0, 0.4], [0, compact ? -10 : -30])
+  const headY = useTransform(progress, [0, 0.4], [0, -30])
 
   if (isStatic) {
     return (
-      <section ref={ref} id="problem" className="bg-slate-50 py-20 lg:py-28">
+      <section ref={ref} id="problem" className="bg-slate-50 py-14 lg:py-28">
         <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
           <Heading t={t} />
-          <div className="mt-10 flex flex-wrap justify-center gap-4">
+          {/* Telefonda oxirgi ikkitasi yashiriladi: fikr beshtasida ham
+              yetib boradi, ikkitasi esa faqat ekranni uzaytirardi. */}
+          <div className="mt-8 flex flex-wrap justify-center gap-3 sm:gap-4 lg:mt-10">
             {t.fragments.map((fragment, i) => (
               <Paper
                 key={fragment.title}
                 fragment={fragment}
-                className={i % 2 ? 'rotate-2' : '-rotate-2'}
+                className={`${i % 2 ? 'rotate-2' : '-rotate-2'} ${i >= 5 ? 'hidden sm:block' : ''}`}
               />
             ))}
           </div>
-          <div className="mt-10 flex justify-center">
-            <Resolved locale={locale} compact={compact} />
+          <div className="mt-8 flex justify-center lg:mt-10">
+            <Resolved locale={locale} compact={false} />
           </div>
         </div>
       </section>
@@ -216,12 +217,7 @@ export function Problem({ locale }: { locale: Locale }) {
   }
 
   return (
-    <section
-      ref={ref}
-      id="problem"
-      className="relative bg-slate-50"
-      style={{ height: compact ? '230vh' : '280vh' }}
-    >
+    <section ref={ref} id="problem" className="relative bg-slate-50" style={{ height: '280vh' }}>
       <div className="sticky top-0 flex h-screen flex-col overflow-hidden pt-[76px]">
         <motion.div
           style={{ y: headY }}
@@ -246,7 +242,7 @@ export function Problem({ locale }: { locale: Locale }) {
               style={{ opacity: windowOpacity, scale: windowScale, y: windowY }}
               className="w-full max-w-3xl will-change-transform"
             >
-              <Resolved locale={locale} compact={compact} />
+              <Resolved locale={locale} compact={false} />
             </motion.div>
           </div>
 

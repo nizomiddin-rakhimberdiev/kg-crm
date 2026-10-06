@@ -57,6 +57,15 @@ export const env = {
   get loginUrl() {
     return `${this.appUrl.replace(/\/$/, '')}/login`
   },
+  /**
+   * Oʻzi roʻyxatdan oʻtish (ADR-28) — sotuv sahifasining birinchi tugmasi.
+   *
+   * `loginUrl` bilan bir xil sababdan toʻliq manzil: bir domenli
+   * oʻrnatmada ham, ertaga alohida `app.` subdomenida ham toʻgʻri ishlaydi.
+   */
+  get signupUrl() {
+    return `${this.appUrl.replace(/\/$/, '')}/signup`
+  },
   publicHost: import.meta.env.VITE_PUBLIC_HOST ?? 'radix-crm.uz',
   legalEntityName: import.meta.env.VITE_LEGAL_ENTITY_NAME ?? '',
   /**

@@ -442,7 +442,7 @@ attended), so that is what is built: `3050000/22*4 = 554 545`.
 
 ---
 
-### Bosqich 8 — the landing page: say what the product now is, and work on a phone `[ ]`
+### Bosqich 8 — the landing page: say what the product now is, and work on a phone `[x]`
 
 Owner, 2026-10-06: *"radix-crm.uz dagi landing pageni ham to'liq update qilish
 kerak hozirgi xolat bilan mos ravishda… mobil versiyaga ham qattiq e'tibor
@@ -469,29 +469,54 @@ three UI languages (ADR-16). Nor does it say the one thing a cautious buyer
 most wants to hear: **unpaid months stop writing, never reading, and nothing is
 ever deleted** (invariant 11).
 
-- [ ] **8.1** Mobile-first layout. Pinned scenes only on a real desktop
+- [x] **8.1** Mobile-first layout. Pinned scenes only on a real desktop
   window (`min-width: 1024px` **and** `min-height: 700px`); everything else
   gets the static layout that already exists and is already tested. The
-  tablet-only "compact pinned" branch goes away — three code paths per
-  section become two.
-- [ ] **8.2** Navigation on a phone: the brand, one real call to action and
-  the menu; language moves inside the menu; a solid bar once scrolled; the
-  dark-section flip survives re-render; `100dvh` and safe-area padding.
-- [ ] **8.3** Product panels on a phone: two KPI columns instead of three,
-  no number wider than its tile, no clipped chart, no fake skeleton bar in
-  the window header, nothing past the right edge.
-- [ ] **8.4** Content caught up with the product (uz/ru/en in the same
-  change): the trial and self-signup as the first call to action, the
-  Telegram parent channel, online payment, the absence credit, money with a
-  location, Radix Intelligence, import, languages, and what suspension does.
-- [ ] **8.5** Pricing: all three terms the business actually sells —
-  monthly, 6 months −15 %, yearly −25 % (ADR-12). The third one needs
-  `/public/pricing` to return it, because the formula lives on the server and
-  the page is not allowed to have its own.
-- [ ] **8.6** Tests: the new sections, the trial link, the three-term
-  pricing, key parity across the three locales, prerender still ≥ 800 words
-  with the FAQ JSON-LD, and the mobile path rendering no pinned scene.
-- [ ] **8.7** Re-measure every viewport and record the numbers here.
+  tablet-only "compact pinned" branch is gone — three code paths per section
+  became two, and `useCompact` / `centerInStrip` went with it.
+- [x] **8.2** Navigation on a phone: the brand, one real call to action
+  ("Sinab koʻrish" → `/signup`) and the menu; language moved inside the
+  menu; a solid bar once scrolled; `safe-area` padding at the bottom of the
+  sheet. The dark-section flip now re-arms on DOM changes (`MutationObserver`)
+  — sections swap their tree by viewport, so the old one-shot observer was
+  watching nodes that no longer existed and the bar stayed white over a dark
+  section.
+- [x] **8.3** Product panels on a phone: two KPI columns instead of three, the
+  window header shows the screen's name instead of a grey bar that read as an
+  unfinished skeleton, the "one system" panel is fluid instead of a fixed
+  720 px (it squeezed tiles to 11 px), and module cards go two-up only from
+  `lg` (at 768 px the card's inner panel split again and columns fell to
+  41 px).
+- [x] **8.4** Content caught up with the product (uz/ru/en in one change): the
+  trial as the first call to action, a new **parents** section (Telegram bot,
+  online payment through the kindergarten's own merchant, linking by
+  invitation, SMS optional), a **Radix AI** section (rule + evidence, ADR-14),
+  eight **extras** cards (absence credit with its document, Excel import, where
+  the money sits, expense lines, the audit log, three languages, roles,
+  branches), eleven rewritten FAQ answers and new SEO text.
+- [x] **8.5** Pricing: all three terms — monthly, 6 months −15 %, yearly −25 %.
+  `/public/pricing` now builds every quote from `TERM_DISCOUNTS` / `TERM_MONTHS`
+  and returns `trial_days`, so the page still has no formula of its own
+  (docs/04 §18b).
+- [x] **8.6** Tests: 21 landing tests (was 14) — the trial link, the three new
+  sections, three-term pricing against the mocked server quote, FAQ coverage of
+  what the product now does, locale key parity, and a phone-path test that
+  fails if any section renders a `vh`-tall pinned scene. Backend: two new
+  pricing-endpoint tests (six-month amounts, trial length).
+- [x] **8.7** Measured with headless Chrome, before → after:
+
+  | Viewport | Page height | Sideways scroll | Clipped text | < 12 px text |
+  |---|---|---|---|---|
+  | 390 × 844 (phone, uz) | 12 932 → **15 956** px (three new sections) | 0 → 0 | 1 → 1 (sr-only) | 0 → 0 |
+  | 390 × 844 (phone, **ru**) | 13 108 → 16 358 px | **35 px → 0** | — | 0 |
+  | 844 × 390 (landscape) | 25 772 → **16 287** px | 0 | 8 → 3 | 0 |
+  | 768 × 1024 (tablet) | 25 806 → **16 491** px | 0 | 14 → 4 | 0 |
+
+  The landscape and tablet numbers are the point: those viewports were running
+  the desktop's pinned scenes in a window too short to hold them. The phone is
+  longer than before because the page now says three things it never said.
+  The Russian sideways scroll was live and pre-existing — a grid child without
+  `min-w-0` whose longest Russian label set the column width.
 
 **Decision taken under standing permission.** The first call to action becomes
 **"start the 15-day trial"** (`/signup`), with "book a demo" beside it. The

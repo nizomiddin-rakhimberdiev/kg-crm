@@ -2,12 +2,17 @@ import { api } from '@/lib/api/client'
 
 export interface PricingQuote {
   total_amount: string
+  /** Necha oy oldindan toʻlanadi — 1, 6 yoki 12. */
+  months: number
 }
 
 export interface PublicPricing {
   children: number
   currency: string
+  trial_days: number
   monthly: PricingQuote
+  /** Uchinchi muddat — 6 oy, −15 % (ADR-12). */
+  semiannual: PricingQuote
   annual: PricingQuote
   annual_before_discount: string
   annual_saving: string

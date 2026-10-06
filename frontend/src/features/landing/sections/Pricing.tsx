@@ -10,12 +10,15 @@ import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useMotionValueEvent, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, Check } from 'lucide-react'
+import { env } from '@/config/env'
 import { marketingApi } from '@/features/marketing/api'
 import { CURRENCY, copy, groupThousands, money, type Locale } from '../content'
 import { Reveal, useStatic } from '../motion'
 import { Num } from '../ui/Num'
 
-type Term = 'monthly' | 'annual'
+type Term = 'monthly' | 'semiannual' | 'annual'
+
+const TERMS = ['monthly', 'semiannual', 'annual'] as const satisfies readonly Term[]
 
 // Bo'lim ekranga kirayotganda slayder o'zi "namoyish" qiladi: 20 → 50 bola,
 // narx shunga qarab o'zgaradi. Foydalanuvchi slayderga tegishi bilan
@@ -56,13 +59,17 @@ export function Pricing({ locale }: { locale: Locale }) {
     placeholderData: (previous) => previous,
   })
   const data = quote.data
-  const monthly = data ? Number(data.monthly.total_amount) : null
-  const annual = data ? Number(data.annual.total_amount) : null
-  const shown = term === 'monthly' ? monthly : annual
-  const effective = annual !== null ? annual / 12 : null
+  // Uchala summa ham SERVERDAN (`/public/pricing`): sahifa narx
+  // hisoblamaydi, aks holda bir kun u hisob-faktura bilan ajralib
+  // qolardi (ADR-12, docs/04 §18b).
+  const shown = data ? Number(data[term].total_amount) : null
+  const months = data ? data[term].months : 1
+  // Oyiga tushadigan narx — faqat chegirmali muddatlarda ko'rsatiladi.
+  const effective = shown !== null && months > 1 ? shown / months : null
+  const perLabel = { monthly: t.perMonth, semiannual: t.perHalfYear, annual: t.perYear }[term]
 
   return (
-    <section ref={ref} id="pricing" className="scroll-mt-16 bg-white py-20 lg:py-32">
+    <section ref={ref} id="pricing" className="scroll-mt-16 bg-white py-14 lg:py-32">
       <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
         <Reveal>
           <div className="max-w-3xl">
@@ -114,24 +121,30 @@ export function Pricing({ locale }: { locale: Locale }) {
                 <span>300</span>
               </div>
 
-              <div role="tablist" className="mt-7 inline-flex rounded-xl bg-slate-200/70 p-1">
-                {(['monthly', 'annual'] as const).map((k) => (
+              {/* Uch muddat — biznes sotadigan uchalasi (ADR-12).
+                  Telefonda ular bitta qatorga sig'maydi, shuning uchun
+                  grid: uchta teng ustun, har biri 44px dan baland. */}
+              <div
+                role="tablist"
+                className="mt-7 grid grid-cols-3 gap-1 rounded-xl bg-slate-200/70 p-1 sm:inline-grid"
+              >
+                {TERMS.map((k) => (
                   <button
                     key={k}
                     role="tab"
                     aria-selected={term === k}
                     type="button"
                     onClick={() => setTerm(k)}
-                    className={`inline-flex min-h-[44px] items-center gap-2 rounded-lg px-4 text-sm font-semibold transition ${
+                    className={`inline-flex min-h-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-2 text-[13px] font-semibold leading-tight transition sm:flex-row sm:gap-2 sm:px-4 sm:text-sm ${
                       term === k
                         ? 'bg-white text-slate-950 shadow-card'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     {t[k]}
-                    {k === 'annual' && (
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[12px] font-bold text-emerald-700">
-                        {t.annualBadge}
+                    {k !== 'monthly' && (
+                      <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[12px] font-bold text-emerald-700 sm:px-2">
+                        {k === 'annual' ? t.annualBadge : t.semiannualBadge}
                       </span>
                     )}
                   </button>
@@ -154,12 +167,10 @@ export function Pricing({ locale }: { locale: Locale }) {
                   )}
                 </p>
                 <span className="text-base font-medium text-slate-500">
-                  {shown === null
-                    ? ''
-                    : `${CURRENCY[locale]} ${term === 'monthly' ? t.perMonth : t.perYear}`}
+                  {shown === null ? '' : `${CURRENCY[locale]} ${perLabel}`}
                 </span>
               </div>
-              {term === 'annual' && effective !== null && (
+              {effective !== null && (
                 <p className="mt-1 text-sm text-slate-500">
                   {t.effective.replace('{amount}', money(effective, locale))}
                 </p>
@@ -181,20 +192,34 @@ export function Pricing({ locale }: { locale: Locale }) {
                 ))}
               </ul>
 
-              <a
-                href="#demo"
-                className="group mt-7 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 text-base font-semibold text-white transition hover:bg-brand-700 sm:w-auto"
-              >
-                {t.cta}
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </a>
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <a
+                  href={env.signupUrl}
+                  className="group inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 text-base font-semibold text-white transition hover:bg-brand-700"
+                >
+                  {t.trial}
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </a>
+                <a
+                  href="#demo"
+                  className="inline-flex min-h-[52px] items-center justify-center rounded-xl border border-slate-200 bg-white px-6 text-base font-semibold text-slate-800 transition hover:border-slate-300"
+                >
+                  {t.cta}
+                </a>
+              </div>
+              <p className="mt-3 text-[13px] leading-5 text-slate-500">{t.trialNote}</p>
             </div>
           </Reveal>
 
           <Reveal delay={0.08}>
             <div className="rounded-[28px] border border-slate-200 p-6 sm:p-8">
-              <p className="text-base font-semibold text-slate-900">{t.examplesTitle}</p>
-              <table className="mt-4 w-full text-[15px]">
+              {/* Misollar jadvali telefonda YASHIRILADI: kalkulyator
+                  shu savolga allaqachon javob beradi, jadval esa yana
+                  400 px scroll qo'shardi. */}
+              <p className="hidden text-base font-semibold text-slate-900 sm:block">
+                {t.examplesTitle}
+              </p>
+              <table className="mt-4 hidden w-full text-[15px] sm:table">
                 <thead className="text-left text-[12px] uppercase tracking-wider text-slate-400">
                   <tr>
                     <th className="pb-2 font-medium">{t.childrenUnit}</th>
@@ -221,10 +246,20 @@ export function Pricing({ locale }: { locale: Locale }) {
                   ))}
                 </tbody>
               </table>
-              <p className="mt-3 text-[13px] text-slate-500">{t.annualFormula}</p>
-              <div className="mt-6 rounded-2xl bg-slate-50 p-4">
+              <p className="hidden text-[13px] text-slate-500 sm:mt-3 sm:block">
+                {t.annualFormula}
+              </p>
+              <div className="rounded-2xl bg-slate-50 p-4 sm:mt-6">
                 <p className="text-[15px] font-semibold text-slate-900">{t.first3}</p>
                 <p className="mt-1 text-[13px] leading-5 text-slate-500">{t.note}</p>
+              </div>
+              {/* Xaridorning jim savoli: "bir oy toʻlay olmasam?"
+                  (invariant 11 — yozish toʻxtaydi, oʻqish qoladi). */}
+              <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+                <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-700">
+                  <Check className="h-3 w-3" strokeWidth={3} />
+                </span>
+                <p className="text-[13px] leading-5 text-emerald-900">{t.safety}</p>
               </div>
             </div>
           </Reveal>

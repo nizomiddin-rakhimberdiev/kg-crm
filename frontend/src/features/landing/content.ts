@@ -39,6 +39,12 @@ export interface StepCopy {
   text: string
 }
 
+/** Sarlavha + matn — eng oddiy karta (ota-onalar, qoʻshimcha imkoniyatlar). */
+export interface CardCopy {
+  title: string
+  text: string
+}
+
 /** Namunaviy ekranlardagi qisqa yorliqlar — bo'limlar bo'yicha. */
 export interface UiCopy {
   hero: { alert: string; severe: string }
@@ -75,6 +81,25 @@ export interface UiCopy {
     expenses: string
   }
   deepDive: { last6: string; alert: string; why: string }
+  parents: {
+    bot: string
+    balance: string
+    invoices: string
+    pay: string
+    receipts: string
+    askBalance: string
+    answer: string
+    due: string
+    payNow: string
+    paid: string
+  }
+  intelligence: {
+    kind: string
+    severity: string
+    why: string
+    evidence: string[]
+    action: string
+  }
   roles: {
     branches: string
     chilonzor: string
@@ -106,10 +131,15 @@ export interface Copy {
   nav: {
     product: string
     capabilities: string
+    parents: string
     pricing: string
     faq: string
     login: string
     demo: string
+    /** Birinchi chaqiriq — oʻzi roʻyxatdan oʻtib sinab koʻrish (ADR-28). */
+    trial: string
+    /** Telefon paneli uchun qisqa shakl — uzun yozuv panelni toshirardi. */
+    trialShort: string
     menu: string
     close: string
     /** Til tanlagichning aria yorlig'i. */
@@ -120,8 +150,12 @@ export interface Copy {
     eyebrow: string
     title: string
     subtitle: string
+    /** Asosiy tugma: 15 kunlik sinov (`/signup`). */
+    trial: string
     cta: string
     secondary: string
+    /** Tugmalar ostidagi bir qator: nima kerak emasligi. */
+    trustLine: string
     priceFrom: string
     scroll: string
   }
@@ -160,6 +194,23 @@ export interface Copy {
     text: string
     steps: string[]
   }
+  /** Ota-onalar kanali: Telegram bot + onlayn toʻlov (ADR-23, ADR-26, ADR-27). */
+  parents: {
+    eyebrow: string
+    title: string
+    text: string
+    items: CardCopy[]
+    note: string
+  }
+  /** Radix Intelligence V1 — qoidaga asoslangan, dalili bilan (ADR-14). */
+  intelligence: {
+    eyebrow: string
+    title: string
+    text: string
+    points: string[]
+  }
+  /** Mahsulotning qolgan qismi — mock'siz, oddiy kartalar. */
+  extras: { eyebrow: string; title: string; items: CardCopy[] }
   roles: { eyebrow: string; title: string; text: string; items: RoleCopy[] }
   workflow: { eyebrow: string; title: string; text: string; steps: StepCopy[] }
   finance: {
@@ -176,9 +227,13 @@ export interface Copy {
     childrenLabel: string
     childrenUnit: string
     monthly: string
+    /** Uchinchi muddat — 6 oy, −15 % (ADR-12). */
+    semiannual: string
     annual: string
+    semiannualBadge: string
     annualBadge: string
     perMonth: string
+    perHalfYear: string
     perYear: string
     effective: string
     includes: string[]
@@ -187,6 +242,11 @@ export interface Copy {
     annualFormula: string
     first3: string
     note: string
+    /** Sinov muddati — raqam backend'dan (`trial_days`). */
+    trial: string
+    trialNote: string
+    /** Toʻlov kechikса nima boʻladi (invariant 11) — xaridorning jim savoli. */
+    safety: string
     cta: string
     error: string
     /** Ikkinchi yetkazib berish modeli — alohida o'rnatma (ADR-13). */
@@ -209,6 +269,8 @@ export interface Copy {
     eyebrow: string
     title: string
     text: string
+    /** Forma yonidagi tinchlantiruvchi qator — soʻrov nimaga ishlatiladi. */
+    assurance: string
     name: string
     phone: string
     kindergarten: string
@@ -238,10 +300,13 @@ const uz: Copy = {
   nav: {
     product: 'Mahsulot',
     capabilities: 'Imkoniyatlar',
+    parents: 'Ota-onalar',
     pricing: 'Narxlar',
     faq: 'Savollar',
     login: 'CRMʼga kirish',
     demo: 'Demo olish',
+    trial: 'Bepul sinab koʻrish',
+    trialShort: 'Sinab koʻrish',
     menu: 'Menyu',
     close: 'Yopish',
     language: 'Til',
@@ -250,9 +315,12 @@ const uz: Copy = {
   hero: {
     eyebrow: 'Xususiy bogʻchalar uchun boshqaruv platformasi',
     title: 'Bogʻchangizni boshqarishning barchasi — bitta tizimda.',
-    subtitle: 'Bolalar, toʻlovlar, davomat, xodimlar va moliyaviy nazorat — hammasi Radix CRMʼda.',
+    subtitle:
+      'Bolalar, toʻlovlar, davomat, xodimlar va moliyaviy nazorat — hammasi bitta tizimda. Ota-ona esa balansni Telegramʼdan koʻradi.',
+    trial: '15 kun bepul sinab koʻrish',
     cta: 'Demo olish',
     secondary: 'Radix qanday ishlaydi',
+    trustLine: 'Karta kerak emas · 15 kun · istalgan payt toʻxtatasiz',
     priceFrom: '400 000 soʻm / oy dan',
     scroll: 'Pastga',
   },
@@ -371,6 +439,78 @@ const uz: Copy = {
     text: 'Bugungi davomat, oylik tushum, qarzdorlik va xodimlar — kirishingiz bilan. Har bir raqam jonli maʼlumotdan hisoblanadi.',
     steps: ['Umumiy holat', 'Davomat', 'Qarzdorlik', 'Tushum'],
   },
+  parents: {
+    eyebrow: 'Ota-onalar uchun',
+    title: 'Ota-ona balansni telefonidan koʻradi — qoʻngʻiroqsiz.',
+    text: 'Asosiy kanal — Telegram bot. Ilova oʻrnatish shart emas, bogʻchaga soʻrov bilan qoʻngʻiroq kamayadi.',
+    items: [
+      {
+        title: 'Telegram bot',
+        text: 'Balans, hisob-fakturalar, kvitansiyalar va “toʻlash” tugmasi — ota-onaning oʻz tilida (oʻzbek, rus, ingliz).',
+      },
+      {
+        title: 'Onlayn toʻlov — Payme va Click',
+        text: 'Pul toʻgʻridan-toʻgʻri bogʻchaning oʻz merchant hisobiga tushadi. Radix pulni ushlab turmaydi, ota-ona hisobdagi summani toʻlaydi — ustiga hech narsa qoʻshilmaydi.',
+      },
+      {
+        title: 'Ulanish — taklif havolasi orqali',
+        text: 'Vasiy botni oʻzi ishga tushiradi; havolaning bosilishi roziligining yozuvi. Kim ulanmaganini roʻyxatda koʻrib turasiz.',
+      },
+      {
+        title: 'SMS — ixtiyoriy',
+        text: 'Telegram xabarlari bepul. SMS kerak boʻlsa, oʻz gateway hisobingiz ulanadi va har bir xabar hisoblanadi.',
+      },
+    ],
+    note: 'Bola kelmaganligi haqidagi xabar — standart holatda oʻchiq. Yoqish yoki yoqmaslik bogʻchaning qarori.',
+  },
+  intelligence: {
+    eyebrow: 'Radix AI',
+    title: 'Toʻlov kechikishini oldindan aytadi — va nega deganiga javob beradi.',
+    text: 'Har bir ogohlantirish qoidadan chiqadi va dalilini yonida olib yuradi: qaysi bolalar, qancha kun, qancha summa. Bosilsa — oʻsha roʻyxat ochiladi.',
+    points: [
+      'Qoida asosida, taxmin emas — bir xil maʼlumot har doim bir xil javob beradi',
+      'Har bir xulosaning “Nega?” tugmasi bor: raqamlar qayerdan olingani koʻrinadi',
+      'Har kecha oʻzi hisoblanadi; ertalab ekranda tayyor turadi',
+    ],
+  },
+  extras: {
+    eyebrow: 'Yana nimalar bor',
+    title: 'Kundalik ishning mayda-chuydasi ham oʻylangan.',
+    items: [
+      {
+        title: 'Kelmagan kunlar uchun qayta hisob',
+        text: 'Spravka yoki ariza asosida — davomat jadvalidan emas. Hujjatning oʻzi biriktiriladi va shu oy toʻlanmagan boʻlsa summadan darhol ayriladi.',
+      },
+      {
+        title: 'Excelʼdan koʻchirish',
+        text: 'Shablon sizning guruhlaringiz va tariflaringiz bilan yuklanadi. Qarzdorlik ustuni ham bor — eski qarz birinchi kundanoq qarzdorlar roʻyxatida turadi.',
+      },
+      {
+        title: 'Pul qayerda turibdi',
+        text: 'Kassa, bank, terminal, Payme/Click — har biri alohida hisob. Qoldiq saqlanmaydi, har doim harakatlardan hisoblanadi.',
+      },
+      {
+        title: 'Chiqim qatorlari',
+        text: 'Kartoshka, 50 kg, 3 000 → 150 000. “Bozorlik — 600 000” emas: nima olinganini keyin ham koʻrasiz.',
+      },
+      {
+        title: 'Oʻzgarmas audit jurnali',
+        text: 'Kim, nimani, qachon oʻzgartirdi. Yozuvni tahrirlab yoki oʻchirib boʻlmaydi — xodim almashsa ham tarix qoladi.',
+      },
+      {
+        title: 'Uch til',
+        text: 'Oʻzbek, rus, ingliz — har bir xodim oʻzi tanlaydi. Bot ham ota-onaning tilida yozadi.',
+      },
+      {
+        title: 'Rollar va ruxsatlar',
+        text: 'Kim nimani koʻrishini egasi belgilaydi. Hech kim oʻzida yoʻq huquqni boshqaga bera olmaydi.',
+      },
+      {
+        title: 'Filiallar',
+        text: 'Bitta obuna — cheksiz filial. Ega hammasini birga koʻradi, xodim esa faqat oʻz filialini.',
+      },
+    ],
+  },
   roles: {
     eyebrow: 'Radix kimlar uchun?',
     title: 'Har bir rol oʻziga kerak narsani koʻradi.',
@@ -455,9 +595,12 @@ const uz: Copy = {
     childrenLabel: 'Bolalar soni',
     childrenUnit: 'bola',
     monthly: 'Oylik',
+    semiannual: '6 oy',
     annual: 'Yillik',
+    semiannualBadge: '15 % tejang',
     annualBadge: '25 % tejang',
     perMonth: '/ oy',
+    perHalfYear: '/ 6 oy',
     perYear: '/ yil',
     effective: 'oyiga {amount} ga teng',
     includes: [
@@ -475,6 +618,10 @@ const uz: Copy = {
     ],
     annualFormula: 'Yillik = oylik × 12 × 0,75',
     first3: 'Ilk 3 oy — amaldagi narx.',
+    trial: '15 kun bepul',
+    trialNote: 'Karta kerak emas. Sinov tugagach toʻlovga oʻtasiz yoki shunchaki toʻxtatasiz.',
+    safety:
+      'Toʻlov kechiksa yozish toʻxtaydi, lekin oʻqish va eksport ishlayveradi — maʼlumotingiz oʻchirilmaydi va yashirilmaydi.',
     note: 'Radix rivojlanishi va yangi imkoniyatlar qoʻshilishi bilan narxlar kelajakda oʻzgarishi mumkin.',
     cta: 'Demo olish',
     error: 'Narxni yuklab boʻlmadi — qayta urinib koʻring.',
@@ -496,31 +643,47 @@ const uz: Copy = {
     items: [
       {
         q: 'Radix nima?',
-        a: 'Xususiy bogʻchalar uchun boshqaruv platformasi: bolalar, guruhlar, davomat, toʻlovlar, qarzdorlik, xodimlar, ish haqi, xarajatlar, ombor va hisobotlar — bitta tizimda.',
+        a: 'Xususiy bogʻchalar uchun boshqaruv platformasi: bolalar, guruhlar, davomat, toʻlovlar, qarzdorlik, xodimlar, ish haqi, xarajatlar, ombor va hisobotlar — bitta tizimda. Ota-onalar bilan aloqa Telegram bot orqali.',
       },
       {
-        q: 'Kimlar uchun moʻljallangan?',
-        a: 'Oʻzbekistondagi xususiy bogʻchalar va bir nechta filiali boʻlgan tashkilotlar uchun. Rollar — bogʻcha egasi, direktor, kassir, administrator, tarbiyachi.',
+        q: 'Bepul sinab koʻrsa boʻladimi?',
+        a: 'Ha, 15 kun. Oʻzingiz roʻyxatdan oʻtasiz, karta kerak emas. Sinov davrida tizim toʻliq ishlaydi — oʻz bogʻchangiz maʼlumoti bilan.',
       },
       {
         q: 'Qancha turadi?',
-        a: '50 tagacha bola uchun oyiga 400 000 soʻm. Filiallar va xodimlar soni narxga taʼsir qilmaydi.',
+        a: '50 tagacha bola uchun oyiga 400 000 soʻm. Har boshlangan 10 bola uchun 50 000 soʻm qoʻshiladi: 60 bola — 450 000, 70 bola — 500 000. Filiallar va xodimlar soni narxga taʼsir qilmaydi.',
       },
       {
-        q: '50 tadan koʻp bola boʻlsa nima boʻladi?',
-        a: 'Har boshlangan 10 bola uchun oyiga 50 000 soʻm qoʻshiladi: 60 bola — 450 000, 70 bola — 500 000, 80 bola — 550 000 soʻm.',
+        q: 'Toʻlov muddatlari qanday?',
+        a: 'Oylik — chegirmasiz; 6 oylik — 15 % chegirma; yillik — 25 % chegirma. Narx sahifadagi kalkulyatorda hisoblanadi va hisob-faktura ham aynan shu formuladan chiqadi.',
       },
       {
-        q: 'Yillik toʻlov qanday hisoblanadi?',
-        a: 'Oylik narx × 12 × 0,75 — yaʼni 25 % chegirma. 50 bola uchun yillik toʻlov 3 600 000 soʻm.',
+        q: 'Mavjud bolalarimizni qanday koʻchiramiz?',
+        a: 'Excel shablonini yuklab olasiz — u sizning guruhlaringiz va tariflaringiz bilan keladi. Qarzdorlik ustuni ham bor, shuning uchun eski qarz birinchi kundanoq qarzdorlar roʻyxatida koʻrinadi. Koʻchirishda biz yordam beramiz.',
       },
       {
-        q: 'Demo olish mumkinmi?',
-        a: 'Ha. Pastdagi formani toʻldiring — biz bogʻlanib, tizimni sizning bogʻchangiz misolida koʻrsatamiz.',
+        q: 'Ota-onalar bilan qanday ishlaydi?',
+        a: 'Telegram bot orqali: balans, hisob-fakturalar, kvitansiyalar va toʻlov tugmasi. Ilova oʻrnatish shart emas, xabarlar bepul. SMS kerak boʻlsa — oʻz gateway hisobingiz ulanadi.',
+      },
+      {
+        q: 'Ota-ona onlayn toʻlay oladimi?',
+        a: 'Ha — Payme va Click orqali. Pul toʻgʻridan-toʻgʻri sizning merchant hisobingizga tushadi, Radix pulni ushlab turmaydi. Ota-ona hisobdagi summani toʻlaydi, ustiga komissiya qoʻshilmaydi.',
+      },
+      {
+        q: 'Obuna toʻlovini kechiktirsak nima boʻladi?',
+        a: 'Yangi yozuv kiritish toʻxtaydi, lekin tizimga kirish, oʻqish va maʼlumotni eksport qilish ishlayveradi. Maʼlumot oʻchirilmaydi va yashirilmaydi — toʻlagan kuningizdan ishni kutgan joyingizdan davom ettirasiz.',
       },
       {
         q: 'Maʼlumotlar xavfsizligi qanday taʼminlanadi?',
-        a: 'Rollarga asoslangan kirish, tashkilotlar izolyatsiyasi — ilova va maʼlumotlar bazasi darajasida — hamda oʻzgartirib boʻlmaydigan audit jurnali. Zaxira nusxa muntazam olinadi.',
+        a: 'Rollarga asoslangan kirish, tashkilotlar izolyatsiyasi — ilova va maʼlumotlar bazasi darajasida (RLS), oʻzgartirib boʻlmaydigan audit jurnali, ixtiyoriy ikki bosqichli kirish va har kuni olinadigan zaxira nusxa.',
+      },
+      {
+        q: 'Oʻz serverimizga oʻrnatsa boʻladimi?',
+        a: 'Ha. Alohida oʻrnatma — bir martalik litsenziya: tizim sizning serveringizda, sizning domeningizda ishlaydi, oylik obuna boʻlmaydi. Narx kelishuv asosida.',
+      },
+      {
+        q: 'Qaysi tillarda ishlaydi?',
+        a: 'Oʻzbek, rus va ingliz tillarida. Har bir xodim oʻzi uchun tanlaydi, bot esa ota-onaning tilida yozadi.',
       },
     ],
   },
@@ -528,6 +691,8 @@ const uz: Copy = {
     eyebrow: 'Demo',
     title: 'Radix CRM bilan ishlashni boshlang.',
     text: 'Bogʻchangiz boshqaruvini soddalashtirish uchun biz bilan bogʻlaning.',
+    assurance:
+      'Maʼlumotlaringiz faqat shu suhbat uchun ishlatiladi — reklama roʻyxatiga qoʻshilmaydi va boshqalarga berilmaydi. Kutishni xohlamasangiz, 15 kunlik sinovni hoziroq oʻzingiz boshlashingiz mumkin.',
     name: 'Ism',
     phone: 'Telefon raqami',
     kindergarten: 'Bogʻcha nomi',
@@ -555,7 +720,11 @@ const uz: Copy = {
     login: 'CRMʼga kirish',
     copyright: '© 2026 Radix CRM',
   },
-  testimonials: { eyebrow: 'Mijozlar fikri', title: 'Radix bilan ishlayotgan bogʻchalar', items: [] },
+  testimonials: {
+    eyebrow: 'Mijozlar fikri',
+    title: 'Radix bilan ishlayotgan bogʻchalar',
+    items: [],
+  },
   contact: {
     title: 'Aloqa',
     telegram: 'Telegram',
@@ -569,9 +738,9 @@ const uz: Copy = {
     home: 'Bosh sahifa',
   },
   seo: {
-    title: 'Radix CRM — bogʻchangizni boshqarishning barchasi bitta tizimda',
+    title: 'Radix CRM — bogʻcha boshqaruvi: toʻlovlar, davomat, ota-onalar',
     description:
-      'Xususiy bogʻchalar uchun boshqaruv platformasi: bolalar, toʻlovlar, davomat, xodimlar va moliyaviy nazorat. 400 000 soʻm / oy dan.',
+      'Xususiy bogʻchalar uchun boshqaruv platformasi: bolalar, toʻlovlar, qarzdorlik, davomat, xodimlar va moliyaviy nazorat. Ota-onalar uchun Telegram bot va onlayn toʻlov. 15 kun bepul, 400 000 soʻm / oy dan.',
   },
   ui: {
     hero: { alert: '9 ta bola boʻyicha toʻlov 15 kundan ortiq kechikmoqda', severe: 'Jiddiy' },
@@ -617,6 +786,29 @@ const uz: Copy = {
       alert: '9 ta bola boʻyicha toʻlov 15 kundan ortiq kechikmoqda',
       why: 'Nega?',
     },
+    parents: {
+      bot: 'Radix bot',
+      balance: 'Balans',
+      invoices: 'Hisob-fakturalar',
+      pay: 'Toʻlash',
+      receipts: 'Kvitansiyalar',
+      askBalance: 'Balans',
+      answer: 'Karimov Ali · Quyosh guruhi',
+      due: 'Sentabr uchun 1 500 000 soʻm',
+      payNow: 'Payme orqali toʻlash',
+      paid: 'Toʻlandi · kvitansiya yuborildi',
+    },
+    intelligence: {
+      kind: 'Toʻlov kechikishi',
+      severity: 'Jiddiy',
+      why: 'Nega?',
+      evidence: [
+        '9 ta bola boʻyicha muddat 15 kundan oshdi',
+        'Jami kechikkan summa — 12 450 000 soʻm',
+        'Oʻtgan oyda bu raqam 6 bola va 7 200 000 edi',
+      ],
+      action: 'Qarzdorlar roʻyxatini ochish',
+    },
     roles: {
       branches: 'Filiallar',
       chilonzor: 'Chilonzor',
@@ -655,10 +847,13 @@ const ru: Copy = {
   nav: {
     product: 'Продукт',
     capabilities: 'Возможности',
+    parents: 'Родителям',
     pricing: 'Цены',
     faq: 'Вопросы',
     login: 'Войти в CRM',
     demo: 'Получить демо',
+    trial: 'Попробовать бесплатно',
+    trialShort: 'Попробовать',
     menu: 'Меню',
     close: 'Закрыть',
     language: 'Язык',
@@ -667,9 +862,12 @@ const ru: Copy = {
   hero: {
     eyebrow: 'Платформа управления для частных детских садов',
     title: 'Всё управление детским садом — в одной системе.',
-    subtitle: 'Дети, оплаты, посещаемость, сотрудники и финансовый контроль — всё в Radix CRM.',
+    subtitle:
+      'Дети, оплаты, посещаемость, сотрудники и финансовый контроль — в одной системе. А родитель видит баланс в Telegram.',
+    trial: '15 дней бесплатно',
     cta: 'Получить демо',
     secondary: 'Как работает Radix',
+    trustLine: 'Без карты · 15 дней · отменить можно в любой момент',
     priceFrom: 'от 400 000 сум / мес',
     scroll: 'Вниз',
   },
@@ -793,6 +991,78 @@ const ru: Copy = {
     text: 'Посещаемость сегодня, выручка за месяц, задолженность и сотрудники — сразу после входа. Каждая цифра считается из живых данных.',
     steps: ['Общая картина', 'Посещаемость', 'Задолженность', 'Выручка'],
   },
+  parents: {
+    eyebrow: 'Родителям',
+    title: 'Родитель видит баланс в телефоне — без звонков.',
+    text: 'Основной канал — бот в Telegram. Приложение ставить не нужно, а звонков «сколько я должен?» становится меньше.',
+    items: [
+      {
+        title: 'Бот в Telegram',
+        text: 'Баланс, счета, квитанции и кнопка «оплатить» — на языке самого родителя (узбекский, русский, английский).',
+      },
+      {
+        title: 'Онлайн-оплата — Payme и Click',
+        text: 'Деньги идут прямо на мерчант-счёт самого сада. Radix не держит чужие деньги, родитель платит ровно сумму счёта — сверху ничего не добавляется.',
+      },
+      {
+        title: 'Подключение по ссылке-приглашению',
+        text: 'Родитель запускает бота сам; переход по ссылке и есть запись о согласии. В списке видно, кто ещё не подключился.',
+      },
+      {
+        title: 'SMS — по желанию',
+        text: 'Сообщения в Telegram бесплатны. Если нужен SMS, подключается ваш собственный шлюз, и каждое сообщение считается.',
+      },
+    ],
+    note: 'Уведомление «ребёнка сегодня нет» по умолчанию выключено. Включать его или нет — решает сад.',
+  },
+  intelligence: {
+    eyebrow: 'Radix AI',
+    title: 'Предупреждает о задержке оплаты — и отвечает на вопрос «почему».',
+    text: 'Каждое предупреждение выводится по правилу и несёт с собой доказательство: какие дети, сколько дней, какая сумма. По нажатию открывается тот самый список.',
+    points: [
+      'По правилам, а не на догадках — одни и те же данные всегда дают один и тот же ответ',
+      'У каждого вывода есть «Почему?»: видно, откуда взяты цифры',
+      'Считается ночью; утром результат уже на экране',
+    ],
+  },
+  extras: {
+    eyebrow: 'Что ещё есть',
+    title: 'Мелочи ежедневной работы тоже продуманы.',
+    items: [
+      {
+        title: 'Перерасчёт за дни отсутствия',
+        text: 'По справке или заявлению, а не по табелю. Сам документ прикрепляется, и если месяц ещё не оплачен — сумма уменьшается сразу.',
+      },
+      {
+        title: 'Перенос из Excel',
+        text: 'Шаблон скачивается с вашими группами и тарифами. Есть и колонка долга — прежняя задолженность с первого дня видна в списке должников.',
+      },
+      {
+        title: 'Где лежат деньги',
+        text: 'Касса, банк, терминал, Payme/Click — каждый свой счёт. Остаток не хранится, а всегда считается из движений.',
+      },
+      {
+        title: 'Строки расхода',
+        text: 'Картошка, 50 кг, 3 000 → 150 000. Не «рынок — 600 000»: через полгода видно, что именно купили.',
+      },
+      {
+        title: 'Неизменяемый журнал',
+        text: 'Кто, что и когда изменил. Запись нельзя поправить или удалить — сотрудники меняются, история остаётся.',
+      },
+      {
+        title: 'Три языка',
+        text: 'Узбекский, русский, английский — каждый сотрудник выбирает свой. Бот пишет на языке родителя.',
+      },
+      {
+        title: 'Роли и права',
+        text: 'Кто что видит, решает владелец. И никто не может выдать прав больше, чем есть у него самого.',
+      },
+      {
+        title: 'Филиалы',
+        text: 'Одна подписка — сколько угодно филиалов. Владелец видит всё вместе, сотрудник — только свой.',
+      },
+    ],
+  },
   roles: {
     eyebrow: 'Для кого Radix?',
     title: 'Каждая роль видит то, что нужно именно ей.',
@@ -877,9 +1147,12 @@ const ru: Copy = {
     childrenLabel: 'Количество детей',
     childrenUnit: 'детей',
     monthly: 'Ежемесячно',
+    semiannual: '6 месяцев',
     annual: 'За год',
+    semiannualBadge: 'экономия 15 %',
     annualBadge: 'экономия 25 %',
     perMonth: '/ мес',
+    perHalfYear: '/ 6 мес',
     perYear: '/ год',
     effective: 'равно {amount} в месяц',
     includes: [
@@ -897,6 +1170,11 @@ const ru: Copy = {
     ],
     annualFormula: 'Год = месяц × 12 × 0,75',
     first3: 'Первые 3 месяца — по действующей цене.',
+    trial: '15 дней бесплатно',
+    trialNote:
+      'Карта не нужна. После пробного периода вы переходите на оплату или просто останавливаетесь.',
+    safety:
+      'При задержке оплаты запись останавливается, но чтение и выгрузка работают — данные не удаляются и не прячутся.',
     note: 'По мере развития Radix и появления новых возможностей цены могут измениться.',
     cta: 'Получить демо',
     error: 'Не удалось загрузить цену — попробуйте ещё раз.',
@@ -918,31 +1196,47 @@ const ru: Copy = {
     items: [
       {
         q: 'Что такое Radix?',
-        a: 'Платформа управления для частных детских садов: дети, группы, посещаемость, оплаты, задолженность, сотрудники, зарплата, расходы, склад и отчёты — в одной системе.',
+        a: 'Платформа управления для частных детских садов: дети, группы, посещаемость, оплаты, задолженность, сотрудники, зарплата, расходы, склад и отчёты — в одной системе. С родителями — через бот в Telegram.',
       },
       {
-        q: 'Для кого она предназначена?',
-        a: 'Для частных детских садов в Узбекистане и организаций с несколькими филиалами. Роли — владелец, директор, кассир, администратор, воспитатель.',
+        q: 'Можно попробовать бесплатно?',
+        a: 'Да, 15 дней. Вы регистрируетесь сами, карта не нужна. В пробный период система работает полностью — на данных вашего сада.',
       },
       {
         q: 'Сколько стоит?',
-        a: 'До 50 детей — 400 000 сум в месяц. Число филиалов и сотрудников на цену не влияет.',
+        a: '400 000 сум в месяц до 50 детей. За каждые начатые 10 детей — плюс 50 000 сум: 60 детей — 450 000, 70 детей — 500 000. Количество филиалов и сотрудников на цену не влияет.',
       },
       {
-        q: 'Что, если детей больше 50?',
-        a: 'За каждые начатые 10 детей добавляется 50 000 сум в месяц: 60 детей — 450 000, 70 — 500 000, 80 — 550 000 сум.',
+        q: 'Какие есть периоды оплаты?',
+        a: 'Ежемесячно — без скидки; 6 месяцев — скидка 15 %; год — скидка 25 %. Калькулятор на странице считает по той же формуле, по которой выставляется счёт.',
       },
       {
-        q: 'Как считается годовая оплата?',
-        a: 'Месячная цена × 12 × 0,75 — то есть скидка 25 %. Для 50 детей год стоит 3 600 000 сум.',
+        q: 'Как перенести уже имеющихся детей?',
+        a: 'Скачиваете шаблон Excel — он приходит с вашими группами и тарифами. Есть колонка задолженности, поэтому прежний долг виден в списке должников с первого дня. С переносом мы помогаем.',
       },
       {
-        q: 'Можно получить демо?',
-        a: 'Да. Заполните форму ниже — мы свяжемся и покажем систему на примере вашего сада.',
+        q: 'Как это работает для родителей?',
+        a: 'Через бот в Telegram: баланс, счета, квитанции и кнопка оплаты. Приложение ставить не нужно, сообщения бесплатны. Нужен SMS — подключается ваш собственный шлюз.',
+      },
+      {
+        q: 'Родитель может оплатить онлайн?',
+        a: 'Да — через Payme и Click. Деньги приходят прямо на ваш мерчант-счёт, Radix их не держит. Родитель платит ровно сумму счёта, комиссия сверху не добавляется.',
+      },
+      {
+        q: 'Что будет, если задержать оплату подписки?',
+        a: 'Остановится ввод новых записей, но вход, чтение и выгрузка данных продолжают работать. Ничего не удаляется и не прячется — после оплаты вы продолжаете с того же места.',
       },
       {
         q: 'Как обеспечивается безопасность данных?',
-        a: 'Доступ по ролям, изоляция организаций — на уровне приложения и базы данных — и неизменяемый журнал аудита. Резервные копии делаются регулярно.',
+        a: 'Доступ по ролям, изоляция организаций — и в приложении, и на уровне базы данных (RLS), неизменяемый журнал действий, двухфакторный вход по желанию и ежедневная резервная копия.',
+      },
+      {
+        q: 'Можно установить на свой сервер?',
+        a: 'Да. Отдельная установка — разовая лицензия: система работает на вашем сервере и вашем домене, без ежемесячной подписки. Цена договорная.',
+      },
+      {
+        q: 'На каких языках работает?',
+        a: 'Узбекский, русский и английский. Каждый сотрудник выбирает свой, а бот пишет на языке родителя.',
       },
     ],
   },
@@ -950,6 +1244,8 @@ const ru: Copy = {
     eyebrow: 'Демо',
     title: 'Начните работать с Radix CRM.',
     text: 'Свяжитесь с нами, чтобы упростить управление вашим детским садом.',
+    assurance:
+      'Ваши данные используются только для этого разговора — ни рассылок, ни передачи третьим лицам. Ждать не обязательно: пробный период на 15 дней можно начать самостоятельно.',
     name: 'Имя',
     phone: 'Номер телефона',
     kindergarten: 'Название детского сада',
@@ -992,9 +1288,9 @@ const ru: Copy = {
     home: 'На главную',
   },
   seo: {
-    title: 'Radix CRM — всё управление детским садом в одной системе',
+    title: 'Radix CRM — управление садом: оплаты, посещаемость, родители',
     description:
-      'Платформа управления для частных детских садов: дети, оплаты, посещаемость, сотрудники и финансовый контроль. От 400 000 сум / мес.',
+      'Платформа управления для частных детских садов: дети, оплаты, задолженность, посещаемость, сотрудники и финансовый контроль. Для родителей — бот в Telegram и онлайн-оплата. 15 дней бесплатно, от 400 000 сум / мес.',
   },
   ui: {
     hero: { alert: 'По 9 детям оплата задерживается более 15 дней', severe: 'Серьёзно' },
@@ -1035,6 +1331,29 @@ const ru: Copy = {
       alert: 'По 9 детям оплата задерживается более 15 дней',
       why: 'Почему?',
     },
+    parents: {
+      bot: 'Radix bot',
+      balance: 'Баланс',
+      invoices: 'Счета',
+      pay: 'Оплатить',
+      receipts: 'Квитанции',
+      askBalance: 'Баланс',
+      answer: 'Каримов Али · группа «Куёш»',
+      due: 'За сентябрь — 1 500 000 сум',
+      payNow: 'Оплатить через Payme',
+      paid: 'Оплачено · квитанция отправлена',
+    },
+    intelligence: {
+      kind: 'Задержка оплаты',
+      severity: 'Серьёзно',
+      why: 'Почему?',
+      evidence: [
+        'По 9 детям срок превышен более чем на 15 дней',
+        'Общая просроченная сумма — 12 450 000 сум',
+        'В прошлом месяце было 6 детей и 7 200 000',
+      ],
+      action: 'Открыть список должников',
+    },
     roles: {
       branches: 'Филиалы',
       chilonzor: 'Чиланзар',
@@ -1073,10 +1392,13 @@ const en: Copy = {
   nav: {
     product: 'Product',
     capabilities: 'Capabilities',
+    parents: 'For parents',
     pricing: 'Pricing',
     faq: 'FAQ',
     login: 'Sign in to CRM',
     demo: 'Get a demo',
+    trial: 'Try it free',
+    trialShort: 'Try free',
     menu: 'Menu',
     close: 'Close',
     language: 'Language',
@@ -1085,9 +1407,12 @@ const en: Copy = {
   hero: {
     eyebrow: 'A management platform for private kindergartens',
     title: 'Everything to run your kindergarten — in one system.',
-    subtitle: 'Children, payments, attendance, staff and financial control — all in Radix CRM.',
+    subtitle:
+      'Children, payments, attendance, staff and financial control in one system — and parents see the balance in Telegram.',
+    trial: 'Start a 15-day free trial',
     cta: 'Get a demo',
     secondary: 'How Radix works',
+    trustLine: 'No card · 15 days · cancel whenever you like',
     priceFrom: 'from 400 000 UZS / month',
     scroll: 'Scroll',
   },
@@ -1210,6 +1535,78 @@ const en: Copy = {
     text: 'Today’s attendance, monthly revenue, debt and staff — the moment you sign in. Every number is calculated from live data.',
     steps: ['Overview', 'Attendance', 'Debt', 'Revenue'],
   },
+  parents: {
+    eyebrow: 'For parents',
+    title: 'Parents see the balance on their phone — no phone calls.',
+    text: 'The main channel is a Telegram bot. Nothing to install, and far fewer "how much do I owe?" calls to the office.',
+    items: [
+      {
+        title: 'Telegram bot',
+        text: 'Balance, invoices, receipts and a "pay" button — in the parent’s own language (Uzbek, Russian, English).',
+      },
+      {
+        title: 'Online payment — Payme and Click',
+        text: 'The money goes straight to the kindergarten’s own merchant account. Radix never holds it, and the parent pays exactly the invoice — nothing is added on top.',
+      },
+      {
+        title: 'Linking by invitation',
+        text: 'The parent starts the bot themselves; following the link is the consent record. The list shows who has not linked yet.',
+      },
+      {
+        title: 'SMS — optional',
+        text: 'Telegram messages are free. If you want SMS, your own gateway is connected and every message is counted.',
+      },
+    ],
+    note: 'The "your child is absent today" message is off by default. Whether to turn it on is the kindergarten’s call.',
+  },
+  intelligence: {
+    eyebrow: 'Radix AI',
+    title: 'It warns about late payment — and answers "why".',
+    text: 'Every warning comes from a rule and carries its evidence: which children, how many days, how much money. One tap opens that exact list.',
+    points: [
+      'Rules, not guesswork — the same data always gives the same answer',
+      'Every finding has a "Why?": you can see where the numbers came from',
+      'Computed overnight; the answer is on the screen by morning',
+    ],
+  },
+  extras: {
+    eyebrow: 'What else is there',
+    title: 'The small parts of the daily work are thought through too.',
+    items: [
+      {
+        title: 'Credit for days absent',
+        text: 'From a certificate or an application, never from the attendance grid. The document itself is attached, and if the month is unpaid the amount drops straight away.',
+      },
+      {
+        title: 'Move in from Excel',
+        text: 'The template downloads with your own groups and tariffs. It has a debt column too, so an old balance shows up among the debtors from day one.',
+      },
+      {
+        title: 'Where the money sits',
+        text: 'Till, bank, terminal, Payme/Click — each its own account. A balance is never stored; it is always computed from the movements.',
+      },
+      {
+        title: 'Expense lines',
+        text: 'Potatoes, 50 kg, 3 000 → 150 000. Not "market — 600 000": six months later you can still see what was bought.',
+      },
+      {
+        title: 'An audit log that cannot be edited',
+        text: 'Who changed what, and when. Entries cannot be edited or deleted — staff come and go, the history stays.',
+      },
+      {
+        title: 'Three languages',
+        text: 'Uzbek, Russian, English — each member of staff picks their own. The bot writes in the parent’s language.',
+      },
+      {
+        title: 'Roles and permissions',
+        text: 'The owner decides who sees what. And nobody can hand out more access than they hold themselves.',
+      },
+      {
+        title: 'Branches',
+        text: 'One subscription, as many branches as you like. The owner sees them together, staff see only their own.',
+      },
+    ],
+  },
   roles: {
     eyebrow: 'Who is Radix for?',
     title: 'Every role sees exactly what it needs.',
@@ -1294,9 +1691,12 @@ const en: Copy = {
     childrenLabel: 'Number of children',
     childrenUnit: 'children',
     monthly: 'Monthly',
+    semiannual: '6 months',
     annual: 'Annual',
+    semiannualBadge: 'Save 15 %',
     annualBadge: 'Save 25 %',
     perMonth: '/ month',
+    perHalfYear: '/ 6 months',
     perYear: '/ year',
     effective: 'equals {amount} per month',
     includes: [
@@ -1314,6 +1714,10 @@ const en: Copy = {
     ],
     annualFormula: 'Annual = monthly × 12 × 0.75',
     first3: 'First 3 months — at the current price.',
+    trial: '15 days free',
+    trialNote: 'No card. When the trial ends you either start paying or simply stop.',
+    safety:
+      'If payment is late, writing stops — but reading and export keep working, and nothing is deleted or hidden.',
     note: 'As Radix grows and new capabilities are added, prices may change in the future.',
     cta: 'Get a demo',
     error: 'Couldn’t load the price — please try again.',
@@ -1335,31 +1739,47 @@ const en: Copy = {
     items: [
       {
         q: 'What is Radix?',
-        a: 'A management platform for private kindergartens: children, groups, attendance, payments, debt, staff, payroll, expenses, inventory and reports — in one system.',
+        a: 'A management platform for private kindergartens: children, groups, attendance, payments, debtors, staff, payroll, expenses, inventory and reports in one system — with a Telegram bot as the channel to parents.',
       },
       {
-        q: 'Who is it for?',
-        a: 'Private kindergartens in Uzbekistan and organizations with several branches. Roles — kindergarten owner, director, cashier, administrator, teacher.',
+        q: 'Can we try it for free?',
+        a: 'Yes, for 15 days. You sign up yourself and no card is needed. During the trial the system is complete — with your own kindergarten’s data.',
       },
       {
-        q: 'How much does it cost?',
-        a: '400 000 UZS per month for up to 50 children. The number of branches and staff doesn’t affect the price.',
+        q: 'What does it cost?',
+        a: '400 000 UZS a month for up to 50 children. Every started 10 children adds 50 000: 60 children — 450 000, 70 children — 500 000. Branches and staff do not change the price.',
       },
       {
-        q: 'What if there are more than 50 children?',
-        a: 'Every started block of 10 children adds 50 000 UZS per month: 60 children — 450 000, 70 — 500 000, 80 — 550 000 UZS.',
+        q: 'Which payment terms are there?',
+        a: 'Monthly at full price, six months at −15 %, a year at −25 %. The calculator on this page uses the same formula the invoice is built from.',
       },
       {
-        q: 'How is the annual payment calculated?',
-        a: 'Monthly price × 12 × 0.75 — a 25 % discount. For 50 children the annual payment is 3 600 000 UZS.',
+        q: 'How do we move the children we already have?',
+        a: 'You download an Excel template that comes with your own groups and tariffs. It has a debt column, so an old balance appears among the debtors from day one. We help with the move.',
       },
       {
-        q: 'Can I get a demo?',
-        a: 'Yes. Fill in the form below — we’ll get in touch and walk you through the system using your kindergarten as the example.',
+        q: 'How does it work for parents?',
+        a: 'Through a Telegram bot: balance, invoices, receipts and a pay button. Nothing to install and the messages are free. If you want SMS, your own gateway is connected.',
       },
       {
-        q: 'How is data security ensured?',
-        a: 'Role-based access, organization isolation — at the application and database level — and an immutable audit log. Backups are taken regularly.',
+        q: 'Can a parent pay online?',
+        a: 'Yes — with Payme and Click. The money arrives in your own merchant account; Radix never holds it. The parent pays exactly the invoice, with nothing added on top.',
+      },
+      {
+        q: 'What happens if a subscription payment is late?',
+        a: 'Writing stops, but signing in, reading and exporting keep working. Nothing is deleted or hidden — once you pay, you carry on where you left off.',
+      },
+      {
+        q: 'How is the data kept safe?',
+        a: 'Role-based access, organizations isolated both in the application and in the database itself (RLS), an audit log that cannot be edited, optional two-factor sign-in and a daily backup.',
+      },
+      {
+        q: 'Can we install it on our own server?',
+        a: 'Yes. A standalone licence is a one-off: the system runs on your server and your domain, with no monthly subscription. Price by agreement.',
+      },
+      {
+        q: 'Which languages does it work in?',
+        a: 'Uzbek, Russian and English. Each member of staff picks their own, and the bot writes in the parent’s language.',
       },
     ],
   },
@@ -1367,6 +1787,8 @@ const en: Copy = {
     eyebrow: 'Demo',
     title: 'Start working with Radix CRM.',
     text: 'Get in touch to simplify the management of your kindergarten.',
+    assurance:
+      'Your details are used for this conversation only — no mailing list, nothing passed on. And you do not have to wait: the 15-day trial can be started by yourself.',
     name: 'Name',
     phone: 'Phone number',
     kindergarten: 'Kindergarten name',
@@ -1408,9 +1830,9 @@ const en: Copy = {
     home: 'Home page',
   },
   seo: {
-    title: 'Radix CRM — everything to run your kindergarten in one system',
+    title: 'Radix CRM — kindergarten management: payments, attendance, parents',
     description:
-      'A management platform for private kindergartens: children, payments, attendance, staff and financial control. From 400 000 UZS / month.',
+      'A management platform for private kindergartens: children, payments, debtors, attendance, staff and financial control. A Telegram bot and online payment for parents. 15 days free, from 400 000 UZS / month.',
   },
   ui: {
     hero: { alert: 'Payments for 9 children are more than 15 days overdue', severe: 'Serious' },
@@ -1455,6 +1877,29 @@ const en: Copy = {
       last6: 'last 6 months',
       alert: 'Payments for 9 children are more than 15 days overdue',
       why: 'Why?',
+    },
+    parents: {
+      bot: 'Radix bot',
+      balance: 'Balance',
+      invoices: 'Invoices',
+      pay: 'Pay',
+      receipts: 'Receipts',
+      askBalance: 'Balance',
+      answer: 'Ali Karimov · Quyosh group',
+      due: 'September — 1 500 000 UZS',
+      payNow: 'Pay with Payme',
+      paid: 'Paid · receipt sent',
+    },
+    intelligence: {
+      kind: 'Late payment',
+      severity: 'Serious',
+      why: 'Why?',
+      evidence: [
+        '9 children are more than 15 days past due',
+        'The overdue total is 12 450 000 UZS',
+        'Last month it was 6 children and 7 200 000',
+      ],
+      action: 'Open the debtors list',
     },
     roles: {
       branches: 'Branches',

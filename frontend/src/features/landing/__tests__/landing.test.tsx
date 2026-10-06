@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter, matchRoutes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { routes } from '@/router'
@@ -18,8 +19,10 @@ const quote = (children: number) => {
   return {
     children,
     currency: 'UZS',
-    monthly: { total_amount: String(monthly) },
-    annual: { total_amount: String(monthly * 12 * 0.75) },
+    trial_days: 15,
+    monthly: { total_amount: String(monthly), months: 1 },
+    semiannual: { total_amount: String(monthly * 6 * 0.85), months: 6 },
+    annual: { total_amount: String(monthly * 12 * 0.75), months: 12 },
     annual_before_discount: String(monthly * 12),
     annual_saving: String(monthly * 12 * 0.25),
     plan: { included_children: 50, overage_step_children: 10, overage_step_price: '50000' },
@@ -104,6 +107,39 @@ describe('content', () => {
   })
 })
 
+describe('mahsulot bilan mos', () => {
+  it('sinov taklifi uchala tilda ham bor va 15 kun deyiladi', () => {
+    for (const locale of ['uz', 'ru', 'en'] as const) {
+      expect(copy[locale].nav.trial).toBeTruthy()
+      expect(copy[locale].hero.trial).toMatch(/15/)
+      expect(copy[locale].pricing.trial).toMatch(/15/)
+    }
+  })
+
+  it('ota-onalar, Radix AI va qoʻshimcha imkoniyatlar bloklari toʻldirilgan', () => {
+    for (const locale of ['uz', 'ru', 'en'] as const) {
+      expect(copy[locale].parents.items).toHaveLength(4)
+      expect(copy[locale].intelligence.points).toHaveLength(3)
+      expect(copy[locale].extras.items).toHaveLength(8)
+      expect(copy[locale].ui.intelligence.evidence).toHaveLength(3)
+    }
+  })
+
+  it('FAQ mahsulotning bugungi holatini aytadi (sinov, bot, onlayn toʻlov, 6 oy)', () => {
+    const uz = copy.uz.faq.items.map((i) => `${i.q} ${i.a}`).join(' ')
+    expect(uz).toMatch(/15 kun/)
+    expect(uz).toMatch(/Telegram/)
+    expect(uz).toMatch(/Payme/)
+    expect(uz).toMatch(/6 oylik/)
+    // To'lov kechikса ma'lumot o'chmaydi (invariant 11) — bu va'da
+    // sahifada YOZILGAN bo'lishi kerak, chunki xaridor buni so'raydi.
+    expect(uz).toMatch(/oʻchirilmaydi/)
+    for (const locale of ['uz', 'ru', 'en'] as const) {
+      expect(copy[locale].faq.items.length).toBe(copy.uz.faq.items.length)
+    }
+  })
+})
+
 describe('marshrut', () => {
   it('/uz, /ru, /en bosh sahifa; eski /test-redesign havolasi yo‘naltiriladi', () => {
     const leaf = (p: string) => {
@@ -142,6 +178,53 @@ describe('LandingPage', () => {
     )
     // Uzbek apostrophes: faqat ‘ (U+2018) va ’ (U+2019), ASCII ' emas.
     expect(copy.uz.hero.title).not.toContain("'")
+  })
+})
+
+describe('telefon maketi', () => {
+  // `matchMedia` stub'i (src/test/setup.ts) har doim `matches: false`
+  // qaytaradi, ya'ni bu testlar AYNAN telefon/planshet yo'lini bosib
+  // o'tadi — pinned sahna bo'lmasligi kerak.
+  const renderPage = () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    return render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={['/uz']}>
+          <LandingPage locale="uz" />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+  }
+
+  it('hech bir boʻlim ekran bo-yiga bogʻlangan (vh) balandlik bermaydi', () => {
+    const { container } = renderPage()
+    const pinned = [...container.querySelectorAll<HTMLElement>('section')].filter((el) =>
+      (el.getAttribute('style') ?? '').includes('vh'),
+    )
+    expect(pinned.map((el) => el.id || el.className.slice(0, 40))).toEqual([])
+  })
+
+  it('birinchi chaqiriq — sinov, va u roʻyxatdan oʻtish sahifasiga olib boradi', () => {
+    renderPage()
+    const trial = screen.getAllByRole('link', { name: new RegExp(copy.uz.hero.trial, 'i') })
+    expect(trial.length).toBeGreaterThan(0)
+    expect(trial[0].getAttribute('href')).toMatch(/\/signup$/)
+  })
+
+  it('yangi boʻlimlar sahifada chizilgan', () => {
+    renderPage()
+    expect(screen.getByText(copy.uz.parents.title)).toBeInTheDocument()
+    expect(screen.getByText(copy.uz.intelligence.title)).toBeInTheDocument()
+    expect(screen.getByText(copy.uz.extras.title)).toBeInTheDocument()
+  })
+
+  it('narx uchta muddatni koʻrsatadi va summani SERVERDAN oladi', async () => {
+    renderPage()
+    const half = await screen.findByRole('tab', { name: new RegExp(copy.uz.pricing.semiannual) })
+    expect(half).toBeInTheDocument()
+    await userEvent.click(half)
+    // 50 bola uchun 6 oylik: 400 000 × 6 × 0,85 = 2 040 000.
+    expect(await screen.findByText(groupThousands(2_040_000))).toBeInTheDocument()
   })
 })
 

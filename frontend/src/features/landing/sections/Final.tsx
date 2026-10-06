@@ -15,31 +15,42 @@ import { ContactList, LegalLine } from '../ui/Contacts'
 export function Final({ locale }: { locale: Locale }) {
   const t = copy[locale]
   return (
-    <section className="relative overflow-hidden bg-slate-50 pt-20 lg:pt-32">
+    <section className="relative overflow-hidden bg-slate-50 pt-16 lg:pt-32">
       <div className="mx-auto max-w-[1280px] px-5 text-center lg:px-8">
         <Reveal>
-          <h2 className="mx-auto max-w-3xl text-balance text-[2rem] font-bold !leading-[1.12] tracking-[-0.02em] text-tosh-900 sm:text-[2.5rem] lg:text-5xl">
+          <h2 className="mx-auto max-w-3xl text-balance text-[1.875rem] font-bold !leading-[1.12] tracking-[-0.02em] text-tosh-900 sm:text-[2.5rem] lg:text-5xl">
             {t.final.title}
           </h2>
-          <p className="mt-5 text-lg text-slate-600 lg:text-xl">{t.final.text}</p>
+          <p className="mt-4 text-[17px] text-slate-600 sm:mt-5 sm:text-lg lg:text-xl">
+            {t.final.text}
+          </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <a
-              href="#demo"
+              href={env.signupUrl}
               className="group inline-flex min-h-[54px] items-center justify-center gap-2 rounded-xl bg-brand-600 px-7 text-base font-semibold text-white transition hover:bg-brand-700"
             >
-              {t.final.cta}
+              {t.nav.trial}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>
             <a
+              href="#demo"
+              className="inline-flex min-h-[54px] items-center justify-center rounded-xl border border-slate-200 bg-white px-7 text-base font-semibold text-slate-800 transition hover:border-slate-300"
+            >
+              {t.final.cta}
+            </a>
+            <a
               href={env.loginUrl}
-              className="inline-flex min-h-[54px] items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-7 text-base font-semibold text-slate-800 transition hover:border-slate-300"
+              className="inline-flex min-h-[54px] items-center justify-center gap-1.5 rounded-xl px-7 text-base font-semibold text-slate-600 transition hover:text-slate-900"
             >
               {t.final.secondary}
               <ArrowUpRight className="h-4 w-4 text-slate-400" />
             </a>
           </div>
         </Reveal>
-        <Reveal delay={0.1} className="relative mx-auto mt-14 max-w-4xl [perspective:1400px]">
+        <Reveal
+          delay={0.1}
+          className="relative mx-auto mt-14 hidden max-w-4xl [perspective:1400px] sm:block"
+        >
           <div className="[transform:rotateX(8deg)] origin-bottom">
             <Frame demo={t.demo}>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

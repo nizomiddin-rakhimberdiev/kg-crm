@@ -16,7 +16,7 @@ export function Testimonials({ locale }: { locale: Locale }) {
   if (t.items.length === 0) return null
 
   return (
-    <section id="testimonials" className="bg-white py-16 lg:py-24">
+    <section id="testimonials" className="bg-white py-14 lg:py-24">
       <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
         <Reveal>
           <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">

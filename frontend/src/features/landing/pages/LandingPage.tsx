@@ -8,14 +8,17 @@
 
 import { type Locale } from '../content'
 import { DeepDive } from '../sections/DeepDive'
+import { Extras } from '../sections/Extras'
 import { Faq } from '../sections/Faq'
 import { Final } from '../sections/Final'
 import { Finance } from '../sections/Finance'
 import { Hero } from '../sections/Hero'
+import { Intelligence } from '../sections/Intelligence'
 import { Lead } from '../sections/Lead'
 import { Modules } from '../sections/Modules'
 import { Nav } from '../sections/Nav'
 import { OneSystem } from '../sections/OneSystem'
+import { Parents } from '../sections/Parents'
 import { Pricing } from '../sections/Pricing'
 import { Problem } from '../sections/Problem'
 import { Roles } from '../sections/Roles'
@@ -36,9 +39,13 @@ export function LandingPage({ locale }: { locale: Locale }) {
         <OneSystem locale={locale} />
         <Modules locale={locale} />
         <DeepDive locale={locale} />
+        {/* Ota-onalar kanali — sotuvdagi birinchi savol (ADR-23). */}
+        <Parents locale={locale} />
         <Roles locale={locale} />
         <Workflow locale={locale} />
         <Finance locale={locale} />
+        <Intelligence locale={locale} />
+        <Extras locale={locale} />
         <Pricing locale={locale} />
         {/* Ma'lumot qo'shilmaguncha hech narsa chizmaydi (PLAN 5.7). */}
         <Testimonials locale={locale} />

@@ -23,7 +23,7 @@ import {
 import { RadixMark } from '@/components/brand/Logo'
 import { BRAND } from '@/lib/brand'
 import { copy, type Locale } from '../content'
-import { useCompact, useScene, useStaticScene } from '../motion'
+import { useScene, useStaticScene } from '../motion'
 
 const ICONS = [UserRound, Wallet, CalendarCheck, Users, Boxes, Receipt, BarChart3]
 // Yetti modul — besh brend rangining tiniqlik darajalarida.
@@ -55,23 +55,36 @@ function ringPose(i: number, radius: number) {
   return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius }
 }
 
+/**
+ * Modul plitkasi.
+ *
+ * `fluid` — katakning enini oladi (panel ichida). Belgilangan `w-[…]`
+ * telefonda plitkani 11 px gacha siqib qo'yardi va yozuv "B…" bo'lib
+ * ko'rinardi: aylana maketi uchun kerak bo'lgan qat'iy en panel ichida
+ * kerak emas edi.
+ */
 function Tile({
   label,
   index,
   className = '',
   compact = false,
+  fluid = false,
 }: {
   label: string
   index: number
   className?: string
   compact?: boolean
+  fluid?: boolean
 }) {
   const Icon = ICONS[index]
+  const size = fluid
+    ? 'w-full min-w-0 px-2.5 py-2'
+    : compact
+      ? 'w-[6.5rem] px-2 py-1.5'
+      : 'w-[9.5rem] px-3 py-2.5'
   return (
     <div
-      className={`flex items-center gap-2 rounded-xl border border-slate-200 bg-white shadow-[0_16px_40px_-20px_rgba(18,53,47,0.35)] ${
-        compact ? 'w-[6.5rem] px-2 py-1.5' : 'w-[9.5rem] px-3 py-2.5'
-      } ${className}`}
+      className={`flex items-center gap-2 rounded-xl border border-slate-200 bg-white shadow-[0_16px_40px_-20px_rgba(18,53,47,0.35)] ${size} ${className}`}
     >
       <span
         className={`grid shrink-0 place-items-center rounded-lg ${compact ? 'h-6 w-6' : 'h-7 w-7'} ${TONES[index]}`}
@@ -147,12 +160,22 @@ function Connector({
   )
 }
 
-function Panel({ locale, factor }: { locale: Locale; factor: number }) {
+function Panel({
+  locale,
+  factor,
+  fluid = false,
+}: {
+  locale: Locale
+  factor: number
+  fluid?: boolean
+}) {
   const t = copy[locale]
   return (
     <div
-      className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_30px_80px_-30px_rgba(18,53,47,0.25)]"
-      style={{ width: factor < 1 ? 320 : 720 }}
+      className={`rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_30px_80px_-30px_rgba(18,53,47,0.25)] ${
+        fluid ? 'w-full max-w-[720px]' : ''
+      }`}
+      style={fluid ? undefined : { width: factor < 1 ? 320 : 720 }}
     >
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2">
@@ -161,29 +184,46 @@ function Panel({ locale, factor }: { locale: Locale; factor: number }) {
         </div>
         <span className="text-[12px] text-slate-400">{t.demo.today}</span>
       </div>
-      <div className={`mt-3 grid gap-2 ${factor < 1 ? 'grid-cols-2' : 'grid-cols-4'}`}>
+      <div
+        className={`mt-3 grid gap-2 ${fluid ? 'grid-cols-2 sm:grid-cols-4' : factor < 1 ? 'grid-cols-2' : 'grid-cols-4'}`}
+      >
         {t.oneSystem.modules.map((label, i) => (
           <Tile
             key={label}
             label={label}
             index={i}
-            compact={factor < 1}
-            className={`w-auto shadow-none ${factor < 1 ? (i === 6 ? 'col-span-2' : '') : i === 4 ? 'col-start-1' : ''}`}
+            compact={!fluid && factor < 1}
+            fluid={fluid}
+            className={`shadow-none ${
+              fluid
+                ? i === 6
+                  ? 'col-span-2 sm:col-span-1'
+                  : ''
+                : factor < 1
+                  ? i === 6
+                    ? 'col-span-2'
+                    : ''
+                  : i === 4
+                    ? 'col-start-1'
+                    : ''
+            }`}
           />
         ))}
       </div>
       {/* Bog'liqlik: bitta amal — boshqa modulda natija. */}
       <ul
-        className={`mt-3 grid gap-2 border-t border-slate-100 pt-3 ${factor < 1 ? '' : 'grid-cols-3'}`}
+        className={`mt-3 grid gap-2 border-t border-slate-100 pt-3 ${
+          fluid ? 'sm:grid-cols-3' : factor < 1 ? '' : 'grid-cols-3'
+        }`}
       >
         {t.oneSystem.links.map(([cause, effect]) => (
           <li
             key={cause}
-            className="flex items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-2 text-[12px]"
+            className="flex min-w-0 items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-2 text-[12px]"
           >
-            <span className="text-slate-600">{cause}</span>
+            <span className="truncate text-slate-600">{cause}</span>
             <ArrowRight className="h-3 w-3 shrink-0 text-brand-600" />
-            <span className="whitespace-nowrap font-semibold text-slate-900">{effect}</span>
+            <span className="truncate font-semibold text-slate-900">{effect}</span>
           </li>
         ))}
       </ul>
@@ -195,22 +235,21 @@ export function OneSystem({ locale }: { locale: Locale }) {
   const t = copy[locale].oneSystem
   const ref = useRef<HTMLElement>(null)
   const progress = useScene(ref)
-  const compact = useCompact()
   const isStatic = useStaticScene()
-  const factor = compact ? 0.48 : 1
+  const factor = 1
 
   const panelOpacity = useTransform(progress, [0.7, 0.85], [0, 1])
   const panelScale = useTransform(progress, [0.7, 0.9], [0.96, 1])
-  const titleScale = useTransform(progress, [0.75, 0.95], [1, compact ? 1 : 1.06])
-  const titleY = useTransform(progress, [0, 0.4], [0, compact ? -6 : -20])
+  const titleScale = useTransform(progress, [0.75, 0.95], [1, 1.06])
+  const titleY = useTransform(progress, [0, 0.4], [0, -20])
 
   if (isStatic) {
     return (
-      <section ref={ref} id="one-system" className="bg-white py-20 lg:py-28">
+      <section ref={ref} id="one-system" className="bg-white py-14 lg:py-28">
         <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
           <Heading locale={locale} />
-          <div className="mt-10 flex justify-center">
-            <Panel locale={locale} factor={factor} />
+          <div className="mt-8 flex justify-center lg:mt-10">
+            <Panel locale={locale} factor={factor} fluid />
           </div>
         </div>
       </section>
@@ -218,12 +257,7 @@ export function OneSystem({ locale }: { locale: Locale }) {
   }
 
   return (
-    <section
-      ref={ref}
-      id="one-system"
-      className="relative bg-white"
-      style={{ height: compact ? '220vh' : '260vh' }}
-    >
+    <section ref={ref} id="one-system" className="relative bg-white" style={{ height: '260vh' }}>
       <div className="sticky top-0 flex h-screen flex-col overflow-hidden pt-[76px]">
         <motion.div
           style={{ y: titleY, scale: titleScale }}

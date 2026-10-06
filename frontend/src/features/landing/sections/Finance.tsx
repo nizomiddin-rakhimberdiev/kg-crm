@@ -10,9 +10,9 @@
 
 import { useRef } from 'react'
 import { motion, useTransform, type MotionValue } from 'framer-motion'
-import { ArrowDown, ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { copy, groupThousands, money, type Locale } from '../content'
-import { CountUp, Reveal, useCompact, useScene, useStaticScene } from '../motion'
+import { CountUp, Reveal, useScene, useStaticScene } from '../motion'
 
 type Tone = 'in' | 'out' | 'warn' | 'neutral'
 const TEXT: Record<Tone, string> = {
@@ -65,26 +65,12 @@ function Appear({
   )
 }
 
-function Arrow({
-  progress,
-  at,
-  compact,
-}: {
-  progress: MotionValue<number>
-  at: number
-  compact: boolean
-}) {
+function Arrow({ progress, at }: { progress: MotionValue<number>; at: number }) {
   const opacity = useTransform(progress, [at, at + 0.05], [0.2, 1], { clamp: true })
-  const shift = useTransform(progress, [at, at + 0.08], compact ? [-6, 0] : [-10, 0], {
-    clamp: true,
-  })
-  const Icon = compact ? ArrowDown : ArrowRight
+  const shift = useTransform(progress, [at, at + 0.08], [-10, 0], { clamp: true })
   return (
-    <motion.div
-      style={compact ? { opacity, y: shift } : { opacity, x: shift }}
-      className={compact ? 'flex justify-center py-1' : 'flex items-center'}
-    >
-      <Icon className={`${compact ? 'h-5 w-5' : 'h-6 w-6'} text-brand-400`} />
+    <motion.div style={{ opacity, x: shift }} className="flex items-center">
+      <ArrowRight className="h-6 w-6 text-brand-400" />
     </motion.div>
   )
 }
@@ -93,7 +79,6 @@ export function Finance({ locale }: { locale: Locale }) {
   const t = copy[locale].finance
   const ref = useRef<HTMLElement>(null)
   const progress = useScene(ref)
-  const compact = useCompact()
   const isStatic = useStaticScene()
   const byId = Object.fromEntries(t.metrics.map((m) => [m.id, m]))
   const payments = byId.payments.value
@@ -157,7 +142,7 @@ export function Finance({ locale }: { locale: Locale }) {
       ref={ref}
       data-nav-dark
       className="relative bg-ildiz-900 text-white"
-      style={{ height: compact ? '300vh' : '280vh' }}
+      style={{ height: '280vh' }}
     >
       <div className="sticky top-0 flex h-screen flex-col overflow-hidden pt-[76px]">
         <div className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col justify-center px-5 py-4 lg:px-8">
@@ -169,7 +154,7 @@ export function Finance({ locale }: { locale: Locale }) {
               <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400">
                 {ui.inflow}
               </p>
-              <div className={compact ? 'mt-2 grid grid-cols-3 gap-2' : ''}>
+              <div>
                 {[
                   [byId.revenue, [0.04, 0.2]],
                   [byId.payments, [0.12, 0.28]],
@@ -177,47 +162,47 @@ export function Finance({ locale }: { locale: Locale }) {
                 ].map(([m, range]) => {
                   const metric = m as typeof byId.revenue
                   return (
-                    <div key={metric.id} className={compact ? 'min-w-0' : 'mt-4 first:mt-3'}>
-                      <p className={`${label} ${compact ? 'leading-tight' : ''}`}>{metric.label}</p>
+                    <div key={metric.id} className="mt-4 first:mt-3">
+                      <p className={label}>{metric.label}</p>
                       <Scrub
                         progress={progress}
                         range={range as [number, number]}
                         value={metric.value}
-                        className={`${num} ${TEXT[metric.tone]} ${compact ? '!text-[15px]' : ''}`}
+                        className={`${num} ${TEXT[metric.tone]}`}
                       />
                     </div>
                   )
                 })}
               </div>
             </Appear>
-            <Arrow progress={progress} at={0.34} compact={compact} />
+            <Arrow progress={progress} at={0.34} />
 
             {/* Chiqim */}
             <Appear progress={progress} at={0.38} className={card}>
               <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400">
                 {ui.outflow}
               </p>
-              <div className={compact ? 'mt-2 grid grid-cols-2 gap-2' : ''}>
+              <div>
                 {[
                   [byId.expenses, [0.4, 0.52]],
                   [byId.salaries, [0.46, 0.58]],
                 ].map(([m, range]) => {
                   const metric = m as typeof byId.expenses
                   return (
-                    <div key={metric.id} className={compact ? 'min-w-0' : 'mt-4 first:mt-3'}>
+                    <div key={metric.id} className="mt-4 first:mt-3">
                       <p className={label}>{metric.label}</p>
                       <Scrub
                         progress={progress}
                         range={range as [number, number]}
                         value={metric.value}
-                        className={`${num} ${TEXT[metric.tone]} ${compact ? '!text-[15px]' : ''}`}
+                        className={`${num} ${TEXT[metric.tone]}`}
                       />
                     </div>
                   )
                 })}
               </div>
             </Appear>
-            <Arrow progress={progress} at={0.58} compact={compact} />
+            <Arrow progress={progress} at={0.58} />
 
             {/* Balans */}
             <Appear

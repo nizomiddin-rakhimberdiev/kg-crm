@@ -15,7 +15,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { useMotionValue, useMotionValueEvent, useTransform, type MotionValue } from 'framer-motion'
 import { Check, ChevronRight } from 'lucide-react'
 import { copy, groupThousands, type Locale, type ModuleCopy } from '../content'
-import { centerInStrip, Reveal, useCompact, usePhone, useScene, useStaticScene } from '../motion'
+import { Reveal, usePhone, useScene, useStaticScene } from '../motion'
 import { Bars, Frame, Kpi, Pill, Row } from '../ui/Mock'
 import { Num } from '../ui/Num'
 
@@ -164,9 +164,7 @@ export function AttendanceUi({ local, locale }: UiProps) {
   return (
     <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
       <div>
-        <p className="text-[12px] font-semibold text-slate-800">
-          Quyosh · {ui.today}
-        </p>
+        <p className="text-[12px] font-semibold text-slate-800">Quyosh · {ui.today}</p>
         <div className="mt-2 grid grid-cols-10 gap-1.5">
           {Array.from({ length: 20 }).map((_, i) => (
             <span
@@ -376,7 +374,6 @@ export function Modules({ locale }: { locale: Locale }) {
   const t = copy[locale]
   const ref = useRef<HTMLElement>(null)
   const progress = useScene(ref)
-  const compact = useCompact()
   const isStatic = useStaticScene()
 
   const activeMv = useTransform(progress, (p) => Math.min(STEPS - 1, Math.floor(p * STEPS)))
@@ -442,7 +439,7 @@ export function Modules({ locale }: { locale: Locale }) {
 
   if (isStatic) {
     return (
-      <section ref={ref} id="capabilities" className="bg-slate-50 py-16 lg:py-24">
+      <section ref={ref} id="capabilities" className="bg-slate-50 py-14 lg:py-24">
         <div className="mx-auto max-w-[1280px] px-5 lg:px-8">
           <Reveal>
             <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
@@ -452,7 +449,13 @@ export function Modules({ locale }: { locale: Locale }) {
               {t.modules.title}
             </h2>
           </Reveal>
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
+          {/*
+            Ikki ustun faqat `lg` dan: 768 px da karta 340 px bo'lib
+            qolardi va uning ICHIDAGI mahsulot ko'rinishi yana ikkiga
+            bo'linib, ustunlar 41 px ga tushardi — "Karimova N." dan
+            "Kar…" qolardi.
+          */}
+          <div className="mt-8 grid gap-6 lg:grid-cols-2">
             {t.modules.items.map((item, i) => {
               const Ui = UI[item.id]
               return (
@@ -471,55 +474,6 @@ export function Modules({ locale }: { locale: Locale }) {
                 </Reveal>
               )
             })}
-          </div>
-        </div>
-      </section>
-    )
-  }
-
-  if (compact) {
-    const item = t.modules.items[active]
-    const Ui = UI[item.id]
-    return (
-      <section
-        ref={ref}
-        id="capabilities"
-        className="relative bg-slate-50"
-        style={{ height: `${STEPS * 80}vh` }}
-      >
-        <div className="sticky top-0 flex h-screen flex-col overflow-hidden pt-[76px]">
-          <div className="px-5 pt-3">
-            <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-brand-700">
-              {t.modules.eyebrow}
-            </p>
-            <h2 className="mt-1.5 text-balance text-[1.6rem] font-bold !leading-[1.08] tracking-[-0.03em] text-slate-950">
-              {t.modules.title}
-            </h2>
-          </div>
-          {/* Qadam chiplari — faol modul markazda turadi. */}
-          <div className="mt-3 flex gap-1.5 overflow-x-auto px-5 pb-1 [scrollbar-width:none]">
-            {t.modules.items.map((m, i) => (
-              <span
-                key={m.id}
-                ref={(el) => i === active && centerInStrip(el)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors duration-300 ${
-                  i === active
-                    ? 'bg-slate-950 text-white'
-                    : 'bg-white text-slate-500 ring-1 ring-slate-200'
-                }`}
-              >
-                0{i + 1} · {m.title}
-              </span>
-            ))}
-          </div>
-          <div className="mt-3 px-5">
-            <Frame demo={t.demo} compact className="rx-fade" key={item.id}>
-              <Ui local={local} locale={locale} compact />
-            </Frame>
-          </div>
-          <div className="px-5 pt-3">
-            <h3 className="text-lg font-bold tracking-tight text-slate-950">{item.title}</h3>
-            <p className="mt-1 line-clamp-3 text-[14px] leading-6 text-slate-600">{item.text}</p>
           </div>
         </div>
       </section>

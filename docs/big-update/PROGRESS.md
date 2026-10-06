@@ -1037,3 +1037,92 @@ guess another's path.
 Tests: the unpaid month, the paid month, a credit that does not fit, a month
 with no invoice yet, attaching at creation and afterwards, a rejected `.exe`,
 and another organization getting `404` on both the upload and the download.
+
+## Bosqich 8 — the landing page
+
+### What was actually wrong
+
+Two separate problems, and only one of them was visible in the code.
+
+**The page was a year behind the product.** It never mentioned the 15-day
+trial — even though self-signup has been live since phase 6 and the page's
+only call to action was "book a demo". It never mentioned the Telegram parent
+bot, which is the main parent channel (ADR-23) and the first thing a
+kindergarten asks about. Nor online payment, the absence credit, expense
+lines, where the money sits, Radix Intelligence, the Excel import, or the
+three UI languages. It also never said the thing a cautious buyer most wants
+to hear: an unpaid month stops writing, not reading, and nothing is ever
+deleted.
+
+**And below 1024 px the layout was running the desktop's scroll story.**
+`useStaticScene()` gave the plain layout only under 640 px, so a phone held
+sideways (844 × 390) and every tablet still got pinned, scroll-jacked scenes
+— in a window far too short for them. Measured with headless Chrome against
+the live site: 25 800 px of page at 768 px wide, with the product panel cut
+in half in each scene.
+
+### What changed
+
+The breakpoint rule is now one line and it asks about the **window**, not the
+device: pinned scenes need `min-width: 1024px` **and** `min-height: 700px`.
+Everything else gets the static layout, which already existed for
+`prefers-reduced-motion` and was already tested. That deleted the entire
+tablet "compact pinned" branch from seven sections.
+
+On the phone the navigation now carries one real call to action instead of a
+language switcher that took half the bar; the language moved into the menu,
+where it is a full-width row. The dark-section flip re-arms on DOM changes:
+sections swap their whole tree when the viewport class changes, so the old
+one-shot `IntersectionObserver` was watching detached nodes and the bar
+stayed white over a dark section.
+
+Three panel bugs that made the product look unfinished on a phone: the window
+header drew a grey rounded rectangle that read as a loading skeleton (it now
+names the screen), the "one system" panel was a fixed 720 px inside a 350 px
+column and squeezed its tiles to 11 px wide, and the dashboard showed five KPI
+tiles in three columns where a number ran wider than its tile.
+
+### The sideways scroll nobody had noticed
+
+The Russian page scrolled 35 px sideways — on the live site, before any of
+this. The cause was a grid child without `min-w-0`: the default
+`min-width: auto` let the longest Russian label inside the role panel set the
+column width, and the whole document grew with it. Uzbek fitted, so it never
+showed up in testing. Now `uz`, `ru` and `en` are all at zero at 360 px and
+390 px.
+
+### Content
+
+New sections: **parents** (bot, online payment into the kindergarten's own
+merchant account, linking by invitation, SMS as the paid option), **Radix AI**
+(a rule and its evidence — the card shows the "Why?" list, because that is
+what the product actually renders), and **extras** — eight plain cards for the
+things that need naming, not a mock. The FAQ was rewritten into eleven
+answers, including the trial, migrating existing children, what suspension
+does, and the standalone licence. Pricing shows all three terms the business
+sells; the six-month one needed `/public/pricing` to return it, because the
+page is not allowed to carry its own formula (ADR-12).
+
+The first call to action is now the trial, with the demo form beside it. That
+is a reversible content decision, taken under standing permission: the trial
+exists, it costs nobody a meeting, and the kindergartens that want to be
+walked through it still have the form.
+
+### Numbers (headless Chrome, before → after)
+
+| Viewport | Height | Sideways | Clipped | < 12 px |
+|---|---|---|---|---|
+| 390 × 844 uz | 12 932 → 15 956 | 0 → 0 | 1 → 1 | 0 |
+| 390 × 844 ru | 13 108 → 16 358 | **35 → 0** | — | 0 |
+| 844 × 390 | 25 772 → **16 287** | 0 | 8 → 3 | 0 |
+| 768 × 1024 | 25 806 → **16 491** | 0 | 14 → 4 | 0 |
+
+The phone page is longer because it now says three things it did not say
+before; every screen of it is content, not scroll distance.
+
+### Gates
+
+Frontend: 251 tests (landing 21, was 14), tsc clean, eslint 0 errors,
+prettier clean, prerender 9 pages with the FAQ JSON-LD intact. Backend: the
+platform and subscriptions suites (232 tests), including two new ones for the
+six-month quote and the trial length.
