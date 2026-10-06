@@ -390,7 +390,7 @@ o'zing qabul qil". Quyidagi jadval — kim va nima qaror qildi.
 Owner relayed seven requests from the first customers. Investigated before
 planning; two turned out to be bugs rather than features.
 
-- [ ] **7.1** Enrolment date on the add-child form — **a money bug**. The
+- [x] **7.1** Enrolment date on the add-child form — **a money bug**. The
   backend prorates the first month correctly and every organization already
   has `first_month_mode=prorated`, but the "Yangi bola" form has no
   `enrolled_on` field, so every child is created with it empty and
@@ -398,8 +398,8 @@ planning; two turned out to be bugs rather than features.
   children and 5 of 5 in the new org have no date — each was billed a full
   month. Fix the form, plus a dry-run backfill for children with no invoice
   yet.
-- [ ] **7.2** Expenses are created already approved (no pending step).
-- [ ] **7.3** Dashboard: one "Bank hisobi" card for transfer + terminal +
+- [x] **7.2** Expenses are created already approved (no pending step).
+- [x] **7.3** Dashboard: one "Bank hisobi" card for transfer + terminal +
   Payme/Click (cash stays its own), and the revenue-by-method breakdown from
   Reports shown on the dashboard itself. Display only — `cash_account` keeps
   its four pots (ADR-17).

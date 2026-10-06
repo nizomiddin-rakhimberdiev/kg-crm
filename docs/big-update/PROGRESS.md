@@ -898,3 +898,38 @@ Worth remembering: that account has **0 backup codes**. If 2FA is ever turned
 back on and the phone is lost, the way in is `create_platform_user --email …
 --update --new-2fa` on the server.
 
+## 2026-10-06 — phase 7, first three items
+
+**7.1 — the first month was never prorated.** The backend was right all
+along and every organization is set to `prorated`; the add-child form simply
+had no enrolment date, so `enrolled_on` stayed empty and `_is_first_period()`
+returned False. Production had 21 of 21 Paddington children and 5 of 5 in the
+new organization with no date — every one billed a full month regardless of
+when they arrived. The form now asks for it (today by default) and says what
+it affects; editing keeps whatever the child has and does not demand one, so
+an old record is never quietly given today's date.
+`backfill_enrollment_dates` (dry run by default) fills in children that have
+no invoice yet, from `created_at`; children with an invoice are left alone,
+because an issued document is not recomputed backwards.
+
+Tested with the owner's own example: 3 050 000 over 22 working days, a child
+arriving 25 September pays for 4 days — **554 545**. His message also carried
+a formula, `3050000 − 3050000/22*4`, which is 18 days and contradicts his own
+sentence ("should be charged for 4 days"); the sentence matches the
+documented policy, so that is what was built. Flagged to him.
+
+**7.2 — expenses are approved on creation.** The same person entered and
+approved them, so the pending step checked nothing while keeping the expense
+out of the report and the money in the till. The cash movement still happens
+on approval (ADR-17); approval now happens with creation.
+
+**7.3 — dashboard.** Transfer, terminal and Payme/Click read as one "Bank
+hisobi" card, cash stays its own, and the card lists what was merged. Display
+only: `cash_account` keeps four pots so the journal can still say where money
+is. This month's income by method now sits on the dashboard too, from
+`revenue_report` — the same source Reports uses.
+
+Still open: 7.4 guardians (second phone, editing), 7.5 expense line items,
+7.6 dynamic import template, 7.7 absence credit against the current month
+plus file attachment.
+
