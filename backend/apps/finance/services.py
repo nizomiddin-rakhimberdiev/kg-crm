@@ -57,6 +57,7 @@ __all__ = [
     "recompute_child_balance",
     "applicable_discount",
     "first_month_share",
+    "record_opening_debt",
     "first_invoice_due_date",
     "record_payment",
     "record_payment_batch",
@@ -299,6 +300,39 @@ def _is_first_period(child: Child, period_year: int, period_month: int) -> bool:
     )
 
 
+@transaction.atomic
+def record_opening_debt(
+    *, child: Child, amount: Decimal, created_by: Any = None
+) -> ChildLedgerEntry | None:
+    """
+    Eski qarzni ledger'ga kiritadi — import uchun (PLAN 7.8).
+
+    Bog'cha tizimga o'tganda bolalarning bir qismi qarz bilan keladi.
+    U qarz hisob-faktura emas (hujjat yo'q, davri ham noma'lum), lekin
+    PUL — shuning uchun u ledger'ga `adjustment` debeti bo'lib tushadi
+    va bola qarzdorlar ro'yxatida darhol ko'rinadi (4-invariant).
+
+    **Faqat toza ledger'da.** Bitta yozuvi bor bolaga boshlang'ich qarz
+    qo'yib bo'lmaydi: import ikki marta ishga tushsa yoki xodim qo'lda
+    takrorlasa, qarz jimgina ikkilanardi.
+    """
+    if amount is None or amount <= 0:
+        return None
+    if ChildLedgerEntry.objects.filter(child=child).exists():
+        raise BusinessRuleViolation(
+            gettext("Bolada allaqachon moliyaviy yozuv bor — boshlangʻich qarz qoʻshilmaydi.")
+        )
+    return post_ledger_entry(
+        child=child,
+        entry_type=EntryType.ADJUSTMENT,
+        direction=Direction.DEBIT,
+        amount=amount,
+        source_type=SourceType.MANUAL,
+        description=gettext("Tizimga oʻtishdagi eski qarz"),
+        created_by=created_by,
+    )
+
+
 def first_month_share(
     *, child: Child, period_year: int, period_month: int
 ) -> tuple[int, int] | None:
@@ -310,6 +344,10 @@ def first_month_share(
     """
     from apps.attendance.services_absence import billable_days, working_days_in_month
 
+    if child.is_existing_client:
+        # Tizimga o'tishdan oldin ham qatnab yurgan bola (PLAN 7.8):
+        # uning uchun bu oy "birinchi oy" emas, to'liq oy.
+        return None
     if not _is_first_period(child, period_year, period_month):
         return None
     if str(_setting("finance.first_month_mode", child.branch)) != FIRST_MONTH_PRORATED:

@@ -1288,4 +1288,13 @@ export const messages: Record<string, string> = {
   'Bank hisobi': 'Bank account',
   'Naqd kassa': 'Cash till',
   'Shu oy tushumi — qaysi yoʻl bilan': "This month's income — by method",
+  // Yangi/mavjud mijoz va eski qarz (PLAN 7.8)
+  'Allaqachon qatnab yuradi': 'Already attending',
+  'Birinchi oy ish kunlari boʻyicha': 'First month by working days',
+  'Eski qarz': 'Existing debt',
+  'Mavjud mijoz': 'Existing client',
+  Mijoz: 'Client',
+  'Qarz boʻlmasa boʻsh qoldiring. Kiritilsa, bola qarzdorlar roʻyxatida koʻrinadi.':
+    'Leave empty if there is no debt. If you enter one, the child appears in the debtors list.',
+  'Yangi mijoz': 'New client',
 }

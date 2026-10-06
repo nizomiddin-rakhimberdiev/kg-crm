@@ -21,6 +21,7 @@ import csv
 import io
 from dataclasses import dataclass, field
 from datetime import date, datetime
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from django.db import transaction
@@ -49,6 +50,24 @@ COLUMNS: dict[str, tuple[str, ...]] = {
     "group": ("guruh", "guruhi", "group"),
     "guardian_name": ("ota-ona", "vasiy", "guardian", "ota ona"),
     "guardian_phone": ("telefon", "tel", "phone", "guardian_phone"),
+    # PLAN 7.8 — tizimga o'tayotgan bog'cha uchun.
+    "tariff": ("tarif", "tarif rejasi", "tariff", "narx"),
+    "client_kind": ("mijoz", "mijoz turi", "holat", "client"),
+    "opening_debt": ("qarzdorlik", "qarz", "eski qarz", "debt"),
+}
+
+#: "Mijoz" ustunining qiymatlari. Shablonda sukut — MAVJUD: import
+#: bog'cha tizimga o'tayotganda ishlatiladi, ya'ni undagi bolalarning
+#: deyarli hammasi allaqachon qatnab yuradi (PLAN 7.8).
+_CLIENT_KIND_WORDS: dict[str, bool] = {
+    "mavjud": True,
+    "eski": True,
+    "existing": True,
+    "ha": True,
+    "yangi": False,
+    "new": False,
+    "yo'q": False,
+    "yoq": False,
 }
 
 _GENDER_WORDS: dict[str, str] = {
@@ -299,6 +318,27 @@ def _validate(row: dict[str, str], line: int) -> tuple[dict[str, Any] | None, li
             RowError(line, "guardian_name", gettext("Telefon bor, lekin ota-ona ismi yoʻq."))
         )
 
+    # Mijoz turi: bo'sh bo'lsa MAVJUD (shablondagi sukut bilan bir xil).
+    raw_kind = row.get("client_kind", "").strip().lower()
+    is_existing = _CLIENT_KIND_WORDS.get(raw_kind, True) if raw_kind else True
+
+    # Eski qarz. Bo'sh yoki 0 — qarz yo'q; manfiy qiymat qabul
+    # qilinmaydi (avansni import qilish alohida ish va u so'ralmagan).
+    opening_debt = Decimal("0")
+    raw_debt = row.get("opening_debt", "").strip().replace(" ", "").replace("\u00a0", "")
+    if raw_debt:
+        try:
+            opening_debt = Decimal(raw_debt.replace(",", "."))
+        except InvalidOperation:
+            errors.append(RowError(line, "opening_debt", gettext("Qarzdorlik raqam emas.")))
+        else:
+            if opening_debt < 0:
+                errors.append(
+                    RowError(
+                        line, "opening_debt", gettext("Qarzdorlik manfiy boʻlishi mumkin emas.")
+                    )
+                )
+
     if errors:
         return None, errors
 
@@ -311,6 +351,9 @@ def _validate(row: dict[str, str], line: int) -> tuple[dict[str, Any] | None, li
         "group_name": row.get("group", "").strip(),
         "guardian_name": guardian_name,
         "guardian_phone": phone,
+        "tariff_name": row.get("tariff", "").strip(),
+        "is_existing_client": is_existing,
+        "opening_debt": opening_debt,
     }, []
 
 
@@ -392,6 +435,14 @@ def import_children(
         return report
 
     groups: dict[str, Group] = {}
+    # Tariflar nomi bo'yicha — katta-kichik harf farqi bo'lmasin
+    # (kotib "Full" deb ham, "full" deb ham yozadi).
+    from apps.finance.models import TariffPlan
+
+    tariffs: dict[str, Any] = {
+        plan.name.casefold(): plan
+        for plan in TariffPlan.objects.filter(branch=branch, is_active=True)
+    }
 
     for data in prepared:
         # Idempotentlik: bir xil ism + tug'ilgan sana + filial = bir xil bola.
@@ -423,7 +474,19 @@ def import_children(
             date_of_birth=data["date_of_birth"],
             gender=data["gender"],
             enrollment_status=EnrollmentStatus.ACTIVE,
+            # Import — tizimga O'TISH quroli, shuning uchun sukut
+            # "mavjud mijoz": bunday bola butun oy qatnagan va uning
+            # birinchi oyi proporsional hisoblanmaydi (PLAN 7.8).
+            is_existing_client=data["is_existing_client"],
+            tariff=tariffs.get(data["tariff_name"].casefold()) if data["tariff_name"] else None,
         )
+
+        # Eski qarz — ledger'ga debet, ya'ni bola darhol qarzdorlar
+        # ro'yxatida ko'rinadi (4-invariant).
+        if data["opening_debt"] > 0:
+            from apps.finance.services import record_opening_debt
+
+            record_opening_debt(child=child, amount=data["opening_debt"])
 
         if data["guardian_phone"]:
             parts = data["guardian_name"].split(maxsplit=1)
@@ -467,9 +530,17 @@ _TEMPLATE_COLUMNS: tuple[tuple[str, str, bool], ...] = (
     ("Tug'ilgan sana", "kun.oy.yil — masalan 14.03.2021", True),
     ("Jinsi", "o'g'il yoki qiz", False),
     ("Otasining ismi", "Ixtiyoriy", False),
-    ("Guruh", "Guruh nomi — mavjud bo'lmasa e'tiborsiz qoldiriladi", False),
+    ("Guruh", "Ro'yxatdan tanlang — bog'chadagi mavjud guruhlar", False),
+    ("Tarif", "Ro'yxatdan tanlang — oylik to'lov rejasi", False),
+    (
+        "Mijoz",
+        "mavjud — allaqachon qatnab yuradi (sukut); yangi — endi keladi va "
+        "birinchi oyi ish kunlari bo'yicha hisoblanadi",
+        False,
+    ),
+    ("Qarzdorlik", "Eski qarz so'mda. Qarz yo'q bo'lsa 0 qoldiring", False),
     ("Ota-ona", "Familiya va ism, masalan: Valiyeva Nodira", False),
-    ("Telefon", "+998901234567 — SMS eslatma shu raqamga ketadi", False),
+    ("Telefon", "+998901234567 — xabar shu raqamga ketadi", False),
 )
 
 _TEMPLATE_EXAMPLES: tuple[tuple[str, ...], ...] = (
@@ -480,14 +551,29 @@ _TEMPLATE_EXAMPLES: tuple[tuple[str, ...], ...] = (
         "o'g'il",
         "Rustamovich",
         "Quyoshcha",
+        "Full",
+        "mavjud",
+        "0",
         "Valiyeva Nodira",
         "+998901112233",
     ),
-    ("Karimova", "Zilola", "02.11.2020", "qiz", "", "Kamalak", "Karimov Bahodir", "+998939874455"),
+    (
+        "Karimova",
+        "Zilola",
+        "02.11.2020",
+        "qiz",
+        "",
+        "Kamalak",
+        "Yarim kun",
+        "mavjud",
+        "1200000",
+        "Karimov Bahodir",
+        "+998939874455",
+    ),
 )
 
 
-def build_template() -> bytes:
+def build_template(*, groups: list[str] | None = None, tariffs: list[str] | None = None) -> bytes:
     """
     To'ldirish uchun Excel shabloni.
 
@@ -532,16 +618,42 @@ def build_template() -> bytes:
     # nomlarini yo'qotmasin.
     sheet.freeze_panes = "A2"
 
-    # Jins uchun ro'yxat: xato yozilgan qiymat importda ogohlantirish
-    # beradi, lekin uni oldindan to'sish arzonroq.
-    gender_column = get_column_letter(4)
-    validation = DataValidation(
-        type="list", formula1="\"o'g'il,qiz\"", allow_blank=True, showDropDown=False
-    )
-    validation.error = 'Faqat "o\'g\'il" yoki "qiz" yozing.'
-    validation.errorTitle = "Noto'g'ri qiymat"
-    sheet.add_data_validation(validation)
-    validation.add(f"{gender_column}2:{gender_column}1000")
+    def dropdown(column_index: int, values: list[str], message: str) -> None:
+        """
+        Ustunga ro'yxat biriktiradi.
+
+        Excel ro'yxatni formulaga QO'SHTIRNOQ ichida oladi va uning
+        uzunligi 255 belgi bilan cheklangan. Bog'chada guruh ko'p
+        bo'lsa (yoki nomlari uzun bo'lsa) ro'yxat sig'maydi — o'shanda
+        ustun oddiy matn bo'lib qoladi: import nom bo'yicha baribir
+        topadi, shunchaki oldindan tanlash qulayligi bo'lmaydi.
+        Yarim ishlaydigan ro'yxatdan ko'ra shunisi yaxshi.
+        """
+        cleaned = [value.replace('"', "").replace(",", " ") for value in values if value.strip()]
+        if not cleaned:
+            return
+        formula = ",".join(cleaned)
+        if len(formula) > 250:
+            return
+        rule = DataValidation(
+            type="list", formula1=f'"{formula}"', allow_blank=True, showDropDown=False
+        )
+        rule.error = message
+        rule.errorTitle = "Noto'g'ri qiymat"
+        sheet.add_data_validation(rule)
+        letter = get_column_letter(column_index)
+        rule.add(f"{letter}2:{letter}1000")
+
+    # Jins: xato yozilgan qiymat importda ogohlantirish beradi, lekin
+    # uni oldindan to'sish arzonroq.
+    dropdown(4, ["o'g'il", "qiz"], 'Faqat "o\'g\'il" yoki "qiz" yozing.')
+    # Guruh va tarif — BOG'CHANING O'ZINIKI (PLAN 7.6). Shablon
+    # yuklanayotgan paytdagi ro'yxat olinadi, shuning uchun kotib nom
+    # o'ylab topmaydi va xato yozmaydi.
+    dropdown(6, groups or [], "Bog'chadagi guruhlardan birini tanlang.")
+    dropdown(7, tariffs or [], "Bog'chadagi tariflardan birini tanlang.")
+    # Mijoz turi: sukut — MAVJUD, chunki import tizimga o'tish quroli.
+    dropdown(8, ["mavjud", "yangi"], 'Faqat "mavjud" yoki "yangi".')
 
     # Ikkinchi varaq — yo'riqnoma. Import faqat BIRINCHI varaqni o'qiydi,
     # shuning uchun bu yerdagi matn hech narsaga xalaqit bermaydi.

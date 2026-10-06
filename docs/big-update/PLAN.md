@@ -409,8 +409,14 @@ planning; two turned out to be bugs rather than features.
 - [ ] **7.5** Expense line items: category, item, quantity (kg/dona), unit
   price, optional note; "+ add" for more lines; running total. Shown as
   `50 kg × 3 000 = 150 000`.
-- [ ] **7.6** Import template carries the organization's own groups and
+- [x] **7.6** Import template carries the organization's own groups and
   tariffs as dropdowns, the way gender already works.
+- [x] **7.8** New vs existing client (owner, 2026-10-06). The form defaults to
+  **new** — prorated first month; the import sheet defaults to **existing**,
+  because import is the migration tool. An existing client skips proration and
+  may carry an opening debt, which lands in the ledger as an `adjustment`
+  debit so Debtors shows it (invariant 4). The sheet gains a `Qarzdorlik`
+  column that starts at 0.
 - [ ] **7.7** Absence credit applies to the **current** month when that
   invoice is still unpaid, and only carries forward when it is paid. Plus a
   file attachment for the certificate or application.

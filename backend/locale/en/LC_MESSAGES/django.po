@@ -1379,3 +1379,16 @@ msgstr "The link has expired or was already used. Please start the sign-up again
 
 msgid "Bu email bilan sinov allaqachon ochilgan. Kirish sahifasidan kiring yoki ikkinchi bogʻcha uchun biz bilan bogʻlaning."
 msgstr "A trial has already been opened with this e-mail. Sign in, or contact us about a second kindergarten."
+
+# Mavjud mijoz va eski qarz (PLAN 7.8)
+msgid "Bolada allaqachon moliyaviy yozuv bor — boshlangʻich qarz qoʻshilmaydi."
+msgstr "The child already has financial records — an opening debt is not added."
+
+msgid "Qarzdorlik manfiy boʻlishi mumkin emas."
+msgstr "The debt cannot be negative."
+
+msgid "Qarzdorlik raqam emas."
+msgstr "The debt is not a number."
+
+msgid "Tizimga oʻtishdagi eski qarz"
+msgstr "Existing debt carried over at migration"

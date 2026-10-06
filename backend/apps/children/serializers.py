@@ -194,6 +194,12 @@ class ChildWriteSerializer(serializers.ModelSerializer):
     # Individual narx — tarif o'rniga (docs/03 §11.1). `min_value` bazadagi
     # `ck_child_monthly_fee_positive` ning API'dagi ko'zgusi: 0 so'm "narx
     # yo'q" bilan adashmasin, narxsiz bola uchun maydon bo'sh qoladi.
+    # Eski qarz — FAQAT yozish uchun va faqat yaratishda (PLAN 7.8).
+    # Modelda bunday ustun yo'q: qarz ledger'da yashaydi (3-invariant),
+    # bu esa uni kiritish yo'li.
+    opening_debt = serializers.DecimalField(
+        max_digits=12, decimal_places=2, min_value=0, required=False, write_only=True
+    )
     monthly_fee = serializers.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -213,6 +219,8 @@ class ChildWriteSerializer(serializers.ModelSerializer):
             "gender",
             "enrollment_status",
             "enrolled_on",
+            "is_existing_client",
+            "opening_debt",
             "notes",
             "allergies",
             "medical_notes",

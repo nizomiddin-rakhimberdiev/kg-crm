@@ -113,13 +113,20 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
     def perform_create(self, serializer: Any) -> None:
         user = request_user(self.request)
         branch = serializer.validated_data.get("branch") or resolve_branch(user)
+        # `opening_debt` modelda yo'q — u ledger'ga yoziladi (PLAN 7.8).
+        opening_debt = serializer.validated_data.pop("opening_debt", None)
         child = serializer.save(organization=user.organization, branch=branch)
+        if opening_debt:
+            from apps.finance.services import record_opening_debt
+
+            record_opening_debt(child=child, amount=opening_debt, created_by=user)
         audit.record(
             action="create",
             request=self.request._request,
             actor=user,
             entity_type="child",
             entity_id=child.id,
+            changes={"opening_debt": str(opening_debt)} if opening_debt else None,
         )
 
     def perform_destroy(self, instance: Child) -> None:
@@ -341,7 +348,24 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
         yozilgan ro'yxat ertami-kechmi ajralib qoladi — o'shanda mijoz
         to'ldirgan fayl "majburiy ustun topilmadi" deb rad etilardi.
         """
-        content = importer.build_template()
+        from apps.branches.selectors import resolve_branch
+        from apps.finance.models import TariffPlan
+
+        # Guruh va tarif ro'yxati BOG'CHANIKI (PLAN 7.6): kotib nom
+        # o'ylab topmasin va "Quyoshcha"ni "Quyosha" deb yozib
+        # yubormasin. Ro'yxat shablon yuklanayotgan paytdagi holat.
+        branch = resolve_branch(request_user(request), request.query_params.get("branch"))
+        groups = list(
+            Group.objects.filter(branch=branch, is_active=True)
+            .order_by("name")
+            .values_list("name", flat=True)
+        )
+        tariffs = list(
+            TariffPlan.objects.filter(branch=branch, is_active=True)
+            .order_by("name")
+            .values_list("name", flat=True)
+        )
+        content = importer.build_template(groups=groups, tariffs=tariffs)
         return FileResponse(
             io.BytesIO(content),
             as_attachment=True,

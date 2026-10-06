@@ -933,3 +933,30 @@ Still open: 7.4 guardians (second phone, editing), 7.5 expense line items,
 7.6 dynamic import template, 7.7 absence credit against the current month
 plus file attachment.
 
+### 7.6 + 7.8 — migrating a kindergarten that already has children
+
+The owner's answer to "which next" turned out to be one coherent feature: a
+kindergarten moving onto Radix is not adding new children, it is carrying
+over the ones it already has.
+
+* `Child.is_existing_client`. It decides two things, both about money: the
+  first month is **not** prorated (the child has been attending all month —
+  PLAN 7.1's rule would be wrong for them), and the child may arrive with a
+  debt. A flag rather than "enrolled_on is in a past month", because a
+  kindergarten usually does not know the original date, and "no date" is
+  exactly the silent full-month bug 7.1 just fixed.
+* `record_opening_debt()` writes an `adjustment` debit through
+  `post_ledger_entry`, so Debtors picks it up with no new concept (invariant
+  4). It refuses on a child that already has ledger rows, so a second import
+  run or a manual repeat cannot double someone's debt.
+* The add-child form asks "Yangi mijoz / Mavjud mijoz", defaulting to **new**;
+  the import sheet defaults to **existing**. Opposite defaults on purpose —
+  the form is for a child joining now, the sheet is for the move.
+* The template now carries the kindergarten's own groups and tariffs as
+  dropdowns, plus `Mijoz` and `Qarzdorlik` (starting at 0). Excel caps a list
+  formula at 255 characters, so a long group list falls back to plain text —
+  import still matches by name, you just lose the dropdown. Tested.
+
+Tests: 12 for template and import, 6 for proration and opening debt,
+including "a payment closes it like any other debt".
+

@@ -1379,3 +1379,16 @@ msgstr "Ссылка устарела или уже использована. Н
 
 msgid "Bu email bilan sinov allaqachon ochilgan. Kirish sahifasidan kiring yoki ikkinchi bogʻcha uchun biz bilan bogʻlaning."
 msgstr "С этим email пробный период уже открыт. Войдите на странице входа или свяжитесь с нами по поводу второго садика."
+
+# Mavjud mijoz va eski qarz (PLAN 7.8)
+msgid "Bolada allaqachon moliyaviy yozuv bor — boshlangʻich qarz qoʻshilmaydi."
+msgstr "У ребёнка уже есть финансовые записи — начальный долг не добавляется."
+
+msgid "Qarzdorlik manfiy boʻlishi mumkin emas."
+msgstr "Долг не может быть отрицательным."
+
+msgid "Qarzdorlik raqam emas."
+msgstr "Долг указан не числом."
+
+msgid "Tizimga oʻtishdagi eski qarz"
+msgstr "Прежний долг при переходе в систему"

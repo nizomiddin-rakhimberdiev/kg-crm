@@ -44,6 +44,25 @@ class Child(BranchScopedModel):
     )
     enrolled_on = models.DateField(null=True, blank=True)
 
+    # Bola tizimga o'tishdan OLDIN ham bog'chada bo'lganmi (PLAN 7.8).
+    #
+    # Ikkita amaliy savolni hal qiladi, va ikkalasi ham pulga tegadi:
+    #
+    # 1. **Birinchi oy proporsional hisoblanmaydi.** Yangi bola oyning
+    #    25-kunida kelsa, undan 4 kunlik pul olinadi (PLAN 7.1). Eski
+    #    bola esa allaqachon butun oy qatnab yurgan — unga o'sha hisob
+    #    noto'g'ri bo'lardi.
+    # 2. **Eski qarzini olib kiradi.** Import paytida `opening_debt`
+    #    ledger'ga debet bo'lib tushadi va bola qarzdorlar ro'yxatida
+    #    darhol ko'rinadi (4-invariant: qarzdorlar — ledger ustidagi
+    #    hosila).
+    #
+    # Nega alohida bayroq, `enrolled_on` ning o'tgan oyda bo'lishi emas:
+    # bog'cha eski bolaning aniq qabul sanasini ko'pincha bilmaydi, va
+    # "sanasi yo'q" degan holat (PLAN 7.1 dagi xato) yana jimgina
+    # to'liq oyga aylanib ketardi. Bayroq esa niyatni ochiq aytadi.
+    is_existing_client = models.BooleanField(default=False)
+
     # Joriy tarif rejasi (docs/03 §11.1). Sprint 4 da qo'shildi.
     tariff = models.ForeignKey(
         "finance.TariffPlan",

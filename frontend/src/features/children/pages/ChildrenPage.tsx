@@ -70,6 +70,11 @@ const EMPTY_FORM: ChildInput = {
   // 25-kunida kelgan bolaga ham to'liq oy yozilardi (productionda 21
   // boladan 21 tasi shunday edi). Sana BO'SH QOLDIRILMAYDI.
   enrolled_on: today(),
+  // Formada sukut — YANGI mijoz: qo'lda bola qo'shilayotganda u odatda
+  // endi keladi. Import esa teskarisi (sukut "mavjud"), chunki u
+  // tizimga o'tish quroli (PLAN 7.8).
+  is_existing_client: false,
+  opening_debt: '',
 }
 
 export default function ChildrenPage() {
@@ -284,6 +289,10 @@ export default function ChildrenPage() {
       return
     }
     const body = { ...form, ...pricePayload }
+    // Bo'sh qarz maydoni YUBORILMAYDI: bo'sh satr son emas va server uni
+    // validatsiya xatosi bilan rad etardi. Tahrirlashda esa qarz umuman
+    // yo'q — u faqat yaratishda ledger'ga yoziladi (PLAN 7.8).
+    if (!body.opening_debt || editing) delete body.opening_debt
     if (editing) {
       updateMutation.mutate({ id: editing.id, payload: body, groupId: formGroupId })
     } else {
@@ -502,6 +511,71 @@ export default function ChildrenPage() {
               {fieldErrors[key] && <p className="mt-1 text-xs text-red-600">{fieldErrors[key]}</p>}
             </div>
           ))}
+
+          {/* Yangi yoki mavjud mijoz (PLAN 7.8). Tanlov ikki narsani
+              hal qiladi: birinchi oy proporsional hisoblanadimi va
+              bolaning eski qarzi bormi. */}
+          {!editing && (
+            <div>
+              <span className="mb-1 block text-xs font-medium text-slate-600">{t('Mijoz')}</span>
+              <div role="group" className="grid grid-cols-2 gap-2">
+                {(
+                  [
+                    [false, t('Yangi mijoz'), t('Birinchi oy ish kunlari boʻyicha')],
+                    [true, t('Mavjud mijoz'), t('Allaqachon qatnab yuradi')],
+                  ] as const
+                ).map(([value, label, hint]) => (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={Boolean(form.is_existing_client) === value}
+                    onClick={() =>
+                      setForm((p) => ({
+                        ...p,
+                        is_existing_client: value,
+                        opening_debt: value ? p.opening_debt : '',
+                      }))
+                    }
+                    className={cn(
+                      'rounded-lg border px-3 py-2 text-left transition',
+                      Boolean(form.is_existing_client) === value
+                        ? 'border-brand-500 bg-brand-50/60'
+                        : 'border-slate-200 hover:border-slate-300',
+                    )}
+                  >
+                    <span className="block text-sm font-medium text-slate-900">{label}</span>
+                    <span className="block text-xs text-slate-500">{hint}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!editing && form.is_existing_client && (
+            <div>
+              <label
+                htmlFor="opening_debt"
+                className="mb-1 block text-xs font-medium text-slate-600"
+              >
+                {t('Eski qarz')}
+              </label>
+              <input
+                id="opening_debt"
+                inputMode="numeric"
+                placeholder="0"
+                value={form.opening_debt ?? ''}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, opening_debt: e.target.value.replace(/\D/g, '') }))
+                }
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                {t(
+                  'Qarz boʻlmasa boʻsh qoldiring. Kiritilsa, bola qarzdorlar roʻyxatida koʻrinadi.',
+                )}
+              </p>
+            </div>
+          )}
 
           <div>
             <label htmlFor="enrolled_on" className="mb-1 block text-xs font-medium text-slate-600">
