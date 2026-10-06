@@ -52,6 +52,9 @@ DASHBOARD_SECTIONS: dict[str, tuple[str, ...]] = {
     # oylik maoshni bitta raqamga yig'adi, ya'ni uchtasidan birortasiga
     # ruxsati yo'q odam undan qolganini chiqarib olardi.
     "cash": ("payments.read", "expenses.read", "payroll.read"),
+    # Qaysi yo'l bilan qancha pul kelgani — faqat to'lov ma'lumoti,
+    # shuning uchun bitta ruxsat yetarli (PLAN 7.3).
+    "income_by_method": ("payments.read",),
 }
 
 
@@ -193,6 +196,19 @@ def dashboard_kpis(
         result["cash"] = selectors.cash_position(
             organization_id=organization_id, branch_id=branch_id
         )
+
+    if "income_by_method" in allowed:
+        # "Qaysi yo'l bilan qancha pul kelgan" — shu oy kesimida
+        # (PLAN 7.3). Ilgari bu faqat Hisobotlar sahifasida edi, mijoz
+        # esa uni har kuni ochadigan ekranda ko'rishni so'radi.
+        # Manba Hisobotlar bilan BIR XIL (`revenue_report`), aks holda
+        # ikki ekran bir savolga ikki xil javob berardi.
+        result["income_by_method"] = selectors.revenue_report(
+            organization_id=organization_id,
+            date_from=month_start,
+            date_to=today,
+            branch_id=branch_id,
+        )["by_method"]
 
     cache.set(key, result, DASHBOARD_TTL)
     return result

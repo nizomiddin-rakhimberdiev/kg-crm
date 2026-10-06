@@ -18,6 +18,8 @@ import { navItems } from '@/config/navigation'
 import { queryKeys } from '@/lib/api/queryKeys'
 import type { DashboardKpis } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
+import { groupAccounts } from '@/features/dashboard/cashGroups'
+import { paymentMethodLabel } from '@/features/payments/methods'
 import { BRAND, CHART } from '@/lib/brand'
 import { cn, formatDateLong, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -76,6 +78,12 @@ const ACCOUNT_COLORS: Record<string, string> = {
   ewallet: CHART.niholSoft,
 }
 
+/** Guruh nomlari — qoplarning o'z nomlari emas (PLAN 7.3). */
+const GROUP_LABELS: Record<'cash' | 'bank', string> = {
+  cash: t('Naqd kassa'),
+  bank: t('Bank hisobi'),
+}
+
 /**
  * "Hozirda qancha pulimiz bor" — bog'cha egasining birinchi savoli.
  *
@@ -84,8 +92,20 @@ const ACCOUNT_COLORS: Record<string, string> = {
  * kutganidan farq qilsa, uni tushuntirib bo'lmasdi va ishonchni
  * yo'qotardi.
  */
-function CashPanel({ cash, isLoading }: { cash: DashboardKpis['cash']; isLoading: boolean }) {
+function CashPanel({
+  cash,
+  incomeByMethod,
+  isLoading,
+}: {
+  cash: DashboardKpis['cash']
+  incomeByMethod: DashboardKpis['income_by_method']
+  isLoading: boolean
+}) {
   const balance = Number(cash?.balance ?? 0)
+  // To'rtta qop ikkita guruh bo'lib ko'rsatiladi (PLAN 7.3) — jadvalda
+  // ular avvalgidek alohida (ADR-17).
+  const accountGroups = groupAccounts(cash?.accounts)
+  const methods = incomeByMethod ?? []
   const parts: Array<{ label: string; value: number; sign: string; tone: string }> = [
     {
       label: t('Jami tushum'),
@@ -150,36 +170,70 @@ function CashPanel({ cash, isLoading }: { cash: DashboardKpis['cash']; isLoading
       </div>
       {/* Qoplar kesimi — mijozning aynan so'ragan savoli: naqd
           qancha, plastikda qancha, bankda qancha (ADR-17). */}
-      {(cash?.accounts?.length ?? 0) > 0 && (
-        <ul className="mt-4 grid gap-2 border-t border-slate-100 pt-4 sm:grid-cols-2 xl:grid-cols-4">
-          {cash?.accounts.map((account) => (
+      {accountGroups.length > 0 && (
+        <ul className="mt-4 grid gap-2 border-t border-slate-100 pt-4 sm:grid-cols-2">
+          {accountGroups.map((group) => (
             <li
-              key={account.id}
+              key={group.key}
               className="flex items-center gap-2.5 rounded-xl border border-slate-200 px-3 py-2.5"
             >
               <span
                 className="grid h-8 w-8 shrink-0 place-items-center rounded-lg"
                 style={{
-                  backgroundColor: `${ACCOUNT_COLORS[account.kind]}1a`,
-                  color: ACCOUNT_COLORS[account.kind],
+                  backgroundColor: `${ACCOUNT_COLORS[group.key]}1a`,
+                  color: ACCOUNT_COLORS[group.key],
                 }}
               >
                 <Coins className="h-4 w-4" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs text-slate-500">{account.name}</span>
+                <span className="block truncate text-xs text-slate-500">
+                  {GROUP_LABELS[group.key]}
+                </span>
                 <span
                   className={cn(
                     'num block text-sm font-semibold',
-                    Number(account.balance) < 0 ? 'text-red-600' : 'text-slate-900',
+                    group.balance < 0 ? 'text-red-600' : 'text-slate-900',
                   )}
                 >
-                  {isLoading ? '…' : formatUZS(Number(account.balance))}
+                  {isLoading ? '…' : formatUZS(group.balance)}
                 </span>
+                {/* Guruhga nima kirgani — "bankda nega buncha ko'p?"
+                    degan savol javobsiz qolmasin. */}
+                {group.parts.length > 1 && (
+                  <span className="block truncate text-xs text-slate-400">
+                    {group.parts.join(' · ')}
+                  </span>
+                )}
               </span>
             </li>
           ))}
         </ul>
+      )}
+
+      {/* Shu oyda qaysi yo'l bilan qancha pul kelgan (PLAN 7.3).
+          Manba Hisobotlar sahifasi bilan bir xil. */}
+      {methods.length > 0 && (
+        <div className="mt-4 border-t border-slate-100 pt-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            {t('Shu oy tushumi — qaysi yoʻl bilan')}
+          </p>
+          <ul className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            {methods.map((row) => (
+              <li key={row.method} className="rounded-xl border border-slate-200 px-3 py-2">
+                <span className="block truncate text-xs text-slate-500">
+                  {paymentMethodLabel(row.method)}
+                </span>
+                <span className="num block text-sm font-semibold text-slate-900">
+                  {formatUZS(Number(row.total))}
+                </span>
+                <span className="block text-xs text-slate-400">
+                  {t('{n} ta toʻlov', { n: row.count })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <p className="mt-3 text-xs text-slate-400">
@@ -278,7 +332,13 @@ export default function DashboardPage() {
           "nimaga e'tibor berish kerak" umumiy raqamlardan muhimroq. */}
       <BriefingSection />
 
-      {showCash && <CashPanel cash={data?.cash} isLoading={isLoading} />}
+      {showCash && (
+        <CashPanel
+          cash={data?.cash}
+          incomeByMethod={data?.income_by_method}
+          isLoading={isLoading}
+        />
+      )}
 
       <div
         className={cn(

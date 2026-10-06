@@ -1279,4 +1279,8 @@ export const messages: Record<string, string> = {
   // Qabul sanasi (PLAN 7.1)
   'Birinchi oy shu sanadan boshlab, ish kunlari boʻyicha hisoblanadi.':
     'Первый месяц считается с этой даты, по рабочим дням.',
+  // Dashboard: qoplar guruhi va tushum tarkibi (PLAN 7.3)
+  'Bank hisobi': 'Банковский счёт',
+  'Naqd kassa': 'Наличная касса',
+  'Shu oy tushumi — qaysi yoʻl bilan': 'Поступления за месяц — каким способом',
 }

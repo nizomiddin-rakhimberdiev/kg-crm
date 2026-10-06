@@ -710,6 +710,8 @@ export interface DashboardKpis {
     /** Naqd qancha, terminalda qancha, bankda qancha (ADR-17). */
     accounts: CashAccountBalance[]
   }
+  /** Shu oyda qaysi yo'l bilan qancha pul kelgani (PLAN 7.3). */
+  income_by_method?: Array<{ method: string; total: string; count: number }>
 }
 
 /** Bitta pul qopi va undagi qoldiq (docs/03 §13a). */
