@@ -22,6 +22,7 @@ from apps.children.models import Child
 from apps.core.exceptions import BusinessRuleViolation
 from apps.core.tenancy import organization_context
 from apps.finance import services as finance
+from apps.finance.balance import child_balance
 from apps.finance.models import TariffPlan
 
 pytestmark = pytest.mark.django_db
@@ -146,32 +147,94 @@ def test_the_rate_follows_the_charged_amount_not_the_raw_tariff(tenant_a: Any):
 # --- Qaytarish yo'li ---
 
 
-def test_an_approved_claim_becomes_a_minus_line_on_the_next_invoice(tenant_a: Any):
+def test_an_unpaid_month_is_reduced_straight_away(tenant_a: Any):
     """
-    Ota-ona qo'lidagi qog'oz bilan balans bir xil raqamni ko'rsatadi,
-    va o'tgan hujjat tahrirlanmaydi (D3).
+    Egasining qoidasi (PLAN 7.7): ota-ona bu oy uchun hali to'lamagan
+    bo'lsa, qayta hisob SHU OYNING summasidan ayriladi — keyingi oyni
+    kutmaydi.
+
+    Hujjat o'zgaradi (minus qator va yangi summa), chunki ota-ona hali
+    to'lamagan qog'ozdagi raqam bilan tizimdagi raqam bir xil bo'lishi
+    kerak. Ledger esa qarshi KREDIT yozuvi bilan to'g'rilanadi — debet
+    o'chirilmaydi (3-invariant).
     """
     child = _child(tenant_a, "2200000")
     with organization_context(tenant_a.organization.id):
-        finance.issue_invoice(child=child, period_year=2026, period_month=9)
+        september = finance.issue_invoice(child=child, period_year=2026, period_month=9)
+        claim = _claim(tenant_a, child, date(2026, 9, 7), date(2026, 9, 11))
+        absence.approve_claim(claim=claim)
+
+        claim.refresh_from_db()
+        september.refresh_from_db()
+
+        assert claim.credit_amount == Decimal("500000.00")
+        assert claim.status == ClaimStatus.APPLIED
+        assert claim.applied_invoice_id == september.id
+        assert september.amount_due == Decimal("1700000.00")
+        assert any("Kelmagan kunlar" in line.description for line in september.lines.all())
+        # Balans ham qog'oz bilan bir xil: 2 200 000 debet − 500 000 kredit.
+        assert child_balance(child).balance == Decimal("1700000.00")
+
+
+def test_a_paid_month_carries_the_credit_to_the_next_invoice(tenant_a: Any):
+    """To'langan oydan pul ayirib bo'lmaydi — kredit keyingi oyga o'tadi."""
+    child = _child(tenant_a, "2200000")
+    with organization_context(tenant_a.organization.id):
+        september = finance.issue_invoice(child=child, period_year=2026, period_month=9)
+        finance.record_payment(
+            child=child, amount=september.amount_due, method="cash", invoice=september
+        )
+
         claim = _claim(tenant_a, child, date(2026, 9, 7), date(2026, 9, 11))
         absence.approve_claim(claim=claim)
         claim.refresh_from_db()
+        september.refresh_from_db()
 
-        assert claim.billable_days == 5
-        assert claim.credit_amount == Decimal("500000.00")
+        # Sentabr tegilmaydi.
+        assert september.amount_due == Decimal("2200000.00")
+        assert claim.status == ClaimStatus.APPROVED
 
         october = finance.issue_invoice(child=child, period_year=2026, period_month=10)
         claim.refresh_from_db()
-        lines = list(october.lines.order_by("created_at"))
-        # Ledger ham kamaygan summani oladi — balans qog'oz bilan mos.
         charge = child.ledger_entries.filter(source_id=october.id).first()
 
         assert october.amount_due == Decimal("1700000.00")
         assert claim.status == ClaimStatus.APPLIED
         assert claim.applied_invoice_id == october.id
-        assert any("Kelmagan kunlar" in line.description for line in lines)
         assert charge.amount == Decimal("1700000.00")
+
+
+def test_a_credit_bigger_than_what_is_left_waits_for_next_month(tenant_a: Any):
+    """
+    Qoldiqdan katta kredit BO'LINMAYDI.
+
+    Qisman qo'llash da'voni ikkiga bo'lishni talab qilardi; bo'linmagan
+    holda esa qoldiqdan ortig'i jimgina yo'qolardi.
+    """
+    child = _child(tenant_a, "2200000")
+    with organization_context(tenant_a.organization.id):
+        september = finance.issue_invoice(child=child, period_year=2026, period_month=9)
+        # Qoldiq 200 000 bo'lib qoladi, kredit esa 500 000 bo'ladi.
+        finance.record_payment(
+            child=child, amount=Decimal("2000000"), method="cash", invoice=september
+        )
+        claim = _claim(tenant_a, child, date(2026, 9, 7), date(2026, 9, 11))
+        absence.approve_claim(claim=claim)
+
+        claim.refresh_from_db()
+        september.refresh_from_db()
+        assert september.amount_due == Decimal("2200000.00")
+        assert claim.status == ClaimStatus.APPROVED
+
+
+def test_without_an_invoice_the_credit_simply_waits(tenant_a: Any):
+    """Hali faktura chiqarilmagan oy — qo'llaydigan hujjat yo'q."""
+    child = _child(tenant_a, "2200000")
+    with organization_context(tenant_a.organization.id):
+        claim = _claim(tenant_a, child, date(2026, 9, 7), date(2026, 9, 11))
+        absence.approve_claim(claim=claim)
+        claim.refresh_from_db()
+        assert claim.status == ClaimStatus.APPROVED
 
 
 def test_a_credit_is_applied_only_once(tenant_a: Any):
@@ -254,3 +317,111 @@ def test_there_is_no_minimum_length(tenant_a: Any):
 
     assert short.billable_days == 1
     assert short.credit_amount == Decimal("100000.00")
+
+
+# --- Hujjatning o'zi (PLAN 7.7) ---
+
+
+def _pdf(name: str = "spravka.pdf") -> Any:
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    return SimpleUploadedFile(
+        name, "%PDF-1.4 maʼlumotnoma".encode(), content_type="application/pdf"
+    )
+
+
+def test_a_claim_can_be_created_with_the_certificate_attached(tenant_a: Any):
+    child = _child(tenant_a)
+    client = tenant_a.client()
+    response = client.post(
+        "/api/v1/absence-claims",
+        {
+            "child_id": str(child.id),
+            "kind": ClaimKind.MEDICAL,
+            "date_from": "2026-09-07",
+            "date_to": "2026-09-11",
+            "document_no": "№ 12/3",
+            "document_file": _pdf(),
+        },
+        format="multipart",
+    )
+    assert response.status_code == 201, response.content
+    assert response.json()["data"]["has_document"] is True
+
+    with organization_context(tenant_a.organization.id):
+        claim = AbsenceClaim.objects.get(pk=response.json()["data"]["id"])
+        # Nom UUID: yuklangan nom saqlansa, hujjat nomini taxmin qilish
+        # yo'li ochilardi va bir xil nomlar to'qnashardi.
+        assert "spravka" not in claim.document_file.name
+        assert claim.document_file.name.startswith(f"{tenant_a.organization.id}/absence/")
+
+
+def test_the_certificate_can_be_attached_later(tenant_a: Any):
+    """Qog'oz ko'pincha keyinroq keladi."""
+    child = _child(tenant_a)
+    with organization_context(tenant_a.organization.id):
+        claim = _claim(tenant_a, child, date(2026, 9, 7), date(2026, 9, 11))
+
+    client = tenant_a.client()
+    response = client.post(
+        f"/api/v1/absence-claims/{claim.id}/document", {"file": _pdf()}, format="multipart"
+    )
+    assert response.status_code == 200, response.content
+    assert response.json()["data"]["has_document"] is True
+
+    download = client.get(f"/api/v1/absence-claims/{claim.id}/document/download")
+    assert download.status_code == 200
+    assert b"".join(download.streaming_content) == "%PDF-1.4 maʼlumotnoma".encode()
+
+
+def test_a_decided_claim_keeps_the_document_it_was_approved_with(tenant_a: Any):
+    """
+    Tasdiqlangandan keyin hujjat almashmaydi: aks holda tasdiqlovchi
+    bir narsani ko'rib imzolardi, papkada esa boshqasi turardi.
+    """
+    child = _child(tenant_a)
+    with organization_context(tenant_a.organization.id):
+        claim = _claim(tenant_a, child, date(2026, 9, 7), date(2026, 9, 11))
+        absence.approve_claim(claim=claim)
+
+    response = tenant_a.client().post(
+        f"/api/v1/absence-claims/{claim.id}/document", {"file": _pdf()}, format="multipart"
+    )
+    assert response.status_code == 422, response.content
+
+
+def test_an_executable_is_not_a_certificate(tenant_a: Any):
+    child = _child(tenant_a)
+    with organization_context(tenant_a.organization.id):
+        claim = _claim(tenant_a, child, date(2026, 9, 7), date(2026, 9, 11))
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    response = tenant_a.client().post(
+        f"/api/v1/absence-claims/{claim.id}/document",
+        {"file": SimpleUploadedFile("virus.exe", b"MZ", content_type="application/octet-stream")},
+        format="multipart",
+    )
+    assert response.status_code == 422, response.content
+
+
+def test_another_organization_cannot_read_the_document(tenant_a: Any, tenant_b: Any):
+    """
+    Begona bolaning tibbiy maʼlumotnomasi — `404`, `403` emas.
+
+    Fayl `/media/` havolasi orqali berilmaydi aynan shu sababdan:
+    statik URL na kirishni, na tashkilot chegarasini biladi.
+    """
+    child = _child(tenant_a)
+    with organization_context(tenant_a.organization.id):
+        claim = _claim(tenant_a, child, date(2026, 9, 7), date(2026, 9, 11))
+        absence.attach_document(claim=claim, uploaded=_pdf())
+
+    stranger = tenant_b.client()
+    assert stranger.get(f"/api/v1/absence-claims/{claim.id}/document/download").status_code == 404
+    assert (
+        stranger.post(
+            f"/api/v1/absence-claims/{claim.id}/document", {"file": _pdf()}, format="multipart"
+        ).status_code
+        == 404
+    )

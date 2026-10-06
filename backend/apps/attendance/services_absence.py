@@ -30,6 +30,7 @@ from apps.core.exceptions import BusinessRuleViolation
 
 __all__ = [
     "create_claim",
+    "attach_document",
     "working_weekdays",
     "working_days_in_month",
     "billable_days",
@@ -155,6 +156,7 @@ def create_claim(
     date_to: date,
     document_no: str = "",
     note: str = "",
+    document_file: Any = None,
     created_by: Any = None,
 ) -> AbsenceClaim:
     """
@@ -188,9 +190,33 @@ def create_claim(
         date_from=date_from,
         date_to=date_to,
         document_no=document_no[:60],
+        document_file=document_file or "",
         note=note[:255],
         created_by=created_by,
     )
+
+
+def attach_document(*, claim: AbsenceClaim, uploaded: Any) -> AbsenceClaim:
+    """
+    Spravka yoki arizani da'voga biriktiradi (PLAN 7.7).
+
+    Faqat `pending` holatda. Qaror chiqqandan keyin hujjatni
+    almashtirish — pulni harakatga keltirgan dalilni orqadan
+    o'zgartirish bo'lardi: tasdiqlovchi bir narsani ko'rib imzolagan,
+    papkada esa boshqa narsa turardi. Xato bo'lsa — rad etish va
+    yangi da'vo (viewset'dagi izoh).
+
+    Eski fayl o'chiriladi: biriktirishni ikki marta bosish diskda
+    egasiz nusxa qoldirardi.
+    """
+    if claim.status != ClaimStatus.PENDING:
+        raise BusinessRuleViolation(gettext("Qaror chiqqan daʼvoga hujjat biriktirib boʻlmaydi."))
+    old = claim.document_file
+    if old:
+        old.delete(save=False)
+    claim.document_file = uploaded
+    claim.save(update_fields=["document_file", "updated_at"])
+    return claim
 
 
 @transaction.atomic
@@ -259,6 +285,14 @@ def approve_claim(*, claim: AbsenceClaim, approved_by: Any = None, note: str = "
             "updated_at",
         ]
     )
+
+    # Shu oyning fakturasi hali to'lanmagan bo'lsa — kredit DARHOL
+    # o'sha summadan ayriladi (PLAN 7.7). To'langan bo'lsa yoki kredit
+    # qoldiqdan katta bo'lsa, da'vo `approved` bo'lib qoladi va keyingi
+    # faktura chiqarilganda minus qator bo'lib tushadi.
+    from apps.finance.services import apply_claim_to_open_invoice
+
+    apply_claim_to_open_invoice(claim=claim, created_by=approved_by)
     return claim
 
 

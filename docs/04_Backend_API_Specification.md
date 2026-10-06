@@ -389,10 +389,16 @@ A fee credit comes from an approved **document**, never from the attendance grid
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/absence-claims` | `attendance.read` | Filters: `status`, `kind`, `child` |
-| POST | `/absence-claims` | `attendance.create` | `{child_id, kind: medical\|parental, date_from, date_to, document_no?, note?}` |
+| POST | `/absence-claims` | `attendance.create` | `{child_id, kind: medical\|parental, date_from, date_to, document_no?, note?}`; accepts `multipart/form-data` with `document_file` |
+| POST | `/absence-claims/{id}/document` | `attendance.create` | `multipart/form-data`, field `file` — the certificate/application, ≤ 10 MB, `.pdf .png .jpg .jpeg .webp .heic`. Only while `pending` |
+| GET | `/absence-claims/{id}/document/download` | `attendance.read` | The file itself, as an attachment. `404` when there is none — and `404`, not `403`, for another organization's claim |
 | POST | `/absence-claims/{id}/approve` | `attendance.**approve**` | Freezes `billable_days`, `daily_rate`, `credit_amount` |
 | POST | `/absence-claims/{id}/reject` | `attendance.approve` | The row stays as a record of what was asked |
 | GET / POST / DELETE | `/holidays` | `attendance.read` / `.create` / `.delete` | The organization's closed days — `{holiday_date, name}` |
+
+The list exposes `has_document` and `document_name`, never a URL: `/media/` knows neither the session nor the tenant, and the document is a child's medical record — the same reason report exports are downloaded through an endpoint (§14.3).
+
+**When the credit lands (PLAN 7.7).** Approval checks the invoice of the month the absence began in. If that invoice is still unpaid and the credit fits inside what is outstanding, it is taken off **that** invoice at once: a negative line, a lower `amount_due`, a `discount` CREDIT ledger entry (the debit was already posted in full and ledgers are append-only — invariant 3), and the claim goes straight to `applied`. If the invoice is already paid, missing, or the credit is larger than what is left, the claim stays `approved` and the next invoice consumes it whole. A credit is never split across two invoices: splitting would need the claim split too, and the untracked remainder would quietly disappear.
 
 There is no `PATCH` and no `DELETE` on a claim: once approved it has produced a number that lands on an invoice, and editing it would move money retroactively. A mistake is rejected, or corrected by a new claim.
 

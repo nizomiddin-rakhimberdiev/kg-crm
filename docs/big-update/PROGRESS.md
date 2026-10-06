@@ -994,3 +994,46 @@ Lines are optional, so the old single-amount path and old records still work.
 Tested with the owner's own example, including that the till loses exactly
 the sum of the lines.
 
+
+### 7.7 — the credit comes off this month, and the certificate stays with it
+
+Until now an approved absence claim always waited for the **next** invoice.
+For a family that had not paid yet that was backwards: they owed 2 200 000,
+five days were credited, and the bill in their hand still said 2 200 000
+while a minus line sat somewhere in next month.
+
+Approval now looks at the invoice of the month the absence started in:
+
+- **unpaid, and the credit fits in what is outstanding** → it comes off that
+  invoice at once (a negative line, a lower `amount_due`, a `discount` CREDIT
+  ledger entry, status `applied`);
+- **already paid, or no invoice yet, or the credit is bigger than what is
+  left** → nothing moves; the claim stays `approved` and the next invoice
+  swallows it whole, exactly as before.
+
+Two decisions worth writing down. **The invoice document is edited** — which
+D3 normally forbids — and that is right here precisely because the parent has
+not paid: the paper and the system have to show the same number. **The ledger
+is not edited**: the debit was posted in full at issue, so the correction is
+a separate CREDIT entry (invariant 3). And a credit larger than the
+outstanding amount is **not split** across two invoices — splitting the money
+would mean splitting the claim, and whatever did not fit would quietly cease
+to exist.
+
+The certificate or application itself can now be attached (`document_file`):
+in the create form, or later with a paperclip on a pending row — the paper
+usually arrives after the phone call. PDF or photo, 10 MB. Only while
+`pending`: after a decision, the document behind the money is fixed, or the
+approver would be signing off on one certificate while the folder held
+another.
+
+The file is never served from `/media/`. A static URL knows neither the
+session nor the tenant, and this one is a child's medical record, so it goes
+through `GET /absence-claims/{id}/document/download` — tenant-scoped, and a
+`404` for anyone else. The stored name is a UUID: "spravka.pdf" is what
+everyone calls it, so the real names would both collide and let one family
+guess another's path.
+
+Tests: the unpaid month, the paid month, a credit that does not fit, a month
+with no invoice yet, attaching at creation and afterwards, a rejected `.exe`,
+and another organization getting `404` on both the upload and the download.

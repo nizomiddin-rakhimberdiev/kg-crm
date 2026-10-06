@@ -1406,3 +1406,16 @@ msgstr "An expense needs at least one line."
 
 msgid "Summa yoki chiqim qatorlari kiritilishi kerak."
 msgstr "Enter either an amount or the expense lines."
+
+# Spravka/ariza biriktirish (PLAN 7.7)
+msgid "Fayl 10 MB dan kichik boʻlishi kerak."
+msgstr "The file must be smaller than 10 MB."
+
+msgid "PDF yoki rasm (JPG, PNG, WEBP) yuboring."
+msgstr "Send a PDF or an image (JPG, PNG, WEBP)."
+
+msgid "Qaror chiqqan daʼvoga hujjat biriktirib boʻlmaydi."
+msgstr "A claim that has been decided cannot take a new document."
+
+msgid "Kelmagan kunlar uchun qayta hisob ({number})"
+msgstr "Credit for days absent ({number})"

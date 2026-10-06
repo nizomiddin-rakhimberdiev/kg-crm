@@ -422,9 +422,17 @@ planning; two turned out to be bugs rather than features.
   may carry an opening debt, which lands in the ledger as an `adjustment`
   debit so Debtors shows it (invariant 4). The sheet gains a `Qarzdorlik`
   column that starts at 0.
-- [ ] **7.7** Absence credit applies to the **current** month when that
+- [x] **7.7** Absence credit applies to the **current** month when that
   invoice is still unpaid, and only carries forward when it is paid. Plus a
   file attachment for the certificate or application.
+  The document **is** edited in that case, deliberately: the parent has not
+  paid yet, so the paper in their hand and the number in the system have to
+  agree. The ledger is not — the debit stays and a `discount` CREDIT corrects
+  it (invariant 3). A credit larger than what is outstanding carries forward
+  **whole** rather than being split, because a split claim would lose its
+  remainder. The file is attachable only while `pending`, stored under a UUID
+  name and served through `GET /absence-claims/{id}/document/download`, never
+  from `/media/` — it is a child's medical record.
 
 **Owner decision needed (7.1).** His words: a child arriving on the 25th "should
 be charged for 4 days". His formula says the opposite — `3050000 − 3050000/22*4`

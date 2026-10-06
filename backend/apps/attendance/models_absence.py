@@ -13,7 +13,9 @@ yozuvi: hujjat turi, kunlar oralig'i, tasdiqlash va u bergan raqam.
 
 from __future__ import annotations
 
+import uuid
 from decimal import Decimal
+from pathlib import PurePosixPath
 
 from django.db import models
 from django.utils.translation import gettext_lazy
@@ -66,6 +68,19 @@ class ClaimStatus(models.TextChoices):
     APPLIED = "applied", gettext_lazy("Hisob-fakturaga tushdi")
 
 
+def absence_document_path(instance: AbsenceClaim, filename: str) -> str:
+    """
+    `media/{organization}/absence/{uuid}.{ext}`
+
+    Fayl nomi UUID: yuklangan nom saqlansa, boshqa oilaning hujjat
+    nomini taxmin qilish yo'li ochilardi, va bir xil nomli fayllar
+    ("spravka.pdf" — hamma shunday nomlaydi) to'qnashardi.
+    Kengaytma qoladi: brauzer `Content-Type` ni shundan aniqlaydi.
+    """
+    suffix = PurePosixPath(filename).suffix.lower() or ".pdf"
+    return f"{instance.organization_id}/absence/{uuid.uuid4()}{suffix}"
+
+
 class AbsenceClaim(BranchScopedModel):
     """
     Kelmagan kunlar uchun to'lovdan qaytarish da'vosi (docs/03 §12.2).
@@ -82,6 +97,15 @@ class AbsenceClaim(BranchScopedModel):
     date_from = models.DateField()
     date_to = models.DateField()
     document_no = models.CharField(max_length=60, blank=True)
+    # Spravka yoki arizaning o'zi (PLAN 7.7).
+    #
+    # Hujjat raqami yetarli emas edi: bir yildan keyin "shu kunlar
+    # nega bekor qilingan?" degan savolga javob faqat qog'oz papkada
+    # qolardi. ADR-19 bo'yicha pulni AYNAN hujjat harakatga keltiradi,
+    # shuning uchun hujjatning o'zi ham shu yerda turishi mantiqan
+    # to'g'ri. Ixtiyoriy: bog'cha arizani qog'ozda saqlashni afzal
+    # ko'rsa, oqim avvalgidek ishlaydi.
+    document_file = models.FileField(upload_to=absence_document_path, blank=True)
     note = models.CharField(max_length=255, blank=True)
 
     status = models.CharField(

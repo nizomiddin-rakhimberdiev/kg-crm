@@ -569,6 +569,7 @@ A documented absence that earns a fee credit. **Not derived from `attendance_rec
 | `date_from` | `DATE` | `NOT NULL` | |
 | `date_to` | `DATE` | `NOT NULL`, `CHECK (date_to >= date_from)` | Inclusive |
 | `document_no` | `VARCHAR(60)` | `NULL` | Certificate number, if any |
+| `document_file` | `VARCHAR` (`FileField`) | `NULL` | The certificate or application itself — `media/{organization_id}/absence/{uuid}.{ext}` (PLAN 7.7) |
 | `note` | `VARCHAR(255)` | `NULL` | |
 | `status` | `VARCHAR(10)` | `NOT NULL DEFAULT 'pending'`, `CHECK (... IN ('pending','approved','rejected','applied'))` | |
 | `billable_days` | `SMALLINT` | `NOT NULL DEFAULT 0`, `CHECK (billable_days >= 0)` | Working days in the range, holidays removed — **computed at approval** |
@@ -588,7 +589,8 @@ A documented absence that earns a fee credit. **Not derived from `attendance_rec
 - `billable_days` counts only days the kindergarten was open: the branch's working weekdays (`attendance.working_weekdays`) minus `holiday` (§12.3). A day the kindergarten was closed anyway is not a day the parent missed.
 - `daily_rate` = the charged amount of the invoice covering the absence month ÷ the working days of **that** month. Falls back to `tariff ÷ working days` when no invoice exists yet. Using the charged amount rather than the raw tariff keeps a discounted child from being credited more than they were billed.
 - `credit_amount` is capped at the covering invoice's `amount_due`.
-- Status flow: `pending → approved → applied`, or `pending → rejected`. `applied` is set by invoice generation when the credit becomes a line, and `applied_invoice_id` makes double-application impossible.
+- Status flow: `pending → approved → applied`, or `pending → rejected`. `applied` is set either by invoice generation (the credit becomes a line on the next invoice) or, since PLAN 7.7, by approval itself when the covering month's invoice is still unpaid — `applied_invoice_id` makes double-application impossible in both cases.
+- **The file is attachable only while `pending`.** After a decision the document behind the money is fixed: otherwise the approver signs off on one certificate and the folder ends up holding another. The stored name is a UUID — the uploaded name would both collide ("spravka.pdf" is what everyone calls it) and let one family guess another's document path. It is never served from `/media/`; `GET /absence-claims/{id}/document/download` is the only way in, because a static URL knows neither the session nor the tenant and the file is a child's medical record.
 
 **Indexes:** `(organization_id, child_id, date_from)`; partial `(organization_id, status) WHERE status = 'approved'` — the hot path is "which credits are waiting to be applied".
 

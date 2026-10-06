@@ -1,4 +1,5 @@
-import { api } from '@/lib/api/client'
+import { api, httpClient } from '@/lib/api/client'
+import type { Envelope } from '@/lib/api/types'
 import type {
   StaffAttendanceStatus,
   StaffDailyRow,
@@ -82,6 +83,41 @@ export const absenceApi = {
     document_no?: string
     note?: string
   }) => api.post<AbsenceClaim>('/absence-claims', payload),
+
+  /**
+   * Spravka/arizani biriktirish — `multipart/form-data`, shuning uchun
+   * umumiy `api` yordamchisi emas, `httpClient` bevosita (brauzer
+   * `Content-Type` ni boundary bilan o'zi qo'yishi kerak).
+   */
+  async attachDocument(id: string, file: File) {
+    const form = new FormData()
+    form.append('file', file)
+    const response = await httpClient.post<Envelope<AbsenceClaim>>(
+      `/absence-claims/${id}/document`,
+      form,
+      { headers: { 'Content-Type': undefined } },
+    )
+    return response.data.data
+  },
+
+  /**
+   * Yuklab olish `/media/` havolasi orqali EMAS: statik URL na kirishni,
+   * na tashkilot chegarasini biladi, hujjat esa bolaning tibbiy
+   * ma'lumotnomasi bo'lishi mumkin.
+   */
+  async downloadDocument(id: string, fallbackName: string) {
+    const response = await httpClient.get(`/absence-claims/${id}/document/download`, {
+      responseType: 'blob',
+    })
+    const disposition = String(response.headers?.['content-disposition'] ?? '')
+    const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition)
+    const url = URL.createObjectURL(response.data as Blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = match ? decodeURIComponent(match[1]) : fallbackName
+    link.click()
+    URL.revokeObjectURL(url)
+  },
   approve: (id: string, note = '') =>
     api.post<AbsenceClaim>(`/absence-claims/${id}/approve`, { note }),
   reject: (id: string, note = '') =>

@@ -1406,3 +1406,16 @@ msgstr "В расходе должна быть хотя бы одна стро�
 
 msgid "Summa yoki chiqim qatorlari kiritilishi kerak."
 msgstr "Укажите сумму или строки расхода."
+
+# Spravka/ariza biriktirish (PLAN 7.7)
+msgid "Fayl 10 MB dan kichik boʻlishi kerak."
+msgstr "Файл должен быть меньше 10 МБ."
+
+msgid "PDF yoki rasm (JPG, PNG, WEBP) yuboring."
+msgstr "Отправьте PDF или изображение (JPG, PNG, WEBP)."
+
+msgid "Qaror chiqqan daʼvoga hujjat biriktirib boʻlmaydi."
+msgstr "К заявке с принятым решением нельзя прикрепить документ."
+
+msgid "Kelmagan kunlar uchun qayta hisob ({number})"
+msgstr "Перерасчёт за дни отсутствия ({number})"

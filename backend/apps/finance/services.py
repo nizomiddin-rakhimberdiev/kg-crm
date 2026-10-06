@@ -58,6 +58,7 @@ __all__ = [
     "applicable_discount",
     "first_month_share",
     "record_opening_debt",
+    "apply_claim_to_open_invoice",
     "first_invoice_due_date",
     "record_payment",
     "record_payment_batch",
@@ -200,6 +201,91 @@ def _next_invoice_number(branch: Any, year: int, month: int) -> str:
     )
     sequence = int(last.rsplit("-", 1)[1]) + 1 if last else 1
     return f"{prefix}-{sequence:04d}"
+
+
+@transaction.atomic
+def apply_claim_to_open_invoice(*, claim: Any, created_by: Any = None) -> bool:
+    """
+    Tasdiqlangan da'voni SHU OYNING to'lanmagan fakturasiga qo'llaydi.
+
+    Egasining qoidasi (PLAN 7.7): ota-ona bu oy uchun hali to'lamagan
+    bo'lsa, qayta hisob shu oyning summasidan ayriladi; to'lagan bo'lsa,
+    kredit keyingi oyga o'tadi va keyingi faktura chiqarilganda minus
+    qator bo'lib tushadi (avvalgi xatti-harakat).
+
+    `False` qaytsa — hech narsa qilinmadi va da'vo `approved` bo'lib
+    qoladi, ya'ni uni `_apply_absence_credits` keyingi fakturada
+    oladi.
+
+    **Qoldiqdan katta kredit KEYINGI oyga o'tadi, bo'linmaydi.** Qisman
+    qo'llash da'voni ikkiga bo'lishni talab qilardi; bo'linmagan holda
+    esa "qoldiq 300 000, kredit 554 000" holatida 254 000 jimgina
+    yo'qolardi.
+
+    Hujjat o'zgaradi (minus qator va yangi summa) — bu ataylab: ota-ona
+    hali to'lamagan qog'ozdagi raqam bilan tizimdagi raqam bir xil
+    bo'lishi kerak. Ledger esa alohida KREDIT yozuvi bilan to'g'rilanadi,
+    chunki debet allaqachon to'liq summada yozilgan (3-invariant:
+    yozuvlar o'chirilmaydi, qarshi yozuv qo'shiladi).
+    """
+    from apps.attendance.models_absence import ClaimStatus
+
+    if claim.status != ClaimStatus.APPROVED or claim.credit_amount <= 0:
+        return False
+
+    invoice = (
+        Invoice.objects.select_for_update()
+        .filter(
+            child=claim.child,
+            period_year=claim.date_from.year,
+            period_month=claim.date_from.month,
+        )
+        .exclude(status=InvoiceStatus.CANCELLED)
+        .first()
+    )
+    if invoice is None:
+        return False
+
+    outstanding = _money(invoice.amount_due - invoice.amount_paid)
+    if outstanding <= 0 or claim.credit_amount > outstanding:
+        # To'langan yoki kredit qoldiqdan katta — keyingi oyga.
+        return False
+
+    credit = _money(claim.credit_amount)
+    InvoiceLine.objects.create(
+        invoice=invoice,
+        description=gettext("Kelmagan kunlar uchun qayta hisob: {days} kun × {rate}").format(
+            days=claim.billable_days, rate=claim.daily_rate
+        )[:255],
+        quantity=Decimal("1"),
+        unit_amount=-credit,
+        line_total=-credit,
+    )
+    new_due = _money(invoice.amount_due - credit)
+    Invoice.objects.filter(pk=invoice.pk).update(amount_due=new_due)
+    invoice.amount_due = new_due
+
+    # Ledger: debet allaqachon to'liq summada yozilgan, shuning uchun
+    # farq KREDIT yozuvi bilan qaytariladi — aks holda balans qog'ozdagi
+    # yangi summadan katta bo'lib qolardi.
+    post_ledger_entry(
+        child=claim.child,
+        entry_type=EntryType.DISCOUNT,
+        direction=Direction.CREDIT,
+        amount=credit,
+        source_type=SourceType.INVOICE,
+        source_id=invoice.id,
+        description=gettext("Kelmagan kunlar uchun qayta hisob ({number})").format(
+            number=invoice.number
+        )[:255],
+        created_by=created_by,
+    )
+    _refresh_invoice_payment_state(invoice)
+
+    claim.status = ClaimStatus.APPLIED
+    claim.applied_invoice = invoice
+    claim.save(update_fields=["status", "applied_invoice", "updated_at"])
+    return True
 
 
 def _apply_absence_credits(

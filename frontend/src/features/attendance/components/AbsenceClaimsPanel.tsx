@@ -6,14 +6,19 @@
  * shifokor ma'lumotnomasi yoki ota-ona arizasi — asosida harakat
  * qiladi va tasdiqlashdan o'tadi.
  *
- * Tasdiqlangan qaytarish keyingi hisob-fakturaga minus qator bo'lib
- * tushadi, ya'ni ota-ona qo'lidagi qog'oz bilan balans bir xil raqamni
- * ko'rsatadi.
+ * Tasdiqlangan qaytarish shu oyning hisob-fakturasi hali to'lanmagan
+ * bo'lsa O'SHA fakturadan ayriladi; to'langan bo'lsa keyingi oyga minus
+ * qator bo'lib o'tadi (PLAN 7.7). Ikkala holatda ham ota-ona qo'lidagi
+ * qog'oz bilan balans bir xil raqamni ko'rsatadi.
+ *
+ * Spravka yoki arizaning O'ZI ham shu yerga biriktiriladi: bir yildan
+ * keyin "bu kunlar nega bekor qilingan?" degan savolga javob qog'oz
+ * papkada emas, da'voning yonida turadi.
  */
 
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarX2, Check, Plus, X } from 'lucide-react'
+import { CalendarX2, Check, Download, Paperclip, Plus, X } from 'lucide-react'
 import { DateInput } from '@/components/ui/DateInput'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { EmptyRow } from '@/components/ui/EmptyState'
@@ -60,6 +65,7 @@ export function AbsenceClaimsPanel() {
   const { can } = useCan()
 
   const [form, setForm] = useState(EMPTY)
+  const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const claimsQuery = useQuery({
@@ -80,17 +86,34 @@ export function AbsenceClaimsPanel() {
     setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.'))
 
   const create = useMutation({
-    mutationFn: () =>
-      absenceApi.create({
+    mutationFn: async () => {
+      const claim = await absenceApi.create({
         child_id: form.child_id,
         kind: form.kind,
         date_from: form.date_from,
         date_to: form.date_to,
         ...(form.document_no ? { document_no: form.document_no } : {}),
         ...(form.note ? { note: form.note } : {}),
-      }),
+      })
+      // Fayl ALOHIDA so'rov bilan ketadi: da'vo yaratilgan bo'lsa-yu
+      // yuklash uzilib qolsa, kiritilgan kunlar yo'qolmaydi — hujjatni
+      // keyin biriktirsa bo'ladi.
+      if (file) await absenceApi.attachDocument(claim.id, file)
+      return claim
+    },
     onSuccess: () => {
       setForm(EMPTY)
+      setFile(null)
+      setError(null)
+      invalidate()
+    },
+    onError: fail,
+  })
+
+  const attach = useMutation({
+    mutationFn: ({ id, picked }: { id: string; picked: File }) =>
+      absenceApi.attachDocument(id, picked),
+    onSuccess: () => {
       setError(null)
       invalidate()
     },
@@ -224,6 +247,19 @@ export function AbsenceClaimsPanel() {
             />
           </div>
           <div className="sm:col-span-2 xl:col-span-3">
+            <label htmlFor="ac-file" className="mb-1 block text-xs font-medium text-slate-600">
+              {t('Spravka yoki ariza (ixtiyoriy)')}
+            </label>
+            <input
+              id="ac-file"
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg,.webp,.heic"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-700"
+            />
+            <p className="mt-1 text-xs text-slate-400">{t('PDF yoki rasm, 10 MB gacha')}</p>
+          </div>
+          <div className="sm:col-span-2 xl:col-span-3">
             <label htmlFor="ac-note" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Izoh')}
             </label>
@@ -259,6 +295,41 @@ export function AbsenceClaimsPanel() {
                     {KIND_LABELS[claim.kind] ?? claim.kind}
                     {claim.document_no && (
                       <span className="ml-1.5 text-xs text-slate-400">{claim.document_no}</span>
+                    )}
+                    {claim.has_document ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          absenceApi
+                            .downloadDocument(claim.id, claim.document_name || 'hujjat')
+                            .catch(fail)
+                        }
+                        title={t('Hujjatni yuklab olish')}
+                        aria-label={t('Hujjatni yuklab olish')}
+                        className="ml-1.5 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-brand-700 transition hover:bg-brand-50"
+                      >
+                        <Download className="h-3.5 w-3.5" /> {t('Hujjat')}
+                      </button>
+                    ) : (
+                      // Qaror chiqqandan keyin biriktirib bo'lmaydi:
+                      // tasdiqlovchi ko'rgan dalil keyin almashmasligi kerak.
+                      claim.status === 'pending' &&
+                      can('attendance.create') && (
+                        <label className="ml-1.5 inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-slate-500 transition hover:bg-slate-100">
+                          <Paperclip className="h-3.5 w-3.5" /> {t('Biriktirish')}
+                          <input
+                            type="file"
+                            className="sr-only"
+                            accept=".pdf,.png,.jpg,.jpeg,.webp,.heic"
+                            aria-label={t('Hujjat biriktirish')}
+                            onChange={(e) => {
+                              const picked = e.target.files?.[0]
+                              if (picked) attach.mutate({ id: claim.id, picked })
+                              e.target.value = ''
+                            }}
+                          />
+                        </label>
+                      )
                     )}
                   </td>
                   <td className="px-4 py-3 text-slate-600">

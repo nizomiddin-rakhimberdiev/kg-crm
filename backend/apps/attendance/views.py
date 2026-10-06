@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import PurePosixPath
 from typing import Any
 
+from django.http import FileResponse, Http404
 from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -183,9 +186,17 @@ class AbsenceClaimViewSet(BranchScopedMixin, TenantViewSet):
     model = AbsenceClaim
     serializer_class = AbsenceClaimSerializer
     select_related_fields = ("child", "approved_by")
+    #: Spravka/ariza 10 MB gacha — telefonda suratga olingan ikki
+    #: betlik qog'oz shuncha chiqadi; bundan kattasi deyarli har doim
+    #: siqilmagan skaner, va u bog'chaning diskini yeb qo'yardi.
+    MAX_DOCUMENT_BYTES = 10 * 1024 * 1024
+    ALLOWED_DOCUMENT_SUFFIXES = (".pdf", ".png", ".jpg", ".jpeg", ".webp", ".heic")
     filterset_fields = ["status", "kind", "child"]
     ordering_fields = ["date_from", "created_at"]
     http_method_names = ["get", "post", "head", "options"]
+    # Yaratishda fayl ham kelishi mumkin — shuning uchun JSON yonida
+    # `multipart` ham qabul qilinadi.
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         payload = AbsenceClaimWriteSerializer(data=request.data)
@@ -200,6 +211,7 @@ class AbsenceClaimViewSet(BranchScopedMixin, TenantViewSet):
             date_to=data["date_to"],
             document_no=data.get("document_no", ""),
             note=data.get("note", ""),
+            document_file=self._checked_document(data.get("document_file")),
             created_by=user,
         )
         audit.record(
@@ -211,6 +223,51 @@ class AbsenceClaimViewSet(BranchScopedMixin, TenantViewSet):
             changes={"from": str(claim.date_from), "to": str(claim.date_to), "kind": claim.kind},
         )
         return Response(AbsenceClaimSerializer(claim).data, status=status.HTTP_201_CREATED)
+
+    def _checked_document(self, uploaded: Any) -> Any:
+        """Hajm va kengaytma — biriktirishning ikkala yo'lida bir xil."""
+        if uploaded is None:
+            return None
+        if uploaded.size > self.MAX_DOCUMENT_BYTES:
+            raise BusinessRuleViolation(gettext("Fayl 10 MB dan kichik boʻlishi kerak."))
+        suffix = PurePosixPath(str(uploaded.name)).suffix.lower()
+        if suffix not in self.ALLOWED_DOCUMENT_SUFFIXES:
+            raise BusinessRuleViolation(gettext("PDF yoki rasm (JPG, PNG, WEBP) yuboring."))
+        return uploaded
+
+    @action(detail=True, methods=["post"], url_path="document", parser_classes=[MultiPartParser])
+    def document(self, request: Request, pk: str | None = None) -> Response:
+        """Spravka/arizani keyinroq biriktirish (PLAN 7.7)."""
+        claim = self.get_object()
+        uploaded = request.FILES.get("file")
+        if uploaded is None:
+            raise BusinessRuleViolation(gettext("Fayl yuborilmagan."))
+        absence.attach_document(claim=claim, uploaded=self._checked_document(uploaded))
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="absence_claim",
+            entity_id=claim.id,
+            changes={"document": claim.document_file.name.rsplit("/", 1)[-1]},
+        )
+        return Response(AbsenceClaimSerializer(claim).data)
+
+    @action(detail=True, methods=["get"], url_path="document/download")
+    def document_download(self, request: Request, pk: str | None = None) -> FileResponse:
+        """
+        Faylni **shu endpoint** beradi, `/media/` havolasi emas.
+
+        Statik media URL'i na kirishni, na tashkilot chegarasini
+        biladi — havolani topgan har kim begona bolaning tibbiy
+        ma'lumotnomasini ochardi. Bu yerda `get_object()` tenant bilan
+        cheklangan, ya'ni begona da'vo oddiygina `404`.
+        """
+        claim = self.get_object()
+        if not claim.document_file:
+            raise Http404
+        name = claim.document_file.name.rsplit("/", 1)[-1]
+        return FileResponse(claim.document_file.open("rb"), as_attachment=True, filename=name)
 
     @action(detail=True, methods=["post"])
     def approve(self, request: Request, pk: str | None = None) -> Response:

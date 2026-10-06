@@ -110,6 +110,12 @@ class HolidaySerializer(serializers.ModelSerializer):
 
 class AbsenceClaimSerializer(serializers.ModelSerializer):
     child_name = serializers.CharField(source="child.full_name", read_only=True)
+    # Faylning O'ZI emas, borligi va nomi. Havola `/media/` ga
+    # chiqarilmaydi: u autentifikatsiyani ham, tashkilot chegarasini
+    # ham bilmaydi — yuklash `document/download` endpointi orqali
+    # ketadi (eksportlardagi kabi, apps/reports/views.py).
+    has_document = serializers.SerializerMethodField()
+    document_name = serializers.SerializerMethodField()
     approved_by_name = serializers.CharField(
         source="approved_by.full_name", read_only=True, default=None
     )
@@ -124,6 +130,8 @@ class AbsenceClaimSerializer(serializers.ModelSerializer):
             "date_from",
             "date_to",
             "document_no",
+            "has_document",
+            "document_name",
             "note",
             "status",
             "billable_days",
@@ -137,6 +145,12 @@ class AbsenceClaimSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    def get_has_document(self, obj: AbsenceClaim) -> bool:
+        return bool(obj.document_file)
+
+    def get_document_name(self, obj: AbsenceClaim) -> str:
+        return obj.document_file.name.rsplit("/", 1)[-1] if obj.document_file else ""
+
 
 class AbsenceClaimWriteSerializer(serializers.Serializer):
     """Da'vo yozish — servis orqali, chunki kesishma tekshiriladi."""
@@ -147,6 +161,10 @@ class AbsenceClaimWriteSerializer(serializers.Serializer):
     date_to = serializers.DateField()
     document_no = serializers.CharField(required=False, allow_blank=True, max_length=60)
     note = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    # Spravka/ariza darhol yuborilishi mumkin (`multipart/form-data`),
+    # lekin shart emas: qog'oz ko'pincha keyinroq keladi — o'shanda
+    # `POST .../document` ishlatiladi.
+    document_file = serializers.FileField(required=False, allow_null=True)
 
 
 # --- Xodimlar davomati (tabel) ---

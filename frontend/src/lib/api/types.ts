@@ -754,6 +754,9 @@ export interface AbsenceClaim {
   date_from: string
   date_to: string
   document_no: string
+  /** Spravka/ariza biriktirilganmi (PLAN 7.7) — faylning o'zi emas. */
+  has_document: boolean
+  document_name: string
   note: string
   status: 'pending' | 'approved' | 'rejected' | 'applied'
   billable_days: number
