@@ -8,12 +8,14 @@ qayerdan?" degan savolni javobsiz qoldirardi.
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from django.db import models
 from django.utils.translation import gettext_lazy
 
 from apps.core.models import BranchScopedModel
 
-__all__ = ["ExpenseCategory", "Expense", "ExpenseStatus"]
+__all__ = ["ExpenseCategory", "Expense", "ExpenseStatus", "ExpenseItem"]
 
 
 class ExpenseCategory(BranchScopedModel):
@@ -103,3 +105,48 @@ class Expense(BranchScopedModel):
 
     def __str__(self) -> str:
         return f"{self.amount} ({self.category_id})"
+
+
+class ExpenseItem(BranchScopedModel):
+    """
+    Chiqim ichidagi bitta qator (PLAN 7.5).
+
+    Mijozning so'zi: "bozorlik" degan 600 000 so'm yetarli emas — nima
+    olingani, qancha va qanchadan olingani kerak. Shuning uchun chiqim
+    endi qatorlardan iborat: *kartoshka, 50 kg, 3 000 so'm → 150 000*.
+
+    **`line_total` saqlanadi, hisoblanmaydi.** Miqdor × narx har safar
+    qayta hisoblansa, yaxlitlash ekranda va hisobotda boshqacha
+    chiqishi mumkin; saqlangan qiymat esa chiqim summasi bilan aynan
+    mos tushadi. `Expense.amount` — qatorlar yig'indisi, va bu kassaga
+    chiqadigan pul (ADR-17).
+
+    Qatorlar IXTIYORIY: eski chiqimlarda ular yo'q va shunday qoladi —
+    yozuvni orqaga qarab to'ldirib bo'lmaydi.
+    """
+
+    expense = models.ForeignKey("expenses.Expense", on_delete=models.CASCADE, related_name="items")
+    name = models.CharField(max_length=120)
+    quantity = models.DecimalField(max_digits=12, decimal_places=3)
+    unit = models.CharField(max_length=10, default="dona")
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+    line_total = models.DecimalField(max_digits=12, decimal_places=2)
+    note = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = "expense_item"
+        ordering = ["created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(quantity__gt=Decimal("0")), name="ck_expense_item_quantity"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(unit_price__gte=Decimal("0")), name="ck_expense_item_price"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(line_total__gte=Decimal("0")), name="ck_expense_item_total"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.name} {self.quantity}{self.unit} × {self.unit_price}"

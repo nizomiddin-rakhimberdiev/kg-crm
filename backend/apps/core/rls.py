@@ -89,6 +89,7 @@ OPERATIONAL_TABLES: tuple[str, ...] = (
     "enrollment",
     "expense",
     "expense_category",
+    "expense_item",
     "group",
     "guardian",
     "holiday",

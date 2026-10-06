@@ -2,15 +2,26 @@ import { api } from '@/lib/api/client'
 import { withBranch } from '@/lib/branchScope'
 import type { Expense, ExpenseCategory, ExpenseSummary } from '@/lib/api/types'
 
+export interface ExpenseItemInput {
+  name: string
+  quantity: string
+  unit: string
+  unit_price: string
+  note?: string
+}
+
 export const expensesApi = {
   list: (params?: Record<string, unknown>) => api.list<Expense>('/expenses', params),
   create: (payload: {
     category_id: string
-    amount: string
+    /** Qatorlar berilsa YUBORILMAYDI — summa ulardan hisoblanadi. */
+    amount?: string
     expense_date: string
     description?: string
     /** Qaysi puldan to'lanadi (ADR-17) — bo'sh bo'lsa naqd kassa. */
     cash_account_id?: string
+    /** Chiqim qatorlari (PLAN 7.5): nima, qancha, qanchadan. */
+    items?: ExpenseItemInput[]
   }) => api.post<Expense>('/expenses', withBranch(payload)),
   /** Tasdiqlash — pul aynan shu yerda kassadan chiqadi (ADR-17). */
   approve: (id: string, note = '', cashAccountId?: string) =>

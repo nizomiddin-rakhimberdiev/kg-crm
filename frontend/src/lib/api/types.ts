@@ -568,6 +568,16 @@ export interface Expense {
   decided_at: string | null
   decision_note: string
   created_at: string
+  /** Chiqim qatorlari (PLAN 7.5) — eski chiqimlarda bo'sh. */
+  items: Array<{
+    id: string
+    name: string
+    quantity: string
+    unit: string
+    unit_price: string
+    line_total: string
+    note: string
+  }>
 }
 
 export interface ExpenseSummary {

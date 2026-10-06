@@ -960,3 +960,37 @@ over the ones it already has.
 Tests: 12 for template and import, 6 for proration and opening debt,
 including "a payment closes it like any other debt".
 
+### 7.4 — guardians: a second phone, and a way to edit one
+
+Families usually carry two numbers and one of them is often off. The second
+is optional and appears only behind a "+ Ikkinchi raqam" button, so no empty
+input sits in the form waiting to be ignored.
+
+It is not decoration: the contact index stores both numbers and
+`link_by_phone` matches either, so a parent who shares the other SIM with the
+bot is still found (ADR-27). Without that the field would exist and do
+nothing. It stays non-unique — the main phone is still who the guardian is.
+
+Editing turned out to exist in the API the whole time; there was simply no
+screen for it. So "vasiy qo'shish yaxshi ishlamayapti" was really "a changed
+number means detaching and re-adding", which threw away the Telegram link and
+the history. The dialog warns when the main number changes, because that is
+the bot's key.
+
+### 7.5 — expenses are made of lines
+
+"Bozorlik — 600 000" does not say what was bought. An expense is now rows:
+*kartoshka, 50 kg, 3 000 → 150 000*, with "Yana qo'shish" for the next one
+and a running total underneath.
+
+`expense_item` is a tenant table with the usual guards (`check_rls` 58 → 59).
+`line_total` is stored rather than recomputed, so rounding cannot differ
+between the screen and the report, and `Expense.amount` is the sum of the
+lines — which is what leaves the till (ADR-17). **A client-supplied amount is
+ignored when lines are present**: if we trusted it, the figure on screen and
+the money in the journal would drift apart one day and nobody would notice.
+Lines are optional, so the old single-amount path and old records still work.
+
+Tested with the owner's own example, including that the till loses exactly
+the sum of the lines.
+

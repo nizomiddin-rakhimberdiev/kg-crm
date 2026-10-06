@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, time
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from django.db import transaction
@@ -14,9 +14,15 @@ from django.utils.translation import gettext
 from apps.cash import services as cash
 from apps.cash.models import MovementDirection, MovementSource
 from apps.core.exceptions import BusinessRuleViolation
-from apps.expenses.models import Expense, ExpenseStatus
+from apps.expenses.models import Expense, ExpenseItem, ExpenseStatus
 
-__all__ = ["approve_expense", "reject_expense", "mark_expense_paid", "expense_summary"]
+__all__ = [
+    "approve_expense",
+    "reject_expense",
+    "mark_expense_paid",
+    "expense_summary",
+    "create_expense_with_items",
+]
 
 
 def _assert_pending(expense: Expense, action: str) -> None:
@@ -29,6 +35,71 @@ def _assert_pending(expense: Expense, action: str) -> None:
 
 
 @transaction.atomic
+@transaction.atomic
+def create_expense_with_items(
+    *,
+    organization: Any,
+    branch: Any,
+    category: Any,
+    expense_date: Any,
+    items: list[dict[str, Any]],
+    description: str = "",
+    cash_account: Any = None,
+    created_by: Any = None,
+) -> Expense:
+    """
+    Qatorlardan chiqim yaratadi va DARHOL tasdiqlaydi (PLAN 7.5, 7.2).
+
+    Summa qatorlardan hisoblanadi, mijozdan OLINMAYDI: ekranda
+    ko'rsatilgan yig'indi bilan kassadan chiqqan pul har doim bir xil
+    bo'lishi kerak. Mijoz yuborgan summaga ishonilsa, ular bir kun
+    ajralib qolardi va buni hech kim sezmasdi.
+
+    Har bir qator uchun `line_total = miqdor × narx` shu yerda
+    hisoblanib SAQLANADI (modeldagi izoh).
+    """
+    if not items:
+        raise BusinessRuleViolation(gettext("Chiqimda kamida bitta qator boʻlishi kerak."))
+
+    rows: list[ExpenseItem] = []
+    total = Decimal("0")
+    for item in items:
+        quantity = Decimal(str(item["quantity"]))
+        unit_price = Decimal(str(item["unit_price"]))
+        line_total = (quantity * unit_price).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        total += line_total
+        rows.append(
+            ExpenseItem(
+                organization=organization,
+                branch=branch,
+                name=str(item["name"]).strip()[:120],
+                quantity=quantity,
+                unit=str(item.get("unit") or "dona")[:10],
+                unit_price=unit_price,
+                line_total=line_total,
+                note=str(item.get("note") or "").strip()[:255],
+            )
+        )
+
+    if total <= 0:
+        raise BusinessRuleViolation(gettext("Chiqim summasi noldan katta boʻlishi kerak."))
+
+    expense = Expense.objects.create(
+        organization=organization,
+        branch=branch,
+        category=category,
+        amount=total,
+        expense_date=expense_date,
+        description=description[:255],
+        cash_account=cash_account,
+    )
+    for row in rows:
+        row.expense = expense
+    ExpenseItem.objects.bulk_create(rows)
+
+    return approve_expense(expense=expense, approved_by=created_by, cash_account=cash_account)
+
+
 def approve_expense(
     *,
     expense: Expense,

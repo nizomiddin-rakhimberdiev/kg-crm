@@ -100,6 +100,7 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.inventory.ProductCategory",
     "apps.inventory.Supplier",
     "apps.inventory.Warehouse",
+    "apps.expenses.ExpenseItem",
     "apps.expenses.Expense",
     "apps.expenses.ExpenseCategory",
     # Chiqim qopga `RESTRICT` bilan bog'langan — qop chiqimdan KEYIN.

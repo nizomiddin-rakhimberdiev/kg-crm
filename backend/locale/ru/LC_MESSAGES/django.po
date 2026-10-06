@@ -1396,3 +1396,13 @@ msgstr "Прежний долг при переходе в систему"
 # Vasiyning ikkinchi raqami (PLAN 7.4)
 msgid "Ikkinchi raqam birinchisidan farq qilishi kerak."
 msgstr "Второй номер должен отличаться от первого."
+
+# Chiqim qatorlari (PLAN 7.5)
+msgid "Chiqim summasi noldan katta boʻlishi kerak."
+msgstr "Сумма расхода должна быть больше нуля."
+
+msgid "Chiqimda kamida bitta qator boʻlishi kerak."
+msgstr "В расходе должна быть хотя бы одна строка."
+
+msgid "Summa yoki chiqim qatorlari kiritilishi kerak."
+msgstr "Укажите сумму или строки расхода."

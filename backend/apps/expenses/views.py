@@ -73,9 +73,24 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
         yozadi (ADR-17), endi u yaratish bilan bir tranzaksiyada.
         """
         user = request_user(self.request)
-        category = serializer.validated_data["category"]
-        serializer.save(organization=category.organization, branch=category.branch)
-        services.approve_expense(expense=serializer.instance, approved_by=user)
+        data = serializer.validated_data
+        category = data["category"]
+        items = data.pop("items", None)
+        if items:
+            # Qatorlar berilgan — summa ULARDAN hisoblanadi (PLAN 7.5).
+            serializer.instance = services.create_expense_with_items(
+                organization=category.organization,
+                branch=category.branch,
+                category=category,
+                expense_date=data["expense_date"],
+                items=items,
+                description=data.get("description", ""),
+                cash_account=data.get("cash_account"),
+                created_by=user,
+            )
+        else:
+            serializer.save(organization=category.organization, branch=category.branch)
+            services.approve_expense(expense=serializer.instance, approved_by=user)
         audit.record(
             action="create",
             request=self.request._request,

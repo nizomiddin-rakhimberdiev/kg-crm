@@ -1303,4 +1303,11 @@ export const messages: Record<string, string> = {
   'Raqam oʻzgarsa, Telegram ulanishi va xabarlar shu yangi raqamga bogʻlanadi.':
     'If the number changes, the Telegram link and messages follow the new number.',
   'Vasiyni tahrirlash': 'Edit guardian',
+  // Chiqim qatorlari (PLAN 7.5)
+  'Izoh (ixtiyoriy)': 'Note (optional)',
+  'Masalan: kartoshka': 'For example: potatoes',
+  Miqdori: 'Quantity',
+  'Nima olindi': 'What was bought',
+  Oʻlchov: 'Unit',
+  'Yana qoʻshish': 'Add another',
 }

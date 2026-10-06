@@ -408,9 +408,12 @@ planning; two turned out to be bugs rather than features.
   editing. The API could already PATCH a guardian; the gap was entirely in
   the screen. Either number connects the Telegram bot (ADR-27), otherwise the
   field would exist but do nothing.
-- [ ] **7.5** Expense line items: category, item, quantity (kg/dona), unit
+- [x] **7.5** Expense line items: category, item, quantity (kg/dona), unit
   price, optional note; "+ add" for more lines; running total. Shown as
-  `50 kg × 3 000 = 150 000`.
+  `50 kg × 3 000 = 150 000`. The total is computed from the lines on the
+  server — a client-sent amount is ignored, so the figure on screen and the
+  money leaving the till can never drift apart. Lines are optional, so the
+  old single-amount path still works.
 - [x] **7.6** Import template carries the organization's own groups and
   tariffs as dropdowns, the way gender already works.
 - [x] **7.8** New vs existing client (owner, 2026-10-06). The form defaults to

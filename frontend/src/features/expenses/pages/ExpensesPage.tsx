@@ -11,7 +11,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Pencil, Plus, Receipt, Trash2, X } from 'lucide-react'
 import { DateInput } from '@/components/ui/DateInput'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
-import { expensesApi } from '@/features/expenses/api'
+import { expensesApi, type ExpenseItemInput } from '@/features/expenses/api'
+import {
+  EMPTY_ITEM,
+  ExpenseItemsEditor,
+  itemsTotal,
+  usableItems,
+} from '@/features/expenses/components/ExpenseItemsEditor'
 import { cashApi } from '@/features/cash/api'
 import { invalidateMoney } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -19,7 +25,7 @@ import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { EmptyRow } from '@/components/ui/EmptyState'
-import { som, today } from '@/lib/format'
+import { quantity, som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
 const money = som
@@ -44,9 +50,11 @@ export default function ExpensesPage() {
   const { can } = useCan()
 
   const [from, to] = monthRange()
+  // Chiqim endi QATORLARDAN iborat (PLAN 7.5) — summa qo'lda
+  // yozilmaydi, u qatorlardan yig'iladi.
+  const [items, setItems] = useState<ExpenseItemInput[]>([{ ...EMPTY_ITEM }])
   const [form, setForm] = useState({
     category_id: '',
-    amount: '',
     // Sukut — BUGUN (PLAN 4.7): chiqim deyarli har doim
     // bugun kiritiladi, bo'sh maydon esa ortiqcha bosish.
     expense_date: today(),
@@ -88,16 +96,17 @@ export default function ExpensesPage() {
     mutationFn: () =>
       expensesApi.create({
         ...form,
+        items: usableItems(items),
         ...(form.cash_account_id ? {} : { cash_account_id: undefined }),
       }),
     onSuccess: () => {
       setForm({
         category_id: '',
-        amount: '',
         expense_date: today(),
         description: '',
         cash_account_id: '',
       })
+      setItems([{ ...EMPTY_ITEM }])
       setError(null)
       invalidate()
     },
@@ -301,21 +310,6 @@ export default function ExpensesPage() {
                 </select>
               </div>
               <div>
-                <label htmlFor="eamt" className="mb-1 block text-xs font-medium text-slate-600">
-                  {t('Summa')}
-                </label>
-                <input
-                  id="eamt"
-                  type="number"
-                  required
-                  min="0.01"
-                  step="0.01"
-                  value={form.amount}
-                  onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
-                />
-              </div>
-              <div>
                 <label htmlFor="edate" className="mb-1 block text-xs font-medium text-slate-600">
                   {t('Sana')}
                 </label>
@@ -326,6 +320,10 @@ export default function ExpensesPage() {
                   onChange={(iso) => setForm((p) => ({ ...p, expense_date: iso }))}
                 />
               </div>
+              <div className="sm:col-span-3">
+                <ExpenseItemsEditor items={items} onChange={setItems} />
+              </div>
+
               {/* Tavsif maydoni bazada ham, jadvalda ham bor edi — faqat
                   formada yo'q edi, ya'ni har doim bo'sh saqlanardi.
                   "Ta'mirlash" o'zi kam: nimaga ketgani yozilsin. */}
@@ -363,9 +361,12 @@ export default function ExpensesPage() {
                 </select>
               </div>
               <div className="flex items-end">
+                {/* Bitta ham to'ldirilgan qator bo'lmaguncha yuborilmaydi:
+                    summa qatorlardan hisoblanadi, ya'ni bo'sh qatorlar
+                    nol so'mlik chiqim yasardi. */}
                 <button
                   type="submit"
-                  disabled={create.isPending}
+                  disabled={create.isPending || itemsTotal(items) <= 0}
                   className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
                 >
                   <Plus className="h-4 w-4" /> {t('Qoʻshish')}
@@ -404,7 +405,27 @@ export default function ExpensesPage() {
                     <tr key={e.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3 text-slate-500">{e.expense_date}</td>
                       <td className="px-4 py-3 text-slate-700">{e.category_name}</td>
-                      <td className="px-4 py-3 text-slate-600">{e.description || '—'}</td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {/* Qatorlar bo'lsa — aynan nima olingani
+                            ko'rinadi (PLAN 7.5): "50 kg × 3 000". */}
+                        {e.items?.length ? (
+                          <ul className="space-y-0.5">
+                            {e.items.map((item) => (
+                              <li key={item.id} className="text-xs">
+                                <span className="text-slate-700">{item.name}</span>{' '}
+                                <span className="num text-slate-500">
+                                  {quantity(item.quantity, item.unit)} × {money(item.unit_price)}
+                                </span>
+                                {item.note && (
+                                  <span className="text-slate-400"> · {item.note}</span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          e.description || '—'
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-right font-medium text-slate-900">
                         {money(e.amount)}
                       </td>
