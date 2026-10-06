@@ -439,3 +439,62 @@ be charged for 4 days". His formula says the opposite — `3050000 − 3050000/2
 is 18 days. The words match the documented policy (Q2/Q3: pay for the days
 attended), so that is what is built: `3050000/22*4 = 554 545`.
 
+
+---
+
+### Bosqich 8 — the landing page: say what the product now is, and work on a phone `[ ]`
+
+Owner, 2026-10-06: *"radix-crm.uz dagi landing pageni ham to'liq update qilish
+kerak hozirgi xolat bilan mos ravishda… mobil versiyaga ham qattiq e'tibor
+qarat, chunki ayni xozirgi mobil versiya yaxshi ishlamayapti."*
+
+**What the audit found** (Chrome via CDP against the live site, 2026-10-06):
+
+| Viewport | Page height | What it looks like |
+|---|---|---|
+| 390 × 844 (phone) | 12 900 px | ~15 screens; headings pass under the fixed bar; KPI tiles cramped, chart clipped; the closing panel runs off the right edge |
+| 844 × 390 (phone, landscape) | 25 800 px | **pinned scroll-jacking in a 390 px-tall window** — each scene is cut in half |
+| 768 × 1024 (tablet) | 25 800 px | same pinned scenes; `capabilities` alone is 4 320 px of scroll |
+
+The cause is one line: `useStaticScene()` gives the plain layout only below
+**640 px**, so every tablet and every phone held sideways still gets the
+desktop's pinned scroll story.
+
+**And the content is a year behind the product.** The page never mentions the
+15-day trial (self-signup is built and live — ADR-28), the Telegram parent bot
+(ADR-23/27, the main parent channel), online payment by Payme/Click (ADR-26),
+the absence credit with its document (ADR-19, PLAN 7.7), expense lines, where
+the money sits (ADR-17), Radix Intelligence (ADR-14), the Excel import, or the
+three UI languages (ADR-16). Nor does it say the one thing a cautious buyer
+most wants to hear: **unpaid months stop writing, never reading, and nothing is
+ever deleted** (invariant 11).
+
+- [ ] **8.1** Mobile-first layout. Pinned scenes only on a real desktop
+  window (`min-width: 1024px` **and** `min-height: 700px`); everything else
+  gets the static layout that already exists and is already tested. The
+  tablet-only "compact pinned" branch goes away — three code paths per
+  section become two.
+- [ ] **8.2** Navigation on a phone: the brand, one real call to action and
+  the menu; language moves inside the menu; a solid bar once scrolled; the
+  dark-section flip survives re-render; `100dvh` and safe-area padding.
+- [ ] **8.3** Product panels on a phone: two KPI columns instead of three,
+  no number wider than its tile, no clipped chart, no fake skeleton bar in
+  the window header, nothing past the right edge.
+- [ ] **8.4** Content caught up with the product (uz/ru/en in the same
+  change): the trial and self-signup as the first call to action, the
+  Telegram parent channel, online payment, the absence credit, money with a
+  location, Radix Intelligence, import, languages, and what suspension does.
+- [ ] **8.5** Pricing: all three terms the business actually sells —
+  monthly, 6 months −15 %, yearly −25 % (ADR-12). The third one needs
+  `/public/pricing` to return it, because the formula lives on the server and
+  the page is not allowed to have its own.
+- [ ] **8.6** Tests: the new sections, the trial link, the three-term
+  pricing, key parity across the three locales, prerender still ≥ 800 words
+  with the FAQ JSON-LD, and the mobile path rendering no pinned scene.
+- [ ] **8.7** Re-measure every viewport and record the numbers here.
+
+**Decision taken under standing permission.** The first call to action becomes
+**"start the 15-day trial"** (`/signup`), with "book a demo" beside it. The
+trial exists, it is the cheaper path for both sides, and the demo form stays
+for the kindergartens that want to be walked through it. Reversible in one
+line of content if the owner prefers sales-led.

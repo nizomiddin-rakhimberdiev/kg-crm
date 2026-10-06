@@ -1020,9 +1020,22 @@ Omitting the header keeps the old behaviour. That is deliberate — making it ma
 
 ---
 
+## 18b. Public (marketing) endpoints
+
+Anonymous, throttled, and read-only except for the lead form. They exist for the public site (`radix-crm.uz`) and nothing else; none of them touches tenant data.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/public/pricing?children=60` | What a kindergarten of that size pays, **in all three terms it can buy**: `monthly`, `semiannual` (−15 %), `annual` (−25 %), plus `trial_days`, `annual_saving` and the plan's shape (`included_children`, `overage_step_children`, `overage_step_price`). Light throttle (`public_pricing`) — a slider calls it as it moves |
+| POST | `/public/leads` | The demo request. Honeypot field, hard throttle, consent and policy version recorded; no PII in the logs |
+
+**The page is not allowed to compute a price.** Every number on the pricing screen comes from `subscriptions.pricing.quote()` with the discounts out of `TERM_DISCOUNTS` — the same table billing charges from (ADR-12). A formula copied into the frontend would be right on the day it was written and wrong on the day the price changed, and the first person to notice would be a customer holding an invoice that disagrees with the site.
+
+---
+
 ## 19. Platform Console (vendor-only)
 
-Module: `platform`. **Not part of the customer API surface** — separate auth path, every call audited (ADR-10, [02 §11.0](./02_Software_Architecture.md)). `POST /platform/auth/login` takes `email` + `password`; when the deployment runs with `PLATFORM_2FA_REQUIRED=true` (ADR-15, default off) a request without `code` answers `401 TOTP_REQUIRED` and the client resubmits with the Authenticator code.
+Module: `platform`. **Not part of the customer API surface** — separate auth path, every call audited (ADR-10, [02 §11.0](./02_Software_Architecture.md)). `POST /platform/auth/login` takes `email` + `password`; when the deployment runs with `PLATFORM_2FA_REQUIRED=true` (ADR-24, **default on** — it supersedes ADR-15's off, because single-use backup codes removed the lock-out risk) a request without `code` answers `401 TOTP_REQUIRED` and the client resubmits with the Authenticator code.
 
 | Method | Path | Description |
 |--------|------|-------------|

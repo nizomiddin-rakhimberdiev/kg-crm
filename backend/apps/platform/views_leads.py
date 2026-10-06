@@ -44,24 +44,33 @@ class PublicPricingView(APIView):
         if not 1 <= children <= 10_000:
             return Response({"detail": "children 1 va 10000 orasida bo'lishi kerak."}, status=400)
 
-        from decimal import Decimal
-
         from apps.subscriptions import pricing
+        from apps.subscriptions.models import TERM_DISCOUNTS, TERM_MONTHS, TRIAL_DAYS, PaymentTerm
         from apps.subscriptions.services import current_plan
 
         plan = current_plan()
-        monthly = pricing.quote(plan=plan, peak_children=children)
-        annual = pricing.quote(
-            plan=plan,
-            peak_children=children,
-            months=12,
-            discount_percent=Decimal("25"),
-        )
+        # Uchala muddat ham BITTA joydan: `TERM_DISCOUNTS` billingning
+        # o'zi ishlatadigan jadval (ADR-12). Bu yerda 25 % ni qo'lda
+        # yozish sahifani bir kun narxnomadan ajratib qo'yardi — va
+        # mijoz ekranda ko'rgan raqam bilan hisob-fakturadagi raqam
+        # boshqacha bo'lardi.
+        quotes = {
+            term: pricing.quote(
+                plan=plan,
+                peak_children=children,
+                months=TERM_MONTHS[term],
+                discount_percent=TERM_DISCOUNTS[term],
+            )
+            for term in (PaymentTerm.MONTHLY, PaymentTerm.SEMIANNUAL, PaymentTerm.ANNUAL)
+        }
+        annual = quotes[PaymentTerm.ANNUAL]
         return Response(
             {
                 "children": children,
                 "currency": plan.currency,
-                "monthly": monthly.as_dict(),
+                "trial_days": TRIAL_DAYS,
+                "monthly": quotes[PaymentTerm.MONTHLY].as_dict(),
+                "semiannual": quotes[PaymentTerm.SEMIANNUAL].as_dict(),
                 "annual": annual.as_dict(),
                 "annual_before_discount": f"{annual.base_amount + annual.overage_amount:.2f}",
                 "annual_saving": f"{annual.discount_amount:.2f}",

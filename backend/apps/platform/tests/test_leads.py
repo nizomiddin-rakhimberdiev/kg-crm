@@ -202,3 +202,23 @@ class TestPublicPricing:
         assert data["monthly"]["total_amount"] == monthly
         assert data["annual"]["total_amount"] == annual
         assert data["annual_saving"] == saving
+
+    @pytest.mark.parametrize(
+        ("children", "semiannual"),
+        [(50, "2040000.00"), (60, "2295000.00"), (101, "3570000.00")],
+    )
+    def test_also_quotes_the_six_month_term(self, children, semiannual):
+        """
+        Yarim yillik muddat ham sotiladi (−15 %, ADR-12) va sahifa uni
+        koʻrsatishi kerak. Raqam SHU YERDAN keladi: marketing sahifasi
+        oʻz formulasini yozsa, u bir kun billing bilan ajralib qolardi.
+        """
+        response = APIClient().get(f"/api/v1/public/pricing?children={children}")
+        data = response.json()["data"]
+        assert data["semiannual"]["total_amount"] == semiannual
+        assert data["semiannual"]["months"] == 6
+
+    def test_says_how_long_the_trial_is(self):
+        """Sinov muddati ham bitta joydan (`TRIAL_DAYS`) — sahifada ham, billingda ham."""
+        data = APIClient().get("/api/v1/public/pricing").json()["data"]
+        assert data["trial_days"] == 15
