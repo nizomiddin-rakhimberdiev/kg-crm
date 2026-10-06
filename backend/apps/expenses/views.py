@@ -60,16 +60,29 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
         )
 
     def perform_create(self, serializer: Any) -> None:
+        """
+        Chiqim DARHOL tasdiqlanadi (PLAN 7.2, egasining qarori 2026-10-06).
+
+        Ilgari u `pending` bo'lib turar va kimdir "Tasdiqlash" tugmasini
+        bosishini kutardi. Bog'chada esa chiqimni kiritadigan odam bilan
+        tasdiqlaydigan odam bir xil — ya'ni bu bosqich hech narsani
+        tekshirmaydi, faqat kiritilgan chiqim hisobotda ham, kassada ham
+        ko'rinmay turishiga olib keladi.
+
+        Pul harakati o'z joyida qoladi: uni avvalgidek `approve_expense`
+        yozadi (ADR-17), endi u yaratish bilan bir tranzaksiyada.
+        """
         user = request_user(self.request)
         category = serializer.validated_data["category"]
         serializer.save(organization=category.organization, branch=category.branch)
+        services.approve_expense(expense=serializer.instance, approved_by=user)
         audit.record(
             action="create",
             request=self.request._request,
             actor=user,
             entity_type="expense",
             entity_id=serializer.instance.id,
-            changes={"amount": str(serializer.instance.amount)},
+            changes={"amount": str(serializer.instance.amount), "status": "approved"},
         )
 
     def perform_update(self, serializer: Any) -> None:

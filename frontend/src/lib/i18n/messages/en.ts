@@ -1281,4 +1281,7 @@ export const messages: Record<string, string> = {
   'Toʻlov haqida xabar': 'Payment message',
   'Bundan oldin tayyor boʻlgan xabar navbatda turadi — tungi xabar yuborilmaydi.':
     'A message ready before this hour waits in the queue — nothing is sent at night.',
+  // Qabul sanasi (PLAN 7.1)
+  'Birinchi oy shu sanadan boshlab, ish kunlari boʻyicha hisoblanadi.':
+    'The first month is counted from this date, by working days.',
 }

@@ -122,18 +122,22 @@ class TestEndpoints:
             format="json",
         )
         assert created.status_code == 201
+        # Chiqim yaratilgan zahoti tasdiqlangan (PLAN 7.2): alohida
+        # "Tasdiqlash" qadami yo'q, shuning uchun uni qayta tasdiqlab
+        # bo'lmaydi ham.
+        assert created.json()["data"]["status"] == "approved"
         expense_id = created.json()["data"]["id"]
 
-        approved = client.post(reverse("v1:expense-approve", args=[expense_id]))
-        assert approved.status_code == 200
-        assert approved.json()["data"]["status"] == "approved"
+        again = client.post(reverse("v1:expense-approve", args=[expense_id]))
+        assert again.status_code == 422
 
     def test_status_cannot_be_set_directly(self, tenant_a, category):
         """
-        Mijoz `status` ni yozolmaydi.
+        Mijoz `status` ni yozolmaydi — uni server qo'yadi.
 
-        Aks holda har kim o'z chiqimini "tasdiqlangan" deb kiritib,
-        tasdiqlash oqimini chetlab o'tardi.
+        PLAN 7.2 dan keyin yangi chiqim baribir `approved` bo'ladi, lekin
+        maydonning o'zi mijozdan OLINMAYDI: aks holda ertaga
+        "rad etilgan" yoki "to'langan" deb kiritib yuborish mumkin bo'lardi.
         """
         response = tenant_a.client().post(
             reverse("v1:expense-list"),
@@ -146,7 +150,7 @@ class TestEndpoints:
             format="json",
         )
         assert response.status_code == 201
-        assert response.json()["data"]["status"] == "pending"
+        assert response.json()["data"]["status"] == "approved"
 
     def test_approved_expense_cannot_be_edited(self, tenant_a, expense):
         client = tenant_a.client()

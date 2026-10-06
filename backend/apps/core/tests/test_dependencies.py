@@ -72,18 +72,14 @@ def _imported() -> set[str]:
     return {
         name
         for name in found
-        if name not in LOCAL
-        and name not in sys.stdlib_module_names
-        and not name.startswith("_")
+        if name not in LOCAL and name not in sys.stdlib_module_names and not name.startswith("_")
     }
 
 
 def test_every_third_party_import_is_declared():
     declared = _declared()
     missing = sorted(
-        name
-        for name in _imported()
-        if PACKAGE_OF.get(name, name).lower() not in declared
+        name for name in _imported() if PACKAGE_OF.get(name, name).lower() not in declared
     )
     assert not missing, (
         f"Bu kutubxonalar kodda ishlatiladi, lekin requirements da yo'q: {missing}. "

@@ -17,6 +17,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { Pencil, Phone, Plus, Search, Trash2, Upload, Users } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { useBranchScope } from '@/app/providers/BranchProvider'
+import { DateInput } from '@/components/ui/DateInput'
 import { Pagination } from '@/components/ui/primitives'
 import { childrenApi, groupsApi, type ChildInput } from '@/features/children/api'
 import { ImportWizard } from '@/features/children/components/ImportWizard'
@@ -30,6 +31,7 @@ import { ApiError, type Child } from '@/lib/api/types'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { GroupOptions } from '@/features/children/components/GroupOptions'
 import { useCan } from '@/lib/rbac/useCan'
+import { today } from '@/lib/format'
 import { avatarTone, cn, initials } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
@@ -61,6 +63,13 @@ const EMPTY_FORM: ChildInput = {
   middle_name: '',
   date_of_birth: '',
   gender: 'male',
+  // Qabul sanasi — sukut bo'yicha BUGUN.
+  //
+  // Bu maydon formada yo'q edi, va natijasi pulda ko'rindi: `enrolled_on`
+  // bo'sh qolgani uchun birinchi oy proporsional hisoblanmasdi va oyning
+  // 25-kunida kelgan bolaga ham to'liq oy yozilardi (productionda 21
+  // boladan 21 tasi shunday edi). Sana BO'SH QOLDIRILMAYDI.
+  enrolled_on: today(),
 }
 
 export default function ChildrenPage() {
@@ -127,6 +136,11 @@ export default function ChildrenPage() {
       middle_name: child.middle_name ?? '',
       date_of_birth: child.date_of_birth,
       gender: child.gender,
+      // Mavjud sana saqlanadi. Bo'sh bo'lsa bo'sh qoladi va MAJBURIY
+      // emas: eski bolaga bugungi sanani jimgina yozib qo'yish uning
+      // birinchi oyini noto'g'ri proporsional qilardi — eskilarni
+      // `backfill_enrollment_dates` buyrug'i hal qiladi.
+      enrolled_on: child.enrolled_on ?? '',
     })
     setPrice(priceFromChild(child))
     setFormGroupId(child.current_group?.id ?? '')
@@ -488,6 +502,21 @@ export default function ChildrenPage() {
               {fieldErrors[key] && <p className="mt-1 text-xs text-red-600">{fieldErrors[key]}</p>}
             </div>
           ))}
+
+          <div>
+            <label htmlFor="enrolled_on" className="mb-1 block text-xs font-medium text-slate-600">
+              {t('Qabul sanasi')}
+            </label>
+            <DateInput
+              id="enrolled_on"
+              required={!editing}
+              value={form.enrolled_on ?? ''}
+              onChange={(iso) => setForm((p) => ({ ...p, enrolled_on: iso }))}
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              {t('Birinchi oy shu sanadan boshlab, ish kunlari boʻyicha hisoblanadi.')}
+            </p>
+          </div>
 
           <div>
             <label htmlFor="gender" className="mb-1 block text-xs font-medium text-slate-600">

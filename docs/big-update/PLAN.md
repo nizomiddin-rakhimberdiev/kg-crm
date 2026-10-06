@@ -382,3 +382,41 @@ o'zing qabul qil". Quyidagi jadval — kim va nima qaror qildi.
 - [x] 1-bo'limdagi mavjud funksiyalar buzilmadi
 - [x] 375px va 1280px kengliklarda tekshirildi (landing + 16 ilova sahifasi, haqiqiy login bilan)
 - [x] `CHANGELOG.md` yangilandi
+
+---
+
+### Bosqich 7 — mijoz so'rovlari (2026-10-06)
+
+Owner relayed seven requests from the first customers. Investigated before
+planning; two turned out to be bugs rather than features.
+
+- [ ] **7.1** Enrolment date on the add-child form — **a money bug**. The
+  backend prorates the first month correctly and every organization already
+  has `first_month_mode=prorated`, but the "Yangi bola" form has no
+  `enrolled_on` field, so every child is created with it empty and
+  `_is_first_period()` returns False. Production: **21 of 21** Paddington
+  children and 5 of 5 in the new org have no date — each was billed a full
+  month. Fix the form, plus a dry-run backfill for children with no invoice
+  yet.
+- [ ] **7.2** Expenses are created already approved (no pending step).
+- [ ] **7.3** Dashboard: one "Bank hisobi" card for transfer + terminal +
+  Payme/Click (cash stays its own), and the revenue-by-method breakdown from
+  Reports shown on the dashboard itself. Display only — `cash_account` keeps
+  its four pots (ADR-17).
+- [ ] **7.4** Guardians: a second phone number (optional, no empty input
+  hanging about), and the ability to edit a guardian — today only the link
+  (relation, primary) can be changed, never the name or phone.
+- [ ] **7.5** Expense line items: category, item, quantity (kg/dona), unit
+  price, optional note; "+ add" for more lines; running total. Shown as
+  `50 kg × 3 000 = 150 000`.
+- [ ] **7.6** Import template carries the organization's own groups and
+  tariffs as dropdowns, the way gender already works.
+- [ ] **7.7** Absence credit applies to the **current** month when that
+  invoice is still unpaid, and only carries forward when it is paid. Plus a
+  file attachment for the certificate or application.
+
+**Owner decision needed (7.1).** His words: a child arriving on the 25th "should
+be charged for 4 days". His formula says the opposite — `3050000 − 3050000/22*4`
+is 18 days. The words match the documented policy (Q2/Q3: pay for the days
+attended), so that is what is built: `3050000/22*4 = 554 545`.
+
