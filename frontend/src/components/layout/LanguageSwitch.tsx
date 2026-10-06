@@ -38,7 +38,10 @@ export function LanguageSwitch({
           onClick={() => setLocale(item.code as AppLocale)}
           className={cn(
             'rounded-md transition-colors',
-            size === 'md' ? 'min-h-[40px] px-3 text-sm' : 'px-2 py-1',
+            // Barmoq nishoni: `sm` ham 26 px emas, 36 px — ilovadagi
+            // panelda u yonidagi tugmalar bilan bir xil balandlikda
+            // turadi, public sahifalarda esa bosish oson bo'ladi.
+            size === 'md' ? 'min-h-[44px] px-3.5 text-sm' : 'min-h-[36px] px-2.5',
             item.code === locale
               ? 'bg-slate-900 text-white'
               : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900',

@@ -15,7 +15,7 @@ import { copy, type Locale } from '../content'
 export function ContactList({ locale, className = '' }: { locale: Locale; className?: string }) {
   const t = copy[locale].contact
   const row =
-    'inline-flex items-center gap-2.5 text-[15px] text-slate-700 transition hover:text-slate-950'
+    'inline-flex min-h-[44px] items-center gap-2.5 py-1 text-[15px] text-slate-700 transition hover:text-slate-950'
   return (
     <ul className={`grid gap-2.5 ${className}`}>
       {CONTACT.phones.map((phone) => (

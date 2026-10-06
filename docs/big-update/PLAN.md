@@ -518,6 +518,29 @@ ever deleted** (invariant 11).
   The Russian sideways scroll was live and pre-existing — a grid child without
   `min-w-0` whose longest Russian label set the column width.
 
+- [x] **8.8** Full UI/UX pass across devices and a copy edit in all three
+  languages (owner, 2026-10-06: *"men ancha mumcha kamchiliklarni sezdim…
+  anchagina imloviy xatoliklar"*). Audited with headless Chrome at 320, 360,
+  390, 414, 430, 768, 844×390, 1024, 1280 and 1920 — on `/uz`, `/ru`, `/en`,
+  both legal pages, `/signup`, `/login` and the 404 — for sideways scroll,
+  text under 12 px, WCAG contrast, tap-target size, clipped text, heading
+  structure and unnamed controls.
+
+  Found and fixed:
+
+  | What | Why it mattered |
+  |---|---|
+  | **The mobile menu only opened 48 px tall** | The panel was inside a header with `backdrop-filter`, and a filtered element becomes the containing block for its `fixed` children — so `top-[60px] bottom-0` measured against the 60 px bar, not the screen. The menu was effectively unusable on every phone |
+  | 12 px grey text at **2.62 : 1** | `slate-400` on white fails AA (4.5). Every hint, chart label and date on the page. Raised to `slate-500`/`600` on light surfaces; dark sections keep `slate-400`, which is 5.09 there |
+  | Debt pills and FAQ numbers below AA | `orik-700` on a tinted card is 4.25; the inactive FAQ number was 1.66 — practically invisible |
+  | Tap targets under 44 px | Module chips (32), the price slider (8 px track), footer contacts (23), the legal "back" link (20), language buttons (26) |
+  | Login page contradicted itself | It offered a self-signup trial *and* "contact us to open an account" — the second was written before ADR-28. Removed |
+  | No `h1` on login, three `h1`s on the 404 | Structure for screen readers |
+  | Copy | `Yog‘` written with the wrong apostrophe (U+2018 instead of ʻ); "400 000 soʻm / oy dan" → "Oyiga 400 000 soʻmdan"; "havolaning bosilishi roziligining yozuvi" → readable Uzbek; "spravka" → "shifokor maʼlumotnomasi"; "ledger"/"леджер" → "pul harakatlari jurnali"/"журнал операций"; English straight quotes → curly; and a dozen more across uz/ru/en |
+
+  Guarded by `features/landing/__tests__/quality.test.tsx`: no faint text on a
+  light surface, the menu stays outside the header, and the 44 px targets stay.
+
 **Decision taken under standing permission.** The first call to action becomes
 **"start the 15-day trial"** (`/signup`), with "book a demo" beside it. The
 trial exists, it is the cheaper path for both sides, and the demo form stays

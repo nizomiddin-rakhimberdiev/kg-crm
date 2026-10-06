@@ -114,9 +114,9 @@ export function Pricing({ locale }: { locale: Locale }) {
                 value={Math.min(300, children)}
                 onChange={(e) => pick(Number(e.target.value))}
                 onPointerDown={() => setTouched(true)}
-                className="mt-5 h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-brand-600"
+                className="mt-5 h-11 w-full cursor-pointer appearance-none bg-transparent accent-brand-600 [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-slate-200 [&::-webkit-slider-thumb]:mt-[-7px] [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-brand-600 [&::-webkit-slider-thumb]:shadow-[0_2px_6px_rgba(18,53,47,0.35)] [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-brand-600 [&::-moz-range-track]:h-2 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-slate-200"
               />
-              <div className="mt-1 flex justify-between text-[12px] text-slate-400">
+              <div className="-mt-1 flex justify-between text-[12px] text-slate-500">
                 <span>10</span>
                 <span>300</span>
               </div>
@@ -220,7 +220,7 @@ export function Pricing({ locale }: { locale: Locale }) {
                 {t.examplesTitle}
               </p>
               <table className="mt-4 hidden w-full text-[15px] sm:table">
-                <thead className="text-left text-[12px] uppercase tracking-wider text-slate-400">
+                <thead className="text-left text-[12px] uppercase tracking-wider text-slate-500">
                   <tr>
                     <th className="pb-2 font-medium">{t.childrenUnit}</th>
                     <th className="pb-2 text-right font-medium">{t.monthly}</th>

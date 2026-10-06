@@ -132,7 +132,7 @@ export function Workflow({ locale }: { locale: Locale }) {
               <motion.span className="num text-5xl font-bold tracking-tight text-tosh-900">
                 {label}
               </motion.span>
-              <span className="text-sm font-medium text-slate-400">{t.demo.today}</span>
+              <span className="text-sm font-medium text-slate-500">{t.demo.today}</span>
             </div>
             <ol className="relative mt-6 border-l-2 border-slate-200 pl-6">
               <motion.span

@@ -36,10 +36,15 @@ export function LegalPage({ locale, page }: { locale: Locale; page: 'privacy' | 
       <LegalSeo locale={locale} page={page} />
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex h-[72px] max-w-4xl items-center justify-between px-5">
-          <Link to={`/${locale}`}>
+          {/* Logotip havolasining nomi bo'lishi SHART: ekran o'quvchi
+              uchun u "havola" bo'lib qolardi. */}
+          <Link to={`/${locale}`} aria-label="Radix CRM">
             <Brand />
           </Link>
-          <Link className="text-sm font-semibold text-brand-700" to={`/${locale}`}>
+          <Link
+            className="inline-flex min-h-[44px] items-center text-sm font-semibold text-brand-700"
+            to={`/${locale}`}
+          >
             {t.back}
           </Link>
         </div>

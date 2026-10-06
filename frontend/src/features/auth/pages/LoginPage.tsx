@@ -161,6 +161,10 @@ export default function LoginPage() {
               Sarlavha matni yo'q: logotipning o'zida yozuv bor va uni
               takrorlash brendbuk qoidasiga zid. */}
           <Logo height={40} />
+          {/* Sahifada bitta `h1` bo'lishi kerak. Ko'rinishda logotip
+              yetarli, shuning uchun sarlavha ekran o'quvchi uchun
+              yashirin: brendbuk yozuvni takrorlashni taqiqlaydi. */}
+          <h1 className="sr-only">Radix CRM</h1>
           <p className="mt-3 text-sm text-tosh-500">{t('Bogʻcha boshqaruv tizimi')}</p>
         </div>
 
@@ -186,7 +190,7 @@ export default function LoginPage() {
                   autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+                  className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
                 />
               </div>
 
@@ -207,7 +211,7 @@ export default function LoginPage() {
                     setCodeAsked(null)
                     setStage({ kind: 'forgot' })
                   }}
-                  className="mt-1.5 text-xs text-tosh-500 underline-offset-2 hover:text-nihol-700 hover:underline"
+                  className="mt-1 inline-flex min-h-[40px] items-center text-[13px] font-medium text-nihol-700 underline-offset-2 hover:underline"
                 >
                   {t('Parolni unutdingizmi?')}
                 </button>
@@ -229,8 +233,11 @@ export default function LoginPage() {
 
               {/* Self-signup (PLAN 6.7): only where there is a subscription. */}
               {!env.isStandalone && (
-                <p className="text-center text-sm text-tosh-500">
-                  <Link to="/signup" className="hover:text-nihol-700 hover:underline">
+                <p className="text-center text-sm text-tosh-600">
+                  <Link
+                    to="/signup"
+                    className="inline-flex min-h-[40px] items-center font-semibold text-nihol-700 underline-offset-2 hover:underline"
+                  >
                     {t('Bogʻchangiz hali yoʻqmi? 15 kunlik sinovni boshlang')}
                   </Link>
                 </p>
@@ -299,13 +306,10 @@ export default function LoginPage() {
           )}
         </div>
 
-        {/* Akkauntni faqat vendor ochadi (ADR-10) — "sinovni boshlang"
-            havolasi endi hech qayerga olib bormasdi. O'rniga aloqa yo'li:
-            bu sahifaga adashib tushgan odam nima qilishini bilsin. */}
-        <p className="mt-6 text-center text-xs text-slate-400">
-          {t('Hisobingiz yoʻqmi? Bogʻchangiz uchun akkaunt ochish uchun biz bilan bogʻlaning.')}
-        </p>
-        <div className="mt-4 flex justify-center">
+        {/* Eski izoh ("akkaunt ochish uchun biz bilan bog'laning")
+            olib tashlandi: u yuqoridagi sinov havolasiga zid edi.
+            Self-signup (PLAN 6.7) bilan odam o'zi boshlaydi. */}
+        <div className="mt-6 flex justify-center">
           <LanguageSwitch size="md" />
         </div>
       </div>

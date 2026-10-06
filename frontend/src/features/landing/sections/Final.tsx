@@ -43,7 +43,7 @@ export function Final({ locale }: { locale: Locale }) {
               className="inline-flex min-h-[54px] items-center justify-center gap-1.5 rounded-xl px-7 text-base font-semibold text-slate-600 transition hover:text-slate-900"
             >
               {t.final.secondary}
-              <ArrowUpRight className="h-4 w-4 text-slate-400" />
+              <ArrowUpRight className="h-4 w-4 text-slate-500" />
             </a>
           </div>
         </Reveal>
@@ -83,20 +83,29 @@ export function Final({ locale }: { locale: Locale }) {
             <LegalLine locale={locale} />
           </div>
           <nav
-            className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600"
+            className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-600"
             aria-label="Footer"
           >
-            <Link to={`/${locale}/privacy`} className="hover:text-slate-950">
+            <Link
+              to={`/${locale}/privacy`}
+              className="inline-flex min-h-[44px] items-center hover:text-slate-950"
+            >
               {t.footer.privacy}
             </Link>
-            <Link to={`/${locale}/terms`} className="hover:text-slate-950">
+            <Link
+              to={`/${locale}/terms`}
+              className="inline-flex min-h-[44px] items-center hover:text-slate-950"
+            >
               {t.footer.terms}
             </Link>
-            <a href={env.loginUrl} className="hover:text-slate-950">
+            <a
+              href={env.loginUrl}
+              className="inline-flex min-h-[44px] items-center hover:text-slate-950"
+            >
               {t.footer.login}
             </a>
           </nav>
-          <p className="text-sm text-slate-400">{t.footer.copyright}</p>
+          <p className="text-sm text-slate-500">{t.footer.copyright}</p>
         </div>
       </footer>
     </section>

@@ -81,7 +81,7 @@ export default function SignupPage() {
   return (
     <div className="flex min-h-screen flex-col items-center bg-sut px-4 py-8">
       <div className="flex w-full max-w-md items-center justify-between">
-        <Logo height={32} />
+        <Logo height={36} />
         <LanguageSwitch />
       </div>
       <main className="mt-8 w-full max-w-md rounded-2xl border border-tosh-200 bg-white p-6 shadow-card">

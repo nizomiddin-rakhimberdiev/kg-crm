@@ -102,95 +102,109 @@ export function Nav({ locale }: { locale: Locale }) {
   ] as const
 
   return (
-    <header
-      data-dark={dark || undefined}
-      className={`group/nav fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow,backdrop-filter] duration-300 ${
-        dark
-          ? 'bg-ildiz-900/95 text-white backdrop-blur-md'
-          : scrolled || open
-            ? 'bg-white/95 shadow-[0_1px_0_0_rgba(27,36,33,0.06)] backdrop-blur-md'
-            : 'bg-transparent'
-      }`}
-    >
-      <div
-        className={`mx-auto flex max-w-[1280px] items-center justify-between gap-2 px-5 transition-[height] duration-300 lg:px-8 ${
-          scrolled ? 'h-[60px]' : 'h-[68px] lg:h-[76px]'
+    <>
+      <header
+        data-dark={dark || undefined}
+        className={`group/nav fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow,backdrop-filter] duration-300 ${
+          dark
+            ? 'bg-ildiz-900/95 text-white backdrop-blur-md'
+            : scrolled || open
+              ? 'bg-white/95 shadow-[0_1px_0_0_rgba(27,36,33,0.06)] backdrop-blur-md'
+              : 'bg-transparent'
         }`}
       >
-        {/*
+        <div
+          className={`mx-auto flex max-w-[1280px] items-center justify-between gap-2 px-5 transition-[height] duration-300 lg:px-8 ${
+            scrolled ? 'h-[60px]' : 'h-[68px] lg:h-[76px]'
+          }`}
+        >
+          {/*
           Logotipning rangi CSS bilan bo'yalmaydi — brendbuk buni taqiqlaydi.
           To'q bo'lim ustida B varianti (Nihol kvadrat, oq yozuv) chiziladi.
         */}
-        {/*
+          {/*
           Balandlik 34 px dan PAST tushmaydi: brendbuk qoidasi bo'yicha
           undan kichik joyda `Logo` yozuvni olib tashlab, faqat belgini
           chizadi (`MIN_FULL_HEIGHT`) — ya'ni 32 px da sayt nomsiz
           qolardi. Chaqiriq esa qisqaradi: ruscha "Попробовать"
           panelni 35 px ga toshirgan edi.
         */}
-        <Link to={basePath(locale)} aria-label="Radix CRM" className="shrink-0">
-          <Brand variant={dark ? 'dark' : 'light'} height={scrolled ? 34 : 36} />
-        </Link>
+          <Link to={basePath(locale)} aria-label="Radix CRM" className="shrink-0">
+            <Brand variant={dark ? 'dark' : 'light'} height={scrolled ? 34 : 36} />
+          </Link>
 
-        <nav aria-label={t.menu} className="hidden items-center gap-1 lg:flex">
-          {links.map(([href, label]) => (
-            <a
-              key={href}
-              href={href}
-              className="rounded-lg px-3 py-2 text-[15px] font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 group-data-[dark]/nav:text-slate-300 group-data-[dark]/nav:hover:bg-white/10 group-data-[dark]/nav:hover:text-white"
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
+          <nav aria-label={t.menu} className="hidden items-center gap-1 lg:flex">
+            {links.map(([href, label]) => (
+              <a
+                key={href}
+                href={href}
+                className="rounded-lg px-3 py-2 text-[15px] font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 group-data-[dark]/nav:text-slate-300 group-data-[dark]/nav:hover:bg-white/10 group-data-[dark]/nav:hover:text-white"
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
 
-        <div className="hidden items-center gap-2 lg:flex">
-          {/* Aloqa — header'da (PLAN 5.7): raqam keng ekranda matn
+          <div className="hidden items-center gap-2 lg:flex">
+            {/* Aloqa — header'da (PLAN 5.7): raqam keng ekranda matn
               bilan, torroqda belgi; Telegram har doim belgi. */}
-          <HeaderContacts locale={locale} />
-          <LangSwitch locale={locale} className="mr-2" />
-          <a
-            href={env.loginUrl}
-            className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-[15px] font-semibold text-slate-800 transition hover:bg-slate-100 group-data-[dark]/nav:text-white group-data-[dark]/nav:hover:bg-white/10"
-          >
-            {t.login}
-            <ArrowUpRight className="h-4 w-4 text-slate-400" />
-          </a>
-          <a
-            href={env.signupUrl}
-            className="inline-flex items-center rounded-lg bg-brand-600 px-4 py-2 text-[15px] font-semibold text-white transition hover:bg-brand-700"
-          >
-            {t.trial}
-          </a>
-        </div>
+            <HeaderContacts locale={locale} />
+            <LangSwitch locale={locale} className="mr-2" />
+            <a
+              href={env.loginUrl}
+              className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-[15px] font-semibold text-slate-800 transition hover:bg-slate-100 group-data-[dark]/nav:text-white group-data-[dark]/nav:hover:bg-white/10"
+            >
+              {t.login}
+              <ArrowUpRight className="h-4 w-4 text-slate-500" />
+            </a>
+            <a
+              href={env.signupUrl}
+              className="inline-flex items-center rounded-lg bg-brand-600 px-4 py-2 text-[15px] font-semibold text-white transition hover:bg-brand-700"
+            >
+              {t.trial}
+            </a>
+          </div>
 
-        {/* Telefon: bitta chaqiriq + menyu. Til menyuning ichida.
+          {/* Telefon: bitta chaqiriq + menyu. Til menyuning ichida.
             Yozuv qisqa shaklda — toʻlig'i 390 px panelni toshirardi. */}
-        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2 lg:hidden">
-          <a
-            href={env.signupUrl}
-            className="inline-flex h-10 min-w-0 max-w-[46vw] shrink items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap rounded-lg bg-brand-600 px-3 text-[14px] font-semibold text-white"
-          >
-            {t.trialShort}
-          </a>
-          <button
-            type="button"
-            aria-expanded={open}
-            aria-label={open ? t.close : t.menu}
-            onClick={() => setOpen((v) => !v)}
-            className="grid h-11 w-11 place-items-center rounded-lg text-slate-800 hover:bg-slate-100 group-data-[dark]/nav:text-white group-data-[dark]/nav:hover:bg-white/10"
-          >
-            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2 lg:hidden">
+            <a
+              href={env.signupUrl}
+              className="inline-flex h-10 min-w-0 max-w-[46vw] shrink items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap rounded-lg bg-brand-600 px-3 text-[14px] font-semibold text-white"
+            >
+              {t.trialShort}
+            </a>
+            <button
+              type="button"
+              aria-expanded={open}
+              aria-label={open ? t.close : t.menu}
+              onClick={() => setOpen((v) => !v)}
+              className="grid h-11 w-11 place-items-center rounded-lg text-slate-800 hover:bg-slate-100 group-data-[dark]/nav:text-white group-data-[dark]/nav:hover:bg-white/10"
+            >
+              {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
 
+      {/*
+        Menyu header'ning ICHIDA emas — bu tuzatish, ko'rinish emas.
+        Header'da `backdrop-filter: blur()` bor, filtrli element esa
+        `fixed` bolalari uchun yangi "containing block" yaratadi: panel
+        ekranga emas, 60 px balandlikdagi panelga nisbatan joylashib,
+        atigi 48 px bo'lib qolardi va menyuning deyarli hammasi
+        ko'rinmasdi. Birodar element sifatida u yana ekranga bog'lanadi.
+      */}
       {open && (
         // `100dvh` emas, `inset-0` + `top` — brauzer paneli yig'ilganda
         // menyu ekrandan chiqib ketmasin; pastda esa barmoq uchun joy
         // (`safe-area`), aks holda oxirgi havola iPhone chizig'i ostida
         // qolardi.
-        <div className="fixed inset-x-0 bottom-0 top-[60px] z-40 overflow-y-auto overscroll-contain bg-white px-5 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-4 lg:hidden">
+        <div
+          className={`fixed inset-x-0 bottom-0 z-40 overflow-y-auto overscroll-contain bg-white px-5 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-4 lg:hidden ${
+            scrolled ? 'top-[60px]' : 'top-[68px]'
+          }`}
+        >
           <nav className="grid gap-1" aria-label={t.menu}>
             {links.map(([href, label]) => (
               <a
@@ -222,7 +236,7 @@ export function Nav({ locale }: { locale: Locale }) {
               className="inline-flex min-h-[52px] items-center justify-center gap-1 rounded-xl text-base font-semibold text-slate-600"
             >
               {t.login}
-              <ArrowUpRight className="h-4 w-4 text-slate-400" />
+              <ArrowUpRight className="h-4 w-4 text-slate-500" />
             </a>
           </div>
           <LangSwitch locale={locale} className="mt-6 w-full justify-between" />
@@ -230,7 +244,7 @@ export function Nav({ locale }: { locale: Locale }) {
           <ContactList locale={locale} className="mt-8 border-t border-slate-100 px-1 pt-6" />
         </div>
       )}
-    </header>
+    </>
   )
 }
 

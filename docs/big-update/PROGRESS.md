@@ -1126,3 +1126,54 @@ Frontend: 251 tests (landing 21, was 14), tsc clean, eslint 0 errors,
 prettier clean, prerender 9 pages with the FAQ JSON-LD intact. Backend: the
 platform and subscriptions suites (232 tests), including two new ones for the
 six-month quote and the trial length.
+
+### 8.8 — the device sweep and the copy edit
+
+The owner looked at the new page and said two things: there were plenty of
+defects, and the spelling was off in several places. Both were right.
+
+**The worst find was the mobile menu.** It opened 48 px tall — a white strip
+under the bar with one and a half links in it. The cause is a CSS rule that is
+easy to miss: an element with `backdrop-filter` becomes the containing block
+for its `position: fixed` descendants. The menu was a child of the blurred
+header, so `top-[60px] bottom-0` resolved against the 60 px bar instead of the
+screen. Moving the panel out of `<header>` fixed it; a test now asserts it
+stays out.
+
+**Contrast was the widest problem.** Grey 12 px text (`slate-400` on white)
+measures 2.62 : 1 where AA asks for 4.5 — and that colour carried every hint,
+every chart label, every date and the "sample data" note. On light surfaces it
+is now `slate-500` (4.96) or `slate-600` where the surface is tinted; dark
+sections keep `slate-400`, which is 5.09 against `ildiz-900`. Two more: the
+debt pill (`orik-700` on a tinted card, 4.25) and the inactive FAQ number
+(1.66 — it was barely visible at all).
+
+**Tap targets.** Module chips were 32 px, the price slider's hit area was the
+8 px track itself, footer contact links 23 px, the legal page's "back" link
+20 px, the language buttons 26 px. All are 44 px now, and the slider has a
+24 px thumb on a 44 px rail.
+
+**Two things the audit could not see** but a screenshot could: the login page
+offered the 15-day trial *and*, four lines below, "contact us to open an
+account" — the second line predates ADR-28 and is now gone; and the signup
+page drew a logo at 32 px, below the brandbook's 34 px threshold, so it
+silently dropped the wordmark and the page opened with a bare mark.
+
+**Copy.** `Yog‘` was written with U+2018 instead of the Uzbek ʻ — invisible on
+screen, a different string to every lookup. "400 000 soʻm / oy dan" is not
+Uzbek; it is now "Oyiga 400 000 soʻmdan". "Havolaning bosilishi roziligining
+yozuvi" was unreadable. "Spravka" became "shifokor maʼlumotnomasi", "ledger"
+and "леджер" became "pul harakatlari jurnali" and "журнал операций" — the
+reader is a kindergarten director, not a developer. English straight quotes
+became curly ones, and "Move in from Excel" became "Import from Excel". About
+thirty edits in all, across the three languages.
+
+### Final numbers (headless Chrome, after)
+
+| Page | Sideways scroll | < 12 px | Contrast failures | Clipped |
+|---|---|---|---|---|
+| `/uz`, `/ru`, `/en` (320–1920) | 0 | 0 | 0 | 1–2 (sr-only / 8 px in a mock row) |
+| `/signup`, `/login` | 0 | 0 | 0 | 0 |
+| legal, 404 | 0 | 0 | 0 | 0 |
+
+Frontend: 254 tests, tsc clean, eslint 0 errors, prettier clean.

@@ -127,7 +127,13 @@ export function DeepDive({ locale }: { locale: Locale }) {
         <Frame demo={t.demo}>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
             {t.demo.kpis.map((kpi, i) => (
-              <div key={kpi.label} ref={i === 1 ? (el) => (targets.current[1] = el) : undefined}>
+              // Beshinchi katak telefonda yolg'iz qatorda qolardi —
+              // ikki ustunni egallaydi va panjara tugallangan ko'rinadi.
+              <div
+                key={kpi.label}
+                ref={i === 1 ? (el) => (targets.current[1] = el) : undefined}
+                className={i === 4 ? 'col-span-2 sm:col-span-1' : undefined}
+              >
                 <Kpi
                   kpi={kpi}
                   index={i}
@@ -150,7 +156,7 @@ export function DeepDive({ locale }: { locale: Locale }) {
             >
               <div className="flex items-center justify-between">
                 <p className="text-[12px] font-semibold text-slate-800">{t.demo.chartTitle}</p>
-                <span className="text-[12px] text-slate-400">{ui.last6}</span>
+                <span className="text-[12px] text-slate-500">{ui.last6}</span>
               </div>
               <Bars values={TREND} labels={t.demo.months} className="mt-2" />
             </div>
@@ -216,7 +222,7 @@ export function DeepDive({ locale }: { locale: Locale }) {
           <Reveal>{heading}</Reveal>
           <Reveal delay={0.08} className="mt-8">
             {panel}
-            <p className="mt-3 text-center text-[12px] text-slate-400">{t.demo.note}</p>
+            <p className="mt-3 text-center text-[12px] text-slate-500">{t.demo.note}</p>
           </Reveal>
         </div>
       </section>
@@ -235,7 +241,7 @@ export function DeepDive({ locale }: { locale: Locale }) {
             <span
               key={label}
               className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-semibold transition-colors duration-300 lg:px-3 ${
-                step === i ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-500'
+                step === i ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-600'
               }`}
             >
               {label}
@@ -245,7 +251,7 @@ export function DeepDive({ locale }: { locale: Locale }) {
         <div className="relative mx-auto mt-3 w-full max-w-5xl flex-1 px-5 lg:mt-4 lg:px-8">
           {panel}
         </div>
-        <p className="pb-3 text-center text-[12px] text-slate-400">{t.demo.note}</p>
+        <p className="pb-3 text-center text-[12px] text-slate-500">{t.demo.note}</p>
       </div>
     </section>
   )

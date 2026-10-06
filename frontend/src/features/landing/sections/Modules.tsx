@@ -131,7 +131,7 @@ export function PaymentsUi({ local, locale }: UiProps) {
       <div className="grid grid-cols-3 gap-2">
         {[
           [L.paid, paid, 'text-emerald-700'],
-          [L.wait, wait, 'text-amber-700'],
+          [L.wait, wait, 'text-amber-800'],
           [L.debt, debt, 'text-red-700'],
         ].map(([label, value, cls]) => (
           <div key={String(label)} className="rounded-xl border border-slate-200/80 p-2.5">
@@ -174,7 +174,7 @@ export function AttendanceUi({ local, locale }: UiProps) {
                   ? 'bg-emerald-500 text-white'
                   : i === 19 && present >= 19
                     ? 'bg-red-100 text-red-600'
-                    : 'bg-slate-100 text-slate-400'
+                    : 'bg-slate-100 text-slate-500'
               }`}
             >
               {i < present ? (
@@ -414,7 +414,7 @@ export function Modules({ locale }: { locale: Locale }) {
                 role="tab"
                 aria-selected={i === picked}
                 onClick={() => setPicked(i)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-[13px] font-semibold transition-colors ${
+                className={`inline-flex min-h-[44px] shrink-0 items-center rounded-full px-4 text-[13px] font-semibold transition-colors ${
                   i === picked
                     ? 'bg-slate-950 text-white'
                     : 'bg-white text-slate-600 ring-1 ring-slate-200'
@@ -469,7 +469,7 @@ export function Modules({ locale }: { locale: Locale }) {
                     <div className="mt-4 rounded-xl border border-slate-200/80 bg-slate-50/60 p-3">
                       <Ui local={one} locale={locale} />
                     </div>
-                    <p className="mt-3 text-[12px] text-slate-400">{item.caption}</p>
+                    <p className="mt-3 text-[12px] text-slate-500">{item.caption}</p>
                   </article>
                 </Reveal>
               )
@@ -509,7 +509,7 @@ export function Modules({ locale }: { locale: Locale }) {
                   >
                     <div className="flex items-center gap-3">
                       <span
-                        className={`text-[12px] font-bold tabular-nums ${on ? 'text-brand-700' : 'text-slate-400'}`}
+                        className={`text-[12px] font-bold tabular-nums ${on ? 'text-brand-700' : 'text-slate-500'}`}
                       >
                         0{i + 1}
                       </span>
@@ -545,7 +545,7 @@ export function Modules({ locale }: { locale: Locale }) {
             >
               <Ui local={local} locale={locale} />
             </Frame>
-            <p className="mt-3 text-center text-[12px] text-slate-400">{item.caption}</p>
+            <p className="mt-3 text-center text-[12px] text-slate-500">{item.caption}</p>
           </div>
         </div>
       </div>

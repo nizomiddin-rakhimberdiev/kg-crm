@@ -216,8 +216,6 @@ export const messages: Record<string, string> = {
   'Hisob-fakturasiz — pul bolaning balansiga tushadi':
     'Без счёта — деньги пойдут на баланс ребёнка',
   'Hisobingiz maʼlumotlari va xavfsizlik.': 'Данные вашей учётной записи и безопасность.',
-  'Hisobingiz yoʻqmi? Bogʻchangiz uchun akkaunt ochish uchun biz bilan bogʻlaning.':
-    'Нет учётной записи? Свяжитесь с нами, чтобы открыть аккаунт для вашего сада.',
   Hisoblanadi: 'Начисляется',
   Hisoblangan: 'Начислено',
   'Hisoblanmoqda…': 'Формируется…',
@@ -248,7 +246,7 @@ export const messages: Record<string, string> = {
   'Spravka yoki ariza (ixtiyoriy)': 'Справка или заявление (необязательно)',
   'PDF yoki rasm, 10 MB gacha': 'PDF или изображение, до 10 МБ',
   'Hujjatni yuklab olish': 'Скачать документ',
-  'Biriktirish': 'Прикрепить',
+  Biriktirish: 'Прикрепить',
   'Hujjat biriktirish': 'Прикрепить документ',
   'Hujjatli kelmaslik yoʻq': 'Документированных пропусков нет',
   'Identifikator: {slug} · Roʻyxatdan oʻtgan:': 'Идентификатор: {slug} · Зарегистрирован:',

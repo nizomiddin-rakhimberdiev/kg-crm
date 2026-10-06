@@ -186,7 +186,7 @@ export function Hero({ locale }: { locale: Locale }) {
               </div>
             </div>
           </motion.div>
-          <p className="mt-4 text-center text-[12px] text-slate-400 sm:mt-14 lg:text-right">
+          <p className="mt-4 text-center text-[12px] text-slate-500 sm:mt-14 lg:text-right">
             {t.demo.note}
           </p>
         </div>
@@ -194,7 +194,7 @@ export function Hero({ locale }: { locale: Locale }) {
 
       <a
         href="#problem"
-        className="absolute bottom-5 left-1/2 hidden -translate-x-1/2 items-center gap-1.5 text-xs font-medium text-slate-400 transition hover:text-slate-700 lg:inline-flex"
+        className="absolute bottom-5 left-1/2 hidden -translate-x-1/2 items-center gap-1.5 text-xs font-medium text-slate-500 transition hover:text-slate-700 lg:inline-flex"
       >
         {t.hero.scroll}
         <ArrowDown className="rx-bob h-3.5 w-3.5" />

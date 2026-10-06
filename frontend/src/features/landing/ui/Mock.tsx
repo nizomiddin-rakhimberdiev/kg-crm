@@ -91,7 +91,7 @@ export function Frame({
               {demo.sidebar[active] ?? demo.sidebar[0]}
             </p>
             <div className="flex items-center gap-2">
-              <span className="hidden whitespace-nowrap text-[12px] text-slate-400 sm:block">
+              <span className="hidden whitespace-nowrap text-[12px] text-slate-500 sm:block">
                 {demo.today}
               </span>
               <span className="grid h-6 w-6 place-items-center rounded-full bg-amber-100 text-[12px] font-bold text-amber-800">
@@ -148,7 +148,7 @@ export function Kpi({
           "120 / 128 belgilangan" bir qatorga sig'masdi va "belgila…"
           bo'lib kesilardi — ya'ni raqamning ma'nosi yo'qolardi. */}
       <p className="line-clamp-2 text-[12px] font-medium leading-4 text-slate-600">{kpi.label}</p>
-      <p className="mt-0.5 line-clamp-2 text-[12px] leading-4 text-slate-400">{kpi.hint}</p>
+      <p className="mt-0.5 line-clamp-2 text-[12px] leading-4 text-slate-500">{kpi.hint}</p>
     </div>
   )
 }
@@ -180,7 +180,7 @@ export function Bars({
                 }}
               />
             </div>
-            <span className="text-[12px] text-slate-400">{labels[i]}</span>
+            <span className="text-[12px] text-slate-500">{labels[i]}</span>
           </div>
         ))}
       </div>
@@ -197,8 +197,8 @@ export function Pill({
 }) {
   const cls = {
     ok: 'bg-nihol-50 text-nihol-700',
-    wait: 'bg-orik-100 text-orik-800',
-    debt: 'bg-orik-50 text-orik-700',
+    wait: 'bg-orik-100 text-orik-900',
+    debt: 'bg-orik-50 text-orik-900',
     neutral: 'bg-tosh-100 text-tosh-600',
   }[tone]
   return (
@@ -238,7 +238,7 @@ export function Row({
       )}
       <div className="min-w-0 flex-1">
         <p className="truncate text-[12px] font-semibold text-slate-800">{name}</p>
-        {meta && <p className="truncate text-[12px] text-slate-400">{meta}</p>}
+        {meta && <p className="truncate text-[12px] text-slate-500">{meta}</p>}
       </div>
       {right}
     </div>

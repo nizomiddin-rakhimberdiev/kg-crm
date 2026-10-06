@@ -27,7 +27,7 @@ export function PasswordInput({ className, ...props }: Props) {
         {...props}
         type={shown ? 'text' : 'password'}
         className={cn(
-          'w-full rounded-lg border border-tosh-200 px-3 py-2 pr-10 text-sm outline-none focus:border-nihol-500',
+          'h-11 w-full rounded-lg border border-tosh-200 px-3 pr-11 text-sm outline-none focus:border-nihol-500',
           className,
         )}
       />
@@ -40,7 +40,7 @@ export function PasswordInput({ className, ...props }: Props) {
         tabIndex={-1}
         aria-label={shown ? t('Parolni yashirish') : t('Parolni koʻrsatish')}
         title={shown ? t('Parolni yashirish') : t('Parolni koʻrsatish')}
-        className="absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-tosh-400 hover:bg-tosh-50 hover:text-tosh-700"
+        className="absolute right-0.5 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-md text-tosh-500 hover:bg-tosh-50 hover:text-tosh-700"
       >
         {shown ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
       </button>

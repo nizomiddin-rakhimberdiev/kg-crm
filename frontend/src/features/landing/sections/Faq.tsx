@@ -53,14 +53,14 @@ export function Faq({ locale }: { locale: Locale }) {
             >
               <span className="flex items-center gap-3">
                 <span
-                  className={`hidden text-[12px] tabular-nums sm:block ${on ? 'text-brand-700' : 'text-slate-300'}`}
+                  className={`hidden text-[12px] tabular-nums sm:block ${on ? 'text-brand-700' : 'text-slate-500'}`}
                 >
                   0{i + 1}
                 </span>
                 {item.q}
               </span>
               <Plus
-                className={`h-5 w-5 shrink-0 text-slate-400 transition-transform duration-300 ${on ? 'rotate-45' : ''}`}
+                className={`h-5 w-5 shrink-0 text-slate-500 transition-transform duration-300 ${on ? 'rotate-45' : ''}`}
               />
             </button>
             <div

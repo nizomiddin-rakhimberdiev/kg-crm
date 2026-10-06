@@ -314,14 +314,14 @@ const uz: Copy = {
   },
   hero: {
     eyebrow: 'Xususiy bogʻchalar uchun boshqaruv platformasi',
-    title: 'Bogʻchangizni boshqarishning barchasi — bitta tizimda.',
+    title: 'Bogʻcha boshqaruvi uchun kerak boʻlgan hamma narsa — bitta tizimda.',
     subtitle:
       'Bolalar, toʻlovlar, davomat, xodimlar va moliyaviy nazorat — hammasi bitta tizimda. Ota-ona esa balansni Telegramʼdan koʻradi.',
     trial: '15 kun bepul sinab koʻrish',
     cta: 'Demo olish',
     secondary: 'Radix qanday ishlaydi',
     trustLine: 'Karta kerak emas · 15 kun · istalgan payt toʻxtatasiz',
-    priceFrom: '400 000 soʻm / oy dan',
+    priceFrom: 'Oyiga 400 000 soʻmdan',
     scroll: 'Pastga',
   },
   demo: {
@@ -404,7 +404,7 @@ const uz: Copy = {
       {
         id: 'payments',
         title: 'Toʻlovlar va qarzdorlik',
-        text: 'Hisob-faktura, toʻlov, qoldiq. Qarzdorlar roʻyxati ledgerʼdan hisoblanadi — u hech qachon haqiqatdan ajralmaydi.',
+        text: 'Hisob-faktura, toʻlov, qoldiq. Qarzdorlar roʻyxati pul harakatlari jurnalidan hisoblanadi — u hech qachon haqiqatdan ajralmaydi.',
         caption: 'Toʻlangan → kutilmoqda → qarz',
       },
       {
@@ -442,7 +442,7 @@ const uz: Copy = {
   parents: {
     eyebrow: 'Ota-onalar uchun',
     title: 'Ota-ona balansni telefonidan koʻradi — qoʻngʻiroqsiz.',
-    text: 'Asosiy kanal — Telegram bot. Ilova oʻrnatish shart emas, bogʻchaga soʻrov bilan qoʻngʻiroq kamayadi.',
+    text: 'Asosiy kanal — Telegram bot. Ilova oʻrnatish shart emas, bogʻchaga «qancha qarzim bor?» deb qilinadigan qoʻngʻiroqlar esa kamayadi.',
     items: [
       {
         title: 'Telegram bot',
@@ -454,18 +454,18 @@ const uz: Copy = {
       },
       {
         title: 'Ulanish — taklif havolasi orqali',
-        text: 'Vasiy botni oʻzi ishga tushiradi; havolaning bosilishi roziligining yozuvi. Kim ulanmaganini roʻyxatda koʻrib turasiz.',
+        text: 'Vasiy botni oʻzi ishga tushiradi — havolani bosgani roziligining yozuvi boʻlib qoladi. Kim hali ulanmaganini roʻyxatda koʻrib turasiz.',
       },
       {
         title: 'SMS — ixtiyoriy',
-        text: 'Telegram xabarlari bepul. SMS kerak boʻlsa, oʻz gateway hisobingiz ulanadi va har bir xabar hisoblanadi.',
+        text: 'Telegram xabarlari bepul. SMS kerak boʻlsa, oʻz SMS-provayderingiz hisobi ulanadi va har bir xabar alohida hisoblanadi.',
       },
     ],
-    note: 'Bola kelmaganligi haqidagi xabar — standart holatda oʻchiq. Yoqish yoki yoqmaslik bogʻchaning qarori.',
+    note: 'Bola kelmagani haqidagi xabar — standart holatda oʻchiq. Uni yoqish yoki yoqmaslik bogʻchaning qarori.',
   },
   intelligence: {
     eyebrow: 'Radix AI',
-    title: 'Toʻlov kechikishini oldindan aytadi — va nega deganiga javob beradi.',
+    title: 'Toʻlov kechikishini oldindan aytadi — va buning sababini koʻrsatadi.',
     text: 'Har bir ogohlantirish qoidadan chiqadi va dalilini yonida olib yuradi: qaysi bolalar, qancha kun, qancha summa. Bosilsa — oʻsha roʻyxat ochiladi.',
     points: [
       'Qoida asosida, taxmin emas — bir xil maʼlumot har doim bir xil javob beradi',
@@ -479,7 +479,7 @@ const uz: Copy = {
     items: [
       {
         title: 'Kelmagan kunlar uchun qayta hisob',
-        text: 'Spravka yoki ariza asosida — davomat jadvalidan emas. Hujjatning oʻzi biriktiriladi va shu oy toʻlanmagan boʻlsa summadan darhol ayriladi.',
+        text: 'Shifokor maʼlumotnomasi yoki ota-ona arizasi asosida — davomat jadvalidan emas. Hujjatning oʻzi biriktiriladi va shu oy toʻlanmagan boʻlsa, summadan darhol ayriladi.',
       },
       {
         title: 'Excelʼdan koʻchirish',
@@ -514,7 +514,7 @@ const uz: Copy = {
   roles: {
     eyebrow: 'Radix kimlar uchun?',
     title: 'Har bir rol oʻziga kerak narsani koʻradi.',
-    text: 'Ruxsatlar rollarga asoslangan va tashkilot egasi tomonidan boshqariladi.',
+    text: 'Ruxsatlar rollar boʻyicha beriladi, rollarni esa bogʻcha egasi belgilaydi.',
     items: [
       {
         id: 'owner',
@@ -590,7 +590,7 @@ const uz: Copy = {
   },
   pricing: {
     eyebrow: 'Narxlar',
-    title: '50 tagacha bola uchun — 400 000 soʻm / oy.',
+    title: '50 tagacha bola uchun — oyiga 400 000 soʻm.',
     text: 'Narx faqat bolalar soniga bogʻliq. Filiallar va xodimlar soni cheklanmagan.',
     childrenLabel: 'Bolalar soni',
     childrenUnit: 'bola',
@@ -617,7 +617,7 @@ const uz: Copy = {
       { children: 80, monthly: 550_000 },
     ],
     annualFormula: 'Yillik = oylik × 12 × 0,75',
-    first3: 'Ilk 3 oy — amaldagi narx.',
+    first3: 'Ilk 3 oy — roʻyxatdan oʻtgan kuningizdagi narx boʻyicha.',
     trial: '15 kun bepul',
     trialNote: 'Karta kerak emas. Sinov tugagach toʻlovga oʻtasiz yoki shunchaki toʻxtatasiz.',
     safety:
@@ -658,7 +658,7 @@ const uz: Copy = {
         a: 'Oylik — chegirmasiz; 6 oylik — 15 % chegirma; yillik — 25 % chegirma. Narx sahifadagi kalkulyatorda hisoblanadi va hisob-faktura ham aynan shu formuladan chiqadi.',
       },
       {
-        q: 'Mavjud bolalarimizni qanday koʻchiramiz?',
+        q: 'Hozirgi bolalar roʻyxatini qanday koʻchiramiz?',
         a: 'Excel shablonini yuklab olasiz — u sizning guruhlaringiz va tariflaringiz bilan keladi. Qarzdorlik ustuni ham bor, shuning uchun eski qarz birinchi kundanoq qarzdorlar roʻyxatida koʻrinadi. Koʻchirishda biz yordam beramiz.',
       },
       {
@@ -690,7 +690,7 @@ const uz: Copy = {
   lead: {
     eyebrow: 'Demo',
     title: 'Radix CRM bilan ishlashni boshlang.',
-    text: 'Bogʻchangiz boshqaruvini soddalashtirish uchun biz bilan bogʻlaning.',
+    text: 'Bogʻchangiz boshqaruvini soddalashtirishni birga rejalashtiramiz — bogʻlaning.',
     assurance:
       'Maʼlumotlaringiz faqat shu suhbat uchun ishlatiladi — reklama roʻyxatiga qoʻshilmaydi va boshqalarga berilmaydi. Kutishni xohlamasangiz, 15 kunlik sinovni hoziroq oʻzingiz boshlashingiz mumkin.',
     name: 'Ism',
@@ -773,7 +773,7 @@ const uz: Copy = {
     inventory: {
       rice: 'Guruch',
       flour: 'Un',
-      oil: 'Yog‘',
+      oil: 'Yogʻ',
       sugar: 'Shakar',
       food: 'Oziq-ovqat',
       utilities: 'Kommunal',
@@ -898,8 +898,7 @@ const ru: Copy = {
   },
   problem: {
     eyebrow: 'Знакомая ситуация',
-    title:
-      'То, что руководитель должен контролировать, не должно быть разбросано по разным местам.',
+    title: 'То, что руководитель должен контролировать, не должно лежать в десяти разных местах.',
     text: 'Сообщение в Telegram, таблица в Excel, запись в тетради, чек в кассе. Каждое по отдельности верно — но общей картины нет.',
     fragments: [
       {
@@ -956,7 +955,7 @@ const ru: Copy = {
       {
         id: 'payments',
         title: 'Оплаты и задолженность',
-        text: 'Счёт, оплата, остаток. Список должников считается из леджера — он никогда не расходится с реальностью.',
+        text: 'Счёт, оплата, остаток. Список должников считается из журнала операций — он никогда не расходится с реальностью.',
         caption: 'Оплачено → ожидает → долг',
       },
       {
@@ -1010,7 +1009,7 @@ const ru: Copy = {
       },
       {
         title: 'SMS — по желанию',
-        text: 'Сообщения в Telegram бесплатны. Если нужен SMS, подключается ваш собственный шлюз, и каждое сообщение считается.',
+        text: 'Сообщения в Telegram бесплатны. Если нужны SMS — подключаем ваш собственный шлюз, и каждое сообщение считается отдельно.',
       },
     ],
     note: 'Уведомление «ребёнка сегодня нет» по умолчанию выключено. Включать его или нет — решает сад.',
@@ -1039,7 +1038,7 @@ const ru: Copy = {
       },
       {
         title: 'Где лежат деньги',
-        text: 'Касса, банк, терминал, Payme/Click — каждый свой счёт. Остаток не хранится, а всегда считается из движений.',
+        text: 'Касса, банк, терминал, Payme/Click — каждый отдельным счётом. Остаток не хранится, а всегда считается из движений.',
       },
       {
         title: 'Строки расхода',
@@ -1066,7 +1065,7 @@ const ru: Copy = {
   roles: {
     eyebrow: 'Для кого Radix?',
     title: 'Каждая роль видит то, что нужно именно ей.',
-    text: 'Права основаны на ролях и управляются владельцем организации.',
+    text: 'Права выдаются по ролям, а роли настраивает владелец сада.',
     items: [
       {
         id: 'owner',
@@ -1089,7 +1088,7 @@ const ru: Copy = {
       {
         id: 'admin',
         title: 'Администратор',
-        text: 'Упорядоченно ведите детей, группы и посещаемость.',
+        text: 'Ведите списки детей, группы и посещаемость в порядке.',
         focus: 'Список, профиль, зачисление в группу, посещаемость',
       },
     ],
@@ -1169,7 +1168,7 @@ const ru: Copy = {
       { children: 80, monthly: 550_000 },
     ],
     annualFormula: 'Год = месяц × 12 × 0,75',
-    first3: 'Первые 3 месяца — по действующей цене.',
+    first3: 'Первые 3 месяца — по цене на день подписки.',
     trial: '15 дней бесплатно',
     trialNote:
       'Карта не нужна. После пробного периода вы переходите на оплату или просто останавливаетесь.',
@@ -1216,7 +1215,7 @@ const ru: Copy = {
       },
       {
         q: 'Как это работает для родителей?',
-        a: 'Через бот в Telegram: баланс, счета, квитанции и кнопка оплаты. Приложение ставить не нужно, сообщения бесплатны. Нужен SMS — подключается ваш собственный шлюз.',
+        a: 'Через бот в Telegram: баланс, счета, квитанции и кнопка оплаты. Приложение ставить не нужно, сообщения бесплатны. Нужны SMS — подключаем ваш собственный шлюз.',
       },
       {
         q: 'Родитель может оплатить онлайн?',
@@ -1444,7 +1443,7 @@ const en: Copy = {
   problem: {
     eyebrow: 'A familiar picture',
     title: 'What a director has to keep track of shouldn’t be scattered across ten places.',
-    text: 'A message in Telegram, a table in Excel, a note in a ledger book, a receipt at the till. Each one is correct — but there is no overall picture.',
+    text: 'A message in Telegram, a table in Excel, a note in a notebook, a receipt at the till. Each one is correct — but there is no overall picture.',
     fragments: [
       {
         kind: 'chat',
@@ -1538,11 +1537,11 @@ const en: Copy = {
   parents: {
     eyebrow: 'For parents',
     title: 'Parents see the balance on their phone — no phone calls.',
-    text: 'The main channel is a Telegram bot. Nothing to install, and far fewer "how much do I owe?" calls to the office.',
+    text: 'The main channel is a Telegram bot. Nothing to install, and far fewer “how much do I owe?” calls to the office.',
     items: [
       {
         title: 'Telegram bot',
-        text: 'Balance, invoices, receipts and a "pay" button — in the parent’s own language (Uzbek, Russian, English).',
+        text: 'Balance, invoices, receipts and a “pay” button — in the parent’s own language (Uzbek, Russian, English).',
       },
       {
         title: 'Online payment — Payme and Click',
@@ -1554,18 +1553,18 @@ const en: Copy = {
       },
       {
         title: 'SMS — optional',
-        text: 'Telegram messages are free. If you want SMS, your own gateway is connected and every message is counted.',
+        text: 'Telegram messages are free. If you want SMS, we connect your own gateway and every message is counted.',
       },
     ],
-    note: 'The "your child is absent today" message is off by default. Whether to turn it on is the kindergarten’s call.',
+    note: 'The “your child is absent today” message is off by default. Whether to turn it on is the kindergarten’s call.',
   },
   intelligence: {
     eyebrow: 'Radix AI',
-    title: 'It warns about late payment — and answers "why".',
+    title: 'It warns about late payment — and answers “why”.',
     text: 'Every warning comes from a rule and carries its evidence: which children, how many days, how much money. One tap opens that exact list.',
     points: [
       'Rules, not guesswork — the same data always gives the same answer',
-      'Every finding has a "Why?": you can see where the numbers came from',
+      'Every finding has a “Why?”: you can see where the numbers came from',
       'Computed overnight; the answer is on the screen by morning',
     ],
   },
@@ -1578,7 +1577,7 @@ const en: Copy = {
         text: 'From a certificate or an application, never from the attendance grid. The document itself is attached, and if the month is unpaid the amount drops straight away.',
       },
       {
-        title: 'Move in from Excel',
+        title: 'Import from Excel',
         text: 'The template downloads with your own groups and tariffs. It has a debt column too, so an old balance shows up among the debtors from day one.',
       },
       {
@@ -1587,7 +1586,7 @@ const en: Copy = {
       },
       {
         title: 'Expense lines',
-        text: 'Potatoes, 50 kg, 3 000 → 150 000. Not "market — 600 000": six months later you can still see what was bought.',
+        text: 'Potatoes, 50 kg, 3 000 → 150 000. Not “market — 600 000”: six months later you can still see what was bought.',
       },
       {
         title: 'An audit log that cannot be edited',
@@ -1603,7 +1602,7 @@ const en: Copy = {
       },
       {
         title: 'Branches',
-        text: 'One subscription, as many branches as you like. The owner sees them together, staff see only their own.',
+        text: 'One subscription, as many branches as you like. The owner sees them together, staff see only theirs.',
       },
     ],
   },
@@ -1713,7 +1712,7 @@ const en: Copy = {
       { children: 80, monthly: 550_000 },
     ],
     annualFormula: 'Annual = monthly × 12 × 0.75',
-    first3: 'First 3 months — at the current price.',
+    first3: 'First 3 months — at the price on the day you sign up.',
     trial: '15 days free',
     trialNote: 'No card. When the trial ends you either start paying or simply stop.',
     safety:
@@ -1747,7 +1746,7 @@ const en: Copy = {
       },
       {
         q: 'What does it cost?',
-        a: '400 000 UZS a month for up to 50 children. Every started 10 children adds 50 000: 60 children — 450 000, 70 children — 500 000. Branches and staff do not change the price.',
+        a: '400 000 UZS a month for up to 50 children. Each further 10 children, or part of them, adds 50 000: 60 children — 450 000, 70 children — 500 000. Branches and staff do not change the price.',
       },
       {
         q: 'Which payment terms are there?',
@@ -1759,7 +1758,7 @@ const en: Copy = {
       },
       {
         q: 'How does it work for parents?',
-        a: 'Through a Telegram bot: balance, invoices, receipts and a pay button. Nothing to install and the messages are free. If you want SMS, your own gateway is connected.',
+        a: 'Through a Telegram bot: balance, invoices, receipts and a pay button. Nothing to install and the messages are free. If you want SMS, we connect your own gateway.',
       },
       {
         q: 'Can a parent pay online?',
@@ -1788,7 +1787,7 @@ const en: Copy = {
     title: 'Start working with Radix CRM.',
     text: 'Get in touch to simplify the management of your kindergarten.',
     assurance:
-      'Your details are used for this conversation only — no mailing list, nothing passed on. And you do not have to wait: the 15-day trial can be started by yourself.',
+      'Your details are used for this conversation only — no mailing list, nothing passed on. And you do not have to wait: you can start the 15-day trial yourself.',
     name: 'Name',
     phone: 'Phone number',
     kindergarten: 'Kindergarten name',

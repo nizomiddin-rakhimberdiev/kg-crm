@@ -171,7 +171,7 @@ export function Lead({ locale }: { locale: Locale }) {
                 <label className="mt-5 flex cursor-pointer items-start gap-3 text-sm leading-5 text-slate-600">
                   <input
                     required
-                    className="mt-0.5 h-5 w-5 shrink-0 rounded border-slate-300 accent-brand-600"
+                    className="mt-0.5 h-[22px] w-[22px] shrink-0 rounded border-slate-300 accent-brand-600"
                     type="checkbox"
                     name="consent"
                   />

@@ -182,7 +182,7 @@ function Panel({
           <RadixMark size={24} />
           <span className="text-[12px] font-semibold text-slate-800">{t.demo.org}</span>
         </div>
-        <span className="text-[12px] text-slate-400">{t.demo.today}</span>
+        <span className="text-[12px] text-slate-500">{t.demo.today}</span>
       </div>
       <div
         className={`mt-3 grid gap-2 ${fluid ? 'grid-cols-2 sm:grid-cols-4' : factor < 1 ? 'grid-cols-2' : 'grid-cols-4'}`}
@@ -219,11 +219,11 @@ function Panel({
         {t.oneSystem.links.map(([cause, effect]) => (
           <li
             key={cause}
-            className="flex min-w-0 items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-2 text-[12px]"
+            className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 rounded-lg bg-slate-50 px-2.5 py-2 text-[12px]"
           >
-            <span className="truncate text-slate-600">{cause}</span>
+            <span className="text-slate-600">{cause}</span>
             <ArrowRight className="h-3 w-3 shrink-0 text-brand-600" />
-            <span className="truncate font-semibold text-slate-900">{effect}</span>
+            <span className="font-semibold text-slate-900">{effect}</span>
           </li>
         ))}
       </ul>

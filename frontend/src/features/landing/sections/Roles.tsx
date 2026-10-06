@@ -184,7 +184,7 @@ export function Roles({ locale }: { locale: Locale }) {
         </span>
         <div className="min-w-0">
           <p className="text-[12px] font-bold text-slate-900">{active.title}</p>
-          <p className="truncate text-[12px] text-slate-500">{active.focus}</p>
+          <p className="text-[12px] leading-4 text-slate-500">{active.focus}</p>
         </div>
       </div>
       <RoleView role={role} locale={locale} />
@@ -220,7 +220,7 @@ export function Roles({ locale }: { locale: Locale }) {
                 {item.title}
               </p>
               <span
-                className={`text-[12px] font-semibold tabular-nums ${on ? 'text-slate-900' : 'text-slate-300'}`}
+                className={`text-[12px] font-semibold tabular-nums ${on ? 'text-slate-900' : 'text-slate-500'}`}
               >
                 0{i + 1}
               </span>
