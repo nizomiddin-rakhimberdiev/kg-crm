@@ -47,6 +47,8 @@ interface GuardianDraft {
   last_name: string
   first_name: string
   phone: string
+  /** Ixtiyoriy ikkinchi raqam — bo'sh input formada turmaydi (PLAN 7.4). */
+  phone_alt: string
   relation: string
 }
 
@@ -54,6 +56,7 @@ const EMPTY_GUARDIAN_DRAFT: GuardianDraft = {
   last_name: '',
   first_name: '',
   phone: '',
+  phone_alt: '',
   relation: 'mother',
 }
 
@@ -105,6 +108,7 @@ export default function ChildrenPage() {
   // vasiyni ikkinchi ekranda qo'shish kerak edi va ko'pincha
   // unutilardi — vasiysiz bola esa SMS olmaydigan bola.
   const [guardian, setGuardian] = useState<GuardianDraft>(EMPTY_GUARDIAN_DRAFT)
+  const [showGuardianAlt, setShowGuardianAlt] = useState(false)
   // Narx — tarif yoki individual summa (PricePicker).
   const [price, setPrice] = useState<PriceValue>({ tariffId: null, monthlyFee: null })
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -117,6 +121,7 @@ export default function ChildrenPage() {
     setPrice({ tariffId: null, monthlyFee: null })
     setFormGroupId('')
     setGuardian(EMPTY_GUARDIAN_DRAFT)
+    setShowGuardianAlt(false)
     setFieldErrors({})
     setError(null)
   }
@@ -128,6 +133,7 @@ export default function ChildrenPage() {
     setPrice({ tariffId: null, monthlyFee: null })
     setFormGroupId('')
     setGuardian(EMPTY_GUARDIAN_DRAFT)
+    setShowGuardianAlt(false)
     setFieldErrors({})
     setError(null)
     setShowForm(true)
@@ -242,6 +248,7 @@ export default function ChildrenPage() {
           first_name: guardian.first_name,
           last_name: guardian.last_name,
           phone: guardian.phone,
+          ...(guardian.phone_alt ? { phone_alt: guardian.phone_alt } : {}),
           relation: guardian.relation,
           is_primary: true,
         })
@@ -674,6 +681,24 @@ export default function ChildrenPage() {
                   onChange={(e) => setGuardian((p) => ({ ...p, phone: e.target.value }))}
                   className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
                 />
+                {showGuardianAlt ? (
+                  <input
+                    aria-label={t('Ikkinchi raqam')}
+                    type="tel"
+                    placeholder={t('Ikkinchi raqam')}
+                    value={guardian.phone_alt}
+                    onChange={(e) => setGuardian((p) => ({ ...p, phone_alt: e.target.value }))}
+                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowGuardianAlt(true)}
+                    className="rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-brand-600 hover:border-brand-300"
+                  >
+                    {t('+ Ikkinchi raqam')}
+                  </button>
+                )}
                 <select
                   aria-label={t('Kim boʻladi')}
                   value={guardian.relation}

@@ -86,6 +86,8 @@ export const childrenApi = {
       first_name: string
       last_name: string
       phone: string
+      /** Ixtiyoriy ikkinchi raqam (PLAN 7.4). */
+      phone_alt?: string
       relation: string
       is_primary?: boolean
       /** Xabar tili; bo'sh — bog'chaning sukut tili (PLAN 3.4). */
@@ -111,7 +113,18 @@ export const childrenApi = {
   },
 }
 
+export interface GuardianPatch {
+  first_name?: string
+  last_name?: string
+  phone?: string
+  phone_alt?: string
+  language?: string
+}
+
 export const guardiansApi = {
+  /** Vasiyning o'zini tahrirlash (PLAN 7.4) — ismi, raqamlari, tili. */
+  update: (id: string, payload: GuardianPatch) => api.patch(`/guardians/${id}`, payload),
+
   /**
    * Ota-onaga beriladigan Telegram havolasi (PLAN 3.7).
    *

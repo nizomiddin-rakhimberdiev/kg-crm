@@ -1392,3 +1392,7 @@ msgstr "Долг указан не числом."
 
 msgid "Tizimga oʻtishdagi eski qarz"
 msgstr "Прежний долг при переходе в систему"
+
+# Vasiyning ikkinchi raqami (PLAN 7.4)
+msgid "Ikkinchi raqam birinchisidan farq qilishi kerak."
+msgstr "Второй номер должен отличаться от первого."

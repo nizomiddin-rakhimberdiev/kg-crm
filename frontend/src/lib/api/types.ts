@@ -202,6 +202,8 @@ export interface GuardianLink {
     last_name: string
     full_name: string
     phone: string
+    /** Ixtiyoriy ikkinchi raqam (PLAN 7.4). */
+    phone_alt: string
     email: string
     /** Xabar tili; bo'sh — bog'chaning sukut tili (PLAN 3.4). */
     language: string

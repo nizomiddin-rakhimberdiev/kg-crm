@@ -1297,4 +1297,10 @@ export const messages: Record<string, string> = {
   'Qarz boʻlmasa boʻsh qoldiring. Kiritilsa, bola qarzdorlar roʻyxatida koʻrinadi.':
     'Leave empty if there is no debt. If you enter one, the child appears in the debtors list.',
   'Yangi mijoz': 'New client',
+  // Vasiy: ikkinchi raqam va tahrirlash (PLAN 7.4)
+  '+ Ikkinchi raqam': '+ Second number',
+  'Ikkinchi raqam': 'Second number',
+  'Raqam oʻzgarsa, Telegram ulanishi va xabarlar shu yangi raqamga bogʻlanadi.':
+    'If the number changes, the Telegram link and messages follow the new number.',
+  'Vasiyni tahrirlash': 'Edit guardian',
 }

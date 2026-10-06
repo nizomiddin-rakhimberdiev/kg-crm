@@ -403,9 +403,11 @@ planning; two turned out to be bugs rather than features.
   Payme/Click (cash stays its own), and the revenue-by-method breakdown from
   Reports shown on the dashboard itself. Display only — `cash_account` keeps
   its four pots (ADR-17).
-- [ ] **7.4** Guardians: a second phone number (optional, no empty input
-  hanging about), and the ability to edit a guardian — today only the link
-  (relation, primary) can be changed, never the name or phone.
+- [x] **7.4** Guardians: a second phone number (optional, revealed by a
+  "+ Ikkinchi raqam" button so no empty input hangs about) and guardian
+  editing. The API could already PATCH a guardian; the gap was entirely in
+  the screen. Either number connects the Telegram bot (ADR-27), otherwise the
+  field would exist but do nothing.
 - [ ] **7.5** Expense line items: category, item, quantity (kg/dona), unit
   price, optional note; "+ add" for more lines; running total. Shown as
   `50 kg × 3 000 = 150 000`.

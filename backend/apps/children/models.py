@@ -182,6 +182,18 @@ class Guardian(BranchScopedModel):
     first_name = models.CharField(max_length=80)
     last_name = models.CharField(max_length=80)
     phone = models.CharField(max_length=20)
+    # Ikkinchi raqam (PLAN 7.4) — IXTIYORIY.
+    #
+    # Oilada ko'pincha ikkita raqam bo'ladi: biri onaniki, biri ish
+    # raqami yoki ikkinchi SIM. Birinchisi o'chib qolsa, bog'cha
+    # ikkinchisiga qo'ng'iroq qiladi — shuning uchun u kartada
+    # turishi kerak.
+    #
+    # Unikal EMAS va asosiy raqam o'rnini bosmaydi: `phone` — vasiyning
+    # kimligi (filial ichida unikal), bu esa qo'shimcha aloqa. Lekin
+    # botga ulanishda ikkalasi ham ishlaydi (ADR-27), aks holda ota-ona
+    # ikkinchi raqamini yuborib "topilmadi" degan javob olardi.
+    phone_alt = models.CharField(max_length=20, blank=True)
     email = models.EmailField(blank=True)
     # Xabar tili (PLAN 3.4). Bo'sh = bog'chaning sukut tili. Ruscha
     # gaplashadigan oila o'zbekcha xabar olsa, u matnni o'qimaydi va
@@ -249,7 +261,7 @@ class Guardian(BranchScopedModel):
         """Qidiruv kaliti HAR SAQLASHDA qayta hisoblanadi (PLAN 2.7)."""
         from apps.core.translit import search_key as _key
 
-        self.search_key = _key(f"{self.last_name} {self.first_name} {self.phone}")
+        self.search_key = _key(f"{self.last_name} {self.first_name} {self.phone} {self.phone_alt}")
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:

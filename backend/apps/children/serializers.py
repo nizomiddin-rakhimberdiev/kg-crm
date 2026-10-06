@@ -33,6 +33,22 @@ __all__ = [
 ]
 
 
+def _reject_same_phones(attrs: dict[str, Any], instance: Any = None) -> None:
+    """
+    Ikkala raqam bir xil bo'lmasin (PLAN 7.4).
+
+    Bir xil raqam ikki marta yozilsa, u ikkinchi aloqa yo'li bo'lmaydi —
+    faqat ro'yxatda ikkita bir xil qator ko'rinadi va xodim "nega
+    ikkitasi bir xil?" deb so'raydi.
+    """
+    phone = attrs.get("phone", getattr(instance, "phone", ""))
+    phone_alt = attrs.get("phone_alt", getattr(instance, "phone_alt", ""))
+    if phone and phone_alt and phone == phone_alt:
+        raise serializers.ValidationError(
+            {"phone_alt": gettext("Ikkinchi raqam birinchisidan farq qilishi kerak.")}
+        )
+
+
 class GuardianSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(read_only=True)
     telegram_linked = serializers.SerializerMethodField()
@@ -40,6 +56,9 @@ class GuardianSerializer(serializers.ModelSerializer):
     # yo'qotadi — bildirishnoma "yuborildi" bo'lib turadi, ota-ona esa
     # hech narsa olmaydi.
     phone = PhoneField()
+    # Ikkinchi raqam ixtiyoriy: bo'sh satr ham, umuman yo'qligi ham
+    # to'g'ri holat (PLAN 7.4).
+    phone_alt = PhoneField(required=False, allow_blank=True)
 
     class Meta:
         model = Guardian
@@ -49,6 +68,7 @@ class GuardianSerializer(serializers.ModelSerializer):
             "last_name",
             "full_name",
             "phone",
+            "phone_alt",
             "email",
             # Xabar tili (PLAN 3.4). Bo'sh = bog'chaning sukut tili.
             "language",
@@ -63,6 +83,10 @@ class GuardianSerializer(serializers.ModelSerializer):
 
     def get_telegram_linked(self, obj: Guardian) -> bool:
         return bool((obj.telegram_chat_id or "").strip())
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        _reject_same_phones(attrs, self.instance)
+        return attrs
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -103,6 +127,7 @@ class AddGuardianSerializer(serializers.Serializer):
     """
 
     phone = PhoneField()
+    phone_alt = PhoneField(required=False, allow_blank=True)
     first_name = serializers.CharField(max_length=80, required=False, allow_blank=True)
     last_name = serializers.CharField(max_length=80, required=False, allow_blank=True)
     email = serializers.EmailField(required=False, allow_blank=True)
@@ -110,6 +135,10 @@ class AddGuardianSerializer(serializers.Serializer):
     relation = serializers.CharField(max_length=20, required=False, default="other")
     is_primary = serializers.BooleanField(required=False, default=False)
     can_pickup = serializers.BooleanField(required=False, default=True)
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        _reject_same_phones(attrs)
+        return attrs
 
 
 class ChildGuardianSerializer(serializers.ModelSerializer):

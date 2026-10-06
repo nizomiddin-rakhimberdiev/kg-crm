@@ -124,9 +124,12 @@ def entries_for_guardian(guardian: Any) -> list[tuple[str, str]]:
     entries: list[tuple[str, str]] = []
     if not getattr(guardian, "is_active", True):
         return entries
-    phone = phone_digest(getattr(guardian, "phone", "") or "")
-    if phone:
-        entries.append((ContactKind.PHONE, phone))
+    # Ikkala raqam ham indeksga tushadi (PLAN 7.4): ota-ona botga
+    # qaysi SIM'dan yozsa ham topilishi kerak.
+    for number in (getattr(guardian, "phone", ""), getattr(guardian, "phone_alt", "")):
+        digest_value = phone_digest(number or "")
+        if digest_value:
+            entries.append((ContactKind.PHONE, digest_value))
     chat = chat_digest(getattr(guardian, "telegram_chat_id", "") or "")
     if chat:
         entries.append((ContactKind.CHAT, chat))

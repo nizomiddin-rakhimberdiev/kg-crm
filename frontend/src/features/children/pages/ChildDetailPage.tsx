@@ -16,13 +16,14 @@ import { PricePicker } from '@/features/children/components/PricePicker'
 import { priceFromChild, priceToPayload, type PriceValue } from '@/features/children/price'
 import { tariffsApi } from '@/features/payments/api'
 import { queryKeys } from '@/lib/api/queryKeys'
-import { ApiError } from '@/lib/api/types'
+import { ApiError, type GuardianLink } from '@/lib/api/types'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { ChildBalanceCard } from '@/features/children/components/ChildBalanceCard'
 import { ChildEditDialog } from '@/features/children/components/ChildEditDialog'
 import { ChildStatusDialog } from '@/features/children/components/ChildStatusDialog'
 import { ChildTabs } from '@/features/children/components/ChildTabs'
 import { TelegramLinkButton } from '@/features/children/components/TelegramLinkButton'
+import { GuardianEditDialog } from '@/features/children/components/GuardianEditDialog'
 import { ContractsCard } from '@/features/contracts/components/ContractsCard'
 import { useFeature } from '@/lib/features'
 import { GroupOptions } from '@/features/children/components/GroupOptions'
@@ -58,6 +59,8 @@ const EMPTY_GUARDIAN = {
   last_name: '',
   first_name: '',
   phone: '',
+  // Ikkinchi raqam formada TURMAYDI — faqat so'ralganda ochiladi.
+  phone_alt: '',
   relation: 'mother',
   is_primary: false,
   // Bo'sh — bog'chaning sukut tili. Ruscha gaplashadigan oila
@@ -73,6 +76,10 @@ export default function ChildDetailPage() {
   const { can } = useCan()
 
   const [guardianForm, setGuardianForm] = useState(EMPTY_GUARDIAN)
+  const [showGuardianAlt, setShowGuardianAlt] = useState(false)
+  // Tahrirlanayotgan vasiy (PLAN 7.4) — ilgari uni umuman
+  // o'zgartirib bo'lmasdi.
+  const [editingGuardian, setEditingGuardian] = useState<GuardianLink['guardian'] | null>(null)
   const [showGuardianForm, setShowGuardianForm] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Guruh TASDIQ bilan o'zgaradi (PLAN 1.4): sichqoncha g'ildiragining
@@ -111,6 +118,7 @@ export default function ChildDetailPage() {
     mutationFn: () => childrenApi.addGuardian(childId, guardianForm),
     onSuccess: () => {
       setGuardianForm(EMPTY_GUARDIAN)
+      setShowGuardianAlt(false)
       setShowGuardianForm(false)
       setError(null)
       invalidate()
@@ -399,6 +407,9 @@ export default function ChildDetailPage() {
                   <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
                     <Phone className="h-3 w-3" />
                     {link.guardian.phone}
+                    {link.guardian.phone_alt && (
+                      <span className="text-slate-400">· {link.guardian.phone_alt}</span>
+                    )}
                   </p>
                   {/* Asosiy kanal — Telegram (ADR-23): ulanmagan
                       ota-ona hech qanday xabar olmaydi, shuning uchun
@@ -415,6 +426,17 @@ export default function ChildDetailPage() {
                   <span className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500">
                     {RELATIONS.find(([code]) => code === link.relation)?.[1] ?? link.relation}
                   </span>
+                  {can('children.update') && (
+                    <button
+                      type="button"
+                      title={t('Tahrirlash')}
+                      aria-label={t('Tahrirlash')}
+                      onClick={() => setEditingGuardian(link.guardian)}
+                      className="rounded p-1 text-slate-300 transition hover:bg-slate-100 hover:text-slate-700"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                   {can('children.update') && !link.is_primary && (
                     <button
                       type="button"
@@ -476,6 +498,25 @@ export default function ChildDetailPage() {
                 onChange={(e) => setGuardianForm((p) => ({ ...p, phone: e.target.value }))}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
               />
+              {showGuardianAlt ? (
+                <input
+                  type="tel"
+                  placeholder={t('Ikkinchi raqam')}
+                  aria-label={t('Ikkinchi raqam')}
+                  value={guardianForm.phone_alt}
+                  onChange={(e) => setGuardianForm((p) => ({ ...p, phone_alt: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowGuardianAlt(true)}
+                  className="text-sm font-medium text-brand-600 hover:underline"
+                >
+                  {t('+ Ikkinchi raqam')}
+                </button>
+              )}
+
               <div className="flex items-center gap-2">
                 <select
                   aria-label={t('Kim boʻladi')}
@@ -547,6 +588,14 @@ export default function ChildDetailPage() {
           onDone={invalidate}
         />
       )}
+      {editingGuardian && (
+        <GuardianEditDialog
+          guardian={editingGuardian}
+          onClose={() => setEditingGuardian(null)}
+          onSaved={invalidate}
+        />
+      )}
+
       <ConfirmDialog
         open={archiving}
         title={child.archived_at ? t('Arxivdan qaytarish') : t('Arxivlash')}

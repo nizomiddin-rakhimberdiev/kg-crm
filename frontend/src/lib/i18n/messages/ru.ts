@@ -1292,4 +1292,10 @@ export const messages: Record<string, string> = {
   'Qarz boʻlmasa boʻsh qoldiring. Kiritilsa, bola qarzdorlar roʻyxatida koʻrinadi.':
     'Если долга нет — оставьте пустым. Если указать, ребёнок появится в списке должников.',
   'Yangi mijoz': 'Новый клиент',
+  // Vasiy: ikkinchi raqam va tahrirlash (PLAN 7.4)
+  '+ Ikkinchi raqam': '+ Второй номер',
+  'Ikkinchi raqam': 'Второй номер',
+  'Raqam oʻzgarsa, Telegram ulanishi va xabarlar shu yangi raqamga bogʻlanadi.':
+    'Если номер изменится, подключение к Telegram и сообщения будут привязаны к новому номеру.',
+  'Vasiyni tahrirlash': 'Редактировать опекуна',
 }

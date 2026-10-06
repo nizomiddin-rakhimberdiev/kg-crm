@@ -1392,3 +1392,7 @@ msgstr "The debt is not a number."
 
 msgid "Tizimga oʻtishdagi eski qarz"
 msgstr "Existing debt carried over at migration"
+
+# Vasiyning ikkinchi raqami (PLAN 7.4)
+msgid "Ikkinchi raqam birinchisidan farq qilishi kerak."
+msgstr "The second number must differ from the first."

@@ -34,6 +34,7 @@ import uuid
 from typing import Any
 
 from django.conf import settings
+from django.db import models
 from django.utils import timezone
 
 from apps.children.models import Guardian
@@ -266,18 +267,26 @@ def link_by_phone(*, phone: str, chat_id: str) -> Guardian | None:
         return None
 
     guardian = (
-        Guardian.objects.filter(phone=normalised, is_active=True).order_by("-updated_at").first()
+        Guardian.objects.filter(is_active=True)
+        .filter(models.Q(phone=normalised) | models.Q(phone_alt=normalised))
+        .order_by("-updated_at")
+        .first()
     )
     if guardian is None:
         # Rows saved before phones were normalised (Q7) may read "90 123 45 67".
         # A rare event on a small table: compare in canonical form.
         for candidate in Guardian.objects.filter(is_active=True).order_by("-updated_at"):
-            try:
-                if normalise_phone(candidate.phone) == normalised:
-                    guardian = candidate
-                    break
-            except PhoneFormatError:
-                continue
+            for number in (candidate.phone, candidate.phone_alt):
+                if not number:
+                    continue
+                try:
+                    if normalise_phone(number) == normalised:
+                        guardian = candidate
+                        break
+                except PhoneFormatError:
+                    continue
+            if guardian is not None:
+                break
     if guardian is None:
         return None
     if guardian.telegram_chat_id == chat:

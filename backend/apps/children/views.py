@@ -274,6 +274,7 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
             organization=child.organization,
             branch=child.branch,
             phone=data["phone"],
+            phone_alt=data.get("phone_alt", "").strip(),
             first_name=data.get("first_name", "").strip(),
             last_name=data.get("last_name", "").strip(),
             email=data.get("email", "").strip(),
