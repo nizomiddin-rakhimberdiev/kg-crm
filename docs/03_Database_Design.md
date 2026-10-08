@@ -441,6 +441,7 @@ Authentication identity.
 | `gender` | `VARCHAR(10)` | `NOT NULL`, `CHECK (gender IN ('male','female'))` | |
 | `enrollment_status` | `VARCHAR(20)` | `NOT NULL DEFAULT 'active'`, `CHECK (... IN ('prospect','active','paused','graduated','withdrawn'))` | Lifecycle |
 | `enrolled_on` | `DATE` | `NULL` | |
+| `contract_number` | `VARCHAR(40)` | `NULL` | The number on the kindergarten's **paper** contract (PLAN 9.3) — deliberately separate from `contract.number` (`SH-2026-0001`), which the system generates. Forcing both into one column would have made one of them a lie |
 | `tariff_id` | `UUID` | `NULL` FK → tariff_plan `ON DELETE RESTRICT` | Current billing plan |
 | `monthly_fee` | `NUMERIC(12,2)` | `NULL`, `CHECK (monthly_fee IS NULL OR monthly_fee > 0)` | **Individual** monthly price — instead of a tariff (2026-10) |
 | `photo_path` | `VARCHAR(255)` | `NULL` | Private storage key |
@@ -844,8 +845,16 @@ Distinct from `user` — not every employee logs in; not every user is paid.
 | `termination_date` | `DATE` | `NULL` | |
 | `base_salary` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0`, `CHECK (base_salary >= 0)` | Monthly base — **the total the employee receives** |
 | `official_salary` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0`, `CHECK (official_salary >= 0)`, `CHECK (official_salary <= base_salary)` | The on-the-books part (ADR-18). The remainder, `base_salary − official_salary`, is the cash part |
+| `work_mode` | `VARCHAR(10)` | `NOT NULL DEFAULT 'monthly'`, `CHECK (... IN ('monthly','hourly'))` | How the pay is computed (PLAN 9.1) |
+| `work_days` | `VARCHAR(20)` | `NULL` | ISO weekdays, comma-separated (`"1,3,5"`). Empty = the branch calendar |
+| `hours_per_day` | `NUMERIC(4,2)` | `NOT NULL DEFAULT 0`, `CHECK (0 ≤ hours_per_day ≤ 24)` | Hourly staff only |
+| `hourly_rate` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0` | Hourly staff only |
 
 **Constraints:** `uq_employee_user UNIQUE (user_id)` (a user maps to at most one employee); `ck_employee_termination CHECK (termination_date IS NULL OR termination_date >= hire_date)`; `ck_employee_official_within_base CHECK (official_salary <= base_salary)`.
+
+**The schedule is the denominator of the pay, not a label** (PLAN 9.1). A part-time teacher who starts mid-month is prorated over **her own** working days (`work_days`), not the branch's: 8/13 rather than 13/22, which paid her less than the days she actually worked. For `hourly`, the amount is days present in the timesheet × `hours_per_day` × `hourly_rate`; with no timesheet rows at all for that month it falls back to the schedule, because a silent zero is worse than an approximation nobody asked for. `ck_employee_hourly_rate` refuses an hourly employee without a rate and hours — otherwise their payroll line would quietly come out as zero.
+
+**Who fills `user_id`** (PLAN 9.1b). The account form, not the employee form: a person is hired first and given access later, if at all. Clearing the picker releases the link, so an account handed to someone else stops carrying the old employee's group scope (ADR-21).
 
 **Why one total and one split, not two independent numbers** (ADR-18). `base_salary` stays the single answer to "what does this person earn", so nothing that already reads it changes meaning, and `official_salary` carves a part out of it. Two free-standing columns would have made the total a sum nobody owns — and the first time they disagreed, the payslip and the employment contract would disagree with them. Existing rows default to `official_salary = 0`, so **every historical payroll figure stays exactly what it was**; moving someone onto the books is a deliberate edit.
 

@@ -628,6 +628,18 @@ Module: `debtors` — **derived view over the finance ledger** ([03 §13.7](./03
 
 ---
 
+
+### 10.1 Debt by month (PLAN 9.2)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/debtors/by-period?from=2026-09&to=2026-10` | `debtors.read` | One row per month: `invoiced`, `paid`, `paid_late`, `outstanding`, `children`, `debtors`, plus `totals` |
+| GET | `/debtors/by-period?period=2026-09` | `debtors.read` | That month in detail — per child: invoice, `invoiced`, `paid`, `outstanding`, `due_date`, `days_overdue` and the payments that closed it (`paid_at` in **local** time, `method`, `amount`). `&debtors_only=true` hides the settled ones |
+
+**Why the allocation table and not `invoice.amount_paid`.** The question is "which month is still open", and a payment taken in October may close September's invoice — `payment_allocation` is the only place that records which money closed which document (ADR-20). `amount_paid` is a cache over that table; reading the cache would let the report drift from the ledger. A reversed payment releases its allocation, so the debt returns to the month it belongs to.
+
+Filters: `group_id`, `branch_id`. A malformed `period` answers `422`, never `500`.
+
 ## 11. HR & Payroll
 
 Modules: `hr` (employees, positions) and `payroll`.
