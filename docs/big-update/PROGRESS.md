@@ -1373,3 +1373,23 @@ keladi. Natijada diagramma 0–4 shkalasini chizardi (soxta shkala — unda
 "4" nimani anglatishini hech kim ayta olmaydi) va jadval telefonda ikki
 ming piksel boʻsh qator berardi. Endi tekshiruv — davrda harakat
 boʻlganmi.
+
+**Xato holati oʻnta sahifadan sakkiztasida yoʻq edi.** Boʻsh holatlar
+yaxshi ishlangan (`EmptyState`: nima yoʻq, nega normal, keyingi qadam),
+lekin soʻrov YIQILGANDA nima koʻrinishini hech kim yozmagandi. Sabab
+oddiy: "boʻsh roʻyxat" sharti `data && items.length === 0` koʻrinishida
+yozilgan, xatoda esa `data` umuman boʻlmaydi — shart ishlamaydi va
+sahifada sarlavhadan keyin hech narsa qolmaydi. Bu ekranni odam
+"maʼlumotim yoʻqoldi" deb oʻqiydi, holbuki server shunchaki javob
+bermagan. `QueryError` uch narsani aytadi — nima boʻldi, maʼlumot
+yoʻqolmagani, va qayta urinish tugmasi.
+
+**`aria-modal` — vaʼda, fokus esa — amal.** Telefon menyusi va modalda
+`role="dialog"`, `aria-modal="true"`, Escape va body scroll qulfi bor
+edi; yaʼni ekranni oʻquvchiga "orqadagi narsa yoʻq" deb aytilardi.
+Klaviatura esa buni bilmaydi: Tab orqadagi tugmalarga oʻtib ketardi va
+dialog yopilgach fokus sahifa boshiga tushardi — uni ochgan tugma
+yoʻqolardi. `useFocusTrap` uchta ishni qiladi: ochilganda fokus panelga
+kiradi, Tab panel ichida aylanadi, yopilganda ochgan elementga qaytadi.
+Qoida `a11y.test.ts` da: `aria-modal` yozilgan fayl `useFocusTrap` ni
+chaqirishi shart — aks holda uchinchi dialogda u unutilardi.

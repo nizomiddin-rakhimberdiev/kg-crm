@@ -238,7 +238,10 @@ export function Row({
       )}
       <div className="min-w-0 flex-1">
         <p className="truncate text-[12px] font-semibold text-slate-800">{name}</p>
-        {meta && <p className="truncate text-[12px] text-slate-500">{meta}</p>}
+        {/* Ikkinchi qator KESILMAYDI, balki o'ralib tushadi (PLAN 10.13):
+            u yerda summa va sana turadi, ya'ni qatorning butun ma'nosi —
+            768 px da "2 300 000 · 12.09" ning oxiri qirqilib qolardi. */}
+        {meta && <p className="line-clamp-2 text-[12px] leading-tight text-slate-500">{meta}</p>}
       </div>
       {right}
     </div>

@@ -24,6 +24,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { QueryError } from '@/components/ui/QueryError'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { formatDate, quantity, som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
@@ -381,6 +382,10 @@ export default function ExpensesPage() {
       )}
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        {expensesQuery.isError && (
+          <QueryError error={expensesQuery.error} onRetry={() => expensesQuery.refetch()} />
+        )}
+
         {expensesQuery.data?.items.length === 0 && (
           <div className="px-4 py-12 text-center">
             <Receipt className="mx-auto mb-3 h-10 w-10 text-slate-200" />

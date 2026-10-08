@@ -18,6 +18,7 @@ import { ApiError, type Product } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { quantity } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { QueryError } from '@/components/ui/QueryError'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { t } from '@/lib/i18n'
 
@@ -276,6 +277,14 @@ export default function InventoryPage() {
               </button>
             ))}
           </div>
+
+          {productsQuery.isError && (
+            <QueryError
+              error={productsQuery.error}
+              onRetry={() => productsQuery.refetch()}
+              className="rounded-2xl border border-slate-200 bg-white"
+            />
+          )}
 
           {products.length === 0 && !productsQuery.isPending && (
             <div className="rounded-2xl border border-slate-200 bg-white">

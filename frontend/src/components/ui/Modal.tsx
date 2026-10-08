@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
+import { useFocusTrap } from '@/lib/useFocusTrap'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
@@ -18,6 +19,8 @@ interface ModalProps {
  * the page-transition transform.
  */
 export function Modal({ open, onClose, children, className }: ModalProps) {
+  const panel = useFocusTrap<HTMLDivElement>(open)
+
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -46,6 +49,7 @@ export function Modal({ open, onClose, children, className }: ModalProps) {
           />
           {/* Panel */}
           <motion.div
+            ref={panel}
             role="dialog"
             aria-modal="true"
             className={cn(

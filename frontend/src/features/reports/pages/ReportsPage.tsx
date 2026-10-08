@@ -55,6 +55,7 @@ import { ApiError } from '@/lib/api/types'
 import { useCan, type PermissionCode } from '@/lib/rbac/useCan'
 import { Modal } from '@/components/ui/Modal'
 import { BRAND, CHART, CHART_SEQUENCE } from '@/lib/brand'
+import { QueryError } from '@/components/ui/QueryError'
 import { formatDateTime } from '@/lib/format'
 import { cn, formatMoney, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -270,6 +271,17 @@ export default function ReportsPage() {
             'Oylik maosh va sof natija bu koʻrinishda yoʻq — ular «Oylik» boʻlimiga ruxsati bor xodimga koʻrinadi.',
           )}
         </div>
+      )}
+
+      {(plQuery.isError || revenueQuery.isError) && (
+        <QueryError
+          error={plQuery.error ?? revenueQuery.error}
+          onRetry={() => {
+            void plQuery.refetch()
+            void revenueQuery.refetch()
+          }}
+          className="rounded-2xl border border-slate-200 bg-white"
+        />
       )}
 
       {!showRevenue && !showExpenses && (

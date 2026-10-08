@@ -19,6 +19,7 @@ import { useSmsStatus } from '@/features/notifications/useSmsStatus'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
+import { QueryError } from '@/components/ui/QueryError'
 import { formatDateTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -222,7 +223,14 @@ export default function NotificationsPage() {
                   </tr>
                 )
               })}
-              {rows.length === 0 && (
+              {logQuery.isError && (
+                <tr>
+                  <td colSpan={5} className="p-0">
+                    <QueryError error={logQuery.error} onRetry={() => logQuery.refetch()} />
+                  </td>
+                </tr>
+              )}
+              {rows.length === 0 && !logQuery.isError && (
                 <tr>
                   <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
                     <Send className="mx-auto mb-2 h-6 w-6" />

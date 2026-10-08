@@ -126,6 +126,23 @@ describe('a11y', () => {
     expect(offenders).toEqual([])
   })
 
+  it('har bir `aria-modal` dialogda fokus tutqichi bor', () => {
+    /*
+     * `aria-modal="true"` ekranni oʻquvchiga "orqasidagi narsa yoʻq"
+     * deydi, lekin Tab baribir orqaga oʻtadi (PLAN 10.15). Uchinchi
+     * dialog yozilganda bu qoida eng oson unutiladigan narsa, shuning
+     * uchun u testda: modal boʻlgan fayl `useFocusTrap` ni chaqirsin.
+     */
+    const offenders: string[] = []
+    for (const file of files) {
+      const text = readFileSync(file, 'utf8')
+      if (!text.includes('aria-modal="true"')) continue
+      if (text.includes('useFocusTrap')) continue
+      offenders.push(file.replace(SRC, ''))
+    }
+    expect(offenders).toEqual([])
+  })
+
   it('koʻrinadigan fokus butun ilovada belgilangan', () => {
     const css = readFileSync(join(SRC, 'index.css'), 'utf8')
     // `:focus` emas, `:focus-visible`: sichqoncha bosganda halqa

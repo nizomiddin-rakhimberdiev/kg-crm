@@ -81,7 +81,9 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
             [ui.debt, '12 450 000', 'text-red-700'],
           ].map(([l, v, c]) => (
             <div key={l} className="min-w-0 rounded-xl border border-slate-200/80 p-2.5">
-              <p className="truncate text-[12px] text-slate-500">{l}</p>
+              {/* 320 px da uchta ustun tor: "Belgilangan" qirqilib
+                "Belgilang…" bo'lib qolardi — yorliq o'ralib tushadi. */}
+              <p className="text-[12px] leading-tight text-slate-500">{l}</p>
               <p
                 className={`whitespace-nowrap text-[12px] font-bold tabular-nums sm:text-[13px] ${c}`}
               >
@@ -120,7 +122,9 @@ function RoleView({ role, locale }: { role: RoleCopy['id']; locale: Locale }) {
           [ui.marked, '5 / 6'],
         ].map(([l, v]) => (
           <div key={l} className="min-w-0 rounded-xl border border-slate-200/80 p-2.5">
-            <p className="truncate text-[12px] text-slate-500">{l}</p>
+            {/* 320 px da uchta ustun tor: "Belgilangan" qirqilib
+                "Belgilang…" bo'lib qolardi — yorliq o'ralib tushadi. */}
+            <p className="text-[12px] leading-tight text-slate-500">{l}</p>
             <p className="text-[13px] font-bold tabular-nums text-slate-900">{v}</p>
           </div>
         ))}

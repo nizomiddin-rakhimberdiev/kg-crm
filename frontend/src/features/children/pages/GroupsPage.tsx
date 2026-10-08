@@ -17,6 +17,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Group } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { avatarTone, cn, initials } from '@/lib/utils'
+import { QueryError } from '@/components/ui/QueryError'
 import { t } from '@/lib/i18n'
 
 export default function GroupsPage() {
@@ -244,6 +245,14 @@ export default function GroupsPage() {
 
       {groupsQuery.isPending && (
         <p className="py-8 text-center text-sm text-slate-500">{t('Yuklanmoqda…')}</p>
+      )}
+
+      {groupsQuery.isError && (
+        <QueryError
+          error={groupsQuery.error}
+          onRetry={() => groupsQuery.refetch()}
+          className="rounded-2xl border border-slate-200 bg-white"
+        />
       )}
 
       {groupsQuery.data?.items.length === 0 && (

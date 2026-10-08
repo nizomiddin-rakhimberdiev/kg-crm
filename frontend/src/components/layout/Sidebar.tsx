@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { LogOut, X } from 'lucide-react'
+import { useFocusTrap } from '@/lib/useFocusTrap'
 import { OrgMark } from '@/components/brand/OrgMark'
 import { Avatar } from '@/components/ui/Avatar'
 import { useAuth } from '@/app/providers/AuthProvider'
@@ -187,6 +188,8 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
 
   // Marshrut o'zgarganda drawer yopiladi — foydalanuvchi punktni bosdi,
   // sahifa ochildi, menyu esa uni to'sib turmasligi kerak.
+  const drawer = useFocusTrap<HTMLElement>(open)
+
   useEffect(() => {
     if (previousPath.current !== location.pathname) {
       previousPath.current = location.pathname
@@ -220,6 +223,7 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
             onClick={onClose}
           />
           <motion.aside
+            ref={drawer}
             role="dialog"
             aria-modal="true"
             aria-label={t('Asosiy menyu')}

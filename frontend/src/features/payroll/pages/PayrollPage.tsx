@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { DateInput } from '@/components/ui/DateInput'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { QueryError } from '@/components/ui/QueryError'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
 import { employeesApi } from '@/features/staff/api'
@@ -457,6 +458,14 @@ export default function PayrollPage() {
           )
         })}
       </div>
+
+      {runsQuery.isError && (
+        <QueryError
+          error={runsQuery.error}
+          onRetry={() => runsQuery.refetch()}
+          className="rounded-2xl border border-slate-200 bg-white"
+        />
+      )}
 
       {runsQuery.data?.items.length === 0 && (
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-12 text-center">

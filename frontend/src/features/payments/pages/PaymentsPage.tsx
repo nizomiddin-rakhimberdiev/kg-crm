@@ -25,6 +25,7 @@ import { cn, formatDate, formatMoney } from '@/lib/utils'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
 import { som } from '@/lib/format'
+import { QueryError } from '@/components/ui/QueryError'
 import { t } from '@/lib/i18n'
 
 const money = som
@@ -520,6 +521,12 @@ export default function PaymentsPage() {
               {boardQuery.isPending && (
                 <li className="px-4 py-12 text-center text-sm text-slate-500">
                   {t('Yuklanmoqda…')}
+                </li>
+              )}
+
+              {boardQuery.isError && (
+                <li>
+                  <QueryError error={boardQuery.error} onRetry={() => boardQuery.refetch()} />
                 </li>
               )}
             </ul>

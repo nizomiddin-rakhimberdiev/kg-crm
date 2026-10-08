@@ -27,6 +27,7 @@ import { Modal } from '@/components/ui/Modal'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/app/providers/ToastProvider'
+import { QueryError } from '@/components/ui/QueryError'
 import { t } from '@/lib/i18n'
 
 const STATUS_BUTTONS: Array<{
@@ -331,6 +332,9 @@ function ChildrenAttendance() {
           <p className="px-4 py-8 text-center text-sm text-slate-500">
             {t('Avval guruh yarating.')}
           </p>
+        )}
+        {registerQuery.isError && (
+          <QueryError error={registerQuery.error} onRetry={() => registerQuery.refetch()} />
         )}
         {registerQuery.data?.rows.length === 0 && (
           <p className="px-4 py-8 text-center text-sm text-slate-500">

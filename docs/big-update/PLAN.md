@@ -712,4 +712,32 @@ Egasining roʻyxatidan keyingi uchtasi (2026-10-08, "ha davom et"):
   joyda ham savol — matn, harakat — ajratilgan havola (44 px). Rozilik
   katagi 20 px ga kattalashtirildi.
 
-Qolgan promptlar (12, 14, 15) hali bajarilmadi — roʻyxat PLAN'da turibdi.
+- [x] **10.13 Landing — mudira koʻzi bilan.** 320 / 375 / 768 / 1440 px
+  oʻlchovi: yon scroll yoʻq, 12 px dan kichik matn yoʻq, kontrast toza.
+  Ikkita haqiqiy kesilish topildi — 320 px da namunaviy ekrandagi
+  "Belgilangan" yorligʻi "Belgilang…" boʻlib qolardi, 768 px da esa
+  "2 300 000 · 12.09" qatorining oxiri qirqilardi: ikkalasi ham
+  mahsulotni KOʻRSATADIGAN ekranlarda, yaʼni "bu tizimda matn
+  sigʻmaydi" degan birinchi taassurot. Endi ular oʻraladi, kesilmaydi.
+  (Audit yana ikkita narsani belgilagan edi — `sr-only` matn va
+  `<label>` ichidagi maydon — ikkalasi ham notoʻgʻri signal.)
+- [x] **10.14 Boʻsh, yuklanmoqda, xato.** Boʻsh holatlar yaxshi edi
+  (`EmptyState`: nima yoʻq, nega normal, keyingi qadam), xato holatlari
+  esa — **oʻnta asosiy sahifadan sakkiztasida umuman yoʻq**. Roʻyxat
+  soʻrovi yiqilsa `data` boʻsh qoladi, "boʻsh roʻyxat" sharti esa
+  `data && …` boʻlgani uchun ishlamaydi: sahifada sarlavha turadi va
+  ostida hech narsa yoʻq — foydalanuvchi buni "maʼlumotim yoʻqoldi"
+  deb oʻqiydi. Yangi `components/ui/QueryError` uch narsani aytadi va
+  **qayta urinish** tugmasini beradi (sabab koʻpincha bir soniyalik
+  uzilish — sahifani qayta yuklash kerak emas).
+- [x] **10.15 Qulaylik auditi.** Toʻrtta qoida allaqachon testda
+  (12 px, `aria-label`, yorliq, fokus halqasi), telefon menyusi va
+  modalda `role="dialog"`, `aria-modal`, Escape va scroll qulfi bor
+  edi. Yetishmagani — **fokusning oʻzi**: `aria-modal` ekranni
+  oʻquvchiga "orqasidagi narsa yoʻq" deydi, lekin Tab baribir
+  orqadagi tugmalarga oʻtardi, dialog yopilgach esa fokus sahifa
+  boshiga tushib, uni ochgan tugma yoʻqolardi. `lib/useFocusTrap`
+  ikkalasi uchun bitta uy, va `a11y.test.ts` endi har bir
+  `aria-modal` faylida uni talab qiladi.
+
+Barcha 15 ta prompt bajarildi.

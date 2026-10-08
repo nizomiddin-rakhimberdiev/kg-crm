@@ -335,6 +335,8 @@ export const messages: Record<string, string> = {
   Lavozim: 'Position',
   'Lavozim maoshi': 'Base salary',
   'Lavozim:': 'Position:',
+  'Maʼlumot yoʻqolmadi — aloqa tiklangach qayta koʻrinadi.':
+    'Nothing was lost — it reappears as soon as the connection is back.',
   'Maʼlumotni yuklab boʻlmadi.': 'Couldn’t load the data.',
   'Maʼlumotnoma (ixtiyoriy)': 'Reference (optional)',
   Mahsulot: 'Product',
