@@ -231,14 +231,20 @@ export default function LoginPage() {
                 {busy ? t('Tekshirilmoqda…') : t('Kirish')}
               </button>
 
-              {/* Self-signup (PLAN 6.7): only where there is a subscription. */}
+              {/* Self-signup (PLAN 6.7): only where there is a subscription.
+
+                  Savol — matn, harakat — havola (PLAN 10.12). Ilgari butun
+                  gap yashil havola edi, ya'ni "Bog'changiz hali yo'qmi?"
+                  degan SAVOLning o'zi bosiladigan ko'rinardi va havola
+                  qayerda boshlanishi bilinmasdi. */}
               {!env.isStandalone && (
                 <p className="text-center text-sm text-tosh-600">
+                  {t('Bogʻchangiz hali yoʻqmi?')}{' '}
                   <Link
                     to="/signup"
-                    className="inline-flex min-h-[40px] items-center font-semibold text-nihol-700 underline-offset-2 hover:underline"
+                    className="inline-flex min-h-11 items-center font-semibold text-nihol-700 underline underline-offset-2"
                   >
-                    {t('Bogʻchangiz hali yoʻqmi? 15 kunlik sinovni boshlang')}
+                    {t('15 kunlik sinovni boshlang')}
                   </Link>
                 </p>
               )}

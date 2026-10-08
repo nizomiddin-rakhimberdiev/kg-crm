@@ -309,6 +309,7 @@ export const messages: Record<string, string> = {
   'Kim, nima va qachon — oʻzgartirib boʻlmaydigan yozuv.':
     'Кто, что и когда — неизменяемая запись.',
   'Kirim {v}': 'Приход {v}',
+  '15 kunlik sinovni boshlang': 'Начните 15-дневный пробный период',
   Kirish: 'Войти',
   'Kirish tokeni topilmadi. Konsoldan qayta urinib koʻring.':
     'Токен входа не найден. Попробуйте ещё раз из консоли.',
@@ -1267,7 +1268,7 @@ export const messages: Record<string, string> = {
     'Садик открыт — 15-дневный пробный период начался. Теперь войдите.',
   'Bogʻchani ochish': 'Открыть садик',
   'Bolalar soni': 'Число детей',
-  'Hisobingiz bormi? Kirish': 'Уже есть аккаунт? Войти',
+  'Hisobingiz bormi?': 'Уже есть аккаунт?',
   Ismingiz: 'Ваше имя',
   'maxfiylik siyosati': 'политика конфиденциальности',
   'Parol oʻrnating': 'Задайте пароль',
@@ -1276,8 +1277,7 @@ export const messages: Record<string, string> = {
   'Shaxsiy maʼlumotlarga ishlov berishga roziman': 'Согласен(на) на обработку персональных данных',
   '15 kunlik sinov — mos kelmasa, hech narsa toʻlamaysiz':
     '15-дневный пробный период — если не подойдёт, вы ничего не платите',
-  'Bogʻchangiz hali yoʻqmi? 15 kunlik sinovni boshlang':
-    'Ещё нет садика в системе? Начните 15-дневный пробный период',
+  'Bogʻchangiz hali yoʻqmi?': 'Ещё нет садика в системе?',
   'Karta soʻralmaydi. Davom ettirsangiz, birinchi toʻlangan oy sinov boshlangan kundan hisoblanadi. Davom ettirmasangiz — hech narsa toʻlamaysiz, maʼlumotlaringiz 30 kun yuklab olish uchun saqlanadi.':
     'Карта не нужна. Если продолжите, первый оплачиваемый месяц считается с начала пробного периода. Если нет — вы ничего не платите, а данные 30 дней доступны для выгрузки.',
   // Notifications: channel-neutral labels (Telegram is primary, ADR-23)

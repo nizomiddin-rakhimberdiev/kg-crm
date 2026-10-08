@@ -704,4 +704,12 @@ Egasining roʻyxatidan keyingi uchtasi (2026-10-08, "ha davom et"):
   Telefonda bu ikki ming piksel "maʼlumot bor" degan boʻsh joy.
   `rows.length` oʻrniga endi `hasActivity` tekshiriladi.
 
-Qolgan promptlar (11, 12, 14, 15) hali bajarilmadi — roʻyxat PLAN'da turibdi.
+- [x] **10.12 Kirish va roʻyxatdan oʻtish.** Ikkala sahifa ham toza edi;
+  xatolik **havolaning oʻzida**: kirish sahifasida butun gap yashil havola
+  edi ("Bogʻchangiz hali yoʻqmi? 15 kunlik sinovni boshlang" — savolning
+  oʻzi bosiladigan koʻrinardi), roʻyxatdan oʻtishda esa teskarisi — butun
+  gap bir xil kulrang va "Kirish" havolaga umuman oʻxshamasdi. Endi ikkala
+  joyda ham savol — matn, harakat — ajratilgan havola (44 px). Rozilik
+  katagi 20 px ga kattalashtirildi.
+
+Qolgan promptlar (12, 14, 15) hali bajarilmadi — roʻyxat PLAN'da turibdi.

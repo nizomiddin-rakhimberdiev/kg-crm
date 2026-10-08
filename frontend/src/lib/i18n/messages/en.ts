@@ -312,6 +312,7 @@ export const messages: Record<string, string> = {
   'Kim, nima va qachon — oʻzgartirib boʻlmaydigan yozuv.':
     'Who, what and when — an immutable record.',
   'Kirim {v}': 'In {v}',
+  '15 kunlik sinovni boshlang': 'Start a 15-day trial',
   Kirish: 'Sign in',
   'Kirish tokeni topilmadi. Konsoldan qayta urinib koʻring.':
     'Access token not found. Try again from the console.',
@@ -1272,7 +1273,7 @@ export const messages: Record<string, string> = {
     'Your kindergarten is open — the 15-day trial has started. Sign in now.',
   'Bogʻchani ochish': 'Open the kindergarten',
   'Bolalar soni': 'Number of children',
-  'Hisobingiz bormi? Kirish': 'Already have an account? Sign in',
+  'Hisobingiz bormi?': 'Already have an account?',
   Ismingiz: 'Your name',
   'maxfiylik siyosati': 'privacy policy',
   'Parol oʻrnating': 'Set a password',
@@ -1281,8 +1282,7 @@ export const messages: Record<string, string> = {
   'Shaxsiy maʼlumotlarga ishlov berishga roziman': 'I agree to the processing of my personal data',
   '15 kunlik sinov — mos kelmasa, hech narsa toʻlamaysiz':
     "15-day trial — pay nothing if it isn't for you",
-  'Bogʻchangiz hali yoʻqmi? 15 kunlik sinovni boshlang':
-    'No kindergarten yet? Start a 15-day trial',
+  'Bogʻchangiz hali yoʻqmi?': 'No kindergarten yet?',
   'Karta soʻralmaydi. Davom ettirsangiz, birinchi toʻlangan oy sinov boshlangan kundan hisoblanadi. Davom ettirmasangiz — hech narsa toʻlamaysiz, maʼlumotlaringiz 30 kun yuklab olish uchun saqlanadi.':
     'No card needed. If you continue, the first paid month counts from the start of the trial. If not, you pay nothing and your data stays available for export for 30 days.',
   // Notifications: channel-neutral labels (Telegram is primary, ADR-23)

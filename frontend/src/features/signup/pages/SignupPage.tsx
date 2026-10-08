@@ -137,7 +137,7 @@ export default function SignupPage() {
                 required
                 checked={form.consent}
                 onChange={(event) => set({ consent: event.target.checked })}
-                className="mt-0.5"
+                className="mt-0.5 h-5 w-5 shrink-0 accent-nihol-600"
               />
               <span>
                 {t('Shaxsiy maʼlumotlarga ishlov berishga roziman')} (
@@ -157,9 +157,15 @@ export default function SignupPage() {
             >
               {busy ? t('Yuborilmoqda…') : t('Bogʻchani ochish')}
             </button>
-            <p className="text-center text-sm text-tosh-500">
-              <Link to="/login" className="hover:underline">
-                {t('Hisobingiz bormi? Kirish')}
+            {/* Savol — matn, harakat — havola (PLAN 10.12). Ilgari butun
+                gap bir xil kulrang edi va "Kirish" havolaga o'xshamasdi. */}
+            <p className="text-center text-sm text-tosh-600">
+              {t('Hisobingiz bormi?')}{' '}
+              <Link
+                to="/login"
+                className="inline-flex min-h-11 items-center font-semibold text-nihol-700 underline underline-offset-2"
+              >
+                {t('Kirish')}
               </Link>
             </p>
           </form>
