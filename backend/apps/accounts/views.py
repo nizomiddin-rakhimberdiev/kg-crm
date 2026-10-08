@@ -27,6 +27,22 @@ from apps.core.viewsets import BranchScopedMixin, TenantReadOnlyViewSet, TenantV
 __all__ = ["UserViewSet", "RoleViewSet", "PermissionViewSet"]
 
 
+def _link_employee(user: Any, employee_id: Any) -> None:
+    """
+    Hisobni xodimga bogʻlaydi yoki bogʻlanishni uzadi (PLAN 9.1b).
+
+    Bogʻlanish `Employee.user` da qoladi — model oʻzgarmadi, faqat uni
+    KIM toʻldirishi oʻzgardi. Avvalgi bogʻlanish uziladi: bitta hisob
+    ikki xodimga tegishli boʻla olmaydi (`OneToOne`), va eski qator
+    jimgina qolib ketsa, tarbiyachi hamon birovning guruhini koʻrardi.
+    """
+    from apps.hr.models import Employee
+
+    Employee.objects.filter(user=user).exclude(pk=employee_id).update(user=None)
+    if employee_id:
+        Employee.objects.filter(pk=employee_id).update(user=user)
+
+
 class UserViewSet(BranchScopedMixin, TenantViewSet):
     """
     Xodimlar ro'yxati filial bo'yicha ham cheklanadi (docs/02 §11.2:
@@ -56,6 +72,7 @@ class UserViewSet(BranchScopedMixin, TenantViewSet):
         # filialga bog'langan bo'lsa — faqat o'z filialiga.
         delegation.assert_can_assign_role(actor, data["role"])
         delegation.assert_can_assign_branch(actor, data.get("branch"))
+        employee_id = data.pop("employee_id", None)
         user = services.create_user(
             organization=organization,
             email=data["email"],
@@ -65,6 +82,7 @@ class UserViewSet(BranchScopedMixin, TenantViewSet):
             branch=data.get("branch"),
             phone=data.get("phone", ""),
         )
+        _link_employee(user, employee_id)
         serializer.instance = user
         audit.record(
             action="create",
@@ -89,7 +107,10 @@ class UserViewSet(BranchScopedMixin, TenantViewSet):
         if "branch" in data:
             delegation.assert_can_assign_branch(actor, data["branch"])
         password = data.pop("password", None)
+        employee_id = data.pop("employee_id", "keep")
         user = serializer.save()
+        if employee_id != "keep":
+            _link_employee(user, employee_id)
         if password:
             user.set_password(password)
             user.save(update_fields=["password"])

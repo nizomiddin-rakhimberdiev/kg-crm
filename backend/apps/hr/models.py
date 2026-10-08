@@ -17,7 +17,7 @@ from django.utils.translation import gettext_lazy
 
 from apps.core.models import BranchScopedModel
 
-__all__ = ["Position", "Employee", "EmploymentStatus"]
+__all__ = ["Position", "Employee", "EmploymentStatus", "WorkMode"]
 
 
 class Position(BranchScopedModel):
@@ -45,6 +45,22 @@ class EmploymentStatus(models.TextChoices):
     ACTIVE = "active", gettext_lazy("Ishlayapti")
     ON_LEAVE = "on_leave", gettext_lazy("Taʼtilda")
     TERMINATED = "terminated", gettext_lazy("Ishdan boʻshagan")
+
+
+class WorkMode(models.TextChoices):
+    """
+    Xodimga pul qanday hisoblanadi.
+
+    Bu ro'yxat ataylab QISQA. "To'liq kun", "yarim stavka", "haftada uch
+    kun" — bularning hammasi pul nuqtai nazaridan bitta narsa: oylik
+    maosh va shu maosh qaysi kunlarga tegishli (`work_days`). Ularni
+    alohida tur qilish uchta bir xil hisob-kitobni uchta joyda
+    saqlashni anglatardi. Soatbay esa haqiqatan boshqacha: u kelgan
+    kunlardan hisoblanadi, maoshdan emas.
+    """
+
+    MONTHLY = "monthly", gettext_lazy("Oylik maosh")
+    HOURLY = "hourly", gettext_lazy("Soatbay")
 
 
 class Employee(BranchScopedModel):
@@ -77,6 +93,21 @@ class Employee(BranchScopedModel):
     employment_status = models.CharField(
         max_length=15, choices=EmploymentStatus.choices, default=EmploymentStatus.ACTIVE
     )
+
+    # --- Ish grafigi (PLAN 9.1) ---
+    #
+    # Grafik — bezak emas, PULNING maxraji: haftada uch kun keladigan
+    # tarbiyachi oy o'rtasida ishga kirsa, uning proporsiyasi filialning
+    # 22 ish kunidan emas, O'ZINING 13 kunidan chiqishi kerak. Ilgari
+    # bunday xodim ishga kirgan oyida kamroq olardi va buni hech kim
+    # payslipdan tushuntira olmasdi.
+    work_mode = models.CharField(max_length=10, choices=WorkMode.choices, default=WorkMode.MONTHLY)
+    #: ISO kunlar, vergul bilan: "1,3,5". BO'SH = filial kalendari
+    #: (`attendance.working_weekdays`) — ko'pchilik xodim shunday.
+    work_days = models.CharField(max_length=20, blank=True)
+    #: Soatbay uchun: bir kunda necha soat va soatiga qancha.
+    hours_per_day = models.DecimalField(max_digits=4, decimal_places=2, default=Decimal("0"))
+    hourly_rate = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
     hire_date = models.DateField()
     termination_date = models.DateField(null=True, blank=True)
 
@@ -112,6 +143,20 @@ class Employee(BranchScopedModel):
                 & models.Q(official_salary__lte=models.F("base_salary")),
                 name="ck_employee_official_within_base",
             ),
+            # Soatbay xodimda soat narxi ham, kunlik soat ham bo'lishi
+            # SHART: aks holda oylik hisoblashda uning satri jimgina
+            # nol bo'lib chiqardi.
+            models.CheckConstraint(
+                condition=(
+                    ~models.Q(work_mode="hourly")
+                    | (models.Q(hourly_rate__gt=0) & models.Q(hours_per_day__gt=0))
+                ),
+                name="ck_employee_hourly_rate",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(hours_per_day__gte=0) & models.Q(hours_per_day__lte=24),
+                name="ck_employee_hours_per_day",
+            ),
             models.CheckConstraint(
                 condition=(
                     models.Q(termination_date__isnull=True)
@@ -140,3 +185,12 @@ class Employee(BranchScopedModel):
     @property
     def full_name(self) -> str:
         return f"{self.last_name} {self.first_name}"
+
+    @property
+    def weekdays(self) -> list[int]:
+        """Xodimning ish kunlari (ISO 1–7). Bo'sh bo'lsa — filial kalendari."""
+        if not self.work_days:
+            from apps.attendance.services_absence import working_weekdays
+
+            return sorted(working_weekdays(self.branch))
+        return sorted({int(part) for part in self.work_days.split(",") if part.strip().isdigit()})

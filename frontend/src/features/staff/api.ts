@@ -28,8 +28,11 @@ export interface EmployeeInput {
   termination_date?: string | null
   /** Org Owner uchun majburiy (ko'p filialda); qolganlarda backend o'zi aniqlaydi. */
   branch_id?: string
-  /** Tizim hisobi (PLAN 2.8) — tarbiyachi o'z guruhini ko'rishi uchun. */
-  user_id?: string | null
+  /** Ish grafigi (PLAN 9.1) — oylik hisoblashning maxraji. */
+  work_mode?: 'monthly' | 'hourly'
+  work_days?: string
+  hours_per_day?: string
+  hourly_rate?: string
 }
 
 export const employeesApi = {
@@ -57,6 +60,14 @@ export interface StaffInput {
   password?: string
   role_id: string
   branch_id?: string | null
+  /**
+   * Hisob qaysi xodimga tegishli (PLAN 9.1b).
+   *
+   * Bogʻlanish SHU YERDA beriladi, xodim formasida emas: avval odam
+   * ishga olinadi, kirish huquqi esa keyin — va hammaga ham kerak emas.
+   * `null` — bogʻlanishni uzadi.
+   */
+  employee_id?: string | null
 }
 
 export const staffApi = {

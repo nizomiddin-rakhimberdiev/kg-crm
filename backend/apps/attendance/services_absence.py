@@ -75,9 +75,15 @@ def billable_days(
     date_from: date,
     date_to: date,
     branch: Any = None,
+    weekdays: set[int] | None = None,
 ) -> int:
-    """Oraliqdagi ish kunlari soni — bayramlar chiqarib tashlangan."""
-    weekdays = working_weekdays(branch)
+    """
+    Oraliqdagi ish kunlari soni — bayramlar chiqarib tashlangan.
+
+    `weekdays` berilsa, filial kalendari o'rniga o'sha kunlar
+    hisoblanadi: xodimning o'z grafigi uchun kerak (PLAN 9.1).
+    """
+    weekdays = working_weekdays(branch) if weekdays is None else set(weekdays)
     closed = _holidays(organization_id, date_from, date_to)
 
     count = 0
@@ -90,7 +96,12 @@ def billable_days(
 
 
 def working_days_in_month(
-    *, organization_id: Any, year: int, month: int, branch: Any = None
+    *,
+    organization_id: Any,
+    year: int,
+    month: int,
+    branch: Any = None,
+    weekdays: set[int] | None = None,
 ) -> int:
     """O'sha oydagi ish kunlari — kun narxining maxraji."""
     last = calendar.monthrange(year, month)[1]
@@ -99,6 +110,7 @@ def working_days_in_month(
         date_from=date(year, month, 1),
         date_to=date(year, month, last),
         branch=branch,
+        weekdays=weekdays,
     )
 
 

@@ -324,6 +324,9 @@ class BranchSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     role = RoleSerializer(read_only=True)
     branch = BranchSerializer(read_only=True)
+    # Qaysi xodimning hisobi (PLAN 9.1b) — ro'yxatda ko'rinib tursin.
+    employee_id = serializers.UUIDField(source="employee.id", read_only=True, default=None)
+    employee_name = serializers.CharField(source="employee.full_name", read_only=True, default=None)
 
     class Meta:
         model = User
@@ -334,6 +337,8 @@ class UserSerializer(serializers.ModelSerializer):
             "phone",
             "role",
             "branch",
+            "employee_id",
+            "employee_name",
             "is_active",
             "last_login_at",
             "created_at",
@@ -353,6 +358,10 @@ class UserWriteSerializer(serializers.ModelSerializer):
     branch_id = TenantPrimaryKeyRelatedField(
         model=Branch, source="branch", required=False, allow_null=True
     )
+    # Hisobni xodimga bog'lash SHU YERDA (PLAN 9.1b): avval odam ishga
+    # olinadi, kirish huquqi esa keyin. Teskarisi — xodim formasida
+    # hisob tanlash — mavjud bo'lmagan hisobni tanlashni so'rardi.
+    employee_id = serializers.UUIDField(required=False, allow_null=True, write_only=True)
 
     class Meta:
         model = User
@@ -364,9 +373,25 @@ class UserWriteSerializer(serializers.ModelSerializer):
             "password",
             "role_id",
             "branch_id",
+            "employee_id",
             "is_active",
         ]
         read_only_fields = ["id"]
+
+    def validate_employee_id(self, value: Any) -> Any:
+        """Xodim shu tashkilotda va hali boshqa hisobga bogʻlanmagan boʻlishi kerak."""
+        if value is None:
+            return None
+        from apps.hr.models import Employee
+
+        employee = Employee.objects.filter(pk=value).first()
+        if employee is None:
+            raise serializers.ValidationError(gettext("Xodim topilmadi."))
+        if employee.user_id and employee.user_id != getattr(self.instance, "id", None):
+            raise serializers.ValidationError(
+                gettext("Bu xodim allaqachon boshqa hisobga bogʻlangan.")
+            )
+        return value
 
     # `Role.objects` va `Branch.objects` — TenantManager, ya'ni bu queryset'lar
     # allaqachon joriy tashkilot bilan cheklangan. Boshqa tashkilotning rol

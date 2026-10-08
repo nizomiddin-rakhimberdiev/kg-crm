@@ -15,7 +15,7 @@ import { useBranchScope } from '@/app/providers/BranchProvider'
 import { Modal } from '@/components/ui/Modal'
 import { Pagination } from '@/components/ui/primitives'
 import { branchesApi } from '@/features/branches/api'
-import { staffApi, type StaffInput } from '@/features/staff/api'
+import { employeesApi, staffApi, type StaffInput } from '@/features/staff/api'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { usePageState } from '@/hooks/usePageState'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -31,6 +31,7 @@ const EMPTY_FORM: StaffInput = {
   password: '',
   role_id: '',
   branch_id: '',
+  employee_id: '',
 }
 
 const dateTime = formatDateTime
@@ -97,6 +98,7 @@ export function AccountsPanel() {
       password: '', // bo'sh qoldirilsa parol o'zgarmaydi
       role_id: member.role?.id ?? '',
       branch_id: member.branch?.id ?? '',
+      employee_id: member.employee_id ?? '',
     })
     setFieldErrors({})
     setError(null)
@@ -114,6 +116,12 @@ export function AccountsPanel() {
     queryKey: queryKeys.users(organizationId, params),
     queryFn: () => staffApi.list(params),
     placeholderData: keepPreviousData,
+  })
+  // Bog'lash uchun xodimlar ro'yxati (PLAN 9.1b) — faqat forma ochilganda.
+  const employeesQuery = useQuery({
+    queryKey: queryKeys.employees(organizationId, { page_size: 200 }),
+    queryFn: () => employeesApi.list({ page_size: 200 }),
+    enabled: showForm,
   })
   const rolesQuery = useQuery({
     queryKey: queryKeys.roles(organizationId),
@@ -180,6 +188,9 @@ export function AccountsPanel() {
       phone: form.phone,
       role_id: form.role_id,
       branch_id: form.branch_id || null,
+      // Bo'sh tanlov — bog'lanishni UZADI (PLAN 9.1b): hisob boshqa
+      // odamga o'tganda eski xodim hamon uning guruhini ko'rmasligi kerak.
+      employee_id: form.employee_id || null,
     }
     // Bo'sh parol "o'zgartirmaslik" degani — uni yubormaymiz, aks holda
     // serializer kuchsiz parol deb rad etadi.
@@ -517,6 +528,45 @@ export function AccountsPanel() {
               </select>
               {fieldErrors.role_id && (
                 <p className="mt-1 text-xs text-red-600">{fieldErrors.role_id}</p>
+              )}
+            </div>
+
+            {/*
+              Hisobni xodimga bog'lash (PLAN 9.1b).
+
+              Tarbiyachi o'z guruhini aynan shu bog'lanish orqali
+              ko'radi (`children/scope.py`, ADR-21). Ro'yxatda faqat
+              hali bog'lanmagan xodimlar — bittasi ikki hisobga
+              tegishli bo'la olmaydi.
+            */}
+            <div>
+              <label
+                htmlFor="acc-employee"
+                className="mb-1 block text-xs font-medium text-slate-600"
+              >
+                {t('Xodim')}
+              </label>
+              <select
+                id="acc-employee"
+                value={form.employee_id ?? ''}
+                onChange={(e) => setForm((p) => ({ ...p, employee_id: e.target.value }))}
+                className={inputClass(Boolean(fieldErrors.employee_id))}
+              >
+                <option value="">{t('— bogʻlanmagan —')}</option>
+                {(employeesQuery.data?.items ?? [])
+                  .filter((employee) => !employee.user || employee.id === form.employee_id)
+                  .map((employee) => (
+                    <option key={employee.id} value={employee.id}>
+                      {employee.full_name}
+                      {employee.position_title ? ` — ${employee.position_title}` : ''}
+                    </option>
+                  ))}
+              </select>
+              <p className="mt-1 text-xs text-slate-500">
+                {t('Tarbiyachi oʻz guruhini koʻrishi uchun hisob xodimga bogʻlanishi kerak.')}
+              </p>
+              {fieldErrors.employee_id && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.employee_id}</p>
               )}
             </div>
 

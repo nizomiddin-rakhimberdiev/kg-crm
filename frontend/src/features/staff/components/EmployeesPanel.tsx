@@ -19,7 +19,7 @@ import { useBranchScope } from '@/app/providers/BranchProvider'
 import { Modal } from '@/components/ui/Modal'
 import { Pagination } from '@/components/ui/primitives'
 import { branchesApi } from '@/features/branches/api'
-import { employeesApi, positionsApi, staffApi, type EmployeeInput } from '@/features/staff/api'
+import { employeesApi, positionsApi, type EmployeeInput } from '@/features/staff/api'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { usePageState } from '@/hooks/usePageState'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -44,7 +44,31 @@ const EMPTY_FORM: EmployeeInput = {
   official_salary: '',
   employment_status: 'active',
   termination_date: '',
+  // Ish grafigi (PLAN 9.1). Bo'sh `work_days` — filial kalendari, ya'ni
+  // ko'pchilik xodim uchun hech narsa tanlash kerak emas.
+  work_mode: 'monthly',
+  work_days: '',
+  hours_per_day: '',
+  hourly_rate: '',
 }
+
+/** Hafta kunlari — ISO raqamlashda (1 = dushanba). */
+const WEEKDAYS: [number, string][] = [
+  [1, t('Du')],
+  [2, t('Se')],
+  [3, t('Ch')],
+  [4, t('Pa')],
+  [5, t('Ju')],
+  [6, t('Sh')],
+  [7, t('Ya')],
+]
+
+/** "1,3,5" ↔ raqamlar toʻplami — formada katakchalar bilan ishlash uchun. */
+const parseDays = (value: string): number[] =>
+  value
+    .split(',')
+    .map((part) => Number(part.trim()))
+    .filter((day) => day >= 1 && day <= 7)
 
 const inputClass = (invalid?: boolean) =>
   cn(
@@ -101,11 +125,6 @@ export function EmployeesPanel() {
     placeholderData: keepPreviousData,
   })
 
-  // Bog'lash uchun tizim hisoblari ro'yxati (PLAN 2.8).
-  const usersQuery = useQuery({
-    queryKey: queryKeys.users(organizationId, { page_size: 200 }),
-    queryFn: () => staffApi.list({ page_size: 200 }),
-  })
   const positionsQuery = useQuery({
     queryKey: queryKeys.positions(organizationId),
     queryFn: positionsApi.list,
@@ -162,9 +181,12 @@ export function EmployeesPanel() {
       hire_date: employee.hire_date,
       base_salary: employee.base_salary,
       official_salary: employee.official_salary ?? '',
-      user_id: employee.user ?? null,
       employment_status: employee.employment_status,
       termination_date: employee.termination_date ?? '',
+      work_mode: employee.work_mode ?? 'monthly',
+      work_days: employee.work_days ?? '',
+      hours_per_day: employee.hours_per_day ?? '',
+      hourly_rate: employee.hourly_rate ?? '',
     })
     setFieldErrors({})
     setError(null)
@@ -219,8 +241,14 @@ export function EmployeesPanel() {
       phone: form.phone?.trim() ?? '',
       position_id: form.position_id || null,
       hire_date: form.hire_date,
-      base_salary: form.base_salary,
-      official_salary: form.official_salary || '0',
+      // Soatbayda oylik maosh yo'q: summa kunlardan chiqadi, va bazada
+      // `official_salary <= base_salary` cheklovi bor — ikkalasi ham nol.
+      base_salary: form.work_mode === 'hourly' ? '0' : form.base_salary,
+      official_salary: form.work_mode === 'hourly' ? '0' : form.official_salary || '0',
+      work_mode: form.work_mode,
+      work_days: form.work_days ?? '',
+      hours_per_day: form.work_mode === 'hourly' ? form.hours_per_day || '0' : '0',
+      hourly_rate: form.work_mode === 'hourly' ? form.hourly_rate || '0' : '0',
     }
     if (editing) {
       payload.employment_status = form.employment_status
@@ -507,11 +535,17 @@ export function EmployeesPanel() {
                 ['first_name', t('Ism'), 'text', true],
                 ['phone', t('Telefon'), 'tel', false],
                 ['hire_date', t('Ishga kirgan sana'), 'date', true],
-                ['base_salary', t('Oylik maosh (soʻm)'), 'number', true],
-                // Rasmiy qism (ADR-18): bankka, soliq ushlab qolingan
-                // holda. Bo'sh qoldirilsa 0 — ya'ni hammasi naqd, va
-                // hech bir eski raqam siljimaydi.
-                ['official_salary', t('Shundan rasmiy (soʻm)'), 'number', false],
+                // Soatbay xodimda oylik maosh maydoni ma'nosiz: uning
+                // puli kelgan kunlardan chiqadi (PLAN 9.1).
+                ...((form.work_mode === 'hourly'
+                  ? []
+                  : [
+                      ['base_salary', t('Oylik maosh (soʻm)'), 'number', true],
+                      // Rasmiy qism (ADR-18): bankka, soliq ushlab
+                      // qolingan holda. Bo'sh qoldirilsa 0 — ya'ni
+                      // hammasi naqd, va hech bir eski raqam siljimaydi.
+                      ['official_salary', t('Shundan rasmiy (soʻm)'), 'number', false],
+                    ]) as [keyof EmployeeInput, string, string, boolean][]),
               ] as const
             ).map(([key, label, type, required]) => (
               <div key={key}>
@@ -540,30 +574,149 @@ export function EmployeesPanel() {
               </div>
             ))}
 
-            {/* Tizim hisobi (PLAN 2.8) — ixtiyoriy va ataylab shunday:
-                oshpazga hisob kerak emas. Lekin tarbiyachi uchun
-                MAJBURIY: usiz u o'z guruhini ko'ra olmaydi. */}
-            <div>
-              <label htmlFor="emp-user" className="mb-1 block text-xs font-medium text-slate-600">
-                {t('Tizim hisobi')}
-              </label>
-              <select
-                id="emp-user"
-                value={form.user_id ?? ''}
-                onChange={(e) => setForm((prev) => ({ ...prev, user_id: e.target.value || null }))}
-                className={inputClass(false)}
-              >
-                <option value="">{t('— bogʻlanmagan —')}</option>
-                {(usersQuery.data?.items ?? []).map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.full_name} — {user.email}
-                  </option>
+            {/*
+              Ish grafigi (PLAN 9.1).
+
+              Ikki rejim: oylik maosh va soatbay. "Haftada uch kun
+              keladigan" alohida tur EMAS — u oylik maosh va uch kunlik
+              kalendar, ya'ni bitta hisob-kitob. Kunlar tanlanmasa,
+              filial kalendari ishlatiladi.
+            */}
+            <div className="rounded-xl border border-slate-200 p-3 sm:col-span-2">
+              <p className="text-xs font-semibold text-slate-700">{t('Ish grafigi')}</p>
+
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(
+                  [
+                    ['monthly', t('Oylik maosh')],
+                    ['hourly', t('Soatbay')],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={form.work_mode === value}
+                    onClick={() => setForm((prev) => ({ ...prev, work_mode: value }))}
+                    className={cn(
+                      'inline-flex min-h-[40px] items-center rounded-lg px-3 text-sm font-medium transition',
+                      form.work_mode === value
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200',
+                    )}
+                  >
+                    {label}
+                  </button>
                 ))}
-              </select>
-              <p className="mt-1 text-xs text-slate-500">
-                {t('Tarbiyachi oʻz guruhini koʻrishi uchun hisob bogʻlanishi kerak.')}
+              </div>
+
+              <p className="mt-3 text-xs font-medium text-slate-600">{t('Ish kunlari')}</p>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {WEEKDAYS.map(([day, label]) => {
+                  const days = parseDays(form.work_days ?? '')
+                  const on = days.includes(day)
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() =>
+                        setForm((prev) => {
+                          const current = parseDays(prev.work_days ?? '')
+                          const next = on
+                            ? current.filter((d) => d !== day)
+                            : [...current, day].sort((a, b) => a - b)
+                          return { ...prev, work_days: next.join(',') }
+                        })
+                      }
+                      className={cn(
+                        'h-10 w-10 rounded-lg text-sm font-semibold transition',
+                        on
+                          ? 'bg-brand-600 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+                      )}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="mt-1.5 text-xs text-slate-500">
+                {form.work_days
+                  ? t('Oylik shu kunlar boʻyicha hisoblanadi.')
+                  : t('Tanlanmasa — bogʻchaning ish kunlari (odatda Du–Ju).')}
               </p>
+
+              {form.work_mode === 'hourly' && (
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label
+                      htmlFor="emp-hours"
+                      className="mb-1 block text-xs font-medium text-slate-600"
+                    >
+                      {t('Kuniga soat')} <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="emp-hours"
+                      type="number"
+                      min="0"
+                      max="24"
+                      step="0.5"
+                      inputMode="decimal"
+                      value={form.hours_per_day ?? ''}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, hours_per_day: e.target.value }))
+                      }
+                      className={inputClass(Boolean(fieldErrors.hours_per_day))}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="emp-rate"
+                      className="mb-1 block text-xs font-medium text-slate-600"
+                    >
+                      {t('Soat narxi (soʻm)')} <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="emp-rate"
+                      type="number"
+                      min="0"
+                      step="1000"
+                      inputMode="numeric"
+                      value={form.hourly_rate ?? ''}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, hourly_rate: e.target.value }))
+                      }
+                      className={inputClass(Boolean(fieldErrors.hourly_rate))}
+                    />
+                    {fieldErrors.hourly_rate && (
+                      <p className="mt-1 text-xs text-red-600">{fieldErrors.hourly_rate}</p>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 sm:col-span-2">
+                    {t(
+                      'Oylik summa tabeldagi kelgan kunlardan hisoblanadi; tabel yuritilmasa — grafik boʻyicha.',
+                    )}
+                  </p>
+                </div>
+              )}
             </div>
+
+            {/* Tizim hisobi — faqat HOLAT (PLAN 9.1b).
+                Bog'lash foydalanuvchi formasida: avval odam ishga
+                olinadi, kirish huquqi esa keyin va hammaga ham emas.
+                Ilgari bu yerda tanlagich turardi va u hali mavjud
+                bo'lmagan hisobni tanlashni so'rardi. */}
+            {editing && (
+              <div className="rounded-lg bg-slate-50 px-3 py-2.5">
+                <p className="text-xs font-medium text-slate-600">{t('Tizim hisobi')}</p>
+                <p className="mt-0.5 text-sm text-slate-800">
+                  {editing.user_email ?? t('— bogʻlanmagan —')}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {t('Hisob «Hisoblar» boʻlimida yaratiladi va oʻsha yerda xodimga bogʻlanadi.')}
+                </p>
+              </div>
+            )}
 
             {!editing && isOrgOwner && branches.length > 0 && (
               <div>

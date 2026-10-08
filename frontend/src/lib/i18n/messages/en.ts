@@ -822,8 +822,6 @@ export const messages: Record<string, string> = {
   '— biriktirilmagan —': '— not assigned —',
   '— bogʻlanmagan —': '— not linked —',
   Tarbiyachi: 'Teacher',
-  'Tarbiyachi oʻz guruhini koʻrishi uchun hisob bogʻlanishi kerak.':
-    'Link an account so the teacher can see their group.',
   'Tizim hisobi': 'System account',
   'Tizim hisobi bogʻlangan tarbiyachi faqat shu guruhni koʻradi.':
     'A teacher with a linked account sees only this group.',
@@ -1313,4 +1311,17 @@ export const messages: Record<string, string> = {
   'Nima olindi': 'What was bought',
   Oʻlchov: 'Unit',
   'Yana qoʻshish': 'Add another',
+  'Hisob «Hisoblar» boʻlimida yaratiladi va oʻsha yerda xodimga bogʻlanadi.':
+    'The account is created under “Accounts” and linked to the employee there.',
+  'Ish grafigi': 'Work schedule',
+  'Kuniga soat': 'Hours per day',
+  'Oylik shu kunlar boʻyicha hisoblanadi.': 'Payroll is calculated on these days.',
+  'Oylik summa tabeldagi kelgan kunlardan hisoblanadi; tabel yuritilmasa — grafik boʻyicha.':
+    'The monthly amount comes from the days marked present; with no timesheet, from the schedule.',
+  'Soat narxi (soʻm)': 'Hourly rate (UZS)',
+  Soatbay: 'Hourly',
+  'Tanlanmasa — bogʻchaning ish kunlari (odatda Du–Ju).':
+    'If none are chosen — the kindergarten’s working days (usually Mon–Fri).',
+  'Tarbiyachi oʻz guruhini koʻrishi uchun hisob xodimga bogʻlanishi kerak.':
+    'For a teacher to see their group, the account must be linked to an employee.',
 }

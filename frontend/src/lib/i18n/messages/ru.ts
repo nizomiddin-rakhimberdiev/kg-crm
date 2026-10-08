@@ -821,8 +821,6 @@ export const messages: Record<string, string> = {
   '— biriktirilmagan —': '— не закреплён —',
   '— bogʻlanmagan —': '— не связан —',
   Tarbiyachi: 'Воспитатель',
-  'Tarbiyachi oʻz guruhini koʻrishi uchun hisob bogʻlanishi kerak.':
-    'Чтобы воспитатель видел свою группу, нужно связать учётную запись.',
   'Tizim hisobi': 'Учётная запись',
   'Tizim hisobi bogʻlangan tarbiyachi faqat shu guruhni koʻradi.':
     'Воспитатель со связанной учётной записью видит только эту группу.',
@@ -1308,4 +1306,17 @@ export const messages: Record<string, string> = {
   'Nima olindi': 'Что куплено',
   Oʻlchov: 'Единица',
   'Yana qoʻshish': 'Добавить ещё',
+  'Hisob «Hisoblar» boʻlimida yaratiladi va oʻsha yerda xodimga bogʻlanadi.':
+    'Учётная запись создаётся в разделе «Учётные записи» и там же привязывается к сотруднику.',
+  'Ish grafigi': 'График работы',
+  'Kuniga soat': 'Часов в день',
+  'Oylik shu kunlar boʻyicha hisoblanadi.': 'Зарплата считается по этим дням.',
+  'Oylik summa tabeldagi kelgan kunlardan hisoblanadi; tabel yuritilmasa — grafik boʻyicha.':
+    'Сумма за месяц считается по отмеченным в табеле дням; если табель не ведётся — по графику.',
+  'Soat narxi (soʻm)': 'Цена часа (сум)',
+  Soatbay: 'Почасовая',
+  'Tanlanmasa — bogʻchaning ish kunlari (odatda Du–Ju).':
+    'Если не выбрано — рабочие дни сада (обычно Пн–Пт).',
+  'Tarbiyachi oʻz guruhini koʻrishi uchun hisob xodimga bogʻlanishi kerak.':
+    'Чтобы воспитатель видел свою группу, учётную запись нужно привязать к сотруднику.',
 }

@@ -177,23 +177,35 @@ def missing_employees(*, run: PayrollRun) -> list[Employee]:
     ]
 
 
+def scheduled_days(*, employee: Employee, period_year: int, period_month: int) -> int:
+    """Xodim shu oyda O'Z grafigi bo'yicha necha kun ishlashi kerak."""
+    from apps.attendance.services_absence import working_days_in_month
+
+    return working_days_in_month(
+        organization_id=employee.organization_id,
+        year=period_year,
+        month=period_month,
+        branch=employee.branch,
+        weekdays=set(employee.weekdays),
+    )
+
+
 def period_share(*, employee: Employee, period_year: int, period_month: int) -> tuple[int, int]:
     """
     Xodimning shu oydagi ish kunlari va oyning jami ish kunlari.
 
     Ishga kirgan oyi to'liq hisoblangani — bog'cha uchun ortiqcha
-    xarajat, xodim uchun esa keyingi oy "nega kam?" degan savol. Bitta
-    kalendar (`attendance`) ikkala tomonda ham ishlatiladi: bolaning
-    proporsional fakturasi ham shundan chiqadi.
-    """
-    from apps.attendance.services_absence import billable_days, working_days_in_month
+    xarajat, xodim uchun esa keyingi oy "nega kam?" degan savol.
 
-    total = working_days_in_month(
-        organization_id=employee.organization_id,
-        year=period_year,
-        month=period_month,
-        branch=employee.branch,
-    )
+    Maxraj — XODIMNING o'z kunlari (PLAN 9.1), filialniki emas: haftada
+    uch kun keladigan tarbiyachi oy o'rtasida ishga kirsa, 13/22 emas,
+    8/14 olishi kerak. Grafigi bo'sh xodim uchun ikkalasi bir xil,
+    ya'ni eski xatti-harakat o'zgarmaydi.
+    """
+    from apps.attendance.services_absence import billable_days
+
+    weekdays = set(employee.weekdays)
+    total = scheduled_days(employee=employee, period_year=period_year, period_month=period_month)
     last_day = calendar.monthrange(period_year, period_month)[1]
     month_start = date(period_year, period_month, 1)
     month_end = date(period_year, period_month, last_day)
@@ -207,8 +219,61 @@ def period_share(*, employee: Employee, period_year: int, period_month: int) -> 
         date_from=start,
         date_to=month_end,
         branch=employee.branch,
+        weekdays=weekdays,
     )
     return worked, total
+
+
+def present_days(*, employee: Employee, period_year: int, period_month: int) -> int | None:
+    """
+    Tabel bo'yicha kelgan kunlar. Tabel umuman to'ldirilmagan bo'lsa — `None`.
+
+    Farq muhim: nol kun "kelmadi" degani, `None` esa "hech kim
+    belgilamagan". Soatbay xodim uchun ikkalasiga bir xil javob
+    bermaymiz (pastga qarang).
+    """
+    from apps.attendance.models_staff import StaffAttendance, StaffAttendanceStatus
+
+    last_day = calendar.monthrange(period_year, period_month)[1]
+    rows = StaffAttendance.objects.filter(
+        employee=employee,
+        attendance_date__gte=date(period_year, period_month, 1),
+        attendance_date__lte=date(period_year, period_month, last_day),
+    )
+    total = rows.count()
+    if total == 0:
+        return None
+    return rows.filter(status=StaffAttendanceStatus.PRESENT).count()
+
+
+def hourly_amount(*, employee: Employee, period_year: int, period_month: int) -> Decimal:
+    """
+    Soatbay xodimning shu oydagi summasi: kunlar × kunlik soat × soat narxi.
+
+    Kunlar tabeldan olinadi. Tabel yuritilmagan bo'lsa — grafik
+    bo'yicha: nolga tushirish "texnik jihatdan to'g'ri" bo'lardi,
+    lekin bu sabab ko'rsatilmagan nol bo'lib, tabelni hech kim
+    to'ldirmaydigan bog'chada har bir soatbay xodim oyligini
+    ololmay qolardi.
+    """
+    days = present_days(employee=employee, period_year=period_year, period_month=period_month)
+    if days is None:
+        days = scheduled_days(employee=employee, period_year=period_year, period_month=period_month)
+    return _money(Decimal(days) * employee.hours_per_day * employee.hourly_rate)
+
+
+def base_for_period(*, employee: Employee, period_year: int, period_month: int) -> Decimal:
+    """Xodimning shu oydagi bazaviy summasi — rejimiga qarab."""
+    from apps.hr.models import WorkMode
+
+    if employee.work_mode == WorkMode.HOURLY:
+        return hourly_amount(employee=employee, period_year=period_year, period_month=period_month)
+    return _prorated_salary(
+        employee=employee,
+        amount=employee.base_salary,
+        period_year=period_year,
+        period_month=period_month,
+    )
 
 
 def _prorated_salary(
@@ -275,11 +340,8 @@ def create_run(
                 # Maosh SNAPSHOT sifatida ko'chiriladi: keyin oshsa ham
                 # bu hisoblash o'zgarmasligi kerak. Ishga kirgan oyi
                 # esa proporsional (PLAN 1.10).
-                base_amount=_prorated_salary(
-                    employee=employee,
-                    amount=employee.base_salary,
-                    period_year=period_year,
-                    period_month=period_month,
+                base_amount=base_for_period(
+                    employee=employee, period_year=period_year, period_month=period_month
                 ),
                 official_base=_prorated_salary(
                     employee=employee,

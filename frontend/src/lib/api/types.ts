@@ -190,6 +190,9 @@ export interface StaffUser {
   is_active: boolean
   last_login_at: string | null
   created_at: string
+  /** Qaysi xodimning hisobi (PLAN 9.1b). */
+  employee_id: string | null
+  employee_name: string | null
 }
 
 // --- Bolalar CRM ---
@@ -430,9 +433,17 @@ export interface Employee {
   phone: string
   position: string | null
   position_title: string | null
-  /** Tizim hisobi (PLAN 2.8) — bo'lmasligi mumkin. */
+  /** Tizim hisobi (PLAN 2.8) — bo'lmasligi mumkin. Bogʻlanish
+   *  foydalanuvchi formasida beriladi (PLAN 9.1b). */
   user: string | null
   user_email: string | null
+  user_name: string | null
+  /** Ish grafigi (PLAN 9.1): oylik maosh yoki soatbay. */
+  work_mode: 'monthly' | 'hourly'
+  /** ISO kunlar, vergul bilan ("1,3,5"). Boʻsh = filial kalendari. */
+  work_days: string
+  hours_per_day: string
+  hourly_rate: string
   employment_status: 'active' | 'on_leave' | 'terminated'
   hire_date: string
   termination_date: string | null
