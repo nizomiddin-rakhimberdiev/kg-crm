@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Download,
   Phone,
+  SlidersHorizontal,
   Sparkles,
 } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
@@ -168,6 +169,16 @@ export default function DebtorsPage() {
   const [minAmount, setMinAmount] = useState('')
   const [orderBy, setOrderBy] = useState<'debt' | 'days' | 'name'>('debt')
   const [view, setView] = useState<'today' | 'periods'>('today')
+  // Telefonda filtrlar yopiq boshlanadi (PLAN 10.4).
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  /** Nechta filtr yoqilgan — yigʻilgan tugmada koʻrinadi. */
+  const activeFilters =
+    (minDays !== null ? 1 : 0) +
+    (groupId ? 1 : 0) +
+    (minAmount ? 1 : 0) +
+    (overdueOnlyChoice ? 1 : 0) +
+    (orderBy !== 'debt' ? 1 : 0)
+
   const [openChild, setOpenChild] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<ReminderFilters | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -332,10 +343,45 @@ export default function DebtorsPage() {
             <p className="rounded-lg bg-nihol-50 px-3 py-2 text-sm text-nihol-800">{notice}</p>
           )}
 
-          {/* Filtrlar — mudira "kimga bugun qo'ng'iroq qilay?" degan
-          savolga javob izlaydi, shuning uchun kechikish va guruh
-          birinchi o'rinda. */}
-          <div className="flex flex-wrap items-end gap-3 rounded-xl border border-tosh-200 bg-white p-3">
+          {/*
+            Filtrlar — mudira "kimga bugun qo'ng'iroq qilay?" degan
+            savolga javob izlaydi, shuning uchun kechikish va guruh
+            birinchi o'rinda.
+
+            TELEFONDA ular YIG'ILADI (PLAN 10.4): to'rtta chip, uchta
+            tanlagich va katakcha 375px ekranning butun birinchi
+            kadrini egallardi — ya'ni sahifa ochilganda qarzdorlar
+            o'rniga filtr formasi ko'rinardi.
+          */}
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((open) => !open)}
+            aria-expanded={filtersOpen}
+            className="flex w-full items-center justify-between rounded-xl border border-tosh-200 bg-white px-3 py-2.5 text-sm font-medium text-tosh-700 sm:hidden"
+          >
+            <span className="inline-flex items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4 text-tosh-500" />
+              {t('Filtrlar')}
+              {activeFilters > 0 && (
+                <span className="rounded-full bg-nihol-600 px-2 py-0.5 text-xs font-semibold text-white">
+                  {activeFilters}
+                </span>
+              )}
+            </span>
+            <ChevronRight
+              className={cn(
+                'h-4 w-4 text-tosh-500 transition-transform',
+                filtersOpen && 'rotate-90',
+              )}
+            />
+          </button>
+
+          <div
+            className={cn(
+              'flex-wrap items-end gap-3 rounded-xl border border-tosh-200 bg-white p-3 sm:flex',
+              filtersOpen ? 'flex' : 'hidden',
+            )}
+          >
             <div className="flex flex-wrap items-center gap-1">
               {DAY_FILTERS.map(([value, label]) => (
                 <button
@@ -445,8 +491,91 @@ export default function DebtorsPage() {
               </div>
             )}
 
+            {/*
+              TELEFONDA KARTOCHKA (PLAN 10.4).
+
+              Jadvalda eng muhim ustun — qarz — o'ngda turadi va 375px
+              ekranda gorizontal scroll ortida qolardi: mudira kim
+              qancha qarzdorligini ko'rish uchun yon tomonga surishi
+              kerak edi. Kartochkada summa va kechikish birinchi
+              qatorda, eslatma esa bitta bosishda.
+            */}
             {debtorsQuery.data && rows.length > 0 && (
-              <div className="overflow-x-auto">
+              <ul className="divide-y divide-tosh-100 sm:hidden">
+                {rows.map((row) => (
+                  <li key={row.child.id}>
+                    <div className="flex items-start gap-3 px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => setOpenChild(row.child.id)}
+                        className="min-w-0 flex-1 text-left"
+                      >
+                        <p className="truncate font-semibold text-tosh-900">
+                          {row.child.full_name}
+                        </p>
+                        <p className="mt-0.5 truncate text-xs text-tosh-600">
+                          {row.child.group ?? t('Guruhsiz')}
+                          {row.primary_guardian && ` · ${row.primary_guardian.full_name}`}
+                        </p>
+                        <p className="num mt-1.5 text-lg font-bold text-orik-800">
+                          {money(row.balance)}
+                        </p>
+                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                          {row.days_overdue !== null ? (
+                            <span
+                              className={cn(
+                                'num rounded-full px-2 py-0.5 font-medium',
+                                row.days_overdue >= 30
+                                  ? 'bg-orik-100 text-orik-900'
+                                  : 'bg-orik-50 text-orik-800',
+                              )}
+                            >
+                              {t('{days} kun', { days: row.days_overdue })}
+                            </span>
+                          ) : (
+                            <span className="text-tosh-600">{t('muddati kelmagan')}</span>
+                          )}
+                          <span className="text-tosh-600">
+                            {row.last_reminder_at
+                              ? t('eslatma: {date}', { date: date(row.last_reminder_at) })
+                              : t('eslatma yuborilmagan')}
+                          </span>
+                        </p>
+                      </button>
+
+                      <div className="flex shrink-0 flex-col items-center gap-1.5">
+                        {row.primary_guardian && (
+                          <a
+                            href={`tel:${row.primary_guardian.phone}`}
+                            aria-label={t('{name} ga qoʻngʻiroq qilish', {
+                              name: row.primary_guardian.full_name,
+                            })}
+                            className="grid h-11 w-11 place-items-center rounded-lg border border-tosh-200 text-nihol-700"
+                          >
+                            <Phone className="h-4 w-4" />
+                          </a>
+                        )}
+                        {can('notifications.create') && row.primary_guardian && (
+                          <button
+                            type="button"
+                            aria-label={t('{name} uchun eslatma yuborish', {
+                              name: row.child.full_name,
+                            })}
+                            onClick={() => setConfirming({ child_ids: [row.child.id] })}
+                            className="grid h-11 w-11 place-items-center rounded-lg border border-tosh-200 text-tosh-600"
+                          >
+                            <BellRing className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {debtorsQuery.data && rows.length > 0 && (
+              <div className="hidden overflow-x-auto sm:block">
                 <table className="w-full min-w-[760px] text-sm">
                   <thead className="bg-tosh-50 text-left text-xs uppercase tracking-wide text-tosh-500">
                     <tr>

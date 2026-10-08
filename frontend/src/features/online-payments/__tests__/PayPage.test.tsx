@@ -19,6 +19,7 @@ vi.mock('../api', async (original) => ({
 const LINK: PublicPayLink = {
   kindergarten: 'Alfa Bogʻcha',
   logo_url: null,
+  contact_phone: '+998 90 123 45 67',
   child: 'Ali V.',
   invoice: 'INV-2026-09-0001',
   period: '09.2026',

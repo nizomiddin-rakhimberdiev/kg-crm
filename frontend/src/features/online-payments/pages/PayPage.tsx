@@ -12,9 +12,10 @@
  * can arrive a few seconds after the redirect.
  */
 
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { CheckCircle2, Clock, CreditCard } from 'lucide-react'
+import { CheckCircle2, Clock, CreditCard, Phone } from 'lucide-react'
 import { Logo } from '@/components/brand/Logo'
 import { LanguageSwitch } from '@/components/layout/LanguageSwitch'
 import {
@@ -45,6 +46,18 @@ export default function PayPage() {
         : false,
   })
   const data = query.data
+  /*
+   * Kutish tugadimi (PLAN 10.6).
+   *
+   * Har qayta oʻqish `dataUpdatedAt` ni oʻzgartiradi, shuning uchun
+   * sanagich aynan soʻrovlar sonini sanaydi. Chegaraga yetganda
+   * sahifa "tekshirilmoqda" deb jim qolmaydi.
+   */
+  const [polls, setPolls] = useState(0)
+  useEffect(() => {
+    if (returned) setPolls((count) => count + 1)
+  }, [returned, query.dataUpdatedAt])
+  const waitedTooLong = returned && !data?.is_paid && polls >= RETURN_POLL_LIMIT
   const notFound = query.error instanceof ApiError && query.error.status === 404
   const providers = Object.entries(data?.providers ?? {}) as [OnlineProvider, string][]
 
@@ -76,7 +89,22 @@ export default function PayPage() {
 
         {data && (
           <div className="rounded-2xl border border-tosh-200 bg-white p-6 shadow-card">
-            <p className="text-sm font-medium text-tosh-500">{data.kindergarten}</p>
+            {/*
+              Bogʻchaning OʻZ logotipi (PLAN 10.6). Ota-ona havolani
+              Telegramdan ochadi va birinchi savoli — "bu haqiqatan
+              bizning bogʻchamizmi?". Tanish belgi bu savolga bir
+              qarashda javob beradi; `Radix` logotipi esa bermaydi.
+            */}
+            <div className="flex items-center gap-3">
+              {data.logo_url && (
+                <img
+                  src={data.logo_url}
+                  alt=""
+                  className="h-10 w-10 shrink-0 rounded-xl object-contain"
+                />
+              )}
+              <p className="text-sm font-medium text-tosh-600">{data.kindergarten}</p>
+            </div>
             <h1 className="mt-1 text-xl font-bold text-tosh-900">{data.child}</h1>
             <p className="mt-0.5 text-sm text-tosh-500">
               {t('{period} uchun toʻlov', { period: data.period })}
@@ -111,7 +139,17 @@ export default function PayPage() {
                 {returned && (
                   <p className="mt-4 flex items-center gap-2 rounded-lg bg-orik-50 px-3 py-2 text-sm text-orik-900">
                     <Clock className="h-4 w-4 shrink-0" />
-                    {t('Toʻlov tekshirilmoqda — sahifa oʻzi yangilanadi.')}
+                    {/*
+                      Kutish CHEKSIZ emas: provayderning javobi bir
+                      necha soniyada keladi, lekin kelmasligi ham
+                      mumkin. Soʻrov toʻxtagach sahifa jim qolmasligi
+                      kerak — ota-ona nima qilishini bilsin.
+                    */}
+                    {waitedTooLong
+                      ? t(
+                          'Toʻlov hali koʻrinmadi. Pul yechilgan boʻlsa, bir necha daqiqada tushadi — keyin bogʻchaga murojaat qiling.',
+                        )
+                      : t('Toʻlov tekshirilmoqda — sahifa oʻzi yangilanadi.')}
                   </p>
                 )}
 
@@ -135,11 +173,21 @@ export default function PayPage() {
                   </div>
                 )}
 
-                <p className="mt-4 text-xs text-tosh-500">
+                <p className="mt-4 text-xs text-tosh-600">
                   {t(
                     'Pul toʻgʻridan-toʻgʻri bogʻchaning hisobiga tushadi. Karta maʼlumotlari faqat toʻlov tizimi sahifasida kiritiladi.',
                   )}
                 </p>
+
+                {data.contact_phone && (
+                  <a
+                    href={`tel:${data.contact_phone}`}
+                    className="mt-3 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-tosh-200 text-sm font-semibold text-tosh-700"
+                  >
+                    <Phone className="h-4 w-4 text-nihol-700" />
+                    {t('Bogʻchaga qoʻngʻiroq qilish')}
+                  </a>
+                )}
               </>
             )}
           </div>

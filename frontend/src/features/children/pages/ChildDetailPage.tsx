@@ -9,10 +9,11 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Archive, ArrowLeft, Pencil, Phone, Star, Unlink, UserPlus } from 'lucide-react'
+import { Archive, ArrowLeft, Banknote, Pencil, Phone, Star, Unlink, UserPlus } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { childrenApi, groupsApi } from '@/features/children/api'
 import { PricePicker } from '@/features/children/components/PricePicker'
+import { TakePaymentModal } from '@/features/payments/components/TakePaymentModal'
 import { priceFromChild, priceToPayload, type PriceValue } from '@/features/children/price'
 import { tariffsApi } from '@/features/payments/api'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -88,6 +89,8 @@ export default function ChildDetailPage() {
   const [pendingGroup, setPendingGroup] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
   const [changingStatus, setChangingStatus] = useState(false)
+  // Toʻlov oynasi shu sahifadan ochiladi (PLAN 10.5).
+  const [takingPayment, setTakingPayment] = useState(false)
   const [archiving, setArchiving] = useState(false)
   // Narx qoralamasi: `null` — tahrirlanmagan, serverdagi qiymat ko'rsatiladi.
   // Summa yozilayotganda har harfda saqlamaslik uchun qoralama + "Saqlash".
@@ -184,6 +187,9 @@ export default function ChildDetailPage() {
   }
 
   const child = childQuery.data
+  /** Asosiy vasiy: qoʻngʻiroq tugmasi va kartochkadagi aloqa shundan. */
+  const primaryGuardian =
+    child?.guardians.find((link) => link.is_primary)?.guardian ?? child?.guardians[0]?.guardian
 
   return (
     <div className="space-y-6">
@@ -203,6 +209,31 @@ export default function ChildDetailPage() {
           setPendingGroup(null)
         }}
       />
+
+      {/*
+        Toʻlov oynasi — Toʻlovlar sahifasidagi bilan AYNAN BIR XIL
+        (PLAN 10.5): taqsimot, avans ogohlantirishi va ikki marta
+        bosishdan himoya bir joyda yozilgan. Qator faqat kim uchun
+        ekanini aytadi, qolgan hamma narsani oynaning oʻzi yuklaydi.
+      */}
+      {takingPayment && (
+        <TakePaymentModal
+          row={{
+            child_id: child.id,
+            child_name: child.full_name,
+            group_name: child.current_group?.name ?? '',
+            invoice_id: null,
+            invoice_number: '',
+            charged: '0',
+            paid: '0',
+            outstanding: '0',
+            state: 'no_invoice',
+            balance: String(child.balance ?? '0'),
+            advance: '0',
+          }}
+          onClose={() => setTakingPayment(false)}
+        />
+      )}
 
       <Link
         to="/children"
@@ -283,94 +314,39 @@ export default function ChildDetailPage() {
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <ChildBalanceCard childId={childId} />
-        {/* Guruh */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">{t('Guruh')}</h2>
-          {can('children.update') ? (
-            <select
-              aria-label={t('Guruh')}
-              value={child.current_group?.id ?? ''}
-              onChange={(e) => e.target.value && setPendingGroup(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+      {/*
+        Ikkita amal doim qoʻl ostida (PLAN 10.5): pul qabul qilish va
+        ota-onaga qoʻngʻiroq. Ilgari kartada ularning ikkalasi ham
+        yoʻq edi — mudira toʻlov uchun Toʻlovlar sahifasiga oʻtib,
+        bolani qaytadan qidirardi; telefon raqami esa sahifaning
+        pastida, guruh va tarifdan keyin turardi.
+      */}
+      {(can('payments.create') || primaryGuardian) && !child.archived_at && (
+        <div className="flex flex-wrap gap-2">
+          {can('payments.create') && (
+            <button
+              type="button"
+              onClick={() => setTakingPayment(true)}
+              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-nihol-600 px-4 text-sm font-semibold text-white transition hover:bg-nihol-700 sm:flex-none"
             >
-              <GroupOptions
-                groups={groupsQuery.data?.items ?? []}
-                currentId={child.current_group?.id}
-              />
-            </select>
-          ) : (
-            <p className="text-sm text-slate-600">{child.current_group?.name ?? '—'}</p>
+              <Banknote className="h-4 w-4" />
+              {t('Toʻlov qabul qilish')}
+            </button>
+          )}
+          {primaryGuardian && (
+            <a
+              href={`tel:${primaryGuardian.phone}`}
+              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 sm:flex-none"
+            >
+              <Phone className="h-4 w-4 text-nihol-700" />
+              {t('Qoʻngʻiroq')}
+            </a>
           )}
         </div>
+      )}
 
-        {/* Oylik narx — tarif yoki individual summa */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">{t('Oylik narx')}</h2>
-          {can('payments.update') ? (
-            (() => {
-              const current = priceFromChild(child)
-              const shown = priceDraft ?? current
-              const dirty =
-                priceDraft !== null &&
-                (priceDraft.tariffId !== current.tariffId ||
-                  priceDraft.monthlyFee !== current.monthlyFee)
-              return (
-                <>
-                  <PricePicker
-                    idPrefix="child"
-                    value={shown}
-                    onChange={setPriceDraft}
-                    disabled={savePrice.isPending}
-                    tariffs={tariffsQuery.data?.items ?? []}
-                  />
-                  {dirty && (
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        type="button"
-                        disabled={savePrice.isPending}
-                        onClick={() => {
-                          const { payload, error: priceError } = priceToPayload(shown)
-                          if (priceError) {
-                            setError(priceError)
-                            return
-                          }
-                          savePrice.mutate(payload)
-                        }}
-                        className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
-                      >
-                        {savePrice.isPending ? t('Saqlanmoqda…') : t('Saqlash')}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPriceDraft(null)}
-                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
-                      >
-                        {t('Bekor qilish')}
-                      </button>
-                    </div>
-                  )}
-                  {dirty && (
-                    // Q4: narx keyingi hujjatdan — joriy faktura o'zgarmaydi.
-                    <p className="mt-2 text-xs text-slate-500">
-                      {t(
-                        'Yangi tarif KEYINGI hisob-fakturadan kuchga kiradi. Joriy hujjat oʻzgarmaydi.',
-                      )}
-                    </p>
-                  )}
-                </>
-              )
-            })()
-          ) : (
-            <p className="text-sm text-slate-600">
-              {child.monthly_fee !== null
-                ? t('Individual narx: {v}', { v: formatUZS(Number(child.monthly_fee)) })
-                : (child.tariff_name ?? '—')}
-            </p>
-          )}
-        </div>
-
+      <div className="grid gap-4 lg:grid-cols-3">
+        <ChildBalanceCard childId={childId} onTakePayment={() => setTakingPayment(true)} />
         {/* Vasiylar */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
           <div className="mb-3 flex items-center justify-between">
@@ -569,6 +545,92 @@ export default function ChildDetailPage() {
             </form>
           )}
         </div>
+      </div>
+
+      {/* Guruh */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <h2 className="mb-3 text-sm font-semibold text-slate-900">{t('Guruh')}</h2>
+        {can('children.update') ? (
+          <select
+            aria-label={t('Guruh')}
+            value={child.current_group?.id ?? ''}
+            onChange={(e) => e.target.value && setPendingGroup(e.target.value)}
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+          >
+            <GroupOptions
+              groups={groupsQuery.data?.items ?? []}
+              currentId={child.current_group?.id}
+            />
+          </select>
+        ) : (
+          <p className="text-sm text-slate-600">{child.current_group?.name ?? '—'}</p>
+        )}
+      </div>
+
+      {/* Oylik narx — tarif yoki individual summa */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <h2 className="mb-3 text-sm font-semibold text-slate-900">{t('Oylik narx')}</h2>
+        {can('payments.update') ? (
+          (() => {
+            const current = priceFromChild(child)
+            const shown = priceDraft ?? current
+            const dirty =
+              priceDraft !== null &&
+              (priceDraft.tariffId !== current.tariffId ||
+                priceDraft.monthlyFee !== current.monthlyFee)
+            return (
+              <>
+                <PricePicker
+                  idPrefix="child"
+                  value={shown}
+                  onChange={setPriceDraft}
+                  disabled={savePrice.isPending}
+                  tariffs={tariffsQuery.data?.items ?? []}
+                />
+                {dirty && (
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      disabled={savePrice.isPending}
+                      onClick={() => {
+                        const { payload, error: priceError } = priceToPayload(shown)
+                        if (priceError) {
+                          setError(priceError)
+                          return
+                        }
+                        savePrice.mutate(payload)
+                      }}
+                      className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
+                    >
+                      {savePrice.isPending ? t('Saqlanmoqda…') : t('Saqlash')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPriceDraft(null)}
+                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                    >
+                      {t('Bekor qilish')}
+                    </button>
+                  </div>
+                )}
+                {dirty && (
+                  // Q4: narx keyingi hujjatdan — joriy faktura o'zgarmaydi.
+                  <p className="mt-2 text-xs text-slate-500">
+                    {t(
+                      'Yangi tarif KEYINGI hisob-fakturadan kuchga kiradi. Joriy hujjat oʻzgarmaydi.',
+                    )}
+                  </p>
+                )}
+              </>
+            )
+          })()
+        ) : (
+          <p className="text-sm text-slate-600">
+            {child.monthly_fee !== null
+              ? t('Individual narx: {v}', { v: formatUZS(Number(child.monthly_fee)) })
+              : (child.tariff_name ?? '—')}
+          </p>
+        )}
       </div>
 
       {/* Contracts (PLAN 6.5) — next to the guardians they are made with. */}

@@ -1362,4 +1362,12 @@ export const messages: Record<string, string> = {
     '{money} UZS is more than the debt and will go to credit. Continue?',
   'Saqlanmagan belgilar yoʻqoladi. Davom etasizmi?': 'Unsaved marks will be lost. Continue?',
   'Saqlash · {n} ta belgilandi': 'Save · {n} marked',
+  '{name} ga qoʻngʻiroq qilish': 'Call {name}',
+  'eslatma yuborilmagan': 'no reminder sent',
+  'eslatma: {date}': 'reminder: {date}',
+  Filtrlar: 'Filters',
+  Qoʻngʻiroq: 'Call',
+  'Toʻlov hali koʻrinmadi. Pul yechilgan boʻlsa, bir necha daqiqada tushadi — keyin bogʻchaga murojaat qiling.':
+    'The payment has not shown up yet. If the money left your card it will arrive within minutes — after that, contact the kindergarten.',
+  'Bogʻchaga qoʻngʻiroq qilish': 'Call the kindergarten',
 }

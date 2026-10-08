@@ -35,6 +35,8 @@ export interface CredentialInput {
 export interface PublicPayLink {
   kindergarten: string
   logo_url: string | null
+  /** Bogʻchaning telefoni — ota-ona ikkilansa, murojaat qiladigan joy. */
+  contact_phone: string
   /** First name and initial only — the link may be forwarded. */
   child: string
   invoice: string

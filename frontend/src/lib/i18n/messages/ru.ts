@@ -1359,4 +1359,12 @@ export const messages: Record<string, string> = {
   'Saqlanmagan belgilar yoʻqoladi. Davom etasizmi?':
     'Несохранённые отметки будут потеряны. Продолжить?',
   'Saqlash · {n} ta belgilandi': 'Сохранить · отмечено {n}',
+  '{name} ga qoʻngʻiroq qilish': 'Позвонить: {name}',
+  'eslatma yuborilmagan': 'напоминание не отправлялось',
+  'eslatma: {date}': 'напоминание: {date}',
+  Filtrlar: 'Фильтры',
+  Qoʻngʻiroq: 'Позвонить',
+  'Toʻlov hali koʻrinmadi. Pul yechilgan boʻlsa, bir necha daqiqada tushadi — keyin bogʻchaga murojaat qiling.':
+    'Оплата пока не видна. Если деньги списаны, они дойдут за несколько минут — иначе свяжитесь с садом.',
+  'Bogʻchaga qoʻngʻiroq qilish': 'Позвонить в сад',
 }

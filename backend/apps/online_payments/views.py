@@ -167,6 +167,12 @@ class PublicPayLinkView(APIView):
                 {
                     "kindergarten": organization.name,
                     "logo_url": organization.logo.url if organization.logo else None,
+                    # Bogʻchaning OʻZ telefoni (PLAN 10.6): ota-ona
+                    # toʻlovda ikkilansa yoki pul koʻrinmay qolsa,
+                    # sahifada murojaat qiladigan joy boʻlishi kerak.
+                    # Raqam allaqachon ommaviy — u bogʻchaning
+                    # saytida va Telegramida turadi.
+                    "contact_phone": organization.contact_phone,
                     "child": f"{child.first_name} {child.last_name[:1]}.".strip(),
                     "invoice": invoice.number,
                     "period": f"{invoice.period_month:02d}.{invoice.period_year}",
