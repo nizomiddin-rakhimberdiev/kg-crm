@@ -46,8 +46,11 @@ export const messages: Record<string, string> = {
   Baza: 'База',
   'Baza oldindan toʻlangan — faqat oʻsish hisoblanadi.':
     'База оплачена заранее — начисляется только прирост.',
-  'Bazaviy maosh oylik hisoblashda nusxalanadi — keyin oʻzgartirilsa, oʻtgan oylar oʻzgarmaydi.':
-    'Базовый оклад копируется в расчёт за месяц — при изменении прошлые месяцы не меняются.',
+  'Oylik hisoblashda nusxalanadi — keyin oʻzgartirilsa, oʻtgan oylar oʻzgarmaydi.':
+    'Копируется в расчёт за месяц — при изменении прошлые месяцы не меняются.',
+  'Oylik maosh · {days}': 'Оклад · {days}',
+  'Oylik maosh · bogʻchaning ish kunlari': 'Оклад · рабочие дни сада',
+  'Soatbay · {hours} soat/kun': 'Почасовая · {hours} ч/день',
   Bekor: 'Отмена',
   'Bekor qilingan': 'Отменён',
   'Bekor qilish': 'Отменить',
@@ -666,7 +669,7 @@ export const messages: Record<string, string> = {
   'hisoblanadi — yaʼni sinov kunlari shu oyning ichiga kiradi. Sinov yoqmasa, hech qanday toʻlov olinmaydi.':
     '— то есть дни пробного периода входят в этот месяц. Если пробный период не понравится, ничего не списывается.',
   koʻrish: 'просматривать',
-  'min {toLocaleString} {unit}': 'мин. {toLocaleString} {unit}',
+  'min {qty}': 'мин. {qty}',
   'muddati kelmagan': 'срок не наступил',
   'mumkin, oʻzgartirish mumkin emas. Hisobingiz va tariximiz saqlanib turibdi.':
     ', но не изменять. Ваш аккаунт и история сохраняются.',

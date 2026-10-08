@@ -21,7 +21,7 @@ import { useCan } from '@/lib/rbac/useCan'
 import { groupAccounts } from '@/features/dashboard/cashGroups'
 import { paymentMethodLabel } from '@/features/payments/methods'
 import { BRAND, CHART } from '@/lib/brand'
-import { cn, formatDateLong, formatUZS } from '@/lib/utils'
+import { cn, formatDateLong, formatDateTime, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
 const MONTHS = [
@@ -41,9 +41,6 @@ const MONTHS = [
 
 const shortMonth = (iso: string) => MONTHS[Number(iso.slice(5, 7)) - 1] ?? iso
 
-const when = (iso: string) =>
-  new Date(iso).toLocaleString('uz-UZ', { dateStyle: 'short', timeStyle: 'short' })
-
 interface TileProps {
   label: string
   value: string
@@ -55,17 +52,35 @@ interface TileProps {
   mono?: boolean
 }
 
+/*
+ * Telefonda kartochka — YOTIQ qator (PLAN 10.7).
+ *
+ * Tik joylashuvda bitta kartochka 330 px edi: toʻrtta raqamni
+ * koʻrish uchun mudira toʻrt ekran varaqlardi, holbuki ular aynan
+ * birga koʻrilishi kerak ("qarz 58 mln, tushum 0" — savol shu
+ * ikkisining YONMA-YON turishidan tugʻiladi). `sm:` dan boshlab
+ * ustunlar paydo boʻladi va eski tik koʻrinish qaytadi.
+ */
 function Tile({ label, value, hint, icon: Icon, tone, to, mono = true }: TileProps) {
   const body = (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md">
-      <div className={`grid h-10 w-10 place-items-center rounded-xl ${tone}`}>
-        <Icon className="h-5 w-5" />
+    <div className="h-full rounded-2xl border border-slate-200 bg-white p-4 shadow-card transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md sm:p-5">
+      <div className="flex items-center gap-3 sm:block">
+        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${tone}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 sm:mt-4">
+          <p
+            className={cn(
+              'text-xl font-bold tracking-tight text-slate-900 sm:text-2xl',
+              mono && 'num',
+            )}
+          >
+            {value}
+          </p>
+          <p className="text-sm font-medium text-slate-600">{label}</p>
+          <p className="mt-0.5 text-xs text-slate-500 sm:mt-1">{hint}</p>
+        </div>
       </div>
-      <p className={cn('mt-4 text-2xl font-bold tracking-tight text-slate-900', mono && 'num')}>
-        {value}
-      </p>
-      <p className="text-sm font-medium text-slate-600">{label}</p>
-      <p className="mt-1 text-xs text-slate-500">{hint}</p>
     </div>
   )
   return to ? <Link to={to}>{body}</Link> : body
@@ -440,7 +455,7 @@ export default function DashboardPage() {
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-slate-900">{payment.child}</p>
-                    <p className="text-xs text-slate-500">{when(payment.paid_at)}</p>
+                    <p className="text-xs text-slate-500">{formatDateTime(payment.paid_at)}</p>
                   </div>
                   <span className="shrink-0 text-sm font-semibold text-emerald-600">
                     {formatUZS(Number(payment.amount))}

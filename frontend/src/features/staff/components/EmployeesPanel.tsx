@@ -12,7 +12,16 @@
 
 import { useState } from 'react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Briefcase, Pencil, Phone, Plus, Search, UserMinus, UserPlus } from 'lucide-react'
+import {
+  Briefcase,
+  ChevronDown,
+  Pencil,
+  Phone,
+  Plus,
+  Search,
+  UserMinus,
+  UserPlus,
+} from 'lucide-react'
 import { DateInput } from '@/components/ui/DateInput'
 import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { useBranchScope } from '@/app/providers/BranchProvider'
@@ -106,6 +115,13 @@ export function EmployeesPanel() {
   // Lavozim tez qo'shish — alohida sahifaga o'tmasdan.
   const [newPosition, setNewPosition] = useState('')
 
+  /*
+   * Grafik bloki yopiqmi. Tahrirlashda odatdagidan boshqacha grafik
+   * qo'yilgan bo'lsa — o'zini ochadi, aks holda u yashiringanicha
+   * qolib, mudira nega maosh kutganidan kam chiqqanini ko'rmasdi.
+   */
+  const [scheduleOpen, setScheduleOpen] = useState(false)
+
   const [page, setPage] = usePageState(
     JSON.stringify([debouncedSearch, statusFilter, selectedBranchId, pageSize]),
   )
@@ -161,7 +177,70 @@ export function EmployeesPanel() {
     setNewPosition('')
   }
 
+  const scheduleSummary =
+    form.work_mode === 'hourly'
+      ? t('Soatbay · {hours} soat/kun', { hours: form.hours_per_day || '—' })
+      : form.work_days
+        ? t('Oylik maosh · {days}', {
+            days: parseDays(form.work_days)
+              .map((day) => WEEKDAYS.find(([value]) => value === day)?.[1] ?? '')
+              .join(', '),
+          })
+        : t('Oylik maosh · bogʻchaning ish kunlari')
+
+  /**
+   * Formadagi bitta maydon.
+   *
+   * Ilgari maydonlar massivdan `map` bilan chizilardi — shuning uchun
+   * ularning TARTIBI massivdagi tartib edi va yangi maydon oxiriga
+   * qo'shilardi. Endi tartib JSX da ko'rinadi.
+   */
+  const field = (
+    key: keyof EmployeeInput,
+    label: string,
+    type: 'text' | 'tel' | 'date' | 'number',
+    required: boolean,
+    help?: string,
+  ) => (
+    <div key={key}>
+      <label htmlFor={`emp-${key}`} className="mb-1 block text-xs font-medium text-slate-600">
+        {label}
+        {required && <span className="text-red-500"> *</span>}
+      </label>
+      {/* Sana — `DateInput` (05 §17.1): brauzerning o'z maydoni
+          amerikacha tartibni (`mm/dd/yyyy`) ko'rsatadi va bog'cha
+          xodimi uni teskari o'qiydi. */}
+      {type === 'date' ? (
+        <DateInput
+          id={`emp-${key}`}
+          required={required}
+          value={(form[key] as string) ?? ''}
+          onChange={(iso) => setForm((prev) => ({ ...prev, [key]: iso }))}
+        />
+      ) : (
+        <input
+          id={`emp-${key}`}
+          type={type}
+          required={required}
+          min={type === 'number' ? 0 : undefined}
+          step={type === 'number' ? '1000' : undefined}
+          inputMode={type === 'number' ? 'numeric' : type === 'tel' ? 'tel' : undefined}
+          placeholder={key === 'phone' ? '+998 90 123 45 67' : undefined}
+          value={form[key] ?? ''}
+          onChange={(e) => setForm((prev) => ({ ...prev, [key]: e.target.value }))}
+          className={inputClass(Boolean(fieldErrors[key]))}
+        />
+      )}
+      {fieldErrors[key] ? (
+        <p className="mt-1 text-xs text-red-600">{fieldErrors[key]}</p>
+      ) : (
+        help && <p className="mt-1 text-xs text-slate-500">{help}</p>
+      )}
+    </div>
+  )
+
   const openCreate = () => {
+    setScheduleOpen(false)
     setEditing(null)
     setForm(EMPTY_FORM)
     // Topbar'da filial tanlangan bo'lsa — o'sha; tanlov keyin o'zgartirilishi mumkin.
@@ -172,6 +251,7 @@ export function EmployeesPanel() {
   }
 
   const openEdit = (employee: Employee) => {
+    setScheduleOpen(employee.work_mode === 'hourly' || Boolean(employee.work_days))
     setEditing(employee)
     setForm({
       last_name: employee.last_name,
@@ -515,11 +595,6 @@ export function EmployeesPanel() {
                 ? t('{full_name} — tahrirlash', { full_name: editing.full_name })
                 : t('Yangi xodim')}
             </h2>
-            <p className="mt-0.5 text-xs text-slate-500">
-              {t(
-                'Bazaviy maosh oylik hisoblashda nusxalanadi — keyin oʻzgartirilsa, oʻtgan oylar oʻzgarmaydi.',
-              )}
-            </p>
           </div>
 
           {error && (
@@ -529,206 +604,18 @@ export function EmployeesPanel() {
           )}
 
           <div className="grid gap-3 sm:grid-cols-2">
-            {(
-              [
-                ['last_name', t('Familiya'), 'text', true],
-                ['first_name', t('Ism'), 'text', true],
-                ['phone', t('Telefon'), 'tel', false],
-                ['hire_date', t('Ishga kirgan sana'), 'date', true],
-                // Soatbay xodimda oylik maosh maydoni ma'nosiz: uning
-                // puli kelgan kunlardan chiqadi (PLAN 9.1).
-                ...((form.work_mode === 'hourly'
-                  ? []
-                  : [
-                      ['base_salary', t('Oylik maosh (soʻm)'), 'number', true],
-                      // Rasmiy qism (ADR-18): bankka, soliq ushlab
-                      // qolingan holda. Bo'sh qoldirilsa 0 — ya'ni
-                      // hammasi naqd, va hech bir eski raqam siljimaydi.
-                      ['official_salary', t('Shundan rasmiy (soʻm)'), 'number', false],
-                    ]) as [keyof EmployeeInput, string, string, boolean][]),
-              ] as const
-            ).map(([key, label, type, required]) => (
-              <div key={key}>
-                <label
-                  htmlFor={`emp-${key}`}
-                  className="mb-1 block text-xs font-medium text-slate-600"
-                >
-                  {label}
-                  {required && <span className="text-red-500"> *</span>}
-                </label>
-                {/* Sana — `DateInput` (05 §17.1): brauzerning oʻz
-                    maydoni amerikacha tartibni (`mm/dd/yyyy`) koʻrsatadi
-                    va bogʻcha xodimi uni teskari oʻqiydi. */}
-                {type === 'date' ? (
-                  <DateInput
-                    id={`emp-${key}`}
-                    required={required}
-                    value={(form[key] as string) ?? ''}
-                    onChange={(iso) => setForm((prev) => ({ ...prev, [key]: iso }))}
-                  />
-                ) : (
-                  <input
-                    id={`emp-${key}`}
-                    type={type}
-                    required={required}
-                    min={type === 'number' ? 0 : undefined}
-                    step={type === 'number' ? '1000' : undefined}
-                    inputMode={type === 'number' ? 'numeric' : type === 'tel' ? 'tel' : undefined}
-                    placeholder={key === 'phone' ? '+998 90 123 45 67' : undefined}
-                    value={form[key] ?? ''}
-                    onChange={(e) => setForm((prev) => ({ ...prev, [key]: e.target.value }))}
-                    className={inputClass(Boolean(fieldErrors[key]))}
-                  />
-                )}
-                {fieldErrors[key] && (
-                  <p className="mt-1 text-xs text-red-600">{fieldErrors[key]}</p>
-                )}
-              </div>
-            ))}
-
             {/*
-              Ish grafigi (PLAN 9.1).
-
-              Ikki rejim: oylik maosh va soatbay. "Haftada uch kun
-              keladigan" alohida tur EMAS — u oylik maosh va uch kunlik
-              kalendar, ya'ni bitta hisob-kitob. Kunlar tanlanmasa,
-              filial kalendari ishlatiladi.
+              Tartib — odam haqidagi savollar ketma-ketligi (PLAN 10.8).
+              Kim? (ism, telefon) → nima qiladi? (lavozim, filial) →
+              qachondan? (sana) → qancha? (maosh) → qanday grafikda?
+              Ilgari "Lavozim" eng pastda, maosh va butun grafik
+              blokidan KEYIN turardi: oshpaz qo'shayotgan mudira uning
+              kim ekanini aytish uchun ming piksel pastga tushardi.
             */}
-            <div className="rounded-xl border border-slate-200 p-3 sm:col-span-2">
-              <p className="text-xs font-semibold text-slate-700">{t('Ish grafigi')}</p>
-
-              <div className="mt-2 flex flex-wrap gap-2">
-                {(
-                  [
-                    ['monthly', t('Oylik maosh')],
-                    ['hourly', t('Soatbay')],
-                  ] as const
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    aria-pressed={form.work_mode === value}
-                    onClick={() => setForm((prev) => ({ ...prev, work_mode: value }))}
-                    className={cn(
-                      'inline-flex min-h-[40px] items-center rounded-lg px-3 text-sm font-medium transition',
-                      form.work_mode === value
-                        ? 'bg-slate-900 text-white'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200',
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              <p className="mt-3 text-xs font-medium text-slate-600">{t('Ish kunlari')}</p>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {WEEKDAYS.map(([day, label]) => {
-                  const days = parseDays(form.work_days ?? '')
-                  const on = days.includes(day)
-                  return (
-                    <button
-                      key={day}
-                      type="button"
-                      aria-pressed={on}
-                      onClick={() =>
-                        setForm((prev) => {
-                          const current = parseDays(prev.work_days ?? '')
-                          const next = on
-                            ? current.filter((d) => d !== day)
-                            : [...current, day].sort((a, b) => a - b)
-                          return { ...prev, work_days: next.join(',') }
-                        })
-                      }
-                      className={cn(
-                        'h-10 w-10 rounded-lg text-sm font-semibold transition',
-                        on
-                          ? 'bg-brand-600 text-white'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
-                      )}
-                    >
-                      {label}
-                    </button>
-                  )
-                })}
-              </div>
-              <p className="mt-1.5 text-xs text-slate-500">
-                {form.work_days
-                  ? t('Oylik shu kunlar boʻyicha hisoblanadi.')
-                  : t('Tanlanmasa — bogʻchaning ish kunlari (odatda Du–Ju).')}
-              </p>
-
-              {form.work_mode === 'hourly' && (
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="emp-hours"
-                      className="mb-1 block text-xs font-medium text-slate-600"
-                    >
-                      {t('Kuniga soat')} <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      id="emp-hours"
-                      type="number"
-                      min="0"
-                      max="24"
-                      step="0.5"
-                      inputMode="decimal"
-                      value={form.hours_per_day ?? ''}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, hours_per_day: e.target.value }))
-                      }
-                      className={inputClass(Boolean(fieldErrors.hours_per_day))}
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="emp-rate"
-                      className="mb-1 block text-xs font-medium text-slate-600"
-                    >
-                      {t('Soat narxi (soʻm)')} <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      id="emp-rate"
-                      type="number"
-                      min="0"
-                      step="1000"
-                      inputMode="numeric"
-                      value={form.hourly_rate ?? ''}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, hourly_rate: e.target.value }))
-                      }
-                      className={inputClass(Boolean(fieldErrors.hourly_rate))}
-                    />
-                    {fieldErrors.hourly_rate && (
-                      <p className="mt-1 text-xs text-red-600">{fieldErrors.hourly_rate}</p>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 sm:col-span-2">
-                    {t(
-                      'Oylik summa tabeldagi kelgan kunlardan hisoblanadi; tabel yuritilmasa — grafik boʻyicha.',
-                    )}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Tizim hisobi — faqat HOLAT (PLAN 9.1b).
-                Bog'lash foydalanuvchi formasida: avval odam ishga
-                olinadi, kirish huquqi esa keyin va hammaga ham emas.
-                Ilgari bu yerda tanlagich turardi va u hali mavjud
-                bo'lmagan hisobni tanlashni so'rardi. */}
-            {editing && (
-              <div className="rounded-lg bg-slate-50 px-3 py-2.5">
-                <p className="text-xs font-medium text-slate-600">{t('Tizim hisobi')}</p>
-                <p className="mt-0.5 text-sm text-slate-800">
-                  {editing.user_email ?? t('— bogʻlanmagan —')}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  {t('Hisob «Hisoblar» boʻlimida yaratiladi va oʻsha yerda xodimga bogʻlanadi.')}
-                </p>
-              </div>
-            )}
+            {field('last_name', t('Familiya'), 'text', true)}
+            {field('first_name', t('Ism'), 'text', true)}
+            {field('phone', t('Telefon'), 'tel', false)}
+            {field('hire_date', t('Ishga kirgan sana'), 'date', true)}
 
             {!editing && isOrgOwner && branches.length > 0 && (
               <div>
@@ -810,6 +697,200 @@ export function EmployeesPanel() {
               )}
             </div>
 
+            {/*
+              Soatbay xodimda oylik maosh maydoni ma'nosiz: uning puli
+              kelgan kunlardan chiqadi (PLAN 9.1).
+            */}
+            {form.work_mode !== 'hourly' && (
+              <>
+                {field(
+                  'base_salary',
+                  t('Oylik maosh (soʻm)'),
+                  'number',
+                  true,
+                  t(
+                    'Oylik hisoblashda nusxalanadi — keyin oʻzgartirilsa, oʻtgan oylar oʻzgarmaydi.',
+                  ),
+                )}
+                {/* Rasmiy qism (ADR-18): bankka, soliq ushlab qolingan
+                    holda. Bo'sh qoldirilsa 0 — ya'ni hammasi naqd, va
+                    hech bir eski raqam siljimaydi. */}
+                {field('official_salary', t('Shundan rasmiy (soʻm)'), 'number', false)}
+              </>
+            )}
+
+            {/*
+              Ish grafigi (PLAN 9.1).
+
+              Ikki rejim: oylik maosh va soatbay. "Haftada uch kun
+              keladigan" alohida tur EMAS — u oylik maosh va uch kunlik
+              kalendar, ya'ni bitta hisob-kitob. Kunlar tanlanmasa,
+              filial kalendari ishlatiladi.
+            */}
+            <div className="rounded-xl border border-slate-200 sm:col-span-2">
+              {/*
+                Yopiq holat — ko'pchilik xodim uchun (PLAN 10.8).
+                Oylik maosh + bog'chaning ish kunlari — bu xodimlarning
+                aksariyati, ya'ni hech narsa tanlash kerak emas. Ilgari
+                hafta kunlari to'ri doim ochiq turardi va formaning
+                o'rtasida 200 piksel joyni egallab, pastdagi "Lavozim"ni
+                ekrandan chiqarib yuborardi.
+              */}
+              <button
+                type="button"
+                onClick={() => setScheduleOpen((open) => !open)}
+                aria-expanded={scheduleOpen}
+                className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-50"
+              >
+                <span className="min-w-0">
+                  <span className="block text-xs font-semibold text-slate-700">
+                    {t('Ish grafigi')}
+                  </span>
+                  <span className="block truncate text-xs text-slate-500">{scheduleSummary}</span>
+                </span>
+                <ChevronDown
+                  className={cn(
+                    'h-4 w-4 shrink-0 text-slate-500 transition-transform',
+                    scheduleOpen && 'rotate-180',
+                  )}
+                />
+              </button>
+
+              <div className={cn('px-3 pb-3', !scheduleOpen && 'hidden')}>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {(
+                    [
+                      ['monthly', t('Oylik maosh')],
+                      ['hourly', t('Soatbay')],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-pressed={form.work_mode === value}
+                      onClick={() => setForm((prev) => ({ ...prev, work_mode: value }))}
+                      className={cn(
+                        'inline-flex min-h-[40px] items-center rounded-lg px-3 text-sm font-medium transition',
+                        form.work_mode === value
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200',
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                <p className="mt-3 text-xs font-medium text-slate-600">{t('Ish kunlari')}</p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {WEEKDAYS.map(([day, label]) => {
+                    const days = parseDays(form.work_days ?? '')
+                    const on = days.includes(day)
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() =>
+                          setForm((prev) => {
+                            const current = parseDays(prev.work_days ?? '')
+                            const next = on
+                              ? current.filter((d) => d !== day)
+                              : [...current, day].sort((a, b) => a - b)
+                            return { ...prev, work_days: next.join(',') }
+                          })
+                        }
+                        className={cn(
+                          'h-10 w-10 rounded-lg text-sm font-semibold transition',
+                          on
+                            ? 'bg-brand-600 text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+                        )}
+                      >
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="mt-1.5 text-xs text-slate-500">
+                  {form.work_days
+                    ? t('Oylik shu kunlar boʻyicha hisoblanadi.')
+                    : t('Tanlanmasa — bogʻchaning ish kunlari (odatda Du–Ju).')}
+                </p>
+
+                {form.work_mode === 'hourly' && (
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label
+                        htmlFor="emp-hours"
+                        className="mb-1 block text-xs font-medium text-slate-600"
+                      >
+                        {t('Kuniga soat')} <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="emp-hours"
+                        type="number"
+                        min="0"
+                        max="24"
+                        step="0.5"
+                        inputMode="decimal"
+                        value={form.hours_per_day ?? ''}
+                        onChange={(e) =>
+                          setForm((prev) => ({ ...prev, hours_per_day: e.target.value }))
+                        }
+                        className={inputClass(Boolean(fieldErrors.hours_per_day))}
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="emp-rate"
+                        className="mb-1 block text-xs font-medium text-slate-600"
+                      >
+                        {t('Soat narxi (soʻm)')} <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="emp-rate"
+                        type="number"
+                        min="0"
+                        step="1000"
+                        inputMode="numeric"
+                        value={form.hourly_rate ?? ''}
+                        onChange={(e) =>
+                          setForm((prev) => ({ ...prev, hourly_rate: e.target.value }))
+                        }
+                        className={inputClass(Boolean(fieldErrors.hourly_rate))}
+                      />
+                      {fieldErrors.hourly_rate && (
+                        <p className="mt-1 text-xs text-red-600">{fieldErrors.hourly_rate}</p>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 sm:col-span-2">
+                      {t(
+                        'Oylik summa tabeldagi kelgan kunlardan hisoblanadi; tabel yuritilmasa — grafik boʻyicha.',
+                      )}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Tizim hisobi — faqat HOLAT (PLAN 9.1b).
+                Bog'lash foydalanuvchi formasida: avval odam ishga
+                olinadi, kirish huquqi esa keyin va hammaga ham emas.
+                Ilgari bu yerda tanlagich turardi va u hali mavjud
+                bo'lmagan hisobni tanlashni so'rardi. */}
+            {editing && (
+              <div className="rounded-lg bg-slate-50 px-3 py-2.5">
+                <p className="text-xs font-medium text-slate-600">{t('Tizim hisobi')}</p>
+                <p className="mt-0.5 text-sm text-slate-800">
+                  {editing.user_email ?? t('— bogʻlanmagan —')}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {t('Hisob «Hisoblar» boʻlimida yaratiladi va oʻsha yerda xodimga bogʻlanadi.')}
+                </p>
+              </div>
+            )}
+
             {editing && (
               <>
                 <div>
@@ -860,7 +941,14 @@ export function EmployeesPanel() {
             )}
           </div>
 
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          {/*
+            Saqlash — doim ko'rinadigan joyda (PLAN 10.8). Forma
+            telefonda ming pikseldan uzun; tugmalar pastda qolganda
+            ularni ko'rish uchun hamma narsani oxirigacha varaqlash
+            kerak edi. Modalning o'zi scroll qiladi, shuning uchun
+            `sticky` aynan uning pastiga yopishadi.
+          */}
+          <div className="sticky bottom-0 -mx-5 -mb-5 flex flex-col-reverse gap-2 border-t border-slate-100 bg-white px-5 py-3 sm:-mx-6 sm:-mb-6 sm:flex-row sm:justify-end sm:px-6">
             <button
               type="button"
               onClick={closeForm}

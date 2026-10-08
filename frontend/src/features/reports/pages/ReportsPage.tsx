@@ -55,6 +55,7 @@ import { ApiError } from '@/lib/api/types'
 import { useCan, type PermissionCode } from '@/lib/rbac/useCan'
 import { Modal } from '@/components/ui/Modal'
 import { BRAND, CHART, CHART_SEQUENCE } from '@/lib/brand'
+import { formatDateTime } from '@/lib/format'
 import { cn, formatMoney, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
@@ -749,10 +750,7 @@ export default function ReportsPage() {
                         {job.report_type}
                       </p>
                       <p className="text-xs text-slate-500">
-                        {new Date(job.created_at).toLocaleString('uz-UZ', {
-                          dateStyle: 'short',
-                          timeStyle: 'short',
-                        })}
+                        {formatDateTime(job.created_at)}
                         {job.status === 'ready' &&
                           t(' · {row_count} qator', { row_count: job.row_count })}
                         {job.error && ` · ${job.error}`}

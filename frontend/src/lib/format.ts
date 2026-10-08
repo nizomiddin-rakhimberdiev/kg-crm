@@ -197,11 +197,27 @@ export function formatDate(value: string | Date | null | undefined): string {
   return `${two(date.getDate())}.${two(date.getMonth() + 1)}.${date.getFullYear()}`
 }
 
-/** "14.09.2023, 10:35" */
-export function formatDateTime(value: string | Date | null | undefined): string {
+/** "10:35" — faqat soat. */
+export function formatTime(value: string | Date | null | undefined): string {
   const date = toDate(value)
   if (!date) return '—'
-  return `${formatDate(date)}, ${two(date.getHours())}:${two(date.getMinutes())}`
+  return `${two(date.getHours())}:${two(date.getMinutes())}`
+}
+
+/**
+ * "14.09.2023, 10:35" — `seconds` bilan "14.09.2023, 10:35:07".
+ *
+ * Soniyalar audit izi uchun kerak: bitta so'rovda ketma-ket yozilgan
+ * ikki yozuvni faqat o'sha yerda ajratib bo'ladi.
+ */
+export function formatDateTime(
+  value: string | Date | null | undefined,
+  { seconds = false }: { seconds?: boolean } = {},
+): string {
+  const date = toDate(value)
+  if (!date) return '—'
+  const time = `${formatTime(date)}${seconds ? `:${two(date.getSeconds())}` : ''}`
+  return `${formatDate(date)}, ${time}`
 }
 
 /** "14-sentabr, 2023" / "14 сентября 2023" / "14 September 2023" — sarlavhalar uchun. */

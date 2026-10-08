@@ -47,8 +47,11 @@ export const messages: Record<string, string> = {
   Baza: 'Base',
   'Baza oldindan toʻlangan — faqat oʻsish hisoblanadi.':
     'The base is prepaid — only growth is billed.',
-  'Bazaviy maosh oylik hisoblashda nusxalanadi — keyin oʻzgartirilsa, oʻtgan oylar oʻzgarmaydi.':
-    'The base salary is copied into each payroll run — changing it later doesn’t affect past months.',
+  'Oylik hisoblashda nusxalanadi — keyin oʻzgartirilsa, oʻtgan oylar oʻzgarmaydi.':
+    'Copied into each payroll run — changing it later doesn’t affect past months.',
+  'Oylik maosh · {days}': 'Salary · {days}',
+  'Oylik maosh · bogʻchaning ish kunlari': 'Salary · the kindergarten’s working days',
+  'Soatbay · {hours} soat/kun': 'Hourly · {hours} h/day',
   Bekor: 'Cancel',
   'Bekor qilingan': 'Cancelled',
   'Bekor qilish': 'Cancel',
@@ -667,7 +670,7 @@ export const messages: Record<string, string> = {
   'hisoblanadi — yaʼni sinov kunlari shu oyning ichiga kiradi. Sinov yoqmasa, hech qanday toʻlov olinmaydi.':
     '— so the trial days fall inside that month. If the trial isn’t for you, nothing is charged.',
   koʻrish: 'view',
-  'min {toLocaleString} {unit}': 'min {toLocaleString} {unit}',
+  'min {qty}': 'min {qty}',
   'muddati kelmagan': 'not yet due',
   'mumkin, oʻzgartirish mumkin emas. Hisobingiz va tariximiz saqlanib turibdi.':
     'data, but not change it. Your account and history are kept.',

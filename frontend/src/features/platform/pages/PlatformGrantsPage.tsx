@@ -9,11 +9,11 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { KeyRound } from 'lucide-react'
+import { formatDateTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { platform } from '../api'
 
-const when = (iso: string) =>
-  new Date(iso).toLocaleString('uz-UZ', { dateStyle: 'short', timeStyle: 'short' })
+const when = (iso: string) => formatDateTime(iso)
 
 export default function PlatformGrantsPage() {
   const { data, isLoading } = useQuery({

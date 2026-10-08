@@ -15,6 +15,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Inbox, MessageCircle, Phone } from 'lucide-react'
 import { DateInput } from '@/components/ui/DateInput'
 import { ApiError } from '@/lib/api/types'
+import { formatDateTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { platform, type Lead, type LeadStatus } from '../api'
 
@@ -27,8 +28,7 @@ const STATUS: Record<LeadStatus, { label: string; tone: string }> = {
 const ORDER: LeadStatus[] = ['new', 'contacted', 'qualified', 'closed']
 const LANG: Record<Lead['language'], string> = { uz: 'UZ', ru: 'RU', en: 'EN' }
 
-const when = (iso: string) =>
-  new Date(iso).toLocaleString('uz-UZ', { dateStyle: 'short', timeStyle: 'short' })
+const when = (iso: string) => formatDateTime(iso)
 
 function LeadRow({ lead }: { lead: Lead }) {
   const queryClient = useQueryClient()

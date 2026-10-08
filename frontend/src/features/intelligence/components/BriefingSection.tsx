@@ -15,6 +15,7 @@ import { getCopy } from '@/features/intelligence/content'
 import { BriefingChecks } from '@/features/intelligence/components/BriefingChecks'
 import { InsightCard } from '@/features/intelligence/components/InsightCard'
 import { queryKeys } from '@/lib/api/queryKeys'
+import { formatTime } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
 export function BriefingSection() {
@@ -67,10 +68,7 @@ export function BriefingSection() {
         {data?.generated_at && (
           <span className="num ml-auto text-xs text-slate-400">
             {t('holat {time}', {
-              time: new Date(data.generated_at).toLocaleTimeString('uz-UZ', {
-                hour: '2-digit',
-                minute: '2-digit',
-              }),
+              time: formatTime(data.generated_at),
             })}
           </span>
         )}

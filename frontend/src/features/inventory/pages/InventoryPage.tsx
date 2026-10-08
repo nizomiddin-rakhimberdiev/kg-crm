@@ -16,6 +16,7 @@ import { invalidateMoney } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Product } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
+import { quantity } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { t } from '@/lib/i18n'
@@ -265,14 +266,11 @@ export default function InventoryPage() {
                     p.is_low_stock ? 'text-amber-700' : 'text-slate-900',
                   )}
                 >
-                  {Number(p.current_stock).toLocaleString('uz-UZ')} {p.unit}
+                  {quantity(p.current_stock, p.unit)}
                 </p>
                 {Number(p.min_stock) > 0 && (
                   <p className="text-xs text-slate-500">
-                    {t('min {toLocaleString} {unit}', {
-                      toLocaleString: Number(p.min_stock).toLocaleString('uz-UZ'),
-                      unit: p.unit,
-                    })}
+                    {t('min {qty}', { qty: quantity(p.min_stock, p.unit) })}
                   </p>
                 )}
               </button>
@@ -406,7 +404,7 @@ export default function InventoryPage() {
                       )}
                     >
                       {m.direction === 'in' ? '+' : '−'}
-                      {Number(m.quantity).toLocaleString('uz-UZ')} {moving.unit}
+                      {quantity(m.quantity, moving.unit)}
                     </span>
                   </li>
                 ))}

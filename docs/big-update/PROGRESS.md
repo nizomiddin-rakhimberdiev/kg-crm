@@ -1307,3 +1307,34 @@ qaytish: sahifa callback'ni kutib qayta oʻqiydi, lekin kutish cheksiz
 boʻlmasligi kerak edi. 20 ta soʻrovdan keyin u "tekshirilmoqda" deb jim
 qolmaydi, balki pul yechilgan boʻlsa nima boʻlishini aytadi va bogʻchaga
 qoʻngʻiroq tugmasini koʻrsatadi.
+
+**Boshqaruv panelida bitta raqam — bitta ekran.** 375 px auditi toza
+chiqqandi: yon scroll yoʻq, kontrast joyida, nishonlar 44 px. Lekin oʻlchov
+javob bermaydigan savol bor edi — *nechta raqam birga koʻrinadi?* KPI
+kartochkasi 330 px balandlikda, ikonka tepada, raqam ostida: toʻrtta raqam
+uchun toʻrt ekran. Holbuki bu raqamlar aynan birga oʻqiladi — "qarz 58 mln"
+"tushum 0" bilan yonma-yon turganda savol tugʻiladi, alohida turganda esa
+yoʻq. Telefonda kartochka yotiq qatorga aylandi, `sm:` dan yuqorida hech
+narsa oʻzgarmadi.
+
+**Oʻn bitta `toLocaleString` PLAN 4.1 dan keyin ham qolib ketgandi.** Ularni
+hech narsa koʻrsatmadi, chunki ekranda sana "xato" emas — shunchaki
+BOSHQACHA: dashboardda `2026-09-17 17:20`, qolgan hamma joyda
+`17.09.2026, 17:20`. Yomoni — `uz-UZ` qatʼiy yozilgan, yaʼni ruscha yoki
+inglizcha ishlayotgan foydalanuvchi ham oʻzbekcha sana olardi. Q12 qoidasi
+("formatlashning yagona uyi") endi `src/__tests__/format.test.ts` da:
+`lib/format.ts` dan tashqarida yalangʻoch `toLocale*` yoki `new Intl.*`
+boʻlsa, build yiqiladi. `formatDateTime` ga soniyalar varianti qoʻshildi
+(audit izi uchun kerak) va `formatTime` ajratildi.
+
+**Xodim formasida eng muhim maydon eng pastda edi.** Tartib shunday
+boʻlgandi: familiya, ism, telefon, sana, maosh, rasmiy maosh, butun ish
+grafigi bloki (hafta kunlari toʻri bilan), tizim hisobi, filial — va
+faqat SHUNDAN keyin "Lavozim". Yaʼni oshpaz qoʻshayotgan mudira uning kim
+ekanini aytish uchun formaning oxirigacha tushardi. Sabab texnik: maydonlar
+massivdan `map` bilan chizilardi, shuning uchun har bir yangi maydon
+oxiriga qoʻshilardi va TARTIB hech kimning qarori emas edi. Endi maydon
+chizuvchi alohida funksiya, tartib esa JSX da koʻrinadi va savollar
+ketma-ketligiga mos: kim → nima qiladi → qachondan → qancha → qanday
+grafikda. Grafik bloki yigʻildi (oylik maosh + bogʻchaning kalendari —
+xodimlarning aksariyati), "Saqlash" esa modalning pastiga yopishdi.

@@ -12,6 +12,7 @@ import { ScrollText, ShieldCheck } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { auditApi } from '@/features/dashboard/api'
 import { queryKeys } from '@/lib/api/queryKeys'
+import { formatDateTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { env } from '@/config/env'
 import { t } from '@/lib/i18n'
@@ -154,8 +155,7 @@ const FILTERS: Array<[string, string]> = [
   ['login_blocked', t('Bloklanishlar')],
 ]
 
-const when = (iso: string) =>
-  new Date(iso).toLocaleString('uz-UZ', { dateStyle: 'short', timeStyle: 'medium' })
+const when = (iso: string) => formatDateTime(iso, { seconds: true })
 
 export default function AuditPage() {
   const organizationId = useOrganizationId()

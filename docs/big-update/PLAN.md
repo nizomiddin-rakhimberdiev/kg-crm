@@ -655,4 +655,24 @@ Egasining roʻyxatidan keyingi uchtasi (2026-10-08, "ha davom et"):
   cheksiz emas — 20 ta soʻrovdan keyin sahifa jim qolmay, nima qilishni
   aytadi, va pastda bogʻchaga qoʻngʻiroq tugmasi bor.
 
-Qolgan promptlar (6–12, 14, 15) hali bajarilmadi — roʻyxat PLAN'da turibdi.
+- [x] **10.7 Boshqaruv paneli.** Oʻlchov toza edi (yon scroll yoʻq, kontrast
+  joyida), lekin telefonda **bitta raqam — bitta ekran**: KPI kartochkasi
+  330 px, yaʼni toʻrtta raqamni koʻrish uchun toʻrt marta varaqlash kerak
+  edi, holbuki ular aynan birga oʻqiladi ("qarz 58 mln, tushum 0"). Telefonda
+  kartochka endi yotiq qator; `sm:` dan eski tik koʻrinish qaytadi.
+  Ikkinchi topilma — **sana**: "Oxirgi toʻlovlar" da `2026-09-17 17:20`
+  turardi, chunki `toLocaleString('uz-UZ')` qolib ketgan edi. Q12 (bitta
+  formatlash uyi) boʻyicha 11 ta shunday chaqiruv `lib/format.ts` ga
+  qaytarildi va qoida endi `__tests__/format.test.ts` da qoʻriqlanadi —
+  ru/en foydalanuvchi ham qatʼiy `uz-UZ` sanasini koʻrardi.
+- [x] **10.8 Xodim formasi.** Uch narsa: (1) **tartib** — "Lavozim" eng
+  pastda, maosh va butun grafik blokidan keyin turardi, yaʼni oshpaz
+  qoʻshayotgan mudira uning kim ekanini aytish uchun ming piksel pastga
+  tushardi; endi tartib savollar ketma-ketligi: kim → nima qiladi →
+  qachondan → qancha → qanday grafikda. (2) **grafik bloki yigʻildi** —
+  oylik maosh va bogʻchaning ish kunlari xodimlarning aksariyati, ya'ni
+  hech narsa tanlash kerak emas; tahrirlashda boshqacha grafik qoʻyilgan
+  boʻlsa blok oʻzi ochiladi. (3) **"Saqlash" yopishib turadi** — forma
+  telefonda ming pikseldan uzun edi.
+
+Qolgan promptlar (8–12, 14, 15) hali bajarilmadi — roʻyxat PLAN'da turibdi.

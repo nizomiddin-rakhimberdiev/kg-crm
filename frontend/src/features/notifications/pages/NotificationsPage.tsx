@@ -19,6 +19,7 @@ import { useSmsStatus } from '@/features/notifications/useSmsStatus'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
+import { formatDateTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
@@ -33,8 +34,7 @@ const STATUS: Record<string, [string, string]> = {
   cancelled: [t('Bekor qilingan'), 'bg-tosh-100 text-tosh-600'],
 }
 
-const when = (value: string | null) =>
-  value ? new Date(value).toLocaleString('uz-UZ', { dateStyle: 'short', timeStyle: 'short' }) : '—'
+const when = (value: string | null) => (value ? formatDateTime(value) : '—')
 
 export default function NotificationsPage() {
   const organizationId = useOrganizationId()

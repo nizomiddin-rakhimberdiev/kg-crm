@@ -32,6 +32,12 @@ export function ChildBalanceCard({ childId }: { childId: string }) {
   const advance = Number(data?.advance ?? 0)
   const overdue = Number(data?.overdue_amount ?? 0)
   const next = data?.open_invoices[0]
+  /*
+   * Hech narsa boʻlmasa, chiziq ham boʻlmaydi: qarzi va avansi yoʻq
+   * bolada `dl` boʻsh qolib, ajratuvchi chiziq hech nimani ajratmay
+   * turardi.
+   */
+  const hasDetails = advance > 0 || overdue > 0 || Boolean(next)
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -54,28 +60,30 @@ export function ChildBalanceCard({ childId }: { childId: string }) {
           </p>
           <p className="text-xs text-slate-500">{debt > 0 ? t('Jami qarz') : t('Qarz yoʻq')}</p>
 
-          <dl className="mt-3 space-y-1 border-t border-slate-100 pt-3 text-sm">
-            {advance > 0 && (
-              <div className="flex justify-between gap-3">
-                <dt className="text-nihol-700">{t('Avansda')}</dt>
-                <dd className="num font-semibold text-nihol-700">{money(advance)}</dd>
-              </div>
-            )}
-            {overdue > 0 && (
-              <div className="flex justify-between gap-3">
-                <dt className="text-orik-700">
-                  {t('Muddati oʻtgan ({days} kun)', { days: data?.overdue_days ?? 0 })}
-                </dt>
-                <dd className="num font-semibold text-orik-700">{money(overdue)}</dd>
-              </div>
-            )}
-            {next && (
-              <div className="flex justify-between gap-3">
-                <dt className="text-slate-500">{t('Keyingi toʻlov')}</dt>
-                <dd className="num text-slate-800">{formatDate(next.due_date)}</dd>
-              </div>
-            )}
-          </dl>
+          {hasDetails && (
+            <dl className="mt-3 space-y-1 border-t border-slate-100 pt-3 text-sm">
+              {advance > 0 && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-nihol-700">{t('Avansda')}</dt>
+                  <dd className="num font-semibold text-nihol-700">{money(advance)}</dd>
+                </div>
+              )}
+              {overdue > 0 && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-orik-700">
+                    {t('Muddati oʻtgan ({days} kun)', { days: data?.overdue_days ?? 0 })}
+                  </dt>
+                  <dd className="num font-semibold text-orik-700">{money(overdue)}</dd>
+                </div>
+              )}
+              {next && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-slate-500">{t('Keyingi toʻlov')}</dt>
+                  <dd className="num text-slate-800">{formatDate(next.due_date)}</dd>
+                </div>
+              )}
+            </dl>
+          )}
         </>
       )}
     </div>
