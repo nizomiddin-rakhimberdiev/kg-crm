@@ -9,7 +9,7 @@
 
 import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { FileSignature } from 'lucide-react'
+import { FileSignature, FileText } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { useToast } from '@/app/providers/ToastProvider'
 import { contractTemplatesApi, type ContractTemplate } from '@/features/contracts/api'
@@ -40,6 +40,22 @@ export function ContractTemplatesSettings() {
   const [draft, setDraft] = useState<Draft | null>(null)
   const [error, setError] = useState<string | null>(null)
   const bodyRef = useRef<HTMLTextAreaElement>(null)
+
+  /**
+   * Namunaviy matnni tahrirlagichga qoʻyadi (PLAN 9.3).
+   *
+   * Mavjud matn ustiga yozilmaydi: shablonni yarim yozib qoʻygan odam
+   * bir bosishda hammasini yoʻqotmasligi kerak.
+   */
+  const loadSample = async () => {
+    const sample = await contractTemplatesApi.sample()
+    setDraft((current) => {
+      const base = current ?? EMPTY
+      return base.body.trim()
+        ? { ...base, body: `${base.body}\n\n${sample.body}` }
+        : { ...base, name: base.name || sample.name, body: sample.body }
+    })
+  }
 
   const save = useMutation({
     mutationFn: (value: Draft) => {
@@ -172,6 +188,29 @@ export function ContractTemplatesSettings() {
                 <option value="en">{t('Inglizcha')}</option>
               </select>
             </div>
+          </div>
+
+          {/*
+            Namunaviy matn (PLAN 9.3): bogʻcha boʻsh varaqdan emas,
+            haqiqiy shartnomadan boshlaydi va uni oʻziga moslashtiradi.
+            Tugma matnni faqat tahrirlagichga qoʻyadi — saqlash baribir
+            ongli qadam bo'lib qoladi.
+          */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs font-medium text-slate-700">{t('Boʻsh varaqdan boshlamang')}</p>
+            <p className="mt-0.5 text-xs text-slate-600">
+              {t(
+                'Namunaviy shartnoma matnini yuklab, oʻz bogʻchangizga moslashtiring: bandlarni oʻzgartiring, qoʻshing yoki oʻchiring.',
+              )}
+            </p>
+            <button
+              type="button"
+              onClick={() => void loadSample()}
+              className="mt-2 inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 hover:border-brand-300"
+            >
+              <FileText className="h-4 w-4" />
+              {t('Namunaviy matnni yuklash')}
+            </button>
           </div>
 
           <div>

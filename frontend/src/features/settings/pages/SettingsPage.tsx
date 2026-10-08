@@ -128,6 +128,33 @@ const META: Record<string, SettingMeta> = {
     label: t('Avtomatik "kelmadi"'),
     help: t('Belgilanmagan bolalar kun oxirida kelmagan deb yoziladi.'),
   },
+  // Shartnoma rekvizitlari (PLAN 9.3) — shablondagi {{...}} maydonlar
+  // shu yerdan to'ldiriladi.
+  'contracts.director_name': {
+    label: t('Direktor (F.I.Sh.)'),
+    help: t('Shartnomada imzo qoʻyuvchi shaxs.'),
+  },
+  'contracts.bank_name': {
+    label: t('Bank nomi'),
+    help: t('Shartnomaning rekvizitlar qismida koʻrsatiladi.'),
+  },
+  'contracts.bank_account': {
+    label: t('Hisob raqami'),
+    help: t('Bogʻchaning hisob-kitob raqami.'),
+  },
+  'contracts.bank_mfo': { label: t('MFO'), help: t('Bank kodi.') },
+  'contracts.daily_meal_fee': {
+    label: t('Bir kunlik ovqat puli (soʻm)'),
+    help: t('Bola kelmagan kun uchun shartnoma boʻyicha ayriladigan summa.'),
+  },
+  'contracts.free_absence_days': {
+    label: t('Toʻlovsiz saqlanadigan kunlar'),
+    help: t('Yiliga shuncha ish kuni joy toʻlovsiz saqlanadi.'),
+  },
+  'contracts.daily_hours': {
+    label: t('Kunlik saqlash vaqti (soat)'),
+    help: t('Shartnomaning birinchi bandidagi soat.'),
+  },
 }
 
 const GROUPS: Array<[string, string]> = [
@@ -135,6 +162,7 @@ const GROUPS: Array<[string, string]> = [
   ['finance', t('Moliya')],
   ['notifications', t('Bildirishnomalar')],
   ['attendance', t('Davomat')],
+  ['contracts', t('Shartnoma rekvizitlari')],
 ]
 
 export default function SettingsPage() {
@@ -287,6 +315,10 @@ export default function SettingsPage() {
       {GROUPS.map(([prefix, title]) => {
         const groupKeys = keys.filter((key) => key.startsWith(`${prefix}.`))
         if (groupKeys.length === 0) return null
+        // Shartnoma rekvizitlari faqat shartnomalar yoqilganda kerak
+        // (PLAN 9.3): o'chirilgan bo'limning sozlamasi ekranni
+        // sababsiz uzaytiradi.
+        if (prefix === 'contracts' && !contractsOn) return null
         return (
           <section
             key={prefix}

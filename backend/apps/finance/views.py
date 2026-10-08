@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import calendar
 import uuid
 from datetime import date
+from decimal import Decimal
 from typing import Any
 
 from django.http import Http404
@@ -522,6 +524,33 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
         )
 
 
+def _parse_period(value: str) -> tuple[int, int]:
+    """`"2026-09"` → `(2026, 9)`. Buzuq qiymat — `422`, `500` emas."""
+    try:
+        year, month = value.split("-")
+        year_int, month_int = int(year), int(month)
+    except (ValueError, AttributeError) as exc:
+        raise BusinessRuleViolation(gettext("Davr «YYYY-MM» koʻrinishida boʻlishi kerak.")) from exc
+    if not 1 <= month_int <= 12 or not 2000 <= year_int <= 2100:
+        raise BusinessRuleViolation(gettext("Davr «YYYY-MM» koʻrinishida boʻlishi kerak."))
+    return year_int, month_int
+
+
+def _period_start(value: str | None, *, default: date) -> date:
+    if not value:
+        return default
+    year, month = _parse_period(value)
+    return date(year, month, 1)
+
+
+def _period_end(value: str | None, *, default: date) -> date:
+    if not value:
+        return default
+    year, month = _parse_period(value)
+    last = calendar.monthrange(year, month)[1]
+    return date(year, month, last)
+
+
 class DebtorViewSet(viewsets.ViewSet):
     """
     Qarzdorlar — **hisoblangan ro'yxat**, jadval emas (ADR-7).
@@ -554,6 +583,46 @@ class DebtorViewSet(viewsets.ViewSet):
         )
         total = sum(D(row["balance"]) for row in rows)
         return Response({"count": len(rows), "total_debt": str(total), "results": rows})
+
+    @action(detail=False, methods=["get"], url_path="by-period")
+    def by_period(self, request: Request) -> Response:
+        """
+        Oy boʻyicha qarzdorlik yoshi (PLAN 9.2).
+
+        `?from=2026-09&to=2026-10` — davr; `period=2026-09` berilsa,
+        oʻsha oyning tafsiloti (kim, qancha, qachon, nima orqali).
+        Ikkalasi bitta endpointda, chunki ekranda ham bitta jadval:
+        qatorni ochganda ichidagi roʻyxat chiqadi.
+        """
+        from apps.core.params import parse_bool, parse_uuid
+
+        params = request.query_params
+        group_id = parse_uuid(params.get("group_id"))
+        branch_id = parse_uuid(params.get("branch_id"))
+
+        period = params.get("period")
+        if period:
+            year, month = _parse_period(period)
+            rows = selectors.debt_period_children(
+                period_year=year,
+                period_month=month,
+                branch_id=branch_id,
+                group_id=group_id,
+                debtors_only=parse_bool(params.get("debtors_only")),
+            )
+            return Response({"period": period, "count": len(rows), "results": rows})
+
+        today = timezone.localdate()
+        date_from = _period_start(params.get("from"), default=today.replace(day=1, month=1))
+        date_to = _period_end(params.get("to"), default=today)
+        rows = selectors.debt_by_period(
+            date_from=date_from, date_to=date_to, branch_id=branch_id, group_id=group_id
+        )
+        totals = {
+            key: f"{sum(Decimal(row[key]) for row in rows):.2f}"
+            for key in ("invoiced", "paid", "outstanding")
+        }
+        return Response({"count": len(rows), "totals": totals, "results": rows})
 
     def retrieve(self, request: Request, pk: str | None = None) -> Response:
         """

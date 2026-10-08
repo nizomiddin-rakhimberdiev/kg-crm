@@ -19,6 +19,8 @@ export interface ChildInput {
   gender: 'male' | 'female'
   enrollment_status?: string
   enrolled_on?: string | null
+  /** Qogʻozdagi shartnoma raqami (PLAN 9.3). */
+  contract_number?: string
   /** Bola tizimga o'tishdan oldin ham bog'chada bo'lganmi (PLAN 7.8). */
   is_existing_client?: boolean
   /** Eski qarz — faqat yaratishda; ledger'ga debet bo'lib tushadi. */

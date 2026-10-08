@@ -230,6 +230,8 @@ export interface Child {
   gender: 'male' | 'female'
   enrollment_status: 'prospect' | 'active' | 'paused' | 'graduated' | 'withdrawn'
   enrolled_on: string | null
+  /** Qogʻozdagi shartnoma raqami (PLAN 9.3). */
+  contract_number: string
   tariff: string | null
   tariff_name: string | null
   /** Individual oylik narx — tarifsiz. `null` bo'lsa narx tarifdan. */

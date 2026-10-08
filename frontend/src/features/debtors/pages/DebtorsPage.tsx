@@ -31,6 +31,7 @@ import { groupsApi } from '@/features/children/api'
 import { notificationsApi, type ReminderFilters } from '@/features/notifications/api'
 import { ReminderConfirmDialog } from '@/features/notifications/components/ReminderConfirmDialog'
 import { TestModeBanner } from '@/features/notifications/components/TestModeBanner'
+import { DebtByPeriod } from '@/features/debtors/components/DebtByPeriod'
 import { debtorsApi } from '@/features/payments/api'
 import { useExcelExport } from '@/features/reports/useExcelExport'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -166,6 +167,7 @@ export default function DebtorsPage() {
   const [groupId, setGroupId] = useState('')
   const [minAmount, setMinAmount] = useState('')
   const [orderBy, setOrderBy] = useState<'debt' | 'days' | 'name'>('debt')
+  const [view, setView] = useState<'today' | 'periods'>('today')
   const [openChild, setOpenChild] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<ReminderFilters | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -287,219 +289,255 @@ export default function DebtorsPage() {
         </div>
       </div>
 
-      <TestModeBanner />
+      {/*
+        Ikki ko'rinish (PLAN 9.2): "Bugun" — kimga qo'ng'iroq qilish
+        kerak; "Oylar bo'yicha" — qaysi oyning qarzi qolgani va u
+        qachon, nima orqali yopilgani. Ikkinchisi birinchisining
+        o'rnini bosmaydi: bitta ekranda ikki xil savol.
+      */}
+      <div className="inline-flex rounded-xl bg-tosh-100 p-1">
+        {(
+          [
+            ['today', t('Bugungi qarzdorlar')],
+            ['periods', t('Oylar boʻyicha')],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            aria-pressed={view === key}
+            onClick={() => setView(key)}
+            className={cn(
+              'inline-flex min-h-[40px] items-center rounded-lg px-4 text-sm font-semibold transition',
+              view === key ? 'bg-white text-tosh-900 shadow-card' : 'text-tosh-600',
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
-      {(excel.error || error) && (
-        <p role="alert" className="rounded-lg bg-orik-50 px-3 py-2 text-sm text-orik-900">
-          {excel.error || error}
-        </p>
-      )}
-      {notice && (
-        <p className="rounded-lg bg-nihol-50 px-3 py-2 text-sm text-nihol-800">{notice}</p>
-      )}
+      {view === 'periods' && <DebtByPeriod />}
 
-      {/* Filtrlar — mudira "kimga bugun qo'ng'iroq qilay?" degan
+      {view === 'today' && (
+        <>
+          <TestModeBanner />
+
+          {(excel.error || error) && (
+            <p role="alert" className="rounded-lg bg-orik-50 px-3 py-2 text-sm text-orik-900">
+              {excel.error || error}
+            </p>
+          )}
+          {notice && (
+            <p className="rounded-lg bg-nihol-50 px-3 py-2 text-sm text-nihol-800">{notice}</p>
+          )}
+
+          {/* Filtrlar — mudira "kimga bugun qo'ng'iroq qilay?" degan
           savolga javob izlaydi, shuning uchun kechikish va guruh
           birinchi o'rinda. */}
-      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-tosh-200 bg-white p-3">
-        <div className="flex flex-wrap items-center gap-1">
-          {DAY_FILTERS.map(([value, label]) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => setMinDays(value)}
-              className={cn(
-                'rounded-lg px-3 py-1.5 text-sm font-medium',
-                minDays === value ? 'bg-tosh-900 text-white' : 'text-tosh-600 hover:bg-tosh-50',
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+          <div className="flex flex-wrap items-end gap-3 rounded-xl border border-tosh-200 bg-white p-3">
+            <div className="flex flex-wrap items-center gap-1">
+              {DAY_FILTERS.map(([value, label]) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => setMinDays(value)}
+                  className={cn(
+                    'rounded-lg px-3 py-1.5 text-sm font-medium',
+                    minDays === value ? 'bg-tosh-900 text-white' : 'text-tosh-600 hover:bg-tosh-50',
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
-        <div className="min-w-[160px]">
-          <label htmlFor="debtor-group" className="block text-xs font-medium text-tosh-500">
-            {t('Guruh')}
-          </label>
-          <select
-            id="debtor-group"
-            value={groupId}
-            onChange={(event) => setGroupId(event.target.value)}
-            className="mt-1 w-full rounded-lg border border-tosh-200 px-2.5 py-2 text-sm outline-none focus:border-nihol-500"
-          >
-            <option value="">{t('Barcha guruhlar')}</option>
-            {(groupsQuery.data?.items ?? []).map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="min-w-[140px]">
-          <label htmlFor="debtor-amount" className="block text-xs font-medium text-tosh-500">
-            {t('Eng kam qarz')}
-          </label>
-          <input
-            id="debtor-amount"
-            inputMode="numeric"
-            value={minAmount}
-            placeholder="500000"
-            onChange={(event) => setMinAmount(event.target.value.replace(/[^\d]/g, ''))}
-            className="num mt-1 w-full rounded-lg border border-tosh-200 px-2.5 py-2 text-sm outline-none focus:border-nihol-500"
-          />
-        </div>
-
-        <div className="min-w-[160px]">
-          <label htmlFor="debtor-order" className="block text-xs font-medium text-tosh-500">
-            {t('Saralash')}
-          </label>
-          <select
-            id="debtor-order"
-            value={orderBy}
-            onChange={(event) => setOrderBy(event.target.value as typeof orderBy)}
-            className="mt-1 w-full rounded-lg border border-tosh-200 px-2.5 py-2 text-sm outline-none focus:border-nihol-500"
-          >
-            <option value="debt">{t('Qarz boʻyicha')}</option>
-            <option value="days">{t('Kechikish boʻyicha')}</option>
-            <option value="name">{t('Ism boʻyicha')}</option>
-          </select>
-        </div>
-
-        <label
-          htmlFor="debtor-overdue"
-          className="flex cursor-pointer items-center gap-2 py-2 text-sm text-tosh-600"
-        >
-          <input
-            id="debtor-overdue"
-            type="checkbox"
-            checked={overdueOnly}
-            disabled={aiDays !== null}
-            onChange={(event) => setOverdueOnly(event.target.checked)}
-          />
-          {t('Faqat muddati oʻtganlar')}
-        </label>
-
-        {debtorsQuery.data && (
-          <p className="ml-auto text-right text-sm">
-            <span className="text-xs text-tosh-500">{t('Jami qarz')}</span>
-            <br />
-            <span className="num text-lg font-bold text-orik-800">
-              {money(debtorsQuery.data.total_debt)}
-            </span>
-          </p>
-        )}
-      </div>
-
-      <div className="overflow-hidden rounded-2xl border border-tosh-200 bg-white">
-        {debtorsQuery.isPending && (
-          <p className="px-4 py-8 text-center text-sm text-tosh-400">{t('Yuklanmoqda…')}</p>
-        )}
-        {debtorsQuery.isError && (
-          <p className="px-4 py-8 text-center text-sm text-orik-800">
-            {debtorsQuery.error instanceof ApiError
-              ? debtorsQuery.error.message
-              : t('Maʼlumotni yuklab boʻlmadi.')}
-          </p>
-        )}
-        {debtorsQuery.data && rows.length === 0 && (
-          <div className="px-4 py-12 text-center">
-            <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-tosh-200" />
-            <p className="text-sm text-tosh-500">{t('Qarzdorlar yoʻq.')}</p>
-          </div>
-        )}
-
-        {debtorsQuery.data && rows.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-sm">
-              <thead className="bg-tosh-50 text-left text-xs uppercase tracking-wide text-tosh-500">
-                <tr>
-                  <th className="px-4 py-3 font-medium">{t('Bola')}</th>
-                  <th className="px-4 py-3 font-medium">{t('Guruh')}</th>
-                  <th className="px-4 py-3 font-medium">{t('Vasiy')}</th>
-                  <th className="px-4 py-3 font-medium">{t('Kechikish')}</th>
-                  <th className="px-4 py-3 font-medium">{t('Oxirgi eslatma')}</th>
-                  <th className="px-4 py-3 text-right font-medium">{t('Qarz')}</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-tosh-100">
-                {rows.map((row) => (
-                  <tr
-                    key={row.child.id}
-                    className="cursor-pointer hover:bg-tosh-50"
-                    onClick={() => setOpenChild(row.child.id)}
-                  >
-                    <td className="px-4 py-3 font-medium text-tosh-800">{row.child.full_name}</td>
-                    <td className="px-4 py-3 text-tosh-600">{row.child.group ?? '—'}</td>
-                    <td className="px-4 py-3 text-tosh-600">
-                      {row.primary_guardian ? (
-                        <>
-                          <p>{row.primary_guardian.full_name}</p>
-                          <p className="flex items-center gap-1 text-xs text-tosh-400">
-                            <Phone className="h-3 w-3" />
-                            {row.primary_guardian.phone}
-                          </p>
-                        </>
-                      ) : (
-                        <span className="text-orik-800">{t('vasiy yoʻq')}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {row.days_overdue !== null ? (
-                        <span
-                          className={cn(
-                            'num rounded-full px-2 py-0.5 text-xs font-medium',
-                            row.days_overdue >= 30
-                              ? 'bg-orik-100 text-orik-900'
-                              : 'bg-orik-50 text-orik-800',
-                          )}
-                        >
-                          {t('{days} kun', { days: row.days_overdue })}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-tosh-400">{t('muddati kelmagan')}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-tosh-500">
-                      {row.last_reminder_at ? (
-                        date(row.last_reminder_at)
-                      ) : (
-                        <span className="text-tosh-400">{t('yuborilmagan')}</span>
-                      )}
-                    </td>
-                    <td className="num px-4 py-3 text-right font-semibold text-orik-800">
-                      {money(row.balance)}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {can('notifications.create') && row.primary_guardian && (
-                          <button
-                            type="button"
-                            title={t('Shu ota-onaga eslatma')}
-                            aria-label={t('{name} uchun eslatma yuborish', {
-                              name: row.child.full_name,
-                            })}
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              setConfirming({ child_ids: [row.child.id] })
-                            }}
-                            className="rounded-lg border border-tosh-200 p-1.5 text-tosh-600 hover:bg-tosh-50"
-                          >
-                            <BellRing className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                        <ChevronRight className="h-4 w-4 text-tosh-300" />
-                      </div>
-                    </td>
-                  </tr>
+            <div className="min-w-[160px]">
+              <label htmlFor="debtor-group" className="block text-xs font-medium text-tosh-500">
+                {t('Guruh')}
+              </label>
+              <select
+                id="debtor-group"
+                value={groupId}
+                onChange={(event) => setGroupId(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-tosh-200 px-2.5 py-2 text-sm outline-none focus:border-nihol-500"
+              >
+                <option value="">{t('Barcha guruhlar')}</option>
+                {(groupsQuery.data?.items ?? []).map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
                 ))}
-              </tbody>
-            </table>
+              </select>
+            </div>
+
+            <div className="min-w-[140px]">
+              <label htmlFor="debtor-amount" className="block text-xs font-medium text-tosh-500">
+                {t('Eng kam qarz')}
+              </label>
+              <input
+                id="debtor-amount"
+                inputMode="numeric"
+                value={minAmount}
+                placeholder="500000"
+                onChange={(event) => setMinAmount(event.target.value.replace(/[^\d]/g, ''))}
+                className="num mt-1 w-full rounded-lg border border-tosh-200 px-2.5 py-2 text-sm outline-none focus:border-nihol-500"
+              />
+            </div>
+
+            <div className="min-w-[160px]">
+              <label htmlFor="debtor-order" className="block text-xs font-medium text-tosh-500">
+                {t('Saralash')}
+              </label>
+              <select
+                id="debtor-order"
+                value={orderBy}
+                onChange={(event) => setOrderBy(event.target.value as typeof orderBy)}
+                className="mt-1 w-full rounded-lg border border-tosh-200 px-2.5 py-2 text-sm outline-none focus:border-nihol-500"
+              >
+                <option value="debt">{t('Qarz boʻyicha')}</option>
+                <option value="days">{t('Kechikish boʻyicha')}</option>
+                <option value="name">{t('Ism boʻyicha')}</option>
+              </select>
+            </div>
+
+            <label
+              htmlFor="debtor-overdue"
+              className="flex cursor-pointer items-center gap-2 py-2 text-sm text-tosh-600"
+            >
+              <input
+                id="debtor-overdue"
+                type="checkbox"
+                checked={overdueOnly}
+                disabled={aiDays !== null}
+                onChange={(event) => setOverdueOnly(event.target.checked)}
+              />
+              {t('Faqat muddati oʻtganlar')}
+            </label>
+
+            {debtorsQuery.data && (
+              <p className="ml-auto text-right text-sm">
+                <span className="text-xs text-tosh-500">{t('Jami qarz')}</span>
+                <br />
+                <span className="num text-lg font-bold text-orik-800">
+                  {money(debtorsQuery.data.total_debt)}
+                </span>
+              </p>
+            )}
           </div>
-        )}
-      </div>
+
+          <div className="overflow-hidden rounded-2xl border border-tosh-200 bg-white">
+            {debtorsQuery.isPending && (
+              <p className="px-4 py-8 text-center text-sm text-tosh-400">{t('Yuklanmoqda…')}</p>
+            )}
+            {debtorsQuery.isError && (
+              <p className="px-4 py-8 text-center text-sm text-orik-800">
+                {debtorsQuery.error instanceof ApiError
+                  ? debtorsQuery.error.message
+                  : t('Maʼlumotni yuklab boʻlmadi.')}
+              </p>
+            )}
+            {debtorsQuery.data && rows.length === 0 && (
+              <div className="px-4 py-12 text-center">
+                <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-tosh-200" />
+                <p className="text-sm text-tosh-500">{t('Qarzdorlar yoʻq.')}</p>
+              </div>
+            )}
+
+            {debtorsQuery.data && rows.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] text-sm">
+                  <thead className="bg-tosh-50 text-left text-xs uppercase tracking-wide text-tosh-500">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">{t('Bola')}</th>
+                      <th className="px-4 py-3 font-medium">{t('Guruh')}</th>
+                      <th className="px-4 py-3 font-medium">{t('Vasiy')}</th>
+                      <th className="px-4 py-3 font-medium">{t('Kechikish')}</th>
+                      <th className="px-4 py-3 font-medium">{t('Oxirgi eslatma')}</th>
+                      <th className="px-4 py-3 text-right font-medium">{t('Qarz')}</th>
+                      <th className="px-4 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-tosh-100">
+                    {rows.map((row) => (
+                      <tr
+                        key={row.child.id}
+                        className="cursor-pointer hover:bg-tosh-50"
+                        onClick={() => setOpenChild(row.child.id)}
+                      >
+                        <td className="px-4 py-3 font-medium text-tosh-800">
+                          {row.child.full_name}
+                        </td>
+                        <td className="px-4 py-3 text-tosh-600">{row.child.group ?? '—'}</td>
+                        <td className="px-4 py-3 text-tosh-600">
+                          {row.primary_guardian ? (
+                            <>
+                              <p>{row.primary_guardian.full_name}</p>
+                              <p className="flex items-center gap-1 text-xs text-tosh-400">
+                                <Phone className="h-3 w-3" />
+                                {row.primary_guardian.phone}
+                              </p>
+                            </>
+                          ) : (
+                            <span className="text-orik-800">{t('vasiy yoʻq')}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {row.days_overdue !== null ? (
+                            <span
+                              className={cn(
+                                'num rounded-full px-2 py-0.5 text-xs font-medium',
+                                row.days_overdue >= 30
+                                  ? 'bg-orik-100 text-orik-900'
+                                  : 'bg-orik-50 text-orik-800',
+                              )}
+                            >
+                              {t('{days} kun', { days: row.days_overdue })}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-tosh-400">{t('muddati kelmagan')}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-tosh-500">
+                          {row.last_reminder_at ? (
+                            date(row.last_reminder_at)
+                          ) : (
+                            <span className="text-tosh-400">{t('yuborilmagan')}</span>
+                          )}
+                        </td>
+                        <td className="num px-4 py-3 text-right font-semibold text-orik-800">
+                          {money(row.balance)}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {can('notifications.create') && row.primary_guardian && (
+                              <button
+                                type="button"
+                                title={t('Shu ota-onaga eslatma')}
+                                aria-label={t('{name} uchun eslatma yuborish', {
+                                  name: row.child.full_name,
+                                })}
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  setConfirming({ child_ids: [row.child.id] })
+                                }}
+                                className="rounded-lg border border-tosh-200 p-1.5 text-tosh-600 hover:bg-tosh-50"
+                              >
+                                <BellRing className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                            <ChevronRight className="h-4 w-4 text-tosh-300" />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }

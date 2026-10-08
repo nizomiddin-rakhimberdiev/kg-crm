@@ -69,6 +69,22 @@ def _price(ctx: dict[str, Any]) -> Any:
     return ctx["price"]
 
 
+def _setting(key: str, *, money: bool = False) -> Callable[[dict[str, Any]], str]:
+    """Sozlamadan o'qiladigan maydon (PLAN 9.3) — direktor, bank, kunlik ovqat puli."""
+
+    def read(_ctx: dict[str, Any]) -> str:
+        from apps.settings_app.services import get_setting
+
+        value = get_setting(key=key)
+        if value in (None, ""):
+            return ""
+        if money:
+            return _money(Decimal(str(value)))
+        return str(value)
+
+    return read
+
+
 def _guardian(attr: str) -> Callable[[dict[str, Any]], str]:
     def read(ctx: dict[str, Any]) -> str:
         guardian = ctx.get("guardian")
@@ -97,6 +113,18 @@ PLACEHOLDERS: dict[str, Callable[[dict[str, Any]], str]] = {
     "filial.manzil": lambda ctx: ctx["branch"].address,
     "shartnoma.raqam": lambda ctx: ctx["number"],
     "shartnoma.sana": lambda ctx: _date(ctx["today"]),
+    # --- Shartnoma rekvizitlari (PLAN 9.3) ---
+    "bola.tugilgan_yil": lambda ctx: str(ctx["child"].date_of_birth.year)
+    if ctx["child"].date_of_birth
+    else "",
+    "bogcha.direktor": _setting("contracts.director_name"),
+    "bogcha.bank": _setting("contracts.bank_name"),
+    "bogcha.hisob_raqam": _setting("contracts.bank_account"),
+    "bogcha.mfo": _setting("contracts.bank_mfo"),
+    "tolov.kuni": _setting("finance.due_day"),
+    "tolov.ovqat_puli": _setting("contracts.daily_meal_fee", money=True),
+    "tolov.bepul_kunlar": _setting("contracts.free_absence_days"),
+    "bogcha.saqlash_soati": _setting("contracts.daily_hours"),
 }
 
 

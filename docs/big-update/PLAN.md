@@ -549,7 +549,7 @@ line of content if the owner prefers sales-led.
 
 ---
 
-### Bosqich 9 — mijozning uchta soʻrovi (2026-10-08) `[ ]`
+### Bosqich 9 — mijozning uchta soʻrovi (2026-10-08) `[x]`
 
 **9.1 Ish grafigi va tizim hisobining bogʻlanishi.** Owner: *"yangi xodim
 qoʻshishda ish grafigini ham qoʻshish imkoniyati… to'liq, soatlik, yoki
@@ -557,7 +557,7 @@ haftada 2-3 marta keladigan"*, va *"tizim xisobini yangi xodimga emas,
 xodim yaratib bo'linganidan keyin tizim xisobi yaratishda xodim tanlash
 qilsa yaxshiroq"*.
 
-- [ ] **9.1a** Grafik xodimning **pulini** oʻzgartiradi, bezak emas. Shuning
+- [x] **9.1a** Grafik xodimning **pulini** oʻzgartiradi, bezak emas. Shuning
   uchun ikkita rejim: `monthly` (oylik maosh — toʻliq yoki belgilangan
   kunlar) va `hourly` (soatbay). Ish kunlari (`work_days`, ISO 1–7) boʻsh
   boʻlsa filial kalendari. Oylik proporsiya endi **xodimning oʻz** ish
@@ -565,7 +565,7 @@ qilsa yaxshiroq"*.
   oʻrtasida ishga kirsa, maxraj filialning 22 kuni emas, uning 13 kuni
   boʻlishi kerak. Soatbayda summa = tabeldagi kelgan kunlar × kunlik soat
   × soat narxi.
-- [ ] **9.1b** Hisob bogʻlash teskari tomonga: xodim formasidan tanlagich
+- [x] **9.1b** Hisob bogʻlash teskari tomonga: xodim formasidan tanlagich
   olib tashlanadi (faqat holat koʻrinadi), foydalanuvchi yaratish
   formasiga esa "Xodim" tanlagichi qoʻshiladi. Mantiq ham shunday: avval
   odam ishga olinadi, kirish huquqi esa keyin — va hamma xodimga ham
@@ -576,7 +576,7 @@ qilsa yaxshiroq"*.
 oʻz qarzi — *"mijoz buni to'laqoli ko'rib turish imkoniyatiga ega bo'lishi
 kerak: qachonniki? qachon to'landi? nima orqali? qancha? qancha qoldi?"*
 
-- [ ] **9.2** Yangi hisobot: oy boʻyicha qarzdorlik yoshi. Manba allaqachon
+- [x] **9.2** Yangi hisobot: oy boʻyicha qarzdorlik yoshi. Manba allaqachon
   bor — `invoice(period_year, period_month, amount_due, amount_paid)` va
   `payment_allocation(payment → invoice, amount, released_at)`, yaʼni
   "qaysi pul qaysi oyni yopgani" yozilgan (ADR-20). Jadval: har oy uchun
@@ -589,7 +589,7 @@ ishni to'xtatib turamiz degan edik, lekin yana davom ettirishimizni
 so'ramoqda mijoz"*. Shartnoma tizimga yuklanadi, keyin toʻliq
 moslashtiriladi; bola qoʻshishda **shartnoma raqami** maydoni ham kerak.
 
-- [ ] **9.3** `FEATURE_CONTRACTS` yoqiladi (kod 6.5 da yozilgan va sinalgan).
+- [x] **9.3** `FEATURE_CONTRACTS` yoqiladi (kod 6.5 da yozilgan va sinalgan).
   Mijozning haqiqiy shartnomasi (Oriental Kinderland, 2026) tayyor
   shablon sifatida kiritiladi — matn oʻrnidagi raqamlar va nomlar
   `{{...}}` maydonlarga aylantiriladi, yaʼni "yuklash" emas,

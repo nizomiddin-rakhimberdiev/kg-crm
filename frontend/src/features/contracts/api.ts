@@ -36,6 +36,8 @@ export interface Contract {
 export const contractTemplatesApi = {
   list: () => api.get<ContractTemplate[]>('/contract-templates'),
   placeholders: () => api.get<string[]>('/contract-templates/placeholders'),
+  /** Namunaviy matn (PLAN 9.3) — tahrirlagichning boshlangʻich nuqtasi. */
+  sample: () => api.get<{ name: string; body: string }>('/contract-templates/sample'),
   create: (body: Pick<ContractTemplate, 'name' | 'language' | 'body'>) =>
     api.post<ContractTemplate>('/contract-templates', body),
   update: (id: string, body: Pick<ContractTemplate, 'name' | 'language' | 'body'>) =>

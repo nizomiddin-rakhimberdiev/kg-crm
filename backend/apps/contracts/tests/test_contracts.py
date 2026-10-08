@@ -255,3 +255,57 @@ class TestRowScope:
         assert response.status_code == 404
         assert client.get(CONTRACTS).json()["data"] == []
         assert client.get(f"{CONTRACTS}/{made['id']}").status_code == 404
+
+
+class TestSampleTemplate:
+    """
+    Namunaviy matn (PLAN 9.3) — bogʻcha boʻsh varaqdan boshlamaydi.
+    """
+
+    def test_the_sample_only_uses_known_placeholders(self):
+        from apps.contracts.sample import SAMPLE_CONTRACT
+        from apps.contracts.services import unknown_placeholders
+
+        assert unknown_placeholders(SAMPLE_CONTRACT) == []
+
+    def test_the_endpoint_returns_the_sample(self, tenant_a):
+        response = tenant_a.client().get("/api/v1/contract-templates/sample")
+        assert response.status_code == 200, response.content
+        body = response.json()["data"]["body"]
+        assert "SHARTNOMA" in body
+        assert "{{tarif.summa}}" in body
+
+    def test_the_sample_fills_from_settings_and_the_child(self, tenant_a):
+        """Direktor, bank va kunlik ovqat puli — sozlamadan (PLAN 9.3)."""
+        from datetime import date
+
+        from apps.children.models import Child
+        from apps.contracts.sample import SAMPLE_CONTRACT
+        from apps.contracts.services import create_contract, save_template
+        from apps.settings_app.services import set_setting
+
+        with organization_context(tenant_a.organization.id):
+            org = tenant_a.organization
+            set_setting(organization=org, key="contracts.director_name", value="Xasanova N.N.")
+            set_setting(organization=org, key="contracts.daily_meal_fee", value="25000")
+            set_setting(organization=org, key="contracts.bank_mfo", value="01158")
+            child = Child.objects.create(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                first_name="Ali",
+                last_name="Karimov",
+                date_of_birth=date(2021, 4, 2),
+                gender="male",
+            )
+            template = save_template(
+                organization=tenant_a.organization,
+                template=None,
+                name="Namuna",
+                body=SAMPLE_CONTRACT,
+            )
+            contract = create_contract(child=child, template=template)
+
+        assert "Xasanova N.N." in contract.rendered_text
+        assert "25 000" in contract.rendered_text
+        assert "01158" in contract.rendered_text
+        assert "2021-yilda" in contract.rendered_text

@@ -267,8 +267,52 @@ export const paymentsApi = {
     api.get<DailyCashSummary>('/payments/daily-summary', date ? { date } : undefined),
 }
 
+/** Oy boʻyicha qarzdorlik (PLAN 9.2) — "qaysi oyning qarzi qolgan?". */
+export interface DebtPeriodRow {
+  period: string
+  period_year: number
+  period_month: number
+  invoiced: string
+  paid: string
+  /** Muddatidan KEYIN toʻlangan qism — "kech toʻlandi" ustuni. */
+  paid_late: string
+  outstanding: string
+  children: number
+  debtors: number
+}
+
+export interface DebtPeriodPayment {
+  paid_at: string
+  method: string
+  amount: string
+  payment_id: string
+}
+
+export interface DebtPeriodChild {
+  invoice_id: string
+  invoice_number: string
+  child_id: string
+  child_name: string
+  invoiced: string
+  paid: string
+  outstanding: string
+  due_date: string
+  days_overdue: number
+  payments: DebtPeriodPayment[]
+}
+
 export const debtorsApi = {
   list: (params?: { overdue?: string; min_amount?: string }) =>
     api.get<DebtorList>('/debtors', params),
   statement: (childId: string) => api.get<ChildStatement>(`/debtors/${childId}`),
+  byPeriod: (params: { from?: string; to?: string; group_id?: string }) =>
+    api.get<{ count: number; totals: Record<string, string>; results: DebtPeriodRow[] }>(
+      '/debtors/by-period',
+      params,
+    ),
+  periodChildren: (params: { period: string; group_id?: string; debtors_only?: string }) =>
+    api.get<{ period: string; count: number; results: DebtPeriodChild[] }>(
+      '/debtors/by-period',
+      params,
+    ),
 }

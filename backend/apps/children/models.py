@@ -81,6 +81,15 @@ class Child(BranchScopedModel):
     # o'zgarsa, o'tgan oylar o'zgarmaydi (tarif bilan bir xil qoida).
     monthly_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
 
+    # Qogʻozdagi shartnoma raqami (PLAN 9.3).
+    #
+    # Tizim oʻzi tuzadigan shartnomaning raqami ALOHIDA
+    # (`contract.number`, `SH-2026-0001`). Bu maydon esa bogʻchaning
+    # oʻz daftaridagi raqam: koʻpchilik bogʻcha shartnomani qogʻozda
+    # yuritadi va bolani aynan shu raqam boʻyicha qidiradi. Ikkisini
+    # bitta ustunga tiqish ulardan birini yolgʻon qilardi.
+    contract_number = models.CharField(max_length=40, blank=True)
+
     # Qidiruv kaliti (Q11, PLAN 2.7) — apostrofsiz, faqat lotin.
     #
     # "Ulug'bek", "Ulugʻbek" va "Улугбек" bitta kalitga keladi, ya'ni

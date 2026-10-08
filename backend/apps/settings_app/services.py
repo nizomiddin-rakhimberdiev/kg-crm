@@ -113,6 +113,23 @@ DEFAULTS: dict[str, Any] = {
     # to'laydi. Shuning uchun u sof maoshga emas, hisoblashning
     # UMUMIY QIYMATIGA qo'shiladi.
     "payroll.social_tax_rate": 0,
+    # --- Shartnoma rekvizitlari (PLAN 9.3) ---
+    #
+    # Shartnoma matni bog'chaning o'z hujjati, lekin undagi bir necha
+    # raqam TIZIMDA ham bor (narx, to'lov kuni). Qolganlari — direktor,
+    # bank rekvizitlari, bir kunlik ovqat puli — hech qayerda yo'q edi,
+    # va ularsiz shablon to'ldirilmas edi. Sozlama, chunki ular
+    # bog'chaga xos va yilda bir marta o'zgaradi.
+    "contracts.director_name": "",
+    "contracts.bank_name": "",
+    "contracts.bank_account": "",
+    "contracts.bank_mfo": "",
+    # Bola kelmagan kun uchun qaytariladigan ovqat puli (so'm/kun).
+    "contracts.daily_meal_fee": "0",
+    # Yil davomida to'lovsiz saqlanadigan kunlar soni.
+    "contracts.free_absence_days": 30,
+    # Bolani saqlash vaqti (soat) — shartnomaning 1-bandi.
+    "contracts.daily_hours": 10,
     # --- Ish kalendari (ADR-19) ---
     #
     # ISO raqamlash: 1 = dushanba … 7 = yakshanba. Shanba ishlaydigan

@@ -16,6 +16,7 @@ from decimal import Decimal
 from typing import Any
 
 from django.db.models import (
+    Count,
     DecimalField,
     F,
     OuterRef,
@@ -182,6 +183,179 @@ def debtor_rows(
         rows.sort(key=lambda row: row["days_overdue"] or 0, reverse=True)
     elif order_by == "name":
         rows.sort(key=lambda row: row["child"]["full_name"])
+    return rows
+
+
+def _period_bounds(date_from: Any, date_to: Any) -> tuple[tuple[int, int], tuple[int, int]]:
+    return (date_from.year, date_from.month), (date_to.year, date_to.month)
+
+
+def debt_by_period(
+    *,
+    date_from: Any,
+    date_to: Any,
+    branch_id: Any = None,
+    group_id: Any = None,
+) -> list[dict[str, Any]]:
+    """
+    Oy boʻyicha qarzdorlik yoshi (PLAN 9.2).
+
+    Savol — "qaysi oyning qarzi qolgan?" — balansdan javob olmaydi:
+    balans bitta son, u qaysi oydan qolganini bilmaydi. Javob
+    hisob-fakturada (`period_year/period_month`) va taqsimotda
+    (`payment_allocation`): oktabrda kelgan pul SENTABRNING
+    fakturasini yopgan boʻlsa, u sentabr qatorida koʻrinadi (ADR-20).
+
+    Shuning uchun bu yerda `invoice.amount_paid` keshi emas, taqsimot
+    jadvali oʻqiladi — kesh bir kun siljisa, hisobot haqiqatdan
+    ajralib qolardi.
+    """
+    from apps.finance.models import PaymentAllocation
+
+    (from_year, from_month), (to_year, to_month) = _period_bounds(date_from, date_to)
+    invoices = Invoice.objects.exclude(status=InvoiceStatus.CANCELLED).filter(
+        Q(period_year__gt=from_year) | Q(period_year=from_year, period_month__gte=from_month),
+        Q(period_year__lt=to_year) | Q(period_year=to_year, period_month__lte=to_month),
+    )
+    if branch_id:
+        invoices = invoices.filter(branch_id=branch_id)
+    if group_id:
+        invoices = invoices.filter(
+            child__enrollments__group_id=group_id,
+            child__enrollments__status=EnrollmentState.ACTIVE,
+            child__enrollments__end_date__isnull=True,
+        )
+
+    # Toʻlangan summa — BOʻSHATILMAGAN taqsimotlardan. Qaytarilgan toʻlov
+    # qatorni boʻshatadi, yaʼni qarz oʻz joyiga qaytadi.
+    paid_rows = (
+        PaymentAllocation.objects.filter(invoice__in=invoices, released_at__isnull=True)
+        .values("invoice__period_year", "invoice__period_month")
+        .annotate(
+            paid=Coalesce(Sum("amount"), Decimal("0")),
+            paid_late=Coalesce(
+                Sum("amount", filter=Q(payment__paid_at__date__gt=F("invoice__due_date"))),
+                Decimal("0"),
+            ),
+        )
+    )
+    paid_by_period = {
+        (row["invoice__period_year"], row["invoice__period_month"]): row for row in paid_rows
+    }
+
+    rows: list[dict[str, Any]] = []
+    grouped = (
+        invoices.values("period_year", "period_month")
+        .annotate(
+            invoiced=Coalesce(Sum("amount_due"), Decimal("0")),
+            children=Count("id", distinct=True),
+        )
+        .order_by("-period_year", "-period_month")
+    )
+    for row in grouped:
+        key = (row["period_year"], row["period_month"])
+        money = paid_by_period.get(key, {})
+        paid = money.get("paid") or Decimal("0")
+        outstanding = row["invoiced"] - paid
+        debtors = sum(
+            1
+            for invoice in invoices.filter(period_year=key[0], period_month=key[1]).annotate(
+                allocated=Coalesce(
+                    Sum("allocations__amount", filter=Q(allocations__released_at__isnull=True)),
+                    Decimal("0"),
+                )
+            )
+            if invoice.amount_due - invoice.allocated > 0
+        )
+        rows.append(
+            {
+                "period": f"{key[0]:04d}-{key[1]:02d}",
+                "period_year": key[0],
+                "period_month": key[1],
+                "invoiced": f"{row['invoiced']:.2f}",
+                "paid": f"{paid:.2f}",
+                "paid_late": f"{(money.get('paid_late') or Decimal('0')):.2f}",
+                "outstanding": f"{outstanding:.2f}",
+                "children": row["children"],
+                "debtors": debtors,
+            }
+        )
+    return rows
+
+
+def debt_period_children(
+    *,
+    period_year: int,
+    period_month: int,
+    branch_id: Any = None,
+    group_id: Any = None,
+    debtors_only: bool = False,
+) -> list[dict[str, Any]]:
+    """
+    Bitta oyning tafsiloti: kim qancha toʻladi, qachon, nima orqali, qancha qoldi.
+
+    Toʻlovlar roʻyxati — taqsimotdan, yaʼni "shu oyni yopgan pul".
+    Ota-onaning umumiy toʻlovlari emas: bir toʻlov ikki oyni yopsa, har
+    oy oʻz ulushini koʻradi.
+    """
+    from apps.finance.models import PaymentAllocation
+
+    invoices = (
+        Invoice.objects.exclude(status=InvoiceStatus.CANCELLED)
+        .filter(period_year=period_year, period_month=period_month)
+        .select_related("child")
+    )
+    if branch_id:
+        invoices = invoices.filter(branch_id=branch_id)
+    if group_id:
+        invoices = invoices.filter(
+            child__enrollments__group_id=group_id,
+            child__enrollments__status=EnrollmentState.ACTIVE,
+            child__enrollments__end_date__isnull=True,
+        )
+
+    allocations = (
+        PaymentAllocation.objects.filter(invoice__in=invoices, released_at__isnull=True)
+        .select_related("payment")
+        .order_by("payment__paid_at")
+    )
+    by_invoice: dict[Any, list[dict[str, Any]]] = {}
+    for allocation in allocations:
+        by_invoice.setdefault(allocation.invoice_id, []).append(
+            {
+                # MAHALLIY vaqt: toʻlov Toshkentda soat 00:30 da qabul
+                # qilinsa, UTC da u KECHAGI kun boʻlib chiqadi va
+                # hisobotdagi sana kassadagi chek bilan mos kelmasdi.
+                "paid_at": timezone.localtime(allocation.payment.paid_at).isoformat(),
+                "method": allocation.payment.method,
+                "amount": f"{allocation.amount:.2f}",
+                "payment_id": str(allocation.payment_id),
+            }
+        )
+
+    today = timezone.localdate()
+    rows: list[dict[str, Any]] = []
+    for invoice in invoices:
+        payments = by_invoice.get(invoice.id, [])
+        paid = sum((Decimal(item["amount"]) for item in payments), Decimal("0"))
+        outstanding = invoice.amount_due - paid
+        if debtors_only and outstanding <= 0:
+            continue
+        rows.append(
+            {
+                "invoice_id": str(invoice.id),
+                "invoice_number": invoice.number,
+                "child_id": str(invoice.child_id),
+                "child_name": invoice.child.full_name,
+                "invoiced": f"{invoice.amount_due:.2f}",
+                "paid": f"{paid:.2f}",
+                "outstanding": f"{outstanding:.2f}",
+                "due_date": invoice.due_date.isoformat(),
+                "days_overdue": (today - invoice.due_date).days if outstanding > 0 else 0,
+                "payments": payments,
+            }
+        )
+    rows.sort(key=lambda row: Decimal(row["outstanding"]), reverse=True)
     return rows
 
 

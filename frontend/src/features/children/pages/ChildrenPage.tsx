@@ -73,6 +73,8 @@ const EMPTY_FORM: ChildInput = {
   // 25-kunida kelgan bolaga ham to'liq oy yozilardi (productionda 21
   // boladan 21 tasi shunday edi). Sana BO'SH QOLDIRILMAYDI.
   enrolled_on: today(),
+  // Qogʻozdagi shartnoma raqami (PLAN 9.3) — ixtiyoriy.
+  contract_number: '',
   // Formada sukut — YANGI mijoz: qo'lda bola qo'shilayotganda u odatda
   // endi keladi. Import esa teskarisi (sukut "mavjud"), chunki u
   // tizimga o'tish quroli (PLAN 7.8).
@@ -152,6 +154,7 @@ export default function ChildrenPage() {
       // birinchi oyini noto'g'ri proporsional qilardi — eskilarni
       // `backfill_enrollment_dates` buyrug'i hal qiladi.
       enrolled_on: child.enrolled_on ?? '',
+      contract_number: child.contract_number ?? '',
     })
     setPrice(priceFromChild(child))
     setFormGroupId(child.current_group?.id ?? '')
@@ -583,6 +586,25 @@ export default function ChildrenPage() {
               </p>
             </div>
           )}
+
+          {/* Qogʻozdagi shartnoma raqami (PLAN 9.3) — tizim tuzadigan
+              shartnomaning raqami bundan alohida. */}
+          <div>
+            <label
+              htmlFor="contract_number"
+              className="mb-1 block text-xs font-medium text-slate-600"
+            >
+              {t('Shartnoma raqami')}
+            </label>
+            <input
+              id="contract_number"
+              maxLength={40}
+              value={form.contract_number ?? ''}
+              onChange={(e) => setForm((p) => ({ ...p, contract_number: e.target.value }))}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              placeholder={t('Masalan: 2026/112')}
+            />
+          </div>
 
           <div>
             <label htmlFor="enrolled_on" className="mb-1 block text-xs font-medium text-slate-600">

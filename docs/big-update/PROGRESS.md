@@ -1177,3 +1177,72 @@ thirty edits in all, across the three languages.
 | legal, 404 | 0 | 0 | 0 | 0 |
 
 Frontend: 254 tests, tsc clean, eslint 0 errors, prettier clean.
+
+## Bosqich 9 — mijozning uchta soʻrovi
+
+### 9.1 Ish grafigi: bezak emas, pulning maxraji
+
+Soʻrov "to'liq, soatlik, haftada 2-3 marta keladigan" deb keldi. Shunday
+roʻyxatni ochib qoʻyish oson, lekin u hech narsa qilmasdi. Pul nuqtai
+nazaridan "yarim stavka" va "haftada uch kun" — bitta narsa: oylik maosh
+va u qaysi kunlarga tegishli. Soatbay esa haqiqatan boshqacha: summa
+maoshdan emas, kelgan kunlardan chiqadi. Shuning uchun ikki rejim
+(`monthly`, `hourly`) va ish kunlari roʻyxati (`work_days`, boʻsh boʻlsa
+filial kalendari).
+
+Eng muhim tuzatish koʻrinmaydigan joyda edi: ishga kirgan oyning
+proporsiyasi. Ilgari maxraj filialning ish kunlari edi, yaʼni haftada uch
+kun keladigan tarbiyachi 14-oktabrda ishga kirsa 13/22 olardi — ishlagan
+kunlarining ulushidan kam. Endi maxraj uning OʻZ kunlari: 8/13. Grafigi
+boʻsh xodim uchun ikkalasi bir xil, yaʼni eski xatti-harakat oʻzgarmadi.
+
+Soatbayda: tabeldagi kelgan kunlar × kunlik soat × soat narxi. Tabel
+umuman yuritilmasa — grafik boʻyicha. Nolga tushirish "texnik jihatdan
+toʻgʻri" boʻlardi, lekin bu sabab koʻrsatilmagan nol: tabelni hech kim
+toʻldirmaydigan bogʻchada har bir soatbay xodim oyligini ololmay qolardi.
+
+**Hisob bogʻlash teskari tomonga.** Xodim formasidagi "Tizim hisobi"
+tanlagichi hali mavjud boʻlmagan hisobni tanlashni soʻrardi — ish tartibi
+teskari edi. Endi bogʻlash foydalanuvchi formasida: xodim tanlanadi, va
+boʻsh tanlov bogʻlanishni uzadi (eski qator jimgina qolib ketsa, tarbiyachi
+hamon birovning guruhini koʻrardi). `Employee.user` oʻzgarmadi — faqat uni
+kim toʻldirishi oʻzgardi.
+
+### 9.2 Qarzdorlik tarixi: qaysi oyning qarzi qolgan?
+
+Egasining savoli aniq edi: sentabrda 15 boladan 28 mln qolgan, oktabrda
+24 mln yopilgan, 4 mln qolgan, ustiga oktabrning oʻz qarzi. Qarzdorlar
+roʻyxati bunga javob bera olmaydi: u BUGUNGI qoldiqni koʻrsatadi va u
+qaysi oydan qolganini bilmaydi.
+
+Javob allaqachon bazada edi — `payment_allocation` qaysi pul qaysi
+hisob-fakturani yopganini yozadi (ADR-20). Yangi hisobot shundan
+oʻqiydi: oktabrda kelgan pul sentabr fakturasini yopgan boʻlsa, u
+sentabr qatorida koʻrinadi. Qatorni ochganda — bola, hisoblangan,
+toʻlangan, qoldiq va har bir toʻlov: sana, usul, summa.
+
+Ikki tafsilot bilan: `invoice.amount_paid` keshi emas, taqsimot jadvali
+oʻqiladi (kesh siljisa hisobot haqiqatdan ajralardi), va sana MAHALLIY
+vaqtda koʻrsatiladi — Toshkentda soat 00:30 da qabul qilingan toʻlov UTC
+da kechagi kun boʻlib chiqardi va kassadagi chek bilan mos kelmasdi.
+
+### 9.3 Shartnomalar muzlatmadan chiqarildi
+
+Kod 6.5 da yozilgan va sinalgan edi, faqat `FEATURE_CONTRACTS` oʻchiq
+turardi (P6-7: "hech bir mijoz soʻramayapti"). Endi soʻralyapti.
+
+Mijozning haqiqiy shartnomasi (Oriental Kinderland, 2026) namunaviy matn
+sifatida kiritildi: nomlar, summalar va sanalar oʻrnida `{{...}}`
+maydonlar. Yaʼni bogʻcha hujjatni "yuklamaydi" — tayyor matndan boshlaydi
+va oʻziga moslashtiradi. Matn **kodda**, bazada emas: u mijoz maʼlumoti
+emas, balki boshlangʻich nuqta; saqlagan tashkilot oʻz nusxasini oladi.
+
+Shablon uchun yangi maydonlar kerak boʻldi — direktor, bank rekvizitlari,
+toʻlov kuni, bir kunlik ovqat puli, toʻlovsiz kunlar, saqlash soati.
+Ularning hammasi **sozlama** (`contracts.*`): bogʻchaga xos va yilda bir
+marta oʻzgaradi. Nomaʼlum maydon shablon saqlanganda rad etiladi, yaʼni
+matndagi xato bir yildan keyin chop etishda emas, oʻsha payt chiqadi.
+
+`child.contract_number` — qogʻozdagi raqam, tizim tuzadigan
+shartnomaning raqamidan (`SH-2026-0001`) ALOHIDA. Ikkisini bitta ustunga
+tiqish ulardan birini yolgʻon qilardi.

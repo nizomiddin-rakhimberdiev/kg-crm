@@ -76,6 +76,19 @@ class ContractTemplateViewSet(TenantViewSet):
         """The closed list the editor offers — the same one the server checks."""
         return Response(sorted(services.PLACEHOLDERS))
 
+    @action(detail=False, methods=["get"])
+    def sample(self, request: Request) -> Response:
+        """
+        Namunaviy matn (PLAN 9.3) — tahrirlagichning boshlangʻich nuqtasi.
+
+        Bu yerda hech narsa saqlanmaydi: bogʻcha matnni koʻradi,
+        oʻzgartiradi va oʻzi saqlaydi. Shuning uchun u mijoz maʼlumoti
+        emas — har bir tashkilot saqlaganda oʻz nusxasini oladi.
+        """
+        from apps.contracts.sample import SAMPLE_CONTRACT, SAMPLE_NAME
+
+        return Response({"name": SAMPLE_NAME, "body": SAMPLE_CONTRACT})
+
 
 class ContractViewSet(BranchScopedMixin, TenantViewSet):
     permission_module = "children"

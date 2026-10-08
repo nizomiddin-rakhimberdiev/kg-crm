@@ -1419,3 +1419,25 @@ msgstr "A claim that has been decided cannot take a new document."
 
 msgid "Kelmagan kunlar uchun qayta hisob ({number})"
 msgstr "Credit for days absent ({number})"
+
+# Ish grafigi va qarzdorlik tarixi (PLAN 9.1, 9.2)
+msgid "Bu xodim allaqachon boshqa hisobga bogʻlangan."
+msgstr "This employee is already linked to another account."
+
+msgid "Xodim topilmadi."
+msgstr "Employee not found."
+
+msgid "Davr «YYYY-MM» koʻrinishida boʻlishi kerak."
+msgstr "The period must be written as “YYYY-MM”."
+
+msgid "Ish kunlari 1–7 (dushanba–yakshanba) oraligʻida boʻlishi kerak."
+msgstr "Working days are numbers from 1 to 7 (Monday–Sunday)."
+
+msgid "Soatbay xodim uchun soat narxi va kunlik soat koʻrsatilishi kerak."
+msgstr "An hourly employee needs an hourly rate and hours per day."
+
+msgid "Oylik maosh"
+msgstr "Monthly salary"
+
+msgid "Soatbay"
+msgstr "Hourly"
