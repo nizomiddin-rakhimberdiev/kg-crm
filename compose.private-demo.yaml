@@ -38,6 +38,11 @@ x-django-env: &django-env
   REDIS_URL: redis://private-redis:6379/0
   CELERY_BROKER_URL: redis://private-redis:6379/1
   CELERY_RESULT_BACKEND: redis://private-redis:6379/2
+  # Imkoniyat bayroqlari NOM bilan uzatiladi: `.env.private` ga yozilgan
+  # kalit shu roʻyxatda boʻlmasa, konteyner ichida umuman koʻrinmaydi
+  # (xuddi `compose.prod.yaml` dagi kabi — PLAN 7 dagi dars).
+  FEATURE_CONTRACTS: ${FEATURE_CONTRACTS:-False}
+  FEATURE_KITCHEN: ${FEATURE_KITCHEN:-False}
 
 services:
   private-db:
