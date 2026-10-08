@@ -43,7 +43,7 @@ const KIND_LABELS: Record<string, string> = {
 const STATUS: Record<AbsenceClaim['status'], [string, string]> = {
   pending: [t('Kutilmoqda'), 'bg-amber-50 text-amber-700'],
   approved: [t('Tasdiqlangan'), 'bg-emerald-50 text-emerald-700'],
-  rejected: [t('Rad etilgan'), 'bg-slate-100 text-slate-500'],
+  rejected: [t('Rad etilgan'), 'bg-slate-100 text-slate-600'],
   applied: [t('Hisob-fakturaga tushdi'), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
 }
 

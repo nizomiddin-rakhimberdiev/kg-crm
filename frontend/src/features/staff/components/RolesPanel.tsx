@@ -253,7 +253,7 @@ export function RolesPanel() {
                       'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition',
                       dirty && !saveMutation.isPending
                         ? 'bg-brand-600 text-white hover:bg-brand-700'
-                        : 'bg-slate-100 text-slate-500',
+                        : 'bg-slate-100 text-slate-600',
                     )}
                   >
                     <Save className="h-4 w-4" />

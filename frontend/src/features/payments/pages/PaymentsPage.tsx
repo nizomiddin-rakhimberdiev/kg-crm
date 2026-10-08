@@ -49,7 +49,7 @@ const BOARD_STATE: Record<BoardRow['state'], [string, string]> = {
   unpaid: [t('Toʻlanmagan'), 'bg-red-50 text-red-700'],
   partial: [t('Qisman toʻlangan'), 'bg-amber-50 text-amber-700'],
   paid: [t('Toʻlangan'), 'bg-emerald-50 text-emerald-700'],
-  no_invoice: [t('Fakturasiz'), 'bg-slate-100 text-slate-500'],
+  no_invoice: [t('Fakturasiz'), 'bg-slate-100 text-slate-600'],
 }
 
 export default function PaymentsPage() {

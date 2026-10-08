@@ -241,7 +241,7 @@ export function AccountsPanel() {
     <span
       className={cn(
         'inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium',
-        member.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500',
+        member.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600',
       )}
     >
       {member.is_active ? t('Faol') : t('Faol emas')}

@@ -270,7 +270,7 @@ const iconToneClasses: Record<BadgeTone, string> = {
   danger: 'bg-red-50 text-red-600',
   warning: 'bg-orik-50 text-orik-700',
   info: 'bg-nihol-50 text-nihol-600',
-  neutral: 'bg-tosh-100 text-tosh-500',
+  neutral: 'bg-tosh-100 text-tosh-600',
   ildiz: 'bg-ildiz-50 text-ildiz-700',
   orik: 'bg-orik-100 text-orik-700',
 }

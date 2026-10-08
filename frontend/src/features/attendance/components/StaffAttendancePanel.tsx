@@ -444,7 +444,7 @@ function Timesheet() {
                       key={day}
                       className={cn(
                         'w-7 px-0 py-2 text-center font-medium tabular-nums',
-                        !workingSet.has(day) && 'bg-slate-100 text-slate-500',
+                        !workingSet.has(day) && 'bg-slate-100 text-slate-600',
                       )}
                     >
                       {day}

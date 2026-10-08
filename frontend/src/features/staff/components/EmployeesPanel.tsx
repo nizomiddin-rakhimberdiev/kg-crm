@@ -31,7 +31,7 @@ import { t } from '@/lib/i18n'
 const STATUS: Record<Employee['employment_status'], [string, string]> = {
   active: [t('Ishlayapti'), 'bg-emerald-50 text-emerald-700'],
   on_leave: [t('Taʼtilda'), 'bg-amber-50 text-amber-700'],
-  terminated: [t('Boʻshagan'), 'bg-slate-100 text-slate-500'],
+  terminated: [t('Boʻshagan'), 'bg-slate-100 text-slate-600'],
 }
 
 const EMPTY_FORM: EmployeeInput = {
