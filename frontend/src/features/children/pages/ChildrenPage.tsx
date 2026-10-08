@@ -337,7 +337,10 @@ export default function ChildrenPage() {
   // tipi yaratilsa React uni har renderda qayta o'rnatadi va `<select>`
   // fokusi yo'qoladi.
   const renderName = (child: Child) => (
-    <Link to={`/children/${child.id}`} className="group/name flex min-w-0 items-center gap-3">
+    <Link
+      to={`/children/${child.id}`}
+      className="group/name flex min-h-11 min-w-0 items-center gap-3"
+    >
       <span
         className={cn(
           'grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-bold',
