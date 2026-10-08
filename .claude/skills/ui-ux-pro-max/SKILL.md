@@ -1,11 +1,31 @@
 ---
 name: ui-ux-pro-max
 description: "UI/UX design intelligence for web, mobile, and desktop. This skill should be used when designing, building, reviewing, or fixing interfaces, including pages, components, design systems, accessibility, interaction, responsive layout, typography, color, charts, and stack-specific UI implementation. Searchable local data: 79 searchable styles (50 active), 192 product palettes and reasoning profiles, 74 font pairings, 119 UX guidelines, 105 icons, 17 GSAP presets, 25 chart types, and 22 stacks."
+disable-model-invocation: true
+argument-hint: "<what to design, review or fix>"
 ---
 
 # UI/UX Pro Max - Design Intelligence
 
 Searchable local UI/UX guidance: 79 searchable styles (50 active), 192 product palettes and exact reasoning profiles, 74 font pairings, 119 UX guidelines, 105 curated icons, 17 GSAP presets, 25 chart types, and 22 technology stacks.
+
+> **KG-CRM override — read first.** This skill is vendored from
+> [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)
+> (v2.13.0, MIT). Run the script from the repository root. Its recommendations are *input*; the
+> project's own rules win wherever they disagree:
+>
+> - **Brand is a token layer** ([05 §18](../../../docs/05_Frontend_Architecture.md)). Colours, fonts,
+>   radius and the logo come from `frontend/tailwind.config.js`, `src/lib/brand.ts` and
+>   `src/components/brand/Logo.tsx`. **Never blue or purple** — the Radix Brendbuk forbids them and
+>   `src/__tests__/brand.test.ts` fails on a stray `-sky-500` or a literal `#rrggbb`. Ignore any
+>   palette or font the search suggests; map its *roles* (primary, surface, danger…) onto the
+>   existing tokens instead.
+> - **Formatting** goes through `src/lib/format.ts`; dates through `components/ui/DateInput`.
+> - **Accessibility floor** (05 §17.2): no text under 12px, `aria-label` on icon buttons, a real
+>   label on every field, a visible `:focus-visible` ring — `src/__tests__/a11y.test.ts` guards it.
+> - **All UI text** is Uzbek in the source, wrapped in `t('…')`, with ʻ/ʼ (U+02BB/U+02BC) apostrophes.
+> - Do not use `--persist`: the design system lives in the docs and the token files, not in a
+>   generated `design-system/` folder.
 
 ## When to Apply
 
