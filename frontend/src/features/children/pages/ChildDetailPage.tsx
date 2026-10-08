@@ -167,7 +167,7 @@ export default function ChildDetailPage() {
   })
 
   if (childQuery.isPending) {
-    return <p className="py-12 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
+    return <p className="py-12 text-center text-sm text-slate-500">{t('Yuklanmoqda…')}</p>
   }
 
   if (childQuery.isError || !childQuery.data) {
@@ -388,7 +388,7 @@ export default function ChildDetailPage() {
           </div>
 
           {child.guardians.length === 0 && !showGuardianForm && (
-            <p className="text-sm text-slate-400">{t('Vasiy biriktirilmagan.')}</p>
+            <p className="text-sm text-slate-500">{t('Vasiy biriktirilmagan.')}</p>
           )}
 
           <ul className="space-y-2">
@@ -408,7 +408,7 @@ export default function ChildDetailPage() {
                     <Phone className="h-3 w-3" />
                     {link.guardian.phone}
                     {link.guardian.phone_alt && (
-                      <span className="text-slate-400">· {link.guardian.phone_alt}</span>
+                      <span className="text-slate-500">· {link.guardian.phone_alt}</span>
                     )}
                   </p>
                   {/* Asosiy kanal — Telegram (ADR-23): ulanmagan
@@ -561,7 +561,7 @@ export default function ChildDetailPage() {
               >
                 {addGuardian.isPending ? t('Saqlanmoqda…') : t('Vasiyni biriktirish')}
               </button>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 {t(
                   'Bu telefon bilan vasiy allaqachon mavjud boʻlsa, yangi yozuv yaratilmaydi — mavjudi biriktiriladi.',
                 )}

@@ -61,7 +61,7 @@ export function SmsUsageCard({ status }: { status: SmsStatus }) {
             ) : usage.estimated_cost ? (
               som(usage.estimated_cost)
             ) : (
-              <span className="text-sm font-normal text-tosh-400">{t('narx kiritilmagan')}</span>
+              <span className="text-sm font-normal text-tosh-500">{t('narx kiritilmagan')}</span>
             )}
           </dd>
         </div>

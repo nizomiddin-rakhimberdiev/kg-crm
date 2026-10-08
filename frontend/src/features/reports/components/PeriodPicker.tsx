@@ -106,7 +106,7 @@ export function PeriodPicker({ value, onChange, className }: PeriodPickerProps) 
             onClick={() => onChange(periodFor(value.preset, today))}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
           >
-            <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
+            <CalendarDays className="h-3.5 w-3.5 text-slate-500" />
             {t('Bugun')}
           </button>
         )}
@@ -119,7 +119,7 @@ export function PeriodPicker({ value, onChange, className }: PeriodPickerProps) 
               max={value.to}
               onChange={(iso) => iso && onChange({ ...value, from: iso })}
             />
-            <span className="text-slate-400">—</span>
+            <span className="text-slate-500">—</span>
             <DateInput
               aria-label={t('Gacha')}
               value={value.to}

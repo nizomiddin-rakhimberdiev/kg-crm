@@ -93,7 +93,7 @@ export function InsightCard({ insight }: InsightCardProps) {
           {copy.severity[insight.severity]}
         </Badge>
         {insight.status === 'new' && <Badge tone="info">{copy.statusNew}</Badge>}
-        <span className="ml-auto text-xs text-slate-400">{evidence.as_of}</span>
+        <span className="ml-auto text-xs text-slate-500">{evidence.as_of}</span>
       </div>
 
       <h3 className="mt-3 text-base font-semibold leading-snug text-slate-900 [text-wrap:balance]">

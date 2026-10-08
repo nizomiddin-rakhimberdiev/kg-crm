@@ -40,6 +40,31 @@
   h4 {
     @apply font-display;
   }
+
+  /*
+   * BARMOQ NISHONI — telefonda 44 px (PLAN 10.1).
+   *
+   * Ilovaning boshqaruvlari desktop uchun yozilgan: `py-2 text-sm`
+   * 36–38 px beradi va sichqoncha bilan bu yetarli. Telefonda esa
+   * tarbiyachi ertalab 25 ta bolani belgilaydi, kassir pul sanab
+   * turib tugma bosadi — va 36 px nishon barmoq uchun kichik.
+   *
+   * Nega bu yerda, 59 ta faylda emas: balandlik — komponentning
+   * emas, MUHITNING qoidasi. Bitta joyda turgani yangi ekran
+   * qo'shilganda uni takrorlashni ham, unutishni ham yo'q qiladi.
+   *
+   * Katakcha va radio chetda: ularning o'lchami yorlig'i bilan
+   * birga bosiladi va 44 px katak ro'yxatni buzib yuborardi.
+   */
+  @media (max-width: 640px) {
+    button,
+    select,
+    textarea,
+    [role='tab'],
+    input:not([type='checkbox']):not([type='radio']):not([type='range']) {
+      min-height: 44px;
+    }
+  }
 }
 
 @layer utilities {

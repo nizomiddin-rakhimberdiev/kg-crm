@@ -252,7 +252,7 @@ export default function ReportsPage() {
 
       {!canPL && (showRevenue || showExpenses) && (
         <div className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-600">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
           {t(
             'Oylik maosh va sof natija bu koʻrinishda yoʻq — ular «Oylik» boʻlimiga ruxsati bor xodimga koʻrinadi.',
           )}
@@ -322,7 +322,7 @@ export default function ReportsPage() {
                   >
                     {value === undefined ? '…' : formatUZS(Number(value))}
                   </p>
-                  <p className="mt-1 text-xs text-slate-400">{hint as string}</p>
+                  <p className="mt-1 text-xs text-slate-500">{hint as string}</p>
                 </>
               )
               const shell = 'rounded-2xl border border-slate-200 bg-white p-4 text-left sm:p-5'
@@ -371,19 +371,19 @@ export default function ReportsPage() {
                         {formatUZS(Math.abs(Number(account.net)))}
                       </span>
                     </div>
-                    <div className="mt-1 flex justify-between gap-3 text-xs tabular-nums text-slate-400">
+                    <div className="mt-1 flex justify-between gap-3 text-xs tabular-nums text-slate-500">
                       <span>{t('Kirim {v}', { v: formatUZS(Number(account.inflow)) })}</span>
                       <span>{t('Chiqim {v}', { v: formatUZS(Number(account.outflow)) })}</span>
                     </div>
                   </li>
                 ))}
                 {(cash?.length ?? 0) === 0 && (
-                  <li className="py-8 text-center text-sm text-slate-400">
+                  <li className="py-8 text-center text-sm text-slate-500">
                     {t('Bu davrda pul harakati yoʻq.')}
                   </li>
                 )}
               </ul>
-              <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">
+              <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
                 {t(
                   'Bu yerdagi yigʻindi yuqoridagi sof natijadan farq qilishi mumkin: hisobot yakunlangan oylikni xarajat deb sanaydi, bu esa faqat kassadan haqiqatan chiqqan pulni.',
                 )}
@@ -406,7 +406,7 @@ export default function ReportsPage() {
               </p>
               <div className="mt-4 h-64 sm:h-72">
                 {rows.length === 0 ? (
-                  <p className="grid h-full place-items-center text-sm text-slate-400">
+                  <p className="grid h-full place-items-center text-sm text-slate-500">
                     {t('Bu davrda maʼlumot yoʻq.')}
                   </p>
                 ) : (
@@ -483,7 +483,7 @@ export default function ReportsPage() {
                   {t('Davr ichida qabul qilingan pul')}
                 </p>
                 {methods.length === 0 ? (
-                  <p className="mt-4 grid h-40 place-items-center text-sm text-slate-400">
+                  <p className="mt-4 grid h-40 place-items-center text-sm text-slate-500">
                     {t('Bu davrda toʻlov yoʻq.')}
                   </p>
                 ) : (
@@ -531,13 +531,13 @@ export default function ReportsPage() {
                       ustidagi sichqonchani to'sib qo'yardi. */}
                       <div className="pointer-events-none absolute inset-0 grid place-items-center">
                         <div className="text-center">
-                          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                             {t('Jami')}
                           </p>
                           <p className="text-base font-bold tabular-nums text-slate-900">
                             {formatMoney(methodTotal)}
                           </p>
-                          <p className="text-xs text-slate-400">UZS</p>
+                          <p className="text-xs text-slate-500">UZS</p>
                         </div>
                       </div>
                     </div>
@@ -566,7 +566,7 @@ export default function ReportsPage() {
                             <span className="block text-sm font-semibold leading-6 tabular-nums text-slate-900">
                               {formatUZS(entry.value)}
                             </span>
-                            <span className="block text-xs leading-4 tabular-nums text-slate-400">
+                            <span className="block text-xs leading-4 tabular-nums text-slate-500">
                               {t('{share}% · {v} ta', {
                                 share: entry.share.toFixed(1),
                                 v: entry.count,
@@ -590,14 +590,14 @@ export default function ReportsPage() {
                 <h2 className="text-sm font-semibold text-slate-900">{t('Davr kesimi')}</h2>
                 {canPL && !payrollInChart && (
                   <p className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <Info className="h-3.5 w-3.5 text-slate-400" />
+                    <Info className="h-3.5 w-3.5 text-slate-500" />
                     {t('Oylik maosh faqat jami qatorda')}
                   </p>
                 )}
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[560px] text-sm">
-                  <thead className="bg-slate-50/70 text-left text-xs uppercase tracking-wider text-slate-400">
+                  <thead className="bg-slate-50/70 text-left text-xs uppercase tracking-wider text-slate-500">
                     <tr>
                       <th className="px-4 py-2.5 font-medium">{t('Davr')}</th>
                       {showRevenue && (
@@ -669,7 +669,7 @@ export default function ReportsPage() {
                         >
                           {formatMoney(Number(pl.net))}
                           {!payrollInChart && (
-                            <span className="block text-xs font-normal text-slate-400">
+                            <span className="block text-xs font-normal text-slate-500">
                               {t('oylik {formatMoney} bilan', {
                                 formatMoney: formatMoney(Number(pl.payroll)),
                               })}
@@ -737,7 +737,7 @@ export default function ReportsPage() {
                       <p className="truncate text-sm font-medium text-slate-900">
                         {job.report_type}
                       </p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-slate-500">
                         {new Date(job.created_at).toLocaleString('uz-UZ', {
                           dateStyle: 'short',
                           timeStyle: 'short',

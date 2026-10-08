@@ -133,7 +133,7 @@ function DishesSection() {
               <p className="text-sm font-medium text-slate-900">
                 {dish.name}
                 {dish.portion_grams && (
-                  <span className="ml-1.5 text-xs font-normal text-slate-400">
+                  <span className="ml-1.5 text-xs font-normal text-slate-500">
                     {t('{g} g', { g: dish.portion_grams })}
                   </span>
                 )}
@@ -163,7 +163,7 @@ function DishesSection() {
                   aria-label={t('Oʻchirish')}
                   title={t('Oʻchirish')}
                   onClick={() => remove.mutate(dish.id)}
-                  className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                  className="rounded p-1 text-slate-500 hover:bg-red-50 hover:text-red-600"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -258,7 +258,7 @@ function DishesSection() {
                       ingredients: draft.ingredients.filter((_, i) => i !== index),
                     })
                   }
-                  className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                  className="rounded p-1 text-slate-500 hover:bg-red-50 hover:text-red-600"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -482,7 +482,7 @@ function MenuDaySection() {
                 aria-label={t('Oʻchirish')}
                 title={t('Oʻchirish')}
                 onClick={() => setItems(items.filter((_, i) => i !== index))}
-                className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                className="rounded p-1 text-slate-500 hover:bg-red-50 hover:text-red-600"
               >
                 <X className="h-3.5 w-3.5" />
               </button>

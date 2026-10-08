@@ -252,7 +252,7 @@ export default function BillingPage() {
               </dl>
             </>
           ) : (
-            <p className="mt-4 text-sm text-slate-400">…</p>
+            <p className="mt-4 text-sm text-slate-500">…</p>
           )}
         </section>
       </div>
@@ -364,7 +364,7 @@ export default function BillingPage() {
               })}
               {(invoicesQuery.data ?? []).length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
                     <FileText className="mx-auto mb-2 h-6 w-6" />
                     {t('Hozircha hisob yozilmagan.')}
                   </td>
@@ -409,7 +409,7 @@ export default function BillingPage() {
                       {t('qoʻlda tuzatilgan')}
                     </span>
                   )}
-                  {row.note && <span className="ml-2 text-xs text-slate-400">{row.note}</span>}
+                  {row.note && <span className="ml-2 text-xs text-slate-500">{row.note}</span>}
                 </span>
                 {/* "eng yuqori 40 → hisoblangan 50" degan qator
                     buxgalterga hech narsa demaydi: nega 50? Endi

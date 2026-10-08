@@ -281,7 +281,7 @@ export function TemplateEditor({ templates }: { templates: NotificationTemplate[
           aria-label={t('Shablon tili')}
           className="flex items-center gap-1 rounded-lg bg-tosh-50 p-1"
         >
-          <Languages className="ml-1 h-3.5 w-3.5 text-tosh-400" />
+          <Languages className="ml-1 h-3.5 w-3.5 text-tosh-500" />
           {LANGUAGES.map(([code, label]) => (
             <button
               key={code}

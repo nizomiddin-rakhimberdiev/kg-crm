@@ -144,7 +144,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
         )}
 
         {runImport.isPending && (
-          <p className="mt-4 text-center text-sm text-slate-400">{t('Tekshirilmoqda…')}</p>
+          <p className="mt-4 text-center text-sm text-slate-500">{t('Tekshirilmoqda…')}</p>
         )}
 
         {/* 2-qadam: tekshiruv natijasi */}

@@ -291,7 +291,7 @@ export function EmployeesPanel() {
         {employee.phone ? (
           <a
             href={`tel:${employee.phone}`}
-            className="flex items-center gap-1 text-xs text-slate-400 hover:text-brand-600"
+            className="flex items-center gap-1 text-xs text-slate-500 hover:text-brand-600"
           >
             <Phone className="h-3 w-3" />
             {employee.phone}
@@ -320,7 +320,7 @@ export function EmployeesPanel() {
         <button
           type="button"
           onClick={() => openEdit(employee)}
-          className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+          className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
           title={t('Tahrirlash')}
           aria-label={t('Tahrirlash')}
         >
@@ -330,7 +330,7 @@ export function EmployeesPanel() {
           <button
             type="button"
             onClick={() => setConfirmTerminate(employee)}
-            className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+            className="rounded-lg p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
             title={t('Ishdan boʻshatish')}
             aria-label={t('Ishdan boʻshatish')}
           >
@@ -351,7 +351,7 @@ export function EmployeesPanel() {
       {/* Filtrlar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative flex-1 sm:min-w-[220px] sm:max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
             type="search"
             value={search}
@@ -387,7 +387,7 @@ export function EmployeesPanel() {
       {/* Ro'yxat */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         {employeesQuery.isPending && (
-          <p className="px-4 py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
+          <p className="px-4 py-8 text-center text-sm text-slate-500">{t('Yuklanmoqda…')}</p>
         )}
         {employeesQuery.isError && (
           <p className="px-4 py-8 text-center text-sm text-red-600">
@@ -422,7 +422,7 @@ export function EmployeesPanel() {
           >
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[720px] text-sm">
-                <thead className="border-b border-slate-100 bg-slate-50/70 text-left text-xs uppercase tracking-wider text-slate-400">
+                <thead className="border-b border-slate-100 bg-slate-50/70 text-left text-xs uppercase tracking-wider text-slate-500">
                   <tr>
                     <th className="px-4 py-3 font-medium">{t('Xodim')}</th>
                     <th className="px-4 py-3 font-medium">{t('Lavozim')}</th>
@@ -462,17 +462,17 @@ export function EmployeesPanel() {
                   </div>
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-500">
                     <p className="truncate">
-                      <span className="text-slate-400">{t('Lavozim:')}</span>{' '}
+                      <span className="text-slate-500">{t('Lavozim:')}</span>{' '}
                       <span className="text-slate-700">{employee.position_title ?? '—'}</span>
                     </p>
                     <p>
-                      <span className="text-slate-400">{t('Ishga kirgan:')}</span>{' '}
+                      <span className="text-slate-500">{t('Ishga kirgan:')}</span>{' '}
                       <span className="text-slate-700 tabular-nums">
                         {formatDate(employee.hire_date)}
                       </span>
                     </p>
                     <p className="col-span-2">
-                      <span className="text-slate-400">{t('Maosh:')}</span>{' '}
+                      <span className="text-slate-500">{t('Maosh:')}</span>{' '}
                       <span className="font-medium text-slate-800 tabular-nums">
                         {t('{formatMoney} soʻm', {
                           formatMoney: formatMoney(Number(employee.base_salary)),

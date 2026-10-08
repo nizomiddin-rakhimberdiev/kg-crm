@@ -91,7 +91,7 @@ export function PayslipModal({ item, onClose }: { item: PayrollItem | null; onCl
         </div>
 
         {hasOfficial && (
-          <p className="mt-3 text-xs text-slate-400">
+          <p className="mt-3 text-xs text-slate-500">
             {t(
               'Ushlab qolingan soliq xodimga berilmaydi va kassadan ham chiqmaydi — u davlatga toʻlanganda oddiy chiqim boʻlib yoziladi.',
             )}

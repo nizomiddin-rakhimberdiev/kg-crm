@@ -257,7 +257,7 @@ export function AbsenceClaimsPanel() {
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-700"
             />
-            <p className="mt-1 text-xs text-slate-400">{t('PDF yoki rasm, 10 MB gacha')}</p>
+            <p className="mt-1 text-xs text-slate-500">{t('PDF yoki rasm, 10 MB gacha')}</p>
           </div>
           <div className="sm:col-span-2 xl:col-span-3">
             <label htmlFor="ac-note" className="mb-1 block text-xs font-medium text-slate-600">
@@ -294,7 +294,7 @@ export function AbsenceClaimsPanel() {
                   <td className="px-4 py-3 text-slate-600">
                     {KIND_LABELS[claim.kind] ?? claim.kind}
                     {claim.document_no && (
-                      <span className="ml-1.5 text-xs text-slate-400">{claim.document_no}</span>
+                      <span className="ml-1.5 text-xs text-slate-500">{claim.document_no}</span>
                     )}
                     {claim.has_document ? (
                       <button
@@ -335,7 +335,7 @@ export function AbsenceClaimsPanel() {
                   <td className="px-4 py-3 text-slate-600">
                     {formatDate(claim.date_from)} — {formatDate(claim.date_to)}
                     {claim.billable_days > 0 && (
-                      <span className="ml-1.5 text-xs text-slate-400">
+                      <span className="ml-1.5 text-xs text-slate-500">
                         {t('{v} ish kuni', { v: claim.billable_days })}
                       </span>
                     )}
@@ -372,7 +372,7 @@ export function AbsenceClaimsPanel() {
                           title={t('Rad etish')}
                           aria-label={t('Rad etish')}
                           onClick={() => decide.mutate({ id: claim.id, approve: false })}
-                          className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                          className="rounded-lg p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
                         >
                           <X className="h-4 w-4" />
                         </button>

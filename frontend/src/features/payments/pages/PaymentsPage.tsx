@@ -343,7 +343,7 @@ export default function PaymentsPage() {
                 {t('Bolani qidirish')}
               </label>
               <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                 <input
                   id="board-search"
                   value={search}
@@ -461,7 +461,7 @@ export default function PaymentsPage() {
                         <span className="line-clamp-2 font-medium text-slate-900">
                           {row.child_name}
                         </span>
-                        <span className="block truncate text-xs text-slate-400">
+                        <span className="block truncate text-xs text-slate-500">
                           {row.group_name || t('Guruhsiz')}
                           {credit > 0 && (
                             <span className="ml-1.5 text-emerald-600">
@@ -472,18 +472,18 @@ export default function PaymentsPage() {
                       </span>
 
                       <span className="hidden shrink-0 text-right sm:block">
-                        <span className="block text-xs text-slate-400">{t('Hisoblangan')}</span>
+                        <span className="block text-xs text-slate-500">{t('Hisoblangan')}</span>
                         <span className="block text-sm tabular-nums text-slate-600">
                           {money(row.charged)}
                         </span>
                       </span>
 
                       <span className="w-28 shrink-0 text-right">
-                        <span className="block text-xs text-slate-400">{t('Qolgan')}</span>
+                        <span className="block text-xs text-slate-500">{t('Qolgan')}</span>
                         <span
                           className={cn(
                             'block text-sm font-semibold tabular-nums',
-                            Number(row.outstanding) > 0 ? 'text-amber-600' : 'text-slate-400',
+                            Number(row.outstanding) > 0 ? 'text-amber-600' : 'text-slate-500',
                           )}
                         >
                           {money(row.outstanding)}
@@ -509,7 +509,7 @@ export default function PaymentsPage() {
                   <p className="mt-2 text-sm font-medium text-slate-600">
                     {search ? t('Hech kim topilmadi') : t('Bola yoʻq')}
                   </p>
-                  <p className="mt-1 text-xs text-slate-400">
+                  <p className="mt-1 text-xs text-slate-500">
                     {search
                       ? t('Boshqa ism bilan qidirib koʻring.')
                       : t('Avval bolalarni roʻyxatga oling.')}
@@ -518,7 +518,7 @@ export default function PaymentsPage() {
               )}
 
               {boardQuery.isPending && (
-                <li className="px-4 py-12 text-center text-sm text-slate-400">
+                <li className="px-4 py-12 text-center text-sm text-slate-500">
                   {t('Yuklanmoqda…')}
                 </li>
               )}
@@ -600,7 +600,7 @@ export default function PaymentsPage() {
                   : '—'}
               </p>
               {journalSummary.data && (
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500">
                   {t('{n} ta toʻlov', { n: journalSummary.data.count })}
                   {journalSummary.data.reversed_count > 0 &&
                     t(' · {n} ta qaytarilgan', { n: journalSummary.data.reversed_count })}
@@ -626,7 +626,7 @@ export default function PaymentsPage() {
                   {paymentsQuery.data?.items.map((payment) => (
                     <tr
                       key={payment.id}
-                      className={cn('tabular-nums', payment.is_reversed && 'text-slate-400')}
+                      className={cn('tabular-nums', payment.is_reversed && 'text-slate-500')}
                     >
                       <td className="px-4 py-3">{formatDate(payment.paid_at)}</td>
                       <td className="px-4 py-3 font-medium text-slate-800">{payment.child_name}</td>
@@ -637,7 +637,7 @@ export default function PaymentsPage() {
                       <td
                         className={cn(
                           'px-4 py-3 text-right font-semibold',
-                          payment.is_reversed ? 'text-slate-400 line-through' : 'text-emerald-700',
+                          payment.is_reversed ? 'text-slate-500 line-through' : 'text-emerald-700',
                         )}
                       >
                         {money(payment.amount)}
@@ -651,7 +651,7 @@ export default function PaymentsPage() {
                           onClick={() => setReceiptFor(payment.id)}
                           title={t('Kvitansiya')}
                           aria-label={t('Kvitansiya')}
-                          className="mr-1 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                          className="mr-1 rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
                         >
                           <Printer className="h-4 w-4" />
                         </button>
@@ -672,7 +672,7 @@ export default function PaymentsPage() {
                               }}
                               title={t('Qaytarish')}
                               aria-label={t('Qaytarish')}
-                              className="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                              className="rounded-lg p-1.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
                             >
                               <Ban className="h-4 w-4" />
                             </button>
@@ -755,7 +755,7 @@ export default function PaymentsPage() {
                     <button
                       type="button"
                       onClick={() => removeTariff.mutate(tariff.id)}
-                      className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                      className="shrink-0 rounded-lg p-1.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
                       title={t('Oʻchirish')}
                       aria-label={t('Oʻchirish')}
                     >

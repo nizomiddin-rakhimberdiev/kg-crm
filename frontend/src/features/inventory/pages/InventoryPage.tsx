@@ -268,7 +268,7 @@ export default function InventoryPage() {
                   {Number(p.current_stock).toLocaleString('uz-UZ')} {p.unit}
                 </p>
                 {Number(p.min_stock) > 0 && (
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-500">
                     {t('min {toLocaleString} {unit}', {
                       toLocaleString: Number(p.min_stock).toLocaleString('uz-UZ'),
                       unit: p.unit,
@@ -396,7 +396,7 @@ export default function InventoryPage() {
                       )}
                       {MOVEMENT_LABELS[m.movement_type] ?? m.movement_type}
                       {m.supplier_name && (
-                        <span className="text-xs text-slate-400">· {m.supplier_name}</span>
+                        <span className="text-xs text-slate-500">· {m.supplier_name}</span>
                       )}
                     </span>
                     <span
@@ -411,7 +411,7 @@ export default function InventoryPage() {
                   </li>
                 ))}
                 {movementsQuery.data?.items.length === 0 && (
-                  <li className="py-4 text-center text-slate-400">{t('Harakat yoʻq.')}</li>
+                  <li className="py-4 text-center text-slate-500">{t('Harakat yoʻq.')}</li>
                 )}
               </ul>
             </div>

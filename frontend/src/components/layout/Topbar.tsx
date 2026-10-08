@@ -30,7 +30,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
       {/* Search — planshetdan boshlab; telefonda joy yo'q. */}
       <div className="relative hidden max-w-md flex-1 md:block">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
         <input
           type="text"
           placeholder={t('Ism yoki ID boʻyicha qidiruv...')}
@@ -83,7 +83,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
                 <span className="block max-w-[160px] truncate text-sm font-semibold text-slate-900">
                   {user.full_name}
                 </span>
-                <span className="block text-xs text-slate-400">{user.role?.name ?? '—'}</span>
+                <span className="block text-xs text-slate-500">{user.role?.name ?? '—'}</span>
               </span>
             </Link>
 
@@ -93,7 +93,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
               onClick={() => void logout()}
               title={t('Chiqish')}
               aria-label={t('Chiqish')}
-              className="hidden h-10 w-10 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 active:scale-95 sm:grid"
+              className="hidden h-10 w-10 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 active:scale-95 sm:grid"
             >
               <LogOut className="h-5 w-5" />
             </button>

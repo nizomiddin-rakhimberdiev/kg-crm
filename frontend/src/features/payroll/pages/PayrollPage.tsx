@@ -252,7 +252,7 @@ export default function PayrollPage() {
               className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               {t('Xodimlar roʻyxati')}
-              <ArrowUpRight className="h-4 w-4 text-slate-400" />
+              <ArrowUpRight className="h-4 w-4 text-slate-500" />
             </Link>
           )}
           {can('payroll.create') && (
@@ -276,7 +276,7 @@ export default function PayrollPage() {
       {can('payroll.read') && (
         <details className="rounded-2xl border border-slate-200 bg-white" open={false}>
           <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-800">
-            <Banknote className="h-4 w-4 text-slate-400" />
+            <Banknote className="h-4 w-4 text-slate-500" />
             {t('Avanslar')}
             {(advancesQuery.data?.items.length ?? 0) > 0 && (
               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
@@ -385,7 +385,7 @@ export default function PayrollPage() {
                     <span className="block truncate text-sm font-medium text-slate-800">
                       {advance.employee_name}
                     </span>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-slate-500">
                       {formatDate(advance.paid_on)}
                       {advance.note ? ` · ${advance.note}` : ''}
                     </span>
@@ -409,7 +409,7 @@ export default function PayrollPage() {
                 </li>
               ))}
               {advancesQuery.data?.items.length === 0 && (
-                <li className="py-4 text-center text-sm text-slate-400">
+                <li className="py-4 text-center text-sm text-slate-500">
                   {t('Hozircha avans berilmagan.')}
                 </li>
               )}
@@ -460,7 +460,7 @@ export default function PayrollPage() {
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-12 text-center">
           <Wallet className="mx-auto mb-3 h-10 w-10 text-slate-200" />
           <p className="text-sm text-slate-500">{t('Hozircha hisoblash yoʻq.')}</p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-slate-500">
             {t('Avval')}{' '}
             <Link to="/staff" className="font-medium text-brand-600 hover:underline">
               {t('xodimlarni kiriting')}
@@ -487,7 +487,7 @@ export default function PayrollPage() {
                 {/* Avans jami — aks holda "yalpi − ushlab qolindi = sof"
                     tenglamasi to'g'ri kelmasdi va raqamlar xato ko'rinardi. */}
                 {advanceTotal > 0 && (
-                  <span className="ml-1 text-slate-400">
+                  <span className="ml-1 text-slate-500">
                     {t('(shundan avans {money})', { money: money(String(advanceTotal)) })}
                   </span>
                 )}

@@ -92,7 +92,7 @@ function StatementDrawer({ childId, onClose }: { childId: string; onClose: () =>
         </div>
 
         {query.isPending && (
-          <p className="py-8 text-center text-sm text-tosh-400">{t('Yuklanmoqda…')}</p>
+          <p className="py-8 text-center text-sm text-tosh-500">{t('Yuklanmoqda…')}</p>
         )}
 
         {query.data && (
@@ -104,7 +104,7 @@ function StatementDrawer({ childId, onClose }: { childId: string; onClose: () =>
 
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] text-sm">
-                <thead className="text-left text-xs uppercase tracking-wide text-tosh-400">
+                <thead className="text-left text-xs uppercase tracking-wide text-tosh-500">
                   <tr>
                     <th className="py-2 font-medium">{t('Sana')}</th>
                     <th className="py-2 font-medium">{t('Izoh')}</th>
@@ -428,7 +428,7 @@ export default function DebtorsPage() {
 
           <div className="overflow-hidden rounded-2xl border border-tosh-200 bg-white">
             {debtorsQuery.isPending && (
-              <p className="px-4 py-8 text-center text-sm text-tosh-400">{t('Yuklanmoqda…')}</p>
+              <p className="px-4 py-8 text-center text-sm text-tosh-500">{t('Yuklanmoqda…')}</p>
             )}
             {debtorsQuery.isError && (
               <p className="px-4 py-8 text-center text-sm text-orik-800">
@@ -473,7 +473,7 @@ export default function DebtorsPage() {
                           {row.primary_guardian ? (
                             <>
                               <p>{row.primary_guardian.full_name}</p>
-                              <p className="flex items-center gap-1 text-xs text-tosh-400">
+                              <p className="flex items-center gap-1 text-xs text-tosh-500">
                                 <Phone className="h-3 w-3" />
                                 {row.primary_guardian.phone}
                               </p>
@@ -495,14 +495,14 @@ export default function DebtorsPage() {
                               {t('{days} kun', { days: row.days_overdue })}
                             </span>
                           ) : (
-                            <span className="text-xs text-tosh-400">{t('muddati kelmagan')}</span>
+                            <span className="text-xs text-tosh-500">{t('muddati kelmagan')}</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-xs text-tosh-500">
                           {row.last_reminder_at ? (
                             date(row.last_reminder_at)
                           ) : (
-                            <span className="text-tosh-400">{t('yuborilmagan')}</span>
+                            <span className="text-tosh-500">{t('yuborilmagan')}</span>
                           )}
                         </td>
                         <td className="num px-4 py-3 text-right font-semibold text-orik-800">

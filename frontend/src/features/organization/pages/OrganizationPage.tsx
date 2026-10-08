@@ -124,7 +124,7 @@ export default function OrganizationPage() {
   })
 
   if (query.isPending) {
-    return <p className="py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
+    return <p className="py-8 text-center text-sm text-slate-500">{t('Yuklanmoqda…')}</p>
   }
   if (query.isError) {
     return (
@@ -149,7 +149,7 @@ export default function OrganizationPage() {
           <OrgMark name={query.data?.name} logoUrl={query.data?.logo_url} size={44} />
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-slate-900">{query.data?.name}</p>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               {t('Identifikator: {slug} · Roʻyxatdan oʻtgan:', { slug: query.data?.slug })}{' '}
               {query.data ? formatDate(query.data.created_at) : '—'}
             </p>
@@ -176,7 +176,7 @@ export default function OrganizationPage() {
                   type="button"
                   onClick={() => removeLogo.mutate()}
                   disabled={removeLogo.isPending}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-orik-50 hover:text-orik-700"
+                  className="rounded-lg p-1.5 text-slate-500 hover:bg-orik-50 hover:text-orik-700"
                   aria-label={t('Logotipni olib tashlash')}
                   title={t('Logotipni olib tashlash')}
                 >
@@ -246,7 +246,7 @@ export default function OrganizationPage() {
             </div>
           )}
           {!editable && (
-            <p className="text-xs text-slate-400 sm:col-span-2">
+            <p className="text-xs text-slate-500 sm:col-span-2">
               {t('Tahrirlash uchun tashkilot egasi huquqi kerak.')}
             </p>
           )}

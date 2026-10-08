@@ -220,7 +220,7 @@ function DailyStaff() {
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         {query.isPending && (
-          <p className="px-4 py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
+          <p className="px-4 py-8 text-center text-sm text-slate-500">{t('Yuklanmoqda…')}</p>
         )}
         {query.data && rows.length === 0 && (
           <p className="px-4 py-10 text-center text-sm text-slate-500">
@@ -244,12 +244,12 @@ function DailyStaff() {
                   <span
                     className={cn(
                       'block truncate text-sm font-medium',
-                      value ? 'text-slate-800' : 'text-slate-400',
+                      value ? 'text-slate-800' : 'text-slate-500',
                     )}
                   >
                     {row.full_name}
                   </span>
-                  <span className="block truncate text-xs text-slate-400">
+                  <span className="block truncate text-xs text-slate-500">
                     {row.position ?? '—'}
                     {row.on_leave && ` · ${t('kartada: taʼtilda')}`}
                   </span>
@@ -424,7 +424,7 @@ function Timesheet() {
         )}
       >
         {query.isPending && (
-          <p className="px-4 py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
+          <p className="px-4 py-8 text-center text-sm text-slate-500">{t('Yuklanmoqda…')}</p>
         )}
         {sheet && sheet.employees.length === 0 && (
           <p className="px-4 py-10 text-center text-sm text-slate-500">
@@ -444,7 +444,7 @@ function Timesheet() {
                       key={day}
                       className={cn(
                         'w-7 px-0 py-2 text-center font-medium tabular-nums',
-                        !workingSet.has(day) && 'bg-slate-100 text-slate-400',
+                        !workingSet.has(day) && 'bg-slate-100 text-slate-500',
                       )}
                     >
                       {day}
@@ -471,7 +471,7 @@ function Timesheet() {
                       <span className="block max-w-[200px] truncate text-sm font-medium text-slate-800">
                         {row.full_name}
                       </span>
-                      <span className="block max-w-[200px] truncate text-xs text-slate-400">
+                      <span className="block max-w-[200px] truncate text-xs text-slate-500">
                         {row.position ?? '—'}
                       </span>
                     </td>
@@ -526,7 +526,7 @@ function Timesheet() {
         )}
       </div>
       {sheet && sheet.employees.length > 0 && (
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-500">
           {t(
             '«Ish kuni» — xodimning shu oydagi ish kunlari (ishga kirgan/ketgan sanasi, dam olish kunlari va bayramlar hisobga olingan). «Belgisiz» — bugungacha hali belgilanmagan ish kunlari.',
           )}

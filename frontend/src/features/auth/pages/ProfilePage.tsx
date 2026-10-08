@@ -153,18 +153,18 @@ export default function ProfilePage() {
               <p className="truncate font-semibold text-slate-900">{user.full_name}</p>
               <p className="text-sm text-slate-500">{user.role?.name ?? '—'}</p>
               <div className="mt-1 flex items-center gap-2 text-xs">
-                {photo.isPending && <span className="text-slate-400">{t('Yuklanmoqda…')}</span>}
+                {photo.isPending && <span className="text-slate-500">{t('Yuklanmoqda…')}</span>}
                 {!photo.isPending && user.photo_url && (
                   <button
                     type="button"
                     onClick={() => removePhoto.mutate()}
-                    className="text-slate-400 transition hover:text-red-600"
+                    className="text-slate-500 transition hover:text-red-600"
                   >
                     {t('Rasmni olib tashlash')}
                   </button>
                 )}
                 {!photo.isPending && !user.photo_url && (
-                  <span className="text-slate-400">{t('JPG, PNG yoki WEBP — 2 MB gacha')}</span>
+                  <span className="text-slate-500">{t('JPG, PNG yoki WEBP — 2 MB gacha')}</span>
                 )}
               </div>
               {photoError && <p className="mt-1 text-xs text-red-600">{photoError}</p>}
@@ -237,7 +237,7 @@ export default function ProfilePage() {
           </dl>
 
           <div className="mt-5 flex items-start gap-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
             <p>
               {t('Email, rol va filialni tashkilot egasi')} <strong>{t('Xodimlar')}</strong>{' '}
               {t(
@@ -253,7 +253,7 @@ export default function ProfilePage() {
         {/* --- Parol --- */}
         <div className="rounded-2xl border border-slate-200 bg-white p-5">
           <div className="flex items-center gap-2">
-            <KeyRound className="h-4 w-4 text-slate-400" />
+            <KeyRound className="h-4 w-4 text-slate-500" />
             <h2 className="text-sm font-semibold text-slate-900">{t('Parolni almashtirish')}</h2>
           </div>
           <p className="mt-1 text-xs text-slate-500">
@@ -337,7 +337,7 @@ export default function ProfilePage() {
           </form>
 
           {subscription && (
-            <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">
+            <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
               {/* XOM holat emas (PLAN 4.3): "past_due" foydalanuvchiga
                   na tushunarli, na nima qilish kerakligini aytadi. */}
               {subscriptionStatusLabel(subscription.status)}

@@ -17,7 +17,7 @@ export function Field({
     <label className={cn('block', className)}>
       <span className="mb-1.5 block text-sm font-medium text-slate-600">{label}</span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-slate-400">{hint}</span>}
+      {hint && <span className="mt-1 block text-xs text-slate-500">{hint}</span>}
     </label>
   )
 }
@@ -61,7 +61,7 @@ export function SearchInput({
   return (
     <div className={cn('relative', className)}>
       <svg
-        className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
+        className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

@@ -79,7 +79,7 @@ export class ErrorBoundary extends Component<Props, State> {
           </div>
 
           {requestId && (
-            <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400">
+            <p className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
               {t('Qoʻllab-quvvatlashga ayting:')} <span className="font-mono">{requestId}</span>
             </p>
           )}

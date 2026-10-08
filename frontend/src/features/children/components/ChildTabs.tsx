@@ -136,7 +136,7 @@ export function ChildTabs({ childId }: { childId: string }) {
                     <td
                       className={cn(
                         'num px-4 py-2.5 text-right font-medium',
-                        payment.is_reversed ? 'text-slate-400 line-through' : 'text-nihol-700',
+                        payment.is_reversed ? 'text-slate-500 line-through' : 'text-nihol-700',
                       )}
                     >
                       {money(payment.amount)}

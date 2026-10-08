@@ -127,7 +127,7 @@ const saasOnlyRoutes = env.isStandalone
         element: (
           <Suspense
             fallback={
-              <div className="grid min-h-screen place-items-center text-sm text-slate-400">
+              <div className="grid min-h-screen place-items-center text-sm text-slate-500">
                 {t('Yuklanmoqda…')}
               </div>
             }
@@ -214,7 +214,7 @@ export const routes: RouteObject[] = [
     element: (
       <Suspense
         fallback={
-          <div className="grid min-h-screen place-items-center text-sm text-slate-400">
+          <div className="grid min-h-screen place-items-center text-sm text-slate-500">
             {t('Yuklanmoqda…')}
           </div>
         }

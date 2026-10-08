@@ -50,7 +50,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <p className="truncate text-sm font-bold text-tosh-900">
             {user?.organization?.name ?? t('Radix CRM')}
           </p>
-          <p className="text-xs font-medium tracking-wide text-tosh-400">{t('Boshqaruv Tizimi')}</p>
+          <p className="text-xs font-medium tracking-wide text-tosh-500">{t('Boshqaruv Tizimi')}</p>
         </div>
       </NavLink>
 
@@ -67,7 +67,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           return (
             <div key={section} className="mb-4 last:mb-0">
               {SECTION_LABEL[section] && (
-                <p className="mb-1 px-3 text-xs font-semibold tracking-wide text-tosh-400">
+                <p className="mb-1 px-3 text-xs font-semibold tracking-wide text-tosh-500">
                   {SECTION_LABEL[section]}
                 </p>
               )}
@@ -93,7 +93,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                         <item.icon
                           className={cn(
                             'h-[18px] w-[18px]',
-                            isActive ? 'text-brand-600' : 'text-slate-400',
+                            isActive ? 'text-brand-600' : 'text-slate-500',
                           )}
                         />
                         {item.label}
@@ -136,7 +136,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                   "TARBIYACHI" qilib ko'rsatardi, qolgan ekranlarda esa
                   "Tarbiyachi" turardi (PLAN 4.3). O'lcham 12px —
                   undan kichigi o'qilmaydi (PLAN 4.8). */}
-              <p className="truncate text-xs text-slate-400">{user?.role?.name ?? '—'}</p>
+              <p className="truncate text-xs text-slate-500">{user?.role?.name ?? '—'}</p>
             </div>
           </NavLink>
           <button
@@ -144,7 +144,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             onClick={() => void logout()}
             title={t('Chiqish')}
             aria-label={t('Chiqish')}
-            className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
+            className="shrink-0 rounded-lg p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
           >
             <LogOut className="h-4 w-4" />
           </button>
@@ -233,7 +233,7 @@ export function MobileSidebar({ open, onClose }: MobileSidebarProps) {
               type="button"
               onClick={onClose}
               aria-label={t('Menyuni yopish')}
-              className="absolute right-3 top-3.5 grid h-9 w-9 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              className="absolute right-3 top-3.5 grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
             >
               <X className="h-4 w-4" />
             </button>

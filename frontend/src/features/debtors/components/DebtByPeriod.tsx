@@ -209,7 +209,7 @@ export function DebtByPeriod() {
                       <td
                         className={cn(
                           'px-4 py-3 text-right font-semibold tabular-nums',
-                          Number(row.outstanding) > 0 ? 'text-orik-800' : 'text-slate-400',
+                          Number(row.outstanding) > 0 ? 'text-orik-800' : 'text-slate-500',
                         )}
                       >
                         {som(row.outstanding)}

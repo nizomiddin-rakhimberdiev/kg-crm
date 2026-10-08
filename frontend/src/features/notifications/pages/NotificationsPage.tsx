@@ -198,7 +198,7 @@ export default function NotificationsPage() {
                         {label}
                       </span>
                       {row.retry_count > 0 && (
-                        <p className="mt-1 text-xs text-slate-400">
+                        <p className="mt-1 text-xs text-slate-500">
                           {t('{retry_count} urinish', { retry_count: row.retry_count })}
                         </p>
                       )}
@@ -224,7 +224,7 @@ export default function NotificationsPage() {
               })}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-slate-400">
+                  <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
                     <Send className="mx-auto mb-2 h-6 w-6" />
                     {t('Hozircha xabar yuborilmagan.')}
                   </td>

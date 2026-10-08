@@ -37,7 +37,7 @@ export function EmptyState({
   return (
     <div className={cn('flex flex-col items-center px-6 py-14 text-center', className)}>
       <div className="grid h-12 w-12 place-items-center rounded-full bg-slate-100">
-        <Icon className="h-5 w-5 text-slate-400" />
+        <Icon className="h-5 w-5 text-slate-500" />
       </div>
       <p className="mt-4 text-sm font-medium text-slate-700">{title}</p>
       {hint && <p className="mt-1 max-w-sm text-sm text-slate-500">{hint}</p>}

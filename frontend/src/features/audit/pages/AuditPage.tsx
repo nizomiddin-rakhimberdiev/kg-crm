@@ -216,7 +216,7 @@ export default function AuditPage() {
                 <li key={row.id} className="py-2.5 text-sm">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <span className="font-medium text-slate-900">{row.actor_email}</span>
-                    <span className="text-xs text-slate-400">{when(row.created_at)}</span>
+                    <span className="text-xs text-slate-500">{when(row.created_at)}</span>
                   </div>
                   {typeof row.changes?.reason === 'string' && (
                     <p className="mt-0.5 text-slate-600">
@@ -224,7 +224,7 @@ export default function AuditPage() {
                     </p>
                   )}
                   {typeof row.changes?.expires_at === 'string' && (
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-500">
                       {t('Amal qiladi: {when} gacha', { when: when(row.changes.expires_at) })}
                     </p>
                   )}
@@ -279,7 +279,7 @@ export default function AuditPage() {
                     </td>
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-900">{row.actor_name ?? '—'}</p>
-                      <p className="text-xs text-slate-400">{row.actor_email || '—'}</p>
+                      <p className="text-xs text-slate-500">{row.actor_email || '—'}</p>
                     </td>
                     <td className="px-4 py-3">
                       <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}>
@@ -292,7 +292,7 @@ export default function AuditPage() {
                           degan savolga javob shu ustunda boʻlishi
                           kerak, qidirishga yuboradigan havola emas. */}
                       {row.entity_label && (
-                        <p className="text-xs text-slate-400">{row.entity_label}</p>
+                        <p className="text-xs text-slate-500">{row.entity_label}</p>
                       )}
                     </td>
                     <td className="max-w-sm px-4 py-3 text-xs text-slate-500">
@@ -311,7 +311,7 @@ export default function AuditPage() {
               })}
               {!isLoading && rows.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-slate-400">
+                  <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
                     <ScrollText className="mx-auto mb-2 h-6 w-6" />
                     {t('Yozuv topilmadi.')}
                   </td>

@@ -62,7 +62,7 @@ export default function PayPage() {
 
         {(notFound || (query.isError && !notFound)) && (
           <div className="rounded-2xl border border-tosh-200 bg-white p-6 text-center shadow-card">
-            <Clock className="mx-auto h-9 w-9 text-tosh-400" />
+            <Clock className="mx-auto h-9 w-9 text-tosh-500" />
             <h1 className="mt-3 text-lg font-semibold text-tosh-900">
               {notFound ? t('Havola eskirgan yoki notoʻgʻri') : t('Xatolik yuz berdi.')}
             </h1>

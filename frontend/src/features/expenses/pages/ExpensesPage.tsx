@@ -417,7 +417,7 @@ export default function ExpensesPage() {
                                   {quantity(item.quantity, item.unit)} × {money(item.unit_price)}
                                 </span>
                                 {item.note && (
-                                  <span className="text-slate-400"> · {item.note}</span>
+                                  <span className="text-slate-500"> · {item.note}</span>
                                 )}
                               </li>
                             ))}
@@ -434,7 +434,7 @@ export default function ExpensesPage() {
                           {label}
                         </span>
                         {e.approved_by_name && (
-                          <p className="mt-0.5 text-xs text-slate-400">{e.approved_by_name}</p>
+                          <p className="mt-0.5 text-xs text-slate-500">{e.approved_by_name}</p>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">

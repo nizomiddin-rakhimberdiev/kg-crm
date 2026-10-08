@@ -117,7 +117,7 @@ export default function BranchesPage() {
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         {branchesQuery.isPending && (
-          <p className="px-4 py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
+          <p className="px-4 py-8 text-center text-sm text-slate-500">{t('Yuklanmoqda…')}</p>
         )}
 
         {branchesQuery.isError && (
@@ -129,7 +129,7 @@ export default function BranchesPage() {
         )}
 
         {branchesQuery.data?.items.length === 0 && (
-          <p className="px-4 py-8 text-center text-sm text-slate-400">
+          <p className="px-4 py-8 text-center text-sm text-slate-500">
             {t('Hozircha filial yoʻq.')}
           </p>
         )}
@@ -150,7 +150,7 @@ export default function BranchesPage() {
                   <tr key={branch.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-slate-400" />
+                        <Building2 className="h-4 w-4 text-slate-500" />
                         <span className="font-medium text-slate-800">{branch.name}</span>
                       </div>
                     </td>
@@ -162,7 +162,7 @@ export default function BranchesPage() {
                           type="button"
                           onClick={() => deleteMutation.mutate(branch.id)}
                           disabled={deleteMutation.isPending}
-                          className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                          className="rounded-lg p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
                           title={t('Oʻchirish')}
                           aria-label={t('Oʻchirish')}
                         >

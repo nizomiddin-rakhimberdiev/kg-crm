@@ -92,7 +92,7 @@ export function PricePicker({
               onChange={(e) => onChange({ tariffId: null, monthlyFee: digitsOnly(e.target.value) })}
               className={cn(field, 'pr-14 tabular-nums')}
             />
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">
               {t('soʻm')}
             </span>
           </div>

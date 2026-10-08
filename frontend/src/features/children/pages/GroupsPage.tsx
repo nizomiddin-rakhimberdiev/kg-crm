@@ -183,7 +183,7 @@ export default function GroupsPage() {
                 onChange={(e) => setForm((p) => ({ ...p, age_min: e.target.value }))}
                 className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
               />
-              <span className="text-slate-400">–</span>
+              <span className="text-slate-500">–</span>
               <input
                 id="group-age-max"
                 type="number"
@@ -243,7 +243,7 @@ export default function GroupsPage() {
       )}
 
       {groupsQuery.isPending && (
-        <p className="py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
+        <p className="py-8 text-center text-sm text-slate-500">{t('Yuklanmoqda…')}</p>
       )}
 
       {groupsQuery.data?.items.length === 0 && (
@@ -300,7 +300,7 @@ export default function GroupsPage() {
                       >
                         {group.name}
                       </span>
-                      <span className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
+                      <span className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
                         <Users2 className="h-3.5 w-3.5" />
                         {t('{enrolled_count} ta bola', { enrolled_count: group.enrolled_count })}
                         {limited && ` / ${group.capacity}`}
@@ -314,7 +314,7 @@ export default function GroupsPage() {
                         </span>
                       )}
                       {(group.age_min !== null || group.age_max !== null) && (
-                        <span className="mt-0.5 block text-xs text-slate-400">
+                        <span className="mt-0.5 block text-xs text-slate-500">
                           {group.age_min ?? '0'}–{group.age_max ?? '∞'} {t('yosh')}
                         </span>
                       )}
@@ -358,7 +358,7 @@ export default function GroupsPage() {
                       >
                         {full ? t('Guruh toʻlgan') : t('{free} ta joy boʻsh', { free })}
                       </span>
-                      <span className="text-xs font-semibold tabular-nums text-slate-400">
+                      <span className="text-xs font-semibold tabular-nums text-slate-500">
                         {percent}%
                       </span>
                     </div>

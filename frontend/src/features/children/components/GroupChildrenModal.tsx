@@ -78,7 +78,7 @@ export function GroupChildrenModal({
         )}
 
         {query.isPending && (
-          <p className="py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
+          <p className="py-8 text-center text-sm text-slate-500">{t('Yuklanmoqda…')}</p>
         )}
         {query.isError && (
           <p className="py-8 text-center text-sm text-red-600">
@@ -116,7 +116,7 @@ export function GroupChildrenModal({
                     <span className="block truncate text-sm font-medium text-slate-800 transition-colors group-hover:text-brand-700">
                       {child.last_name} {child.first_name}
                     </span>
-                    <span className="block text-xs text-slate-400">
+                    <span className="block text-xs text-slate-500">
                       {t('{age_years} yosh', { age_years: child.age_years })}
                     </span>
                   </span>

@@ -209,7 +209,7 @@ export function RecordPaymentModal({
                         onClick={() => setLines((prev) => prev.filter((l) => l.key !== line.key))}
                         title={t('Qatorni oʻchirish')}
                         aria-label={t('Qatorni oʻchirish')}
-                        className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                        className="shrink-0 rounded-lg p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
                       >
                         <X className="h-4 w-4" />
                       </button>

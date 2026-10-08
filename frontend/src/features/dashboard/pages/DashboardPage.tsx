@@ -65,7 +65,7 @@ function Tile({ label, value, hint, icon: Icon, tone, to, mono = true }: TilePro
         {value}
       </p>
       <p className="text-sm font-medium text-slate-600">{label}</p>
-      <p className="mt-1 text-xs text-slate-400">{hint}</p>
+      <p className="mt-1 text-xs text-slate-500">{hint}</p>
     </div>
   )
   return to ? <Link to={to}>{body}</Link> : body
@@ -137,7 +137,7 @@ function CashPanel({
             </div>
             <div>
               <p className="text-sm font-medium text-slate-600">{t('Kassadagi qoldiq')}</p>
-              <p className="text-xs text-slate-400">{t('Bogʻcha ochilganidan beri')}</p>
+              <p className="text-xs text-slate-500">{t('Bogʻcha ochilganidan beri')}</p>
             </div>
           </div>
           <p
@@ -201,7 +201,7 @@ function CashPanel({
                 {/* Guruhga nima kirgani — "bankda nega buncha ko'p?"
                     degan savol javobsiz qolmasin. */}
                 {group.parts.length > 1 && (
-                  <span className="block truncate text-xs text-slate-400">
+                  <span className="block truncate text-xs text-slate-500">
                     {group.parts.join(' · ')}
                   </span>
                 )}
@@ -227,7 +227,7 @@ function CashPanel({
                 <span className="num block text-sm font-semibold text-slate-900">
                   {formatUZS(Number(row.total))}
                 </span>
-                <span className="block text-xs text-slate-400">
+                <span className="block text-xs text-slate-500">
                   {t('{n} ta toʻlov', { n: row.count })}
                 </span>
               </li>
@@ -236,7 +236,7 @@ function CashPanel({
         </div>
       )}
 
-      <p className="mt-3 text-xs text-slate-400">
+      <p className="mt-3 text-xs text-slate-500">
         {t(
           'Pul haqiqatan qimirlagan yozuvlardan hisoblanadi. Hisoblangan, lekin hali berilmagan oylik bu yerda hali kassada turgan pul — foyda-zarar hisobotida esa u allaqachon xarajat.',
         )}
@@ -271,7 +271,7 @@ function QuickLinks() {
             to={item.to}
             className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md"
           >
-            <item.icon className="h-4 w-4 shrink-0 text-slate-400" />
+            <item.icon className="h-4 w-4 shrink-0 text-slate-500" />
             {item.label}
           </Link>
         ))}
@@ -433,7 +433,7 @@ export default function DashboardPage() {
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-slate-900">{payment.child}</p>
-                    <p className="text-xs text-slate-400">{when(payment.paid_at)}</p>
+                    <p className="text-xs text-slate-500">{when(payment.paid_at)}</p>
                   </div>
                   <span className="shrink-0 text-sm font-semibold text-emerald-600">
                     {formatUZS(Number(payment.amount))}
@@ -441,7 +441,7 @@ export default function DashboardPage() {
                 </li>
               ))}
               {!isLoading && (data?.recent_payments ?? []).length === 0 && (
-                <li className="py-6 text-center text-sm text-slate-400">
+                <li className="py-6 text-center text-sm text-slate-500">
                   {t('Hozircha toʻlov qabul qilinmagan.')}
                 </li>
               )}

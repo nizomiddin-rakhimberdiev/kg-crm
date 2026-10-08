@@ -1358,4 +1358,8 @@ export const messages: Record<string, string> = {
   'Toʻlovsiz saqlanadigan kunlar': 'Days the place is held free of charge',
   'Yiliga shuncha ish kuni joy toʻlovsiz saqlanadi.':
     'The place is held free of charge for this many working days a year.',
+  '{money} soʻm qarzdan ortiq va avansga tushadi. Davom etasizmi?':
+    '{money} UZS is more than the debt and will go to credit. Continue?',
+  'Saqlanmagan belgilar yoʻqoladi. Davom etasizmi?': 'Unsaved marks will be lost. Continue?',
+  'Saqlash · {n} ta belgilandi': 'Save · {n} marked',
 }

@@ -79,7 +79,7 @@ export function TelegramLinkButton({ guardianId, linked, onChange }: Props) {
       <span
         className={cn(
           'inline-flex items-center gap-1 text-xs',
-          linked ? 'text-nihol-700' : 'text-tosh-400',
+          linked ? 'text-nihol-700' : 'text-tosh-500',
         )}
       >
         <Send className="h-3 w-3" />

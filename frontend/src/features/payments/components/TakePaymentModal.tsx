@@ -201,8 +201,34 @@ export function TakePaymentModal({
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
+  /*
+   * Qarzdan ortiq summa — TASDIQLASH bilan (PLAN 10.1).
+   *
+   * "1500000" o'rniga "15000000" terish oson: nol bitta ortiq va pul
+   * jimgina avansga tushadi. Avansning o'zi xato emas (ADR-20:
+   * ortiqcha to'lov hech qachon xato emas), lekin u ONGLI bo'lishi
+   * kerak — aks holda xato keyingi oyda, balans tushunarsiz bo'lganda
+   * chiqadi.
+   *
+   * Chegara: qoldiq qarzdan katta VA sezilarli (50 000 so'mdan ortiq).
+   * Mayda ortiqcha (chaqa qaytarilmagan) har safar savol bermaydi.
+   */
+  const ADVANCE_ASK_FROM = 50_000
+  const needsConfirm = advance > ADVANCE_ASK_FROM
+
   const submit = () => {
-    if (!save.isPending && taken > 0) save.mutate()
+    if (save.isPending || taken <= 0) return
+    if (
+      needsConfirm &&
+      !window.confirm(
+        t('{money} soʻm qarzdan ortiq va avansga tushadi. Davom etasizmi?', {
+          money: money(advance),
+        }),
+      )
+    ) {
+      return
+    }
+    save.mutate()
   }
 
   return (
@@ -278,7 +304,7 @@ export function TakePaymentModal({
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-xs font-medium text-slate-700">
                       {invoice.period}
-                      <span className="ml-1.5 font-mono text-xs text-slate-400">
+                      <span className="ml-1.5 font-mono text-xs text-slate-500">
                         {invoice.number}
                       </span>
                     </span>
@@ -364,7 +390,7 @@ export function TakePaymentModal({
                     <span
                       className={cn(
                         'block text-xs tabular-nums',
-                        already > 0 ? 'font-semibold text-emerald-700' : 'text-slate-400',
+                        already > 0 ? 'font-semibold text-emerald-700' : 'text-slate-500',
                       )}
                     >
                       {already > 0 ? money(already) : t('bosing')}
@@ -398,7 +424,7 @@ export function TakePaymentModal({
                   onClick={() => remove(tender.key)}
                   title={t('Oʻchirish')}
                   aria-label={t('Oʻchirish')}
-                  className="rounded p-1 text-slate-300 transition hover:bg-red-50 hover:text-red-600"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-slate-500 transition hover:bg-red-50 hover:text-red-600"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -434,7 +460,7 @@ export function TakePaymentModal({
             Endi taqsimot tasdiqlashdan OLDIN ko'rinadi. */}
         {plan.rows.length > 0 && (
           <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               {t('Qaysi hisob-fakturaga tushadi')}
             </p>
             <ul className="mt-1.5 space-y-1">
@@ -489,7 +515,7 @@ export function TakePaymentModal({
               if (reason !== null) cancel.mutate(reason)
             }}
             disabled={cancel.isPending}
-            className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-60"
+            className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-slate-500 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-60"
           >
             <Ban className="h-3.5 w-3.5" />
             {t('Hisob-fakturani bekor qilish')}

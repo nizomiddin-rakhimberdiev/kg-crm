@@ -351,7 +351,7 @@ export default function ChildrenPage() {
           {child.last_name} {child.first_name}
         </span>
         {child.middle_name && (
-          <span className="block truncate text-xs text-slate-400">{child.middle_name}</span>
+          <span className="block truncate text-xs text-slate-500">{child.middle_name}</span>
         )}
       </span>
     </Link>
@@ -394,7 +394,7 @@ export default function ChildrenPage() {
         <button
           type="button"
           onClick={() => openEdit(child)}
-          className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+          className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
           title={t('Tahrirlash')}
           aria-label={t('Tahrirlash')}
         >
@@ -405,7 +405,7 @@ export default function ChildrenPage() {
         <button
           type="button"
           onClick={() => removeMutation.mutate(child.id)}
-          className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+          className="rounded-lg p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
           title={t('Arxivga oʻtkazish')}
           aria-label={t('Arxivga oʻtkazish')}
         >
@@ -767,7 +767,7 @@ export default function ChildrenPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <div className="relative flex-1 sm:min-w-[220px] sm:max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
             type="search"
             value={search}
@@ -794,7 +794,7 @@ export default function ChildrenPage() {
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         {childrenQuery.isPending && (
-          <p className="px-4 py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
+          <p className="px-4 py-8 text-center text-sm text-slate-500">{t('Yuklanmoqda…')}</p>
         )}
         {childrenQuery.isError && (
           <p className="px-4 py-8 text-center text-sm text-red-600">
@@ -830,7 +830,7 @@ export default function ChildrenPage() {
             {/* Jadval — planshet va undan keng ekranlar. */}
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[720px] text-sm">
-                <thead className="border-b border-slate-100 bg-slate-50/70 text-left text-xs uppercase tracking-wider text-slate-400">
+                <thead className="border-b border-slate-100 bg-slate-50/70 text-left text-xs uppercase tracking-wider text-slate-500">
                   <tr>
                     <th className="px-4 py-3 font-medium">{t('Bola')}</th>
                     <th className="px-4 py-3 font-medium">{t('Yosh')}</th>
@@ -856,7 +856,7 @@ export default function ChildrenPage() {
                               <p className="truncate">{primary.guardian.full_name}</p>
                               <a
                                 href={`tel:${primary.guardian.phone}`}
-                                className="mt-0.5 flex items-center gap-1 text-xs text-slate-400 transition-colors hover:text-brand-600"
+                                className="mt-0.5 flex items-center gap-1 text-xs text-slate-500 transition-colors hover:text-brand-600"
                               >
                                 <Phone className="h-3 w-3" />
                                 {primary.guardian.phone}
@@ -888,11 +888,11 @@ export default function ChildrenPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-500">
                       <p>
-                        <span className="text-slate-400">{t('Yosh:')}</span>{' '}
+                        <span className="text-slate-500">{t('Yosh:')}</span>{' '}
                         <span className="text-slate-700 tabular-nums">{child.age_years}</span>
                       </p>
                       <p className="truncate">
-                        <span className="text-slate-400">{t('Vasiy:')}</span>{' '}
+                        <span className="text-slate-500">{t('Vasiy:')}</span>{' '}
                         <span className="text-slate-700">{primary?.guardian.full_name ?? '—'}</span>
                       </p>
                       {primary && (

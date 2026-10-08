@@ -290,7 +290,7 @@ export function StatCard({
   const deltaClass = {
     success: 'text-emerald-600',
     danger: 'text-red-500',
-    neutral: 'text-slate-400',
+    neutral: 'text-slate-500',
   }[deltaTone]
   const rowClass = (tone?: 'success' | 'danger' | 'neutral') =>
     tone === 'success' ? 'text-emerald-600' : tone === 'danger' ? 'text-red-500' : 'text-slate-900'
@@ -317,9 +317,9 @@ export function StatCard({
             <ArrowUpRight className="w-4 h-4 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100" />
           </div>
         </div>
-        <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+        <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
         <p className="num mt-1 text-2xl font-bold text-slate-900">{value}</p>
-        {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
+        {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
       </button>
 
       <Modal open={open} onClose={() => setOpen(false)}>
@@ -334,7 +334,7 @@ export function StatCard({
               <Icon className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {label}
               </p>
               <p className="num text-3xl font-bold text-slate-900">{value}</p>
@@ -342,7 +342,7 @@ export function StatCard({
                 <p className="mt-0.5 text-sm">
                   {delta && <span className={cn('font-semibold', deltaClass)}>{delta}</span>}
                   {delta && hint && <span className="text-slate-300"> · </span>}
-                  {hint && <span className="text-slate-400">{hint}</span>}
+                  {hint && <span className="text-slate-500">{hint}</span>}
                 </p>
               )}
             </div>
@@ -357,7 +357,7 @@ export function StatCard({
 
           {detail?.breakdown && detail.breakdown.length > 0 && (
             <div className="mt-5 space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {t('Taqsimot')}
               </p>
               {detail.breakdown.map((row) => (
@@ -599,7 +599,7 @@ export function Select({
   return (
     <div className="flex flex-col gap-1.5" ref={ref}>
       {label && (
-        <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           {label}
         </label>
       )}
@@ -615,12 +615,12 @@ export function Select({
               : 'border-slate-200 hover:border-slate-300',
           )}
         >
-          <span className={selected ? 'text-slate-700' : 'text-slate-400'}>
+          <span className={selected ? 'text-slate-700' : 'text-slate-500'}>
             {selected?.label ?? placeholder}
           </span>
           <ChevronDown
             className={cn(
-              'w-4 h-4 shrink-0 text-slate-400 transition-transform',
+              'w-4 h-4 shrink-0 text-slate-500 transition-transform',
               open && 'rotate-180',
             )}
           />

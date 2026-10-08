@@ -130,7 +130,7 @@ export function TwoFactorCard() {
         {enabled ? (
           <ShieldCheck className="h-4 w-4 text-nihol-600" />
         ) : (
-          <ShieldOff className="h-4 w-4 text-slate-400" />
+          <ShieldOff className="h-4 w-4 text-slate-500" />
         )}
         <h2 className="text-sm font-semibold text-slate-900">{t('Ikki bosqichli tasdiqlash')}</h2>
       </div>
@@ -250,7 +250,7 @@ export function TwoFactorCard() {
             />
             {/* Parol soʻraladi: oʻgʻirlangan sessiya (XSS, ochiq
                 qolgan noutbuk) himoyani olib tashlamasligi kerak. */}
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500">
               {t('Oʻchirish va kodlarni yangilash uchun parol kerak.')}
             </p>
           </div>

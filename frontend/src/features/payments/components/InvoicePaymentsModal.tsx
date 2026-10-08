@@ -156,7 +156,7 @@ export function InvoicePaymentsModal({
                     {paymentMethodLabel(method)}
                   </span>
                   {row.count > 1 && (
-                    <span className="shrink-0 text-xs tabular-nums text-slate-400">
+                    <span className="shrink-0 text-xs tabular-nums text-slate-500">
                       {t('{v} ta', { v: row.count })}
                     </span>
                   )}
@@ -180,7 +180,7 @@ export function InvoicePaymentsModal({
                 <p className="truncate text-sm font-medium text-slate-800">
                   {paymentMethodLabel(payment.method)}
                 </p>
-                <p className="truncate text-xs text-slate-400">
+                <p className="truncate text-xs text-slate-500">
                   {formatDate(payment.paid_at)}
                   {payment.reference && ` · ${payment.reference}`}
                   {payment.is_reversed && ` · ${t('qaytarilgan')}`}
@@ -189,7 +189,7 @@ export function InvoicePaymentsModal({
               <span
                 className={cn(
                   'shrink-0 text-sm font-semibold tabular-nums',
-                  payment.is_reversed ? 'text-slate-400 line-through' : 'text-slate-900',
+                  payment.is_reversed ? 'text-slate-500 line-through' : 'text-slate-900',
                 )}
               >
                 {money(Number(payment.amount))}
@@ -197,12 +197,12 @@ export function InvoicePaymentsModal({
             </li>
           ))}
           {!isPending && payments.length === 0 && (
-            <li className="py-8 text-center text-sm text-slate-400">
+            <li className="py-8 text-center text-sm text-slate-500">
               {t('Bu hisob-faktura boʻyicha toʻlov yoʻq.')}
             </li>
           )}
           {isPending && (
-            <li className="py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</li>
+            <li className="py-8 text-center text-sm text-slate-500">{t('Yuklanmoqda…')}</li>
           )}
         </ul>
       </div>

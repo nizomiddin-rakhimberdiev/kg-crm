@@ -136,7 +136,7 @@ export function DateInput({
           invalid
             ? 'border-orik-400'
             : tone === 'light' && 'border-tosh-200 focus:border-nihol-500',
-          disabled && (tone === 'dark' ? 'opacity-50' : 'bg-tosh-50 text-tosh-400'),
+          disabled && (tone === 'dark' ? 'opacity-50' : 'bg-tosh-50 text-tosh-500'),
         )}
         {...aria}
       />
@@ -149,8 +149,8 @@ export function DateInput({
         className={cn(
           'absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 disabled:opacity-40',
           tone === 'dark'
-            ? 'text-slate-400 hover:bg-slate-700 hover:text-slate-100'
-            : 'text-tosh-400 hover:bg-tosh-50 hover:text-tosh-700',
+            ? 'text-slate-500 hover:bg-slate-700 hover:text-slate-100'
+            : 'text-tosh-500 hover:bg-tosh-50 hover:text-tosh-700',
         )}
       >
         <CalendarDays className="h-4 w-4" />

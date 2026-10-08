@@ -231,8 +231,8 @@ export function AccountsPanel() {
         ) : (
           <p className="truncate font-medium text-slate-800">{member.full_name}</p>
         )}
-        <p className="truncate text-xs text-slate-400">{member.email}</p>
-        {member.phone && <p className="text-xs text-slate-400">{member.phone}</p>}
+        <p className="truncate text-xs text-slate-500">{member.email}</p>
+        {member.phone && <p className="text-xs text-slate-500">{member.phone}</p>}
       </div>
     </div>
   )
@@ -254,7 +254,7 @@ export function AccountsPanel() {
         <button
           type="button"
           onClick={() => openEdit(member)}
-          className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+          className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
           title={t('Tahrirlash')}
           aria-label={t('Tahrirlash')}
         >
@@ -268,7 +268,7 @@ export function AccountsPanel() {
               type="button"
               disabled={deactivateMutation.isPending}
               onClick={() => deactivateMutation.mutate(member.id)}
-              className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+              className="rounded-lg p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
               title={t('Faolsizlantirish')}
               aria-label={t('Faolsizlantirish')}
             >
@@ -281,7 +281,7 @@ export function AccountsPanel() {
               type="button"
               disabled={reactivateMutation.isPending}
               onClick={() => reactivateMutation.mutate(member.id)}
-              className="rounded-lg p-2 text-slate-400 transition hover:bg-emerald-50 hover:text-emerald-700 disabled:opacity-50"
+              className="rounded-lg p-2 text-slate-500 transition hover:bg-emerald-50 hover:text-emerald-700 disabled:opacity-50"
               title={t('Qayta faollashtirish')}
               aria-label={t('Qayta faollashtirish')}
             >
@@ -301,7 +301,7 @@ export function AccountsPanel() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative flex-1 sm:min-w-[220px] sm:max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
             type="search"
             value={search}
@@ -325,7 +325,7 @@ export function AccountsPanel() {
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         {staffQuery.isPending && (
-          <p className="px-4 py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
+          <p className="px-4 py-8 text-center text-sm text-slate-500">{t('Yuklanmoqda…')}</p>
         )}
         {staffQuery.isError && (
           <p className="px-4 py-8 text-center text-sm text-red-600">
@@ -349,7 +349,7 @@ export function AccountsPanel() {
           <div className={cn('transition-opacity', staffQuery.isPlaceholderData && 'opacity-60')}>
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[640px] text-sm">
-                <thead className="border-b border-slate-100 bg-slate-50/70 text-left text-xs uppercase tracking-wider text-slate-400">
+                <thead className="border-b border-slate-100 bg-slate-50/70 text-left text-xs uppercase tracking-wider text-slate-500">
                   <tr>
                     <th className="px-4 py-3 font-medium">{t('Hisob')}</th>
                     <th className="px-4 py-3 font-medium">{t('Rol')}</th>
@@ -387,15 +387,15 @@ export function AccountsPanel() {
                   </div>
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-500">
                     <p className="truncate">
-                      <span className="text-slate-400">{t('Rol:')}</span>{' '}
+                      <span className="text-slate-500">{t('Rol:')}</span>{' '}
                       <span className="text-slate-700">{member.role?.name ?? '—'}</span>
                     </p>
                     <p className="truncate">
-                      <span className="text-slate-400">{t('Filial:')}</span>{' '}
+                      <span className="text-slate-500">{t('Filial:')}</span>{' '}
                       <span className="text-slate-700">{member.branch?.name ?? t('Barchasi')}</span>
                     </p>
                     <p className="col-span-2">
-                      <span className="text-slate-400">{t('Oxirgi kirish:')}</span>{' '}
+                      <span className="text-slate-500">{t('Oxirgi kirish:')}</span>{' '}
                       <span className="text-slate-700 tabular-nums">
                         {dateTime(member.last_login_at)}
                       </span>

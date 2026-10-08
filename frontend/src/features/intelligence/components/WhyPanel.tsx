@@ -128,12 +128,12 @@ export function WhyPanel({ insight, evidence, onClose }: WhyPanelProps) {
                           <span className="text-slate-300">…</span>
                         ) : (
                           (label?.name ?? (
-                            <span className="italic text-slate-400">{copy.why.deletedChild}</span>
+                            <span className="italic text-slate-500">{copy.why.deletedChild}</span>
                           ))
                         )}
                       </td>
                       <td className="px-3 py-2 text-slate-600">
-                        {label?.group ?? <span className="text-slate-400">{copy.why.noGroup}</span>}
+                        {label?.group ?? <span className="text-slate-500">{copy.why.noGroup}</span>}
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums text-slate-800">
                         {row.days_overdue} {copy.facts.dayUnit}

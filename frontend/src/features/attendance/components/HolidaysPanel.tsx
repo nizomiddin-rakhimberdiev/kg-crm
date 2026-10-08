@@ -63,14 +63,14 @@ export function HolidaysPanel() {
   return (
     <details className="group rounded-2xl border border-slate-200 bg-white">
       <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-900">
-        <CalendarDays className="h-4 w-4 text-slate-400" />
+        <CalendarDays className="h-4 w-4 text-slate-500" />
         {t('Bayram va yopiq kunlar')}
         {holidays.length > 0 && (
           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
             {holidays.length}
           </span>
         )}
-        <span className="ml-auto text-xs font-normal text-slate-400">
+        <span className="ml-auto text-xs font-normal text-slate-500">
           {t('Qayta hisobda ish kuni sanalmaydi')}
         </span>
       </summary>
@@ -150,7 +150,7 @@ export function HolidaysPanel() {
             </li>
           ))}
           {holidays.length === 0 && !holidaysQuery.isPending && (
-            <li className="py-4 text-center text-sm text-slate-400">
+            <li className="py-4 text-center text-sm text-slate-500">
               {t('Hali bayram kiritilmagan — qayta hisob barcha ish kunlarini toʻliq sanaydi.')}
             </li>
           )}

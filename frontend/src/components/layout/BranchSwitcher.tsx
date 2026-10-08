@@ -47,7 +47,7 @@ export function BranchSwitcher({ variant = 'topbar' }: BranchSwitcherProps) {
           inDrawer ? 'mx-3 my-3 flex sm:hidden' : 'hidden sm:flex',
         )}
       >
-        <Building2 className="h-4 w-4 text-slate-400" />
+        <Building2 className="h-4 w-4 text-slate-500" />
         {user.branch.name}
       </div>
     )
@@ -62,13 +62,13 @@ export function BranchSwitcher({ variant = 'topbar' }: BranchSwitcherProps) {
     >
       <Building2
         className={cn(
-          'pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400',
+          'pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500',
           inDrawer ? 'left-6' : 'left-3',
         )}
       />
       <ChevronDown
         className={cn(
-          'pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400',
+          'pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500',
           inDrawer ? 'right-5' : 'right-2.5',
         )}
       />

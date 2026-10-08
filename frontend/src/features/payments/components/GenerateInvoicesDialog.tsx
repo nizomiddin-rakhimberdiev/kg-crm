@@ -134,7 +134,7 @@ export function GenerateInvoicesDialog({ year, month, onClose, onDone }: Props) 
                         <span className="block truncate text-sm font-medium text-slate-800">
                           {row.full_name}
                         </span>
-                        <span className="block truncate text-xs text-slate-400">
+                        <span className="block truncate text-xs text-slate-500">
                           {row.note || row.group_name || t('Guruhsiz')}
                         </span>
                       </span>

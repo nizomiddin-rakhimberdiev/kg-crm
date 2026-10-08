@@ -50,7 +50,7 @@ export function AppLayout() {
             >
               <Suspense
                 fallback={
-                  <div className="grid place-items-center py-20 text-sm text-slate-400">
+                  <div className="grid place-items-center py-20 text-sm text-slate-500">
                     {t('Yuklanmoqda…')}
                   </div>
                 }

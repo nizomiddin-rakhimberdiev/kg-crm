@@ -142,7 +142,7 @@ export function RolesPanel() {
       selectedRole.permissions.some((code) => !draft.has(code)))
 
   if (rolesQuery.isPending || permissionsQuery.isPending) {
-    return <p className="py-8 text-center text-sm text-slate-400">{t('Yuklanmoqda…')}</p>
+    return <p className="py-8 text-center text-sm text-slate-500">{t('Yuklanmoqda…')}</p>
   }
 
   return (
@@ -162,9 +162,9 @@ export function RolesPanel() {
             )}
           >
             {role.is_system ? (
-              <Lock className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <Lock className="h-3.5 w-3.5 shrink-0 text-slate-500" />
             ) : (
-              <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-slate-500" />
             )}
             <span className="truncate">{role.name}</span>
           </button>
@@ -223,7 +223,7 @@ export function RolesPanel() {
       {/* Ruxsatlar */}
       <div className="rounded-2xl border border-slate-200 bg-white p-4">
         {!selectedRole ? (
-          <p className="py-8 text-center text-sm text-slate-400">{t('Rol tanlang.')}</p>
+          <p className="py-8 text-center text-sm text-slate-500">{t('Rol tanlang.')}</p>
         ) : (
           <>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -253,7 +253,7 @@ export function RolesPanel() {
                       'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition',
                       dirty && !saveMutation.isPending
                         ? 'bg-brand-600 text-white hover:bg-brand-700'
-                        : 'bg-slate-100 text-slate-400',
+                        : 'bg-slate-100 text-slate-500',
                     )}
                   >
                     <Save className="h-4 w-4" />
@@ -265,7 +265,7 @@ export function RolesPanel() {
                     type="button"
                     disabled={deleteMutation.isPending}
                     onClick={() => deleteMutation.mutate(selectedRole.id)}
-                    className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                    className="rounded-lg p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                     title={t('Rolni oʻchirish')}
                     aria-label={t('Rolni oʻchirish')}
                   >
@@ -292,7 +292,7 @@ export function RolesPanel() {
             <div className="space-y-4">
               {grouped.map(([module, permissions]) => (
                 <div key={module}>
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     {permissions[0]?.label.split(' — ')[0] ?? module}
                   </p>
                   <div className="flex flex-wrap gap-2">

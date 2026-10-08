@@ -1354,4 +1354,9 @@ export const messages: Record<string, string> = {
   'Toʻlovsiz saqlanadigan kunlar': 'Дни сохранения места без оплаты',
   'Yiliga shuncha ish kuni joy toʻlovsiz saqlanadi.':
     'Столько рабочих дней в году место сохраняется без оплаты.',
+  '{money} soʻm qarzdan ortiq va avansga tushadi. Davom etasizmi?':
+    '{money} сум превышают долг и уйдут в аванс. Продолжить?',
+  'Saqlanmagan belgilar yoʻqoladi. Davom etasizmi?':
+    'Несохранённые отметки будут потеряны. Продолжить?',
+  'Saqlash · {n} ta belgilandi': 'Сохранить · отмечено {n}',
 }

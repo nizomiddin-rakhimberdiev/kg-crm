@@ -49,7 +49,7 @@ export function OnlinePaymentSettings() {
         )}
       </p>
       <div className="divide-y divide-slate-100">
-        {query.isPending && <p className="px-4 py-6 text-sm text-slate-400">{t('Yuklanmoqda…')}</p>}
+        {query.isPending && <p className="px-4 py-6 text-sm text-slate-500">{t('Yuklanmoqda…')}</p>}
         {query.data?.map((state) => (
           <ProviderRow key={state.provider} state={state} />
         ))}
