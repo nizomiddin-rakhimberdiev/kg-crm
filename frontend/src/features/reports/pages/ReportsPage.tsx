@@ -212,6 +212,18 @@ export default function ReportsPage() {
       }
     })
   })()
+  /*
+   * Davrda umuman harakat boʻlganmi (PLAN 10.11).
+   *
+   * Server oyning HAR BIR kuni uchun qator qaytaradi, shuning uchun
+   * `rows.length` hech qachon nol emas: hech narsa boʻlmagan oyda ham
+   * 31 ta nol qator keladi. Telefonda bu ikki ming piksel boʻsh
+   * jadval va 0–4 shkalali soxta diagramma edi — ularning ikkalasi
+   * ham "maʼlumot bor" deb koʻrsatadi.
+   */
+  const hasActivity = rows.some(
+    (row) => row.Tushum !== 0 || row.Chiqim !== 0 || row['Oylik maosh'] !== 0,
+  )
   const totalRevenue = canPL ? pl?.revenue : revenueQuery.data?.total
   const totalExpenses = canPL ? pl?.expenses : expensesQuery.data?.total
   const cash = plQuery.data?.by_account
@@ -406,7 +418,7 @@ export default function ReportsPage() {
                       )}
               </p>
               <div className="mt-4 h-64 sm:h-72">
-                {rows.length === 0 ? (
+                {!hasActivity ? (
                   <p className="grid h-full place-items-center text-sm text-slate-500">
                     {t('Bu davrda maʼlumot yoʻq.')}
                   </p>
@@ -596,7 +608,7 @@ export default function ReportsPage() {
 
           {/* Davr jadvali — hisobotning o'zi: raqamlar qatorlarda, grafik esa
             faqat ko'z uchun. Telefonda grafik tor, jadval esa o'qiladi. */}
-          {rows.length > 0 && (
+          {hasActivity && (
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
                 <h2 className="text-sm font-semibold text-slate-900">{t('Davr kesimi')}</h2>

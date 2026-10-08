@@ -25,7 +25,7 @@ import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { EmptyRow } from '@/components/ui/EmptyState'
-import { quantity, som, today } from '@/lib/format'
+import { formatDate, quantity, som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
 const money = som
@@ -172,7 +172,7 @@ export default function ExpensesPage() {
           </p>
         </div>
         {summaryQuery.data && (
-          <div className="text-right">
+          <div className="sm:text-right">
             <p className="text-xs text-slate-500">{t('Shu oy (tasdiqlangan)')}</p>
             <p className="text-xl font-bold text-slate-900">{money(summaryQuery.data.total)}</p>
           </div>
@@ -187,101 +187,6 @@ export default function ExpensesPage() {
 
       {can('expenses.create') && (
         <>
-          {/* Kategoriyalar — DOIMO ko'rinadi: qo'shish, qayta nomlash,
-              o'chirish. Ilgari bu forma faqat ro'yxat bo'sh bo'lganda
-              chiqardi, ya'ni ikkinchi kategoriyani qo'shishning iloji
-              yo'q edi. */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <p className="text-xs font-medium text-slate-600">{t('Kategoriyalar')}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              {categoriesQuery.data?.items.map((c) =>
-                editingCategory?.id === c.id ? (
-                  <form
-                    key={c.id}
-                    onSubmit={(e) => {
-                      e.preventDefault()
-                      renameCategory.mutate(editingCategory)
-                    }}
-                    className="flex items-center gap-1"
-                  >
-                    <input
-                      autoFocus
-                      value={editingCategory.name}
-                      onChange={(e) =>
-                        setEditingCategory((prev) =>
-                          prev ? { ...prev, name: e.target.value } : prev,
-                        )
-                      }
-                      className="w-36 rounded-lg border border-brand-300 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-brand-100"
-                    />
-                    <button
-                      type="submit"
-                      className="rounded-lg bg-brand-600 px-2 py-1 text-xs font-semibold text-white"
-                    >
-                      {t('Saqlash')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingCategory(null)}
-                      className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600"
-                    >
-                      {t('Bekor')}
-                    </button>
-                  </form>
-                ) : (
-                  <span
-                    key={c.id}
-                    className="group flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 py-1 pl-3 pr-1.5 text-sm text-slate-700"
-                  >
-                    {c.name}
-                    <button
-                      type="button"
-                      onClick={() => setEditingCategory({ id: c.id, name: c.name })}
-                      title={t('Tahrirlash')}
-                      aria-label={t('Tahrirlash')}
-                      className="grid h-8 w-8 shrink-0 place-items-center rounded text-slate-500 transition hover:text-slate-800 sm:h-6 sm:w-6"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeCategory.mutate(c.id)}
-                      title={t('Oʻchirish')}
-                      aria-label={t('Oʻchirish')}
-                      className="grid h-8 w-8 shrink-0 place-items-center rounded text-slate-500 transition hover:text-red-600 sm:h-6 sm:w-6"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </span>
-                ),
-              )}
-
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  addCategory.mutate()
-                }}
-                className="flex items-center gap-1"
-              >
-                <input
-                  id="cat"
-                  required
-                  value={newCategory}
-                  placeholder={t('Yangi kategoriya')}
-                  aria-label={t('Yangi kategoriya')}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  className="w-40 rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
-                />
-                <button
-                  type="submit"
-                  className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
-                >
-                  {t('Qoʻshish')}
-                </button>
-              </form>
-            </div>
-          </div>
-
           {(categoriesQuery.data?.items.length ?? 0) > 0 && (
             <form
               onSubmit={(e) => {
@@ -374,6 +279,104 @@ export default function ExpensesPage() {
               </div>
             </form>
           )}
+
+          {/*
+            Kategoriyalar — forma OSTIDA (PLAN 10.10). Ular sozlama:
+            bir marta kiritiladi va kamdan-kam o'zgaradi, chiqim esa
+            har kuni yoziladi. Yuqorida turganda telefonda chiplar va
+            o'chirish tugmalari ekranning yarmini egallab, asosiy ish
+            — summa kiritish — pastga tushib ketardi.
+          */}
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-xs font-medium text-slate-600">{t('Kategoriyalar')}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {categoriesQuery.data?.items.map((c) =>
+                editingCategory?.id === c.id ? (
+                  <form
+                    key={c.id}
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      renameCategory.mutate(editingCategory)
+                    }}
+                    className="flex items-center gap-1"
+                  >
+                    <input
+                      autoFocus
+                      value={editingCategory.name}
+                      onChange={(e) =>
+                        setEditingCategory((prev) =>
+                          prev ? { ...prev, name: e.target.value } : prev,
+                        )
+                      }
+                      className="w-36 rounded-lg border border-brand-300 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-brand-100"
+                    />
+                    <button
+                      type="submit"
+                      className="rounded-lg bg-brand-600 px-2 py-1 text-xs font-semibold text-white"
+                    >
+                      {t('Saqlash')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingCategory(null)}
+                      className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600"
+                    >
+                      {t('Bekor')}
+                    </button>
+                  </form>
+                ) : (
+                  <span
+                    key={c.id}
+                    className="group flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 py-1 pl-3 pr-1.5 text-sm text-slate-700"
+                  >
+                    {c.name}
+                    <button
+                      type="button"
+                      onClick={() => setEditingCategory({ id: c.id, name: c.name })}
+                      title={t('Tahrirlash')}
+                      aria-label={t('Tahrirlash')}
+                      className="grid h-8 w-8 shrink-0 place-items-center rounded text-slate-500 transition hover:text-slate-800 sm:h-6 sm:w-6"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeCategory.mutate(c.id)}
+                      title={t('Oʻchirish')}
+                      aria-label={t('Oʻchirish')}
+                      className="grid h-8 w-8 shrink-0 place-items-center rounded text-slate-500 transition hover:text-red-600 sm:h-6 sm:w-6"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                ),
+              )}
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  addCategory.mutate()
+                }}
+                className="flex items-center gap-1"
+              >
+                <input
+                  id="cat"
+                  required
+                  value={newCategory}
+                  placeholder={t('Yangi kategoriya')}
+                  aria-label={t('Yangi kategoriya')}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  className="w-40 rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
+                />
+                <button
+                  type="submit"
+                  className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
+                >
+                  {t('Qoʻshish')}
+                </button>
+              </form>
+            </div>
+          </div>
         </>
       )}
 
@@ -386,7 +389,85 @@ export default function ExpensesPage() {
         )}
 
         {(expensesQuery.data?.items.length ?? 0) > 0 && (
-          <div className="overflow-x-auto">
+          <ul className="divide-y divide-slate-100 sm:hidden">
+            {/*
+              Telefonda jadval SUMMANI kesib tashlardi (PLAN 10.10):
+              olti ustun 375 px ga sig'maydi, sana uch qatorga bo'linardi
+              ("2026-\n09-\n20"), summa esa o'ng chekkadan chiqib
+              ketardi — ya'ni chiqimlar sahifasidagi yagona raqam
+              ko'rinmasdi. Tasdiqlash tugmalari ham ikkita 32 px ikonka
+              edi; bu yerda ular yozuvli va 44 px.
+            */}
+            {expensesQuery.data?.items.map((e) => {
+              const [label, tone] = STATUS[e.status] ?? [e.status, '']
+              return (
+                <li key={e.id} className="px-4 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="min-w-0 text-sm font-semibold text-slate-900">
+                      {e.category_name}
+                    </p>
+                    <p className="num shrink-0 text-base font-bold text-slate-900">
+                      {money(e.amount)}
+                    </p>
+                  </div>
+                  <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                    <span className="num">{formatDate(e.expense_date)}</span>
+                    <span className={cn('rounded-full px-2 py-0.5 font-medium', tone)}>
+                      {label}
+                    </span>
+                    {e.approved_by_name && <span>{e.approved_by_name}</span>}
+                  </p>
+                  {e.items?.length ? (
+                    <ul className="mt-1 space-y-0.5">
+                      {e.items.map((item) => (
+                        <li key={item.id} className="text-xs text-slate-600">
+                          {item.name}{' '}
+                          <span className="num text-slate-500">
+                            {quantity(item.quantity, item.unit)} × {money(item.unit_price)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    e.description && <p className="mt-1 text-xs text-slate-600">{e.description}</p>
+                  )}
+                  {can('expenses.approve') && e.status === 'pending' && (
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => decide.mutate({ id: e.id, action: 'approve' })}
+                        className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg bg-nihol-600 text-sm font-semibold text-white"
+                      >
+                        <Check className="h-4 w-4" />
+                        {t('Tasdiqlash')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => decide.mutate({ id: e.id, action: 'reject' })}
+                        className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 text-sm font-semibold text-red-600"
+                      >
+                        <X className="h-4 w-4" />
+                        {t('Rad etish')}
+                      </button>
+                    </div>
+                  )}
+                  {can('expenses.update') && e.status === 'approved' && (
+                    <button
+                      type="button"
+                      onClick={() => decide.mutate({ id: e.id, action: 'markPaid' })}
+                      className="mt-2 flex min-h-11 w-full items-center justify-center rounded-lg border border-slate-200 text-sm font-semibold text-brand-600"
+                    >
+                      {t('Toʻlandi')}
+                    </button>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        )}
+
+        {(expensesQuery.data?.items.length ?? 0) > 0 && (
+          <div className="hidden overflow-x-auto sm:block">
             <table className="w-full min-w-[560px] text-sm">
               <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                 <tr>
@@ -403,7 +484,7 @@ export default function ExpensesPage() {
                   const [label, tone] = STATUS[e.status] ?? [e.status, '']
                   return (
                     <tr key={e.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 text-slate-500">{e.expense_date}</td>
+                      <td className="px-4 py-3 text-slate-500">{formatDate(e.expense_date)}</td>
                       <td className="px-4 py-3 text-slate-700">{e.category_name}</td>
                       <td className="px-4 py-3 text-slate-600">
                         {/* Qatorlar bo'lsa — aynan nima olingani

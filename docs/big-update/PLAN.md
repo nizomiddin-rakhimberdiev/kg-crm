@@ -688,4 +688,20 @@ Egasining roʻyxatidan keyingi uchtasi (2026-10-08, "ha davom et"):
   bola kartasida ishlatiladi; `DebtByPeriod` dagi shaxsiy oy roʻyxati va
   shaxsiy `shortDate` oʻchirildi.
 
-Qolgan promptlar (9–12, 14, 15) hali bajarilmadi — roʻyxat PLAN'da turibdi.
+- [x] **10.10 Chiqimlar.** Jadval telefonda **summani kesib tashlardi**:
+  olti ustun 375 px ga sigʻmaydi, sana uch qatorga boʻlinardi
+  ("2026-\n09-\n20"), summa esa oʻng chekkadan chiqib ketardi — yaʼni
+  chiqimlar sahifasidagi yagona raqam koʻrinmasdi, sana esa ISO koʻrinishda
+  edi. Telefonda kartochka: kategoriya va summa birinchi qatorda, ostida
+  sana va holat, tasdiqlash tugmalari yozuvli va 44 px. Shu bilan birga
+  **kategoriyalar bloki formadan pastga** koʻchdi: u sozlama (bir marta
+  kiritiladi), chiqim esa har kuni yoziladi — yuqorida turganda chiplar
+  va oʻchirish tugmalari ekranning yarmini egallardi.
+- [x] **10.11 Hisobotlar.** Sahifaning oʻzi yaxshi (davr tanlagich, oy
+  nomi, KPI, eksport) — xatolik **boʻsh davrda** edi: server oyning har
+  bir kuni uchun qator qaytaradi, shuning uchun hech narsa boʻlmagan
+  oyda ham 31 ta nol qator va 0–4 shkalali soxta diagramma chizilardi.
+  Telefonda bu ikki ming piksel "maʼlumot bor" degan boʻsh joy.
+  `rows.length` oʻrniga endi `hasActivity` tekshiriladi.
+
+Qolgan promptlar (11, 12, 14, 15) hali bajarilmadi — roʻyxat PLAN'da turibdi.

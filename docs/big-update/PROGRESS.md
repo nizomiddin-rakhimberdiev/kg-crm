@@ -1355,3 +1355,21 @@ kerak boʻldi: sana ichida "14 сентября", yolgʻiz turganda esa "Сен�
 2026" — bitta roʻyxat ikkisiga yaramaydi. `DebtByPeriod` dagi oy nomlari
 va `shortDate` nusxalari oʻchirildi — ular aynan Q12 ogohlantirgan
 "shaxsiy nusxa" edi va ruschada qaratqich kelishigini koʻrsatardi.
+
+**Chiqimlar sahifasida summa koʻrinmasdi.** Jadvalda olti ustun bor; 375 px
+da sana uch qatorga boʻlinib ketardi ("2026-\n09-\n20") va summa oʻng
+chekkadan chiqib ketardi. Yaʼni chiqimlar sahifasida — bitta raqam uchun
+mavjud sahifada — aynan oʻsha raqam kesilgan edi. Telefonda endi kartochka,
+sana esa `formatDate` orqali. Tasdiqlash/rad etish ilgari ikkita 32 px
+ikonka edi; telefonda ular yozuvli va 44 px, chunki noto'g'ri bosilgan
+"rad etish" ni qaytarish uchun qayta yozuvdan boshqa yoʻl yoʻq.
+Kategoriyalar bloki formadan pastga koʻchdi — u sozlama, chiqim esa
+kundalik ish.
+
+**Boʻsh oyda hisobot "maʼlumot bor" deb koʻrsatardi.** Server oyning har
+bir kuni uchun qator qaytaradi, shuning uchun `rows.length === 0` hech
+qachon rost boʻlmaydi: hech narsa boʻlmagan oyda ham 31 ta nol qator
+keladi. Natijada diagramma 0–4 shkalasini chizardi (soxta shkala — unda
+"4" nimani anglatishini hech kim ayta olmaydi) va jadval telefonda ikki
+ming piksel boʻsh qator berardi. Endi tekshiruv — davrda harakat
+boʻlganmi.
