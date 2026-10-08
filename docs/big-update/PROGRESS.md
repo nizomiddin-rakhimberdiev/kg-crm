@@ -1280,3 +1280,30 @@ Recharts'ning standart kulrangida, legenda esa QATOR rangida — "Chiqim"
 2.19:1. Yaʼni ustun nimani anglatishini aytadigan matn ekrandagi eng
 oʻqilmaydigan narsa edi. Yangi `CHART.label` tokeni (tosh-600, 6.97:1)
 ikkalasini ham oladi; rangni esa legendaning nuqtasi koʻrsatadi.
+
+**Qarzdorlar jadvali telefonda jadval boʻlib qolgandi.** Sakkizta ustun
+375 px ga sigʻmaydi — ular siqiladi, va siqilganda eng ichkariga tushadigan
+narsa aynan qoʻngʻiroq qilish qarorini beradigan ikki raqam boʻladi:
+qancha va necha kun. Telefonda endi jadval emas, kartochkalar: summa va
+kun yuqorida, tugmalar pastda. Filtrlar yigʻildi, lekin **yopiq filtr
+tugmada sanaladi** — aks holda kecha qoʻyilgan filtr bugun roʻyxatni
+jimgina kesib, mudira "qarzdor qolmabdi" deb oʻylardi.
+
+**Bola kartasida ikki amal eng yiroqda edi.** Toʻlov tugmasi balans
+kartasining ichida, telefon raqami esa guruh va tarifdan keyin — ikkalasi
+ham varaqlab yetiladigan joyda, holbuki mudira kartani aynan shu ikki ish
+uchun ochadi. Ular sarlavha ostiga chiqdi. Jonli tekshiruvda chiqqan
+yondosh xato: balans kartasidagi eski tugma joyida qolib, bitta ekranda
+bir xil ikkita yashil "Toʻlov qabul qilish" turdi — eskisi oʻchirildi,
+chunki ikkita bir xil asosiy tugma har doim "qaysi biri?" degan savol
+tugʻdiradi.
+
+**Ota-ona toʻlov sahifasida ishonch.** Havola Telegramdan ochiladi, ota-ona
+tizimga kirmagan, va uning birinchi savoli pul haqida emas: "bu haqiqatan
+bizning bogʻchamizmi?". `Radix` logotipi bu savolga javob bermaydi —
+bogʻchaning oʻziniki beradi, shuning uchun `/pay/<token>` javobi endi
+`logo_url` va `contact_phone` qaytaradi. Ikkinchi joy — provayderdan
+qaytish: sahifa callback'ni kutib qayta oʻqiydi, lekin kutish cheksiz
+boʻlmasligi kerak edi. 20 ta soʻrovdan keyin u "tekshirilmoqda" deb jim
+qolmaydi, balki pul yechilgan boʻlsa nima boʻlishini aytadi va bogʻchaga
+qoʻngʻiroq tugmasini koʻrsatadi.

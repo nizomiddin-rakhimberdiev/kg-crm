@@ -12,23 +12,15 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
-import { Banknote, Wallet } from 'lucide-react'
+import { Wallet } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { paymentsApi } from '@/features/payments/api'
-import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate } from '@/lib/utils'
 import { money } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
-export function ChildBalanceCard({
-  childId,
-  onTakePayment,
-}: {
-  childId: string
-  onTakePayment?: () => void
-}) {
+export function ChildBalanceCard({ childId }: { childId: string }) {
   const organizationId = useOrganizationId()
-  const { can } = useCan()
 
   const balance = useQuery({
     queryKey: ['org', organizationId, 'payments', 'child-balance', childId],
@@ -84,17 +76,6 @@ export function ChildBalanceCard({
               </div>
             )}
           </dl>
-
-          {can('payments.create') && onTakePayment && (
-            <button
-              type="button"
-              onClick={onTakePayment}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-nihol-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-nihol-700"
-            >
-              <Banknote className="h-4 w-4" />
-              {t('Toʻlov qabul qilish')}
-            </button>
-          )}
         </>
       )}
     </div>

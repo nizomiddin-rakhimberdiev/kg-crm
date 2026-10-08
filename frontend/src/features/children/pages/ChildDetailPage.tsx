@@ -316,10 +316,12 @@ export default function ChildDetailPage() {
 
       {/*
         Ikkita amal doim qoʻl ostida (PLAN 10.5): pul qabul qilish va
-        ota-onaga qoʻngʻiroq. Ilgari kartada ularning ikkalasi ham
-        yoʻq edi — mudira toʻlov uchun Toʻlovlar sahifasiga oʻtib,
-        bolani qaytadan qidirardi; telefon raqami esa sahifaning
-        pastida, guruh va tarifdan keyin turardi.
+        ota-onaga qoʻngʻiroq. Toʻlov tugmasi ilgari balans kartasining
+        ichida, varaqlab yetiladigan joyda turardi; qoʻngʻiroq raqami
+        esa sahifaning eng pastida, guruh va tarifdan keyin edi.
+        Tugma bu yerga koʻchdi — `ChildBalanceCard` dagi nusxasi
+        olib tashlandi, chunki bitta ekranda bir xil ikkita yashil
+        tugma turardi va mudira qaysi biri "asosiy"ini oʻylab qolardi.
       */}
       {(can('payments.create') || primaryGuardian) && !child.archived_at && (
         <div className="flex flex-wrap gap-2">
@@ -327,7 +329,7 @@ export default function ChildDetailPage() {
             <button
               type="button"
               onClick={() => setTakingPayment(true)}
-              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-nihol-600 px-4 text-sm font-semibold text-white transition hover:bg-nihol-700 sm:flex-none"
+              className="flex min-h-11 flex-[2] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-nihol-600 px-3 text-sm font-semibold text-white transition hover:bg-nihol-700 sm:flex-none sm:px-4"
             >
               <Banknote className="h-4 w-4" />
               {t('Toʻlov qabul qilish')}
@@ -336,7 +338,7 @@ export default function ChildDetailPage() {
           {primaryGuardian && (
             <a
               href={`tel:${primaryGuardian.phone}`}
-              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 sm:flex-none"
+              className="flex min-h-11 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 sm:flex-none sm:px-4"
             >
               <Phone className="h-4 w-4 text-nihol-700" />
               {t('Qoʻngʻiroq')}
@@ -346,7 +348,7 @@ export default function ChildDetailPage() {
       )}
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <ChildBalanceCard childId={childId} onTakePayment={() => setTakingPayment(true)} />
+        <ChildBalanceCard childId={childId} />
         {/* Vasiylar */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
           <div className="mb-3 flex items-center justify-between">

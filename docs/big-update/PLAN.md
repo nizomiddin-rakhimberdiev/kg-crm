@@ -631,4 +631,28 @@ maʼlumot bilan, `app-audit.mjs` (CDP) orqali.
 |---|---|---|---|---|
 | Dashboard, Bolalar, Toʻlovlar, Qarzdorlar, Davomat, Xodimlar, Chiqimlar, Hisobotlar | 0 | 0 | 0 | 0 |
 
-Qolgan promptlar (4–12, 14, 15) hali bajarilmadi — roʻyxat PLAN'da turibdi.
+Egasining roʻyxatidan keyingi uchtasi (2026-10-08, "ha davom et"):
+
+- [x] **10.4 Qarzdorlar telefonda.** Jadval 375 px da oʻqilmasdi: sakkizta
+  ustun siqilib, eng muhim ikki raqam — **qancha** va **necha kun** — eng
+  ichkariga tushib qolgandi, filtrlar esa roʻyxatni ekrandan pastga surib
+  yuborardi. Telefonda jadval oʻrniga kartochkalar roʻyxati: yuqorida summa
+  va kun, pastda 44 px "Qoʻngʻiroq" va "Eslatma" tugmalari. Filtrlar
+  yigʻiladi va yopiq turadi; tugmada nechta filtr yoqilgani koʻrinadi,
+  shuning uchun yopiq panel natijani jimgina kesib qoʻymaydi. Jadval
+  `sm:` dan boshlab oʻz holicha qoladi.
+- [x] **10.5 Bola kartochkasi.** Mudiraning kundalik ikki amali sahifada
+  eng yiroqda edi: toʻlov tugmasi balans kartasining ichida (varaqlash
+  kerak), ota-onaning raqami esa guruh va tarifdan keyin, eng pastda.
+  Ikkalasi sarlavha ostidagi bitta qatorga chiqdi (`tel:` havola bilan),
+  vasiylar kartasi balansdan keyin turadi. Balans kartasidagi nusxa
+  oʻchirildi — jonli tekshiruvda bitta ekranda bir xil ikkita yashil
+  tugma turgani koʻrindi.
+- [x] **10.6 Ota-ona toʻlov sahifasi.** Ishonch masalasi: havola Telegramdan
+  ochiladi va birinchi savol — "bu haqiqatan bizning bogʻchamizmi?".
+  Endi sahifada **bogʻchaning oʻz logotipi** turadi (`/pay/<token>` javobiga
+  `logo_url` va `contact_phone` qoʻshildi), toʻlovdan qaytgach kutish
+  cheksiz emas — 20 ta soʻrovdan keyin sahifa jim qolmay, nima qilishni
+  aytadi, va pastda bogʻchaga qoʻngʻiroq tugmasi bor.
+
+Qolgan promptlar (6–12, 14, 15) hali bajarilmadi — roʻyxat PLAN'da turibdi.
