@@ -521,7 +521,7 @@ export default function DebtorsPage() {
                                   event.stopPropagation()
                                   setConfirming({ child_ids: [row.child.id] })
                                 }}
-                                className="rounded-lg border border-tosh-200 p-1.5 text-tosh-600 hover:bg-tosh-50"
+                                className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-tosh-200 text-tosh-600 hover:bg-tosh-50 sm:h-9 sm:w-9"
                               >
                                 <BellRing className="h-3.5 w-3.5" />
                               </button>

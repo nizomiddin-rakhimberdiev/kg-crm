@@ -239,7 +239,7 @@ export default function ExpensesPage() {
                       onClick={() => setEditingCategory({ id: c.id, name: c.name })}
                       title={t('Tahrirlash')}
                       aria-label={t('Tahrirlash')}
-                      className="rounded p-0.5 text-slate-300 transition hover:text-slate-700 group-hover:text-slate-500"
+                      className="grid h-8 w-8 shrink-0 place-items-center rounded text-slate-500 transition hover:text-slate-800 sm:h-6 sm:w-6"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
@@ -248,7 +248,7 @@ export default function ExpensesPage() {
                       onClick={() => removeCategory.mutate(c.id)}
                       title={t('Oʻchirish')}
                       aria-label={t('Oʻchirish')}
-                      className="rounded p-0.5 text-slate-300 transition hover:text-red-600 group-hover:text-slate-500"
+                      className="grid h-8 w-8 shrink-0 place-items-center rounded text-slate-500 transition hover:text-red-600 sm:h-6 sm:w-6"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>

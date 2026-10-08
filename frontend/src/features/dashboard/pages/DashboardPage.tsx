@@ -402,11 +402,18 @@ export default function DashboardPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={trend}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CHART.grid} />
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    axisLine={false}
+                    fontSize={12}
+                    tick={{ fill: CHART.label }}
+                  />
                   <YAxis
                     tickLine={false}
                     axisLine={false}
                     fontSize={12}
+                    tick={{ fill: CHART.label }}
                     tickFormatter={(v: number) => t('{v} mln', { v: Math.round(v / 1_000_000) })}
                   />
                   <Tooltip

@@ -424,6 +424,7 @@ export default function ReportsPage() {
                         tickLine={false}
                         axisLine={false}
                         fontSize={12}
+                        tick={{ fill: CHART.label }}
                         interval="preserveStartEnd"
                         minTickGap={16}
                       />
@@ -431,6 +432,7 @@ export default function ReportsPage() {
                         tickLine={false}
                         axisLine={false}
                         fontSize={12}
+                        tick={{ fill: CHART.label }}
                         width={56}
                         tickFormatter={(v: number) => compactUZS(v)}
                       />
@@ -443,7 +445,16 @@ export default function ReportsPage() {
                           fontSize: 13,
                         }}
                       />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                      {/* Legenda yozuvi QATOR rangida chiqardi — "Chiqim" oq fonda
+                          2.19:1 edi. Nuqta rangni koʻrsatadi, yozuv esa
+                          oʻqilishi kerak. */}
+                      <Legend
+                        iconType="circle"
+                        wrapperStyle={{ fontSize: 12 }}
+                        formatter={(value: string) => (
+                          <span style={{ color: CHART.label }}>{value}</span>
+                        )}
+                      />
                       {showRevenue && (
                         <Bar
                           dataKey={t('Tushum')}

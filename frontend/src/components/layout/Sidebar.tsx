@@ -153,7 +153,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         {/* Mahsulot nomi PASTDA va kichik (PLAN 4.6): sarlavhada
             bogʻchaning brendi turadi, bizning nomimiz esa shu
             yerda — koʻrinadigan, lekin daʼvo qilmaydigan joyda. */}
-        <p className="mt-3 text-center text-xs text-tosh-300">{t('Radix CRM')}</p>
+        <p className="mt-3 text-center text-xs text-tosh-500">{t('Radix CRM')}</p>
       </div>
     </>
   )

@@ -23,7 +23,11 @@ export const BRAND = {
 /** Diagramma yuzalari — Tailwind shkalalaridan olingan oraliq qiymatlar. */
 export const CHART = {
   grid: '#dde1db', // tosh-200
-  axis: '#98a398', // tosh-400
+  axis: '#98a398', // tosh-400 — faqat CHIZIQ uchun (matn emas)
+  // Diagramma MATNI: o'q yorliqlari va legenda. `axis` rangida ular
+  // oq fonda 2.62:1 edi — AA 4.5 ni talab qiladi, va aynan shu matn
+  // raqamning nimani anglatishini aytadi.
+  label: '#515c55', // tosh-600 — oq fonda 6.97:1
   surface: '#ffffff',
   ildizMid: '#2f6257', // ildiz-500 — to'q yashil, och fonda o'qiladi
   niholSoft: '#79c4a4', // nihol-300

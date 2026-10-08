@@ -291,7 +291,7 @@ export function EmployeesPanel() {
         {employee.phone ? (
           <a
             href={`tel:${employee.phone}`}
-            className="flex items-center gap-1 text-xs text-slate-500 hover:text-brand-600"
+            className="inline-flex min-h-[24px] items-center gap-1 py-0.5 text-xs text-slate-500 hover:text-brand-600"
           >
             <Phone className="h-3 w-3" />
             {employee.phone}
