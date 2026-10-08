@@ -556,18 +556,30 @@ export function EmployeesPanel() {
                   {label}
                   {required && <span className="text-red-500"> *</span>}
                 </label>
-                <input
-                  id={`emp-${key}`}
-                  type={type}
-                  required={required}
-                  min={type === 'number' ? 0 : undefined}
-                  step={type === 'number' ? '1000' : undefined}
-                  inputMode={type === 'number' ? 'numeric' : type === 'tel' ? 'tel' : undefined}
-                  placeholder={key === 'phone' ? '+998 90 123 45 67' : undefined}
-                  value={form[key] ?? ''}
-                  onChange={(e) => setForm((prev) => ({ ...prev, [key]: e.target.value }))}
-                  className={inputClass(Boolean(fieldErrors[key]))}
-                />
+                {/* Sana — `DateInput` (05 §17.1): brauzerning oʻz
+                    maydoni amerikacha tartibni (`mm/dd/yyyy`) koʻrsatadi
+                    va bogʻcha xodimi uni teskari oʻqiydi. */}
+                {type === 'date' ? (
+                  <DateInput
+                    id={`emp-${key}`}
+                    required={required}
+                    value={(form[key] as string) ?? ''}
+                    onChange={(iso) => setForm((prev) => ({ ...prev, [key]: iso }))}
+                  />
+                ) : (
+                  <input
+                    id={`emp-${key}`}
+                    type={type}
+                    required={required}
+                    min={type === 'number' ? 0 : undefined}
+                    step={type === 'number' ? '1000' : undefined}
+                    inputMode={type === 'number' ? 'numeric' : type === 'tel' ? 'tel' : undefined}
+                    placeholder={key === 'phone' ? '+998 90 123 45 67' : undefined}
+                    value={form[key] ?? ''}
+                    onChange={(e) => setForm((prev) => ({ ...prev, [key]: e.target.value }))}
+                    className={inputClass(Boolean(fieldErrors[key]))}
+                  />
+                )}
                 {fieldErrors[key] && (
                   <p className="mt-1 text-xs text-red-600">{fieldErrors[key]}</p>
                 )}
