@@ -31,7 +31,7 @@ import { t } from '@/lib/i18n'
 const money = som
 
 const STATUS: Record<string, [string, string]> = {
-  pending: [t('Kutilmoqda'), 'bg-amber-50 text-amber-700'],
+  pending: [t('Kutilmoqda'), 'bg-amber-50 text-amber-900'],
   approved: [t('Tasdiqlangan'), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
   rejected: [t('Rad etilgan'), 'bg-red-50 text-red-700'],
   paid: [t('Toʻlangan'), 'bg-emerald-50 text-emerald-700'],

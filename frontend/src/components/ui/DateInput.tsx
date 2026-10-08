@@ -147,7 +147,7 @@ export function DateInput({
         aria-label={t('Kalendardan tanlash')}
         title={t('Kalendardan tanlash')}
         className={cn(
-          'absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 disabled:opacity-40',
+          'absolute right-0.5 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-md disabled:opacity-40 sm:h-8 sm:w-8',
           tone === 'dark'
             ? 'text-slate-500 hover:bg-slate-700 hover:text-slate-100'
             : 'text-tosh-500 hover:bg-tosh-50 hover:text-tosh-700',

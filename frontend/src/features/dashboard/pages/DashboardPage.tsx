@@ -457,7 +457,7 @@ export default function DashboardPage() {
             {(data?.low_stock_count ?? 0) > 0 && (
               <Link
                 to="/inventory"
-                className="mt-5 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 hover:bg-amber-100"
+                className="mt-5 flex min-h-11 items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 hover:bg-amber-100"
               >
                 <Package className="h-4 w-4 shrink-0" />
                 {t('{low_stock_count} ta mahsulot minimumdan kam', {

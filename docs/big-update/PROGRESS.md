@@ -1246,3 +1246,37 @@ matndagi xato bir yildan keyin chop etishda emas, oʻsha payt chiqadi.
 `child.contract_number` — qogʻozdagi raqam, tizim tuzadigan
 shartnomaning raqamidan (`SH-2026-0001`) ALOHIDA. Ikkisini bitta ustunga
 tiqish ulardan birini yolgʻon qilardi.
+
+## Bosqich 10 — UI/UX auditi (375 px)
+
+Audit taxmin bilan emas, oʻlchov bilan qilindi: headless Chrome demo stendga
+kiradi, har bir sahifani 375 px da ochadi va yon scroll, 12 px dan kichik
+matn, WCAG kontrasti, barmoq nishoni, kesilgan matn va nomsiz
+boshqaruvlarni sanaydi.
+
+**Ikkita muammo hamma yerda edi.** 12 px kulrang matn oq fonda 2.62:1 —
+guruh nomlari, izohlar, sanalar, hatto summalar. Va boshqaruvlar 34–38 px:
+tablar, filtr chiplari, select'lar, inputlar. Ikkalasi ham bitta ekranning
+xatosi emas, shuning uchun bitta ekranda tuzatilmadi: rang 55 faylda
+koʻtarildi, balandlik esa `index.css` dagi bitta qoidaga aylandi. 59 ta
+komponentga qoʻlda `min-h-11` yozish xuddi shu natijani berardi — va
+oltmishinchisida unutilardi.
+
+**Toʻlovda bitta nol.** "1500000" oʻrniga "15000000" terish oson. Taqsimot
+koʻrinishida u "avansga 13 500 000" boʻlib chiqardi, lekin hech narsa
+soʻramasdi — ota-ona ketgach, buni faqat keyingi oy balans tushunarsiz
+boʻlganda sezilardi. Endi qarzdan 50 000 soʻmdan ortiq har qanday summa
+tasdiqlash soʻraydi. Mayda ortiqcha (chaqa) soʻramaydi: har safar savol
+beradigan qoʻriqchi oʻqilmay qoʻyiladi.
+
+**Davomatda yoʻqolgan mehnat.** Qoralama faqat xotirada: "Saqlash"gacha
+serverda hech narsa yoʻq. Tarbiyachi 25 ta bolani belgilab guruhni
+almashtirsa yoki ilovani yopsa — hammasi yoʻq. Endi ikkala yoʻl ham
+soʻraydi. Telefonda esa saqlash tugmasi roʻyxat tagida qolib ketardi, shuning
+uchun u yopishqoq panelga chiqdi va nechta bola belgilanganini aytadi.
+
+**Diagramma matni.** Eng yomon kontrast grafiklarda edi: oʻq yorliqlari
+Recharts'ning standart kulrangida, legenda esa QATOR rangida — "Chiqim"
+2.19:1. Yaʼni ustun nimani anglatishini aytadigan matn ekrandagi eng
+oʻqilmaydigan narsa edi. Yangi `CHART.label` tokeni (tosh-600, 6.97:1)
+ikkalasini ham oladi; rangni esa legendaning nuqtasi koʻrsatadi.

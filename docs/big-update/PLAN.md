@@ -597,3 +597,38 @@ moslashtiriladi; bola qoʻshishda **shartnoma raqami** maydoni ham kerak.
   direktor, bank rekvizitlari, toʻlov kuni, bir kunlik ovqat puli,
   toʻlovsiz saqlanadigan kunlar, saqlash soati. `child.contract_number`
   — qogʻozdagi raqam, bola kartasida va formada.
+
+---
+
+### Bosqich 10 — UI/UX: pul va har kungi ish `[x]`
+
+Egasining roʻyxatidan birinchi uchtasi (2026-10-08): toʻlov qabul qilish,
+ertalabki davomat va 375 px auditi. Audit jonli demo stendda, haqiqiy
+maʼlumot bilan, `app-audit.mjs` (CDP) orqali.
+
+- [x] **10.1 Toʻlov qabul qilish.** Oqimning oʻzi allaqachon kassa apparati
+  tartibida edi (summa → usul tugmasi → taqsimot koʻrinadi → Enter), shuning
+  uchun uni qayta yozish kerak emas edi. Ikkita haqiqiy bo'shliq yopildi:
+  **bitta nol ortiq** terilganda pul jimgina avansga tushardi — endi
+  qarzdan 50 000 soʻmdan ortiq summa tasdiqlash soʻraydi va qancha avansga
+  ketishini aytadi; va tender qatoridagi oʻchirish tugmasi 22 px edi.
+- [x] **10.2 Davomat.** "Hammasi keldi", 44 px nishonlar va yorliqlar
+  allaqachon bor edi. Yetishmagani — **saqlanmagan qoralamaning himoyasi**:
+  25 ta bolani belgilab, guruhni almashtirgan yoki ilovani yopgan tarbiyachi
+  hammasini yoʻqotardi (qoralama faqat xotirada). Endi ikkala yoʻl ham
+  soʻraydi, telefonda esa saqlash tugmasi roʻyxat bilan birga yuradigan
+  yopishqoq panelda.
+- [x] **10.3 375 px auditi.** Ikkita muammo bitta ekranda emas, HAMMA yerda
+  edi, shuning uchun manbada tuzatildi: 12 px kulrang matn 2.62:1 (AA 4.5
+  talab qiladi) — 55 faylda `tosh-500/600` ga koʻtarildi, toʻq yuzalar
+  (platforma konsoli, kvitansiya) 400 da qoldi; boshqaruvlar 34–38 px edi —
+  `index.css` da bitta qoida telefonda 44 px poya qoʻyadi, chunki balandlik
+  komponentning emas, MUHITNING xususiyati. Ikkinchi oʻtishda: telefon
+  havolalari (16 px), ikonka tugmalari (18–28 px) va diagramma matni —
+  legenda qator rangida chiqardi va "Chiqim" 2.19:1 edi.
+
+| Sahifa (375 px) | Yon scroll | <12 px | Kontrast | Kichik nishon |
+|---|---|---|---|---|
+| Dashboard, Bolalar, Toʻlovlar, Qarzdorlar, Davomat, Xodimlar, Chiqimlar, Hisobotlar | 0 | 0 | 0 | 0 |
+
+Qolgan promptlar (4–12, 14, 15) hali bajarilmadi — roʻyxat PLAN'da turibdi.

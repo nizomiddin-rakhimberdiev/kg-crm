@@ -898,7 +898,7 @@ export default function ChildrenPage() {
                       {primary && (
                         <a
                           href={`tel:${primary.guardian.phone}`}
-                          className="col-span-2 flex items-center gap-1 text-slate-500 hover:text-brand-600"
+                          className="col-span-2 inline-flex min-h-[24px] items-center gap-1 py-0.5 text-slate-500 hover:text-brand-600"
                         >
                           <Phone className="h-3 w-3" />
                           {primary.guardian.phone}

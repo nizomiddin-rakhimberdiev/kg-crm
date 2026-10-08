@@ -407,6 +407,7 @@ export default function DebtorsPage() {
             >
               <input
                 id="debtor-overdue"
+                className="h-[18px] w-[18px] rounded border-tosh-300 accent-nihol-600"
                 type="checkbox"
                 checked={overdueOnly}
                 disabled={aiDays !== null}
