@@ -188,3 +188,25 @@ def test_gettext_sources_use_the_uzbek_apostrophe():
 def test_po_sources_use_the_uzbek_apostrophe(lang: str):
     offenders = sorted(key for key in _po_entries(lang) if RAW_APOSTROPHE.search(key))
     assert offenders == [], f"{lang}: {offenders[:5]}"
+
+
+def test_catalogs_compile_without_duplicates():
+    """
+    `.po` fayllar msgfmt'dan oʻtishi SHART.
+
+    Takrorlangan `msgid` msgfmt uchun fatal xato, lekin testlar uni
+    sezmasdi: kataloglar faqat Docker tasvirini yigʻishda kompilyatsiya
+    qilinadi. Natijada xato ishlab chiqarishga deploy paytida chiqdi —
+    yaʼni eng kech va eng qimmat joyda.
+    """
+    import subprocess
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[3] / "locale"
+    for po in sorted(root.glob("*/LC_MESSAGES/django.po")):
+        result = subprocess.run(
+            ["msgfmt", "--check", "-o", "/dev/null", str(po)],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, f"{po.parent.parent.name}: {result.stderr.strip()}"

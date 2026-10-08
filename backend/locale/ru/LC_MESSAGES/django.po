@@ -1424,9 +1424,6 @@ msgstr "Перерасчёт за дни отсутствия ({number})"
 msgid "Bu xodim allaqachon boshqa hisobga bogʻlangan."
 msgstr "Этот сотрудник уже привязан к другой учётной записи."
 
-msgid "Xodim topilmadi."
-msgstr "Сотрудник не найден."
-
 msgid "Davr «YYYY-MM» koʻrinishida boʻlishi kerak."
 msgstr "Период указывается в виде «ГГГГ-ММ»."
 
@@ -1435,9 +1432,6 @@ msgstr "Рабочие дни указываются числами от 1 до 
 
 msgid "Soatbay xodim uchun soat narxi va kunlik soat koʻrsatilishi kerak."
 msgstr "Для почасового сотрудника нужно указать цену часа и часы в день."
-
-msgid "Oylik maosh"
-msgstr "Ежемесячная зарплата"
 
 msgid "Soatbay"
 msgstr "Почасовая"
