@@ -179,6 +179,43 @@ const MONTHS_BY_LOCALE = {
 
 /** Joriy tildagi oy nomlari (sana ichida: «14-sentabr» / «14 сентября»). */
 export const MONTHS: readonly string[] = MONTHS_BY_LOCALE[locale]
+
+/*
+ * Yolgʻiz turgan oy nomi — sana ichidagisidan FARQ qiladi.
+ *
+ * Ruschada sana ichida qaratqich kelishigi kerak ("14 сентября"), yolgʻiz
+ * turganda esa bosh kelishik ("Сентябрь 2026"). Oʻzbekcha va inglizchada
+ * bitta shakl ishlaydi.
+ */
+const STANDALONE_RU = [
+  'Январь',
+  'Февраль',
+  'Март',
+  'Апрель',
+  'Май',
+  'Июнь',
+  'Июль',
+  'Август',
+  'Сентябрь',
+  'Октябрь',
+  'Ноябрь',
+  'Декабрь',
+] as const
+
+/** «Sentabr 2026» / «Сентябрь 2026» / «September 2026». */
+export function monthLabel(year: number, month: number): string {
+  const names = locale === 'ru' ? STANDALONE_RU : MONTHS_BY_LOCALE[locale]
+  const name = names[month - 1]
+  if (!name) return `${year}-${String(month).padStart(2, '0')}`
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${year}`
+}
+
+/** «2026-09» koʻrinishidagi davrni oʻqiladigan yorliqqa aylantiradi. */
+export function periodLabel(period: string): string {
+  const match = /^(\d{4})-(\d{2})$/.exec(period)
+  if (!match) return period
+  return monthLabel(Number(match[1]), Number(match[2]))
+}
 /** @deprecated `MONTHS` — til bo'yicha. Eski import nomi uchun saqlangan. */
 export const UZ_MONTHS = MONTHS
 

@@ -35,7 +35,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type PayrollItem, type PayrollRun } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate } from '@/lib/utils'
-import { money } from '@/lib/format'
+import { money, monthLabel } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
 const STATUS = {
@@ -170,7 +170,9 @@ export default function PayrollPage() {
   })
 
   const run: PayrollRun | undefined = runQuery.data
-  const periodLabel = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  // Oy nomi bilan: "2026-10 uchun hisoblash" raqamli kod kabi o'qiladi,
+  // holbuki bu mudira uchun oddiy "Oktabr 2026" (PLAN 10.9).
+  const currentPeriod = monthLabel(now.getFullYear(), now.getMonth() + 1)
   // Ochiq hisoblashdagi avanslar yig'indisi — sarlavhadagi tenglama uchun.
   const advanceTotal = (run?.items ?? []).reduce((sum, item) => sum + Number(item.advance), 0)
 
@@ -193,7 +195,7 @@ export default function PayrollPage() {
           <p className="mt-1 text-sm text-slate-500">
             {reopening &&
               t('{period} — qoralamaga qaytariladi va yana tahrirlanadi.', {
-                period: `${reopening.period_year}-${String(reopening.period_month).padStart(2, '0')}`,
+                period: monthLabel(reopening.period_year, reopening.period_month),
               })}
           </p>
           {reopening?.status === 'paid' && (
@@ -249,7 +251,7 @@ export default function PayrollPage() {
           {can('payroll.read') && (
             <Link
               to="/staff"
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
             >
               {t('Xodimlar roʻyxati')}
               <ArrowUpRight className="h-4 w-4 text-slate-500" />
@@ -263,7 +265,7 @@ export default function PayrollPage() {
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
             >
               <Plus className="h-4 w-4" />
-              {t('{periodLabel} uchun hisoblash', { periodLabel })}
+              {t('{period} uchun hisoblash', { period: currentPeriod })}
             </button>
           )}
         </div>
@@ -438,8 +440,8 @@ export default function PayrollPage() {
               )}
             >
               <div className="flex items-center justify-between gap-2">
-                <p className="font-semibold text-slate-900 tabular-nums">
-                  {r.period_year}-{String(r.period_month).padStart(2, '0')}
+                <p className="font-semibold text-slate-900">
+                  {monthLabel(r.period_year, r.period_month)}
                 </p>
                 <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}>
                   {label}
@@ -475,8 +477,7 @@ export default function PayrollPage() {
           <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-semibold text-slate-900">
-                {run.period_year}-{String(run.period_month).padStart(2, '0')} ·{' '}
-                {STATUS[run.status][0]}
+                {monthLabel(run.period_year, run.period_month)} · {STATUS[run.status][0]}
               </p>
               <p className="text-xs text-slate-500">
                 {t('Yalpi {money} · ushlab qolindi {money2} · sof', {
@@ -548,7 +549,76 @@ export default function PayrollPage() {
             )}
           </div>
 
-          <div className="overflow-x-auto">
+          {/*
+            Telefonda — kartochka, jadval emas (PLAN 10.9).
+
+            Jadvalda oltita ustun bor va 375 px da ulardan faqat uchtasi
+            koʻrinardi: xodim, baza va bonus. Yaʼni ekranda xodimga
+            QANCHA TOʻLANISHI — "Sof" — umuman yoʻq edi, uning oʻrniga
+            tahrirlash maydoni turardi. Mudira esa oylikni aynan shu
+            raqam uchun ochadi.
+          */}
+          <ul className="divide-y divide-slate-100 sm:hidden">
+            {run.items.map((item) => (
+              <li key={item.id} className="px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPayslip(item)}
+                    aria-label={t('Oylik varaqasi')}
+                    className="min-h-11 min-w-0 flex-1 text-left text-sm font-semibold text-slate-900 underline-offset-2 hover:underline"
+                  >
+                    {item.employee_name}
+                    {Number(item.official_base) > 0 && (
+                      <span className="ml-1.5 rounded-full bg-ildiz-100 px-1.5 py-0.5 text-xs font-medium text-ildiz-800">
+                        {t('rasmiy')}
+                      </span>
+                    )}
+                  </button>
+                  <span className="num shrink-0 text-base font-bold text-slate-900">
+                    {money(item.net)}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {t('Baza {base}', { base: money(item.base_amount) })}
+                  {Number(item.bonus) > 0 && t(' · bonus {bonus}', { bonus: money(item.bonus) })}
+                  {Number(item.advance) > 0 && t(' · avans −{adv}', { adv: money(item.advance) })}
+                  {Number(item.deduction) > 0 &&
+                    t(' · ushlab qolish −{ded}', { ded: money(item.deduction) })}
+                </p>
+                {run.is_editable && can('payroll.update') && (
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {(['bonus', 'deduction'] as const).map((field) => (
+                      <label key={field} className="block">
+                        <span className="mb-1 block text-xs font-medium text-slate-600">
+                          {field === 'bonus' ? t('Bonus') : t('Ushlab qolish')}
+                        </span>
+                        <input
+                          type="number"
+                          min={0}
+                          inputMode="numeric"
+                          defaultValue={item[field]}
+                          onBlur={(e) => {
+                            if (e.target.value !== item[field]) {
+                              updateItem.mutate({ itemId: item.id, field, value: e.target.value })
+                            }
+                          }}
+                          className="w-full rounded-lg border border-slate-200 px-2 text-right text-sm outline-none focus:border-brand-500"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </li>
+            ))}
+            {run.items.length === 0 && (
+              <li className="px-4 py-10 text-center text-sm text-slate-500">
+                {t('Bu davrda xodim yoʻq')}
+              </li>
+            )}
+          </ul>
+
+          <div className="hidden overflow-x-auto sm:block">
             <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                 <tr>

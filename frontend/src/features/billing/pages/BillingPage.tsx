@@ -21,6 +21,7 @@ import { PayOnlineButton } from '@/features/billing/components/PayOnlineButton'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { SUBSCRIPTION_STATUS } from '@/features/billing/status'
 import { ApiError } from '@/lib/api/types'
+import { monthLabel } from '@/lib/format'
 import { cn, formatDate, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
@@ -403,7 +404,7 @@ export default function BillingPage() {
             {(historyQuery.data ?? []).map((row) => (
               <li key={row.id} className="flex items-center justify-between py-2 text-sm">
                 <span className="text-slate-600">
-                  {row.period_year}-{String(row.period_month).padStart(2, '0')}
+                  {monthLabel(row.period_year, row.period_month)}
                   {row.measurement_method === 'manual_adjustment' && (
                     <span className="ml-2 rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-700">
                       {t('qoʻlda tuzatilgan')}

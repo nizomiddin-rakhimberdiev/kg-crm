@@ -7,6 +7,9 @@ export const messages: Record<string, string> = {
   '"boʻshagan" holatiga oʻtadi va keyingi oylik hisoblashga kirmaydi. Oʻtgan oylardagi maosh tarixi saqlanib qoladi.':
     'will be marked as “terminated” and left out of the next payroll run. Past months’ payroll history is kept.',
   '(shundan avans {money})': '(of which advance {money})',
+  ' · avans −{adv}': ' · advance −{adv}',
+  ' · bonus {bonus}': ' · bonus {bonus}',
+  ' · ushlab qolish −{ded}': ' · deduction −{ded}',
   ', keyin joriy oy uchun hisoblashni boshlang.':
     ', then start the payroll run for the current month.',
   '. Yoqmasa, hech qanday toʻlov olinmaydi.': '. If it isn’t for you, nothing is charged.',
@@ -52,6 +55,7 @@ export const messages: Record<string, string> = {
   'Oylik maosh · {days}': 'Salary · {days}',
   'Oylik maosh · bogʻchaning ish kunlari': 'Salary · the kindergarten’s working days',
   'Soatbay · {hours} soat/kun': 'Hourly · {hours} h/day',
+  'Baza {base}': 'Base {base}',
   Bekor: 'Cancel',
   'Bekor qilingan': 'Cancelled',
   'Bekor qilish': 'Cancel',
@@ -713,7 +717,7 @@ export const messages: Record<string, string> = {
   '{money} soʻm qabul qilish': 'Receive {money} UZS',
   '{name} — harakatlar': '{name} — movements',
   '{name} — tahrirlash': '{name} — edit',
-  '{periodLabel} uchun hisoblash': 'Payroll for {periodLabel}',
+  '{period} uchun hisoblash': 'Payroll for {period}',
   '{period} — qoralamaga qaytariladi va yana tahrirlanadi.':
     '{period} — returns to draft and becomes editable again.',
   '{queued} ta eslatma yuborildi.': '{queued} reminders sent.',

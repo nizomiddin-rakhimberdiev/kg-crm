@@ -1338,3 +1338,20 @@ chizuvchi alohida funksiya, tartib esa JSX da koʻrinadi va savollar
 ketma-ketligiga mos: kim → nima qiladi → qachondan → qancha → qanday
 grafikda. Grafik bloki yigʻildi (oylik maosh + bogʻchaning kalendari —
 xodimlarning aksariyati), "Saqlash" esa modalning pastiga yopishdi.
+
+**Oylikda eng muhim ustun ekrandan tashqarida edi.** Hisoblash jadvalida
+oltita ustun: xodim, baza, bonus, avans, ushlab qolish, sof. 375 px da
+ulardan uchtasi koʻrinadi — va uchinchisi bonus kiritish maydoni. Yaʼni
+telefonda ochilgan oylik sahifasida xodimga QANCHA TOʻLANISHI yoʻq edi,
+holbuki mudira sahifani aynan shuning uchun ochadi. Telefonda endi
+kartochka: ism va sof summa bitta qatorda, ostida qolgan toʻrt raqam
+bitta satrda, tahrirlash esa ikkita yorliqli maydonda.
+
+**"2026-09" — bu kod, oy emas.** Oylik roʻyxati, hisob-fakturalar, qarz
+tarixi, billing va bola kartasi davrni `YYYY-MM` koʻrinishida chizardi,
+har biri oʻz qoʻli bilan (`String(month).padStart(2, '0')`). Endi
+`format.ts` da `monthLabel(year, month)` bor. Ruscha uchun alohida roʻyxat
+kerak boʻldi: sana ichida "14 сентября", yolgʻiz turganda esa "Сентябрь
+2026" — bitta roʻyxat ikkisiga yaramaydi. `DebtByPeriod` dagi oy nomlari
+va `shortDate` nusxalari oʻchirildi — ular aynan Q12 ogohlantirgan
+"shaxsiy nusxa" edi va ruschada qaratqich kelishigini koʻrsatardi.

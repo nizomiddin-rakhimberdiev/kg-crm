@@ -7,6 +7,9 @@ export const messages: Record<string, string> = {
   '"boʻshagan" holatiga oʻtadi va keyingi oylik hisoblashga kirmaydi. Oʻtgan oylardagi maosh tarixi saqlanib qoladi.':
     'перейдёт в статус «уволен» и не попадёт в следующий расчёт зарплаты. История зарплат за прошлые месяцы сохранится.',
   '(shundan avans {money})': '(из них аванс {money})',
+  ' · avans −{adv}': ' · аванс −{adv}',
+  ' · bonus {bonus}': ' · бонус {bonus}',
+  ' · ushlab qolish −{ded}': ' · удержание −{ded}',
   ', keyin joriy oy uchun hisoblashni boshlang.': ', затем запустите расчёт за текущий месяц.',
   '. Yoqmasa, hech qanday toʻlov olinmaydi.': '. Если не понравится, ничего не списывается.',
   '15 % chegirma, 2 ta toʻlov': 'скидка 15 %, 2 платежа',
@@ -51,6 +54,7 @@ export const messages: Record<string, string> = {
   'Oylik maosh · {days}': 'Оклад · {days}',
   'Oylik maosh · bogʻchaning ish kunlari': 'Оклад · рабочие дни сада',
   'Soatbay · {hours} soat/kun': 'Почасовая · {hours} ч/день',
+  'Baza {base}': 'База {base}',
   Bekor: 'Отмена',
   'Bekor qilingan': 'Отменён',
   'Bekor qilish': 'Отменить',
@@ -712,7 +716,7 @@ export const messages: Record<string, string> = {
   '{money} soʻm qabul qilish': 'Принять {money} сум',
   '{name} — harakatlar': '{name} — движения',
   '{name} — tahrirlash': '{name} — редактирование',
-  '{periodLabel} uchun hisoblash': 'Расчёт за {periodLabel}',
+  '{period} uchun hisoblash': 'Расчёт за {period}',
   '{period} — qoralamaga qaytariladi va yana tahrirlanadi.':
     '{period} — вернётся в черновик и снова станет редактируемым.',
   '{queued} ta eslatma yuborildi.': 'Отправлено напоминаний: {queued}.',

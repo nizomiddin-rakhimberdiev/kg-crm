@@ -675,4 +675,17 @@ Egasining roʻyxatidan keyingi uchtasi (2026-10-08, "ha davom et"):
   boʻlsa blok oʻzi ochiladi. (3) **"Saqlash" yopishib turadi** — forma
   telefonda ming pikseldan uzun edi.
 
-Qolgan promptlar (8–12, 14, 15) hali bajarilmadi — roʻyxat PLAN'da turibdi.
+- [x] **10.9 Oylik maosh.** Telefonda jadvalning oltita ustunidan uchtasi
+  koʻrinardi: xodim, baza va bonus — yaʼni ekranda **"Sof"** (xodimga
+  qancha toʻlanishi) umuman yoʻq edi, uning oʻrnida tahrirlash maydoni
+  turardi, holbuki mudira oylikni aynan shu raqam uchun ochadi. Telefonda
+  endi kartochka: ism va sof summa birinchi qatorda, ostida baza/bonus/
+  avans/ushlab qolish bitta satrda, tahrirlash esa ikkita yorliqli maydon.
+  Ikkinchisi — **davr nomi**: "2026-09" kod kabi oʻqiladi, mudira esa oyni
+  nomi bilan biladi. `format.ts` ga `monthLabel`/`periodLabel` qoʻshildi
+  (ruschada yolgʻiz turgan oy bosh kelishikda — "Сентябрь", sana ichidagi
+  "сентября" emas) va u oylik, hisob-fakturalar, qarz tarixi, billing va
+  bola kartasida ishlatiladi; `DebtByPeriod` dagi shaxsiy oy roʻyxati va
+  shaxsiy `shortDate` oʻchirildi.
+
+Qolgan promptlar (9–12, 14, 15) hali bajarilmadi — roʻyxat PLAN'da turibdi.

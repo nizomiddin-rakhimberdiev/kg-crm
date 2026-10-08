@@ -17,9 +17,9 @@ import { ChevronDown, ChevronRight, History } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { groupsApi } from '@/features/children/api'
-import { debtorsApi, type DebtPeriodRow } from '@/features/payments/api'
+import { debtorsApi } from '@/features/payments/api'
 import { queryKeys } from '@/lib/api/queryKeys'
-import { som } from '@/lib/format'
+import { formatDate, monthLabel, som } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
@@ -30,25 +30,6 @@ const METHOD: Record<string, string> = {
   bank_transfer: t('Oʻtkazma'),
   online: t('Payme / Click'),
 }
-
-const MONTHS = [
-  t('Yanvar'),
-  t('Fevral'),
-  t('Mart'),
-  t('Aprel'),
-  t('May'),
-  t('Iyun'),
-  t('Iyul'),
-  t('Avgust'),
-  t('Sentabr'),
-  t('Oktabr'),
-  t('Noyabr'),
-  t('Dekabr'),
-]
-
-const monthLabel = (row: DebtPeriodRow) => `${MONTHS[row.period_month - 1]} ${row.period_year}`
-
-const shortDate = (value: string) => value.slice(0, 10).split('-').reverse().join('.')
 
 /** Oxirgi 12 oy — "qachonniki?" savoli odatda shu oraliqda. */
 const defaultRange = () => {
@@ -192,7 +173,7 @@ export function DebtByPeriod() {
                           ) : (
                             <ChevronRight className="h-4 w-4 text-slate-500" />
                           )}
-                          {monthLabel(row)}
+                          {monthLabel(row.period_year, row.period_month)}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums text-slate-700">
@@ -266,7 +247,7 @@ export function DebtByPeriod() {
                                           className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] text-slate-600"
                                         >
                                           <span className="tabular-nums">
-                                            {shortDate(payment.paid_at)}
+                                            {formatDate(payment.paid_at)}
                                           </span>
                                           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
                                             {METHOD[payment.method] ?? payment.method}
@@ -286,7 +267,7 @@ export function DebtByPeriod() {
                                   {child.days_overdue > 0 && (
                                     <p className="mt-2 text-xs text-orik-800">
                                       {t('Muddati: {date} · {days} kun kechikkan', {
-                                        date: shortDate(child.due_date),
+                                        date: formatDate(child.due_date),
                                         days: child.days_overdue,
                                       })}
                                     </p>

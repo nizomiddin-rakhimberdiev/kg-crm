@@ -18,7 +18,7 @@ import { Modal } from '@/components/ui/Modal'
 import { invoicesApi } from '@/features/payments/api'
 import type { BillingRunResult } from '@/lib/api/types'
 import { ApiError } from '@/lib/api/types'
-import { money } from '@/lib/format'
+import { money, monthLabel } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
 interface Props {
@@ -56,7 +56,7 @@ export function GenerateInvoicesDialog({ year, month, onClose, onDone }: Props) 
         <div className="pr-10">
           <h2 className="text-lg font-bold text-slate-900">{t('Hisob-faktura chiqarish')}</h2>
           <p className="mt-0.5 text-sm text-slate-500">
-            {t('{period} davri uchun', { period: `${String(month).padStart(2, '0')}/${year}` })}
+            {t('{period} davri uchun', { period: monthLabel(year, month) })}
           </p>
         </div>
 

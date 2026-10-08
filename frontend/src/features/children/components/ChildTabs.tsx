@@ -19,7 +19,7 @@ import { invoicesApi, paymentsApi } from '@/features/payments/api'
 import { paymentMethodLabel } from '@/features/payments/methods'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { cn, formatDate, formatDateTime } from '@/lib/utils'
-import { money } from '@/lib/format'
+import { money, monthLabel } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
 type TabKey = 'invoices' | 'payments' | 'history'
@@ -89,7 +89,7 @@ export function ChildTabs({ childId }: { childId: string }) {
                 {invoices.data?.items.map((invoice) => (
                   <tr key={invoice.id}>
                     <td className="px-4 py-2.5 text-slate-700">
-                      {invoice.period_year}-{String(invoice.period_month).padStart(2, '0')}
+                      {monthLabel(invoice.period_year, invoice.period_month)}
                     </td>
                     <td className="num px-4 py-2.5 text-xs text-slate-500">{invoice.number}</td>
                     <td className="num px-4 py-2.5 text-slate-600">
