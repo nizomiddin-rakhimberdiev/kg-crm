@@ -63,6 +63,49 @@ def _seed(tenant: Any) -> None:
         assert CashAccount.objects.filter(branch=tenant.branch).exists()
 
 
+def _absence_claim(tenant: Any) -> None:
+    """
+    Tasdiqlangan ishdan chiqish daʼvosi — jonli bazadagi holat.
+
+    `absence_claim.applied_invoice` hisob-fakturaga `RESTRICT` bilan
+    bogʻlangan, yaʼni daʼvo undan OLDIN oʻchishi kerak. Oʻchirish
+    tartibida u hisob-fakturadan KEYIN turardi va buni hech narsa
+    koʻrsatmadi — chunki birorta testda tasdiqlangan daʼvo yoʻq edi.
+    Jonli bazada esa bitta shunday daʼvo butun tozalashni yiqitdi.
+    """
+    from apps.attendance.services_absence import approve_claim, create_claim
+    from apps.children.models import Child
+    from apps.finance import services as finance
+    from apps.finance.models import TariffPlan
+
+    with organization_context(tenant.organization.id):
+        child = Child.objects.first()
+        assert child is not None
+        child.tariff = TariffPlan.objects.create(
+            organization=tenant.organization,
+            branch=tenant.branch,
+            name="Toʻliq kun",
+            amount=Decimal("1500000"),
+        )
+        child.save(update_fields=["tariff"])
+        finance.issue_invoice(child=child, period_year=2026, period_month=10)
+        claim = create_claim(
+            child=child,
+            kind="sick",
+            date_from=date(2026, 10, 13),
+            date_to=date(2026, 10, 16),
+            note="Kasallik",
+            created_by=tenant.owner,
+        )
+        # Tasdiqlashning oʻzi daʼvoni shu oyning toʻlanmagan
+        # fakturasiga qoʻllaydi (PLAN 7.7). Bizga aynan SHU holat
+        # kerak: `applied_invoice` toʻlgandagina `RESTRICT` ishga
+        # tushadi va jonli bazadagi nosozlik qaytariladi.
+        approve_claim(claim=claim, approved_by=tenant.owner)
+        claim.refresh_from_db()
+        assert claim.applied_invoice_id is not None
+
+
 def _run(tenant: Any, *args: str) -> str:
     out = StringIO()
     call_command("reset_organization_data", "--slug", tenant.organization.slug, *args, stdout=out)
@@ -89,12 +132,15 @@ def test_apply_requires_the_slug_to_be_typed_again(tenant_a: Any):
 
 
 def test_apply_clears_the_data_the_customer_entered(tenant_a: Any):
+    from apps.attendance.models_absence import AbsenceClaim
     from apps.cash.models import CashMovement
     from apps.children.models import Child
     from apps.expenses.models import Expense
+    from apps.finance.models import Invoice
     from apps.hr.models import Employee
 
     _seed(tenant_a)
+    _absence_claim(tenant_a)
     _run(tenant_a, "--confirm", tenant_a.organization.slug, "--apply")
 
     with organization_context(tenant_a.organization.id):
@@ -102,6 +148,8 @@ def test_apply_clears_the_data_the_customer_entered(tenant_a: Any):
         assert Employee.objects.count() == 0
         assert Expense.objects.count() == 0
         assert CashMovement.objects.count() == 0
+        assert Invoice.objects.count() == 0
+        assert AbsenceClaim.objects.count() == 0
 
 
 def test_the_customer_can_still_log_in_afterwards(tenant_a: Any):

@@ -67,6 +67,13 @@ PURGE_ORDER: tuple[str, ...] = (
     # Contracts point at child, guardian and template with RESTRICT (PLAN 6.5).
     "apps.contracts.Contract",
     "apps.contracts.ContractTemplate",
+    # Da'vo bolaga ham, hisob-fakturaga ham `RESTRICT` bilan bog'langan
+    # (`applied_invoice`) — u ikkalasidan ham OLDIN o'chadi. Avval u
+    # ro'yxatda hisob-fakturadan KEYIN turardi: izoh to'g'ri edi, o'rni
+    # esa yo'q, va buni hech narsa ko'rsatmadi, chunki testlarda
+    # tasdiqlangan da'vo yo'q edi. Jonli bazada esa bitta shunday da'vo
+    # butun o'chirishni yiqitdi (PLAN 11.4).
+    "apps.attendance.AbsenceClaim",
     "apps.finance.PaymentAllocation",
     "apps.finance.Payment",
     "apps.finance.ChildLedgerEntry",
@@ -74,9 +81,6 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.finance.Discount",
     # Operatsion yozuvlar
     "apps.intelligence.Insight",  # acted_by → User; hosila, avval ketadi
-    # Da'vo bolaga va hisob-fakturaga `RESTRICT` bilan bog'langan —
-    # u ikkalasidan ham OLDIN o'chadi.
-    "apps.attendance.AbsenceClaim",
     "apps.attendance.AttendanceRecord",
     # Xodimlar tabeli — `employee` ga RESTRICT, ya'ni xodimdan OLDIN.
     "apps.attendance.StaffAttendance",

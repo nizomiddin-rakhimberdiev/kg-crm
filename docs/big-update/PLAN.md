@@ -778,3 +778,11 @@ oylik "toʻlangan" deb belgilandi va boshqaruv panelida qoldiq
   qoplari, xabar shablonlari, sozlamalar va shartnoma shabloni joyida
   qoladi. Sukut boʻyicha dry-run; `--apply` uchun slugʻni `--confirm`
   bilan aynan qayta yozish shart.
+- [x] **11.4 `PURGE_ORDER` dagi tartib xatosi.** Jonli bazada tozalash
+  yiqildi: `absence_claim.applied_invoice` hisob-fakturaga `RESTRICT`
+  bilan bogʻlangan, roʻyxatda esa daʼvo hisob-fakturadan KEYIN turardi.
+  Izoh toʻgʻri edi («u ikkalasidan ham OLDIN oʻchadi»), oʻrni esa yoʻq —
+  va buni hech narsa koʻrsatmadi, chunki birorta testda QOʻLLANGAN daʼvo
+  yoʻq edi. Bu nafaqat tozalashga, balki vendor tomonidagi
+  `purge_organization()` ga ham tegishli edi. Tranzaksiya ichida boʻlgani
+  uchun jonli maʼlumot zarar koʻrmadi.

@@ -1440,3 +1440,16 @@ emas — eng muhim testi ham shu: tozalashdan keyin mijoz oʻsha parol bilan
 kirib, boʻsh tizimni koʻra oladimi. Tashkilot, filial, foydalanuvchilar,
 rollar, obuna, roʻyxatdan oʻtishda ochilgan kassa qoplari, xabar
 shablonlari, sozlamalar va shartnoma shabloni joyida qoladi.
+
+**Jonli bazada tozalash yiqildi — va bu yaxshi boʻldi.** `--apply`
+`RestrictedError` bilan toʻxtadi: `absence_claim.applied_invoice`
+hisob-fakturaga `RESTRICT` bilan bogʻlangan, `PURGE_ORDER` da esa daʼvo
+hisob-fakturadan KEYIN turardi. Izoh oʻrnida yozilgan edi — «daʼvo bolaga
+ham, hisob-fakturaga ham bogʻlangan, u ikkalasidan ham OLDIN oʻchadi» —
+lekin qator oʻsha izohning ostida emas, pastroqda turardi. Buni hech
+narsa koʻrsatmadi, chunki testlarda hech qachon QOʻLLANGAN daʼvo
+boʻlmagan: tasdiqlangani bor, hisob-fakturaga tushgani yoʻq. Nosozlik
+vendor tomonidagi `purge_organization()` ga ham tegishli edi — yaʼni
+tashkilotni butunlay oʻchirish ham birinchi shunday daʼvoda yiqilardi.
+Oʻchirish `transaction.atomic` ichida boʻlgani uchun mijozning maʼlumoti
+zarar koʻrmadi: yetti bola ham joyida qoldi.
