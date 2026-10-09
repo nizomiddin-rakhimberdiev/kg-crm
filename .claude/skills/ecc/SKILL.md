@@ -28,9 +28,12 @@ Arguments: `$ARGUMENTS`
 3. **Load only the chosen entry:**
    - `skill` → read `.claude/ecc/skills/<dir>/SKILL.md`; read its `references/` or other files
      only when the skill points at them for the step you are on.
-   - `agent` → read `.claude/ecc/agents/<name>.md` and run it with the Agent tool
-     (`subagent_type: general-purpose`), passing the file's body as the system-level brief plus the
-     user's task. Ignore its `model:` line.
+   - `agent` → ECC agents are **not** registered subagent types — never look for a
+     `subagent_type` named after them, and never report them "unavailable". An agent is just a
+     brief: read `.claude/ecc/agents/<name>.md` and run it with the Agent tool
+     (`subagent_type: general-purpose`), passing the file's body as the brief plus the user's task.
+     Ignore its `model:` and `tools:` lines. If this session has no Agent tool, adopt the file's
+     body as your own instructions and do the work directly — the result is the same.
    - `command` → read `.claude/ecc/commands/<name>.md` and follow it as a playbook.
 4. **Path rewriting.** `${CLAUDE_PLUGIN_ROOT}` / `$CLAUDE_PLUGIN_ROOT` means `.claude/ecc`.
    Anything under `scripts/`, `hooks/`, `mcp-configs/` or `.claude-plugin/` was **not** vendored —
