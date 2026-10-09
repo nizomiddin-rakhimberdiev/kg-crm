@@ -58,14 +58,26 @@ def record_daily_peak() -> dict[str, int]:
     tayanish xavfli edi.
     """
     measured = 0
+    failed = 0
     for subscription in _live_subscriptions():
         try:
             with organization_context(subscription.organization_id):
                 services.record_daily_usage(subscription=subscription)
             measured += 1
         except Exception:
+            failed += 1
             logger.exception("Kunlik o'lchov muvaffaqiyatsiz: obuna=%s", subscription.id)
-    return {"measured": measured}
+    # Yiqilganlar JAVOBDA sanaladi, faqat log'da emas.
+    #
+    # Avval faqat `measured` qaytarardi: beshta obunadan ikkitasi
+    # yiqilsa javob `{"measured": 3}` bo'lardi va uni o'qigan odam buni
+    # "uchta obuna bor ekan" deb tushunardi. Xato esa muvaffaqiyatli
+    # kechaning log'ida qolardi — ya'ni hech kim qaramaydigan joyda.
+    # Bu vazifa uchun bu ayniqsa qimmat: o'tkazib yuborilgan kun
+    # qaytarib bo'lmaydi va hisob KAMAYIB ketadi.
+    if failed:
+        logger.error("Kunlik o'lchov: %s obunada muvaffaqiyatsiz", failed)
+    return {"measured": measured, "failed": failed}
 
 
 @reliable_task(name="subscriptions.close_periods_and_invoice")
@@ -81,6 +93,7 @@ def close_periods_and_invoice() -> dict[str, int]:
     today = timezone.localdate()
     closed = 0
     invoiced = 0
+    failed = 0
 
     for subscription in _live_subscriptions():
         if subscription.status in (
@@ -121,9 +134,13 @@ def close_periods_and_invoice() -> dict[str, int]:
                 invoiced += 1
                 _roll_period(subscription)
         except Exception:
+            failed += 1
             logger.exception("Davrni yopib bo'lmadi: obuna=%s", subscription.id)
 
-    return {"closed": closed, "invoiced": invoiced}
+    # Yopilmagan davr — yozilmagan hisob. Buni javob aytib tursin.
+    if failed:
+        logger.error("Davr yopish: %s obunada muvaffaqiyatsiz", failed)
+    return {"closed": closed, "invoiced": invoiced, "failed": failed}
 
 
 def _roll_period(subscription: Any) -> None:

@@ -25,6 +25,7 @@ from django.db import connection
 
 from apps.children.models import Child
 from apps.core.rls import (
+    AUTH_TABLES,
     CATALOGUE_TABLES,
     DERIVED_TABLES,
     METADATA_TABLES,
@@ -104,6 +105,74 @@ class TestPoliciesAreInstalled:
         assert not unlisted, (
             f"Bu tenant modellar RLS roʻyxatiga qoʻshilmagan: {sorted(unlisted)}. "
             f"`apps/core/rls.py` ga qoʻshing va migratsiya yozing."
+        )
+
+    def test_a_model_with_an_organization_column_cannot_slip_through(self):
+        """
+        Roʻyxat `TenantScopedModel` dan KENGROQ boʻlishi kerak.
+
+        Yuqoridagi test modellarni `TenantScopedModel` boʻyicha topadi —
+        yaʼni meros olmagan model uning koʻziga umuman tushmaydi.
+        `audit_log` aynan shunday: unda `organization_id` bor, lekin u
+        bazaviy modeldan meros olmaydi (append-only), va u RLS
+        roʻyxatiga faqat kimdir ESLAGANI uchun kirgan. Agar ertaga
+        yana shunday model qoʻshilsa — org ustuni bor, bazasi boshqa —
+        u RLS'siz qolardi va BIRORTA test qizarmasdi.
+
+        Shuning uchun tekshiruv jadvaldagi USTUNGA qaraydi, modelning
+        nasl-nasabiga emas.
+        """
+        from django.apps import apps
+
+        known = {
+            *OPERATIONAL_TABLES,
+            *METADATA_TABLES,
+            *CATALOGUE_TABLES,
+            *DERIVED_TABLES,
+            *AUTH_TABLES,
+        }
+        unlisted = {
+            model._meta.db_table
+            for model in apps.get_models()
+            if any(field.name == "organization" for field in model._meta.fields)
+            and model._meta.db_table not in known
+            and not model._meta.db_table.startswith("test_")
+            # Vendor tekisligi: bu jadvallarga mijoz ulanishi hech qachon
+            # tegmaydi (ADR-10) va ular `platform_context()` ichida
+            # oʻqiladi. Pastdagi test ularning yopiqligini tekshiradi.
+            and model._meta.app_label != "platform_console"
+        }
+        assert not unlisted, (
+            f"Bu jadvallarda `organization_id` bor, lekin RLS roʻyxatida yoʻq: "
+            f"{sorted(unlisted)}. `apps/core/rls.py` ga qoʻshing va migratsiya yozing."
+        )
+
+    def test_the_vendor_tables_are_never_read_from_a_tenant_connection(self):
+        """
+        `support_grant` va `signup_request` da `organization_id` bor,
+        lekin RLS yoʻq — chunki ular vendor tekisligida (ADR-10).
+
+        Bu — qaror, unutish emas; lekin qaror KOD bilan bogʻlangan
+        boʻlishi kerak: ular faqat `platform_context()` ichida
+        oʻqiladi. Kimdir ularni mijoz yoʻlidan oʻqisa, filtrsiz butun
+        baza koʻrinardi — menejer oddiy, RLS esa yoʻq.
+        """
+        import pathlib
+
+        offenders = []
+        for path in pathlib.Path("apps").rglob("*.py"):
+            if path.parts[1] == "platform" or "tests" in path.parts:
+                continue
+            text = path.read_text()
+            for model in ("SupportGrant", "SignupRequest"):
+                if f"{model}.objects" not in text:
+                    continue
+                # Oʻqilgan joyda `platform_context` ham boʻlishi shart.
+                if "platform_context" not in text:
+                    offenders.append(f"{path} ({model})")
+        assert not offenders, (
+            f"Vendor jadvali mijoz yoʻlidan oʻqilmoqda: {sorted(offenders)}. "
+            f"`platform_context()` ichiga oling (ADR-10)."
         )
 
     def test_rls_is_enabled_AND_forced(self):

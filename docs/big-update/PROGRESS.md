@@ -1453,3 +1453,55 @@ vendor tomonidagi `purge_organization()` ga ham tegishli edi — yaʼni
 tashkilotni butunlay oʻchirish ham birinchi shunday daʼvoda yiqilardi.
 Oʻchirish `transaction.atomic` ichida boʻlgani uchun mijozning maʼlumoti
 zarar koʻrmadi: yetti bola ham joyida qoldi.
+
+## Ishga tushirish oldidan: tenant chegarasi va jim xatolar auditi
+
+**Tenant chegarasi — teshik topilmadi, lekin qoʻriqchida koʻr nuqta bor edi.**
+Butun backend koʻrildi: router (sweep oʻzi yangi viewsetni avtomatik
+qamraydi va oʻz istisnolar roʻyxatini ham qoʻriqlaydi), routerdan
+tashqaridagi endpointlar, barcha Celery vazifalari (hammasi
+`platform_context()` da roʻyxat olib, keyin har bir tenant uchun
+`organization_context()` ochadi), `all_objects`/`unscoped()`
+chaqiruvlarining bari (faqat vendor kodi va management buyruqlarida),
+va `organization_id` qabul qiladigan har bir selector (ishlatmagani
+yoʻq). `TenantManager` **fail-closed**: kontekst yoʻq boʻlsa so'rov
+umuman ishlamaydi.
+
+Koʻr nuqta esa RLS roʻyxatining toʻliqligini tekshiradigan testda edi:
+u modellarni `TenantScopedModel` boʻyicha topardi, yaʼni **oʻsha
+bazadan meros olmagan model uning koʻziga tushmasdi**. `audit_log`
+aynan shunday — unda `organization_id` bor, lekin u append-only
+boʻlgani uchun boshqa bazadan keladi, va RLS roʻyxatiga faqat kimdir
+ESLAGANI uchun kirgan. Yangi test modelning nasl-nasabiga emas,
+jadvaldagi USTUNGA qaraydi. Isbot: `audit_log` ni roʻyxatdan vaqtincha
+olib tashlaganda eski test oʻtdi, yangisi qizardi.
+
+**Chiqimni tasdiqlash yarim qolishi mumkin edi.** `approve_expense()`
+ikki yozuv qiladi — hujjat `approved` ga oʻtadi va pul kassadan
+chiqadi — lekin `@transaction.atomic` siz edi. `ATOMIC_REQUESTS` ham
+yoqilmagan, yaʼni soʻrov avtomatik tranzaksiyaga oʻralmaydi. Ilgari bu
+deyarli zararsiz edi, chunki `post_movement()` amalda hech qachon xato
+koʻtarmasdi. **ADR-29 dan keyin u muntazam koʻtaradi** — qopda pul
+yetmasa — va oʻshanda chiqim "tasdiqlangan" boʻlib hisobotga va oylik
+yigʻindiga kirib, kassadan esa chiqmay qolardi. Yaʼni kecha qoʻshilgan
+qoʻriqchi eski nuqsonni xavfliga aylantirgan. Test buni koʻrsatdi:
+boʻsh kassada tasdiqlash xato berdi, lekin hujjat `approved` boʻlib
+saqlanib qoldi.
+
+**Hisob-kitob vazifalari faqat muvaffaqiyatni sanardi.**
+`record_daily_peak` har bir obuna uchun eng yuqori bolalar sonini
+yozadi; oʻz hujjatida "oʻtkazib yuborilgan kun qaytarib boʻlmaydi"
+deyilgan. Shunga qaramay u yiqilgan obunalarni yutib yuborardi va
+`{"measured": 3}` qaytarardi — beshta obunadan ikkitasi yiqilgan
+boʻlsa ham. Buni oʻqigan odam "uchta obuna bor ekan" deb tushunardi,
+xato esa muvaffaqiyatli kechaning log'ida qolardi. Endi javobda
+`failed` bor va yigʻindi alohida `logger.error` bilan yoziladi.
+`close_periods_and_invoice` ham shunday.
+
+**Tunlik tekshiruvlar bitta tenantda toʻxtab qolardi.**
+`recompute_balances` (balans keshini ledger bilan solishtiradi) va
+`send_debt_reminders` tashkilotlar boʻylab himoyasiz siklda aylanardi:
+ikkinchisida chiqqan xato uchinchisidan oxirigacha boʻlganlarni oʻsha
+kechadan mahrum qilardi. Qayta urinish ham yordam bermaydi — xato
+takrorlansa roʻyxatning quyruq qismi **hech qachon** tekshirilmaydi,
+va buni hech kim sezmaydi, chunki tekshiruvning oʻzi jim.

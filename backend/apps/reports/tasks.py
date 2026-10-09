@@ -216,18 +216,27 @@ def send_debt_reminders() -> dict[str, int]:
 
     sent = 0
     organizations = 0
+    failed = 0
     with platform_context():
         all_organizations = list(Organization.objects.filter(is_active=True))
+    # Har bir tashkilot ALOHIDA: ikkinchisida chiqqan xato uchinchisidan
+    # oxirigacha bo'lgan hammasini o'sha kechadan mahrum qilmasin.
     for organization in all_organizations:
-        with organization_context(organization.id):
-            if not get_setting(key="notifications.sms_enabled"):
-                continue
-            organizations += 1
-            for notification in notifications.queue_debt_reminders(organization=organization):
-                notifications.dispatch_notification(notification)
-                sent += 1
+        try:
+            with organization_context(organization.id):
+                if not get_setting(key="notifications.sms_enabled"):
+                    continue
+                organizations += 1
+                for notification in notifications.queue_debt_reminders(organization=organization):
+                    notifications.dispatch_notification(notification)
+                    sent += 1
+        except Exception:
+            failed += 1
+            logger.exception("Eslatmalarni yuborib bo'lmadi: %s", organization.slug)
 
-    return {"organizations": organizations, "queued": sent}
+    if failed:
+        logger.error("Qarz eslatmalari: %s tashkilotda muvaffaqiyatsiz", failed)
+    return {"organizations": organizations, "queued": sent, "failed": failed}
 
 
 @reliable_task(name="reports.recompute_balances")
@@ -246,13 +255,22 @@ def recompute_balances() -> dict[str, int]:
 
     checked = 0
     drifted = 0
+    failed = 0
     with platform_context():
         all_organizations = list(Organization.objects.filter(is_active=True))
+    # Bitta bolaning nosozligi butun kechani yo'qotmasin: tekshiruvning
+    # o'zi JIM, ya'ni to'xtab qolgani ham jim bo'lardi — ro'yxatning
+    # quyruq qismi hech qachon solishtirilmay qolardi.
     for organization in all_organizations:
         with organization_context(organization.id):
             for child in Child.objects.all():
-                before = child.balance
-                after = recompute_child_balance(child)
+                try:
+                    before = child.balance
+                    after = recompute_child_balance(child)
+                except Exception:
+                    failed += 1
+                    logger.exception("Balansni qayta hisoblab bo'lmadi: bola=%s", child.id)
+                    continue
                 checked += 1
                 if before != after:
                     drifted += 1
@@ -260,4 +278,6 @@ def recompute_balances() -> dict[str, int]:
                         "Balans siljishi: bola=%s kesh=%s ledger=%s", child.id, before, after
                     )
 
-    return {"checked": checked, "drifted": drifted}
+    if failed:
+        logger.error("Balans solishtiruvi: %s bolada muvaffaqiyatsiz", failed)
+    return {"checked": checked, "drifted": drifted, "failed": failed}

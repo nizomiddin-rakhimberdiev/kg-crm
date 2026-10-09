@@ -35,7 +35,6 @@ def _assert_pending(expense: Expense, action: str) -> None:
 
 
 @transaction.atomic
-@transaction.atomic
 def create_expense_with_items(
     *,
     organization: Any,
@@ -106,6 +105,7 @@ def create_expense_with_items(
     )
 
 
+@transaction.atomic
 def approve_expense(
     *,
     expense: Expense,
@@ -116,6 +116,14 @@ def approve_expense(
 ) -> Expense:
     """
     Chiqimni tasdiqlaydi va pulni kassadan CHIQARADI (ADR-17).
+
+    **Bitta tranzaksiya** (invariant 12). Hujjat holati va pul harakati
+    ikki yozuv, lekin bitta hodisa: ikkinchisi yiqilsa birinchisi ham
+    qolmasligi kerak. Ilgari dekorator yoʻq edi va bu deyarli zararsiz
+    koʻrinardi, chunki `post_movement()` amalda hech qachon xato
+    koʻtarmasdi. ADR-29 dan keyin u MUNTAZAM koʻtaradi — qopda pul
+    yetmasa — va oʻshanda chiqim "tasdiqlangan" boʻlib hisobotga
+    kirib, kassadan esa chiqmay qolardi.
 
     Nega pul aynan shu yerda chiqadi, `mark-paid` da emas: hisobotlar
     (`expense_summary`, foyda-zarar) boshidan beri `approved` ni ham

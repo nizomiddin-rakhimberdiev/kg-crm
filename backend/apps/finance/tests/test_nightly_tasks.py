@@ -107,7 +107,7 @@ class TestSubscriptionJobs:
                 current_period_start=today - timedelta(days=31),
                 current_period_end=today - timedelta(days=1),
             )
-        assert close_periods_and_invoice() == {"closed": 1, "invoiced": 1}
+        assert close_periods_and_invoice() == {"closed": 1, "invoiced": 1, "failed": 0}
         with organization_context(tenant_a.organization.id):
             subscription = Subscription.objects.get(organization=tenant_a.organization)
             assert subscription.current_period_start == today
@@ -116,7 +116,7 @@ class TestSubscriptionJobs:
     def test_a_trial_is_not_closed_early(self, tenant_a):
         from apps.subscriptions.tasks import close_periods_and_invoice
 
-        assert close_periods_and_invoice() == {"closed": 0, "invoiced": 0}
+        assert close_periods_and_invoice() == {"closed": 0, "invoiced": 0, "failed": 0}
 
     def test_trial_expiry_and_dunning_return_their_counts(self, tenant_a):
         from apps.subscriptions.tasks import dunning_task, expire_trials_task

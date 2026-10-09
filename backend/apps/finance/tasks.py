@@ -57,9 +57,13 @@ def generate_monthly_invoices_task(
                     organization=organization, period_year=year, period_month=month
                 )
             results.append({"organization": organization.slug, **result.as_dict()})
-        except Exception:
+        except Exception as exc:
             logger.exception("Hisob-faktura generatsiyasi muvaffaqiyatsiz: %s", organization.slug)
-            results.append({"organization": organization.slug, "error": True})
+            # SABAB ham javobga tushadi: `error: True` ni o'qigan odam
+            # nima bo'lganini bilish uchun log'ni qidirishga majbur edi.
+            results.append(
+                {"organization": organization.slug, "error": True, "reason": str(exc)[:200]}
+            )
 
     return results
 
