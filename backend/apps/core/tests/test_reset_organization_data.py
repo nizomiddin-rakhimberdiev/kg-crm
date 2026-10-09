@@ -135,6 +135,27 @@ def test_the_customer_can_still_log_in_afterwards(tenant_a: Any):
     assert response.json()["data"] == []
 
 
+def test_the_open_session_keeps_working(tenant_a: Any):
+    """
+    Tozalash — tizimdan chiqarish emas.
+
+    Mijoz boʻsh tizimni oʻsha oynada koʻrishi kerak; qaytadan parol
+    terish "nimadir buzildi" degan taassurot qoldiradi.
+    """
+    from apps.accounts.models import RefreshToken
+
+    _seed(tenant_a)
+    with organization_context(tenant_a.organization.id):
+        before = RefreshToken.objects.filter(user=tenant_a.owner).count()
+    client = tenant_a.client()  # seans tozalashdan OLDIN ochiladi
+
+    _run(tenant_a, "--confirm", tenant_a.organization.slug, "--apply")
+
+    with organization_context(tenant_a.organization.id):
+        assert RefreshToken.objects.filter(user=tenant_a.owner).count() == before
+    assert client.get("/api/v1/children").status_code == 200
+
+
 def test_another_organization_is_not_touched(tenant_a: Any, tenant_b: Any):
     from apps.children.models import Child
 

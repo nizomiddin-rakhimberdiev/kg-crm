@@ -12,7 +12,8 @@ kiradi va boʻsh tizimni koʻradi.
 * obuna va sinov muddati — hisob-kitob buzilmaydi;
 * kassa QOPLARI (harakatlari emas) — ular roʻyxatdan oʻtishda ochilgan;
 * xabar shablonlari, tizim sozlamalari, shartnoma shabloni — bular
-  sozlama, mijoz kiritgan maʼlumot emas.
+  sozlama, mijoz kiritgan maʼlumot emas;
+* ochiq seanslar — odam tizimdan chiqib ketmaydi.
 
 **Nima ketadi:** bolalar, vasiylar, guruhlar, tariflar, hisob-fakturalar,
 toʻlovlar, ledger, qarz, davomat, xodimlar, oylik, avanslar, ombor,
@@ -62,6 +63,10 @@ KEEP: frozenset[str] = frozenset(
         "apps.branches.Branch",
         # Roʻyxatdan oʻtishda ochilgan qoplar (harakatlari tozalanadi).
         "apps.cash.CashAccount",
+        # Ochiq seanslar — tozalash odamni tizimdan CHIQARIB
+        # yubormasligi kerak: u boʻsh tizimni oʻsha oynada koʻrishi
+        # kerak, qaytadan parol terib emas.
+        "apps.accounts.RefreshToken",
         # Sozlama — mijoz kiritgan maʼlumot emas.
         "apps.notifications.NotificationTemplate",
         "apps.settings_app.SystemSetting",
@@ -105,6 +110,8 @@ class Command(BaseCommand):
         counts: dict[str, int] = {}
         with organization_context(organization.id), transaction.atomic():
             for path, lookup in DERIVED_PURGE.items():
+                if path in KEEP:
+                    continue
                 counts[path] = self._wipe(_model(path), {lookup: organization.id}, apply_it)
             for path in RESET_ORDER:
                 counts[path] = self._wipe(
