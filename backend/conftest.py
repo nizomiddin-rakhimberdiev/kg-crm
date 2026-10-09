@@ -119,6 +119,32 @@ class Tenant:
         with organization_context(self.organization.id):
             return Role.objects.get(code=code)
 
+    def fund(self, amount: str = "100000000", kind: str = "cash") -> None:
+        """
+        Qopga boshlangʻich qoldiq qoʻyadi (ADR-29).
+
+        Qoʻriqchi joriy etilgandan keyin "boʻsh kassadan oylik toʻlash"
+        ataylab toʻxtaydi. Haqiqiy bogʻchada ham pul avval tushadi,
+        keyin chiqadi — shuning uchun oqimni sinaydigan testlar avval
+        qopni toʻldiradi. Qoʻriqchining OʻZI alohida sinaladi
+        (`apps/cash/tests/test_cash_ledger.py`).
+        """
+        from decimal import Decimal
+
+        from apps.cash import services as cash_services
+        from apps.cash.models import CashAccount
+
+        with organization_context(self.organization.id):
+            for account in CashAccount.objects.filter(branch=self.branch, is_active=True):
+                if kind != "all" and account.kind != kind:
+                    continue
+                cash_services.adjust_balance(
+                    account=account,
+                    amount=Decimal(amount),
+                    reason="Test: boshlangʻich qoldiq",
+                    opening=True,
+                )
+
     def client(self) -> Any:
         """Egasi sifatida autentifikatsiya qilingan API klient."""
         from rest_framework.test import APIClient

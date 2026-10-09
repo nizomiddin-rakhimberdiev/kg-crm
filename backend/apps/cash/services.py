@@ -36,6 +36,11 @@ __all__ = [
 ]
 
 
+def _som(value: Decimal) -> str:
+    """Xabardagi summa — "6 000 000" koʻrinishida (ingichka boʻsh joy emas)."""
+    return f"{value:,.0f}".replace(",", " ")
+
+
 def _money(value: Decimal) -> Decimal:
     return Decimal(value).quantize(Decimal("0.01"))
 
@@ -124,16 +129,49 @@ def post_movement(
     occurred_at: Any = None,
     created_by: Any = None,
     transfer_group: Any = None,
+    allow_negative: bool = False,
 ) -> CashMovement:
     """
     Kassa jurnaliga bitta yozuv qo'shadi.
 
     Chaqiruvchi uni O'ZI ochgan tranzaksiya ichida chaqirishi kerak —
     hujjat va uning pul harakati bo'linmas bo'lishi shart.
+
+    **Qopda yo'q pul chiqmaydi** (ADR-29). Jonli bog'chada oylik
+    "to'langan" deb belgilangandan keyin qoldiq −6 752 500 ga tushib
+    qoldi: tizim 12 mln ni 6 mln turgan kassadan jimgina chiqarib
+    yubordi. Manfiy qoldiq hech qanday haqiqatni anglatmaydi — u
+    "kassaga tushmagan pul bor" degani, ya'ni YETISHMAYOTGAN YOZUV
+    bor. Shuning uchun chiqim to'xtaydi va nima yetishmayotganini
+    aytadi.
+
+    `allow_negative=True` — foydalanuvchi buni ko'rib turib
+    tasdiqlaganda (egasining o'z puli, yozilmagan tushum) va
+    TUZATISHLARDA: qaytarilgan to'lovning qarshi yozuvi qopni
+    manfiyga tushirishi mumkin, lekin uni to'sish jurnalni yolg'on
+    holatda qoldirardi.
     """
     amount = _money(amount)
     if amount <= 0:
         raise BusinessRuleViolation(gettext("Summa musbat boʻlishi kerak."))
+
+    if direction == MovementDirection.OUT and not allow_negative:
+        from apps.cash import selectors as cash_selectors
+
+        balance = cash_selectors.account_balance(account_id=account.id)
+        if amount > balance:
+            raise BusinessRuleViolation(
+                gettext(
+                    "«{account}» da {balance} soʻm bor, {amount} soʻm chiqmoqda — "
+                    "{short} soʻm yetishmaydi. Kassaga tushmagan pul boʻlsa, avval "
+                    "oʻsha tushumni yozing yoki boshqa qopni tanlang."
+                ).format(
+                    account=account.name,
+                    balance=_som(balance),
+                    amount=_som(amount),
+                    short=_som(amount - balance),
+                )
+            )
 
     movement = CashMovement.objects.create(
         organization=account.organization,
@@ -190,6 +228,10 @@ def reverse_movements_for(
                 source_id=source_id,
                 description=f"↩ {description or gettext('qaytarildi')}",
                 created_by=created_by,
+                # Tuzatish hech qachon to'xtatilmaydi (ADR-29): asl pul
+                # allaqachon qimirlagan, qarshi yozuvni to'sish jurnalni
+                # yolg'on holatda qoldirardi.
+                allow_negative=True,
             )
         )
     return reversals
@@ -241,3 +283,50 @@ def transfer(
         transfer_group=group,
     )
     return out, into
+
+
+@transaction.atomic
+def adjust_balance(
+    *,
+    account: CashAccount,
+    amount: Decimal,
+    reason: str,
+    opening: bool = False,
+    occurred_at: Any = None,
+    created_by: Any = None,
+) -> CashMovement:
+    """
+    Qoldiqni qo'lda to'g'rilash — boshlang'ich qoldiq yoki sanoq farqi
+    (ADR-29).
+
+    **Nega kerak.** Bog'cha tizimga yil o'rtasida keladi: seyfida
+    allaqachon pul bor, lekin tizimda yo'q. Shu sababli har qanday
+    chiqim qopni manfiyga tushirardi — va aynan shu "−6 752 500"
+    bo'lib ko'rindi. Chiqimni to'sish esa boshlang'ich qoldiqsiz
+    ishni butunlay to'xtatib qo'yardi.
+
+    Yozuv — oddiy harakat (`opening` yoki `manual`), ya'ni jurnal
+    append-only qoladi va "qoldiq qayerdan kelgan?" degan savolga
+    SABAB bilan javob beradi. Hech narsa ustiga yozilmaydi: ikkinchi
+    tuzatish — ikkinchi yozuv.
+
+    Manfiy `amount` — pulni kamaytirish (sanoqda kam chiqdi).
+    """
+    amount = _money(amount)
+    if amount == 0:
+        raise BusinessRuleViolation(gettext("Summa nol boʻlishi mumkin emas."))
+    if not reason.strip():
+        raise BusinessRuleViolation(gettext("Sabab yozilishi shart."))
+
+    return post_movement(
+        account=account,
+        direction=MovementDirection.IN if amount > 0 else MovementDirection.OUT,
+        amount=abs(amount),
+        source_type=MovementSource.OPENING if opening else MovementSource.MANUAL,
+        description=reason[:255],
+        occurred_at=occurred_at,
+        created_by=created_by,
+        # Tuzatishning o'zi qoldiqqa qarab to'xtamaydi: sanoqda KAM
+        # chiqqan pulni yozish ham xuddi shunday haqiqat.
+        allow_negative=True,
+    )

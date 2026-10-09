@@ -29,6 +29,9 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture
 def warehouse(tenant_a) -> Warehouse:
+    # Xarid — pul chiqishi (Q13); boʻsh qopdan chiqim endi
+    # toʻxtaydi (ADR-29), shuning uchun avval qop toʻldiriladi.
+    tenant_a.fund()
     with organization_context(tenant_a.organization.id):
         return Warehouse.objects.create(
             organization=tenant_a.organization, branch=tenant_a.branch, name="Oshxona ombori"

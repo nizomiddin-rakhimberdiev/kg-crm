@@ -29,13 +29,15 @@ import { QueryError } from '@/components/ui/QueryError'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
 import { employeesApi } from '@/features/staff/api'
-import { payrollApi } from '@/features/payroll/api'
+import { payrollApi, type PayoutLine } from '@/features/payroll/api'
 import { PayslipModal } from '@/features/payroll/components/PayslipModal'
 import { invalidateMoney } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type PayrollItem, type PayrollRun } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate } from '@/lib/utils'
+import { cashApi } from '@/features/cash/api'
+import { PayoutModal } from '@/features/payroll/components/PayoutModal'
 import { money, monthLabel } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
@@ -57,6 +59,9 @@ export default function PayrollPage() {
     amount: '',
     paid_on: new Date().toISOString().slice(0, 10),
     note: '',
+    // Avans QAYSI qopdan berildi (ADR-29). Ilgari u hamisha naqd
+    // kassadan yechilardi va buni hech kim tanlamasdi.
+    cash_account_id: '',
   })
   const [error, setError] = useState<string | null>(null)
   // Qayta ochish oynasi: qaysi hisoblash va nima sababdan.
@@ -106,6 +111,12 @@ export default function PayrollPage() {
     enabled: can('payroll.read'),
   })
 
+  const cashAccounts = useQuery({
+    queryKey: ['org', organizationId, 'cash-accounts'],
+    queryFn: () => cashApi.accounts(),
+    enabled: can('payroll.create'),
+  })
+
   const advancesQuery = useQuery({
     queryKey: queryKeys.payrollAdvances(organizationId),
     queryFn: () => payrollApi.listAdvances({ page_size: 50 }),
@@ -119,6 +130,7 @@ export default function PayrollPage() {
         amount: advanceForm.amount,
         paid_on: advanceForm.paid_on,
         note: advanceForm.note,
+        ...(advanceForm.cash_account_id ? { cash_account_id: advanceForm.cash_account_id } : {}),
       }),
     onSuccess: () => {
       setAdvanceForm((prev) => ({ ...prev, amount: '', note: '' }))
@@ -152,10 +164,23 @@ export default function PayrollPage() {
     onError: fail,
   })
 
+  /*
+   * To'lov endi OYNA orqali (ADR-29): qaysi qopdan chiqishi
+   * ko'rsatiladi va qoldiq yetmasa so'raydi. Ilgari tugma darhol
+   * yuborardi va pul foydalanuvchi tanlamagan qopdan chiqib ketardi.
+   */
+  const [payingRun, setPayingRun] = useState<PayrollRun | null>(null)
   const markPaid = useMutation({
-    mutationFn: (id: string) => payrollApi.markPaid(id),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: { payouts: PayoutLine[]; allow_negative: boolean }
+    }) => payrollApi.markPaid(id, payload),
     onSuccess: () => {
       setError(null)
+      setPayingRun(null)
       invalidate()
     },
     onError: fail,
@@ -356,6 +381,29 @@ export default function PayrollPage() {
                 </div>
                 <div>
                   <label
+                    htmlFor="adv-account"
+                    className="mb-1 block text-xs font-medium text-slate-600"
+                  >
+                    {t('Qaysi qopdan')}
+                  </label>
+                  <select
+                    id="adv-account"
+                    value={advanceForm.cash_account_id}
+                    onChange={(e) =>
+                      setAdvanceForm((prev) => ({ ...prev, cash_account_id: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                  >
+                    <option value="">{t('Naqd kassa')}</option>
+                    {cashAccounts.data?.items.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label
                     htmlFor="adv-note"
                     className="mb-1 block text-xs font-medium text-slate-600"
                   >
@@ -481,6 +529,16 @@ export default function PayrollPage() {
         </div>
       )}
 
+      {payingRun && (
+        <PayoutModal
+          runId={payingRun.id}
+          period={monthLabel(payingRun.period_year, payingRun.period_month)}
+          saving={markPaid.isPending}
+          onClose={() => setPayingRun(null)}
+          onConfirm={(payload) => markPaid.mutate({ id: payingRun.id, payload })}
+        />
+      )}
+
       {run && (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
           <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -530,7 +588,7 @@ export default function PayrollPage() {
                 {run.status === 'finalized' && (
                   <button
                     type="button"
-                    onClick={() => markPaid.mutate(run.id)}
+                    onClick={() => setPayingRun(run)}
                     disabled={markPaid.isPending}
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 sm:flex-none"
                   >

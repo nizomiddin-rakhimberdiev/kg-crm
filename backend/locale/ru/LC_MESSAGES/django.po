@@ -1435,3 +1435,18 @@ msgstr "Для почасового сотрудника нужно указат
 
 msgid "Soatbay"
 msgstr "Почасовая"
+
+msgid "Sabab yozilishi shart."
+msgstr "Причина обязательна."
+
+msgid "Summa nol boʻlishi mumkin emas."
+msgstr "Сумма не может быть нулевой."
+
+msgid ""
+"«{account}» da {balance} soʻm bor, {amount} soʻm chiqmoqda — {short} soʻm "
+"yetishmaydi. Kassaga tushmagan pul boʻlsa, avval oʻsha tushumni yozing yoki "
+"boshqa qopni tanlang."
+msgstr ""
+"На «{account}» есть {balance} сум, а списывается {amount} сум — не хватает "
+"{short} сум. Если в кассу поступали деньги, сначала внесите этот приход или "
+"выберите другой счёт."

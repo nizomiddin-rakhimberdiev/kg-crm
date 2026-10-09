@@ -298,8 +298,14 @@ def _create_row(tenant: Any, basename: str) -> Any:
             if basename == "employee":
                 return employee
             if basename == "payroll-advance":
+                # Bu test tenant chegarasini sinaydi, pul oqimini emas —
+                # shuning uchun boʻsh qopdan chiqim ataylab ruxsat
+                # etiladi (ADR-29).
                 return record_advance(
-                    employee=employee, amount=Decimal("300000"), paid_on=date(2026, 7, 15)
+                    employee=employee,
+                    amount=Decimal("300000"),
+                    paid_on=date(2026, 7, 15),
+                    allow_negative=True,
                 )
             return create_run(
                 organization=tenant.organization,

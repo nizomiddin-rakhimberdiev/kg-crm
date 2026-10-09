@@ -26,6 +26,10 @@ URL = "/api/v1/expenses"
 
 
 def _category(tenant, name: str = "Bozorlik") -> ExpenseCategory:
+    # Bogʻchada pul avval tushadi, keyin chiqadi (ADR-29): boʻsh
+    # kassadan chiqim ataylab toʻxtaydi, shuning uchun oqim testlari
+    # avval qopni toʻldiradi. Qoʻriqchining oʻzi `apps/cash` da.
+    tenant.fund()
     with organization_context(tenant.organization.id):
         return ExpenseCategory.objects.create(
             organization=tenant.organization, branch=tenant.branch, name=name

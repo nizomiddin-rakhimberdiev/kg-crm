@@ -242,6 +242,17 @@ class EmployeeAdvance(BranchScopedModel):
     employee = models.ForeignKey("hr.Employee", on_delete=models.RESTRICT, related_name="advances")
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     paid_on = models.DateField()
+    # Avans QAYSI qopdan chiqqani (ADR-29). Ilgari u hamisha naqd
+    # kassadan yechilardi va buni hech kim tanlamasdi — ya'ni "pul
+    # qayerdan ketdi?" degan savolga javob yo'q edi. Eski qatorlarda
+    # bo'sh: ularning harakati naqd kassada turibdi, uni o'zgartirmaymiz.
+    cash_account = models.ForeignKey(
+        "cash.CashAccount",
+        on_delete=models.RESTRICT,
+        related_name="advances",
+        null=True,
+        blank=True,
+    )
     note = models.CharField(max_length=255, blank=True)
     created_by = models.ForeignKey(
         "accounts.User",

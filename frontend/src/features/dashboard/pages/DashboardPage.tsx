@@ -7,11 +7,13 @@
  * bir ekranda bir-biriga mos kelmaydigan raqamlar.
  */
 
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, CalendarCheck, Coins, Package, Users, Wallet } from 'lucide-react'
+import { AlertTriangle, CalendarCheck, Coins, Package, Pencil, Users, Wallet } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Link } from 'react-router-dom'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { CashAdjustModal } from '@/features/cash/components/CashAdjustModal'
 import { dashboardApi } from '@/features/dashboard/api'
 import { BriefingSection } from '@/features/intelligence/components/BriefingSection'
 import { navItems } from '@/config/navigation'
@@ -116,6 +118,8 @@ function CashPanel({
   incomeByMethod: DashboardKpis['income_by_method']
   isLoading: boolean
 }) {
+  const { can } = useCan()
+  const [adjusting, setAdjusting] = useState(false)
   const balance = Number(cash?.balance ?? 0)
   // To'rtta qop ikkita guruh bo'lib ko'rsatiladi (PLAN 7.3) — jadvalda
   // ular avvalgidek alohida (ADR-17).
@@ -256,6 +260,26 @@ function CashPanel({
           'Pul haqiqatan qimirlagan yozuvlardan hisoblanadi. Hisoblangan, lekin hali berilmagan oylik bu yerda hali kassada turgan pul — foyda-zarar hisobotida esa u allaqachon xarajat.',
         )}
       </p>
+
+      {/*
+        Qoldiqni toʻgʻrilash (ADR-29).
+
+        Bogʻcha tizimga yil oʻrtasida keladi va seyfdagi pul hech
+        qayerda yoʻq boʻladi — natijada qoldiq manfiyga tushadi.
+        Tugma aynan shu yerda: notoʻgʻri raqam koʻrinadigan joyda.
+      */}
+      {can('payments.update') && (
+        <button
+          type="button"
+          onClick={() => setAdjusting(true)}
+          className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          <Pencil className="h-4 w-4 text-slate-500" />
+          {t('Qoldiqni toʻgʻrilash')}
+        </button>
+      )}
+
+      {adjusting && <CashAdjustModal onClose={() => setAdjusting(false)} />}
     </section>
   )
 }

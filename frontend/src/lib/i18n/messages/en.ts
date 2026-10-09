@@ -1379,4 +1379,27 @@ export const messages: Record<string, string> = {
   'Toʻlov hali koʻrinmadi. Pul yechilgan boʻlsa, bir necha daqiqada tushadi — keyin bogʻchaga murojaat qiling.':
     'The payment has not shown up yet. If the money left your card it will arrive within minutes — after that, contact the kindergarten.',
   'Bogʻchaga qoʻngʻiroq qilish': 'Call the kindergarten',
+  '{period} — toʻlash': '{period} — pay out',
+  'Bilaman, baribir yozilsin': 'I know, record it anyway',
+  'Bu — boshlangʻich qoldiq (tizimga oʻtishdan oldingi pul)':
+    'This is an opening balance (money held before the system)',
+  'chiqadi {out} · qoldiq {left}': 'going out {out} · balance {left}',
+  'Hozirgi qoldiq: {money} soʻm': 'Current balance: {money} UZS',
+  'Jami: {money} soʻm': 'Total: {money} UZS',
+  'Kassaga tushmagan pul boʻlsa, avval «Kassa» boʻlimida oʻsha qoldiqni kiriting.':
+    'If money came in that was never recorded, enter that balance under “Cash” first.',
+  'Manfiy summa — qoldiqni kamaytirish (sanoqda kam chiqdi).':
+    'A negative amount lowers the balance (the count came up short).',
+  naqd: 'cash',
+  'Pul qaysi qopdan chiqishini tekshiring — yozuv shundan keyin qaytmaydi.':
+    'Check which account the money leaves — the entry cannot be undone afterwards.',
+  'Qaysi qop': 'Which account',
+  'Qaysi qopdan': 'From which account',
+  'Qoldiqni toʻgʻrilash': 'Correct the balance',
+  'Qopda pul yetmaydi — qoldiq manfiyga tushadi.':
+    'The account is short — the balance will go negative.',
+  'Summa (soʻm)': 'Amount (UZS)',
+  'Tizimga oʻtishdan oldin qoʻlda turgan pul yoki sanoqdagi farq. Yozuv oʻchirilmaydi — jurnalda sababi bilan qoladi.':
+    'Money held before moving to the system, or a difference found when counting. The entry is never deleted — it stays in the journal with its reason.',
+  'Toʻlangan deb belgilash': 'Mark as paid',
 }

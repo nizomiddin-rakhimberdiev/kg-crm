@@ -30,6 +30,9 @@ TEST_MOMENT = timezone.make_aware(datetime.combine(date(2026, 9, 30), time(12, 0
 
 def _incident(tenant, *, when=TEST_MOMENT) -> dict:
     """Audit paytida qoldirilgan yozuvlarni aynan qayta yaratadi."""
+    # Oʻsha paytdagi bogʻchaning kassasida pul bor edi; qoʻriqchi
+    # (ADR-29) esa boʻsh qopdan chiqimni toʻxtatadi.
+    tenant.fund(kind="all")
     from apps.attendance.services import mark_bulk
     from apps.children.models import Child, Group, Guardian
     from apps.children.services import attach_guardian, enroll_child
@@ -156,7 +159,9 @@ def _state(tenant, rows: dict) -> dict:
             "guardian_active": Guardian.all_objects.get(pk=rows["guardian"].id).is_active,
             "attendance": AttendanceRecord.objects.filter(child=child).count(),
             "stock": stock,
-            "cash_net": net(CashMovement.objects.all()),
+            # Boshlangʻich qoldiq hisobga kirmaydi: bu yerdagi savol
+            # "hodisadan keyin sof nol qoldimi?" degan savol.
+            "cash_net": net(CashMovement.objects.exclude(source_type="opening")),
         }
 
 

@@ -1376,4 +1376,27 @@ export const messages: Record<string, string> = {
   'Toʻlov hali koʻrinmadi. Pul yechilgan boʻlsa, bir necha daqiqada tushadi — keyin bogʻchaga murojaat qiling.':
     'Оплата пока не видна. Если деньги списаны, они дойдут за несколько минут — иначе свяжитесь с садом.',
   'Bogʻchaga qoʻngʻiroq qilish': 'Позвонить в сад',
+  '{period} — toʻlash': '{period} — выплата',
+  'Bilaman, baribir yozilsin': 'Знаю, всё равно записать',
+  'Bu — boshlangʻich qoldiq (tizimga oʻtishdan oldingi pul)':
+    'Это начальный остаток (деньги до перехода на систему)',
+  'chiqadi {out} · qoldiq {left}': 'списывается {out} · остаток {left}',
+  'Hozirgi qoldiq: {money} soʻm': 'Текущий остаток: {money} сум',
+  'Jami: {money} soʻm': 'Итого: {money} сум',
+  'Kassaga tushmagan pul boʻlsa, avval «Kassa» boʻlimida oʻsha qoldiqni kiriting.':
+    'Если в кассу поступали деньги, сначала внесите этот остаток в разделе «Касса».',
+  'Manfiy summa — qoldiqni kamaytirish (sanoqda kam chiqdi).':
+    'Отрицательная сумма уменьшает остаток (при пересчёте оказалось меньше).',
+  naqd: 'наличные',
+  'Pul qaysi qopdan chiqishini tekshiring — yozuv shundan keyin qaytmaydi.':
+    'Проверьте, с какого счёта уходят деньги — запись потом не отменить.',
+  'Qaysi qop': 'С какого счёта',
+  'Qaysi qopdan': 'С какого счёта',
+  'Qoldiqni toʻgʻrilash': 'Исправить остаток',
+  'Qopda pul yetmaydi — qoldiq manfiyga tushadi.':
+    'На счёте не хватает денег — остаток уйдёт в минус.',
+  'Summa (soʻm)': 'Сумма (сум)',
+  'Tizimga oʻtishdan oldin qoʻlda turgan pul yoki sanoqdagi farq. Yozuv oʻchirilmaydi — jurnalda sababi bilan qoladi.':
+    'Деньги, которые были на руках до перехода на систему, или расхождение при пересчёте. Запись не удаляется — она остаётся в журнале с причиной.',
+  'Toʻlangan deb belgilash': 'Отметить выплаченным',
 }

@@ -272,3 +272,119 @@ def test_balances_never_mix_organizations(tenant_a: Any, tenant_b: Any):
         assert selectors.total_balance(organization_id=tenant_b.organization.id) == Decimal(
             "7000000.00"
         )
+
+
+# --- Qopda yoʻq pul (ADR-29) ---
+
+
+def test_spending_more_than_the_pot_holds_is_refused(tenant_a: Any):
+    """
+    Kassada 6 mln turib 12 mln chiqib ketmaydi.
+
+    Jonli bogʻchada aynan shu boʻldi: oylik "toʻlangan" deb
+    belgilandi va qoldiq −6 752 500 ga tushdi. Manfiy qoldiq hech
+    qanday haqiqatni anglatmaydi — u "kassaga tushmagan pul bor"
+    degani, va buni tizim SOʻRASHI kerak, jimgina yozib qoʻyishi
+    emas.
+    """
+    with organization_context(tenant_a.organization.id):
+        account = CashAccount.objects.get(branch=tenant_a.branch, kind="cash")
+        cash.post_movement(
+            account=account,
+            direction=MovementDirection.IN,
+            amount=Decimal("6000000"),
+            source_type=MovementSource.PAYMENT,
+        )
+        with pytest.raises(BusinessRuleViolation) as excinfo:
+            cash.post_movement(
+                account=account,
+                direction=MovementDirection.OUT,
+                amount=Decimal("12000000"),
+                source_type=MovementSource.PAYROLL,
+            )
+        # Xabar aynan nima yetishmayotganini aytadi.
+        assert "6 000 000" in str(excinfo.value).replace(" ", " ")
+        assert selectors.total_balance(organization_id=tenant_a.organization.id) == Decimal(
+            "6000000"
+        )
+
+
+def test_the_owner_can_still_record_it_knowingly(tenant_a: Any):
+    """
+    Taqiq emas, savol.
+
+    Kassaga tushmagan pul (egasining oʻz puli, yozilmagan tushum)
+    haqiqatan ham boʻlishi mumkin. Shunda yozuv yoziladi — lekin
+    foydalanuvchi buni koʻrib turib tasdiqlagan boʻladi.
+    """
+    with organization_context(tenant_a.organization.id):
+        account = CashAccount.objects.get(branch=tenant_a.branch, kind="cash")
+        cash.post_movement(
+            account=account,
+            direction=MovementDirection.OUT,
+            amount=Decimal("500000"),
+            source_type=MovementSource.EXPENSE,
+            allow_negative=True,
+        )
+        assert selectors.total_balance(organization_id=tenant_a.organization.id) == Decimal(
+            "-500000"
+        )
+
+
+def test_a_counter_movement_is_never_blocked(tenant_a: Any):
+    """
+    Tuzatish — hamisha mumkin.
+
+    Qaytarilgan toʻlovning qarshi yozuvi qopni manfiyga tushirishi
+    mumkin (pul allaqachon chiqib ketgan boʻlsa), lekin uni toʻsish
+    jurnalni yolgʻon holatda qoldirardi.
+    """
+    child = _child(tenant_a, "Bekzod")
+    with organization_context(tenant_a.organization.id):
+        payment = finance.record_payment(child=child, amount=Decimal("1000000"), method="cash")
+        account = CashAccount.objects.get(branch=tenant_a.branch, kind="cash")
+        cash.post_movement(
+            account=account,
+            direction=MovementDirection.OUT,
+            amount=Decimal("1000000"),
+            source_type=MovementSource.EXPENSE,
+        )
+        # Endi qopda 0; qaytarish qarshi yozuvi uni manfiyga tushiradi.
+        finance.reverse_payment(payment=payment, reason="Xato")
+        assert selectors.total_balance(organization_id=tenant_a.organization.id) == Decimal(
+            "-1000000"
+        )
+
+
+def test_an_opening_balance_makes_the_pot_usable(tenant_a: Any):
+    """
+    Bogʻcha tizimga yil oʻrtasida keladi — seyfida allaqachon pul bor.
+
+    Busiz qoldiq doim noldan boshlanardi va birinchi chiqimdayoq
+    manfiyga tushardi. Boshlangʻich qoldiq — oddiy harakat, sababi
+    bilan: jurnal append-only qoladi.
+    """
+    with organization_context(tenant_a.organization.id):
+        account = CashAccount.objects.get(branch=tenant_a.branch, kind="cash")
+        cash.adjust_balance(
+            account=account,
+            amount=Decimal("20000000"),
+            reason="Seyfdagi boshlangʻich qoldiq",
+            opening=True,
+        )
+        # Endi oylik toʻlanadi — hech narsa toʻsmaydi.
+        cash.post_movement(
+            account=account,
+            direction=MovementDirection.OUT,
+            amount=Decimal("12000000"),
+            source_type=MovementSource.PAYROLL,
+        )
+        assert selectors.account_balance(account_id=account.id) == Decimal("8000000")
+
+
+def test_an_adjustment_without_a_reason_is_refused(tenant_a: Any):
+    """Qoldiq oʻzgarsa-yu, nega oʻzgargani yozilmasa — buni keyin hech kim tushuntira olmaydi."""
+    with organization_context(tenant_a.organization.id):
+        account = CashAccount.objects.get(branch=tenant_a.branch, kind="cash")
+        with pytest.raises(BusinessRuleViolation):
+            cash.adjust_balance(account=account, amount=Decimal("100"), reason="   ")

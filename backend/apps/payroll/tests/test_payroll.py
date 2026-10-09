@@ -28,6 +28,10 @@ SALARY = Decimal("4000000.00")
 
 @pytest.fixture
 def employees(tenant_a) -> list[Employee]:
+    # Bogʻchada pul avval tushadi, keyin chiqadi (ADR-29): boʻsh
+    # qopdan oylik va avans ataylab toʻxtaydi. Qoʻriqchining oʻzi
+    # `apps/cash/tests/test_cash_ledger.py` da sinaladi.
+    tenant_a.fund(kind="all")
     with organization_context(tenant_a.organization.id):
         position = Position.objects.create(
             organization=tenant_a.organization,

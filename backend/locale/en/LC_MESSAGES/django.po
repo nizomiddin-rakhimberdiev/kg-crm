@@ -1435,3 +1435,18 @@ msgstr "An hourly employee needs an hourly rate and hours per day."
 
 msgid "Soatbay"
 msgstr "Hourly"
+
+msgid "Sabab yozilishi shart."
+msgstr "A reason is required."
+
+msgid "Summa nol boʻlishi mumkin emas."
+msgstr "The amount cannot be zero."
+
+msgid ""
+"«{account}» da {balance} soʻm bor, {amount} soʻm chiqmoqda — {short} soʻm "
+"yetishmaydi. Kassaga tushmagan pul boʻlsa, avval oʻsha tushumni yozing yoki "
+"boshqa qopni tanlang."
+msgstr ""
+"«{account}» holds {balance} UZS and {amount} UZS is going out — {short} UZS "
+"short. If money came in that was never recorded, enter that income first, or "
+"choose another account."

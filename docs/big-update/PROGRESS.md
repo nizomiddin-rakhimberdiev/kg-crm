@@ -1393,3 +1393,50 @@ yoʻqolardi. `useFocusTrap` uchta ishni qiladi: ochilganda fokus panelga
 kiradi, Tab panel ichida aylanadi, yopilganda ochgan elementga qaytadi.
 Qoida `a11y.test.ts` da: `aria-modal` yozilgan fayl `useFocusTrap` ni
 chaqirishi shart — aks holda uchinchi dialogda u unutilardi.
+
+## Bosqich 11 — qopda yoʻq pul chiqib ketdi
+
+**−6 752 500.** Mudira 12 mln lik oylikni "toʻlangan" deb belgiladi va
+boshqaruv panelidagi qoldiq manfiyga tushdi. Birinchi qarashda bu
+"tekshiruv yoʻq" degan nosozlik, lekin ildiz uchta edi va ularni alohida
+tuzatib boʻlmasdi.
+
+**Qop soʻralmasdi.** Backend allaqachon har bir toʻlov qatori uchun
+`cash_account_id` ni qabul qilardi — frontend esa `mark-paid` ni BOʻSH
+tana bilan yuborardi. Shunda server oʻz taklifini qoʻllaydi: rasmiy qism
+bankka, naqd qism kassaga. Yaʼni imkoniyat bor edi, lekin ekran undan
+foydalanmasdi va foydalanuvchi pul qayerdan ketganini bilmasdi. Avansda
+esa imkoniyatning oʻzi ham yoʻq edi: `record_advance()` hamisha naqd
+kassani olardi va `employee_advance` da qop ustuni umuman yoʻq edi.
+
+**Qoldiq tekshirilmasdi.** `post_movement()` chiqimni shunchaki yozardi.
+Manfiy qoldiq esa bogʻcha haqida hech narsa aytmaydi: pul fizik ravishda
+manfiy boʻlmaydi. U faqat bitta narsani bildiradi — **yozuv
+yetishmayapti**.
+
+**Va yetishmayotgan yozuvni kiritib boʻlmasdi.** Mana shu uchinchisi eng
+muhimi. `MovementSource` da `opening` ham, `manual` ham bor edi, lekin
+ularni yozadigan **birorta ham kod yoʻq** edi: na servis, na endpoint, na
+ekran. Yaʼni tizimga yil oʻrtasida kelgan bogʻchaning seyfidagi 20 mln
+hech qayerda yoʻq, har bir qop noldan boshlanadi va birinchi chiqimdayoq
+qoldiq minusga tushadi. Shu sababli faqat "toʻsish" notoʻgʻri javob
+boʻlardi: mijoz birinchi kundayoq chiqim yoza olmay qolardi.
+
+Shuning uchun uchalasi bitta oʻzgarishda: qoʻriqchi + tasdiqlash +
+boshlangʻich qoldiq. Qoʻriqchining xabari aniq raqam beradi — «Naqd
+kassa» da 6 000 000 soʻm bor, 12 000 000 soʻm chiqmoqda — 6 000 000 soʻm
+yetishmaydi — chunki "amalni bajarib boʻlmadi" degan xabar foydalanuvchini
+hech qayerga olib bormaydi.
+
+**Testlar nimani koʻrsatdi.** Qoʻriqchi qoʻshilgach 29 ta test yiqildi va
+ularning koʻpi boʻsh kassadan oylik toʻlardi — yaʼni ular eski xatti-
+harakatni yozib qoʻygan edi. Ikkitasi esa to'g'ridan-to'g'ri MANFIY
+qoldiqni tasdiqlardi (`assert balances["bank"] == Decimal("-2637000.00")`).
+Testlar haqiqiy bogʻchaga oʻxshatildi: avval pul tushadi, keyin chiqadi.
+
+**Tozalash buyrugʻi.** Mijoz hammasini oʻzi boshidan kiritmoqchi.
+`reset_organization_data` ishchi maʼlumotni oʻchiradi, lekin KIRISHNI
+emas — eng muhim testi ham shu: tozalashdan keyin mijoz oʻsha parol bilan
+kirib, boʻsh tizimni koʻra oladimi. Tashkilot, filial, foydalanuvchilar,
+rollar, obuna, roʻyxatdan oʻtishda ochilgan kassa qoplari, xabar
+shablonlari, sozlamalar va shartnoma shabloni joyida qoladi.

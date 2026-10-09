@@ -202,6 +202,7 @@ class PayrollRunViewSet(BranchScopedMixin, TenantViewSet):
             run=run,
             payouts=[dict(row) for row in rows] if rows else None,
             paid_on=payload.validated_data.get("paid_on"),
+            allow_negative=payload.validated_data.get("allow_negative", False),
             created_by=user,
         )
         audit.record(
@@ -272,6 +273,8 @@ class EmployeeAdvanceViewSet(BranchScopedMixin, TenantViewSet):
             amount=data["amount"],
             paid_on=data["paid_on"],
             note=data.get("note", ""),
+            cash_account=data.get("cash_account"),
+            allow_negative=data.get("allow_negative", False),
             created_by=user,
         )
         audit.record(

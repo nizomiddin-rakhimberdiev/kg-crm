@@ -18,6 +18,10 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture
 def category(tenant_a) -> ExpenseCategory:
+    # Bogʻchada pul avval tushadi, keyin chiqadi (ADR-29): boʻsh
+    # kassadan chiqim ataylab toʻxtaydi, shuning uchun oqim testlari
+    # avval qopni toʻldiradi. Qoʻriqchining oʻzi `apps/cash` da.
+    tenant_a.fund()
     with organization_context(tenant_a.organization.id):
         return ExpenseCategory.objects.create(
             organization=tenant_a.organization, branch=tenant_a.branch, name="Kommunal"

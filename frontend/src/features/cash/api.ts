@@ -22,4 +22,16 @@ export interface CashAccount {
 export const cashApi = {
   accounts: () => api.list<CashAccount>('/cash-accounts', { page_size: 50 }),
   balances: () => api.get<CashAccountBalance[]>('/cash-accounts/balances'),
+
+  /**
+   * Qoldiqni qo'lda to'g'rilash (ADR-29).
+   *
+   * Busiz qoldiq doim noldan boshlanardi: tizimga yil o'rtasida
+   * kelgan bog'chaning seyfidagi pul hech qayerda yo'q edi va
+   * birinchi chiqimdayoq qoldiq manfiyga tushardi.
+   */
+  adjust: (
+    id: string,
+    payload: { amount: string; reason: string; opening?: boolean; occurred_on?: string },
+  ) => api.post<{ id: string; balance: string }>(`/cash-accounts/${id}/adjust`, payload),
 }

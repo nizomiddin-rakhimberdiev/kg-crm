@@ -204,8 +204,8 @@ def test_catalogs_compile_without_duplicates():
 
     root = Path(__file__).resolve().parents[3] / "locale"
     for po in sorted(root.glob("*/LC_MESSAGES/django.po")):
-        result = subprocess.run(
-            ["msgfmt", "--check", "-o", "/dev/null", str(po)],
+        result = subprocess.run(  # noqa: S603 — buyruq ham, argumentlar ham literal
+            ["msgfmt", "--check", "-o", "/dev/null", str(po)],  # noqa: S607 — PATH dagi gettext
             capture_output=True,
             text=True,
         )

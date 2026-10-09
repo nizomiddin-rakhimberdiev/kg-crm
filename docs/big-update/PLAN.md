@@ -741,3 +741,40 @@ Egasining roʻyxatidan keyingi uchtasi (2026-10-08, "ha davom et"):
   `aria-modal` faylida uni talab qiladi.
 
 Barcha 15 ta prompt bajarildi.
+
+---
+
+### Bosqich 11 — Pulning manzili: qopda yoʻq pul chiqmaydi `[x]`
+
+Egasining jonli stenddan topgan nosozligi (2026-10-09): 12 000 000 soʻmlik
+oylik "toʻlangan" deb belgilandi va boshqaruv panelida qoldiq
+**−6 752 500** boʻlib chiqdi.
+
+- [x] **11.1 ADR-29.** Bitta tugmada ikkita nosozlik bor edi.
+  **Birinchi:** toʻlov ekrani pul QAYSI qopdan chiqishini soʻramasdi —
+  frontend `mark-paid` ni boʻsh tana bilan yuborardi va server oʻz
+  taklifini jimgina qoʻllardi (rasmiy → bank, naqd → kassa). **Ikkinchi:**
+  qopda pul yetishi umuman tekshirilmasdi. Manfiy qoldiq bogʻcha haqida
+  hech narsa aytmaydi — u **yetishmayotgan yozuv** bor degani, va deyarli
+  har doim bu tizimga oʻtishdan oldin seyfda turgan pul: boshlangʻich
+  qoldiq kiritishning **yoʻli umuman yoʻq edi**, shuning uchun har bir qop
+  noldan boshlanardi. Faqat toʻsish esa birinchi kundayoq ishni
+  toʻxtatib qoʻyardi. Uchala qism birga: `post_movement()` qopdagidan
+  katta chiqimni rad etadi va qop nomi, qoldigʻi va yetishmayotgan
+  summani aytadi; `allow_negative=True` koʻrib turib tasdiqlangan
+  holda yozadi (tuzatishlar — qaytarishning qarshi yozuvi — doim
+  oʻtadi); `adjust_balance()` sababi MAJBURIY boʻlgan `opening`/`manual`
+  harakatini yozadi.
+- [x] **11.2 Har bir chiqim oʻz qopini aytadi.** `employee_advance`
+  ga `cash_account` qoʻshildi (ilgari u hamisha naqd kassadan yechilardi
+  va buni hech kim tanlamasdi); oylik toʻlovi endi **oyna** orqali —
+  har bir qator uchun qop tanlanadi, har bir qop boʻyicha "chiqadi /
+  qoldiq" koʻrsatiladi, yetmasa tasdiqlash katagi chiqadi; boshqaruv
+  panelida «Qoldiqni toʻgʻrilash» tugmasi — aynan notoʻgʻri raqam
+  koʻrinadigan joyda.
+- [x] **11.3 `reset_organization_data`.** Mijoz tizimni noldan kiritib
+  koʻrmoqchi. Buyruq ishchi maʼlumotni tozalaydi, lekin **kirishni
+  emas**: tashkilot, filial, foydalanuvchilar, rollar, obuna, kassa
+  qoplari, xabar shablonlari, sozlamalar va shartnoma shabloni joyida
+  qoladi. Sukut boʻyicha dry-run; `--apply` uchun slugʻni `--confirm`
+  bilan aynan qayta yozish shart.

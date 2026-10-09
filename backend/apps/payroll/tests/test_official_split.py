@@ -49,6 +49,10 @@ def _rates(tenant_a: Any):
 
 
 def _employee(tenant: Any, *, base: str, official: str = "0", name: str = "Nilufar") -> Employee:
+    # Bogʻchada pul avval tushadi, keyin chiqadi (ADR-29): boʻsh
+    # qopdan oylik va avans ataylab toʻxtaydi. Qoʻriqchining oʻzi
+    # `apps/cash/tests/test_cash_ledger.py` da sinaladi.
+    tenant.fund(kind="all")
     with organization_context(tenant.organization.id):
         return Employee.objects.create(
             organization=tenant.organization,
@@ -68,6 +72,12 @@ def _run(tenant: Any, month: int = 9):
         period_year=2026,
         period_month=month,
     )
+
+
+#: `_employee()` har bir qopga qo'yadigan boshlang'ich qoldiq (ADR-29).
+#: Tekshiruvlar unga NISBATAN yoziladi — "qancha chiqdi", "qancha qoldi"
+#: emas, chunki bo'sh qopdan chiqim endi to'xtaydi.
+FUND = Decimal("100000000")
 
 
 def _balances(tenant: Any) -> dict[str, Decimal]:
@@ -184,10 +194,10 @@ def test_paying_a_run_moves_money_out_of_the_right_pots(tenant_a: Any):
         (PayoutPart.CASH, Decimal("2000000.00")),
         (PayoutPart.OFFICIAL, Decimal("2637000.00")),
     }
-    assert balances["bank"] == Decimal("-2637000.00")
-    assert balances["cash"] == Decimal("-2000000.00")
+    assert balances["bank"] == FUND - Decimal("2637000.00")
+    assert balances["cash"] == FUND - Decimal("2000000.00")
     # Ushlab qolingan 363 000 hech qayerdan chiqmadi.
-    assert sum(balances.values()) == Decimal("-4637000.00")
+    assert sum(balances.values()) == FUND * 4 - Decimal("4637000.00")
 
 
 def test_reopening_a_paid_run_returns_the_money(tenant_a: Any):
@@ -202,14 +212,14 @@ def test_reopening_a_paid_run_returns_the_money(tenant_a: Any):
         run = _run(tenant_a)
         services.finalize_run(run=run)
         services.pay_run(run=run)
-        assert _balances(tenant_a)["cash"] == Decimal("-4000000.00")
+        assert _balances(tenant_a)["cash"] == FUND - Decimal("4000000.00")
 
         services.reopen_run(run=run, reason="Xato toʻlangan")
         run.refresh_from_db()
 
         assert run.status == PayrollStatus.DRAFT
         assert PayrollPayout.objects.filter(payroll_run=run).count() == 0
-        assert _balances(tenant_a)["cash"] == Decimal("0.00")
+        assert _balances(tenant_a)["cash"] == FUND
 
 
 def test_a_payout_cannot_exceed_what_was_calculated(tenant_a: Any):

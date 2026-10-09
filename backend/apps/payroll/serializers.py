@@ -6,6 +6,7 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
+from apps.cash.models import CashAccount
 from apps.core.fields import TenantPrimaryKeyRelatedField
 from apps.hr.models import Employee
 from apps.payroll.models import EmployeeAdvance, PayoutPart, PayrollItem, PayrollRun
@@ -97,10 +98,23 @@ class UpdateItemSerializer(serializers.Serializer):
 
 class EmployeeAdvanceSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source="employee.full_name", read_only=True)
+    cash_account_name = serializers.CharField(
+        source="cash_account.name", read_only=True, default=None
+    )
 
     class Meta:
         model = EmployeeAdvance
-        fields = ["id", "employee", "employee_name", "amount", "paid_on", "note", "created_at"]
+        fields = [
+            "id",
+            "employee",
+            "employee_name",
+            "amount",
+            "paid_on",
+            "cash_account",
+            "cash_account_name",
+            "note",
+            "created_at",
+        ]
         read_only_fields = ["id", "created_at"]
 
 
@@ -116,6 +130,12 @@ class EmployeeAdvanceWriteSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
     paid_on = serializers.DateField()
     note = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    # Qaysi qopdan berildi (ADR-29). Berilmasa naqd kassa — eski
+    # mijozlar o'zgarishsiz ishlayveradi.
+    cash_account_id = TenantPrimaryKeyRelatedField(
+        model=CashAccount, source="cash_account", required=False, allow_null=True
+    )
+    allow_negative = serializers.BooleanField(required=False, default=False)
 
 
 class PayoutLineSerializer(serializers.Serializer):
@@ -136,3 +156,6 @@ class PayoutRequestSerializer(serializers.Serializer):
 
     payouts = PayoutLineSerializer(many=True, required=False)
     paid_on = serializers.DateField(required=False)
+    # Foydalanuvchi "qopda pul yetmaydi" ogohlantirishini ko'rib turib
+    # tasdiqladi (ADR-29).
+    allow_negative = serializers.BooleanField(required=False, default=False)

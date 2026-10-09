@@ -490,11 +490,24 @@ def record_advance(
     amount: Decimal,
     paid_on: Any,
     note: str = "",
+    cash_account: Any = None,
+    allow_negative: bool = False,
     created_by: Any = None,
 ) -> EmployeeAdvance:
-    """Avans yozadi va o'sha davrning QORALAMA hisoblashini yangilaydi."""
+    """
+    Avans yozadi va o'sha davrning QORALAMA hisoblashini yangilaydi.
+
+    `cash_account` — pul QAYSI qopdan chiqqani (ADR-29). Berilmasa
+    naqd kassa olinadi, lekin endi u yozuvda qoladi: ilgari tanlov
+    ham, iz ham yo'q edi va "pul qayerdan ketdi?" degan savol
+    javobsiz qolardi.
+    """
     if amount <= 0:
         raise BusinessRuleViolation(gettext("Avans summasi musbat boʻlishi kerak."))
+
+    account = cash_account or cash.account_for_method(branch=employee.branch, method="cash")
+    if account.organization_id != employee.organization_id:
+        raise BusinessRuleViolation(gettext("Kassa hisobi boshqa tashkilotga tegishli."))
 
     advance = EmployeeAdvance.objects.create(
         organization=employee.organization,
@@ -502,6 +515,7 @@ def record_advance(
         employee=employee,
         amount=_money(amount),
         paid_on=paid_on,
+        cash_account=account,
         note=note[:255],
         created_by=created_by,
     )
@@ -510,7 +524,7 @@ def record_advance(
     # hisoblanishini kutib turib yozish "hozir qancha pulim bor?"
     # degan savolga oyning yarmi davomida noto'g'ri javob berardi.
     cash.post_movement(
-        account=cash.account_for_method(branch=employee.branch, method="cash"),
+        account=account,
         direction=MovementDirection.OUT,
         amount=advance.amount,
         source_type=MovementSource.ADVANCE,
@@ -518,6 +532,7 @@ def record_advance(
         description=gettext("Avans: {employee}").format(employee=employee.full_name)[:255],
         occurred_at=timezone.make_aware(datetime.combine(advance.paid_on, time.min)),
         created_by=created_by,
+        allow_negative=allow_negative,
     )
 
     _sync_draft_for(advance)
@@ -676,6 +691,7 @@ def pay_run(
     run: PayrollRun,
     payouts: list[dict[str, Any]] | None = None,
     paid_on: Any = None,
+    allow_negative: bool = False,
     created_by: Any = None,
 ) -> PayrollRun:
     """
@@ -762,6 +778,7 @@ def pay_run(
             )[:255],
             occurred_at=timezone.make_aware(datetime.combine(when, time.min)),
             created_by=created_by,
+            allow_negative=allow_negative,
         )
 
     run.status = PayrollStatus.PAID

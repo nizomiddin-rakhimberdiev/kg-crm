@@ -114,6 +114,7 @@ def _purchase_expense(
     occurred_at: Any,
     created_by: Any,
     note: str,
+    allow_negative: bool = False,
 ) -> Any:
     """
     Xariddan chiqim yozuvini tug'diradi (Q13).
@@ -159,6 +160,7 @@ def _purchase_expense(
         approved_by=created_by,
         note=gettext("Ombor xaridi"),
         cash_account=cash_account,
+        allow_negative=allow_negative,
     )
 
 
@@ -178,6 +180,7 @@ def record_movement(
     create_expense: bool = True,
     expense_category: Any = None,
     cash_account: Any = None,
+    allow_negative: bool = False,
     created_by: Any = None,
 ) -> StockMovement:
     """
@@ -226,6 +229,7 @@ def record_movement(
             occurred_at=occurred_at,
             created_by=created_by,
             note=note,
+            allow_negative=allow_negative,
         )
         if create_expense
         else None

@@ -28,6 +28,11 @@ from apps.expenses.serializers import (
 __all__ = ["ExpenseCategoryViewSet", "ExpenseViewSet"]
 
 
+def _allow_negative(request: Request) -> bool:
+    """Foydalanuvchi "qopda pul yetmaydi" ogohlantirishini tasdiqladimi (ADR-29)."""
+    return str(request.data.get("allow_negative", "")).lower() in {"true", "1", "yes"}
+
+
 class ExpenseCategoryViewSet(BranchScopedMixin, TenantViewSet):
     permission_module = "expenses"
     model = ExpenseCategory
@@ -86,11 +91,16 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
                 items=items,
                 description=data.get("description", ""),
                 cash_account=data.get("cash_account"),
+                allow_negative=_allow_negative(self.request),
                 created_by=user,
             )
         else:
             serializer.save(organization=category.organization, branch=category.branch)
-            services.approve_expense(expense=serializer.instance, approved_by=user)
+            services.approve_expense(
+                expense=serializer.instance,
+                approved_by=user,
+                allow_negative=_allow_negative(self.request),
+            )
         audit.record(
             action="create",
             request=self.request._request,
@@ -141,6 +151,7 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
             approved_by=user,
             note=request.data.get("note", ""),
             cash_account=account,
+            allow_negative=_allow_negative(request),
         )
         audit.record(
             action="update",
@@ -184,7 +195,12 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
         expense = self.get_object()
         user = request_user(request)
         account = self._cash_account(request, user)
-        services.mark_expense_paid(expense=expense, cash_account=account, created_by=user)
+        services.mark_expense_paid(
+            expense=expense,
+            cash_account=account,
+            allow_negative=_allow_negative(request),
+            created_by=user,
+        )
         audit.record(
             action="update",
             request=request._request,

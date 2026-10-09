@@ -145,3 +145,5 @@ class MovementWriteSerializer(serializers.Serializer):
     expense_category_id = TenantPrimaryKeyRelatedField(
         model=ExpenseCategory, source="expense_category", required=False, allow_null=True
     )
+    # Qopda pul yetmasligini foydalanuvchi koʻrib turib tasdiqladi (ADR-29).
+    allow_negative = serializers.BooleanField(required=False, default=False)

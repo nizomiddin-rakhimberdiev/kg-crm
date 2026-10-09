@@ -128,6 +128,7 @@ class StockMovementViewSet(BranchScopedMixin, TenantViewSet):
             create_expense=data.get("create_expense", True),
             cash_account=data.get("cash_account"),
             expense_category=data.get("expense_category"),
+            allow_negative=data.get("allow_negative", False),
             created_by=request_user(request),
         )
         # Stok harakati — mulk harakati. `adjustment` esa qoldiqni

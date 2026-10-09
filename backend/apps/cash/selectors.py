@@ -18,7 +18,7 @@ from django.db.models.functions import Coalesce
 
 from apps.cash.models import CashAccount, CashMovement, MovementDirection
 
-__all__ = ["account_balances", "total_balance", "movement_totals"]
+__all__ = ["account_balance", "account_balances", "total_balance", "movement_totals"]
 
 ZERO = Value(Decimal("0"), output_field=DecimalField(max_digits=16, decimal_places=2))
 
@@ -61,6 +61,19 @@ def account_balances(
         }
         for account in accounts.order_by("kind", "name")
     ]
+
+
+def account_balance(*, account_id: Any) -> Decimal:
+    """
+    Bitta qopdagi pul — Σ kirim − Σ chiqim.
+
+    `account_balances()` dan farqi: bu yerda bitta qop soʻraladi va
+    javob — Decimal. U chiqim yozishdan OLDIN tekshirish uchun kerak
+    (ADR-29), shuning uchun u imkon qadar arzon boʻlishi kerak.
+    """
+    return CashMovement.objects.filter(cash_account_id=account_id).aggregate(total=_signed_sum())[
+        "total"
+    ] or Decimal("0")
 
 
 def total_balance(*, organization_id: Any, branch_id: Any = None) -> Decimal:

@@ -45,6 +45,7 @@ def create_expense_with_items(
     items: list[dict[str, Any]],
     description: str = "",
     cash_account: Any = None,
+    allow_negative: bool = False,
     created_by: Any = None,
 ) -> Expense:
     """
@@ -97,7 +98,12 @@ def create_expense_with_items(
         row.expense = expense
     ExpenseItem.objects.bulk_create(rows)
 
-    return approve_expense(expense=expense, approved_by=created_by, cash_account=cash_account)
+    return approve_expense(
+        expense=expense,
+        approved_by=created_by,
+        cash_account=cash_account,
+        allow_negative=allow_negative,
+    )
 
 
 def approve_expense(
@@ -106,6 +112,7 @@ def approve_expense(
     approved_by: Any,
     note: str = "",
     cash_account: Any = None,
+    allow_negative: bool = False,
 ) -> Expense:
     """
     Chiqimni tasdiqlaydi va pulni kassadan CHIQARADI (ADR-17).
@@ -157,6 +164,7 @@ def approve_expense(
         description=f"{expense.category.name}: {expense.description}"[:255],
         occurred_at=timezone.make_aware(datetime.combine(expense.expense_date, time.min)),
         created_by=approved_by,
+        allow_negative=allow_negative,
     )
     return expense
 
@@ -182,7 +190,11 @@ def reject_expense(*, expense: Expense, approved_by: Any, note: str = "") -> Exp
 
 @transaction.atomic
 def mark_expense_paid(
-    *, expense: Expense, cash_account: Any = None, created_by: Any = None
+    *,
+    expense: Expense,
+    cash_account: Any = None,
+    allow_negative: bool = False,
+    created_by: Any = None,
 ) -> Expense:
     """
     Chiqimni "to'langan" deb belgilaydi — BAYROQ, pul harakati emas.
@@ -219,6 +231,7 @@ def mark_expense_paid(
                 description=f"{expense.category.name}: {expense.description}"[:255],
                 occurred_at=timezone.make_aware(datetime.combine(expense.expense_date, time.min)),
                 created_by=created_by,
+                allow_negative=allow_negative,
             )
         expense.cash_account = cash_account
         fields.insert(1, "cash_account")

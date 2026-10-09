@@ -2,6 +2,24 @@ import { api } from '@/lib/api/client'
 import { withBranch } from '@/lib/branchScope'
 import type { EmployeeAdvance, PayrollItem, PayrollRun } from '@/lib/api/types'
 
+/** Server taklif qilgan bitta to'lov qatori. */
+export interface PlannedPayout {
+  payroll_item_id: string
+  employee: string
+  part: 'official' | 'cash'
+  amount: string
+  cash_account_id: string
+  cash_account_name: string
+}
+
+/** `mark-paid` ga yuboriladigan qator — qopi o'zgartirilgan bo'lishi mumkin. */
+export interface PayoutLine {
+  payroll_item_id: string
+  part: 'official' | 'cash'
+  amount: string
+  cash_account_id: string
+}
+
 // Xodimlar va lavozimlar API'si `features/staff/api.ts` da — ular
 // "Xodimlar" sahifasiga tegishli; oylik faqat hisoblashlar bilan ishlaydi.
 
@@ -22,7 +40,17 @@ export const payrollApi = {
   ) => api.patch<PayrollItem>(`/payroll/runs/${runId}/items/${itemId}`, payload),
 
   finalize: (id: string) => api.post<PayrollRun>(`/payroll/runs/${id}/finalize`),
-  markPaid: (id: string) => api.post<PayrollRun>(`/payroll/runs/${id}/mark-paid`),
+
+  /**
+   * To'lov TAKLIFI: kim, qaysi qismi, qaysi qopdan (ADR-29).
+   *
+   * Ilgari "To'langan" tugmasi bu ro'yxatni ko'rsatmay yuborardi va
+   * pul foydalanuvchi tanlamagan qopdan chiqib ketardi.
+   */
+  plannedPayouts: (id: string) => api.get<PlannedPayout[]>(`/payroll/runs/${id}/planned-payouts`),
+
+  markPaid: (id: string, payload?: { payouts?: PayoutLine[]; allow_negative?: boolean }) =>
+    api.post<PayrollRun>(`/payroll/runs/${id}/mark-paid`, payload ?? {}),
 
   /**
    * Qoralamani qayta hisoblash: yangi xodimlar va avanslar.
@@ -44,6 +72,8 @@ export const payrollApi = {
     amount: string
     paid_on: string
     note?: string
+    cash_account_id?: string
+    allow_negative?: boolean
   }) => api.post<EmployeeAdvance>('/payroll/advances', payload),
   removeAdvance: (id: string) => api.delete(`/payroll/advances/${id}`),
 }

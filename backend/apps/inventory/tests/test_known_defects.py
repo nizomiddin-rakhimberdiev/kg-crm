@@ -30,6 +30,9 @@ TOTAL = QUANTITY * UNIT_COST  # 300 000
 
 @pytest.fixture
 def warehouse(tenant_a) -> Warehouse:
+    # Xarid — pul chiqishi (Q13); boʻsh qopdan chiqim endi
+    # toʻxtaydi (ADR-29), shuning uchun avval qop toʻldiriladi.
+    tenant_a.fund(kind="all")
     with organization_context(tenant_a.organization.id):
         return Warehouse.objects.create(
             organization=tenant_a.organization, branch=tenant_a.branch, name="Oshxona ombori"

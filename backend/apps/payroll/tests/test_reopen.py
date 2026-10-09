@@ -33,6 +33,10 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture
 def employee(tenant_a: Any) -> Employee:
+    # Bogʻchada pul avval tushadi, keyin chiqadi (ADR-29): boʻsh
+    # qopdan oylik va avans ataylab toʻxtaydi. Qoʻriqchining oʻzi
+    # `apps/cash/tests/test_cash_ledger.py` da sinaladi.
+    tenant_a.fund(kind="all")
     with organization_context(tenant_a.organization.id):
         return Employee.objects.create(
             organization=tenant_a.organization,
