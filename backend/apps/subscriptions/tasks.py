@@ -16,6 +16,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from django.db import transaction
 from django.utils import timezone
 
 from apps.core.tasks import reliable_task
@@ -105,7 +106,15 @@ def close_periods_and_invoice() -> dict[str, int]:
             continue
 
         try:
-            with organization_context(subscription.organization_id):
+            # Uchala qadam — BITTA tranzaksiya (PLAN 11.7).
+            #
+            # `ACKS_LATE` bilan ishchi yiqilsa vazifa qayta yetkaziladi.
+            # Ilgari hisob yozilgandan keyin, davr surilishidan oldin
+            # yiqilish mijozga IKKINCHI hisob yozardi: qayta urinishda
+            # `current_period_end` hali o'tmishda bo'lardi va yuqoridagi
+            # qo'riqchi o'tkazib yuborardi. Endi yo uchalasi ham bo'ladi,
+            # yo hech biri — qayta urinish esa toza holatdan boshlanadi.
+            with organization_context(subscription.organization_id), transaction.atomic():
                 snapshot = services.record_daily_usage(subscription=subscription)
                 services.close_period(snapshot=snapshot)
                 closed += 1

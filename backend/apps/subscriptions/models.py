@@ -361,6 +361,24 @@ class SubscriptionInvoice(TenantScopedModel):
                 ),
                 name="ck_subscription_invoice_total",
             ),
+            # Bitta davr — bitta hisob (PLAN 11.7).
+            #
+            # `CELERY_TASK_ACKS_LATE` va `REJECT_ON_WORKER_LOST` birga
+            # vazifani qayta yetkazadi: ishchi hisob yozilgandan KEYIN,
+            # davr surilishidan OLDIN yiqilsa, qayta urinish ikkinchi
+            # hisobni yozardi va mijoz ikki marta toʻlar edi. Servis
+            # endi uchala qadamni bitta tranzaksiyada bajaradi, lekin
+            # oxirgi tutqich BAZADA boʻlishi kerak (invariant 8):
+            # tuition `invoice` da `uq_invoice_child_period` bor,
+            # obunada esa hech narsa yoʻq edi.
+            #
+            # Bekor qilingani chetda: xato yozilgan hisobni bekor qilib,
+            # toʻgʻrisini yozish yoʻli ochiq qolsin.
+            models.UniqueConstraint(
+                fields=["subscription", "period_start"],
+                condition=~models.Q(status="cancelled"),
+                name="uq_sub_invoice_period",
+            ),
         ]
         indexes = [
             models.Index(fields=["organization", "-issued_at"], name="ix_sub_invoice_org_issued"),

@@ -1608,3 +1608,32 @@ uni eslab qoʻshish kerak boʻlardi — va aynan shu ikki marta unutilgan.
 
 Jonli tekshiruv: logotip 200, eksport 404, maʼlumotnoma 404, demo
 stendda ham 404.
+
+**Celery: bitta davr uchun ikkinchi hisob yozilishi mumkin edi.**
+Sozlamalar roʻyxati toza — `ACKS_LATE`, `REJECT_ON_WORKER_LOST`,
+`PREFETCH_MULTIPLIER=1`, yumshoq/qattiq vaqt chegarasi,
+`visibility_timeout` vaqt chegarasidan katta, vaqt zonasi
+`Asia/Tashkent`, qayta urinish esa faqat **oʻtkinchi** xatolarda
+(`BusinessRuleViolation` ataylab roʻyxatda yoʻq: "tarif belgilanmagan"
+besh marta urinishdan toʻgʻrilanmaydi).
+
+Lekin aynan `ACKS_LATE` har bir vazifadan **ikki marta ishlashga
+chidashni** talab qiladi, va `close_periods_and_invoice` chidamasdi.
+Uning ichida uch qadam bor: oʻlchovni yop → hisob yoz → davrni surish.
+Ular bitta tranzaksiyada emas edi. Ishchi hisob yozilgandan KEYIN,
+davr surilishidan OLDIN yiqilsa (deploy, OOM, broker uzilishi) vazifa
+qayta yetkaziladi, `current_period_end` hali oʻtmishda boʻladi,
+yuqoridagi qoʻriqchi oʻtkazib yuboradi — va mijoz **ikkinchi marta**
+hisob oladi.
+
+Bazada ham tutqich yoʻq edi: tuition `invoice` da
+`uq_invoice_child_period` bor, obuna hisob-fakturasida esa hech narsa —
+`issue_invoice` shartsiz `create()` qilardi. Ikkalasi ham tuzatildi:
+uch qadam bitta tranzaksiyada, va `uq_sub_invoice_period` (bekor
+qilingani chetda — xato hisobni bekor qilib, toʻgʻrisini yozish yoʻli
+ochiq qolsin). Productionda dublikat yoʻqligi migratsiyadan oldin
+tekshirildi.
+
+Xabarlar uzatish allaqachon idempotent va buni oʻz hujjatida aytadi:
+faqat `queued` va urinishlari tugamagan `failed` olinadi, yuborilgani
+`sent` boʻlib roʻyxatdan chiqadi.
