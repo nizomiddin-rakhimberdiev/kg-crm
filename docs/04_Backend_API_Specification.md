@@ -503,6 +503,11 @@ Module: `finance` (Payments module UI). The **ledger** is the source of truth ([
 | POST | `/cash-accounts` | `payments.create` | An extra pot (a safe, a second till) |
 | PATCH | `/cash-accounts/{id}` | `payments.update` | Rename, or clear `handles_method` |
 | GET | `/cash-accounts/balances` | `payments.read` | `[{id, name, kind, balance}]` — `Σ in − Σ out`, never stored |
+| POST | `/cash-accounts/{id}/adjust` | `payments.update` | `{amount, reason, opening?, occurred_on?}` → `{id, balance}`. An opening balance or a counting difference (ADR-29) |
+
+**Why `/adjust` exists.** A kindergarten joins mid-year with money already in the safe, and until this endpoint there was no way to say so: `MovementSource` had `opening` and `manual` but nothing wrote either, so every pot started at zero and the first expense pushed the balance negative. Since ADR-29 refuses an `out` movement larger than the balance, the two had to ship together — a guard without a way to enter the opening balance would have stopped ordinary work on day one.
+
+`amount` may be negative (the count came up short). `reason` is **mandatory**: a balance that changes without a recorded reason cannot be explained afterwards. The write is an ordinary `cash_movement`, so the journal stays append-only — a second correction is a second row, never an edit.
 
 Movements themselves have **no endpoint**: a movement is a money record, and it is read through the reports that already carry their own permissions ([§14](#14-reports--dashboard)). Deleting an account with movements is refused by the database (`ON DELETE RESTRICT`); deactivate it instead.
 

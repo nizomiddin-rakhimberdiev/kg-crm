@@ -1637,3 +1637,22 @@ tekshirildi.
 Xabarlar uzatish allaqachon idempotent va buni oʻz hujjatida aytadi:
 faqat `queued` va urinishlari tugamagan `failed` olinadi, yuborilgani
 `sent` boʻlib roʻyxatdan chiqadi.
+
+**Hujjat va kod ajralib qolgan joylar.** Loyihaning 3-qoidasi —
+"hujjat va kod BIRGA oʻzgaradi" — bugun ikki marta buzilgan edi.
+Tizimli tekshiruv (har bir model jadvali `docs/03` da uchraydimi)
+toʻrtta boʻshliq koʻrsatdi, ularning ikkitasi bugungi ish emas:
+
+* `expense_item` — chiqim qatorlari (PLAN 7.5), umuman yozilmagan;
+* `report_export` — eksport ishlari jadvali;
+* `platform_user`, `support_grant` — vendor tekisligi. Ularda
+  `organization_id` bor, lekin RLS yoʻq — va bu **qaror** boʻlishi
+  kerak, keyin kimdir topadigan **unutish** emas, shuning uchun
+  sxema hujjatiga §19a boʻlib yozildi.
+
+Shu bilan birga bugun qoʻshilganlari ham yozildi:
+`employee_advance.cash_account_id`, `uq_sub_invoice_period` va
+`POST /cash-accounts/{id}/adjust` (`docs/04`).
+
+Migratsiyalar tekshiruvi topilmasiz: oʻnta maʼlumot migratsiyasining
+hammasida teskari funksiya bor, yaʼni qaytarib boʻladi.

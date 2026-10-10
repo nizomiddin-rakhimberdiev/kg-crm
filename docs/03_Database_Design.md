@@ -937,8 +937,11 @@ Money handed to an employee **during** the month, before payroll is calculated �
 | `employee_id` | `UUID` | `NOT NULL` FK → employee `ON DELETE RESTRICT` | |
 | `amount` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (amount > 0)` | |
 | `paid_on` | `DATE` | `NOT NULL` | The month of this date decides which run it belongs to |
+| `cash_account_id` | `UUID` | `NULL` FK → cash_account `ON DELETE RESTRICT` | **Which pot the money left** (ADR-29). `NULL` on rows written before the column existed — their movement sits in the till and is not rewritten |
 | `note` | `VARCHAR(255)` | `NULL` | |
 | `created_by_id` | `UUID` | `NULL` FK → user `ON DELETE SET NULL` | |
+
+**The pot is recorded, not assumed** (ADR-29). Until this column existed `record_advance()` always took the branch's till and nobody chose it — so "where did the money go?" had no answer for the one payment a kindergarten makes most casually. The service still falls back to the till when nothing is passed, but the fallback is now *written down*.
 
 **Kept separate from `deduction` on purpose.** A deduction is a penalty or a settlement; an advance is salary the employee already received. Merging them made the payslip unreadable ("why was 3 M withheld?").
 
@@ -1051,7 +1054,27 @@ A storage location (a branch may have kitchen store, dry store, etc.).
 
 **Approval is what moves the money, not `mark-paid`.** This looks like the wrong hook until you line it up with the reports: `expense_summary` and the P&L have counted `approved` as spend since Sprint 7. If cash only fell at `paid`, two screens would answer the same question differently — and in practice most kindergartens approve an expense they have already paid and never touch the "paid" button again. `mark_expense_paid()` therefore only flips the flag; passing a different account there moves the existing movement (counter-entry plus a new one) rather than spending the money twice.
 
-**The movement, not the row, is the outflow.** An approved expense writes one `out` `cash_movement` inside the same transaction. Reversing a mistaken expense is a counter-movement plus a status change, never a delete.
+**The movement, not the row, is the outflow.** An approved expense writes one `out` `cash_movement` inside the same transaction — and *one transaction* is literal: the status change and the movement share it, so a refused payout (ADR-29, a pot that is short) cannot leave an expense standing as `approved` with no money gone. That was the shape of a real defect: the decorator was missing while `post_movement()` never raised, and ADR-29 made it raise routinely.
+
+### 16.3 `expense_item`
+
+What was actually bought, one row per line. Optional: an expense may still be a single amount.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `expense_id` | `UUID` | `NOT NULL` FK → expense `ON DELETE CASCADE` | |
+| `name` | `VARCHAR(120)` | `NOT NULL` | "Kartoshka" |
+| `quantity` | `NUMERIC(12,3)` | `NOT NULL`, `CHECK (quantity > 0)` | |
+| `unit` | `VARCHAR(20)` | `NOT NULL` | kg, dona, litr |
+| `unit_price` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (unit_price >= 0)` | |
+| `line_total` | `NUMERIC(12,2)` | `NOT NULL` | `= quantity × unit_price`, computed and **stored** |
+| `note` | `VARCHAR(255)` | `NULL` | |
+
+**The total comes from the lines, never from the client.** `create_expense_with_items()` sums them server-side. If the posted total were trusted, the figure on screen and the money out of the till could drift apart and nobody would see it.
+
+**`CASCADE`, unlike almost everything else here.** A line has no meaning without its expense and no money of its own — the `cash_movement` hangs off the expense, not the line. This is the one place where the `RESTRICT` discipline would only make deletion awkward without protecting anything.
+
+**Why it exists** (PLAN 7.5): "Bozorlik — 600 000" tells you nothing a month later. "Kartoshka, 50 kg, 3 000" does.
 
 ---
 
@@ -1135,6 +1158,50 @@ One dispatch record per recipient per message.
 - **Insert-only.** No `UPDATE`/`DELETE` (enforced by DB grants: the app DB role has only `INSERT`/`SELECT` on this table).
 - Written from the service layer for all money/admin mutations (payments, invoices, payroll runs, role/permission changes, user activation, settings, stock adjustments).
 - **Retention & scale:** monthly partitioning candidate (§27).
+
+### 19.2 `report_export`
+
+An export the user asked for, built by a Celery worker and fetched later.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `report_type` | `VARCHAR(32)` | `NOT NULL` | `revenue`, `expenses`, `debtors`, `payroll`, `attendance`, `pl` |
+| `params` | `JSONB` | `NOT NULL DEFAULT '{}'` | The period and filters, plus the **request language** |
+| `status` | `VARCHAR(12)` | `NOT NULL DEFAULT 'queued'`, `CHECK (... IN ('queued','running','ready','failed'))` | |
+| `file` | `VARCHAR(255)` | `NULL` | Written through `FileField`, so storage can move to S3 without touching this table |
+| `row_count` | `INTEGER` | `NULL` | Shown next to the finished file |
+| `error` | `VARCHAR(255)` | `NULL` | Why it failed — "I pressed export and nothing happened" must not be a possible state |
+| `requested_by_id` | `UUID` | `NULL` FK → user `ON DELETE SET NULL` | |
+
+**The language is stored with the request, not read at build time.** The worker runs later and in another process, where `Accept-Language` never arrives — the column headings came out Uzbek for everyone (ADR-16).
+
+**The tenant is passed to the task as an argument.** Reading it from the row does not work under RLS: a connection with no context cannot see the row at all, so the task returned "not found" and the user got no file and no error.
+
+**The file is served by `/reports/exports/{id}/download`, never by `/media/`.** nginx serves `/media/` without authentication, and these files hold debtor lists and financial totals; worse, their names are not UUIDs (`debtors-20260923-1001.csv`), so a date and a minute were enough to enumerate them. nginx now serves only `{org}/brand/` and `{org}/avatars/` and returns `404` for everything else under `/media/` — an allow-list, so the next `upload_to` path is private by default.
+
+---
+
+## 19a. Vendor plane (ADR-10)
+
+These two tables are **not** tenant tables: they carry `organization_id` but have no RLS policy and are read only inside `platform_context()`. They are listed here so the schema is complete, and because "no RLS" must be a decision on the page rather than an omission someone finds later.
+
+### 19a.1 `platform_user`
+
+Vendor staff. Deliberately **not** `accounts.User`: a vendor account must never be assignable to a kindergarten role, and keeping the planes in one table is how that line gets crossed by accident. Holds email, password hash, `is_active`, and the TOTP secret plus single-use backup codes (ADR-24, 2FA on by default).
+
+### 19a.2 `support_grant`
+
+A time-boxed, reasoned, **customer-visible** permission for one vendor user to read one organization's operational data through the ordinary customer API — there is no privileged second code path.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `organization_id` | `UUID` | `NOT NULL` FK → organization `ON DELETE RESTRICT` | |
+| `platform_user_id` | `UUID` | `NOT NULL` FK → platform_user `ON DELETE RESTRICT` | |
+| `reason` | `VARCHAR(255)` | `NOT NULL` | Written to the customer's audit log |
+| `expires_at` | `TIMESTAMPTZ` | `NOT NULL` | |
+| `revoked_at` | `TIMESTAMPTZ` | `NULL` | |
+
+**Checked against the database on every request**, not just when the token is issued: a revoked grant has to close access *now*, not in thirty minutes, or the "revoke" button is a false comfort. The session is **read-only** — a write would appear in the audit log under the kindergarten owner's name, because the session runs through their account, which is exactly how an audit log stops answering "who did this".
 
 ---
 
@@ -1237,7 +1304,10 @@ What the vendor bills the organization. Immutable once issued.
 | `currency` | `CHAR(3)` | `NOT NULL DEFAULT 'UZS'` | |
 | `status` | `VARCHAR(20)` | `NOT NULL`, `CHECK (status IN ('issued','paid','overdue','cancelled'))` | |
 
-**Constraint:** `ck_subscription_invoice_total` — `CHECK (total_amount = base_amount + overage_amount - discount_amount)`.
+**Constraints:**
+
+* `ck_subscription_invoice_total` — `CHECK (total_amount = base_amount + overage_amount - discount_amount)`.
+* `uq_sub_invoice_period` — `UNIQUE (subscription_id, period_start) WHERE status <> 'cancelled'`. **One period, one invoice.** `CELERY_TASK_ACKS_LATE` re-delivers a task whose worker died, so `close_periods_and_invoice` can run twice; it closes the measurement, issues the invoice and rolls the period, and a crash between the second and third step used to leave `current_period_end` in the past — the guard let the retry through and the customer was billed again for the same month. The service now does all three in one transaction, and this constraint is the layer below it (invariant 8), mirroring `uq_invoice_child_period` on tuition. Cancelled rows are excluded so a wrong invoice can be voided and reissued.
 
 > Amounts are **denormalized onto the invoice on purpose.** An invoice is a legal document: it must render identically in three years even if the plan version, the snapshot interpretation, or the discount policy has changed. Recomputing an old invoice from current data is a bug, not a feature.
 
