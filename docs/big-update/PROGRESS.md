@@ -1505,3 +1505,30 @@ ikkinchisida chiqqan xato uchinchisidan oxirigacha boʻlganlarni oʻsha
 kechadan mahrum qilardi. Qayta urinish ham yordam bermaydi — xato
 takrorlansa roʻyxatning quyruq qismi **hech qachon** tekshirilmaydi,
 va buni hech kim sezmaydi, chunki tekshiruvning oʻzi jim.
+
+**Tiklash mashqini oʻtkazib boʻlmasdi.** `restore.sh` bazaning nomini
+`.env` dan olardi, uni oʻchirib qayta yaratardi — yaʼni "tiklashni bir
+marta sinab koʻramiz" degan qaror **productionni oʻchirish** degani
+edi. Shuning uchun hujjatdagi mashq (§8) maxsus qayta qurilgan stendda,
+maxsus yaratilgan maʼlumot bilan oʻtkazilgan va hech qachon haqiqiy
+zaxira bilan takrorlanmagan. Oʻtkazib boʻlmaydigan mashq — reja emas,
+va haqiqiy fayl bilan sinalmagan zaxira — taxmin.
+
+`--into` rejimi qoʻshildi: alohida bazaga tiklaydi, ilovani toʻxtatmaydi,
+media'ga tegmaydi (u bitta volume'da — almashtirish jonli rasmlarni
+oʻchirardi) va tasdiq soʻramaydi, yaʼni uni cron'dan ham oʻtkazsa
+boʻladi. `check_rls` oʻsha vaqtinchalik bazaga qarshi ishlaydi.
+
+**Mashq nimani koʻrsatdi.** Haqiqiy shifrlangan zaxira (9-oktabr, 06:30)
+alohida bazaga tiklandi, production esa ishlashda davom etdi: RLS 59 ta
+jadvalda kuchga kirdi. Qator sonlarini `backup.sh --verify` allaqachon
+har safar solishtirardi — hech qachon tekshirilmagani esa **ilova**
+tiklangan bazadan oʻsha haqiqatni oʻqiydimi degan savol edi. Shuning
+uchun har bir tashkilotning qarzi `finance/balance.py`, kassasi esa
+`cash/selectors.py` orqali ikkala bazada qayta hisoblandi. Zaxiradan
+beri oʻzgarmagan bogʻchada — 42 bola, 84 880 000 qarz, 219 320 000
+kassa — barcha raqamlar **aynan mos** chiqdi. Qolgan ikkitasidagi farq
+mashqning jonli holatni oʻqiyotganini tasdiqladi: `paddington` da
+zaxiradan keyin 15 ta bola qoʻshilgan (§7 dagi RPO — nazariy emas,
+haqiqiy), `orientalkinderland` esa zaxiradan keyin tozalangan, yaʼni
+oʻchirilgan maʼlumot zaxirada turibdi va tiklanishi mumkin.

@@ -11,6 +11,16 @@
 #   ./scripts/restore.sh backups/kg-crm-20260914-120000.dump
 #   ./scripts/restore.sh backups/kg-crm-20260914-120000.dump.enc
 #
+# MASHQ rejimi — jonli bazaga TEGMAYDI:
+#
+#   ./scripts/restore.sh backups/...dump.enc --into kg_crm_drill
+#
+# Nega alohida rejim kerak. Tiklash skripti bor edi, lekin uni
+# MASHQ QILIB BO'LMASDI: u `.env` dagi bazani o'chirib qayta yaratardi,
+# ya'ni "tiklashni bir marta sinab ko'ramiz" degan qaror productionni
+# o'chirish degani edi. Shuning uchun mashq hech qachon o'tkazilmagan —
+# va o'tkazilmagan tiklash hali zaxira emas, taxmin.
+#
 # Tiklashdan KEYIN `check_rls` majburiy: dump ichida RLS siyosatlari
 # YO'Q (ular migratsiyada yaratiladi), ya'ni tiklangan baza himoyasiz
 # qolishi mumkin. Skript buni o'zi bajaradi va natijasini ko'rsatadi.
@@ -25,40 +35,77 @@ step() { printf '\n%s▸ %s%s\n' "$BOLD" "$1" "$OFF"; }
 ok()   { printf '  %s✓ %s%s\n' "$GREEN" "$1" "$OFF"; }
 die()  { printf '  %s✗ %s%s\n' "$RED" "$1" "$OFF"; exit 1; }
 
-DUMP="${1:-}"
-[ -n "$DUMP" ] || { echo "Ishlatish: $0 <zaxira-fayli> [media-arxivi]"; exit 2; }
+DUMP=""
+MEDIA_ARG=""
+INTO=""
+KEEP=0
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --into) INTO="$2"; shift 2 ;;
+        --keep) KEEP=1; shift ;;
+        -*) echo "Noma'lum argument: $1"; exit 2 ;;
+        *) if [ -z "$DUMP" ]; then DUMP="$1"; else MEDIA_ARG="$1"; fi; shift ;;
+    esac
+done
+
+[ -n "$DUMP" ] || {
+    echo "Ishlatish: $0 <zaxira-fayli> [media-arxivi] [--into <baza>] [--keep]"
+    exit 2
+}
 [ -f "$DUMP" ] || die "Fayl topilmadi: $DUMP"
 
 [ -f .env ] || die ".env topilmadi"
 # shellcheck disable=SC1091
 set -a; . ./.env; set +a
 
-DB="${POSTGRES_DB:-kg_crm}"
+LIVE_DB="${POSTGRES_DB:-kg_crm}"
 OWNER="${POSTGRES_OWNER:-kg_crm}"
 
+# Mashq rejimida bazaning nomi boshqa — jonli baza qo'l tegmay qoladi.
+DRILL=0
+DB="$LIVE_DB"
+if [ -n "$INTO" ]; then
+    [ "$INTO" != "$LIVE_DB" ] || die "--into jonli baza nomi bilan bir xil: $INTO"
+    DB="$INTO"
+    DRILL=1
+fi
+
 # Media arxivi: berilmasa, dump nomidan taxmin qilamiz.
-MEDIA="${2:-}"
-if [ -z "$MEDIA" ]; then
+MEDIA="$MEDIA_ARG"
+if [ -z "$MEDIA" ] && [ "$DRILL" = "0" ]; then
     GUESS="${DUMP%.enc}"; GUESS="${GUESS%.dump}-media.tar.gz"
     [ -f "$GUESS" ] && MEDIA="$GUESS"
     [ -f "$GUESS.enc" ] && MEDIA="$GUESS.enc"
 fi
+# Mashqda media TIKLANMAYDI: u bitta volume'da yashaydi va uni
+# almashtirish jonli rasmlarni o'chirardi.
+[ "$DRILL" = "1" ] && MEDIA=""
 
 # --- Ogohlantirish ---
-printf '%s%s' "$YELLOW$BOLD" "
+if [ "$DRILL" = "1" ]; then
+    # Mashq hech narsani yo'qotmaydi, ya'ni tasdiq so'rash ham shart
+    # emas — aks holda uni cron'dan o'tkazib bo'lmasdi.
+    printf '\n%sMASHQ%s  jonli baza (%s) TEGILMAYDI\n' "$BOLD" "$OFF" "$LIVE_DB"
+    cat <<INFO
+  Baza:    $DB  (vaqtinchalik)
+  Zaxira:  $DUMP
+INFO
+else
+    printf '%s%s' "$YELLOW$BOLD" "
   DIQQAT
 "
-printf '%s' "$OFF"
-cat <<INFO
+    printf '%s' "$OFF"
+    cat <<INFO
   Baza:    $DB
   Zaxira:  $DUMP
   Media:   ${MEDIA:-yoq}
 
   Bazaning HOZIRGI mazmuni butunlay o'chiriladi.
 INFO
-printf '\n  Davom etish uchun baza nomini aynan yozing (%s): ' "$DB"
-read -r CONFIRM
-[ "$CONFIRM" = "$DB" ] || die "Tasdiq mos kelmadi — hech narsa o'zgartirilmadi"
+    printf '\n  Davom etish uchun baza nomini aynan yozing (%s): ' "$DB"
+    read -r CONFIRM
+    [ "$CONFIRM" = "$DB" ] || die "Tasdiq mos kelmadi — hech narsa o'zgartirilmadi"
+fi
 
 # --- Shifrni ochish ---
 WORK="$(mktemp -d)"
@@ -84,9 +131,11 @@ ok "dump: $(du -h "$WORK/db.dump" | cut -f1)"
 #
 # Tiklash paytida ilova yozishda davom etsa, natija zaxira ham emas,
 # joriy holat ham emas — ikkalasining aralashmasi bo'ladi.
-step "Ilova to'xtatilmoqda"
-$COMPOSE stop web worker beat >/dev/null 2>&1 || true
-ok "web · worker · beat to'xtadi"
+if [ "$DRILL" = "0" ]; then
+    step "Ilova to'xtatilmoqda"
+    $COMPOSE stop web worker beat >/dev/null 2>&1 || true
+    ok "web · worker · beat to'xtadi"
+fi
 
 # --- Bazani almashtiramiz ---
 step "Baza tiklanmoqda"
@@ -131,9 +180,11 @@ ok "kg_crm_app va kg_crm_backup huquqlari tiklandi"
 step "RLS siyosatlari qayta qo'llanmoqda"
 $COMPOSE run --rm --no-deps -T \
     -e POSTGRES_USER="$OWNER" -e POSTGRES_PASSWORD="$OWNER_DB_PASSWORD" \
+    -e POSTGRES_DB="$DB" \
     web python manage.py check_rls --fix >/dev/null 2>&1 || true
 $COMPOSE run --rm --no-deps -T \
     -e POSTGRES_USER="$OWNER" -e POSTGRES_PASSWORD="$OWNER_DB_PASSWORD" \
+    -e POSTGRES_DB="$DB" \
     web python manage.py check_rls || die "RLS tiklanmadi — baza HIMOYASIZ, ilovani ko'tarmang"
 ok "RLS kuchda"
 
@@ -145,6 +196,18 @@ if [ -n "$MEDIA" ] && [ -f "$MEDIA" ]; then
         sh -c 'rm -rf /app/mediafiles/* && tar xzf /restore/media.tar.gz -C /app/mediafiles' \
         || die "Media tiklanmadi"
     ok "media tiklandi"
+fi
+
+# --- Mashq tugadi ---
+if [ "$DRILL" = "1" ]; then
+    if [ "$KEEP" = "1" ]; then
+        printf '\n%sMASHQ TUGADI%s  baza qoldirildi: %s\n' "$GREEN$BOLD" "$OFF" "$DB"
+    else
+        $COMPOSE exec -T db psql -U "$OWNER" -d postgres \
+            -c "DROP DATABASE IF EXISTS \"$DB\";" >/dev/null 2>&1 || true
+        printf '\n%sMASHQ TUGADI%s  vaqtinchalik baza o'"'"'chirildi\n' "$GREEN$BOLD" "$OFF"
+    fi
+    exit 0
 fi
 
 # --- Ilovani qaytaramiz ---

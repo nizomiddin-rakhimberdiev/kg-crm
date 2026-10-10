@@ -173,3 +173,54 @@ Performed on 2026-09-14 against the full production stack, on a database deliber
 **And it proved the premise.** Dumped with the ordinary application role, the same database produced a 40 KB file — full schema, plausible-looking, **zero rows**. With `kg_crm_backup`: 1.2 MB, 65 children, 3 organizations. That 40 KB file is what a naive backup script would have been storing every night.
 
 Repeat this rehearsal after any change to the database roles, the RLS policies, or the backup scripts — those three are what can quietly break a restore.
+
+---
+
+## 9. The production drill
+
+§8 rehearsed the mechanism on a stack rebuilt for the purpose, with data created for the test. This one is different: it restored **the real nightly backup, holding real customers' data, while production kept serving traffic**. Performed 2026-10-10.
+
+### What had to be fixed first
+
+The drill could not be run at all. `restore.sh` read the database name from `.env`, dropped it and recreated it — so "let's rehearse a restore once" meant "let's destroy production once". That is why the rehearsal in §8 needed a stack rebuilt for it, and why it had never been repeated against real data.
+
+A rehearsal you cannot perform is not a plan, and a backup whose restore has never been exercised against the real artifact is an assumption. So the script grew a drill mode:
+
+```bash
+./scripts/restore.sh backups/kg-crm-20261009-063050.dump.enc --into kg_crm_drill --keep
+```
+
+`--into` restores into a scratch database and changes four things: the live database is never touched, `web`/`worker`/`beat` are **not** stopped, media is **not** restored (it lives in one volume — replacing it would delete the live photographs), and no confirmation is typed, so the drill can run unattended. `check_rls` runs against the scratch database through a `POSTGRES_DB` override. Without `--keep` the scratch database is dropped at the end.
+
+### What was run
+
+| Step | Result |
+|---|---|
+| Source | `kg-crm-20261009-063050.dump.enc` — 986,720 bytes, encrypted, produced by the ordinary pre-deploy backup |
+| Decrypt | 964 KB dump |
+| `pg_restore` into `kg_crm_drill` | rows restored |
+| Re-grant `kg_crm_app`, `kg_crm_backup` | done |
+| `check_rls` | **59 tables** — RLS in force on the restored database |
+| Production during the drill | untouched; no service stopped |
+
+### The number that matters
+
+Row counts were already compared by `backup.sh --verify` on every backup. What had never been checked is whether the **application** reads the same truth from a restored database. So each organization's debt was recomputed through `apps/finance/balance.py` and its cash balance through `apps/cash/selectors.py`, in both databases:
+
+| Organization | In the backup | Live | Reading |
+|---|---|---|---|
+| `toshkent-qamarniso-kochasi-9` | 42 children · debt 84,880,000 · cash 219,320,000 | **identical** | The kindergarten was unchanged between the backup and the drill, and every figure survived encryption, decryption, restore and RLS re-application unchanged |
+| `paddington` | 25 children | 40 children | 15 children enrolled after 06:30. Expected: this is the RPO of §7 being real rather than theoretical |
+| `orientalkinderland` | 7 children · debt 7,862,962.92 · cash −6,752,500 | 0 children | The customer's data was reset at their request *after* this backup was taken. The backup holds the pre-reset state, so that data is recoverable |
+
+The identical row is the result. The other two are the drill confirming it reads live state rather than a fixture.
+
+A side observation: the `−6,752,500` in the backup is the overdraft that ADR-29 was written for. A drill that reproduces yesterday's bug is a drill reading real history.
+
+### What this does not yet cover
+
+- **Restoring onto a clean host.** The drill used the existing server. The "whole server lost" RTO in §7 is still an estimate.
+- **Media.** Drill mode deliberately skips it, so the media path is exercised only by a real restore.
+- **Off-server copies.** §4 still has to be done by hand; the backups live on the same machine they protect.
+
+Re-run with `--into` after any change to the database roles, the RLS policies, or the backup scripts.
