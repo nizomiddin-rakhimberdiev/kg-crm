@@ -1583,3 +1583,28 @@ uzunligi — Django sukuti, 8 belgi. Yoʻriqnoma 12 ni tavsiya qiladi,
 lekin ADR-24 xodimlar qulayligi haqida ataylab qaror qabul qilgan
 (bogʻcha xodimlari telefon almashadi, majburiy ogʻirlik butun
 jamoani bitta qurilmaga surardi). Bu biznes qarori — egasiniki.
+
+**Eng jiddiy topilma: moliyaviy eksportlar ochiq edi.** `/media/` yoʻli
+nginx tomonidan autentifikatsiyasiz beriladi, va uning ostida ikkita
+narsa yotardi: bolaning tibbiy maʼlumotnomasi va **qarzdorlar roʻyxati
+eksportlari**. Ikkalasining ham ilovada ruxsat tekshiradigan endpointi
+bor va ikkalasining ham izohida aynan shunday yozilgan — "fayl
+`/media/` havolasi orqali emas, SHU endpoint orqali beriladi", sababi
+ham toʻgʻri koʻrsatilgan: statik media URL'i na kirishni, na tashkilot
+chegarasini biladi. nginx esa ularni baribir berardi.
+
+Maʼlumotnomalar uchun fayl nomi UUID, yaʼni tashqaridan topish amalda
+mumkin emas — xavf bitta havolaning tarqashida edi. Eksportlar esa
+battarroq: ularning nomi UUID EMAS, `debtors-20260923-1001.csv`
+koʻrinishida — sana va daqiqa, yaʼni sanab chiqsa boʻladi. Productionda
+tekshirildi: eksport URL'i hech qanday tokensiz **200** qaytardi.
+
+Tuzatish taqiq roʻyxati emas, **ruxsat roʻyxati** boʻldi. Ommaviy
+boʻlishi kerak boʻlgan narsa ikkitagina — `{org}/brand/` (logotip) va
+`{org}/avatars/` (foydalanuvchi rasmi), chunki brauzer ularni `<img>`
+sifatida tokensiz oladi. Qolgan hamma narsa 404. Shunda keyingi
+`upload_to` yoʻli **sukut boʻyicha yopiq** boʻladi; taqiq roʻyxatida esa
+uni eslab qoʻshish kerak boʻlardi — va aynan shu ikki marta unutilgan.
+
+Jonli tekshiruv: logotip 200, eksport 404, maʼlumotnoma 404, demo
+stendda ham 404.
