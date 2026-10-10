@@ -77,3 +77,27 @@ describe('nginx SPA roʻyxati', () => {
     expect(nginxSegments().has(TENANT_PREFIX)).toBe(true)
   })
 })
+
+/*
+ * Tibbiy maʼlumotnoma nginx orqali berilmaydi (PLAN 11.5).
+ *
+ * `/absence-claims/{id}/document/download` ruxsat tekshiradi, lekin
+ * fayl `/media/` ostida ham yotadi va nginx uni soʻramay berardi —
+ * yaʼni tekshiruv bezak edi. Qoida ikkala konfigda ham boʻlishi kerak:
+ * SaaS va demo stend uchun alohida fayl, va bittasida unutish oson.
+ */
+describe('media — hujjatlar yopiq', () => {
+  const configs = [
+    ['deploy/nginx/_shared.conf', /location\s+~\s+\^\/media\/\[\^\/\]\+\/absence\//],
+    ['deploy/nginx/private-demo.conf', /location\s+~\s+\^\/private\/media\/\[\^\/\]\+\/absence\//],
+  ] as const
+
+  it.each(configs)('%s da `absence/` bloklangan', (file, pattern) => {
+    const text = readFileSync(resolve(__dirname, '../../..', file), 'utf8')
+    expect(text).toMatch(pattern)
+    // Blok `return 404` bilan tugasin — `deny all` 403 beradi va
+    // fayl BOR ekanini aytib qo'yadi.
+    const block = text.slice(text.search(pattern))
+    expect(block.slice(0, 120)).toMatch(/return\s+404/)
+  })
+})

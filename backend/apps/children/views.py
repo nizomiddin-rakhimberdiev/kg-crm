@@ -73,6 +73,13 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
     # ro'yxati 50 ga cheklangan (docs/07 §6); sahifa maksimumi 100.
     IDS_CAP = 100
 
+    # Serializer `tariff.name` ni o'qiydi (PLAN 11.6). Usiz ro'yxat har
+    # bir bola uchun BITTA `tariff_plan` so'rovi yuborardi: 300 bolali
+    # bog'chada 50 qatorlik sahifa 58 ta so'rov qilardi, shundan 50
+    # tasi aynan shu. Kichik bazada bu ko'rinmaydi — aynan shuning
+    # uchun o'lchov 300 bola bilan qilinadi.
+    select_related_fields = ("tariff",)
+
     def get_base_queryset(self) -> Any:
         # `prefetch_related` — ro'yxatda har bir bola uchun vasiy va guruh
         # so'rovi yuborilmasin (docs/02 §21.1: N+1 selector qatlamida

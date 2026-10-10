@@ -1532,3 +1532,54 @@ mashqning jonli holatni oʻqiyotganini tasdiqladi: `paddington` da
 zaxiradan keyin 15 ta bola qoʻshilgan (§7 dagi RPO — nazariy emas,
 haqiqiy), `orientalkinderland` esa zaxiradan keyin tozalangan, yaʼni
 oʻchirilgan maʼlumot zaxirada turibdi va tiklanishi mumkin.
+
+## Ishga tushirish oldidan: sozlamalar, baza va miqyos
+
+**Django'ning oʻz deploy auditi toza.** `manage.py check --deploy`
+productionda bitta ham muammo topmadi (yagona oʻchirilgan tekshiruv —
+`auth.E003`, ya'ni email global emas, tashkilot ichida unikal; bu
+koʻp-tenantli tizimda toʻgʻri). Sozlamalar roʻyxat boʻyicha toʻliq:
+`DEBUG=False`, `ALLOWED_HOSTS` env'dan, HSTS bir yil + subdomenlar +
+preload, cookie'lar `Secure`, `X-Frame-Options: DENY`,
+`SECURE_PROXY_SSL_HEADER`, `CSRF_TRUSTED_ORIGINS`. `SECRET_KEY`
+yoʻq boʻlsa yoki 32 baytdan qisqa boʻlsa server **boot'da toʻxtaydi** —
+yoʻriqnomadagidan qatʼiyroq. Kirish 20/min, roʻyxatdan oʻtish 5/soat
+bilan cheklangan.
+
+**Aytilgan, lekin qoʻyilmagan kafolat.** `document_download` izohida
+"fayl `/media/` havolasi orqali emas, SHU endpoint orqali beriladi"
+deb yozilgan edi — sabab ham toʻgʻri koʻrsatilgan: statik media URL'i
+na kirishni, na tashkilot chegarasini biladi. Lekin nginx `/media/` ni
+baribir ochiq berardi, yaʼni tibbiy maʼlumotnoma uchun ruxsat
+tekshiruvi bezak edi. Fayl nomi UUID boʻlgani uchun tashqaridan topish
+amalda mumkin emas, lekin bitta havolaning tarqashi (tarix, chat,
+skrinshot) yetarli boʻlardi. Endi `^/media/[^/]+/absence/` → `404`
+(`deny` emas: 403 faylning BOR ekanini aytib qoʻyardi), ikkala
+konfigda ham, va qoida testda.
+
+**Indekslar — teshik yoʻq.** RLS siyosati har bir soʻrovga
+`organization_id = …` qoʻshadi, yaʼni u indekslanmagan jadvalda har bir
+soʻrov seq scan boʻlardi. Jonli bazada tekshirildi: `organization_id`
+bor **57 ta jadvalning hammasida** u indeksning birinchi ustuni.
+
+**300 bolalik oʻlchov va bitta N+1.** Jonli bazada hozir 82 ta bola
+bor — yaʼni miqyos muammosini u yerda koʻrib boʻlmaydi. 300 bolali
+bogʻcha yasab oʻlchandi va **bolalar roʻyxati 50 qatorlik sahifa uchun
+58 ta soʻrov** qilardi: serializer `tariff.name` ni oʻqiydi, queryset
+esa `select_related("tariff")` qilmagan edi — har bir bola uchun
+bittadan `tariff_plan` soʻrovi. Tuzatildi: **58 → 8 soʻrov**, 75 → 28
+ms. Qolganlari toza edi (qarzdorlar 7, toʻlovlar doskasi 6, tushum
+hisoboti 9, dashboard 38 — oxirgisi koʻp, lekin bolalar sonidan
+qatʼi nazar oʻzgarmaydi).
+
+Qarzdorlar roʻyxati soʻrov soni boʻyicha toza, lekin vaqt boʻyicha eng
+sekini: 489 ms. Sabab — har bir qator uchun toʻrtta bogʻliq ichki
+soʻrov (`balance.with_balance`), indekslar esa joyida. Bu docs/03 §25
+da allaqachon yozilgan yoʻl: agar sekinlashsa — materiallashgan
+koʻrinish. Endi oʻlchov testda, yaʼni regressiya koʻrinadi.
+
+**Oʻzgartirilmagan, savol sifatida qoldirilgani:** parol minimal
+uzunligi — Django sukuti, 8 belgi. Yoʻriqnoma 12 ni tavsiya qiladi,
+lekin ADR-24 xodimlar qulayligi haqida ataylab qaror qabul qilgan
+(bogʻcha xodimlari telefon almashadi, majburiy ogʻirlik butun
+jamoani bitta qurilmaga surardi). Bu biznes qarori — egasiniki.
