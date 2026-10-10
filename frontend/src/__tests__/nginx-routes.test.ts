@@ -79,25 +79,41 @@ describe('nginx SPA roʻyxati', () => {
 })
 
 /*
- * Tibbiy maʼlumotnoma nginx orqali berilmaydi (PLAN 11.5).
+ * `/media/` — ruxsat etilganlar roʻyxati (PLAN 11.5).
  *
- * `/absence-claims/{id}/document/download` ruxsat tekshiradi, lekin
- * fayl `/media/` ostida ham yotadi va nginx uni soʻramay berardi —
- * yaʼni tekshiruv bezak edi. Qoida ikkala konfigda ham boʻlishi kerak:
- * SaaS va demo stend uchun alohida fayl, va bittasida unutish oson.
+ * Ommaviy boʻlishi kerak boʻlgani ikkitagina: logotip va foydalanuvchi
+ * rasmi. Qolgani — bolaning tibbiy maʼlumotnomasi va moliyaviy
+ * eksportlar — faqat ilovaning ruxsat tekshiradigan endpointi orqali.
+ * Ikkalasining ham izohida shunday deb yozilgan edi, lekin nginx
+ * ularni baribir berardi; eksport nomlari esa UUID ham emas
+ * (`debtors-20260923-1001.csv`), yaʼni sanab chiqsa boʻlardi.
+ *
+ * Qoida ikkala konfigda ham boʻlishi shart va bittasida unutish oson.
  */
-describe('media — hujjatlar yopiq', () => {
+describe('media — faqat ruxsat etilgan kataloglar', () => {
   const configs = [
-    ['deploy/nginx/_shared.conf', /location\s+~\s+\^\/media\/\[\^\/\]\+\/absence\//],
-    ['deploy/nginx/private-demo.conf', /location\s+~\s+\^\/private\/media\/\[\^\/\]\+\/absence\//],
+    ['deploy/nginx/_shared.conf', '/media/'],
+    ['deploy/nginx/private-demo.conf', '/private/media/'],
   ] as const
 
-  it.each(configs)('%s da `absence/` bloklangan', (file, pattern) => {
+  it.each(configs)('%s faqat brand/ va avatars/ ni beradi', (file, prefix) => {
     const text = readFileSync(resolve(__dirname, '../../..', file), 'utf8')
-    expect(text).toMatch(pattern)
-    // Blok `return 404` bilan tugasin — `deny all` 403 beradi va
-    // fayl BOR ekanini aytib qo'yadi.
-    const block = text.slice(text.search(pattern))
-    expect(block.slice(0, 120)).toMatch(/return\s+404/)
+
+    // Ruxsat etilgan yoʻl — aynan ikkita katalog bilan.
+    const allow = new RegExp(
+      `location\\s+~\\s+\\^${prefix.replace(/\//g, '\\/')}\\(\\[\\^\\/\\]\\+\\/\\(\\?:brand\\|avatars\\)`,
+    )
+    expect(text).toMatch(allow)
+
+    // Va qolgan hammasi — 404.
+    const blockStart = text.indexOf(`location ${prefix} {`)
+    expect(blockStart).toBeGreaterThan(-1)
+    expect(text.slice(blockStart, blockStart + 80)).toMatch(/return\s+404/)
+  })
+
+  it.each(configs)('%s da `alias /app/mediafiles/;` qolmagan', (file) => {
+    // Yalangʻoch `alias` butun katalogni ochadi — aynan shu nosozlik edi.
+    const text = readFileSync(resolve(__dirname, '../../..', file), 'utf8')
+    expect(text).not.toMatch(/alias\s+\/app\/mediafiles\/;/)
   })
 })
