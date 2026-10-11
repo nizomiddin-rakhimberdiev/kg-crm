@@ -10,6 +10,7 @@ import { Logo } from '@/components/brand/Logo'
 import { PasswordInput } from '@/components/ui/PasswordInput'
 import { signupApi } from '@/features/signup/api'
 import { ApiError } from '@/lib/api/types'
+import { MIN_PASSWORD_LENGTH, passwordTooShort } from '@/lib/password'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
@@ -23,6 +24,9 @@ export default function SignupConfirmPage() {
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const mismatch = repeat.length > 0 && password !== repeat
+  // Server 12 belgini talab qiladi. Buni EKRANDA aytmaslik —
+  // odamni tushunarsiz server xatosiga yuborish degani.
+  const tooShort = passwordTooShort(password)
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -92,6 +96,9 @@ export default function SignupConfirmPage() {
                   onChange={(event) => setPassword(event.target.value)}
                 />
               </div>
+              <p className={tooShort ? 'text-xs text-orik-700' : 'text-xs text-tosh-500'}>
+                {t('Kamida {MIN_PASSWORD_LENGTH} belgi.', { MIN_PASSWORD_LENGTH })}
+              </p>
               <div>
                 <label
                   htmlFor="signup-repeat"
@@ -112,10 +119,10 @@ export default function SignupConfirmPage() {
               </div>
               <button
                 type="submit"
-                disabled={busy || mismatch || !password}
+                disabled={busy || mismatch || tooShort || !password}
                 className={cn(
                   'flex w-full items-center justify-center gap-2 rounded-lg bg-nihol-600 px-4 py-2.5 text-sm font-semibold text-white',
-                  busy || mismatch || !password ? 'opacity-60' : 'hover:bg-nihol-700',
+                  busy || mismatch || tooShort || !password ? 'opacity-60' : 'hover:bg-nihol-700',
                 )}
               >
                 <KeyRound className="h-4 w-4" />

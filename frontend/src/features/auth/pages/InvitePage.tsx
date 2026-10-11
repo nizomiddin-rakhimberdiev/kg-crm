@@ -21,6 +21,7 @@ import { PasswordInput } from '@/components/ui/PasswordInput'
 import { authApi } from '@/features/auth/api'
 import { ApiError } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
+import { MIN_PASSWORD_LENGTH, passwordTooShort } from '@/lib/password'
 import { t } from '@/lib/i18n'
 
 export default function InvitePage() {
@@ -35,6 +36,9 @@ export default function InvitePage() {
   const [error, setError] = useState<string | null>(null)
 
   const mismatch = repeat.length > 0 && password !== repeat
+  // Server 12 belgini talab qiladi. Buni EKRANDA aytmaslik —
+  // odamni tushunarsiz server xatosiga yuborish degani.
+  const tooShort = passwordTooShort(password)
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -118,6 +122,9 @@ export default function InvitePage() {
                 />
               </div>
 
+              <p className={tooShort ? 'text-xs text-orik-700' : 'text-xs text-tosh-500'}>
+                {t('Kamida {MIN_PASSWORD_LENGTH} belgi.', { MIN_PASSWORD_LENGTH })}
+              </p>
               <div>
                 <label
                   htmlFor="invite-repeat"
@@ -139,10 +146,10 @@ export default function InvitePage() {
 
               <button
                 type="submit"
-                disabled={busy || mismatch || password.length === 0}
+                disabled={busy || mismatch || tooShort || password.length === 0}
                 className={cn(
                   'flex w-full items-center justify-center gap-2 rounded-lg bg-nihol-600 px-4 py-2.5 text-sm font-semibold text-white transition',
-                  busy || mismatch || !password ? 'opacity-60' : 'hover:bg-nihol-700',
+                  busy || mismatch || tooShort || !password ? 'opacity-60' : 'hover:bg-nihol-700',
                 )}
               >
                 <KeyRound className="h-4 w-4" />

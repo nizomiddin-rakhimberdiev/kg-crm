@@ -80,7 +80,7 @@ Never violate these without a superseding ADR:
 ## Tech Stack (quick reference)
 
 **Backend:** Python · Django · Django REST Framework · PostgreSQL · Redis · Celery · JWT · Docker · Nginx · Gunicorn
-**Frontend:** React · TypeScript · Vite · Tailwind · Shadcn/UI · TanStack Query · React Hook Form · Zod · React Router · Axios · Recharts · Framer Motion
+**Frontend:** React · TypeScript · Vite · Tailwind · Shadcn/UI · TanStack Query · React Router · Axios · Recharts · Framer Motion
 **Deploy:** Docker · GitHub · Linux server
 
 ---

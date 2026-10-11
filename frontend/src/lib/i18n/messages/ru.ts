@@ -1385,4 +1385,5 @@ export const messages: Record<string, string> = {
   'Tizimga oʻtishdan oldin qoʻlda turgan pul yoki sanoqdagi farq. Yozuv oʻchirilmaydi — jurnalda sababi bilan qoladi.':
     'Деньги, которые были на руках до перехода на систему, или расхождение при пересчёте. Запись не удаляется — она остаётся в журнале с причиной.',
   'Toʻlangan deb belgilash': 'Отметить выплаченным',
+  'Kamida {MIN_PASSWORD_LENGTH} belgi.': 'Минимум {MIN_PASSWORD_LENGTH} символов.',
 }

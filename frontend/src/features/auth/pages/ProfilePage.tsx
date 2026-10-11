@@ -18,9 +18,10 @@ import { TwoFactorCard } from '@/features/auth/components/TwoFactorCard'
 import { subscriptionStatusLabel } from '@/features/billing/status'
 import { ApiError } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
+import { MIN_PASSWORD_LENGTH } from '@/lib/password'
 import { t } from '@/lib/i18n'
 
-const MIN_PASSWORD_LENGTH = 10
+// Raqam endi bitta uyda — `lib/password.ts` (PLAN 11.10).
 
 export default function ProfilePage() {
   const { user, subscription, refreshUser } = useAuth()

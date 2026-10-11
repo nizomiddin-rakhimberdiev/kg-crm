@@ -150,9 +150,26 @@ AUTH_USER_MODEL = "accounts.User"
 # `AUTH_USER_MODEL` ni qayta ko'rib chiqish kerak.
 SILENCED_SYSTEM_CHECKS = ["auth.E003"]
 
+# Minimal uzunlik — 12, Django sukuti 8 emas (PLAN 11.10).
+#
+# Tizim bolalarning shaxsiy maʼlumotini va pulni saqlaydi; OWASP ASVS
+# shunday ilova uchun 12 belgini talab qiladi. Kirish 20/min bilan
+# cheklangan, yaʼni onlayn tanlash sekin — asosiy xavf zaif yoki
+# boshqa saytdan oʻgʻirlangan parol, va unga qarshi UZUNLIK ishlaydi.
+#
+# **Murakkablik qoidasi ataylab YOʻQ.** Aynan u xodimni parolni
+# qogʻozga yozishga majbur qiladi; uzunlik esa qilmaydi —
+# "bahorbogchasi2026" oson eslanadi va teriladi. ADR-24 bogʻcha
+# xodimlari haqida shu mulohazani yuritadi va bu unga zid emas.
+#
+# Mavjud parollar TEGILMAYDI: validator faqat parol oʻrnatilganda
+# ishlaydi, yaʼni hech kim tizimdan chiqib qolmaydi.
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 12},
+    },
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]

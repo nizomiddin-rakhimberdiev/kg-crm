@@ -4,7 +4,7 @@
 |---|---|
 | **Project** | Kindergarten Management System (KG-CRM) |
 | **Document** | Frontend Architecture & Build Spec v1.0 |
-| **Stack** | React · TypeScript · Vite · Tailwind · Shadcn/UI · TanStack Query · React Hook Form · Zod · React Router · Axios · Recharts · Framer Motion |
+| **Stack** | React · TypeScript · Vite · Tailwind · Shadcn/UI · TanStack Query · React Router · Axios · Recharts · Framer Motion |
 | **Related** | [01_Project_Vision](./01_Project_Vision.md) · [02_Software_Architecture](./02_Software_Architecture.md) · [03_Database_Design](./03_Database_Design.md) · [04_Backend_API_Specification](./04_Backend_API_Specification.md) |
 
 > This is the **authoritative frontend implementation reference**. It expands [02_Software_Architecture](./02_Software_Architecture.md) §7–8, §14–15 with the concrete folder layout, routing map, data-fetching patterns, and conventions every frontend developer follows. If this and §14–15 of doc 02 ever diverge, **this document wins** for frontend detail; a real architectural change is recorded in [02 §2](./02_Software_Architecture.md).
@@ -39,7 +39,7 @@
 |---|-----------|-------------|
 | F1 | **Feature-based, not type-based** | Code grouped by business module; adding a module = adding a folder. |
 | F2 | **Server state ≠ client state** | TanStack Query owns server data; Context holds a tiny global slice; local state stays local. |
-| F3 | **The API contract is typed** | Zod schemas + TS types mirror [04_Backend_API_Specification](./04_Backend_API_Specification.md); no `any`. |
+| F3 | **The API contract is typed** | TypeScript types in `lib/api/types.ts` and each feature's `api.ts` mirror [04_Backend_API_Specification](./04_Backend_API_Specification.md); no `any`. |
 | F4 | **Backend is the security authority** | The UI *hides* what the user can't do; it never *relies* on hiding for security. |
 | F5 | **Consistency over novelty** | Every feature uses the same anatomy, same query-key shape, same form pattern. |
 | F6 | **One HTTP entry point** | A single Axios client owns auth headers, token refresh, and error normalization. |
@@ -96,7 +96,7 @@ frontend/
 │   │   │   ├── permissions.ts      # Permission constants
 │   │   │   └── useCan.ts           # Permission-check hook
 │   │   ├── utils/                  # cn(), formatCurrency, formatDate, etc.
-│   │   └── validation/             # Shared Zod helpers
+│   │   └── password.ts              # Minimal parol uzunligi — bitta uyda (§12)
 │   │
 │   ├── hooks/                      # Global hooks (useDebounce, useMediaQuery, usePagination)
 │   ├── config/
@@ -142,7 +142,7 @@ features/payments/
 │   ├── PaymentsListPage.tsx
 │   └── PaymentDetailPage.tsx
 ├── schemas/
-│   └── payment.schema.ts       # Zod: request + response, inferred types
+│   └── api.ts                  # So'rov/javob TIPLARI (TS), §12
 ├── types/
 │   └── payment.types.ts
 ├── hooks/                      # feature-local hooks (optional)
@@ -323,7 +323,7 @@ Decision tree (F2) — matches [02 §15](./02_Software_Architecture.md):
 | **Server data** | **TanStack Query** (default) | children, invoices, dashboard KPIs, any API data |
 | **Global client** | **React Context** (thin) | authenticated user + permissions, **current organization**, current branch, **subscription read-only flag**, theme |
 | **Local UI** | `useState` / `useReducer` | modal open, selected rows, tab, filter draft |
-| **Forms** | **React Hook Form + Zod** | every create/edit form |
+| **Forms** | `useState` + a server round-trip | every create/edit form — see [§12](#12-forms--validation) |
 
 **No Redux.** Never copy server data into Context. If a genuinely complex *client* state machine appears later (multi-step wizard), use Zustand **locally**, not globally.
 
@@ -365,22 +365,20 @@ queryKeys.children.list(filters)   // ['children', 'list', filters]
 
 ## 12. Forms & Validation
 
-**React Hook Form + Zod** everywhere. The Zod schema is the single contract — it validates input **and** infers the TypeScript type, and mirrors backend validation from [04](./04_Backend_API_Specification.md).
+Forms are **plain `useState`**, and validation is the **server's answer**. There is no form library and no client-side schema.
 
-```
-// features/payments/schemas/payment.schema.ts (illustrative)
-paymentCreateSchema = z.object({
-  amount: z.coerce.number().positive(),
-  method: z.enum(['cash','card','bank_transfer','online']),
-  reference: z.string().max(100).nullable().optional(),
-});
-type PaymentCreateInput = z.infer<typeof paymentCreateSchema>;
-```
+This is written down as what the code does, not as an aspiration. The original plan here was React Hook Form + Zod; twelve sprints of forms were built without either, the three packages sat unused in `package.json`, and the gap was only noticed when a dead-code sweep asked why nothing imported them. Rewriting working forms to match a document would be churn with no user visible in it — so the document matches the code.
 
-**Conventions:**
-- Field-level errors from `400 VALIDATION_ERROR.details` are mapped back onto the form fields (server truth wins).
-- Submit disabled while pending; success → toast + query invalidation + navigate/close.
-- Shared inputs (currency, date, select-from-API) live in `components/ui` / `components/data-display`.
+**Why it holds up.** Validation lives in the backend anyway: a `CHECK` constraint, a service rule, a `BusinessRuleViolation`. A Zod schema beside it is a *second* statement of the same rule, and two statements of one rule drift — this project has already paid for that twice, with the balance formula ([ADR-20](./02_Software_Architecture.md)) and the seventeen private `money()` helpers (§17.1). The round-trip costs one request on a form a user submits once.
+
+**What that requires in return**, and these are not optional:
+
+- **Field errors come back from the server and land on the fields.** `400 VALIDATION_ERROR.details` is mapped into a `fieldErrors` record keyed by field name, rendered under each input. A form that only shows a banner makes the user hunt.
+- **Rules the user must know *before* submitting are stated in the UI** — not discovered by a rejection. The password minimum is the worked example: it lives in `lib/password.ts`, is shown next to the field, and `src/__tests__/password.test.ts` compares the number against `AUTH_PASSWORD_VALIDATORS` in `config/settings/base.py`, so the two cannot drift.
+- **Submit is disabled while pending**; success → invalidate the affected queries, then close or navigate.
+- **Shared inputs** (money, date, select-from-API) live in `components/ui`; a date is always `components/ui/DateInput`, never a native `input[type=date]` (§17.1, guarded by `src/__tests__/a11y.test.ts`).
+
+**When to revisit.** A form with cross-field rules, multi-step state, or a dozen fields is the case a form library is actually for. None exists yet; if one appears, add the library for that form rather than converting the rest.
 
 ---
 
@@ -434,8 +432,8 @@ Matches [02 §21](./02_Software_Architecture.md):
 | Hooks | `useThing.ts`, return typed values. |
 | Feature imports | Only via the feature's `index.ts` barrel. |
 | Query keys | Array form via `queryKeys` factory; never inline strings. **Always organization-scoped** (§10). |
-| Zod schemas | `<entity>.schema.ts`; export schema + inferred type. |
-| Types | No `any`; API types derive from Zod or `types/api.ts`. |
+| API types | Each feature's `api.ts`; shared shapes in `lib/api/types.ts` (§12). |
+| Types | No `any`; API types are hand-written to mirror [04](./04_Backend_API_Specification.md). |
 | Styling | Tailwind classes via `cn()` helper; no inline styles except dynamic values. |
 | Formatting | **One home: `lib/format.ts`** — `money`, `som`, `number`, `signed`, `compact`, `quantity`, `percent`, and every date helper. Never `new Intl.NumberFormat(…)` in a component, never a local `money()`; `lib/utils.ts` keeps the old names as re-exports for existing call sites. |
 | Dates in forms | `components/ui/DateInput` (`dd.mm.yyyy`), never a bare `input[type=date]`. The value in and out is ISO `yyyy-mm-dd`. |

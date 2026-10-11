@@ -1807,3 +1807,59 @@ chiqmagan.
 Yuborish — texnik emas, biznes qarori: repo'da hamkorning tarmoqlari
 bor (`abzal`, `abzal2`), kelishuv esa hali imzolanmagan. Shuning uchun
 men yubormadim.
+
+## Beshta ochiq qaror — yopildi
+
+**1. Yuborish: YOʻQ, zaxira: HA.** Repo'da ikki nafar hamkorda push
+huquqi bor (`abzal4-wq`, `isa704480`), kelishuv esa imzolanmagan.
+137 commitni koʻrinadigan qilish muhandislik emas, tijorat qarori —
+shuning uchun yubormadim. Xavf esa (bitta nusxa) tashqariga
+chiqmasdan yopildi: `~/kg-crm-backups/` da toʻliq `git bundle`,
+tekshirildi — undan klon qilinganda 209 commit tarixi bilan
+`72ee32f` tiklanadi.
+
+**2. CI billing: tasdiqlab boʻlmadi.** `gh auth refresh -s user`
+brauzer orqali tasdiqlashni talab qiladi, yaʼni avtomatik bajarib
+boʻlmaydi. Diagnoz hujjatda: nuqson fayl emas, hisob darajasida.
+Tarmoq yuborilgan kuni CI oʻzi javob beradi.
+
+**3. Eski eksportlar: oʻchiriladigan boʻldi.** `purge_old_exports`
+buyrugʻi yozildi (sukut 30 kun, dry-run). Buyruq birinchi variantda
+`platform_context()` ichida yozilgan edi va **"tozalaydigan narsa
+yoʻq"** deb chiqardi: `report_export` — operatsion jadval, platforma
+uchun chiqishi yoʻq (ADR-10), yaʼni u yerda boʻsh koʻrinadi. Jim
+muvaffaqiyat eng yomon turi — endi buyruq har bir tashkilotga oʻz
+kontekstida kiradi.
+
+**4. Parol: 8 → 12.** Tizim bolalarning shaxsiy maʼlumotini va pulni
+saqlaydi; OWASP ASVS shunday ilova uchun 12 ni talab qiladi. Kirish
+20/min bilan cheklangan, yaʼni asosiy xavf zaif yoki boshqa saytdan
+oʻgʻirlangan parol — unga qarshi aynan UZUNLIK ishlaydi.
+**Murakkablik qoidasi qoʻshilmadi**: aynan u xodimni parolni qogʻozga
+yozishga majbur qiladi, uzunlik esa qilmaydi
+("bahorbogchasi2026" oson eslanadi). ADR-24 bogʻcha xodimlari haqida
+shu mulohazani yuritadi va bu unga zid emas. Mavjud parollar
+tegilmaydi.
+
+Shu yerda uchta raqam yashirin yashab yurgani ham chiqdi: backend 8,
+profil sahifasi 10, qolgan **uchta** parol oʻrnatish ekranida esa
+umuman tekshiruv yoʻq — odam parol yozadi, tugmani bosadi va
+serverdan tushunarsiz xato oladi. Raqam endi `lib/password.ts` da,
+toʻrtala ekranda koʻrsatiladi, va test uni `base.py` dagi
+`min_length` bilan solishtiradi — ajralib keta olmaydi.
+
+**5. Forma strategiyasi: hujjat kodga moslandi.** `docs/02` va
+`docs/05` oʻn ikki joyda "React Hook Form + Zod — har bir create/edit
+formasida" deb yozilgan edi; kod esa ularni hech qachon import
+qilmagan. Ishlayotgan formalarni hujjatga moslash uchun qayta yozish —
+foydasi yoʻq churn. Shuning uchun §12 haqiqatni va uning SABABINI
+yozadi: validatsiya baribir backendda (CHECK, servis qoidasi), Zod
+sxemasi esa oʻsha qoidaning IKKINCHI nusxasi boʻlardi — bu loyiha
+ikki nusxaning ajralib ketishi uchun allaqachon ikki marta toʻlagan
+(balans formulasi va oʻn yettita shaxsiy `money()`).
+
+Buning evaziga §12 uchta shart qoʻyadi: server xatosi maydonga
+tushsin; foydalanuvchi **oldindan** bilishi kerak boʻlgan qoida
+ekranda yozilsin (parol uzunligi — ishlab koʻrilgan namuna); va
+sanalar faqat `DateInput`. Uchalasi ham testda. `react-hook-form`,
+`zod`, `@hookform/resolvers` package.json dan olib tashlandi.

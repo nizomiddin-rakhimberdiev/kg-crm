@@ -1388,4 +1388,5 @@ export const messages: Record<string, string> = {
   'Tizimga oʻtishdan oldin qoʻlda turgan pul yoki sanoqdagi farq. Yozuv oʻchirilmaydi — jurnalda sababi bilan qoladi.':
     'Money held before moving to the system, or a difference found when counting. The entry is never deleted — it stays in the journal with its reason.',
   'Toʻlangan deb belgilash': 'Mark as paid',
+  'Kamida {MIN_PASSWORD_LENGTH} belgi.': 'At least {MIN_PASSWORD_LENGTH} characters.',
 }

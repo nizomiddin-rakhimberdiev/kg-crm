@@ -267,7 +267,7 @@ graph TB
 | **Tailwind CSS** | Styling | Utility-first, consistent design system, no CSS sprawl. |
 | **Shadcn/UI** | Component library | Accessible, unstyled-but-themable primitives we own (copied into repo, not a black-box dependency). |
 | **TanStack Query** | Server state | Caching, background refetch, mutations, invalidation — the heart of data flow. |
-| **React Hook Form + Zod** | Forms + validation | Performant forms; Zod schemas mirror backend validation and infer TS types. |
+| *(no form library)* | Forms + validation | Forms are plain `useState`; validation is the server's answer, so one rule is stated once ([05 §12](./05_Frontend_Architecture.md)). |
 | **React Router** | Routing | Nested layouts, protected/role-based routes. |
 | **Axios** | HTTP client | Interceptors for JWT attach/refresh, centralized error handling. |
 | **Recharts** | Charts | Dashboard & reports visualizations. |
@@ -429,7 +429,7 @@ frontend/
 │   │   │   └── endpoints.ts      # Central endpoint constants
 │   │   ├── auth/                 # Token storage, auth helpers
 │   │   ├── utils/                # formatters, date, currency, cn()
-│   │   └── validation/           # Shared Zod schemas & helpers
+│   │   └── password.ts           # Minimal parol uzunligi (05 §12)
 │   │
 │   ├── hooks/                    # Global reusable hooks (useDebounce, useMediaQuery)
 │   ├── config/                   # Env config, route constants, RBAC map
@@ -460,7 +460,7 @@ features/payments/
 ├── pages/                # Route-level screens
 │   ├── PaymentsListPage.tsx
 │   └── PaymentDetailPage.tsx
-├── schemas/              # Zod schemas (form + response validation)
+├── api.ts                # So'rov/javob tiplari (TS)
 │   └── payment.schema.ts
 ├── types/                # TypeScript types for this feature
 │   └── payment.types.ts
@@ -484,7 +484,7 @@ features/payments/
 | **components/feedback/** | Spinner, EmptyState, ErrorBoundary | Consistent loading/error/empty states across the app — a hallmark of enterprise polish. |
 | **features/** | One folder per business module | The core of scalability: features are self-contained and mirror backend apps (P1, P2). |
 | **features/\*/api/** | TanStack Query hooks | Data-fetching lives beside the feature that uses it; the only place server state is defined. |
-| **features/\*/schemas/** | Zod schemas | Validation + inferred types in one place; mirrors backend serializer validation. |
+| **features/\*/api.ts** | Request/response types | Hand-written TS mirroring [04](./04_Backend_API_Specification.md); validation stays on the server ([05 §12](./05_Frontend_Architecture.md)). |
 | **lib/api/** | Axios client, interceptors, query client | One HTTP entry point → one place for auth headers, token refresh, and error normalization. |
 | **lib/auth/** | Token storage & helpers | Isolates the sensitive auth mechanics; swapping storage strategy touches one folder. |
 | **lib/utils/** | Formatters (currency, date), `cn()` | Pure helpers shared everywhere; no business logic. |
@@ -1019,7 +1019,7 @@ graph TD
     S -->|Data from the server| RQ[TanStack Query]
     S -->|App-wide client state| CTX[React Context]
     S -->|UI state local to one component| LS[Local useState/useReducer]
-    S -->|Complex cross-field form state| RHF[React Hook Form]
+    S -->|Form fields| LS
 ```
 
 | State type | Tool | Examples | Rule |
@@ -1027,7 +1027,7 @@ graph TD
 | **Server state** | **TanStack Query** | children list, payments, dashboard KPIs, any API data | **Default choice.** Never copy server data into Context/global state. Query owns caching, refetch, invalidation, loading/error. |
 | **Global client state** | **React Context** (thin) | authenticated user + permissions, current branch, theme, toast | Only for truly app-wide, low-frequency data. Keep providers small to avoid re-render storms. |
 | **Local UI state** | `useState` / `useReducer` | modal open, selected rows, active tab, filter drafts | Keep it as local as possible; lift only when genuinely shared. |
-| **Form state** | **React Hook Form + Zod** | create/edit forms everywhere | RHF owns field state & validation; Zod schema is the contract (and infers TS types). |
+| **Form state** | `useState` | create/edit forms everywhere | No form library: fields are ordinary local state and validation is the server's answer, so a rule is stated once ([05 §12](./05_Frontend_Architecture.md)). A form with genuine cross-field state would be the case to add one — none exists yet. |
 
 **Concrete conventions:**
 - Query keys are structured and centralized per feature: `['payments', { filters }]`, `['payments', id]`. Mutations **invalidate** the relevant keys — no manual refetch juggling.
@@ -1226,7 +1226,7 @@ Security is layered — no single control is trusted alone.
 | **Rate limiting** | DRF throttling + Nginx | Per-user & per-IP throttles; stricter on `/auth/login` (brute-force defense). Redis-backed counters. |
 | **CORS** | Explicit allowlist | Only the known frontend origin(s) allowed; credentials mode configured deliberately. |
 | **CSRF** | Token-based auth = low CSRF surface | JWT in `Authorization` header (not cookie) sidesteps CSRF for the API. **If** refresh token is in a cookie, apply CSRF protection + `SameSite=Strict` on that flow. |
-| **Validation** | Two-layer | Zod on the frontend (UX) + serializer/service validation on the backend (authority). Never trust the client. |
+| **Validation** | **Server-side, surfaced in the UI** | The serializer and the service are the authority; `400 VALIDATION_ERROR.details` is mapped back onto the fields. Rules the user must know *before* submitting (password length, allowed file types) are stated next to the field and tied to the backend by a test ([05 §12](./05_Frontend_Architecture.md)). |
 | **Secrets** | Env-based | `.env` / secrets manager; never committed. Separate secrets per environment. |
 | **Injection** | ORM + parameterization | Django ORM prevents SQL injection; avoid raw SQL, and parameterize if unavoidable. |
 | **Headers** | Security headers | One list in `deploy/nginx/_headers.conf`, included by both server blocks **and** by `/media/` (an `add_header` in a location silently drops every inherited one): HSTS (1 year, no `preload` — that is an owner's decision), CSP, Permissions-Policy, X-Content-Type-Options, X-Frame-Options, Referrer-Policy. CSP: `script-src 'self'` with no inline script and no `eval`; `style-src 'unsafe-inline'` only because prerendered HTML carries React's `style="…"` attributes; no outside origin at all — fonts are self-hosted (`src/fonts.ts`, 2026-10-03; Google Fonts used to receive every visitor's IP); `connect-src 'self'`; `frame-ancestors 'none'`. Uploaded media get a second, stricter `CSP: sandbox`. Verified in headless Chrome on the landing page, both login pages, the invite page and the vendor console: zero violations. |
@@ -1386,7 +1386,7 @@ graph TB
 | **TypeScript** | `camelCase` vars/functions, `PascalCase` components/types, `use*` for hooks. ESLint + Prettier. |
 | **React files** | Components `PascalCase.tsx`; hooks `useThing.ts`; feature folders lowercase. |
 | **Query keys** | Array form, feature-prefixed: `['children', filters]`, `['children', id]`. |
-| **Zod schemas** | `<entity>.schema.ts`, exported schema + inferred type. |
+| **API types** | Each feature's `api.ts`; shared shapes in `lib/api/types.ts`. |
 | **Commits** | Conventional Commits (`feat:`, `fix:`, `refactor:`). |
 | **Branches** | `feature/…`, `fix/…`, `chore/…`; PR-based, protected `main`. |
 | **Tests** | Backend: `pytest`, factories per app. Frontend: Vitest + Testing Library. Services & selectors must be unit-tested. |
