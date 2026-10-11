@@ -11,7 +11,7 @@
  */
 
 import { expect, test } from '@playwright/test'
-import { openSection, signIn } from './fixtures'
+import { firstVisible, openSection, signIn } from './fixtures'
 
 test('toʻlov qabul qilinadi va qaytariladi', async ({ page }) => {
   await signIn(page)
@@ -34,7 +34,10 @@ test('toʻlov qabul qilinadi va qaytariladi', async ({ page }) => {
   // Usul tugmasining nomi faqat "Naqd" emas — ichida summa ham bor,
   // shuning uchun ankorsiz.
   await dialog.getByRole('button', { name: /naqd/i }).first().click()
-  await dialog.getByRole('button', { name: /qabul qilish/i }).last().click()
+  await dialog
+    .getByRole('button', { name: /qabul qilish/i })
+    .last()
+    .click()
 
   // Kvitansiya oynasi — toʻlov yozilgani.
   await expect(page.getByText(/kvitansiya|qabul qilindi/i).first()).toBeVisible()
@@ -47,7 +50,10 @@ test('toʻlov qabul qilinadi va qaytariladi', async ({ page }) => {
   //
   // Qaytarish tugmasi JURNAL yorligʻida — doskada emas. Doskada
   // toʻlov qabul qilinadi, jurnalda esa yozuvlar koʻrinadi.
-  await page.getByRole('button', { name: /^jurnal$/i }).first().click()
+  await page
+    .getByRole('button', { name: /^jurnal$/i })
+    .first()
+    .click()
   const reverse = page.getByRole('button', { name: /^qaytarish$/i }).first()
   await expect(reverse).toBeVisible()
   await reverse.click()
@@ -70,7 +76,7 @@ test('qarzdorlar roʻyxati ochiladi va summa koʻrinadi', async ({ page }) => {
   // `visible: true` MAJBURIY: jadval telefonda `hidden sm:block` bilan
   // yashiringan, lekin DOM'da turadi — `.first()` aynan oʻshani
   // tanlab, "element bor, lekin koʻrinmaydi" deb yiqilardi.
-  const anyAmount = page.getByText(/soʻm/).filter({ visible: true }).first()
-  const emptyState = page.getByText(/qarzdorlar yoʻq/i).filter({ visible: true }).first()
+  const anyAmount = firstVisible(page.getByText(/soʻm/))
+  const emptyState = firstVisible(page.getByText(/qarzdorlar yoʻq/i))
   await expect(anyAmount.or(emptyState)).toBeVisible()
 })

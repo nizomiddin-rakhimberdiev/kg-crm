@@ -1721,3 +1721,52 @@ jimgina hal qilib qoʻyardi, u esa egasiniki. Ikki yoʻl bor: yo yangi
 formalar uchun RHF+Zod qabul qilinadi (paketlar qoladi), yo hujjat
 haqiqatga moslanadi (paketlar ketadi). Ishlayotgan formalarni qayta
 yozish uchun sabab yoʻq.
+
+## Brauzerdagi E2E — va u topgan ikkita nosozlik
+
+Unit testlar komponentni, backend testlari endpointni tekshiradi.
+Oʻrtadagi narsani — token haqiqatan olinadimi, forma haqiqatan
+yuboriladimi, javob ekranda haqiqatan koʻrinadimi — hech kim
+tekshirmasdi. Playwright qoʻshilgan kundayoq ikkita nosozlik chiqdi.
+
+**Birinchisi: bola formasida native `input[type=date]`.** Playwright
+sanani `dd.mm.yyyy` koʻrinishida kirita olmadi, chunki maydon
+brauzerning oʻziniki edi. 05 §17.1 buni nomma-nom taqiqlaydi va
+sababini ham aytadi — brauzer `mm/dd/yyyy` koʻrsatadi va bogʻcha
+xodimi uni teskari oʻqiydi. Qoida hujjatda bor edi va ilovadagi eng
+koʻp ishlatiladigan formada buzilgan edi. Ikkala joy (bola formasi va
+xodimlar tabeli) tuzatildi, qoida `a11y.test.ts` ga qoʻshildi.
+
+**Ikkinchisi, jiddiyroq: sahifani qayta yuklash tizimdan chiqarardi.**
+`page.reload()` dan keyin test `/private/login` da edi. Sabab:
+`radix_refresh` cookie'ning yoʻli `/api/v1/auth` deb qotirilgan.
+Brauzer cookie'ni faqat uning yoʻli ostidagi soʻrovlarga yuboradi, va
+standalone nusxada API `/private/api/v1/auth` da — yaʼni cookie
+**umuman yuborilmasdi**, access token esa faqat xotirada (04 §5). Har
+bir F5 — qaytadan parol. Havolani yangi tabda ochish ham shunday.
+
+SaaS zarar koʻrmagan, shuning uchun uni hech kim sezmagan: u yerda API
+haqiqatan ildizda va qotirilgan yoʻl tasodifan toʻgʻri. Lekin ADR-13
+standalone'ni **sotiladigan** ikkinchi model deb belgilaydi. Yoʻl endi
+`PUBLIC_BASE_URL` dan olinadi (Django prefiksni oʻzi bilmaydi — nginx
+uni soʻrovdan olib tashlaydi), chiqishda esa eski yoʻldagi nusxa ham
+oʻchiriladi.
+
+**Toʻplam haqida.** Besh stsenariy: kirish (notoʻgʻri parol va
+autentifikatsiyasiz kirish bilan), bola qoʻshish, toʻlov qabul qilish,
+davomat, qarzdorlar. Ikki qurilmada — desktop va 375 px (PLAN 10.3
+auditlari aynan shu enda oʻtkazilgan). Ikki xossa atrofida qurilgan:
+
+* **yozadi**, shuning uchun `/private` demo stendiga qarshi ishlaydi —
+  hech qachon mijozникiga;
+* **oʻzidan keyin tozalaydi**: bola arxivlanadi, toʻlov mahsulotning
+  oʻz qarshi-yozuv yoʻli bilan qaytariladi — yaʼni eng qimmat yoʻl ham
+  sinaladi va demo ifloslanmaydi.
+
+Uch dars yozib qoʻyildi, chunki uchalasiga ham ketma-ket tushildi:
+`baseURL` oxirida `/` boʻlmasa `goto('login')` jimgina BOSHQA stendga
+uradi; bu ilovada koʻp ekran ikki marta chizilgan (telefon kartochkasi
+va `sm:` jadval), shuning uchun `.first()` koʻpincha YASHIRINganini
+tanlaydi — `firstVisible` yordamchisi shundan; va stendning holatiga
+tayangan test bir marta ishlaydi — davomat testi endi oʻz shartini oʻzi
+yaratadi.

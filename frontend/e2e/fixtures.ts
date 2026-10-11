@@ -6,7 +6,7 @@
  * buzilsa, qolgan hamma narsa ishlamaydi.
  */
 
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 
 export const CREDENTIALS = {
   email: process.env.E2E_EMAIL ?? '',
@@ -43,3 +43,15 @@ export async function openSection(page: Page, name: RegExp): Promise<void> {
   }
   await page.getByRole('link', { name }).first().click()
 }
+
+/**
+ * Koʻrinadigan birinchi element.
+ *
+ * Bu ilovada koʻp ekran IKKI marta chizilgan: telefonda kartochka,
+ * `sm:` dan jadval (PLAN 10). Ikkalasi ham DOM'da turadi — biri CSS
+ * bilan yashiringan — shuning uchun oddiy `.first()` koʻpincha
+ * YASHIRINGANini tanlaydi va test "element bor, lekin koʻrinmaydi"
+ * deb qotib qoladi. Bu tuzoqqa ketma-ket uch marta tushildi, shuning
+ * uchun u endi yordamchi funksiya.
+ */
+export const firstVisible = (locator: Locator): Locator => locator.filter({ visible: true }).first()
