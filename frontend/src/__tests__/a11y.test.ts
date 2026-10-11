@@ -143,6 +143,27 @@ describe('a11y', () => {
     expect(offenders).toEqual([])
   })
 
+  it('native `input[type=date]` ishlatilmaydi', () => {
+    /*
+     * Qoida hujjatda bor edi (05 §17.1) — va aynan eng koʻp
+     * ishlatiladigan formada, bola qoʻshishda, buzilgan edi. Uni
+     * birorta test emas, brauzerdagi E2E topdi: Playwright sanani
+     * `dd.mm.yyyy` koʻrinishida kirita olmadi, chunki maydon
+     * brauzerning oʻziniki edi va u boshqa tartib kutardi.
+     *
+     * Shuning uchun qoida endi bu yerda: `components/ui/DateInput`
+     * ning oʻzi istisno, qolgan hamma joyda native maydon yoʻq.
+     */
+    const offenders: string[] = []
+    for (const file of files) {
+      if (file.endsWith('DateInput.tsx')) continue
+      if (/type=["']date["']/.test(readFileSync(file, 'utf8'))) {
+        offenders.push(file.replace(SRC, ''))
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
   it('koʻrinadigan fokus butun ilovada belgilangan', () => {
     const css = readFileSync(join(SRC, 'index.css'), 'utf8')
     // `:focus` emas, `:focus-visible`: sichqoncha bosganda halqa

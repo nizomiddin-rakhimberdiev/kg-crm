@@ -46,3 +46,8 @@ scratch/
 
 # Claude Code local state (project instructions in CLAUDE.md ARE committed)
 .claude/settings.local.json
+
+# Playwright (E2E) — natijalar va hisobotlar
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/

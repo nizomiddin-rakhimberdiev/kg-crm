@@ -11,7 +11,9 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prerender": "vite build --ssr src/prerender/entry.tsx --outDir dist-ssr && node scripts/prerender.mjs"
+    "prerender": "vite build --ssr src/prerender/entry.tsx --outDir dist-ssr && node scripts/prerender.mjs",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@fontsource/golos-text": "^5.3.0",
@@ -33,6 +35,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.64.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",

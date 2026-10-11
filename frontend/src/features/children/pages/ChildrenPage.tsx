@@ -508,19 +508,34 @@ export default function ChildrenPage() {
               <label htmlFor={key} className="mb-1 block text-xs font-medium text-slate-600">
                 {label}
               </label>
-              <input
-                id={key}
-                type={type}
-                required={key !== 'middle_name'}
-                value={(form[key] as string) ?? ''}
-                onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
-                className={cn(
-                  'w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2',
-                  fieldErrors[key]
-                    ? 'border-red-300 focus:ring-red-100'
-                    : 'border-slate-200 focus:border-brand-500 focus:ring-brand-100',
-                )}
-              />
+              {/* Sana — `DateInput` (05 §17.1), native `type=date` EMAS.
+                  Brauzerning oʻz maydoni amerikacha tartibni
+                  (`mm/dd/yyyy`) koʻrsatadi va bogʻcha xodimi uni
+                  teskari oʻqiydi. Bu qoida hujjatda bor edi, lekin
+                  aynan eng koʻp ishlatiladigan formada buzilgan — buni
+                  brauzerdagi E2E topdi. */}
+              {type === 'date' ? (
+                <DateInput
+                  id={key}
+                  required
+                  value={(form[key] as string) ?? ''}
+                  onChange={(iso) => setForm((p) => ({ ...p, [key]: iso }))}
+                />
+              ) : (
+                <input
+                  id={key}
+                  type={type}
+                  required={key !== 'middle_name'}
+                  value={(form[key] as string) ?? ''}
+                  onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
+                  className={cn(
+                    'w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2',
+                    fieldErrors[key]
+                      ? 'border-red-300 focus:ring-red-100'
+                      : 'border-slate-200 focus:border-brand-500 focus:ring-brand-100',
+                  )}
+                />
+              )}
               {fieldErrors[key] && <p className="mt-1 text-xs text-red-600">{fieldErrors[key]}</p>}
             </div>
           ))}

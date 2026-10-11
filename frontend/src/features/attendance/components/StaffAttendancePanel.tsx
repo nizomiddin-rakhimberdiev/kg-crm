@@ -21,6 +21,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type StaffAttendanceStatus } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { DateInput } from '@/components/ui/DateInput'
 import { t } from '@/lib/i18n'
 
 const STATUSES: Array<{
@@ -169,16 +170,17 @@ function DailyStaff() {
       <div className="flex flex-wrap items-end gap-3">
         <label className="text-xs font-medium text-slate-600">
           {t('Sana')}
-          <input
-            type="date"
+          {/* `DateInput` (05 §17.1): native maydon amerikacha tartibni
+              koʻrsatadi va bogʻcha xodimi uni teskari oʻqiydi. */}
+          <DateInput
             max={localISO()}
             value={date}
-            onChange={(e) => {
-              setDate(e.target.value)
+            onChange={(iso) => {
+              setDate(iso)
               setDraft({})
               setSaved(false)
             }}
-            className="mt-1 block rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
+            className="mt-1 block"
           />
         </label>
         {editable && rows.length > 0 && (
