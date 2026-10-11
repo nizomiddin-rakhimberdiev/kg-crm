@@ -1770,3 +1770,40 @@ va `sm:` jadval), shuning uchun `.first()` koʻpincha YASHIRINganini
 tanlaydi — `firstVisible` yordamchisi shundan; va stendning holatiga
 tayangan test bir marta ishlaydi — davomat testi endi oʻz shartini oʻzi
 yaratadi.
+
+## CI: nuqson workflow faylida emas
+
+Bugun qoʻshilgan qoʻriqchi testlar (RLS roʻyxati, obuna darvozasi,
+`DateInput`, formatlash uyi, fokus tutqichi) faqat **haqiqatan ishga
+tushsa** maʼnoga ega. Shuning uchun CI tekshirildi — va u hech qachon
+ishlamagan: **66 tadan 66 tasi** `startup_failure`, reponing birinchi
+kunidan (2026-08-03) 2026-10-02 gacha, birorta muvaffaqiyat yoʻq.
+
+Bu daqiqalar tugashi emas: tugaganda avval muvaffaqiyatli ishga
+tushishlar boʻlardi. Fayl ham emas — tekshirildi:
+
+* ikkala workflow ham toʻgʻri YAML (GitHub ishga tushirgan aynan
+  oʻsha revizia ham);
+* `actions/checkout@v4`, `setup-node@v4`, `setup-python@v5` — uchalasi
+  mavjud va arxivlanmagan;
+* repo'da Actions yoqilgan (`allowed_actions: all`);
+* BOM, CRLF yoki TAB yoʻq;
+* hech qanday ish (job) yaratilmagan va izoh (annotation) yozilmagan —
+  yaʼni nosozlik birinchi qadamdan OLDIN.
+
+Qolgani hisob darajasida — sarf chegarasi yoki Actions daqiqalari.
+Uni tasdiqlash uchun ikki yoʻl bor va ikkalasi ham egasining qarorini
+talab qiladi: billing uchun `user` ruxsatini kengaytirish, yoki sinov
+uchun kichik workflow yuborish.
+
+**Alohida va muhimroq topilma: tarmoq hech qachon yuborilmagan.**
+`origin/main` 2026-10-02 dagi `11da61a` da turibdi, `big-update/
+phase-6-code` esa remote'da umuman yoʻq — **137 ta commit** faqat shu
+kompyuterda va serverdagi rsync nusxasida (unda git tarixi yoʻq,
+chunki deploy `.git` ni chiqarib tashlaydi). Yaʼni CI'ning tuzalishi
+ham oʻz-oʻzidan hech narsa bermasdi: tekshiradigan kod u yerga
+chiqmagan.
+
+Yuborish — texnik emas, biznes qarori: repo'da hamkorning tarmoqlari
+bor (`abzal`, `abzal2`), kelishuv esa hali imzolanmagan. Shuning uchun
+men yubormadim.
