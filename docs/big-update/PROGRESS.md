@@ -1656,3 +1656,32 @@ Shu bilan birga bugun qoʻshilganlari ham yozildi:
 
 Migratsiyalar tekshiruvi topilmasiz: oʻnta maʼlumot migratsiyasining
 hammasida teskari funksiya bor, yaʼni qaytarib boʻladi.
+
+**Obuna darvozasining koʻr nuqtasi.** `test_write_gate_is_everywhere`
+cross-tenant sweep bilan bir xil falsafada yozilgan — qoidani odam
+yodida saqlashiga tayanmaslik. Lekin u **faqat `router.registry`** ni
+koʻrardi, yaʼni oddiy `APIView` undan butunlay chetda qolardi: yangi
+yozuv endpointi qoʻshilsa, u toʻlamagan mijozga ham ishlayverardi va
+hech bir test qizarmasdi. Bu bugungi uchinchi bir xil shakldagi
+topilma (RLS roʻyxati, sweep, darvoza — uchalasi ham qoidani faqat
+bitta roʻyxat ichida qoʻriqlardi).
+
+Tekshirib chiqilganda routerdan tashqarida **27 ta** yozuv endpointi
+topildi va ularning hech birida darvoza yoʻq edi — lekin hammasi ham
+asosli: invariant 11 aytadi, toʻxtatilgan obuna YOZISHNI toʻxtatadi,
+KIRISHNI emas. Toʻlamagan mijoz tizimga kira olishi, parolini tiklay
+olishi va hisobini toʻlay olishi shart. Eng muhimi — **toʻlov
+webhook'lari**: ularni darvozaga qoʻyish toʻxtatilgan mijozning
+toʻlovini rad etardi, yaʼni darvoza oʻzini oʻzi yopib qoʻyardi.
+
+Har biriga sabab yozilib, test kengaytirildi: endi yangi `APIView`
+muallifi ikki narsadan birini tanlashi kerak — yo darvoza, yo sabab.
+Isbot: mavjud darvozani vaqtincha olib tashlaganda test qizardi.
+
+**Servis qatlami — topilma yoʻq.** 8 ta view boshqa ilovaning modelini
+import qiladi, lekin hammasi bir xil shaklda: soʻrovdagi ID ni qatorga
+aylantirish (`Model.objects.filter(pk=…).first()`), tenant menejeri esa
+begona qatorni "topilmadi" qiladi. Bu — `TenantPrimaryKeyRelatedField`
+ning boshqa koʻrinishi, biznes mantiqi emas. 1-invariant modul B ning
+qoidalarini modul A da takrorlamaslik uchun bor; bu yerda bunday narsa
+yoʻq.
