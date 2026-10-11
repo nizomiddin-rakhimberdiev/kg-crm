@@ -52,8 +52,32 @@ REFRESH_COOKIE = "radix_refresh"
 CSRF_COOKIE = "radix_csrf"
 CSRF_HEADER = "X-CSRFToken"
 
+
+def _cookie_path() -> str:
+    """
+    Cookie yoʻli — JOYLASHTIRISHGA qarab.
+
+    Brauzer cookie'ni faqat uning `path` i ostidagi soʻrovlarga
+    yuboradi. Yoʻl `/api/v1/auth` deb qotirib yozilgan edi va SaaS'da
+    bu toʻgʻri — API aynan ildizda. Standalone nusxada esa ilova
+    pastki yoʻlda turishi mumkin (`/private`), API esa
+    `/private/api/v1/...` boʻladi: oʻsha paytda brauzer refresh
+    cookie'ni **umuman yubormaydi**.
+
+    Ekranda bu shunday koʻrinadi: sahifani qayta yuklash — tizimdan
+    chiqish. Access token faqat xotirada yashaydi (04 §5), uni
+    tiklaydigan yagona narsa esa shu cookie. Django prefiksni oʻzi
+    bilmaydi — nginx uni soʻrovdan olib tashlaydi — shuning uchun u
+    sozlamadan olinadi.
+    """
+    from urllib.parse import urlparse
+
+    prefix = urlparse(str(getattr(settings, "PUBLIC_BASE_URL", ""))).path.rstrip("/")
+    return f"{prefix}/api/v1/auth"
+
+
 #: Cookie faqat auth endpointlariga ketadi.
-COOKIE_PATH = "/api/v1/auth"
+COOKIE_PATH = _cookie_path()
 
 
 def _secure() -> bool:
@@ -95,6 +119,11 @@ def set_refresh_cookie(response: Any, raw_token: str) -> None:
 
 def clear_refresh_cookie(response: Any) -> None:
     response.delete_cookie(REFRESH_COOKIE, path=COOKIE_PATH)
+    # Eski (prefikssiz) yoʻldagi nusxa ham oʻchiriladi: yangilanishdan
+    # OLDIN kirgan foydalanuvchining brauzerida u qolib ketardi va
+    # chiqish "yarim" boʻlardi — tokeni bor, lekin yuborilmaydigan.
+    if COOKIE_PATH != "/api/v1/auth":
+        response.delete_cookie(REFRESH_COOKIE, path="/api/v1/auth")
     response.delete_cookie(CSRF_COOKIE, path="/")
 
 

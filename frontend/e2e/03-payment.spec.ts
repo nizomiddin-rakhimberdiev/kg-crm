@@ -24,18 +24,17 @@ test('toʻlov qabul qilinadi va qaytariladi', async ({ page }) => {
   await expect(firstRow).toBeVisible()
   await firstRow.click()
 
-  const amount = page.getByLabel(/^summa$/i).first()
+  // Oyna ichida qolamiz: sahifada ham "Naqd kassa" bor va ankorsiz
+  // qidiruv undan ham ushlab qolardi.
+  const dialog = page.getByRole('dialog')
+  const amount = dialog.getByLabel(/^summa$/i).first()
   await expect(amount).toBeVisible()
   await amount.fill('1000')
 
-  await page
-    .getByRole('button', { name: /^naqd$/i })
-    .first()
-    .click()
-  await page
-    .getByRole('button', { name: /qabul qilish/i })
-    .last()
-    .click()
+  // Usul tugmasining nomi faqat "Naqd" emas — ichida summa ham bor,
+  // shuning uchun ankorsiz.
+  await dialog.getByRole('button', { name: /naqd/i }).first().click()
+  await dialog.getByRole('button', { name: /qabul qilish/i }).last().click()
 
   // Kvitansiya oynasi — toʻlov yozilgani.
   await expect(page.getByText(/kvitansiya|qabul qilindi/i).first()).toBeVisible()
@@ -45,11 +44,10 @@ test('toʻlov qabul qilinadi va qaytariladi', async ({ page }) => {
     .click()
 
   // --- Tozalash: qaytarish ---
-  await page
-    .getByRole('tab', { name: /toʻlovlar/i })
-    .first()
-    .click()
-    .catch(() => {})
+  //
+  // Qaytarish tugmasi JURNAL yorligʻida — doskada emas. Doskada
+  // toʻlov qabul qilinadi, jurnalda esa yozuvlar koʻrinadi.
+  await page.getByRole('button', { name: /^jurnal$/i }).first().click()
   const reverse = page.getByRole('button', { name: /^qaytarish$/i }).first()
   await expect(reverse).toBeVisible()
   await reverse.click()
@@ -68,10 +66,11 @@ test('qarzdorlar roʻyxati ochiladi va summa koʻrinadi', async ({ page }) => {
 
   await expect(page.getByRole('heading', { name: /qarzdor/i })).toBeVisible()
   // Roʻyxat ham, "qarzdor yoʻq" ham toʻgʻri javob — sahifa qotmasin.
-  await expect(
-    page
-      .getByText(/soʻm/)
-      .first()
-      .or(page.getByText(/qarzdorlar yoʻq/i)),
-  ).toBeVisible()
+  //
+  // `visible: true` MAJBURIY: jadval telefonda `hidden sm:block` bilan
+  // yashiringan, lekin DOM'da turadi — `.first()` aynan oʻshani
+  // tanlab, "element bor, lekin koʻrinmaydi" deb yiqilardi.
+  const anyAmount = page.getByText(/soʻm/).filter({ visible: true }).first()
+  const emptyState = page.getByText(/qarzdorlar yoʻq/i).filter({ visible: true }).first()
+  await expect(anyAmount.or(emptyState)).toBeVisible()
 })

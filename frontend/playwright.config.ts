@@ -46,6 +46,19 @@ export default defineConfig({
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     // Telefon — bu mahsulotda asosiy qurilma (PLAN 10).
-    { name: 'mobile', use: { ...devices['iPhone 13'] } },
+    //
+    // Chromium, iPhone emas: Oʻzbekistonda Android ustun va WebKit'ni
+    // oʻrnatish yana bir brauzer yuklab olish degani. Oʻlcham 375×812 —
+    // PLAN 10.3 dagi auditlar aynan shu enda oʻtkazilgan, yaʼni bu
+    // yerda ham oʻsha en sinaladi.
+    {
+      name: 'mobile',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 375, height: 812 },
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
   ],
 })
