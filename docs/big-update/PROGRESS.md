@@ -1685,3 +1685,39 @@ begona qatorni "topilmadi" qiladi. Bu — `TenantPrimaryKeyRelatedField`
 ning boshqa koʻrinishi, biznes mantiqi emas. 1-invariant modul B ning
 qoidalarini modul A da takrorlamaslik uchun bor; bu yerda bunday narsa
 yoʻq.
+
+**Frontend koʻrigi: kalitlar toza, bitta memo nuqsoni.** TanStack Query
+kalitlarining hammasi tashkilot bilan qamralgan — qamralmaganlari
+platforma konsoli (bitta vendor), ommaviy narx sahifasi va shartnoma
+oʻrinbosarlari roʻyxati, oxirgisi esa haqiqatan global konstanta
+(`sorted(services.PLACEHOLDERS)`), yaʼni `staleTime: Infinity` toʻgʻri.
+Hook qoidalari (`rules-of-hooks`, `exhaustive-deps`) yoqilgan va butun
+frontendda **bitta** ogohlantirish bor edi: davomat sahifasida
+`rows = query.data?.rows ?? []` har renderda yangi massiv yasardi,
+yaʼni quyidagi `useMemo` keshdan hech qachon foydalanmay, guruhdagi
+har bir bola boʻylab har bosishda qayta aylanardi. Bu sahifa har kuni
+ertalab ishlatiladi — memo qoʻshildi, ogohlantirish nolga tushdi.
+
+**Oʻlik kod.** `knip` uchta chaqirilmaydigan faylni koʻrsatdi va
+hammasi tasdiqlandi: `RecordPaymentModal` (289 qator) va
+`InvoicePaymentsModal` (211) — ularning oʻrnini `TakePaymentModal`
+egallagan; `components/ui/form.tsx` (84) — shadcn'ning React Hook Form
+oʻramasi. Oʻchirildi, 584 qator. Lugʻatda qolgan 13 ta yetim kalitni
+`catalog.test.ts` oʻzi ushladi — aynan shuning uchun u bor.
+
+`scripts/og.mjs` oʻlik emas: u qoʻlda ishga tushiriladigan vosita
+(brend oʻzgarganda ulashish rasmlarini qayta chizadi), knip esa buni
+koʻra olmaydi.
+
+**Egasiga savol: hujjatdagi forma strategiyasi.** `docs/05` sakkiz
+joyda "React Hook Form + Zod — har bir create/edit formasida" deb
+yozilgan (F3, §Forms). Kod esa ularni **hech qachon import qilmagan**:
+formalar qoʻlda, `useState` bilan yozilgan, va bu oʻn ikki sprint
+davomida shunday. `react-hook-form`, `zod` va `@hookform/resolvers`
+package.json da turibdi, lekin hech qayerda ishlatilmaydi.
+
+Paketlarni oʻchirib yubormadim — bu hujjatdagi arxitektura qarorini
+jimgina hal qilib qoʻyardi, u esa egasiniki. Ikki yoʻl bor: yo yangi
+formalar uchun RHF+Zod qabul qilinadi (paketlar qoladi), yo hujjat
+haqiqatga moslanadi (paketlar ketadi). Ishlayotgan formalarni qayta
+yozish uchun sabab yoʻq.

@@ -122,7 +122,11 @@ function ChildrenAttendance() {
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Saqlab boʻlmadi.')),
   })
 
-  const rows = registerQuery.data?.rows ?? []
+  // `?? []` har renderda YANGI massiv yasaydi, ya'ni quyidagi `useMemo`
+  // hech qachon keshdan foydalanmasdi va guruhdagi har bir bola bo'ylab
+  // har bir bosishda qayta aylanardi. Massivni ham memo'lab qo'yamiz —
+  // shunda u `data` o'zgarmaguncha o'sha-o'sha bo'lib qoladi.
+  const rows = useMemo(() => registerQuery.data?.rows ?? [], [registerQuery.data])
 
   const counts = useMemo(() => {
     const result = { present: 0, excused: 0, absent: 0, unmarked: 0 }
