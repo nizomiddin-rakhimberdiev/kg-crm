@@ -248,6 +248,18 @@ def _create_row(tenant: Any, basename: str) -> Any:
                 deep_link="/debtors?overdue_days=15",
                 generated_at=timezone.now(),
             )
+        if basename in {
+            "memory-photo",
+            "photo-tag",
+            "face-consent",
+            "schedule-item",
+            "camera",
+            "camera-event",
+            "telegram-chat",
+        }:
+            from apps.memories.tests.factories import make_memories_row
+
+            return make_memories_row(tenant, basename)
         if basename == "cash-account":
             from apps.cash.models import CashAccount, CashAccountKind
 

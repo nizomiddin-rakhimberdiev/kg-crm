@@ -32,6 +32,10 @@ CUSTOM_CREATE = {
     "payroll-advance": "record_advance() servisi filialni xodimdan oladi",
     "attendance": "mark_bulk() servisi filialni guruhdan oladi",
     "absence-claim": "create_claim() servisi filialni bolasidan oladi",
+    "memory-photo": "store_photo() servisi filialni so'rovdan aniqlaydi (resolve_branch)",
+    "face-consent": "grant_consent() servisi filialni bolasidan oladi",
+    "photo-tag": "create() o'chirilgan (405): teglar faqat tanish yoki qo'lda belgilash orqali",
+    "telegram-chat": "create() o'chirilgan (405): chat faqat ulash havolasi orqali yaratiladi",
 }
 
 

@@ -44,3 +44,9 @@ CELERY_TASK_EAGER_PROPAGATES = True
 # Testlar yozgan fayllar loyihaga tushib qolmasin — vaqtinchalik papka
 # har bir ishga tushishda tozalanadi.
 MEDIA_ROOT = Path(tempfile.mkdtemp(prefix="kg-crm-test-media-"))
+
+# --- Radix AI testlarda: tashqi tarmoq va model fayllarisiz ---
+FACE_ENGINE = "apps.memories.engine.FakeEngine"
+TELEGRAM_CLIENT = "apps.memories.telegram.RecordingTelegramClient"
+TELEGRAM_WEBHOOK_SECRET = "test-webhook-secret-0123456789"  # noqa: S105
+TELEGRAM_BOT_USERNAME = "radix_test_bot"
