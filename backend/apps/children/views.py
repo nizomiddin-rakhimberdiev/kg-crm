@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from django.http import FileResponse
+from django.utils import timezone
 from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.decorators import action
@@ -18,7 +19,7 @@ from apps.audit import services as audit
 from apps.branches.selectors import resolve_branch
 from apps.children import importer, services
 from apps.children.importer import import_children
-from apps.children.models import Child, Enrollment, Group, Guardian
+from apps.children.models import Child, Enrollment, EnrollmentStatus, Group, Guardian
 from apps.children.serializers import (
     ChildGuardianSerializer,
     ChildSerializer,
@@ -212,6 +213,37 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
             )
 
         return Response(report.as_dict())
+
+
+    @action(detail=False, methods=["get"], url_path="birthdays")
+    def birthdays(self, request: Request) -> Response:
+        """`GET /children/birthdays?days=7` — yaqinda tug'ilgan kuni nishonlanadiganlar.
+
+        Faqat faol bolalar; filial va tenant chegarasi `get_base_queryset`
+        orqali qo'llanadi, shuning uchun begona bola ro'yxatga tushmaydi.
+        """
+        try:
+            days = int(request.query_params.get("days", "7"))
+        except ValueError:
+            days = 7
+        days = max(0, min(days, 60))
+        queryset = self.get_base_queryset().filter(
+            is_active=True, enrollment_status=EnrollmentStatus.ACTIVE
+        )
+        rows = services.upcoming_birthdays(
+            queryset, today=timezone.localdate(), days=days
+        )
+        items = [
+            {
+                "id": str(row["child"].id),
+                "full_name": row["child"].full_name,
+                "birthday": row["birthday"].isoformat(),
+                "days_until": row["days_until"],
+                "turning": row["turning"],
+            }
+            for row in rows
+        ]
+        return Response({"days": days, "items": items})
 
 
 class GuardianViewSet(BranchCreateMixin, BranchScopedMixin, TenantViewSet):

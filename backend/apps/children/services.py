@@ -24,6 +24,7 @@ from apps.core.exceptions import BusinessRuleViolation
 
 __all__ = [
     "attach_guardian",
+    "upcoming_birthdays",
     "enroll_child",
     "end_enrollment",
     "recount_group",
@@ -178,3 +179,41 @@ def group_occupancy(organization_id: Any) -> dict[str, int]:
         .values_list("id", "active")
     )
     return {str(gid): count for gid, count in rows}
+
+
+def _next_birthday(born: date, today: date) -> date:
+    """Tug'ilgan kunning bugun yoki undan keyingi eng yaqin sanasi.
+
+    29-fevralda tug'ilganlar oddiy yilda 1-martda nishonlanadi.
+    """
+    for year in (today.year, today.year + 1):
+        try:
+            occurrence = date(year, born.month, born.day)
+        except ValueError:
+            occurrence = date(year, 3, 1)
+        if occurrence >= today:
+            return occurrence
+    return date(today.year + 1, 3, 1)
+
+
+def upcoming_birthdays(children: Any, *, today: date, days: int) -> list[dict[str, Any]]:
+    """Bugundan boshlab `days` kun ichida tug'ilgan kuni bo'lgan bolalar.
+
+    Yil almashuvi (dekabr → yanvar) to'g'ri hisoblanadi. Natija eng yaqin
+    tug'ilgan kundan boshlab tartiblanadi.
+    """
+    rows: list[dict[str, Any]] = []
+    for child in children:
+        next_day = _next_birthday(child.date_of_birth, today)
+        until = (next_day - today).days
+        if until <= days:
+            rows.append(
+                {
+                    "child": child,
+                    "birthday": next_day,
+                    "days_until": until,
+                    "turning": next_day.year - child.date_of_birth.year,
+                }
+            )
+    rows.sort(key=lambda row: row["days_until"])
+    return rows
