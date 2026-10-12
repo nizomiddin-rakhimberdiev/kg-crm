@@ -1913,9 +1913,25 @@ workflow file` izohisiz** tugaydi. GitHub parse xatosi haqida hech
 narsa demaydi, chunki parse xatosi yoʻq.
 
 Demak toʻsiq — hisobning **xususiy** repolarda Actions ishlatish
-huquqida. Qaraladigan joylar: Billing → *Budgets and alerts* (sarf
-chegarasi) va → *Payment information*; ular toza boʻlsa — shu dalillar
-bilan GitHub Support. Zond oʻchirildi.
+huquqida. Va oʻsha kuni aniq sabab ham topildi.
+
+**Billing → Budgets and alerts** da beshta byudjet turibdi — Codespaces,
+Packages, **Actions**, Git LFS va AI krediti — har biri **$0, "Stop
+usage: Yes", hammasi 100 % da**. Xususiy repodagi Actions — hisoblanadigan
+mahsulot, shuning uchun $0 toʻxtatuvchi byudjet har bir ishga tushishni
+job yaratilmasdan oldin boʻgʻadi. Ommaviy repodagi Actions esa bepul va
+byudjetga tegishli emas — sanoq oʻlchagan ajralish aynan shu.
+
+**Billing → Payment information** byudjetlar qayerdan kelganini
+aytadi: **"Invalid payment method – authorization hold failed"**, va
+toʻlov usuli biriktirilmagan.
+
+Yechim: **Actions** byudjetini oʻchirish — sahifaning oʻzi yozib
+turibdi: "If no budget is set, usage for that product is unlimited".
+Shundan keyin GitHub Free'ning xususiy repo uchun 2 000 daqiqasi
+ochilishi kerak; karta faqat oʻsha daqiqalardan oshib ketganda kerak
+boʻladi, va mahalliy karta avtorizatsiya ushlab turishidan odatda
+oʻtmaydi. Zond oʻchirildi.
 
 Buning narxi aniq: bu yerdagi har bir qoʻriqchi test — RLS roʻyxati,
 obuna darvozasi, `DateInput`, formatlash uyi, fokus tutqichi, parol
