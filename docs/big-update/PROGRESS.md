@@ -1892,10 +1892,30 @@ hal qiluvchi tajriba: toʻrt qatorlik zond-workflow — bitta `echo`,
 servis ham, matritsa ham, hech narsa yoʻq. U **ham** 0 soniyada
 `startup_failure` bilan tugadi.
 
-Bu repodagi hech qanday fayl bunday natija bera olmaydi. Demak sabab
-GitHub hisobida: Actions sarf chegarasi $0 yoki xususiy repo uchun
-daqiqalar tugagan — <https://github.com/settings/billing> da
-koʻrinadi. Zond oʻchirildi, javobini berib boʻldi.
+Zond aslida hech narsani ajratmagan: u eski ikki workflow bilan bir
+papkada turgan edi, yaʼni "fayl buzuq emas" degan xulosa hali
+isbotlanmagandi. Ertasiga billing sahifasi ochildi va u **toza**
+chiqdi — GitHub Free, $0, toʻlov kutilmayapti. Demak taxmin ham
+notoʻgʻri edi.
+
+Haqiqiy javobni hisob boʻylab oʻtkazilgan sanoq berdi. Bu hisobdagi
+**barcha ommaviy repolarda Actions ishlaydi** (`pages build and
+deployment` — `success`; `tripsfactory` dagi Deploy esa oʻz ishiga
+yetib borib, oʻsha yerda yiqiladi — bu oddiy nosozlik). **Barcha
+xususiy repolarda esa birorta ham ishga tushmagan**: `kg-crm` 71/71,
+`smmumirzoq` va `lor-crm` ham shunday — uchta boshqa repo, uchta
+boshqa workflow fayli.
+
+Ikkinchi dalil: `backend.yml` ni API orqali qoʻlda ishga tushirish
+qabul qilinadi, natija aynan `.github/workflows/backend.yml` ga
+bogʻlanadi — va 0 soniyada, bitta ham job yaratilmay, **`Invalid
+workflow file` izohisiz** tugaydi. GitHub parse xatosi haqida hech
+narsa demaydi, chunki parse xatosi yoʻq.
+
+Demak toʻsiq — hisobning **xususiy** repolarda Actions ishlatish
+huquqida. Qaraladigan joylar: Billing → *Budgets and alerts* (sarf
+chegarasi) va → *Payment information*; ular toza boʻlsa — shu dalillar
+bilan GitHub Support. Zond oʻchirildi.
 
 Buning narxi aniq: bu yerdagi har bir qoʻriqchi test — RLS roʻyxati,
 obuna darvozasi, `DateInput`, formatlash uyi, fokus tutqichi, parol
