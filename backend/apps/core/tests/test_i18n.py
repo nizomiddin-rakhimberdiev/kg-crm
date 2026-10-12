@@ -32,17 +32,17 @@ CALL = re.compile(r"\bgettext(?:_lazy)?\(\s*((?:\"(?:[^\"\\]|\\.)*\"\s*)+)\)", r
 def _sources() -> set[str]:
     found: set[str] = set()
     for path in APPS_DIR.rglob("*.py"):
-        text = str(path)
+        text = path.as_posix()
         if any(part in text for part in SKIP):
             continue
-        for match in CALL.finditer(path.read_text()):
+        for match in CALL.finditer(path.read_text(encoding="utf-8")):
             parts = re.findall(r"\"((?:[^\"\\]|\\.)*)\"", match.group(1))
             found.add("".join(parts).replace('\\"', '"'))
     return found
 
 
 def _po_entries(lang: str) -> dict[str, str]:
-    text = (LOCALE_DIR / lang / "LC_MESSAGES" / "django.po").read_text()
+    text = (LOCALE_DIR / lang / "LC_MESSAGES" / "django.po").read_text(encoding="utf-8")
     entries: dict[str, str] = {}
     for block in re.finditer(
         r"msgid ((?:\"(?:[^\"\\]|\\.)*\"\n)+)msgstr ((?:\"(?:[^\"\\]|\\.)*\"\n?)+)", text
@@ -154,6 +154,6 @@ def test_no_fuzzy_entries(lang: str):
     ko'rsatilmagan." xabari ruschada "В токене не указана организация"
     bo'lib chiqardi. Har fuzzy yozuv QO'LDA tekshirilishi kerak.
     """
-    text = (LOCALE_DIR / lang / "LC_MESSAGES" / "django.po").read_text()
+    text = (LOCALE_DIR / lang / "LC_MESSAGES" / "django.po").read_text(encoding="utf-8")
     fuzzy = [line for line in text.splitlines() if line.startswith("#, fuzzy")]
     assert fuzzy == [], f"{lang}: {len(fuzzy)} ta tekshirilmagan tarjima"
