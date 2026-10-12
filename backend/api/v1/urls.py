@@ -14,6 +14,7 @@ from apps.accounts.views_auth import (
     SelectOrganizationView,
 )
 from apps.core.deployment import is_saas
+from apps.memories.views import CameraIngestView, CameraWebhookView, TelegramWebhookView
 from apps.organizations.views import OrganizationView
 from apps.platform.views import PlatformLoginView
 from apps.platform.views_leads import PublicLeadCreateView, PublicPricingView
@@ -47,6 +48,10 @@ urlpatterns = [
     # Singleton resurs — ID yo'q, tashkilot tokendan olinadi (docs/04 §16).
     path("organization", OrganizationView.as_view(), name="organization"),
     *auth_patterns,
+    path("telegram/webhook", TelegramWebhookView.as_view(), name="telegram-webhook"),
+    path("camera-ingest", CameraIngestView.as_view(), name="camera-ingest"),
+    path("camera-webhook", CameraWebhookView.as_view(), name="camera-webhook"),
+    path("camera-webhook/<str:token>", CameraWebhookView.as_view(), name="camera-webhook-url"),
     *router.urls,
 ]
 
