@@ -20,3 +20,19 @@ CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
     default=["http://localhost:5173", "http://127.0.0.1:5173"],
 )
+
+# --- Redis'siz lokal ishlatish ---
+#
+# Redis o'rnatilmagan mashinada (masalan Docker'siz Windows) kesh va
+# Celery ulana olmaydi: so'rov limiti (throttle) keshga yozadi, shuning
+# uchun HAR BIR ommaviy endpoint 500 beradi. `.env` ga
+# `DEV_NO_REDIS=true` yozilsa, kesh xotirada ishlaydi, Celery vazifalari
+# esa darhol (sinxron) bajariladi. Cheklov: `celery beat` ishlamaydi,
+# ya'ni jadvalli xabarlar (Radix AI) avtomatik yuborilmaydi. Productionda
+# va Docker'da bu o'zgaruvchi YOQILMAYDI.
+if env.bool("DEV_NO_REDIS", default=False):
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}  # noqa: F811
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
+    CELERY_BROKER_URL = "memory://"
+    CELERY_RESULT_BACKEND = "cache+memory://"

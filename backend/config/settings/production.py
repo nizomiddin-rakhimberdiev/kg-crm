@@ -22,6 +22,16 @@ if len(SECRET_KEY.encode()) < 32:
         'Yangi kalit: python -c "import secrets; print(secrets.token_urlsafe(48))"'
     )
 
+# Yuz vektorlari (biometrik ma'lumot) shifrlash kalitisiz saqlanmaydi:
+# SECRET_KEY dan olingan kalit aylantirilsa, barcha vektorlar o'qilmay qoladi.
+if not env("MEMORIES_ENCRYPTION_KEY", default=""):
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured(
+        "MEMORIES_ENCRYPTION_KEY majburiy. Yangi kalit: "
+        'python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
+    )
+
 # --- Xavfsizlik (docs/02 §20) ---
 # TLS'ga haydash — bu o'rnatishda nginx ham qiladi (deploy/nginx/tls.conf),
 # ya'ni bu ikkinchi qatlam. Sozlanadigan bo'lishi SHART, chunki ikki

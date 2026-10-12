@@ -66,6 +66,7 @@ LOCAL_APPS = [
     "apps.subscriptions",
     "apps.platform",
     "apps.intelligence",
+    "apps.memories",
     "apps.audit",
 ]
 
@@ -270,6 +271,11 @@ CELERY_BEAT_SCHEDULE = {
     # tirikligiga bog'liq bo'lmasligi kerak. Bu vazifa esa navbatni
     # bo'shatadi. Usiz kvitansiya xabari `queued` holatda abadiy
     # qolardi — xatosiz va jimgina.
+    # Kun tartibi (menyu/ovqat/mashg'ulot) — ota-onalar Telegram'iga.
+    "dispatch-schedule-notifications": {
+        "task": "memories.dispatch_schedule",
+        "schedule": crontab(minute="*/5"),
+    },
     "dispatch-queued-notifications": {
         "task": "notifications.dispatch_queued",
         "schedule": crontab(minute="*/5"),
@@ -382,6 +388,8 @@ REST_FRAMEWORK = {
         # operator vaqtini himoya qiladi; CAPTCHA keyingi qatlam sifatida
         # deploy konfiguratsisida qo'shilishi mumkin.
         "lead": env("LEAD_THROTTLE_RATE", default="5/hour"),
+        "telegram_webhook": env("TELEGRAM_WEBHOOK_THROTTLE_RATE", default="1200/min"),
+        "camera_ingest": env("CAMERA_INGEST_THROTTLE_RATE", default="600/min"),
         "public_pricing": env("PUBLIC_PRICING_THROTTLE_RATE", default="120/min"),
     },
 }
@@ -462,6 +470,22 @@ NOTIFICATION_PROVIDER = env("NOTIFICATION_PROVIDER", default="console")
 # bor. Faqat lokal disk bilan cheklanmagan joyga (monitoring, zaxira,
 # xato kuzatuvi) tushadigan log'da bularning o'rni yo'q.
 NOTIFICATION_LOG_BODY = env.bool("NOTIFICATION_LOG_BODY", default=False)
+
+# --- Radix AI: xotira, yuz tanish, Telegram (docs/08) ---
+# Bot tokeni va webhook siri FAQAT muhit o'zgaruvchisidan; kodda va logda yo'q.
+TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN", default="")
+TELEGRAM_BOT_USERNAME = env("TELEGRAM_BOT_USERNAME", default="")
+# Telegram har so'rovda `X-Telegram-Bot-Api-Secret-Token` sarlavhasida yuboradi.
+TELEGRAM_WEBHOOK_SECRET = env("TELEGRAM_WEBHOOK_SECRET", default="")
+TELEGRAM_CLIENT = env("TELEGRAM_CLIENT", default="apps.memories.telegram.HttpTelegramClient")
+# Yuz vektorlarini shifrlash kaliti (Fernet, 32 bayt urlsafe-base64). Production'da majburiy.
+MEMORIES_ENCRYPTION_KEY = env("MEMORIES_ENCRYPTION_KEY", default="")
+FACE_ENGINE = env("FACE_ENGINE", default="apps.memories.engine.OpenCVEngine")
+FACE_MODEL_DIR = env("FACE_MODEL_DIR", default=str(BASE_DIR / "models"))
+# SFace kosinus chegarasi (OpenCV zoo: 0.363). Yuqori = qat'iyroq.
+FACE_MATCH_THRESHOLD = env.float("FACE_MATCH_THRESHOLD", default=0.363)
+MEMORIES_MAX_UPLOAD_BYTES = env.int("MEMORIES_MAX_UPLOAD_BYTES", default=10 * 1024 * 1024)
+MEMORIES_PARENT_RETENTION_DAYS = env.int("MEMORIES_PARENT_RETENTION_DAYS", default=365)
 
 # --- Loglash ---
 # Loglar STDOUT ga — fayl aylantirish (rotation) ham, disk to'lishi ham

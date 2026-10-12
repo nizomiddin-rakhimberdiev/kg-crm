@@ -6,13 +6,24 @@
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+  ::selection {
+    background: theme('colors.nihol.200');
+    color: theme('colors.ildiz.900');
   }
   /* Sut fon, Tosh matn — brendbuk 04. */
   body {
     @apply bg-sut text-tosh-900 font-sans;
   }
   /*
-   * Sarlavhalar Onest'da — brendbuk 05. Har bir `<h1>` ga `font-display`
+   * Sarlavhalar Manrope'da. Har bir `<h1>` ga `font-display`
    * yozib chiqish o'rniga shu yerda bir marta: ekranlar ko'p, va yangi
    * sahifa qo'shilganda sarlavha o'zidan brend shriftida chiqadi.
    */
@@ -52,6 +63,60 @@
 }
 
 @layer components {
+  /* --- Umumiy silliq elementlar (login, signup va landing) --- */
+  .field {
+    @apply w-full rounded-xl border border-tosh-200 bg-white/90 px-4 py-3 text-[15px] text-tosh-900 outline-none transition duration-200 placeholder:text-tosh-300;
+  }
+  .field:hover {
+    @apply border-tosh-300;
+  }
+  .field:focus {
+    @apply border-nihol-500 bg-white ring-4 ring-nihol-500/15;
+  }
+  .btn-primary {
+    @apply relative inline-flex min-h-[48px] w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-b from-nihol-500 to-nihol-600 px-5 text-[15px] font-semibold text-white shadow-glow transition duration-200;
+  }
+  .btn-primary:hover:not(:disabled) {
+    @apply -translate-y-px brightness-105;
+  }
+  .btn-primary:active:not(:disabled) {
+    @apply translate-y-0 scale-[0.99];
+  }
+  .btn-primary:disabled {
+    @apply cursor-not-allowed opacity-60 shadow-none;
+  }
+  .btn-primary:focus-visible {
+    @apply outline-none ring-4 ring-nihol-500/30;
+  }
+  .glass {
+    @apply border border-white/60 bg-white/70 shadow-soft backdrop-blur-xl;
+  }
+  .mesh-light {
+    background-image:
+      radial-gradient(60% 50% at 8% 0%, rgb(46 158 107 / 0.14), transparent 70%),
+      radial-gradient(45% 40% at 100% 10%, rgb(242 155 85 / 0.12), transparent 70%),
+      radial-gradient(50% 45% at 60% 100%, rgb(46 158 107 / 0.1), transparent 70%);
+  }
+  .mesh-dark {
+    background-color: theme('colors.ildiz.900');
+    background-image:
+      radial-gradient(70% 55% at 0% 0%, rgb(46 158 107 / 0.45), transparent 65%),
+      radial-gradient(50% 45% at 100% 100%, rgb(242 155 85 / 0.22), transparent 65%),
+      radial-gradient(40% 40% at 80% 10%, rgb(121 196 164 / 0.18), transparent 70%);
+  }
+
+  /* Landingdagi tugma va havolalarga bosilish hissi. */
+  .marketing a,
+  .marketing button {
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity,
+      filter;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .marketing button:active:not(:disabled) {
+    transform: scale(0.985);
+  }
+
   .marketing {
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }

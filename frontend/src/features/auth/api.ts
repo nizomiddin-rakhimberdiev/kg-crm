@@ -19,6 +19,12 @@ export const authApi = {
       organization_id: organizationId,
     }),
 
+  /** Access tokenni yangilaydi. Interceptor'siz: boot paytida ishlatiladi. */
+  refresh: (refresh: string) =>
+    httpClient
+      .post<Envelope<{ access: string; refresh: string }>>('/auth/refresh', { refresh })
+      .then((r) => r.data.data),
+
   me: () =>
     api.get<{
       user: CurrentUser

@@ -66,6 +66,7 @@ const PlatformOrganizationPage = lazy(
 const PlatformInvoicesPage = lazy(() => import('./features/platform/pages/PlatformInvoicesPage'))
 const PlatformGrantsPage = lazy(() => import('./features/platform/pages/PlatformGrantsPage'))
 const PlatformLeadsPage = lazy(() => import('./features/platform/pages/PlatformLeadsPage'))
+const SignupPage = lazy(() => import('./features/auth/pages/SignupPage'))
 const SupportEntryPage = lazy(() => import('./features/auth/pages/SupportEntryPage'))
 const ProfilePage = lazy(() => import('./features/auth/pages/ProfilePage'))
 const OrganizationPage = lazy(() => import('./features/organization/pages/OrganizationPage'))
@@ -83,6 +84,7 @@ const ExpensesPage = lazy(() => import('./features/expenses/pages/ExpensesPage')
 const ReportsPage = lazy(() => import('./features/reports/pages/ReportsPage'))
 const BranchesPage = lazy(() => import('./features/branches/pages/BranchesPage'))
 const NotificationsPage = lazy(() => import('./features/notifications/pages/NotificationsPage'))
+const MemoriesPage = lazy(() => import('./features/memories/pages/MemoriesPage'))
 const AuditPage = lazy(() => import('./features/audit/pages/AuditPage'))
 const BillingPage = lazy(() => import('./features/billing/pages/BillingPage'))
 const SettingsPage = lazy(() => import('./features/settings/pages/SettingsPage'))
@@ -151,6 +153,8 @@ const saasOnlyRoutes = env.isStandalone
           { path: '/uz/terms', element: <LegalPage locale="uz" page="terms" /> },
           { path: '/ru/terms', element: <LegalPage locale="ru" page="terms" /> },
           { path: '/en/terms', element: <LegalPage locale="en" page="terms" /> },
+          // Sinov uchun ariza — akkauntni vendor ochadi (ADR-10).
+          { path: '/signup', element: <SignupPage /> },
           // Sinov davridagi havolalar — bosh sahifaga.
           { path: '/test-redesign', element: <Navigate replace to="/uz" /> },
           { path: '/test-redesign/ru', element: <Navigate replace to="/ru" /> },
@@ -280,6 +284,14 @@ export const routes: RouteObject[] = [
           {
             element: <PermissionRoute permission="notifications.read" />,
             children: [{ path: 'notifications', element: <NotificationsPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="memories.read" />,
+            children: [
+              { path: 'radix-ai', element: <MemoriesPage /> },
+              // Kameralar: kamerani ulash va holatini ko'rish (Xavfsizlik tabi).
+              { path: 'cameras', element: <MemoriesPage initialTab="safety" cameras /> },
+            ],
           },
           // Obuna sahifasi — standalone'da umuman yo'q (ADR-13).
           ...(env.isStandalone

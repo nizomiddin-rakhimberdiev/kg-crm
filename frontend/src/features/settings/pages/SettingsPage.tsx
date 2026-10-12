@@ -16,6 +16,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type SettingValue } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { APP_LOCALES, t } from '@/lib/i18n'
+import { cn } from '@/lib/utils'
 
 interface SettingMeta {
   label: string
@@ -48,11 +49,28 @@ const META: Record<string, SettingMeta> = {
     label: t("To'lov haqida SMS"),
     help: t("To'lov qabul qilinganda ota-onaga xabar ketadi."),
   },
+  'attendance.working_weekdays': {
+    label: t('Ish kunlari'),
+    help: t(
+      "Bog'cha ishlaydigan hafta kunlari. Davomat va qatnashmaslik hisobi shunga qarab yuritiladi.",
+    ),
+  },
   'attendance.auto_absent': {
     label: t('Avtomatik "kelmadi"'),
     help: t('Belgilanmagan bolalar kun oxirida kelmagan deb yoziladi.'),
   },
 }
+
+/** ISO hafta kunlari: 1 = dushanba. */
+const WEEKDAYS: Array<[number, string]> = [
+  [1, t('Du')],
+  [2, t('Se')],
+  [3, t('Ch')],
+  [4, t('Pa')],
+  [5, t('Ju')],
+  [6, t('Sh')],
+  [7, t('Ya')],
+]
 
 const GROUPS: Array<[string, string]> = [
   ['general', t('Umumiy')],
@@ -108,6 +126,48 @@ export default function SettingsPage() {
             </option>
           ))}
         </select>
+      )
+    }
+
+    // Ish kunlari "1,2,3,4,5" matni — qo'lda yozilsa xato kiritish oson,
+    // shuning uchun kunlar tugma sifatida tanlanadi. Hech bo'lmasa bitta
+    // kun qolishi shart (backend ham bo'sh qiymatda dushanba-juma oladi).
+    if (key === 'attendance.working_weekdays') {
+      const selected = new Set(
+        String(value ?? '')
+          .split(',')
+          .map((part) => Number(part.trim()))
+          .filter((n) => Number.isInteger(n) && n >= 1 && n <= 7),
+      )
+      return (
+        <div role="group" aria-label={META[key].label} className="flex flex-wrap gap-1.5">
+          {WEEKDAYS.map(([day, label]) => {
+            const on = selected.has(day)
+            return (
+              <button
+                key={day}
+                type="button"
+                aria-pressed={on}
+                disabled={!editable || save.isPending}
+                onClick={() => {
+                  const next = new Set(selected)
+                  if (on) next.delete(day)
+                  else next.add(day)
+                  if (next.size === 0) return
+                  save.mutate({ key, value: [...next].sort((a, b) => a - b).join(',') })
+                }}
+                className={cn(
+                  'h-8 w-9 rounded-lg border text-xs font-medium transition disabled:opacity-60',
+                  on
+                    ? 'border-brand-500 bg-brand-50 text-brand-700'
+                    : 'border-slate-200 text-slate-500 hover:bg-slate-50',
+                )}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </div>
       )
     }
 

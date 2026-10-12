@@ -14,16 +14,19 @@ import { LegalSeo } from '../seo'
 /**
  * Ildiz manzili (`/`) kimga tegishli.
  *
- * Public domenda — sotuv sayti; boshqa har qanday hostda (masalan
- * mijozning o'z domenida yoki lokal ishlab chiqishda) — CRM'ning o'zi.
+ * Public domenda — sotuv sayti; mijozning o'z domenida — CRM'ning o'zi.
+ * Lokal ishlab chiqishda (`npm run dev`, localhost) sotuv sayti ochiladi:
+ * dizaynni ko'rish uchun; CRM'ga `/login` yoki "CRM'ga kirish" orqali
+ * kiriladi. Build'da (`import.meta.env.DEV` yolg'on) xatti-harakat
+ * o'zgarmaydi.
  */
 export function MarketingEntry() {
   const host = window.location.hostname
-  return host === env.publicHost || host === `www.${env.publicHost}` ? (
-    <Navigate replace to="/uz" />
-  ) : (
-    <Navigate replace to="/dashboard" />
-  )
+  const isPublic =
+    host === env.publicHost ||
+    host === `www.${env.publicHost}` ||
+    (import.meta.env.DEV && (host === 'localhost' || host === '127.0.0.1'))
+  return isPublic ? <Navigate replace to="/uz" /> : <Navigate replace to="/dashboard" />
 }
 
 export function LegalPage({ locale, page }: { locale: Locale; page: 'privacy' | 'terms' }) {

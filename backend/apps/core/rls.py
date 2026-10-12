@@ -40,6 +40,7 @@ __all__ = [
     "build_policy_sql",
     "build_policy_teardown_sql",
     "policy_sql_for",
+    "metadata_policy_sql_for",
     "teardown_sql_for",
     "AUTH_TABLES",
     "OPERATIONAL_TABLES",
@@ -72,6 +73,14 @@ AUTH_TABLES: tuple[str, ...] = ("user", "refresh_token")
 # himoyasiz jadval. `test_rls.py` uni modellar ro'yxati bilan solishtiradi.
 OPERATIONAL_TABLES: tuple[str, ...] = (
     "absence_claim",
+    "camera",
+    "camera_event",
+    "day_schedule_item",
+    "face_consent",
+    "face_sample",
+    "memory_photo",
+    "photo_tag",
+    "telegram_pairing",
     "attendance_record",
     "branch",
     "cash_account",
@@ -117,6 +126,7 @@ METADATA_TABLES: tuple[str, ...] = (
     "subscription_invoice",
     "subscription_payment",
     "usage_snapshot",
+    "telegram_chat",
 )
 
 # `organization_id` ustuni YO'Q, lekin ota-jadval orqali bog'langan.
@@ -349,6 +359,11 @@ OPERATIONAL_EXPRESSION = "organization_id = app_current_org()"
 def policy_sql_for(table: str) -> str:
     """Bitta operatsion jadval uchun siyosat — kech qo'shilgan app migratsiyasi uchun."""
     return _policy(table, OPERATIONAL_EXPRESSION)
+
+
+def metadata_policy_sql_for(table: str) -> str:
+    """Metama'lumot jadvali uchun siyosat (`org OR platform`) — kech qo'shilgan app migratsiyasi uchun."""
+    return _policy(table, "organization_id = app_current_org() OR app_is_platform()")
 
 
 def teardown_sql_for(table: str) -> str:

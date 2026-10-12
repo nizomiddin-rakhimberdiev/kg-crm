@@ -39,7 +39,18 @@ function withoutEmpty<T extends object>(payload: T): Partial<T> {
   ) as Partial<T>
 }
 
+/** Tug'ilgan kuni yaqin bola (`GET /children/birthdays`). */
+export interface UpcomingBirthday {
+  id: string
+  full_name: string
+  birthday: string
+  days_until: number
+  turning: number
+}
+
 export const childrenApi = {
+  birthdays: (days = 7) =>
+    api.get<{ days: number; items: UpcomingBirthday[] }>('/children/birthdays', { days }),
   list: (params?: Record<string, unknown>) => api.list<Child>('/children', params),
   get: (id: string) => api.get<Child>(`/children/${id}`),
   create: (payload: ChildInput) => api.post<Child>('/children', withoutEmpty(payload)),

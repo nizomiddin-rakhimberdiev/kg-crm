@@ -112,10 +112,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        // Matn — Golos Text 400/500. Sarlavhalar `font-display` (Onest);
-        // `index.css` uni h1–h3 ga o'zi qo'yadi.
-        sans: ['Golos Text', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
-        display: ['Onest', 'Golos Text', 'system-ui', 'sans-serif'],
+        // Matn — Inter 400/500/600. Sarlavhalar `font-display` (Manrope);
+        // `index.css` uni h1–h4 ga o'zi qo'yadi.
+        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        display: ['Manrope', 'Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       colors: {
@@ -163,6 +163,9 @@ export default {
         // Soya Tosh rangidan — neytral qora ko'kimtir ko'rinardi.
         card: '0 1px 2px 0 rgb(27 36 33 / 0.05), 0 1px 3px 0 rgb(27 36 33 / 0.07)',
         lift: '0 18px 40px -22px rgb(18 53 47 / 0.35)',
+        // Yumshoq, ko'p qatlamli soyalar — "silliq" yuza hissi.
+        soft: '0 1px 1px rgb(18 53 47 / 0.03), 0 8px 24px -8px rgb(18 53 47 / 0.12), 0 24px 48px -24px rgb(18 53 47 / 0.14)',
+        glow: '0 10px 30px -10px rgb(46 158 107 / 0.55)',
       },
       borderRadius: {
         // Brendbuk 03: tugma va kartochkalarda 12–16 px yumaloqlik.

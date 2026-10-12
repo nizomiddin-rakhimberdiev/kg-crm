@@ -33,3 +33,10 @@ Pillow==12.3.0
 # kodlashni buzadi — shuning uchun bu yerda `cp1251` bilan ishlash ham
 # kerak bo'lgan. Bitta bog'liqlik shu ishqalanishni butunlay yo'qotadi.
 openpyxl==3.1.5
+
+# Radix AI (docs/08): yuz vektorlarini shifrlash, Telegram, yuz tanish.
+# opencv-python-headless — GUI kutubxonalarisiz (serverda kerak emas).
+cryptography==50.0.1
+requests==2.34.2
+numpy==2.5.3
+opencv-python-headless==5.0.0.93

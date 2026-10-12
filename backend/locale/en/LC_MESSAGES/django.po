@@ -1067,3 +1067,180 @@ msgstr "Employee not found."
 
 msgid "{full_name} {date} kuni ishlamagan (ishga kirish/bo'shash sanasi)."
 msgstr "{full_name} was not employed on {date} (hire/termination date)."
+
+msgid "Bog'cha guruhi"
+msgstr "Kindergarten group"
+
+msgid "Bola yig'layapti / kayfiyati yo'q"
+msgstr "Child is crying / in a low mood"
+
+msgid "Bu bola uchun namunalar soni to'ldi."
+msgstr "The sample limit for this child has been reached."
+
+msgid "Bu chat ulanmagan. Bog'cha bergan havola orqali ulaning."
+msgstr "This chat is not linked. Connect using the link from your kindergarten."
+
+msgid "Bu davr uchun rasm topilmadi."
+msgstr "No photos found for this period."
+
+msgid "Bu guruh ulandi. Rasm yuboring — men bolalarni taniyman va rasmlarni ota-onalarga yuboraman."
+msgstr "This group is connected. Send photos — I will recognise the children and send the pictures to their parents."
+
+msgid "Bu havola boshqa turdagi chat uchun mo'ljallangan."
+msgstr "This link is meant for a different kind of chat."
+
+msgid "Bu vasiy ushbu bolaning vasiysi emas."
+msgstr "This guardian is not a guardian of this child."
+
+msgid "Bu vasiyning farzandi yo'q."
+msgstr "This guardian has no children."
+
+msgid "Bugun uchun kun tartibi hali kiritilmagan."
+msgstr "Today's schedule has not been entered yet."
+
+msgid "Bugungi kun tartibi"
+msgstr "Today's schedule"
+
+msgid "Buyruqlar:\n/photos — bugungi rasmlar\n/photos week — oxirgi 7 kun\n/photos 2026-10-01 — shu kun rasmlari\n/menu — bugungi menyu va kun tartibi\n/language uz|ru|en — tilni almashtirish"
+msgstr "Commands:\n/photos — today's photos\n/photos week — the last 7 days\n/photos 2026-10-01 — photos of that day\n/menu — today's menu and schedule\n/language uz|ru|en — change language"
+
+msgid "Faqat JPEG, PNG yoki WebP rasm qabul qilinadi."
+msgstr "Only JPEG, PNG or WebP images are accepted."
+
+msgid "Havola yaroqsiz yoki muddati o'tgan. Dasturdan yangisini oling."
+msgstr "The link is invalid or has expired. Get a new one in the app."
+
+msgid "Ko'rildi"
+msgstr "Acknowledged"
+
+msgid "Ma'lumot"
+msgstr "Info"
+
+msgid "Manzil rtsp:// yoki http(s):// bilan boshlanishi kerak."
+msgstr "The address must start with rtsp:// or http(s)://."
+
+msgid "Mashg'ulot"
+msgstr "Activity"
+
+msgid "Menyu"
+msgstr "Menu"
+
+msgid "Noto'g'ri holat."
+msgstr "Invalid status."
+
+msgid "Noto'g'ri signal"
+msgstr "False alarm"
+
+msgid "Ota-ona"
+msgstr "Parent"
+
+msgid "Ota-ona uchun vasiy ko'rsatilishi kerak."
+msgstr "A guardian must be specified for a parent."
+
+msgid "Ovqat"
+msgstr "Meal"
+
+msgid "Ovqatlanish"
+msgstr "Meals"
+
+msgid "Qayta ishlandi"
+msgstr "Processed"
+
+msgid "Radix AI ogohlantirishi"
+msgstr "Radix AI alert"
+
+msgid "Rahbar"
+msgstr "Manager"
+
+msgid "Rahbar uchun foydalanuvchi ko'rsatilishi kerak."
+msgstr "A user must be specified for a manager."
+
+msgid "Rasm hajmi juda katta."
+msgstr "The image is too large."
+
+msgid "Rasm qayta ishlandi: {matched} ta bola aniqlandi, {unknown} ta yuz noma'lum."
+msgstr "Photo processed: {matched} children recognised, {unknown} unknown faces."
+
+msgid "Rasm yaroqsiz."
+msgstr "The image is invalid."
+
+msgid "Rasmda aniq bitta yuz bo'lishi kerak."
+msgstr "The photo must contain exactly one face."
+
+msgid "Rasmda yuz topilmadi."
+msgstr "No faces found in the photo."
+
+msgid "Rozilik allaqachon bekor qilingan."
+msgstr "Consent has already been revoked."
+
+msgid "Rozilik bekor qilingan."
+msgstr "Consent has been revoked."
+
+msgid "Salom, {name}! Ulandingiz. Farzandingiz rasmlari, bugungi menyu va kun tartibi shu yerga keladi."
+msgstr "Hello, {name}! You are connected. Your child's photos, today's menu and schedule will arrive here."
+
+msgid "Taklif"
+msgstr "Suggested"
+
+msgid "Telegram bot sozlanmagan."
+msgstr "The Telegram bot is not configured."
+
+msgid "Telegram guruhi"
+msgstr "Telegram group"
+
+msgid "Til o'zgartirildi."
+msgstr "Language changed."
+
+msgid "Tushunmadim. /help ni yuboring."
+msgstr "I did not understand. Send /help."
+
+msgid "Ulandingiz. Kamera ogohlantirishlari shu yerga keladi."
+msgstr "You are connected. Camera alerts will arrive here."
+
+msgid "Vasiyning roziligisiz bola rasmi yuborilmaydi."
+msgstr "A child's photo is not sent without the guardian's consent."
+
+msgid "Vasiyning roziligisiz yuz vektori saqlanmaydi."
+msgstr "A face vector is not stored without the guardian's consent."
+
+msgid "Xavfsizlik"
+msgstr "Safety"
+
+msgid "Xodim qoidabuzarligi"
+msgstr "Staff violation"
+
+msgid "Yana rasmlar bor — sanani aniqroq ko'rsating."
+msgstr "There are more photos — please narrow the date."
+
+msgid "Yuklangan"
+msgstr "Uploaded"
+
+msgid "Yuz tanish xizmati hozir ishlamayapti."
+msgstr "The face recognition service is unavailable right now."
+
+msgid "Yuz tanish xizmati hozir ishlamayapti. Rasm saqlandi."
+msgstr "The face recognition service is unavailable right now. The photo was saved."
+
+msgid "{child} — {time}"
+msgstr "{child} — {time}"
+
+msgid "{count} ta rasm topildi."
+msgstr "{count} photos found."
+
+msgid "{kind} ({severity}): {note}"
+msgstr "{kind} ({severity}): {note}"
+
+msgid "Rasm JPEG yoki PNG bo'lishi va 5 MB dan oshmasligi kerak."
+msgstr "The image must be JPEG or PNG and at most 5 MB."
+
+msgid "Kamera tokeni noto'g'ri yoki faol emas."
+msgstr "The camera token is invalid or inactive."
+
+msgid "So'rov juda katta."
+msgstr "The request is too large."
+
+msgid "Edge-worker (RTSP)"
+msgstr "Edge-worker (RTSP)"
+
+msgid "Webhook (NVR / bulut)"
+msgstr "Webhook (NVR / cloud)"

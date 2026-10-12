@@ -13,6 +13,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { Link } from 'react-router-dom'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { dashboardApi } from '@/features/dashboard/api'
+import { BirthdayCard } from '@/features/children/components/BirthdayCard'
 import { BriefingSection } from '@/features/intelligence/components/BriefingSection'
 import { navItems } from '@/config/navigation'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -328,6 +329,8 @@ export default function DashboardPage() {
           />
         )}
       </div>
+
+      {showChildren && <BirthdayCard />}
 
       {tileCount === 0 && <QuickLinks />}
 

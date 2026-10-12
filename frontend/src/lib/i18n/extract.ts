@@ -9,7 +9,7 @@
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, sep } from 'node:path'
 
 /** Public sayt va vendor konsoli lug'atga kirmaydi — ularning o'z matn qatlami bor. */
 const SKIP = [
@@ -39,7 +39,9 @@ export function walk(dir: string, out: string[] = []): string[] {
 export function extractSources(srcDir: string): string[] {
   const keys = new Set<string>()
   for (const file of walk(srcDir)) {
-    if (SKIP.some((s) => file.includes(s))) continue
+    // Windows'da yo'l `\` bilan keladi — SKIP ro'yxati `/` bilan yozilgan.
+    const posix = file.split(sep).join('/')
+    if (SKIP.some((s) => posix.includes(s))) continue
     const text = readFileSync(file, 'utf8')
     for (const m of text.matchAll(CALL)) keys.add(unescape(m[2] ?? m[3] ?? ''))
   }

@@ -32,6 +32,15 @@ from apps.inventory.views import (
     SupplierViewSet,
     WarehouseViewSet,
 )
+from apps.memories.views import (
+    CameraEventViewSet,
+    CameraViewSet,
+    DayScheduleItemViewSet,
+    FaceConsentViewSet,
+    MemoryPhotoViewSet,
+    PhotoTagViewSet,
+    TelegramChatViewSet,
+)
 from apps.notifications.views import NotificationTemplateViewSet, NotificationViewSet
 from apps.payroll.views import EmployeeAdvanceViewSet, PayrollRunViewSet
 from apps.platform.views import PlatformConsoleViewSet
@@ -80,6 +89,14 @@ router.register("dashboard", DashboardViewSet, basename="dashboard")
 router.register("reports", ReportViewSet, basename="report")
 router.register("audit-logs", AuditLogViewSet, basename="audit-log")
 router.register("insights", InsightViewSet, basename="insight")
+# Radix AI: xotira, yuz tanish, Telegram, kamera (docs/08).
+router.register("memory-photos", MemoryPhotoViewSet, basename="memory-photo")
+router.register("photo-tags", PhotoTagViewSet, basename="photo-tag")
+router.register("face-consents", FaceConsentViewSet, basename="face-consent")
+router.register("schedule-items", DayScheduleItemViewSet, basename="schedule-item")
+router.register("cameras", CameraViewSet, basename="camera")
+router.register("camera-events", CameraEventViewSet, basename="camera-event")
+router.register("telegram-chats", TelegramChatViewSet, basename="telegram-chat")
 
 # Obuna va vendor konsoli — FAQAT SaaS nusxasida (ADR-13). Standalone'da
 # obuna ob'ekti umuman yaratilmaydi, ya'ni bu yo'llar bo'sh yoki chalkash

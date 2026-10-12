@@ -67,7 +67,7 @@ export function Hero({ locale }: { locale: Locale }) {
           <div className="rx-rise [animation-delay:240ms] mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <a
               href="#demo"
-              className="group inline-flex min-h-[54px] items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 text-base font-semibold text-white transition hover:bg-brand-700"
+              className="group inline-flex min-h-[54px] items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-nihol-500 to-nihol-600 shadow-glow px-6 text-base font-semibold text-white transition hover:-translate-y-px hover:brightness-105"
             >
               {t.hero.cta}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

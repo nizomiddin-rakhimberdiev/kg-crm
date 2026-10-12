@@ -86,3 +86,4 @@ backups/
 
 # Kompilyatsiya qilingan tarjimalar — build paytida yaratiladi (Dockerfile).
 *.mo
+models/*.onnx
