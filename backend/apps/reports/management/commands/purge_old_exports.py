@@ -30,6 +30,7 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Any
 
+from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
@@ -73,9 +74,11 @@ class Command(BaseCommand):
             self.style.MIGRATE_HEADING(f"\n{days} kundan eski eksportlar: {len(stale)} ta")
         )
         if not stale:
-            self.stdout.write("  (tozalaydigan narsa yoʻq)")
-            return
+            self.stdout.write("  (eskirgani yoʻq)")
 
+        # Yetimlar ALOHIDA savol: eskirgan qator boʻlmasa ham ular
+        # boʻlishi mumkin. Dastlab bu yerda erta `return` turgan edi va
+        # tozalash ularga umuman yetib bormasdi.
         removed_files = 0
         for export in stale:
             name = export.file.name or "—"
@@ -90,7 +93,23 @@ class Command(BaseCommand):
                     removed_files += 1
                 export.delete()
 
+        orphans = self._orphans(organizations)
+        if orphans:
+            self.stdout.write(
+                self.style.MIGRATE_HEADING(f"\nQatorsiz (yetim) fayllar: {len(orphans)} ta")
+            )
+            for name in orphans:
+                self.stdout.write(f"  {name}")
+            if apply_it:
+                for name in orphans:
+                    default_storage.delete(name)
+                removed_files += len(orphans)
+
         self.stdout.write("")
+        if not stale and not orphans:
+            self.stdout.write("  (tozalaydigan narsa yoʻq)")
+            return
+
         if apply_it:
             self.stdout.write(
                 self.style.SUCCESS(f"OʻCHIRILDI: {len(stale)} ta yozuv, {removed_files} ta fayl")
@@ -102,3 +121,34 @@ class Command(BaseCommand):
                     f"  python manage.py purge_old_exports --days {days} --apply"
                 )
             )
+
+    @staticmethod
+    def _orphans(organizations: list[Any]) -> list[str]:
+        """
+        `exports/` ichidagi, birorta qator ishora qilmaydigan fayllar.
+
+        Ular paydo boʻladi, chunki Django `queryset.delete()`
+        `FileField` blobini OʻCHIRMAYDI: tashkilot tozalanganda
+        qatorlar ketadi, fayl esa diskda qoladi. Bunday fayl hech kim
+        yuklab ololmaydigan maʼlumot — lekin u maʼlumotligicha
+        qolaveradi, va eksport ichida oilalarning ismi va qarzi
+        boʻladi.
+        """
+        known: set[str] = set()
+        for organization in organizations:
+            with organization_context(organization.id):
+                known.update(
+                    name for name in ReportExport.objects.values_list("file", flat=True) if name
+                )
+
+        found: list[str] = []
+        stack = ["exports"]
+        while stack:
+            folder = stack.pop()
+            try:
+                subfolders, files = default_storage.listdir(folder)
+            except (FileNotFoundError, NotImplementedError):
+                continue
+            stack.extend(f"{folder}/{sub}" for sub in subfolders)
+            found.extend(f"{folder}/{name}" for name in files if f"{folder}/{name}" not in known)
+        return sorted(found)

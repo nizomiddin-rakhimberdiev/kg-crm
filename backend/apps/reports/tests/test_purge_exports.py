@@ -80,3 +80,33 @@ def test_the_window_is_configurable(tenant_a: Any):
 
     with organization_context(tenant_a.organization.id):
         assert not ReportExport.objects.filter(pk=week_old.pk).exists()
+
+
+def test_an_orphaned_file_is_swept_too(tenant_a: Any):
+    """
+    Qatori yoʻq fayl — hech kim yuklab ololmaydigan, lekin diskda
+    turgan maʼlumot.
+
+    Bunday fayllar paydo boʻladi, chunki Django `queryset.delete()`
+    `FileField` blobini OʻCHIRMAYDI: tashkilot tozalanganda
+    (`reset_organization_data`) qatorlar ketdi, qarzdorlar roʻyxati
+    esa diskda qoldi. Productionda aynan shunday boʻlgan — toʻrtta
+    fayl, uchta qator.
+    """
+    from django.core.files.storage import default_storage
+
+    orphan = "exports/2026/01/yetim-qarzdorlar.csv"
+    default_storage.save(orphan, ContentFile(b"ism,qarz\n"))
+    assert default_storage.exists(orphan)
+
+    _run("--apply")
+
+    assert not default_storage.exists(orphan), "yetim fayl ham ketishi kerak"
+
+
+def test_a_file_with_a_live_row_is_kept(tenant_a: Any):
+    """Yetimlarni supurish tirik eksportni olib ketmasin."""
+    fresh = _export(tenant_a, days_old=1)
+    _run("--apply")
+
+    assert fresh.file.storage.exists(fresh.file.name)

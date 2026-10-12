@@ -38,7 +38,7 @@ from __future__ import annotations
 from typing import Any
 
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.db import models, transaction
 
 from apps.core.tenancy import organization_context, platform_context
 from apps.platform.purge import DERIVED_PURGE, PURGE_ORDER, _model
@@ -157,4 +157,17 @@ class Command(BaseCommand):
         queryset = manager.filter(**lookup)
         if not apply_it:
             return queryset.count()
+
+        # Fayllar QATORDAN oldin: Django `queryset.delete()` `FileField`
+        # blobini oʻchirmaydi, yaʼni "toza varaq" diskda qarzdorlar
+        # roʻyxatini qoldirib ketardi. Productionda aynan shunday
+        # boʻlgan — qator oʻchgan, CSV qolgan (PLAN 11.9).
+        file_fields = [f.name for f in model._meta.fields if isinstance(f, models.FileField)]
+        if file_fields:
+            for row in queryset.only("pk", *file_fields):
+                for field in file_fields:
+                    blob = getattr(row, field, None)
+                    if blob:
+                        blob.delete(save=False)
+
         return queryset.delete()[0]

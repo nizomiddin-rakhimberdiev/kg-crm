@@ -183,6 +183,34 @@ def test_the_customer_can_still_log_in_afterwards(tenant_a: Any):
     assert response.json()["data"] == []
 
 
+def test_the_files_go_with_the_rows(tenant_a: Any):
+    """
+    "Toza varaq" diskda ham toza boʻlsin.
+
+    Django `queryset.delete()` `FileField` blobini oʻchirmaydi —
+    yaʼni tozalashdan keyin qarzdorlar CSV'si diskda qolib ketardi.
+    Productionda aynan shunday boʻlgan: uchta qator, toʻrtta fayl.
+    """
+    from django.core.files.base import ContentFile
+
+    from apps.reports.models import ExportStatus, ReportExport
+
+    _seed(tenant_a)
+    with organization_context(tenant_a.organization.id):
+        export = ReportExport.objects.create(
+            organization=tenant_a.organization,
+            report_type="debtors",
+            status=ExportStatus.READY,
+        )
+        export.file.save("qarzdorlar.csv", ContentFile(b"ism,qarz\n"), save=True)
+        path, storage = export.file.name, export.file.storage
+        assert storage.exists(path)
+
+    _run(tenant_a, "--confirm", tenant_a.organization.slug, "--apply")
+
+    assert not storage.exists(path), "qator bilan birga fayl ham ketishi kerak"
+
+
 def test_the_open_session_keeps_working(tenant_a: Any):
     """
     Tozalash — tizimdan chiqarish emas.

@@ -1863,3 +1863,15 @@ tushsin; foydalanuvchi **oldindan** bilishi kerak boʻlgan qoida
 ekranda yozilsin (parol uzunligi — ishlab koʻrilgan namuna); va
 sanalar faqat `DateInput`. Uchalasi ham testda. `react-hook-form`,
 `zod`, `@hookform/resolvers` package.json dan olib tashlandi.
+
+**Va tozalashning oʻzi diskda iz qoldirgani.** Productionda quruq
+tekshiruv **0 ta** eskirgan eksport koʻrsatdi, diskda esa toʻrtta
+fayl va bazada uchta qator bor edi — yaʼni bittasi **yetim**. Sabab:
+Django `queryset.delete()` `FileField` blobini oʻchirmaydi.
+`reset_organization_data` ishlaganda qatorlar ketgan, qarzdorlar
+CSV'si esa diskda qolgan. "Toza varaq" diskda toza emas edi.
+
+Ikkalasi tuzatildi: tozalash buyrugʻi endi qatordan OLDIN fayllarni
+oʻchiradi, `purge_old_exports` esa `exports/` ichidagi birorta qator
+ishora qilmaydigan fayllarni ham supuradi — bunday fayl hech kim
+yuklab ololmaydigan, lekin diskda turgan maʼlumot.
