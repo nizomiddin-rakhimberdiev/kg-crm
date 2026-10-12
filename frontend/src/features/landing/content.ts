@@ -74,7 +74,7 @@ export interface UiCopy {
     stock: string
     expenses: string
   }
-  deepDive: { last6: string; alert: string; why: string }
+  deepDive: { last6: string; alert: string; why: string; days: string }
   roles: {
     branches: string
     chilonzor: string
@@ -583,6 +583,7 @@ const uz: Copy = {
       last6: 'oxirgi 6 oy',
       alert: '9 ta bola bo‘yicha to‘lov 15 kundan ortiq kechikmoqda',
       why: 'Nega?',
+      days: 'kun',
     },
     roles: {
       branches: 'Filiallar',
@@ -986,6 +987,7 @@ const ru: Copy = {
       last6: 'последние 6 мес.',
       alert: 'По 9 детям оплата задерживается более 15 дней',
       why: 'Почему?',
+      days: 'дн.',
     },
     roles: {
       branches: 'Филиалы',
@@ -1392,6 +1394,7 @@ const en: Copy = {
       last6: 'last 6 months',
       alert: 'Payments for 9 children are more than 15 days overdue',
       why: 'Why?',
+      days: 'd',
     },
     roles: {
       branches: 'Branches',

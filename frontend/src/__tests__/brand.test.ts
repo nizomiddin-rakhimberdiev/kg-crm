@@ -17,7 +17,7 @@
  */
 
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join, relative, resolve } from 'node:path'
+import { join, relative, resolve, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const ROOT = resolve(__dirname, '..')
@@ -31,7 +31,8 @@ function sourceFiles(dir: string, found: string[] = []): string[] {
     if (statSync(full).isDirectory()) {
       sourceFiles(full, found)
     } else if (/\.(ts|tsx|css)$/.test(entry)) {
-      const rel = relative(ROOT, full)
+      // Windows'da `\` — EXEMPT ro'yxati `/` bilan yozilgan.
+      const rel = relative(ROOT, full).split(sep).join('/')
       if (!EXEMPT.includes(rel)) found.push(rel)
     }
   }

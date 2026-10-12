@@ -182,17 +182,17 @@ export function DeepDive({ locale }: { locale: Locale }) {
               <div className="mt-1.5 space-y-0.5">
                 <Row
                   name="Karimov Ali"
-                  meta="Quyosh · 42 kun"
+                  meta={`Quyosh · 42 ${ui.days}`}
                   right={<Pill tone="debt">1 500 000</Pill>}
                 />
                 <Row
                   name="Yusupova Dilnoza"
-                  meta="Yulduzcha · 31 kun"
+                  meta={`Yulduzcha · 31 ${ui.days}`}
                   right={<Pill tone="debt">600 000</Pill>}
                 />
                 <Row
                   name="Rasulov Bekzod"
-                  meta="Kamalak · 18 kun"
+                  meta={`Kamalak · 18 ${ui.days}`}
                   right={<Pill tone="wait">450 000</Pill>}
                 />
               </div>

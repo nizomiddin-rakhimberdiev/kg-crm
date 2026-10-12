@@ -924,3 +924,109 @@ export interface StaffTimesheet {
   employees: StaffTimesheetRow[]
   totals: Record<StaffAttendanceStatus, number>
 }
+
+// --- Radix AI: xotira, yuz tanish, Telegram, kamera (docs/08) ---
+
+export type TagStatus = 'suggested' | 'confirmed' | 'rejected'
+
+export interface PhotoTag {
+  id: string
+  photo: string
+  child: string
+  child_name: string
+  confidence: number
+  /** x, y, w, h — rasm o'lchamiga nisbatan 0..1 */
+  box: number[]
+  status: TagStatus
+  sent_at: string | null
+}
+
+export interface MemoryPhoto {
+  id: string
+  branch: string
+  image_url: string
+  taken_at: string
+  source: 'telegram' | 'upload'
+  status: 'pending' | 'processed' | 'failed'
+  faces_detected: number
+  caption: string
+  tags: PhotoTag[]
+  created_at: string
+}
+
+export interface FaceConsent {
+  id: string
+  child: string
+  child_name: string
+  guardian: string
+  guardian_name: string
+  given_at: string
+  revoked_at: string | null
+  samples: number
+}
+
+export type ScheduleKind = 'menu' | 'meal' | 'activity'
+
+export interface ScheduleItem {
+  id: string
+  branch: string
+  kind: ScheduleKind
+  on_date: string
+  at_time: string | null
+  title: string
+  details: string
+  notify: boolean
+  notified_at: string | null
+}
+
+export interface Camera {
+  id: string
+  branch: string
+  name: string
+  location: string
+  has_stream: boolean
+  has_token: boolean
+  is_online: boolean
+  connection: 'edge' | 'webhook'
+  preview_enabled: boolean
+  has_preview: boolean
+  preview_at: string | null
+  last_seen_at: string | null
+  is_active: boolean
+}
+
+export type EventKind = 'staff_violation' | 'child_distress' | 'safety' | 'other'
+export type EventSeverity = 'info' | 'warning' | 'critical'
+export type EventStatus = 'new' | 'acknowledged' | 'dismissed'
+
+export interface CameraEvent {
+  id: string
+  branch: string
+  camera: string | null
+  camera_name: string | null
+  kind: EventKind
+  severity: EventSeverity
+  status: EventStatus
+  snapshot_url: string | null
+  note: string
+  occurred_at: string
+  alerted_at: string | null
+}
+
+export type ChatKind = 'group' | 'parent' | 'staff'
+
+export interface TelegramChat {
+  id: string
+  branch: string
+  kind: ChatKind
+  guardian: string | null
+  guardian_name: string | null
+  language: 'uz' | 'ru' | 'en'
+  title: string
+  created_at: string
+}
+
+export interface PairingLink {
+  url: string
+  expires_at: string
+}

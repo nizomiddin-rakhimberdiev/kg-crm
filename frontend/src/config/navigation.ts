@@ -15,6 +15,8 @@ import {
   CreditCard as CreditCardIcon,
   Building2,
   Users2,
+  Sparkles,
+  Cctv,
   type LucideIcon,
 } from 'lucide-react'
 import type { PermissionCode } from '@/lib/rbac/useCan'
@@ -68,6 +70,8 @@ const allNavItems: NavItem[] = [
     icon: BellRing,
     permission: 'notifications.read',
   },
+  { label: t('Radix AI'), to: '/radix-ai', icon: Sparkles, permission: 'memories.read' },
+  { label: t('Kameralar'), to: '/cameras', icon: Cctv, permission: 'memories.read' },
   { label: t('Filiallar'), to: '/branches', icon: Building2, permission: 'branches.read' },
   { label: t('Obuna'), to: '/billing', icon: CreditCardIcon, permission: 'billing.read' },
   { label: t('Audit jurnali'), to: '/audit', icon: ScrollText, permission: 'audit.read' },

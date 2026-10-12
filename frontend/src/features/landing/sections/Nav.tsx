@@ -126,7 +126,7 @@ export function Nav({ locale }: { locale: Locale }) {
           </a>
           <a
             href="#demo"
-            className="inline-flex items-center rounded-lg bg-brand-600 px-4 py-2 text-[15px] font-semibold text-white transition hover:bg-brand-700"
+            className="inline-flex items-center rounded-lg bg-gradient-to-b from-nihol-500 to-nihol-600 shadow-glow px-4 py-2 text-[15px] font-semibold text-white transition hover:-translate-y-px hover:brightness-105"
           >
             {t.demo}
           </a>
@@ -164,7 +164,7 @@ export function Nav({ locale }: { locale: Locale }) {
             <a
               href="#demo"
               onClick={() => setOpen(false)}
-              className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-brand-600 text-base font-semibold text-white"
+              className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-gradient-to-b from-nihol-500 to-nihol-600 shadow-glow text-base font-semibold text-white"
             >
               {t.demo}
             </a>

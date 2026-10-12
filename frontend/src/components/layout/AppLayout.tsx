@@ -1,6 +1,6 @@
 import { Suspense, useCallback, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { SubscriptionBanner } from './ReadOnlyBanner'
 import { SupportSessionBanner } from './SupportSessionBanner'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -40,12 +40,18 @@ export function AppLayout() {
            * `fixed inset-0` oynasi ekran o'rtasida emas, sahifa ichida —
            * pastda paydo bo'ladi.
            */}
-          <AnimatePresence mode="wait">
+          {/*
+           * `AnimatePresence mode="wait"` ISHLATILMAYDI: u eski sahifa
+           * chiqib bo'lguncha yangisini kutadi, yangi sahifa esa `lazy()`
+           * bo'lib birinchi marta yuklanayotganda Suspense'da to'xtab
+           * qoladi — natijada sahifa Ctrl+R gacha bo'sh turardi
+           * (Filiallar, Obuna, Audit jurnali). Faqat kirish animatsiyasi.
+           */}
+          <>
             <motion.div
               key={location.pathname}
               initial={{ opacity: 0, x: 28, filter: 'blur(6px)' }}
               animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, x: -20, filter: 'blur(6px)' }}
               transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             >
               <Suspense
@@ -66,7 +72,7 @@ export function AppLayout() {
                 </ErrorBoundary>
               </Suspense>
             </motion.div>
-          </AnimatePresence>
+          </>
         </main>
       </div>
     </div>

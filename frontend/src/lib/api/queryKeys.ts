@@ -26,6 +26,17 @@ export const queryKeys = {
   children: (orgId: string, params?: Record<string, unknown>) =>
     ['org', orgId, 'children', params ?? {}] as const,
   child: (orgId: string, id: string) => ['org', orgId, 'children', 'detail', id] as const,
+  birthdays: (orgId: string) => ['org', orgId, 'children', 'birthdays'] as const,
+  blob: (orgId: string, path: string) => ['org', orgId, 'blob', path] as const,
+  memoryPhotos: (orgId: string, params?: Record<string, unknown>) =>
+    ['org', orgId, 'memories', 'photos', params ?? {}] as const,
+  faceConsents: (orgId: string) => ['org', orgId, 'memories', 'consents'] as const,
+  cameras: (orgId: string) => ['org', orgId, 'cameras'] as const,
+  telegramChats: (orgId: string) => ['org', orgId, 'memories', 'telegram', 'chats'] as const,
+  scheduleItems: (orgId: string, date: string) =>
+    ['org', orgId, 'memories', 'schedule', date] as const,
+  cameraEvents: (orgId: string, params?: Record<string, unknown>) =>
+    ['org', orgId, 'cameras', 'events', params ?? {}] as const,
   groups: (orgId: string) => ['org', orgId, 'groups'] as const,
   groupChildren: (orgId: string, groupId: string) =>
     ['org', orgId, 'groups', groupId, 'children'] as const,
