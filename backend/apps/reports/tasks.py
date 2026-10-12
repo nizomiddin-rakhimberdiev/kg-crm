@@ -22,11 +22,17 @@ from django.utils import timezone, translation
 from apps.core.tasks import reliable_task
 from apps.core.tenancy import organization_context, platform_context
 from apps.reports import exporters, selectors
+from apps.reports import services as services_reports
 from apps.reports.models import ExportStatus, ReportExport
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["generate_export", "send_debt_reminders", "recompute_balances"]
+__all__ = [
+    "generate_export",
+    "send_debt_reminders",
+    "recompute_balances",
+    "purge_old_exports",
+]
 
 
 def _run_report(report_type: str, organization_id: Any, params: dict[str, Any]) -> dict[str, Any]:
@@ -281,3 +287,24 @@ def recompute_balances() -> dict[str, int]:
     if failed:
         logger.error("Balans solishtiruvi: %s bolada muvaffaqiyatsiz", failed)
     return {"checked": checked, "drifted": drifted, "failed": failed}
+
+
+@reliable_task(name="reports.purge_old_exports")
+def purge_old_exports(days: int = 30) -> dict[str, int]:
+    """
+    Tunlik tozalash: eskirgan va yetim eksport fayllari.
+
+    Nega jadvalda: eksportni hech narsa oʻchirmasdi, yaʼni qarzdorlar
+    roʻyxati serverda cheksiz yotaverardi. Bir marta qoʻlda tozalash
+    muammoni yopmaydi — u ertaga qaytadan yigʻila boshlaydi.
+
+    Mantiq servisda; bu yerda faqat jadval va natija.
+    """
+    result = services_reports.purge_old_exports(days=days, apply=True)
+    if result["removed_files"]:
+        logger.info(
+            "Eksportlar tozalandi: %s ta yozuv, %s ta fayl",
+            result["removed_rows"],
+            result["removed_files"],
+        )
+    return {"rows": result["removed_rows"], "files": result["removed_files"]}

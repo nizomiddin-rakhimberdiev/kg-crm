@@ -10,7 +10,7 @@ chiqish emas, lekin ekranda ko'rgan odam uchun farqi yo'q.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -242,3 +242,91 @@ def _revenue_trend(
     # qaytaradi (`period_buckets`): grafikda "hech kim to'lamagan oy"
     # yo'q bo'lib ketsa, tushish o'sish bo'lib ko'rinardi.
     return [{"month": row["period"][:7], "total": row["total"]} for row in report["by_period"]]
+
+
+# --- Eksport fayllarini tozalash (PLAN 11.9) --------------------------
+
+
+def purge_old_exports(*, days: int = 30, apply: bool = False) -> dict[str, Any]:
+    """
+    Eskirgan va yetim qolgan eksport fayllarini topadi (va oʻchiradi).
+
+    **Nega kerak.** Eksport — vaqtinchalik hujjat: foydalanuvchi uni
+    yuklab oladi va unutadi. Lekin uni hech narsa oʻchirmasdi, yaʼni
+    `debtors-20260923-1001.csv` — oilalarning ismi va qarzi bilan —
+    serverda cheksiz yotaverardi.
+
+    Ikki xil axlat bor va ikkalasi ham tozalanadi:
+
+    * **eskirgan** — `days` dan katta yoshdagi qator (fayli bilan);
+    * **yetim** — `exports/` ichidagi, birorta qator ishora qilmaydigan
+      fayl. Ular paydo boʻladi, chunki Django `queryset.delete()`
+      `FileField` blobini OʻCHIRMAYDI: tashkilot tozalanganda qatorlar
+      ketadi, fayl esa diskda qoladi. Bunday faylni ilova orqali hech
+      kim yuklab ololmaydi — lekin u maʼlumotligicha qolaveradi.
+
+    `apply=False` — faqat sanaydi.
+    """
+    from django.core.files.storage import default_storage
+
+    from apps.core.tenancy import organization_context, platform_context
+    from apps.organizations.models import Organization
+    from apps.reports.models import ReportExport
+
+    cutoff = timezone.now() - timedelta(days=days)
+
+    with platform_context():
+        organizations = list(Organization.objects.all())
+
+    stale: list[Any] = []
+    live_files: set[str] = set()
+    for organization in organizations:
+        with organization_context(organization.id):
+            stale.extend(ReportExport.objects.filter(created_at__lt=cutoff))
+            live_files.update(
+                name for name in ReportExport.objects.values_list("file", flat=True) if name
+            )
+
+    doomed = {export.file.name for export in stale if export.file}
+    orphans = sorted(_export_files(default_storage) - live_files - doomed)
+
+    removed_files = 0
+    if apply:
+        for export in stale:
+            with organization_context(export.organization_id):
+                if export.file:
+                    export.file.delete(save=False)
+                    removed_files += 1
+                export.delete()
+        for name in orphans:
+            default_storage.delete(name)
+            removed_files += 1
+
+    return {
+        "rows": [
+            {
+                "created": export.created_at.date().isoformat(),
+                "type": export.report_type,
+                "file": export.file.name or "—",
+            }
+            for export in stale
+        ],
+        "orphans": orphans,
+        "removed_rows": len(stale) if apply else 0,
+        "removed_files": removed_files,
+    }
+
+
+def _export_files(storage: Any) -> set[str]:
+    """`exports/` ichidagi barcha fayllar — papkalar boʻylab."""
+    found: set[str] = set()
+    stack = ["exports"]
+    while stack:
+        folder = stack.pop()
+        try:
+            subfolders, files = storage.listdir(folder)
+        except (FileNotFoundError, NotImplementedError):
+            continue
+        stack.extend(f"{folder}/{sub}" for sub in subfolders)
+        found.update(f"{folder}/{name}" for name in files)
+    return found

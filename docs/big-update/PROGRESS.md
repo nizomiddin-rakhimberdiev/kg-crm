@@ -1875,3 +1875,13 @@ Ikkalasi tuzatildi: tozalash buyrugʻi endi qatordan OLDIN fayllarni
 oʻchiradi, `purge_old_exports` esa `exports/` ichidagi birorta qator
 ishora qilmaydigan fayllarni ham supuradi — bunday fayl hech kim
 yuklab ololmaydigan, lekin diskda turgan maʼlumot.
+
+**Bir marta tozalash yetmaydi.** Eksportlar serverdan oʻchirildi
+(uchta eskirgan yozuv va bitta yetim fayl; eski URL endi 404 va fayl
+ham yoʻq). Lekin sabab oʻz joyida qolardi: ularni hech narsa
+oʻchirmaydi, yaʼni ertaga yana yigʻila boshlaydi. Shuning uchun mantiq
+servisga koʻchirildi (`reports.services.purge_old_exports`), buyruq va
+tunlik Celery vazifasi **bitta** mantiqdan oʻqiydi — ikkisi ikki xil
+narsa qilsa, qaysi biri toʻgʻri ekanini keyin hech kim ayta olmasdi —
+va vazifa beat jadvaliga yozildi (har kuni 04:30). Jadvalning oʻzi
+ham testda: yozilmagan vazifa — yozilmagan vazifa.

@@ -110,3 +110,34 @@ def test_a_file_with_a_live_row_is_kept(tenant_a: Any):
     _run("--apply")
 
     assert fresh.file.storage.exists(fresh.file.name)
+
+
+def test_the_nightly_task_cleans_up(tenant_a: Any):
+    """
+    Vazifa ham, buyruq ham BITTA mantiqdan oʻqisin.
+
+    Ikkisi ikki xil narsa qilsa, qaysi biri toʻgʻri ekanini keyin
+    hech kim ayta olmasdi.
+    """
+    from apps.reports.tasks import purge_old_exports
+
+    old = _export(tenant_a, days_old=60)
+    result = purge_old_exports(days=30)
+
+    assert result["rows"] == 1
+    with organization_context(tenant_a.organization.id):
+        assert not ReportExport.objects.filter(pk=old.pk).exists()
+
+
+def test_the_task_is_scheduled():
+    """
+    Jadvalga yozilmagan vazifa — yozilmagan vazifa.
+
+    Buyruqni bir marta qoʻlda ishlatish muammoni yopmaydi: eksportlar
+    ertaga yana yigʻila boshlaydi.
+    """
+    from django.conf import settings
+
+    entry = settings.CELERY_BEAT_SCHEDULE.get("purge-old-exports")
+    assert entry, "tunlik tozalash beat jadvalida yoʻq"
+    assert entry["task"] == "reports.purge_old_exports"

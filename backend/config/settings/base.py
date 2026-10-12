@@ -273,6 +273,16 @@ CELERY_BEAT_SCHEDULE = {
         "task": "finance.generate_monthly_invoices",
         "schedule": crontab(hour=2, minute=0, day_of_month="1"),
     },
+    # Har kuni tunda: eskirgan va yetim eksport fayllari.
+    #
+    # Eksport — vaqtinchalik hujjat, lekin uni hech narsa o'chirmasdi:
+    # `debtors-…csv` oilalarning ismi va qarzi bilan serverda cheksiz
+    # yotaverardi. Bir marta qo'lda tozalash yetmaydi — ertaga yana
+    # yig'ila boshlaydi (PLAN 11.9).
+    "purge-old-exports": {
+        "task": "reports.purge_old_exports",
+        "schedule": crontab(hour=4, minute=30),
+    },
     # Har kuni: muddati o'tganlarni belgilash.
     "mark-overdue-invoices": {
         "task": "finance.mark_overdue_invoices",
