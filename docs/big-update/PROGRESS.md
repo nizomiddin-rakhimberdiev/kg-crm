@@ -1885,3 +1885,19 @@ tunlik Celery vazifasi **bitta** mantiqdan oʻqiydi — ikkisi ikki xil
 narsa qilsa, qaysi biri toʻgʻri ekanini keyin hech kim ayta olmasdi —
 va vazifa beat jadvaliga yozildi (har kuni 04:30). Jadvalning oʻzi
 ham testda: yozilmagan vazifa — yozilmagan vazifa.
+
+**CI: javob olindi — nuqson bizda emas.** Tarmoq yuborilgach (141
+commit) CI darhol ishga tushdi va yana `startup_failure` berdi. Keyin
+hal qiluvchi tajriba: toʻrt qatorlik zond-workflow — bitta `echo`,
+servis ham, matritsa ham, hech narsa yoʻq. U **ham** 0 soniyada
+`startup_failure` bilan tugadi.
+
+Bu repodagi hech qanday fayl bunday natija bera olmaydi. Demak sabab
+GitHub hisobida: Actions sarf chegarasi $0 yoki xususiy repo uchun
+daqiqalar tugagan — <https://github.com/settings/billing> da
+koʻrinadi. Zond oʻchirildi, javobini berib boʻldi.
+
+Buning narxi aniq: bu yerdagi har bir qoʻriqchi test — RLS roʻyxati,
+obuna darvozasi, `DateInput`, formatlash uyi, fokus tutqichi, parol
+uzunligi — hozircha faqat kimdir **qoʻlda** ishga tushirganda
+qizaradi.
