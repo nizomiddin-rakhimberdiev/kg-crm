@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+#
+# Push oldidagi darvoza.
+#
+# Nega bu fayl bor: bu hisobdagi PRIVATE repozitoriyalarda GitHub
+# Actions hech qachon ishga tushmagan (P0-004 — sabab hisob darajasida,
+# `.github/workflows/` da emas). Ya'ni qo'riqchi testlar yozilgan, lekin
+# ularni hech kim ishga tushirmaydi. Bu ilgak o'sha bo'shliqni yopadi va
+# GitHub'ga umuman bog'liq emas — Actions tuzalgandan keyin ham zarar
+# qilmaydi, faqat takrorlaydi.
+#
+# O'rnatish (bir marta, har bir klonda):
+#   ln -s ../../scripts/hooks/pre-push .git/hooks/pre-push
+#
+# Chetlab o'tish:  git push --no-verify
+#
+# Chetlab o'tish ATAYLAB oson. Majburiy ilgak — o'chiriladigan ilgak;
+# qulaylik bilan kurashgan darvoza har doim yutqazadi. Maqsad —
+# tasodifan buzilgan narsani push qilmaslik, hamkasbni ushlab turish emas.
+
+set -uo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+CI="$ROOT/scripts/ci-local.sh"
+
+BOLD=$'\033[1m'; DIM=$'\033[2m'; YELLOW=$'\033[33m'; OFF=$'\033[0m'
+
+# Git har bir ref uchun bitta qator beradi:
+#   <local ref> <local sha> <remote ref> <remote sha>
+# Faqat o'chirish bo'lsa (local sha — nollar) tekshiradigan narsa yo'q.
+PUSHING_MAIN=0
+HAS_COMMITS=0
+while read -r _local_ref local_sha remote_ref _remote_sha; do
+  [ -z "${local_sha:-}" ] && continue
+  case "$local_sha" in
+    *[!0]*) HAS_COMMITS=1 ;;
+    *) continue ;;
+  esac
+  [ "${remote_ref:-}" = "refs/heads/main" ] && PUSHING_MAIN=1
+done
+
+if [ "$HAS_COMMITS" -eq 0 ]; then
+  exit 0
+fi
+
+printf '%s▸ Push oldidagi darvoza (~35 s)%s   %schetlab o'\''tish: git push --no-verify%s\n' \
+  "$BOLD" "$OFF" "$DIM" "$OFF"
+
+"$CI" fast || exit 1
+
+# `main` ga push — tenant izolyatsiyasi ham (yana ~50 s).
+#
+# Cross-tenant sizish bu loyihadagi yagona qaytarib bo'lmaydigan xato
+# (CLAUDE.md), va `main` ga push — uni oxirgi marta ushlash imkoni.
+if [ "$PUSHING_MAIN" -eq 1 ]; then
+  printf '\n%s▸ main ga push — tenant izolyatsiyasi ham (~50 s)%s\n' "$BOLD" "$OFF"
+  "$CI" tenancy || exit 1
+fi
+
+# Nima ishlaMAGANini aytish — o'tkazib yuborilgan tekshiruv hech qachon
+# o'tgan tekshiruvga o'xshamasligi kerak (16-invariant ruhi).
+printf '\n%sIshlamadi:%s pip-audit, npm audit, mypy, deploy check, to'\''liq pytest, vite build' "$YELLOW" "$OFF"
+[ "$PUSHING_MAIN" -eq 1 ] || printf ', tenant izolyatsiyasi'
+printf '.\n%sMerge yoki deploy oldidan: ./scripts/ci-local.sh%s\n' "$DIM" "$OFF"

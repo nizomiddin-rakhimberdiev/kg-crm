@@ -457,6 +457,12 @@ A module/feature is **Done** only when **all** hold:
 - **Branches:** `feature/…`, `fix/…`, `chore/…`; protected `main`; PR + review required.
 - **Commits:** Conventional Commits (`feat:`, `fix:`, `refactor:`, `docs:`).
 - **CI (on PR):** lint (ruff/eslint), type-check (mypy/tsc), tests (pytest/vitest), build images.
+- **CI is not running today, and the local gate stands in for it.** GitHub Actions has never started a run on this account's *private* repositories — public ones run normally, which is how the cause was isolated (see CLAUDE.md, *Current Phase*). Until that is resolved the gate is local and lives in one file, `scripts/ci-local.sh`:
+  - `./scripts/ci-local.sh` — the full set, mirroring the workflow files step for step. Run it before a merge or a deploy.
+  - `./scripts/ci-local.sh fast` — ~35 s. Installed as the **`pre-push` hook** (`ln -s ../../scripts/hooks/pre-push .git/hooks/pre-push`, once per clone).
+  - `./scripts/ci-local.sh tenancy` — the `-m tenancy` marker, ~50 s. The hook adds it automatically when the push target is `main`.
+
+  What `fast` contains is decided by measurement, not taste: ruff (0.1 s), the missing-migration check (1 s), both translation-catalog tests, the RLS-coverage and write-gate list tests, eslint, `tsc`, and `src/__tests__` — the guards that go red when someone adds a table, a viewset or a string and forgets the other half. Everything costing more than a few seconds — `pip-audit`, `npm ci`, `mypy`, `--deploy`, the full `pytest`, `vite build` — is deliberately **outside** it, and the hook prints what it did not run so a skipped check never looks like a passed one. `git push --no-verify` bypasses it on purpose: a gate that fights convenience gets deleted, and the goal is to catch an accident, not to hold anyone hostage.
 - **CD (on merge to main):** build & push images → deploy to Linux server; **migrations run as an explicit step**, never on boot ([02 §23](./02_Software_Architecture.md)).
 - **Backups:** automated Postgres backup + tested restore before each release.
 
