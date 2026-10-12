@@ -7,19 +7,24 @@
  */
 
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Building2, LogIn } from 'lucide-react'
-import { Logo } from '@/components/brand/Logo'
+import { Link, useNavigate } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowRight, Building2, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { AuthShell } from '@/components/auth/AuthShell'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { authApi } from '@/features/auth/api'
 import { ApiError, isPendingChoice, type OrganizationSummary } from '@/lib/api/types'
-import { cn } from '@/lib/utils'
-import { LanguageSwitch } from '@/components/layout/LanguageSwitch'
 import { t } from '@/lib/i18n'
 
 type Stage =
   | { kind: 'credentials' }
   | { kind: 'choose-organization'; pendingToken: string; organizations: OrganizationSummary[] }
+
+const swap = {
+  initial: { opacity: 0, x: 16 },
+  animate: { opacity: 1, x: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as const } },
+  exit: { opacity: 0, x: -16, transition: { duration: 0.2 } },
+}
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -28,6 +33,7 @@ export default function LoginPage() {
   const [stage, setStage] = useState<Stage>({ kind: 'credentials' })
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -78,111 +84,128 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-md">
-        <div className="mb-8 flex flex-col items-center text-center">
-          {/* Mijozga ko'rinadigan yuza — ommaviy brend. Ichki nomlar
-              (repo, Docker, DB rollari) ataylab `kg-crm` bo'lib qoladi.
-              Sarlavha matni yo'q: logotipning o'zida yozuv bor va uni
-              takrorlash brendbuk qoidasiga zid. */}
-          <Logo height={40} />
-          <p className="mt-3 text-sm text-tosh-500">{t("Bog'cha boshqaruv tizimi")}</p>
-        </div>
+    <AuthShell
+      title={stage.kind === 'credentials' ? t('Xush kelibsiz') : t('Tashkilotni tanlang')}
+      subtitle={
+        stage.kind === 'credentials'
+          ? t('Hisobingizga kiring va bog‘changizni boshqaring.')
+          : t("Bu email bir nechta bog'chada ro'yxatdan o'tgan.")
+      }
+      footer={
+        <>
+          {t("Hisobingiz yo'qmi?")}{' '}
+          <Link
+            to="/signup"
+            className="font-semibold text-nihol-700 underline-offset-4 transition hover:text-nihol-800 hover:underline"
+          >
+            {t('Sinov uchun ariza qoldiring')}
+          </Link>
+        </>
+      }
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {error && (
+          <motion.div
+            key="error"
+            role="alert"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mb-5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700"
+          >
+            {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
-          {error && (
-            <div role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
+      <AnimatePresence mode="wait" initial={false}>
+        {stage.kind === 'credentials' ? (
+          <motion.form key="credentials" {...swap} onSubmit={submitCredentials} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="mb-1.5 block text-sm font-semibold text-tosh-700">
+                {t('Email')}
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                autoComplete="username"
+                placeholder="name@kindergarten.uz"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="field"
+              />
             </div>
-          )}
 
-          {stage.kind === 'credentials' ? (
-            <form onSubmit={submitCredentials} className="space-y-4">
-              <div>
-                <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-700">
-                  {t('Email')}
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  required
-                  autoComplete="username"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="password" className="mb-1 block text-sm font-medium text-slate-700">
-                  {t('Parol')}
-                </label>
+            <div>
+              <label htmlFor="password" className="mb-1.5 block text-sm font-semibold text-tosh-700">
+                {t('Parol')}
+              </label>
+              <div className="relative">
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+                  className="field pr-12"
                 />
-              </div>
-
-              <button
-                type="submit"
-                disabled={busy}
-                className={cn(
-                  'flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition',
-                  busy ? 'opacity-60' : 'hover:bg-brand-700',
-                )}
-              >
-                <LogIn className="h-4 w-4" />
-                {busy ? t('Tekshirilmoqda…') : t('Kirish')}
-              </button>
-            </form>
-          ) : (
-            <div className="space-y-3">
-              <div>
-                <h2 className="text-sm font-semibold text-slate-900">{t('Tashkilotni tanlang')}</h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  {t("Bu email bir nechta bog'chada ro'yxatdan o'tgan.")}
-                </p>
-              </div>
-
-              {stage.organizations.map((org) => (
                 <button
-                  key={org.id}
                   type="button"
-                  disabled={busy}
-                  onClick={() => void chooseOrganization(org.id)}
-                  className="flex w-full items-center gap-3 rounded-lg border border-slate-200 px-3 py-3 text-left transition hover:border-brand-300 hover:bg-brand-50 disabled:opacity-60"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? t('Parolni yashirish') : t("Parolni ko'rsatish")}
+                  className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-tosh-400 transition hover:bg-tosh-100 hover:text-tosh-700"
                 >
-                  <Building2 className="h-4 w-4 shrink-0 text-slate-400" />
-                  <span className="text-sm font-medium text-slate-800">{org.name}</span>
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
-              ))}
-
-              <button
-                type="button"
-                onClick={() => setStage({ kind: 'credentials' })}
-                className="w-full pt-1 text-center text-sm text-slate-500 hover:text-slate-700"
-              >
-                {t('Orqaga')}
-              </button>
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* Akkauntni faqat vendor ochadi (ADR-10) — "sinovni boshlang"
-            havolasi endi hech qayerga olib bormasdi. O'rniga aloqa yo'li:
-            bu sahifaga adashib tushgan odam nima qilishini bilsin. */}
-        <p className="mt-6 text-center text-xs text-slate-400">
-          {t("Hisobingiz yo'qmi? Bog'changiz uchun akkaunt ochish uchun biz bilan bog'laning.")}
-        </p>
-        <div className="mt-4 flex justify-center">
-          <LanguageSwitch size="md" />
-        </div>
-      </div>
-    </div>
+            <button type="submit" disabled={busy} className="btn-primary group">
+              {busy ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('Tekshirilmoqda…')}
+                </>
+              ) : (
+                <>
+                  {t('Kirish')}
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </>
+              )}
+            </button>
+          </motion.form>
+        ) : (
+          <motion.div key="choose" {...swap} className="space-y-3">
+            {stage.organizations.map((org, index) => (
+              <motion.button
+                key={org.id}
+                type="button"
+                disabled={busy}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0, transition: { delay: index * 0.05 } }}
+                whileHover={{ y: -1 }}
+                onClick={() => void chooseOrganization(org.id)}
+                className="flex w-full items-center gap-3 rounded-xl border border-tosh-200 bg-white px-4 py-3.5 text-left shadow-card transition hover:border-nihol-300 hover:bg-nihol-50 disabled:opacity-60"
+              >
+                <span className="grid h-9 w-9 place-items-center rounded-lg bg-nihol-50 text-nihol-700">
+                  <Building2 className="h-4 w-4" />
+                </span>
+                <span className="text-sm font-semibold text-tosh-800">{org.name}</span>
+              </motion.button>
+            ))}
+
+            <button
+              type="button"
+              onClick={() => setStage({ kind: 'credentials' })}
+              className="w-full pt-1 text-center text-sm text-tosh-500 transition hover:text-tosh-800"
+            >
+              {t('Orqaga')}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </AuthShell>
   )
 }

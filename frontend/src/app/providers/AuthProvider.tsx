@@ -135,6 +135,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
       try {
+        // Access token xotirada: sahifa yangilanganda u yo'q. Avval
+        // yangilaymiz, shunda `/auth/me` 401 olmaydi (oldin har bir
+        // boot'da ortiqcha 401 + refresh chiqardi).
+        if (!tokenStorage.getAccess()) {
+          const tokens = await authApi.refresh(tokenStorage.getRefresh() ?? '')
+          tokenStorage.setAccess(tokens.access)
+          tokenStorage.setRefresh(tokens.refresh)
+        }
         const { user: me, subscription: sub, organization_settings } = await authApi.me()
         if (!cancelled) {
           setUser(me)
