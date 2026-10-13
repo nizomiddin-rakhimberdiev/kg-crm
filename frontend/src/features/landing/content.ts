@@ -509,6 +509,22 @@ const uz: Copy = {
         title: 'Filiallar',
         text: 'Bitta obuna — cheksiz filial. Ega hammasini birga koʻradi, xodim esa faqat oʻz filialini.',
       },
+      {
+        title: 'Shartnoma — qoʻlda emas',
+        text: 'Shablon sizniki; bolaning ismi, tarifi va vasiysi oʻzi joylashadi, raqam avtomatik — SH-2026-0007. Imzolangani qotib qoladi: tarif keyin oʻzgarsa ham, shartnomada kelishilgan summa turaveradi.',
+      },
+      {
+        title: 'Kassada yoʻq pul chiqmaydi',
+        text: 'Qoldiqdan ortiq chiqim rad etiladi — qaysi hisob, qancha bor, qancha yetmaydi. Baribir yozish kerak boʻlsa, ogohlantirishni oʻqib belgilaysiz.',
+      },
+      {
+        title: 'Hisobot — Excel fayl boʻlib',
+        text: 'Tushum, xarajat, ish haqi, davomat, qarzdorlar — har biri .xlsx boʻlib yuklanadi. Buxgalterga yuborish uchun qayta terish shart emas.',
+      },
+      {
+        title: 'Ikki bosqichli himoya',
+        text: 'Har bir xodim oʻzi yoqadi — majburiy emas, chunki bogʻchada telefon almashib turiladi. Zaxira kodlar bir martalik: telefon yoʻqolsa ham kirasiz.',
+      },
     ],
   },
   roles: {
@@ -1060,6 +1076,22 @@ const ru: Copy = {
         title: 'Филиалы',
         text: 'Одна подписка — сколько угодно филиалов. Владелец видит всё вместе, сотрудник — только свой.',
       },
+      {
+        title: 'Договор — не вручную',
+        text: 'Шаблон ваш; имя ребёнка, тариф и опекун подставляются сами, номер автоматический — SH-2026-0007. Подписанный застывает: даже если тариф потом изменится, в договоре останется согласованная сумма.',
+      },
+      {
+        title: 'Из пустой кассы деньги не уйдут',
+        text: 'Расход больше остатка отклоняется — с названием счёта, остатком и суммой нехватки. Если провести всё-таки нужно, вы ставите галочку, прочитав предупреждение.',
+      },
+      {
+        title: 'Отчёт — файлом Excel',
+        text: 'Выручка, расходы, зарплата, посещаемость, должники — каждый выгружается в .xlsx. Чтобы отправить бухгалтеру, ничего не нужно перенабирать.',
+      },
+      {
+        title: 'Двухэтапная защита',
+        text: 'Каждый сотрудник включает её сам — не принудительно, ведь в саду телефонами меняются. Резервные коды одноразовые: войдёте и с потерянным телефоном.',
+      },
     ],
   },
   roles: {
@@ -1603,6 +1635,22 @@ const en: Copy = {
       {
         title: 'Branches',
         text: 'One subscription, as many branches as you like. The owner sees them together, staff see only theirs.',
+      },
+      {
+        title: 'Contracts, not retyping',
+        text: 'The template is yours; the child, the tariff and the guardian fill themselves in, and the number is automatic — SH-2026-0007. A signed contract freezes: if the tariff changes next month, it still says what was agreed.',
+      },
+      {
+        title: 'An empty till pays nothing out',
+        text: 'A payment larger than the balance is refused, and the message names the account, what it holds and what is short. If it has to go through anyway, you tick a box after reading the warning.',
+      },
+      {
+        title: 'Reports as Excel files',
+        text: 'Revenue, expenses, payroll, attendance, debtors — each downloads as .xlsx. Nothing has to be retyped to send it to an accountant.',
+      },
+      {
+        title: 'Two-step protection',
+        text: 'Each member of staff turns it on themselves — never forced, because phones get shared and swapped in a kindergarten. Backup codes are single-use, so a lost phone does not lock anyone out.',
       },
     ],
   },

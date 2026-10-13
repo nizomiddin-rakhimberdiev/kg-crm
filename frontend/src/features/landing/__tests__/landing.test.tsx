@@ -120,7 +120,11 @@ describe('mahsulot bilan mos', () => {
     for (const locale of ['uz', 'ru', 'en'] as const) {
       expect(copy[locale].parents.items).toHaveLength(4)
       expect(copy[locale].intelligence.points).toHaveLength(3)
-      expect(copy[locale].extras.items).toHaveLength(8)
+      // 12, chunki jonli, lekin sotilmay turgan to'rtta imkoniyat qo'shildi:
+      // shartnoma, kassadan ortiq chiqim taqig'i (ADR-29), .xlsx eksport,
+      // ixtiyoriy 2FA. Son uchala tilda birga o'zgaradi — testning maqsadi
+      // ham shu: biri qo'shilib, ikkinchisi unutilsa, bu yer qizaradi.
+      expect(copy[locale].extras.items).toHaveLength(12)
       expect(copy[locale].ui.intelligence.evidence).toHaveLength(3)
     }
   })
