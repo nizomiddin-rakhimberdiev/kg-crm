@@ -173,7 +173,8 @@ def test_the_customer_can_still_log_in_afterwards(tenant_a: Any):
         assert User.objects.filter(pk=tenant_a.owner.id).exists()
         assert Role.objects.exists()
         assert Branch.objects.filter(pk=tenant_a.branch.id).exists()
-        assert CashAccount.objects.filter(branch=tenant_a.branch).count() == 4
+        # Ikki qop — naqd va bank (2026-10-14).
+        assert CashAccount.objects.filter(branch=tenant_a.branch).count() == 2
         assert NotificationTemplate.objects.exists()
         assert Subscription.objects.filter(organization=tenant_a.organization).exists()
 

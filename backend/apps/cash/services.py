@@ -45,15 +45,27 @@ def _money(value: Decimal) -> Decimal:
     return Decimal(value).quantize(Decimal("0.01"))
 
 
-# Filial ochilganda shu to'rttasi yaratiladi — to'lov usullariga
-# bir-bir mos (docs/03 §13.5). Nomlar o'zbekcha va bog'cha ularni
-# o'zgartira oladi; `kind` va `handles_method` esa kod uchun.
+# Filial ochilganda shu IKKITASI yaratiladi (mijoz so'rovi, 2026-10-14).
+#
+# Avval to'rtta edi — har bir to'lov usuliga bittadan. Bu usul bilan
+# qopni chalkashtirgan edi: terminal, o'tkazma va Payme/Click orqali
+# kelgan pul bog'chaning BITTA bank hisobiga tushadi, va ular uchun
+# alohida qop chiqimni "bankda pul yo'q" deb to'xtatardi, holbuki pul
+# bankda turibdi. Usul endi faqat to'lovning o'zida — hisobot uchun.
+#
+# Nomlar o'zbekcha va bog'cha ularni o'zgartira oladi; `kind` va
+# `handles_method` esa kod uchun.
 DEFAULT_ACCOUNTS: tuple[tuple[str, str, str], ...] = (
     ("Naqd kassa", CashAccountKind.CASH, "cash"),
-    ("Terminal", CashAccountKind.TERMINAL, "terminal"),
     ("Bank hisobi", CashAccountKind.BANK, "bank_transfer"),
-    ("Payme / Click", CashAccountKind.EWALLET, "online"),
 )
+
+# To'lov usuli → qaysi qop uni qabul qiladi (`handles_method` qiymati).
+# Naqd qo'lga tushadi; qolgan hammasi bankka. Ro'yxatda yo'q usul —
+# yangi qo'shilgan bo'lsa ham — bankka boradi: naqd bo'lmagan pul
+# kassaga tushmaydi.
+_POT_FOR_METHOD: dict[str, str] = {"cash": "cash"}
+_BANK_POT = "bank_transfer"
 
 
 @transaction.atomic
@@ -89,16 +101,16 @@ def ensure_branch_accounts(*, branch: Any) -> list[CashAccount]:
 
 def account_for_method(*, branch: Any, method: str) -> CashAccount:
     """
-    To'lov usuliga mos qop.
+    To'lov usuliga mos qop: naqd — kassaga; terminal, o'tkazma va
+    Payme/Click — bank hisobiga. Usulning o'zi to'lovda qoladi.
 
     Mos qop topilmasa naqd kassaga tushadi — va bu ATAYLAB xato emas:
     sozlama kamchiligi tufayli kassirning qo'lidagi puldan voz kechish
     noto'g'ri nosozlik. Topilmagani javobda ko'rinadi, lekin to'lov
     qabul qilinadi.
     """
-    account = CashAccount.objects.filter(
-        branch=branch, is_active=True, handles_method=method
-    ).first()
+    pot = _POT_FOR_METHOD.get(method, _BANK_POT)
+    account = CashAccount.objects.filter(branch=branch, is_active=True, handles_method=pot).first()
     if account is not None:
         return account
 
@@ -110,9 +122,7 @@ def account_for_method(*, branch: Any, method: str) -> CashAccount:
 
     # Filialda umuman qop yo'q — birinchi marta ochamiz va qaytadan qidiramiz.
     ensure_branch_accounts(branch=branch)
-    account = CashAccount.objects.filter(
-        branch=branch, is_active=True, handles_method=method
-    ).first()
+    account = CashAccount.objects.filter(branch=branch, is_active=True, handles_method=pot).first()
     if account is None:  # pragma: no cover — `ensure_branch_accounts` kafolati
         raise BusinessRuleViolation(gettext("Filialda kassa hisobi topilmadi."))
     return account
@@ -246,6 +256,7 @@ def transfer(
     description: str = "",
     occurred_at: Any = None,
     created_by: Any = None,
+    allow_negative: bool = False,
 ) -> tuple[CashMovement, CashMovement]:
     """
     Qoplar orasida pul ko'chirish — kun oxirida naqdni bankka topshirish
@@ -271,6 +282,7 @@ def transfer(
         occurred_at=when,
         created_by=created_by,
         transfer_group=group,
+        allow_negative=allow_negative,
     )
     into = post_movement(
         account=target,

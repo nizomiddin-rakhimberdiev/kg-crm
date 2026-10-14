@@ -629,22 +629,22 @@ class Command(BaseCommand):
                 )
                 finalize_run(run=run, finalized_by=owner)
 
-                # Oylikdan OLDIN terminaldan kassaga pul o'tkaziladi —
-                # haqiqiy bog'cha aynan shunday qiladi (ADR-17).
+                # Oylikdan OLDIN bankdan kassaga pul yechiladi — haqiqiy
+                # bog'cha aynan shunday qiladi (ADR-17).
                 #
                 # Usiz demo ma'lumoti "Naqd kassa: −1 750 500" ko'rsatardi:
-                # tushum asosan terminalga tushadi, naqd maosh esa kassadan
-                # chiqadi. Raqam TO'G'RI edi, lekin bog'chaning haqiqiy
-                # ish tartibini aks ettirmasdi.
-                terminal = account_for_method(branch=branch, method="terminal")
+                # tushum asosan terminal orqali — ya'ni bankka — keladi,
+                # naqd maosh esa kassadan chiqadi. Raqam TO'G'RI edi, lekin
+                # bog'chaning haqiqiy ish tartibini aks ettirmasdi.
+                bank = account_for_method(branch=branch, method="bank_transfer")
                 till = account_for_method(branch=branch, method="cash")
                 need = run.total_net
-                if need > 0 and terminal.kind == CashAccountKind.TERMINAL:
+                if need > 0 and bank.kind == CashAccountKind.BANK:
                     transfer(
-                        source=terminal,
+                        source=bank,
                         target=till,
                         amount=need,
-                        description="Oylik uchun kassaga o'tkazma",
+                        description="Oylik uchun bankdan naqd yechildi",
                         occurred_at=timezone.make_aware(datetime.combine(period, time(hour=9))),
                         created_by=owner,
                     )

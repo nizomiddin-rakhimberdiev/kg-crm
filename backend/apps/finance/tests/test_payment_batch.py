@@ -75,8 +75,10 @@ def test_two_methods_settle_one_invoice(tenant_a: Any):
     assert invoice.status == "paid"
     assert child.balance == Decimal("0.00")
 
+    # Terminal puli bankka tushadi; usul toʻlovning oʻzida qoladi.
     assert balances["cash"] == Decimal("1400000.00")
-    assert balances["terminal"] == Decimal("100000.00")
+    assert balances["bank"] == Decimal("100000.00")
+    assert sorted(p.method for p in payments) == ["cash", "terminal"]
 
 
 def test_overpayment_becomes_an_advance_instead_of_an_error(tenant_a: Any):

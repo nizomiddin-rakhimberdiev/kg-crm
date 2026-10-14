@@ -49,17 +49,17 @@ def _balances(tenant: Any) -> dict[str, Decimal]:
 # --- Qoplar ---
 
 
-def test_branch_is_born_with_four_accounts(tenant_a: Any):
-    """Roʻyxatdan oʻtish paytida ochiladi — birinchi toʻlovdan oldin."""
+def test_branch_is_born_with_two_accounts(tenant_a: Any):
+    """
+    Roʻyxatdan oʻtish paytida ochiladi — birinchi toʻlovdan oldin.
+
+    Ikkita: naqd va bank (mijoz soʻrovi, 2026-10-14). Terminal va
+    Payme/Click puli bankka tushadi — `test_two_pots.py`.
+    """
     with organization_context(tenant_a.organization.id):
         accounts = CashAccount.objects.filter(branch=tenant_a.branch, is_active=True)
-        assert {a.kind for a in accounts} == {"cash", "terminal", "bank", "ewallet"}
-        assert {a.handles_method for a in accounts} == {
-            "cash",
-            "terminal",
-            "bank_transfer",
-            "online",
-        }
+        assert {a.kind for a in accounts} == {"cash", "bank"}
+        assert {a.handles_method for a in accounts} == {"cash", "bank_transfer"}
 
 
 def test_ensure_accounts_is_idempotent_and_keeps_renames(tenant_a: Any):
@@ -107,8 +107,7 @@ def test_payment_lands_in_the_account_for_its_method(tenant_a: Any):
         balances = _balances(tenant_a)
 
     assert balances["cash"] == Decimal("1400000.00")
-    assert balances["terminal"] == Decimal("100000.00")
-    assert balances["bank"] == Decimal("0.00")
+    assert balances["bank"] == Decimal("100000.00")
 
 
 def test_reversal_adds_a_counter_movement_and_keeps_the_original(tenant_a: Any):

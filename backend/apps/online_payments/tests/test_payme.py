@@ -141,7 +141,8 @@ class TestPerform:
             assert payment.method == "online"
             assert payment.amount == Decimal("1500000.00")
             movement = CashMovement.objects.get(source_id=payment.id)
-            assert movement.cash_account.handles_method == "online"
+            # Payme puli bank hisobiga tushadi (2026-10-14); usul — toʻlovda.
+            assert movement.cash_account.handles_method == "bank_transfer"
 
     def test_a_retried_perform_records_money_once(self, api_client, tenant_a, payme, invoice):
         from apps.finance.models import Payment

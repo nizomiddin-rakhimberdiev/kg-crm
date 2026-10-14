@@ -782,7 +782,7 @@ A pot of money the kindergarten actually holds. Seeded per branch, editable by t
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
-| `name` | `VARCHAR(80)` | `NOT NULL` | "Naqd kassa", "Terminal", "Bank hisobi", "Payme/Click" |
+| `name` | `VARCHAR(80)` | `NOT NULL` | "Naqd kassa", "Bank hisobi" (older branches also had "Terminal", "Payme/Click") |
 | `kind` | `VARCHAR(12)` | `NOT NULL`, `CHECK (... IN ('cash','terminal','bank','ewallet'))` | Drives the default icon and the method mapping |
 | `handles_method` | `VARCHAR(20)` | `NULL`, `CHECK (... IN ('cash','terminal','bank_transfer','online'))` | The payment method that lands here by default. `NULL` = never auto-selected |
 
@@ -790,7 +790,11 @@ A pot of money the kindergarten actually holds. Seeded per branch, editable by t
 - `uq_cash_account_branch_name UNIQUE (branch_id, name) WHERE is_active`.
 - `uq_cash_account_method UNIQUE (branch_id, handles_method) WHERE is_active AND handles_method IS NOT NULL` — **one destination per method per branch.** Two accounts claiming `cash` would make "where did this payment land" a coin toss.
 
-**Seeding.** Creating a branch creates its four accounts (one per method). A branch with no account for a method still accepts the payment — it lands in the branch's `cash` account and the response says so, because refusing money at the counter over a configuration gap is the wrong failure.
+**Seeding — two pots, not one per method (owner request, 2026-10-14).** Creating a branch creates **"Naqd kassa"** (`cash`, handles `cash`) and **"Bank hisobi"** (`bank`, handles `bank_transfer`). Routing lives in `cash.account_for_method()`: cash lands in the till, and **terminal, bank transfer and Payme/Click all land in the bank pot**, because that is where the money physically is — a card terminal and an online wallet settle into the kindergarten's one bank account. The payment *method* is a separate question and stays on `payment.method`, so the revenue report still answers "how much came in by terminal?".
+
+The first design seeded four pots, one per method, and it confused the two questions: money taken by terminal sat in a "Terminal" pot, the bank pot read zero, and an expense paid from the bank was refused under ADR-29 while the money was in fact in the bank. The `terminal` and `ewallet` kinds stay in the enum for history. Existing branches are moved with `manage.py consolidate_cash_accounts` (dry-run by default, `--apply` to write): one **transfer** per old pot into the bank — append-only, never a rewrite of old movements — after which the emptied pot is deactivated.
+
+A branch with no matching pot still accepts the payment — it lands in the branch's `cash` account, because refusing money at the counter over a configuration gap is the wrong failure.
 
 ### 13a.2 `cash_movement` (append-only — THE source of truth for cash)
 

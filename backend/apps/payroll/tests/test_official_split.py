@@ -197,7 +197,8 @@ def test_paying_a_run_moves_money_out_of_the_right_pots(tenant_a: Any):
     assert balances["bank"] == FUND - Decimal("2637000.00")
     assert balances["cash"] == FUND - Decimal("2000000.00")
     # Ushlab qolingan 363 000 hech qayerdan chiqmadi.
-    assert sum(balances.values()) == FUND * 4 - Decimal("4637000.00")
+    # Ikki qop toʻldirilgan — naqd va bank (2026-10-14).
+    assert sum(balances.values()) == FUND * 2 - Decimal("4637000.00")
 
 
 def test_reopening_a_paid_run_returns_the_money(tenant_a: Any):

@@ -214,7 +214,7 @@ def test_the_balance_is_broken_down_by_pot(tenant_a: Any):
 
     position = _position(tenant_a)
     by_kind = {row["kind"]: row["balance"] for row in position["accounts"]}
-    assert by_kind["cash"] == "1400000.00"
-    assert by_kind["terminal"] == "100000.00"
-    assert by_kind["bank"] == "300000.00"
+    # Ikki qop (2026-10-14): terminal va oʻtkazma — ikkalasi ham bankda.
+    # "Nimadan qancha keldi" esa tushum hisobotining usul kesimida qoladi.
+    assert by_kind == {"cash": "1400000.00", "bank": "400000.00"}
     assert position["balance"] == "1800000.00"
