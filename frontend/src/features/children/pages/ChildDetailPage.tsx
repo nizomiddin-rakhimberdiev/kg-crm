@@ -31,14 +31,7 @@ import { GroupOptions } from '@/features/children/components/GroupOptions'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
-
-const RELATIONS: Array<[string, string]> = [
-  ['mother', t('Onasi')],
-  ['father', t('Otasi')],
-  ['grandparent', 'Buvi/bobo'],
-  ['sibling', 'Aka/opa'],
-  ['other', t('Boshqa')],
-]
+import { RELATIONS, relationLabel } from '@/features/children/relations'
 
 const STATUS_LABEL: Record<string, string> = {
   prospect: t('Nomzod'),
@@ -80,7 +73,7 @@ export default function ChildDetailPage() {
   const [showGuardianAlt, setShowGuardianAlt] = useState(false)
   // Tahrirlanayotgan vasiy (PLAN 7.4) — ilgari uni umuman
   // o'zgartirib bo'lmasdi.
-  const [editingGuardian, setEditingGuardian] = useState<GuardianLink['guardian'] | null>(null)
+  const [editingGuardian, setEditingGuardian] = useState<GuardianLink | null>(null)
   const [showGuardianForm, setShowGuardianForm] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Guruh TASDIQ bilan o'zgaradi (PLAN 1.4): sichqoncha g'ildiragining
@@ -402,14 +395,14 @@ export default function ChildDetailPage() {
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   <span className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500">
-                    {RELATIONS.find(([code]) => code === link.relation)?.[1] ?? link.relation}
+                    {relationLabel(link.relation)}
                   </span>
                   {can('children.update') && (
                     <button
                       type="button"
                       title={t('Tahrirlash')}
                       aria-label={t('Tahrirlash')}
-                      onClick={() => setEditingGuardian(link.guardian)}
+                      onClick={() => setEditingGuardian(link)}
                       className="rounded p-1 text-slate-300 transition hover:bg-slate-100 hover:text-slate-700"
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -431,7 +424,14 @@ export default function ChildDetailPage() {
                       type="button"
                       title={t('Bogʻlanishni uzish')}
                       aria-label={t('Bogʻlanishni uzish')}
-                      onClick={() => unlinkGuardian.mutate(link.id)}
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            t('{name} bu boladan uzilsinmi?', { name: link.guardian.full_name }),
+                          )
+                        )
+                          unlinkGuardian.mutate(link.id)
+                      }}
                       className="rounded p-1 text-slate-300 transition hover:bg-red-50 hover:text-red-600"
                     >
                       <Unlink className="h-3.5 w-3.5" />
@@ -654,7 +654,8 @@ export default function ChildDetailPage() {
       )}
       {editingGuardian && (
         <GuardianEditDialog
-          guardian={editingGuardian}
+          childId={childId}
+          link={editingGuardian}
           onClose={() => setEditingGuardian(null)}
           onSaved={invalidate}
         />

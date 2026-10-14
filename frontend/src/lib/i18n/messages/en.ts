@@ -1398,4 +1398,12 @@ export const messages: Record<string, string> = {
   'Chiqimni tahrirlash': 'Edit expense',
   'Yangi summa keyingi hisob-fakturadan ishlaydi.': 'The new amount applies from the next invoice.',
   '«{name}» tarifi oʻchirilsinmi?': 'Delete the «{name}» tariff?',
+  '{name} bu boladan uzilsinmi?': 'Unlink {name} from this child?',
+  'Aka/opa': 'Brother/sister',
+  'Asosiy vasiy — qoʻngʻiroq va xabarlar shunga': 'Main guardian — calls and messages go here',
+  'Bogʻcha tili (sukut)': 'Kindergarten language (default)',
+  'Bolaga kim boʻladi': 'Relation to the child',
+  'Bolani olib keta oladi': 'May pick the child up',
+  'Buvi/bobo': 'Grandparent',
+  Email: 'Email',
 }

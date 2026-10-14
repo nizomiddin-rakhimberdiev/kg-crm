@@ -9,43 +9,58 @@
  *
  * Telefon — vasiyning KIMLIGI (filial ichida unikal) va botga ulanish
  * kaliti, shuning uchun uni o'zgartirish ogohlantirish bilan boradi.
+ *
+ * To'liq tahrirlash (mijoz so'rovi, 2026-10-14): oyna endi vasiyning
+ * O'ZINI (ism, raqamlar, email, xabar tili) ham, uning SHU BOLA bilan
+ * bog'lanishini (kim bo'ladi, asosiy vasiymi, bolani olib keta oladimi)
+ * ham o'zgartiradi, va bog'lanishni uzish ham shu yerda. Ikki xil
+ * yozuv, ikki xil endpoint: vasiy bir necha bolaga bog'langan bo'lishi
+ * mumkin, "otasi" esa faqat shu bola uchun.
  */
 
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Modal } from '@/components/ui/Modal'
-import { guardiansApi } from '@/features/children/api'
-import { ApiError } from '@/lib/api/types'
+import { childrenApi, guardiansApi } from '@/features/children/api'
+import { RELATIONS } from '@/features/children/relations'
+import { ApiError, type GuardianLink } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
-interface GuardianShape {
-  id: string
-  first_name: string
-  last_name: string
-  phone: string
-  phone_alt: string
-  language: string
-}
+const LANGUAGES: Array<[string, string]> = [
+  ['', t('Bogʻcha tili (sukut)')],
+  ['uz', 'Oʻzbekcha'],
+  ['ru', 'Русский'],
+  ['en', 'English'],
+]
 
 const field =
   'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100'
 
 export function GuardianEditDialog({
-  guardian,
+  childId,
+  link,
   onClose,
   onSaved,
 }: {
-  guardian: GuardianShape
+  childId: string
+  link: GuardianLink
   onClose: () => void
   onSaved: () => void
 }) {
+  const guardian = link.guardian
   const [form, setForm] = useState({
     last_name: guardian.last_name,
     first_name: guardian.first_name,
     phone: guardian.phone,
     phone_alt: guardian.phone_alt ?? '',
+    email: guardian.email ?? '',
     language: guardian.language ?? '',
+  })
+  const [relation, setRelation] = useState({
+    relation: link.relation,
+    is_primary: link.is_primary,
+    can_pickup: link.can_pickup,
   })
   // Ikkinchi raqam maydoni faqat KERAK bo'lganda ochiladi: bo'sh input
   // formada turib olishi kerak emas (egasining so'zi).
@@ -54,7 +69,16 @@ export function GuardianEditDialog({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   const save = useMutation({
-    mutationFn: () => guardiansApi.update(guardian.id, form),
+    // Avval vasiyning o'zi, keyin bog'lanish: telefon xato bo'lsa
+    // (PhoneField) bog'lanish yarim saqlangan holda qolmaydi.
+    mutationFn: async () => {
+      await guardiansApi.update(guardian.id, form)
+      const linkChanged =
+        relation.relation !== link.relation ||
+        relation.is_primary !== link.is_primary ||
+        relation.can_pickup !== link.can_pickup
+      if (linkChanged) await childrenApi.updateGuardianLink(childId, link.id, relation)
+    },
     onSuccess: () => {
       onSaved()
       onClose()
@@ -67,6 +91,15 @@ export function GuardianEditDialog({
         setError(t('Xatolik yuz berdi.'))
       }
     },
+  })
+
+  const unlink = useMutation({
+    mutationFn: () => childrenApi.unlinkGuardian(childId, link.id),
+    onSuccess: () => {
+      onSaved()
+      onClose()
+    },
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
   const phoneChanged = form.phone !== guardian.phone
@@ -133,6 +166,24 @@ export function GuardianEditDialog({
           )}
         </div>
 
+        <div>
+          <label htmlFor="g-relation" className="mb-1 block text-xs font-medium text-slate-600">
+            {t('Bolaga kim boʻladi')}
+          </label>
+          <select
+            id="g-relation"
+            value={relation.relation}
+            onChange={(e) => setRelation((p) => ({ ...p, relation: e.target.value }))}
+            className={field}
+          >
+            {RELATIONS.map(([code, label]) => (
+              <option key={code} value={code}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {showAlt ? (
           <div>
             <label htmlFor="g-phone-alt" className="mb-1 block text-xs font-medium text-slate-600">
@@ -160,24 +211,91 @@ export function GuardianEditDialog({
           </button>
         )}
 
-        <div className="flex justify-end gap-2 pt-1">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label htmlFor="g-email" className="mb-1 block text-xs font-medium text-slate-600">
+              {t('Email')}
+            </label>
+            <input
+              id="g-email"
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+              className={field}
+            />
+            {fieldErrors.email && <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>}
+          </div>
+          <div>
+            <label htmlFor="g-lang" className="mb-1 block text-xs font-medium text-slate-600">
+              {t('Xabar tili')}
+            </label>
+            <select
+              id="g-lang"
+              value={form.language}
+              onChange={(e) => setForm((p) => ({ ...p, language: e.target.value }))}
+              className={field}
+            >
+              {LANGUAGES.map(([code, label]) => (
+                <option key={code} value={code}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="space-y-2 rounded-lg bg-slate-50 px-3 py-2.5">
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={relation.is_primary}
+              onChange={(e) => setRelation((p) => ({ ...p, is_primary: e.target.checked }))}
+              className="h-4 w-4 rounded border-slate-300 focus-visible:ring-2 focus-visible:ring-brand-500"
+            />
+            {t('Asosiy vasiy — qoʻngʻiroq va xabarlar shunga')}
+          </label>
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={relation.can_pickup}
+              onChange={(e) => setRelation((p) => ({ ...p, can_pickup: e.target.checked }))}
+              className="h-4 w-4 rounded border-slate-300 focus-visible:ring-2 focus-visible:ring-brand-500"
+            />
+            {t('Bolani olib keta oladi')}
+          </label>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 pt-1">
           <button
             type="button"
-            onClick={onClose}
-            className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"
+            disabled={unlink.isPending}
+            onClick={() => {
+              if (window.confirm(t('{name} bu boladan uzilsinmi?', { name: guardian.full_name })))
+                unlink.mutate()
+            }}
+            className="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
           >
-            {t('Bekor qilish')}
+            {t('Bogʻlanishni uzish')}
           </button>
-          <button
-            type="submit"
-            disabled={save.isPending}
-            className={cn(
-              'rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white',
-              save.isPending ? 'opacity-60' : 'hover:bg-brand-700',
-            )}
-          >
-            {save.isPending ? t('Saqlanmoqda…') : t('Saqlash')}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100"
+            >
+              {t('Bekor qilish')}
+            </button>
+            <button
+              type="submit"
+              disabled={save.isPending}
+              className={cn(
+                'rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white',
+                save.isPending ? 'opacity-60' : 'hover:bg-brand-700',
+              )}
+            >
+              {save.isPending ? t('Saqlanmoqda…') : t('Saqlash')}
+            </button>
+          </div>
         </div>
       </form>
     </Modal>

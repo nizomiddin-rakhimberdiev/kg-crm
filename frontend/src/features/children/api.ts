@@ -120,6 +120,7 @@ export interface GuardianPatch {
   last_name?: string
   phone?: string
   phone_alt?: string
+  email?: string
   language?: string
 }
 
