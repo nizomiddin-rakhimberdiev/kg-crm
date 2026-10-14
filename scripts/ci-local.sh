@@ -87,8 +87,12 @@ run_backend() {
   step "backend · migratsiya yetishmaydimi" python manage.py makemigrations --check --dry-run
 
   # Toza bazada: migratsiyalar haqiqatan RLS qo'yadimi?
+  # Bazaning EGASI — Django ulanadigan foydalanuvchi. Usiz `createdb`
+  # bazani OS foydalanuvchisiga yozardi, migratsiya esa `kg_crm` bo'lib
+  # ishlab `btree_gist` kengaytmasini yarata olmasdi (ADR-19 dagi
+  # EXCLUDE uchun) — va darvoza kodda emas, muhitda qizarardi.
   dropdb --if-exists "$CI_DB" 2>/dev/null
-  createdb "$CI_DB" 2>/dev/null
+  createdb -O "${POSTGRES_USER:-kg_crm}" "$CI_DB" 2>/dev/null
   step "backend · migrate + check_rls" env POSTGRES_DB="$CI_DB" bash -c \
       'python manage.py migrate --noinput && python manage.py check_rls'
   dropdb --if-exists "$CI_DB" 2>/dev/null

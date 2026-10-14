@@ -44,4 +44,7 @@ Pillow==12.3.0
 openpyxl==3.1.5
 
 # Encryption of merchant (Payme/Click) secrets at rest — PLAN 6.1.
-cryptography==46.0.3
+# 46.0.3 -> 50.0.2 (2026-10-14): pip-audit reported seven advisories in
+# 46.0.3. Only `Fernet` is used, whose token format is fixed by its spec,
+# so secrets encrypted by the old version still decrypt.
+cryptography==50.0.2
