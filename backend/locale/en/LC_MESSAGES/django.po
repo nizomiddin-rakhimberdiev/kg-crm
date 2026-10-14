@@ -1456,3 +1456,18 @@ msgstr "You see only the payments you took yourself, so you cannot remove this r
 
 msgid "Siz faqat oʻzingiz qabul qilgan toʻlovlarni koʻrasiz — bu cheklovsiz rolni bera olmaysiz."
 msgstr "You see only the payments you took yourself, so you cannot assign a role without this restriction."
+
+msgid "Bu chiqim ombor xarididan tugʻilgan — miqdor va narxni ombordagi xarid yozuvida tuzating."
+msgstr "This expense comes from a stock purchase — correct the quantity and price on the purchase itself."
+
+msgid "Chiqim qatorlardan iborat — summani qatorlar orqali oʻzgartiring."
+msgstr "This expense is made of lines — change the total through its lines."
+
+msgid "Chiqim qaysi puldan toʻlanayotganini tanlang."
+msgstr "Choose which money the expense is paid from."
+
+msgid "Rad etilgan chiqimni tahrirlab boʻlmaydi."
+msgstr "A rejected expense cannot be edited."
+
+msgid "chiqim tahrirlandi"
+msgstr "expense edited"

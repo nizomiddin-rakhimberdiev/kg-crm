@@ -38,6 +38,11 @@ def _category(tenant, name: str = "Bozorlik") -> ExpenseCategory:
 
 
 def _create(client, category, amount: str = "600000", **extra):
+    from apps.cash.models import CashAccount
+
+    # "Qaysi puldan" endi majburiy (2026-10-14) — sukut kassa yo'q.
+    with organization_context(category.organization_id):
+        till = CashAccount.objects.get(branch_id=category.branch_id, kind="cash", is_active=True)
     return client.post(
         URL,
         {
@@ -45,6 +50,7 @@ def _create(client, category, amount: str = "600000", **extra):
             "amount": amount,
             "expense_date": str(date(2026, 10, 5)),
             "description": "sabzavotlar",
+            "cash_account_id": str(till.id),
             **extra,
         },
         format="json",

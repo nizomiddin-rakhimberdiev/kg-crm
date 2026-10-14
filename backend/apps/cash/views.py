@@ -12,8 +12,10 @@ from datetime import datetime, time
 from typing import Any
 
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -24,6 +26,7 @@ from apps.cash.models import CashAccount
 from apps.cash.serializers import CashAccountSerializer, CashAdjustSerializer
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchScopedMixin, TenantViewSet
+from apps.finance.scope import payments_own_only
 
 __all__ = ["CashAccountViewSet"]
 
@@ -45,12 +48,26 @@ class CashAccountViewSet(BranchScopedMixin, TenantViewSet):
 
     @action(detail=False, methods=["get"])
     def balances(self, request: Request) -> Response:
-        """`GET /cash-accounts/balances` — har bir qopdagi qoldiq."""
+        """
+        `GET /cash-accounts/balances` — har bir qopdagi qoldiq.
+
+        Ikki to'siq, ikkalasi ham ilgari yo'q edi:
+
+        * "Faqat o'z to'lovlari" bilan cheklangan odam (kassir, ADR-30)
+          qoldiqni ko'rmaydi: qopdagi pul — bog'chaning butun tushumi.
+          Ekranda u allaqachon yashiringan, lekin API ochiq qolardi.
+        * Filialga bog'langan xodim faqat O'Z filialining qoplarini
+          ko'radi, `?branch=` bilan boshqasini so'rasa ham — to'lovlar
+          va hisobotlardagi qoida bilan bir xil. Egasi istalganini.
+        """
         user = request_user(request)
+        if payments_own_only(user):
+            raise PermissionDenied(gettext("Bu amalga ruxsat yoʻq."))
+        branch = request.query_params.get("branch") or None
         return Response(
             selectors.account_balances(
                 organization_id=user.organization_id,
-                branch_id=request.query_params.get("branch") or None,
+                branch_id=branch if user.is_org_owner else user.branch_id,
             )
         )
 

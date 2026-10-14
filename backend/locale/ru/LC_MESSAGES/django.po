@@ -1456,3 +1456,18 @@ msgstr "Вы видите только принятые вами платежи 
 
 msgid "Siz faqat oʻzingiz qabul qilgan toʻlovlarni koʻrasiz — bu cheklovsiz rolni bera olmaysiz."
 msgstr "Вы видите только принятые вами платежи — назначить роль без этого ограничения вы не можете."
+
+msgid "Bu chiqim ombor xarididan tugʻilgan — miqdor va narxni ombordagi xarid yozuvida tuzating."
+msgstr "Этот расход создан закупкой на складе — количество и цену исправьте в записи закупки."
+
+msgid "Chiqim qatorlardan iborat — summani qatorlar orqali oʻzgartiring."
+msgstr "Расход состоит из строк — меняйте сумму через строки."
+
+msgid "Chiqim qaysi puldan toʻlanayotganini tanlang."
+msgstr "Выберите, из каких денег оплачивается расход."
+
+msgid "Rad etilgan chiqimni tahrirlab boʻlmaydi."
+msgstr "Отклонённый расход нельзя редактировать."
+
+msgid "chiqim tahrirlandi"
+msgstr "расход изменён"

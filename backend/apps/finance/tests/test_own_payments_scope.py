@@ -289,3 +289,40 @@ def test_the_command_restricts_existing_cashier_roles(tenant_a: Any, tenant_b: A
     with organization_context(tenant_a.organization.id):
         assert tenant_a.role("director").role_permissions.count() == director_before
     assert "0 ta" in second
+
+
+# --- Qoplardagi qoldiq ---
+
+
+def test_a_cashier_cannot_read_pot_balances(tenant_a: Any, desk: dict[str, Any]):
+    """
+    Qopdagi qoldiq — bogʻchaning butun puli, yaʼni umumiy tushumning oʻzi.
+
+    `/cash-accounts/balances` faqat `payments.read` talab qilardi va u
+    kassirda bor (toʻlov doskasi uchun) — ekranda koʻrinmasa ham API
+    orqali ochiq qolardi.
+    """
+    client = _client(tenant_a, desk["cashier"])
+    assert client.get(reverse("v1:cash-account-balances")).status_code == 403
+    # Qoplar roʻyxati (nomlar) esa qoladi — toʻlov oynasi undan foydalanadi.
+    assert client.get(reverse("v1:cash-account-list")).status_code == 200
+
+
+def test_a_branch_bound_reader_sees_only_her_branchs_pots(tenant_a: Any):
+    """Filialga bogʻlangan xodim boshqa filial qopini soʻrasa ham — oʻzinikini oladi."""
+    from apps.branches.models import Branch
+    from apps.cash import services as cash
+
+    with organization_context(tenant_a.organization.id):
+        second = Branch.objects.create(
+            organization=tenant_a.organization, name="Gorkiy", code="SECOND"
+        )
+        cash.ensure_branch_accounts(branch=second)
+    manager = _user(tenant_a, "menejer@alfa.uz", tenant_a.role("manager"))
+    client = _client(tenant_a, manager)
+
+    own = _data(client.get(reverse("v1:cash-account-balances")))
+    asked = _data(client.get(reverse("v1:cash-account-balances"), {"branch": str(second.id)}))
+
+    assert {row["branch_id"] for row in own} == {str(tenant_a.branch.id)}
+    assert {row["branch_id"] for row in asked} == {str(tenant_a.branch.id)}

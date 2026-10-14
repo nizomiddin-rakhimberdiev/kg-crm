@@ -36,6 +36,16 @@ def _category(tenant, name: str = "Bozorlik") -> ExpenseCategory:
         )
 
 
+def _till(category) -> str:
+    """Filialning naqd kassasi — "Qaysi puldan" endi majburiy (2026-10-14)."""
+    from apps.cash.models import CashAccount
+
+    with organization_context(category.organization_id):
+        return str(
+            CashAccount.objects.get(branch_id=category.branch_id, kind="cash", is_active=True).id
+        )
+
+
 def _post(client, category, items, **extra):
     return client.post(
         URL,
@@ -43,6 +53,7 @@ def _post(client, category, items, **extra):
             "category_id": str(category.id),
             "expense_date": str(date(2026, 10, 6)),
             "items": items,
+            "cash_account_id": _till(category),
             **extra,
         },
         format="json",
@@ -130,13 +141,15 @@ class TestRefusals:
 
     def test_a_plain_total_still_works_for_the_old_path(self, tenant_a):
         """Qatorsiz chiqim — eski yo'l, u buzilmasligi kerak."""
+        category = _category(tenant_a)
         response = tenant_a.client().post(
             URL,
             {
-                "category_id": str(_category(tenant_a).id),
+                "category_id": str(category.id),
                 "expense_date": "2026-10-06",
                 "amount": "600000",
                 "description": "sabzavotlar",
+                "cash_account_id": _till(category),
             },
             format="json",
         )

@@ -20,9 +20,12 @@ import { t } from '@/lib/i18n'
 /** Bog'cha amalda ishlatadigan o'lchovlar. */
 export const UNITS = ['kg', 'dona', 'l', 'quti', 'bogʻlam'] as const
 
+// Miqdor sukut bo'yicha 1 (mijoz so'rovi, 2026-10-14): ko'p chiqim
+// bitta narsa — "kraska", "konditsioner ta'miri" — va bo'sh miqdor
+// qatorni nol so'mlik qilib, "Qo'shish" ni o'chirib qo'yardi.
 export const EMPTY_ITEM: ExpenseItemInput = {
   name: '',
-  quantity: '',
+  quantity: '1',
   unit: 'kg',
   unit_price: '',
   note: '',

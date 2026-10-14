@@ -111,11 +111,49 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
         )
 
     def perform_update(self, serializer: Any) -> None:
-        """Tasdiqlangan chiqim tahrirlanmaydi — summani keyin o'zgartirish
-        tasdiqni ma'nosiz qilardi."""
-        if serializer.instance.status != "pending":
-            raise BusinessRuleViolation(gettext("Faqat kutilayotgan chiqimni tahrirlash mumkin."))
-        serializer.save()
+        """
+        Chiqimni tahrirlash (mijoz so'rovi, 2026-10-14).
+
+        Ilgari faqat `pending` chiqim tahrirlanardi — lekin PLAN 7.2 dan
+        beri chiqim yaratilishi bilan tasdiqlanadi, ya'ni tahrirlash amalda
+        yo'q edi. Pul izi `services.update_expense` da qarshi yozuv bilan
+        to'g'rilanadi; bu yerda faqat chaqiriladi va auditga yoziladi.
+        """
+        user = request_user(self.request)
+        data = serializer.validated_data
+        before = serializer.instance
+        was = {
+            "amount": str(before.amount),
+            "cash_account": str(before.cash_account_id) if before.cash_account_id else None,
+            "expense_date": before.expense_date.isoformat(),
+        }
+        serializer.instance = services.update_expense(
+            expense=before,
+            category=data.get("category"),
+            expense_date=data.get("expense_date"),
+            description=data.get("description"),
+            items=data.get("items"),
+            amount=data.get("amount"),
+            cash_account=data.get("cash_account"),
+            allow_negative=_allow_negative(self.request),
+            updated_by=user,
+        )
+        after = serializer.instance
+        audit.record(
+            action="update",
+            request=self.request._request,
+            actor=user,
+            entity_type="expense",
+            entity_id=after.id,
+            changes={
+                "before": was,
+                "after": {
+                    "amount": str(after.amount),
+                    "cash_account": str(after.cash_account_id) if after.cash_account_id else None,
+                    "expense_date": after.expense_date.isoformat(),
+                },
+            },
+        )
 
     @staticmethod
     def _cash_account(request: Request, user: Any) -> Any:

@@ -17,6 +17,7 @@ from apps.core.exceptions import BusinessRuleViolation
 from apps.expenses.models import Expense, ExpenseItem, ExpenseStatus
 
 __all__ = [
+    "update_expense",
     "approve_expense",
     "reject_expense",
     "mark_expense_paid",
@@ -58,6 +59,39 @@ def create_expense_with_items(
     Har bir qator uchun `line_total = miqdor × narx` shu yerda
     hisoblanib SAQLANADI (modeldagi izoh).
     """
+    rows, total = _build_items(organization=organization, branch=branch, items=items)
+
+    expense = Expense.objects.create(
+        organization=organization,
+        branch=branch,
+        category=category,
+        amount=total,
+        expense_date=expense_date,
+        description=description[:255],
+        cash_account=cash_account,
+    )
+    for row in rows:
+        row.expense = expense
+    ExpenseItem.objects.bulk_create(rows)
+
+    return approve_expense(
+        expense=expense,
+        approved_by=created_by,
+        cash_account=cash_account,
+        allow_negative=allow_negative,
+    )
+
+
+def _build_items(
+    *, organization: Any, branch: Any, items: list[dict[str, Any]]
+) -> tuple[list[ExpenseItem], Decimal]:
+    """
+    Qatorlardan saqlanmagan `ExpenseItem` lar va ularning yig'indisi.
+
+    Yaratish ham, tahrirlash ham shu yerdan o'tadi: `line_total` va jami
+    bitta joyda hisoblanadi, aks holda ikki yo'l bir kun bir-biridan
+    ajralib qolardi.
+    """
     if not items:
         raise BusinessRuleViolation(gettext("Chiqimda kamida bitta qator boʻlishi kerak."))
 
@@ -83,26 +117,119 @@ def create_expense_with_items(
 
     if total <= 0:
         raise BusinessRuleViolation(gettext("Chiqim summasi noldan katta boʻlishi kerak."))
+    return rows, total
 
-    expense = Expense.objects.create(
-        organization=organization,
-        branch=branch,
-        category=category,
-        amount=total,
-        expense_date=expense_date,
-        description=description[:255],
-        cash_account=cash_account,
-    )
-    for row in rows:
-        row.expense = expense
-    ExpenseItem.objects.bulk_create(rows)
 
-    return approve_expense(
-        expense=expense,
-        approved_by=created_by,
-        cash_account=cash_account,
-        allow_negative=allow_negative,
-    )
+@transaction.atomic
+def update_expense(
+    *,
+    expense: Expense,
+    category: Any = None,
+    expense_date: Any = None,
+    description: str | None = None,
+    items: list[dict[str, Any]] | None = None,
+    amount: Decimal | None = None,
+    cash_account: Any = None,
+    allow_negative: bool = False,
+    updated_by: Any = None,
+) -> Expense:
+    """
+    Chiqimni tahrirlaydi (mijoz so'rovi, 2026-10-14).
+
+    Chiqim yaratilishi bilan tasdiqlanadi va pul qopdan chiqadi, ya'ni
+    tahrirlash ikki narsa: hujjatni o'zgartirish VA pul izini to'g'rilash.
+    Summa, sana yoki qop o'zgarsa, eski chiqimga QARSHI yozuv va yangisiga
+    chiqim yoziladi — eski harakat hech qachon tahrirlanmaydi (12-invariant).
+    Qarshi yozuv avval yoziladi, shuning uchun o'sha qopdagi tahrir eski
+    summa qaytgan qoldiq bilan tekshiriladi (ADR-29).
+
+    Tavsif yoki kategoriya o'zgarsa — pulga tegilmaydi.
+
+    Rad etilgan chiqim tahrirlanmaydi: u "nima so'ralgan va nega rad
+    etilgan" degan yozuv. Ombor xaridiga bog'langan chiqimning qatorlari
+    va summasi ham bu yerdan o'zgarmaydi — ular omborda, va bu yerdagi
+    o'zgarish ombordagi miqdor bilan pulni ajratib qo'yardi.
+    """
+    expense = Expense.objects.select_for_update().get(pk=expense.pk)
+    if expense.status == ExpenseStatus.REJECTED:
+        raise BusinessRuleViolation(gettext("Rad etilgan chiqimni tahrirlab boʻlmaydi."))
+
+    touches_lines = items is not None or amount is not None
+    if touches_lines and expense.stock_movements.exists():
+        raise BusinessRuleViolation(
+            gettext(
+                "Bu chiqim ombor xarididan tugʻilgan — miqdor va narxni ombordagi "
+                "xarid yozuvida tuzating."
+            )
+        )
+    if amount is not None and items is None and expense.items.exists():
+        raise BusinessRuleViolation(
+            gettext("Chiqim qatorlardan iborat — summani qatorlar orqali oʻzgartiring.")
+        )
+
+    fields = ["updated_at"]
+    money_changed = False
+
+    if category is not None and category.id != expense.category_id:
+        expense.category = category
+        fields.append("category")
+    if description is not None:
+        expense.description = description[:255]
+        fields.append("description")
+    if expense_date is not None and expense_date != expense.expense_date:
+        expense.expense_date = expense_date
+        fields.append("expense_date")
+        money_changed = True
+    if cash_account is not None and cash_account.id != expense.cash_account_id:
+        if cash_account.organization_id != expense.organization_id:
+            raise BusinessRuleViolation(gettext("Kassa hisobi boshqa tashkilotga tegishli."))
+        expense.cash_account = cash_account
+        fields.append("cash_account")
+        money_changed = True
+
+    new_rows: list[ExpenseItem] | None = None
+    if items is not None:
+        new_rows, total = _build_items(
+            organization=expense.organization, branch=expense.branch, items=items
+        )
+    elif amount is not None:
+        total = Decimal(amount).quantize(Decimal("0.01"))
+        if total <= 0:
+            raise BusinessRuleViolation(gettext("Chiqim summasi noldan katta boʻlishi kerak."))
+    if touches_lines and total != expense.amount:
+        expense.amount = total
+        fields.append("amount")
+        money_changed = True
+
+    expense.save(update_fields=fields)
+    if new_rows is not None:
+        expense.items.all().delete()
+        for row in new_rows:
+            row.expense = expense
+        ExpenseItem.objects.bulk_create(new_rows)
+
+    if money_changed and expense.status in (ExpenseStatus.APPROVED, ExpenseStatus.PAID):
+        account = expense.cash_account or cash.account_for_method(
+            branch=expense.branch, method="cash"
+        )
+        cash.reverse_movements_for(
+            source_type=MovementSource.EXPENSE,
+            source_id=expense.id,
+            description=gettext("chiqim tahrirlandi"),
+            created_by=updated_by,
+        )
+        cash.post_movement(
+            account=account,
+            direction=MovementDirection.OUT,
+            amount=expense.amount,
+            source_type=MovementSource.EXPENSE,
+            source_id=expense.id,
+            description=f"{expense.category.name}: {expense.description}"[:255],
+            occurred_at=timezone.make_aware(datetime.combine(expense.expense_date, time.min)),
+            created_by=updated_by,
+            allow_negative=allow_negative,
+        )
+    return expense
 
 
 @transaction.atomic

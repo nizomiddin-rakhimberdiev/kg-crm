@@ -18,10 +18,12 @@ import {
   itemsTotal,
   usableItems,
 } from '@/features/expenses/components/ExpenseItemsEditor'
-import { cashApi } from '@/features/cash/api'
+import { ExpenseEditModal } from '@/features/expenses/components/ExpenseEditModal'
+import { PotSelect, ShortfallNotice } from '@/features/expenses/components/PotSelect'
+import { shortfall, usePots } from '@/features/expenses/pots'
 import { invalidateMoney } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
-import { ApiError } from '@/lib/api/types'
+import { ApiError, type Expense } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { QueryError } from '@/components/ui/QueryError'
@@ -62,14 +64,15 @@ export default function ExpensesPage() {
     description: '',
     // Qaysi puldan to'lanadi (ADR-17) — mijozning so'zi: "chiqim
     // kiritayotgan paytda qaysi puldan ketayotgani hisobga olinishi
-    // kerak". Bo'sh qoldirilsa tasdiqlashda naqd kassa olinadi.
+    // kerak". SUKUT YO'Q (2026-10-14): tanlanmaguncha forma ketmaydi.
     cash_account_id: '',
   })
-  const accountsQuery = useQuery({
-    queryKey: queryKeys.cashAccounts(organizationId),
-    queryFn: cashApi.accounts,
-    enabled: can('expenses.create'),
-  })
+  const { pots } = usePots(can('expenses.create'))
+  const [allowNegative, setAllowNegative] = useState(false)
+  const [editing, setEditing] = useState<Expense | null>(null)
+  const draftTotal = itemsTotal(items)
+  const short = shortfall(pots, form.cash_account_id, draftTotal)
+  const chosenPot = pots.find((p) => p.id === form.cash_account_id)
   const [newCategory, setNewCategory] = useState('')
   const [error, setError] = useState<string | null>(null)
 
@@ -98,7 +101,7 @@ export default function ExpensesPage() {
       expensesApi.create({
         ...form,
         items: usableItems(items),
-        ...(form.cash_account_id ? {} : { cash_account_id: undefined }),
+        ...(short > 0 ? { allow_negative: allowNegative } : {}),
       }),
     onSuccess: () => {
       setForm({
@@ -108,6 +111,7 @@ export default function ExpensesPage() {
         cash_account_id: '',
       })
       setItems([{ ...EMPTY_ITEM }])
+      setAllowNegative(false)
       setError(null)
       invalidate()
     },
@@ -180,6 +184,28 @@ export default function ExpensesPage() {
         )}
       </div>
 
+      {/* Qoplarda qancha bor (mijoz so'rovi, 2026-10-14) — chiqim yozishdan
+          OLDIN ko'rinadi, "bankda pul yo'q" xabaridan keyin emas. */}
+      {pots.some((pot) => pot.balance !== null) && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {pots.map((pot) => (
+            <div key={pot.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                {pot.name}
+              </p>
+              <p
+                className={cn(
+                  'num mt-0.5 text-xl font-bold',
+                  (pot.balance ?? 0) < 0 ? 'text-red-700' : 'text-slate-900',
+                )}
+              >
+                {money(pot.balance ?? 0)}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {error && (
         <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
@@ -246,25 +272,29 @@ export default function ExpensesPage() {
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
                 />
               </div>
-              {/* Qaysi puldan to'lanadi (ADR-17). Ixtiyoriy: so'rovni
-                  yozgan odam ko'pincha uni to'laydigan odam emas. */}
+              {/* Qaysi puldan to'lanadi (ADR-17) — majburiy, sukutsiz
+                  (2026-10-14), har bir qop qoldig'i bilan. */}
               <div>
                 <label htmlFor="eacct" className="mb-1 block text-xs font-medium text-slate-600">
                   {t('Qaysi puldan')}
                 </label>
-                <select
+                <PotSelect
                   id="eacct"
+                  pots={pots}
                   value={form.cash_account_id}
-                  onChange={(e) => setForm((p) => ({ ...p, cash_account_id: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
-                >
-                  <option value="">{t('Naqd kassa (sukut)')}</option>
-                  {accountsQuery.data?.items.map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => {
+                    setForm((p) => ({ ...p, cash_account_id: value }))
+                    setAllowNegative(false)
+                  }}
+                />
+              </div>
+              <div className="sm:col-span-3">
+                <ShortfallNotice
+                  pot={chosenPot}
+                  short={short}
+                  checked={allowNegative}
+                  onChange={setAllowNegative}
+                />
               </div>
               <div className="flex items-end">
                 {/* Bitta ham to'ldirilgan qator bo'lmaguncha yuborilmaydi:
@@ -272,7 +302,7 @@ export default function ExpensesPage() {
                     nol so'mlik chiqim yasardi. */}
                 <button
                   type="submit"
-                  disabled={create.isPending || itemsTotal(items) <= 0}
+                  disabled={create.isPending || draftTotal <= 0 || (short > 0 && !allowNegative)}
                   className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
                 >
                   <Plus className="h-4 w-4" /> {t('Qoʻshish')}
@@ -465,6 +495,16 @@ export default function ExpensesPage() {
                       {t('Toʻlandi')}
                     </button>
                   )}
+                  {can('expenses.update') && e.status !== 'rejected' && (
+                    <button
+                      type="button"
+                      onClick={() => setEditing(e)}
+                      className="mt-2 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      {t('Tahrirlash')}
+                    </button>
+                  )}
                 </li>
               )
             })}
@@ -555,6 +595,17 @@ export default function ExpensesPage() {
                             {t('Toʻlandi')}
                           </button>
                         )}
+                        {can('expenses.update') && e.status !== 'rejected' && (
+                          <button
+                            type="button"
+                            title={t('Tahrirlash')}
+                            aria-label={t('Tahrirlash')}
+                            onClick={() => setEditing(e)}
+                            className="ml-1 rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   )
@@ -585,6 +636,8 @@ export default function ExpensesPage() {
           </div>
         )}
       </div>
+
+      {editing && <ExpenseEditModal expense={editing} onClose={() => setEditing(null)} />}
     </div>
   )
 }

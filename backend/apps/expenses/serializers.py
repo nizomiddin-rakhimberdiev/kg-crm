@@ -74,8 +74,10 @@ class ExpenseSerializer(serializers.ModelSerializer):
 
 class ExpenseWriteSerializer(serializers.ModelSerializer):
     category_id = TenantPrimaryKeyRelatedField(model=ExpenseCategory, source="category")
-    # Qaysi puldan to'lanadi — kiritish paytidayoq (ADR-17). Ixtiyoriy:
-    # so'rovni yozgan odam buni bilmasligi mumkin, tasdiqlovchi biladi.
+    # Qaysi puldan to'lanadi — kiritish paytidayoq (ADR-17). Yaratishda
+    # MAJBURIY (mijoz so'rovi, 2026-10-14; `validate` da): sukut "naqd
+    # kassa" bo'lganda bankdan to'langan chiqim jimgina kassadan
+    # yozilardi va adashish hech qayerda ko'rinmasdi.
     cash_account_id = TenantPrimaryKeyRelatedField(
         model=CashAccount, source="cash_account", required=False, allow_null=True
     )
@@ -108,8 +110,15 @@ class ExpenseWriteSerializer(serializers.ModelSerializer):
         Ikkalasi ham kelsa, qatorlar ustun: ekranda ko'rsatilgan
         yig'indi bilan kassadan chiqqan pul ajralib qolmasligi kerak.
         """
+        if self.instance is not None:
+            # Tahrirlash (PATCH) — faqat yuborilgan maydonlar o'zgaradi.
+            return attrs
         if not attrs.get("items") and attrs.get("amount") is None:
             raise serializers.ValidationError(
                 {"amount": gettext("Summa yoki chiqim qatorlari kiritilishi kerak.")}
+            )
+        if attrs.get("cash_account") is None:
+            raise serializers.ValidationError(
+                {"cash_account_id": gettext("Chiqim qaysi puldan toʻlanayotganini tanlang.")}
             )
         return attrs

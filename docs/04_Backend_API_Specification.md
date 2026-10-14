@@ -719,16 +719,18 @@ Module: `expenses`.
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/expenses` | `expenses.read` | List (filters: `category`, `status`, `expense_date` range) |
-| POST | `/expenses` | `expenses.create` | Create expense (status `pending`) |
+| POST | `/expenses` | `expenses.create` | Create **and approve** expense (PLAN 7.2) — money leaves the pot at once. `cash_account_id` is **required** (2026-10-14) |
 | GET | `/expenses/{id}` | `expenses.read` | Detail |
-| PATCH | `/expenses/{id}` | `expenses.update` | Update pending expense |
+| PATCH | `/expenses/{id}` | `expenses.update` | Edit any non-rejected expense (2026-10-14). Changing `items`/`amount`, `expense_date` or `cash_account_id` reverses the expense's cash movement and posts a new one — append-only; `description`/`category_id` touch no money. `allow_negative` as on create (ADR-29) |
 | POST | `/expenses/{id}/approve` | `expenses.approve` | Approve (Director) |
 | POST | `/expenses/{id}/reject` | `expenses.approve` | Reject |
 | POST | `/expenses/{id}/receipt` | `expenses.update` | Upload receipt (multipart) |
 | GET | `/expense-categories` | `expenses.read` | List categories |
 | POST | `/expense-categories` | `expenses.create` | Create category |
 
-**Errors:** `422` (future date; approving a non-pending expense).
+**Errors:** `400` (create without `cash_account_id`); `422` (future date; approving a non-pending expense; editing a rejected expense; changing the lines or amount of an expense born from a stock purchase — those are corrected on the purchase; the pot cannot cover the amount and `allow_negative` was not sent).
+
+**Why the pot is required.** The create form used to default to "Naqd kassa (sukut)", so an expense paid from the bank was silently written against the till and nobody saw the mistake. The customer asked for no default and an explicit choice.
 
 ---
 

@@ -354,7 +354,6 @@ export const messages: Record<string, string> = {
   Moliya: 'Финансы',
   Muddat: 'Срок',
   Naqd: 'Наличные',
-  'Naqd kassa (sukut)': 'Наличная касса (по умолчанию)',
   'Naqd qism': 'Наличная часть',
   Navbatda: 'В очереди',
   Nomi: 'Название',
@@ -1391,4 +1390,7 @@ export const messages: Record<string, string> = {
   'Faqat oʻzi qabul qilgan toʻlovlarni koʻradi': 'Видит только принятые им платежи',
   'Jurnal va kunlik hisobotda faqat shu xodim olgan pul; oyning umumiy tushumi koʻrinmaydi.':
     'В журнале и дневном отчёте — только деньги, принятые этим сотрудником; общая выручка за месяц не показывается.',
+  '«{pot}» da {balance} bor — {short} yetmaydi.': 'На «{pot}» {balance} — не хватает {short}.',
+  'Baribir yozilsin — qoldiq manfiy boʻladi': 'Всё равно провести — остаток станет отрицательным',
+  'Chiqimni tahrirlash': 'Редактировать расход',
 }

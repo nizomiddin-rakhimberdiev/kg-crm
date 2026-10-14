@@ -112,6 +112,14 @@ class TestSummary:
         assert summary["total"] == "500000.00"  # 200k + 300k
 
 
+def _till(tenant) -> str:
+    """Naqd kassa — "Qaysi puldan" endi majburiy (2026-10-14)."""
+    from apps.cash.models import CashAccount
+
+    with organization_context(tenant.organization.id):
+        return str(CashAccount.objects.get(branch=tenant.branch, kind="cash", is_active=True).id)
+
+
 class TestEndpoints:
     def test_create_and_approve(self, tenant_a, category):
         client = tenant_a.client()
@@ -122,6 +130,7 @@ class TestEndpoints:
                 "amount": "750000",
                 "expense_date": "2026-07-20",
                 "description": "Taʼmirlash",
+                "cash_account_id": _till(tenant_a),
             },
             format="json",
         )
@@ -150,13 +159,22 @@ class TestEndpoints:
                 "amount": "100000",
                 "expense_date": "2026-07-20",
                 "status": "approved",
+                "cash_account_id": _till(tenant_a),
             },
             format="json",
         )
         assert response.status_code == 201
         assert response.json()["data"]["status"] == "approved"
 
-    def test_approved_expense_cannot_be_edited(self, tenant_a, expense):
+    def test_an_approved_single_total_expense_can_be_edited(self, tenant_a, expense):
+        """
+        Qatorsiz (eski yo'l) chiqimning summasi ham tahrirlanadi (2026-10-14).
+
+        Ilgari tasdiqlangan chiqim umuman tahrirlanmasdi; PLAN 7.2 dan
+        beri esa har bir chiqim yaratilishi bilan tasdiqlanadi, ya'ni
+        tahrirlash amalda yo'q edi. Pul izi qarshi yozuv bilan
+        to'g'rilanadi — `test_expense_edit.py`.
+        """
         client = tenant_a.client()
         client.post(reverse("v1:expense-approve", args=[expense.id]))
         response = client.patch(
@@ -164,7 +182,8 @@ class TestEndpoints:
             {"amount": "1"},
             format="json",
         )
-        assert response.status_code == 422
+        assert response.status_code == 200
+        assert response.json()["data"]["amount"] == "1.00"
 
     def test_summary_endpoint(self, tenant_a, expense):
         client = tenant_a.client()

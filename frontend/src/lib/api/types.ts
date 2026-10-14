@@ -588,6 +588,9 @@ export interface Expense {
   approved_by_name: string | null
   decided_at: string | null
   decision_note: string
+  /** Qaysi qopdan to'landi (ADR-17); `null` — hali to'lanmagan. */
+  cash_account: string | null
+  cash_account_name: string | null
   created_at: string
   /** Chiqim qatorlari (PLAN 7.5) — eski chiqimlarda bo'sh. */
   items: Array<{
