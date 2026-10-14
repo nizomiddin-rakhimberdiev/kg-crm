@@ -11,11 +11,12 @@
  * "bola yo'q" degan noto'g'ri xulosa berardi.
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Phone, Plus, Search, Trash2, Upload, Users } from 'lucide-react'
-import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
+import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/drafts'
 import { useBranchScope } from '@/app/providers/BranchProvider'
 import { DateInput } from '@/components/ui/DateInput'
 import { Pagination } from '@/components/ui/primitives'
@@ -60,6 +61,15 @@ const EMPTY_GUARDIAN_DRAFT: GuardianDraft = {
   relation: 'mother',
 }
 
+/** Saqlanmagan "Yangi bola" formasi — sessionStorage'da (lib/drafts.ts). */
+interface ChildDraft {
+  form: ChildInput
+  price: PriceValue
+  formGroupId: string
+  guardian: GuardianDraft
+  showGuardianAlt: boolean
+}
+
 const EMPTY_FORM: ChildInput = {
   first_name: '',
   last_name: '',
@@ -98,25 +108,52 @@ export default function ChildrenPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [pageSize, setPageSize] = useState(25)
   const [showImport, setShowImport] = useState(false)
-  const [showForm, setShowForm] = useState(false)
+  // Saqlanmagan "Yangi bola" qoralamasi (2026-10-14): boshqa bo'limga
+  // o'tib qaytilganda forma tozalanmaydi. Faqat YARATISH — tahrirlash
+  // har safar serverdan yangi yuklanadi. `lib/drafts.ts` dagi izoh:
+  // sessionStorage, chiqishda tozalanadi.
+  const { user } = useAuth()
+  const childDraftKey = draftKey(user?.id, 'children-create')
+  const [restored] = useState(() => readDraft<ChildDraft>(childDraftKey))
+  const [showForm, setShowForm] = useState(Boolean(restored))
   // `null` — yangi bola qo'shilyapti; obyekt — mavjudi tahrirlanyapti.
   const [editing, setEditing] = useState<Child | null>(null)
-  const [form, setForm] = useState<ChildInput>(EMPTY_FORM)
+  const [form, setForm] = useState<ChildInput>(restored?.form ?? EMPTY_FORM)
   // Guruh bolaning MAYDONI emas — u alohida biriktirish (`/children/{id}/enroll`),
   // chunki bola guruhdan guruhga ko'chadi va har ko'chish tarixda qoladi.
   // Shuning uchun u formada alohida holat sifatida yuriladi.
-  const [formGroupId, setFormGroupId] = useState('')
+  const [formGroupId, setFormGroupId] = useState(restored?.formGroupId ?? '')
   // Yaratish formasidagi IXTIYORIY vasiy bloki (PLAN 2.3). Ilgari
   // vasiyni ikkinchi ekranda qo'shish kerak edi va ko'pincha
   // unutilardi — vasiysiz bola esa SMS olmaydigan bola.
-  const [guardian, setGuardian] = useState<GuardianDraft>(EMPTY_GUARDIAN_DRAFT)
-  const [showGuardianAlt, setShowGuardianAlt] = useState(false)
+  const [guardian, setGuardian] = useState<GuardianDraft>(
+    restored?.guardian ?? EMPTY_GUARDIAN_DRAFT,
+  )
+  const [showGuardianAlt, setShowGuardianAlt] = useState(restored?.showGuardianAlt ?? false)
   // Narx — tarif yoki individual summa (PricePicker).
-  const [price, setPrice] = useState<PriceValue>({ tariffId: null, monthlyFee: null })
+  const [price, setPrice] = useState<PriceValue>(
+    restored?.price ?? { tariffId: null, monthlyFee: null },
+  )
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
 
+  // Qoralama faqat nimadir yozilganda saqlanadi — bo'sh ochilgan forma
+  // qaytib kelganda o'zi ochilib turmasin.
+  useEffect(() => {
+    if (!showForm || editing) return
+    const draft: ChildDraft = { form, price, formGroupId, guardian, showGuardianAlt }
+    const blank =
+      JSON.stringify(form) === JSON.stringify(EMPTY_FORM) &&
+      JSON.stringify(guardian) === JSON.stringify(EMPTY_GUARDIAN_DRAFT) &&
+      !formGroupId &&
+      !price.tariffId &&
+      !price.monthlyFee
+    if (blank) clearDraft(childDraftKey)
+    else writeDraft(childDraftKey, draft)
+  }, [showForm, editing, form, price, formGroupId, guardian, showGuardianAlt, childDraftKey])
+
   const closeForm = () => {
+    clearDraft(childDraftKey)
     setShowForm(false)
     setEditing(null)
     setForm(EMPTY_FORM)

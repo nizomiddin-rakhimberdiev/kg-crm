@@ -21,6 +21,7 @@ import { restoreSession, setSessionExpiredHandler } from '@/lib/api/client'
 import { applyOrganizationLocale } from '@/lib/i18n'
 import { tokenStorage } from '@/lib/auth/tokenStorage'
 import { supportSession } from '@/lib/auth/supportSession'
+import { clearAllDrafts } from '@/lib/drafts'
 import { shouldLandOnTenantAddress, tenantPath } from '@/lib/tenantAddress'
 import type { AuthSession, CurrentUser, SubscriptionState } from '@/lib/api/types'
 
@@ -57,6 +58,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Keshni to'liq tozalash MAJBURIY: umumiy kompyuterda keyingi
     // foydalanuvchi oldingisining ma'lumotini ko'rmasligi kerak.
     queryClient.clear()
+    // Saqlanmagan formalar ham — ularda bola va vasiyning shaxsiy
+    // ma'lumoti bo'lishi mumkin (lib/drafts.ts).
+    clearAllDrafts()
   }, [queryClient])
 
   const applySession = useCallback(

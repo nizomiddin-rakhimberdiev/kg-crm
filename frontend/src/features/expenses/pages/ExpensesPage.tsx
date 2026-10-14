@@ -6,11 +6,12 @@
  * rad etilgani haqidagi yozuv bo'lib qoladi.
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Pencil, Plus, Receipt, Trash2, X } from 'lucide-react'
 import { DateInput } from '@/components/ui/DateInput'
-import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
+import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/drafts'
 import { expensesApi, type ExpenseItemInput } from '@/features/expenses/api'
 import {
   EMPTY_ITEM,
@@ -47,32 +48,65 @@ const monthRange = () => {
   return [first.toISOString().slice(0, 10), last.toISOString().slice(0, 10)] as const
 }
 
+interface ExpenseFormState {
+  category_id: string
+  expense_date: string
+  description: string
+  cash_account_id: string
+}
+
 export default function ExpensesPage() {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
   const { can } = useCan()
 
   const [from, to] = monthRange()
+  // Saqlanmagan chiqim qoralamasi (2026-10-14) — boshqa bo'limga o'tib
+  // qaytilganda yozilgani yo'qolmaydi (lib/drafts.ts).
+  const { user } = useAuth()
+  const expenseDraftKey = draftKey(user?.id, 'expense-create')
+  const [restored] = useState(() =>
+    readDraft<{ form: ExpenseFormState; items: ExpenseItemInput[] }>(expenseDraftKey),
+  )
   // Chiqim endi QATORLARDAN iborat (PLAN 7.5) — summa qo'lda
   // yozilmaydi, u qatorlardan yig'iladi.
-  const [items, setItems] = useState<ExpenseItemInput[]>([{ ...EMPTY_ITEM }])
-  const [form, setForm] = useState({
-    category_id: '',
-    // Sukut — BUGUN (PLAN 4.7): chiqim deyarli har doim
-    // bugun kiritiladi, bo'sh maydon esa ortiqcha bosish.
-    expense_date: today(),
-    description: '',
-    // Qaysi puldan to'lanadi (ADR-17) — mijozning so'zi: "chiqim
-    // kiritayotgan paytda qaysi puldan ketayotgani hisobga olinishi
-    // kerak". SUKUT YO'Q (2026-10-14): tanlanmaguncha forma ketmaydi.
-    cash_account_id: '',
-  })
+  const [items, setItems] = useState<ExpenseItemInput[]>(restored?.items ?? [{ ...EMPTY_ITEM }])
+  const [form, setForm] = useState<ExpenseFormState>(
+    restored?.form ?? {
+      category_id: '',
+      // Sukut — BUGUN (PLAN 4.7): chiqim deyarli har doim
+      // bugun kiritiladi, bo'sh maydon esa ortiqcha bosish.
+      expense_date: today(),
+      description: '',
+      // Qaysi puldan to'lanadi (ADR-17) — mijozning so'zi: "chiqim
+      // kiritayotgan paytda qaysi puldan ketayotgani hisobga olinishi
+      // kerak". SUKUT YO'Q (2026-10-14): tanlanmaguncha forma ketmaydi.
+      cash_account_id: '',
+    },
+  )
+  useEffect(() => {
+    const blank =
+      !form.category_id &&
+      !form.description &&
+      !form.cash_account_id &&
+      usableItems(items).length === 0 &&
+      items.every((item) => !item.name.trim() && !item.unit_price)
+    if (blank) clearDraft(expenseDraftKey)
+    else writeDraft(expenseDraftKey, { form, items })
+  }, [form, items, expenseDraftKey])
   const { pots } = usePots(can('expenses.create'))
   const [allowNegative, setAllowNegative] = useState(false)
   const [editing, setEditing] = useState<Expense | null>(null)
   const draftTotal = itemsTotal(items)
   const short = shortfall(pots, form.cash_account_id, draftTotal)
   const chosenPot = pots.find((p) => p.id === form.cash_account_id)
+  // Qoralamadan qaytgan qop endi yo'q bo'lishi mumkin (masalan
+  // `consolidate_cash_accounts` dan keyin) — eskirgan ID yuborilmasin.
+  useEffect(() => {
+    if (form.cash_account_id && pots.length > 0 && !chosenPot) {
+      setForm((p) => ({ ...p, cash_account_id: '' }))
+    }
+  }, [form.cash_account_id, pots.length, chosenPot])
   const [newCategory, setNewCategory] = useState('')
   const [error, setError] = useState<string | null>(null)
 
@@ -104,6 +138,7 @@ export default function ExpensesPage() {
         ...(short > 0 ? { allow_negative: allowNegative } : {}),
       }),
     onSuccess: () => {
+      clearDraft(expenseDraftKey)
       setForm({
         category_id: '',
         expense_date: today(),
