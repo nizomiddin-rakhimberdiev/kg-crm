@@ -211,29 +211,42 @@ def reverse_movements_for(
     created_by: Any = None,
 ) -> list[CashMovement]:
     """
-    Hujjatning barcha harakatlarini QARSHI yozuv bilan bekor qiladi.
+    Hujjatning qopdagi izini QARSHI yozuv bilan nolga keltiradi.
 
     Yozuvni o'chirmaydi — teskari yo'nalishdagi yangisini qo'shadi.
     Shunda jurnal "pul kirdi, keyin qaytarildi" deb ko'rsatadi, "hech
-    narsa bo'lmagan" emas. Bu `reverse_payment()` dagi mantiq bilan
-    aynan bir xil (D3).
+    narsa bo'lmagan" emas (D3).
+
+    **Har bir qop bo'yicha SOF qoldiq qaytariladi, yozuvlar sanab emas.**
+    Ilgari funksiya har bir yozuvni alohida qaytarib, faqat "↩" bilan
+    boshlanganini o'tkazib yuborardi — ya'ni allaqachon qaytarilgan ASL
+    yozuvni ikkinchi chaqiruvda YANA qaytarardi. Bir martalik
+    chaqiruvchilar (to'lovni qaytarish, oylikni qayta ochish) buni hech
+    qachon sezmasdi; chiqimni ikki marta tahrirlash esa kassaga yo'q
+    pulni qo'shardi. Sof qoldiq bo'yicha ishlash funksiyani idempotent
+    qiladi: hujjatning izi allaqachon nol bo'lsa, hech narsa yozilmaydi.
     """
-    opposite = {
-        MovementDirection.IN: MovementDirection.OUT,
-        MovementDirection.OUT: MovementDirection.IN,
-    }
-    reversals: list[CashMovement] = []
+    net: dict[Any, Decimal] = {}
+    accounts: dict[Any, CashAccount] = {}
     for movement in CashMovement.objects.filter(
         source_type=source_type, source_id=source_id
     ).select_related("cash_account"):
-        # Allaqachon qaytarilganni ikkinchi marta qaytarmaymiz.
-        if movement.description.startswith("↩"):
+        sign = 1 if movement.direction == MovementDirection.IN else -1
+        net[movement.cash_account_id] = net.get(movement.cash_account_id, Decimal("0")) + (
+            sign * movement.amount
+        )
+        accounts[movement.cash_account_id] = movement.cash_account
+
+    reversals: list[CashMovement] = []
+    for account_id, amount in net.items():
+        if amount == 0:
             continue
         reversals.append(
             post_movement(
-                account=movement.cash_account,
-                direction=opposite[MovementDirection(movement.direction)],
-                amount=movement.amount,
+                account=accounts[account_id],
+                # Qopga sof kirgan bo'lsa — chiqaramiz, sof chiqqan bo'lsa — qaytaramiz.
+                direction=MovementDirection.OUT if amount > 0 else MovementDirection.IN,
+                amount=abs(amount),
                 source_type=source_type,
                 source_id=source_id,
                 description=f"↩ {description or gettext('qaytarildi')}",

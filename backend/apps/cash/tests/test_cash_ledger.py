@@ -387,3 +387,42 @@ def test_an_adjustment_without_a_reason_is_refused(tenant_a: Any):
         account = CashAccount.objects.get(branch=tenant_a.branch, kind="cash")
         with pytest.raises(BusinessRuleViolation):
             cash.adjust_balance(account=account, amount=Decimal("100"), reason="   ")
+
+
+# --- Qarshi yozuv takror chaqirilganda (2026-10-14) ---
+
+
+def test_reversing_a_reposted_document_returns_the_money_once(tenant_a: Any):
+    """
+    Hujjat qaytarilib, qayta yozilib, yana qaytarilsa — pul BIR marta qaytadi.
+
+    Ilgari funksiya faqat "↩" bilan boshlangan yozuvni oʻtkazib yuborardi,
+    allaqachon qaytarilgan ASL yozuvni esa ikkinchi chaqiruvda yana
+    qaytarardi. Bir martalik chaqiruvchilarda bu sezilmasdi; chiqimni
+    ikki marta tahrirlash esa kassaga yoʻq pulni qoʻshardi.
+    """
+    import uuid
+
+    tenant_a.fund("1000000")
+    source = uuid.uuid4()
+    with organization_context(tenant_a.organization.id):
+        till = CashAccount.objects.get(branch=tenant_a.branch, kind="cash", is_active=True)
+
+        def out(amount: str) -> None:
+            cash.post_movement(
+                account=till,
+                direction=MovementDirection.OUT,
+                amount=Decimal(amount),
+                source_type=MovementSource.EXPENSE,
+                source_id=source,
+            )
+
+        out("100000")  # chiqim
+        cash.reverse_movements_for(source_type=MovementSource.EXPENSE, source_id=source)
+        out("50000")  # tahrir: yangi summa
+        cash.reverse_movements_for(source_type=MovementSource.EXPENSE, source_id=source)
+        cash.reverse_movements_for(source_type=MovementSource.EXPENSE, source_id=source)
+
+        balance = selectors.account_balance(account_id=till.id)
+
+    assert balance == Decimal("1000000.00")
