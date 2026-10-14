@@ -1450,3 +1450,9 @@ msgstr ""
 "На «{account}» есть {balance} сум, а списывается {amount} сум — не хватает "
 "{short} сум. Если в кассу поступали деньги, сначала внесите этот приход или "
 "выберите другой счёт."
+
+msgid "Siz faqat oʻzingiz qabul qilgan toʻlovlarni koʻrasiz — bu cheklovni olib tashlay olmaysiz."
+msgstr "Вы видите только принятые вами платежи — снять это ограничение вы не можете."
+
+msgid "Siz faqat oʻzingiz qabul qilgan toʻlovlarni koʻrasiz — bu cheklovsiz rolni bera olmaysiz."
+msgstr "Вы видите только принятые вами платежи — назначить роль без этого ограничения вы не можете."

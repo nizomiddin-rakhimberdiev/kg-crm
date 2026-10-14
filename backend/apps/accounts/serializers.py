@@ -198,10 +198,26 @@ class RoleSerializer(serializers.ModelSerializer):
             "is_system",
             "branch",
             "permissions",
+            "payments_own_only",
             "can_assign",
             "can_edit",
         ]
         read_only_fields = ["id", "is_system", "permissions", "can_assign", "can_edit"]
+
+    def validate_payments_own_only(self, value: bool) -> bool:
+        # Cheklangan odam bayroqni o'chirib, rolga ko'proq ko'rishni bera
+        # olmaydi (ADR-25, ADR-30). Yoqish — torroq qilish, u har doim mumkin.
+        actor = self._actor()
+        if value is False and actor is not None and not actor.is_org_owner:
+            role = getattr(actor, "role", None)
+            if role is not None and role.payments_own_only:
+                raise serializers.ValidationError(
+                    gettext(
+                        "Siz faqat oʻzingiz qabul qilgan toʻlovlarni koʻrasiz — "
+                        "bu cheklovni olib tashlay olmaysiz."
+                    )
+                )
+        return value
 
     # Ro'yxatda (masalan 25 ta xodim, har birida ichki rol) har bir qator
     # uchun bazaga qayta bormaslik: to'plamlar butun javob davomida

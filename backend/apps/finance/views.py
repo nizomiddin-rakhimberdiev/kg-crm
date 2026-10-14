@@ -25,6 +25,7 @@ from apps.core.typing import request_user
 from apps.core.viewsets import BranchScopedMixin, TenantReadOnlyViewSet, TenantViewSet
 from apps.finance import balance, selectors, services
 from apps.finance.models import ChildLedgerEntry, Discount, Invoice, Payment, TariffPlan
+from apps.finance.scope import payments_own_only, restrict_payments
 from apps.finance.serializers import (
     DiscountSerializer,
     GenerateInvoicesSerializer,
@@ -301,6 +302,12 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
             PaymentSerializer if self.request.method in ("GET", "HEAD") else PaymentWriteSerializer
         )
 
+    def get_base_queryset(self) -> Any:
+        # Ro'yxat, bitta to'lov, kvitansiya va qaytarish — hammasi shu
+        # yerdan o'tadi, ya'ni boshqa kassirning to'lovi `404` beradi
+        # (`403` emas: u mavjudligini ham bilmasligi kerak).
+        return restrict_payments(super().get_base_queryset(), request_user(self.request))
+
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         serializer = PaymentWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -399,14 +406,18 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
         """
         user = request_user(request)
         year, month = self._period(request)
-        return Response(
-            selectors.month_board_summary(
-                organization_id=user.organization_id,
-                period_year=year,
-                period_month=month,
-                branch_id=self._branch_scope(request, user),
-            )
+        summary = selectors.month_board_summary(
+            organization_id=user.organization_id,
+            period_year=year,
+            period_month=month,
+            branch_id=self._branch_scope(request, user),
         )
+        if payments_own_only(user):
+            # Doska kassirning ishi, oyning umumiy tushumi esa yo'q
+            # (ADR-30). Kalitlar QOLADI, qiymat `null` — ekran "bu raqam
+            # sizga ko'rsatilmaydi" ni "yuklanmadi" dan ajrata oladi.
+            summary.update(charged=None, paid=None, outstanding=None)
+        return Response(summary)
 
     @action(detail=False, methods=["post"])
     def batch(self, request: Request) -> Response:
@@ -499,7 +510,9 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
             branch_id=self._branch_scope(request, user),
             method=params.get("method") or "",
             child_id=params.get("child") or None,
-            received_by=params.get("received_by") or None,
+            # Cheklangan foydalanuvchi boshqa kassirni so'rab doirani
+            # kengaytira olmaydi — filtr uning o'ziga qotiriladi.
+            received_by=(user.id if payments_own_only(user) else params.get("received_by") or None),
         )
         return Response(summary)
 
@@ -520,6 +533,7 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
                 organization_id=user.organization_id,
                 on_date=on_date,
                 branch_id=user.branch_id,
+                received_by_id=user.id if payments_own_only(user) else None,
             )
         )
 

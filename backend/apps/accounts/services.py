@@ -22,6 +22,7 @@ from apps.accounts.constants import (
     ACTIONS,
     EXTRA_ACTIONS,
     MODULES,
+    OWN_PAYMENTS_ROLES,
     PERMISSION_LABELS,
     ROLE_MATRIX,
     SYSTEM_ROLES,
@@ -91,7 +92,11 @@ def seed_system_roles(organization: Organization) -> dict[str, Role]:
             organization=organization,
             code=code,
             branch=None,
-            defaults={"name": name, "is_system": True},
+            defaults={
+                "name": name,
+                "is_system": True,
+                "payments_own_only": code in OWN_PAYMENTS_ROLES,
+            },
         )
         roles[code] = role
 
@@ -457,6 +462,12 @@ def user_payload(user: User) -> dict[str, Any]:
         ),
         "branch": ({"id": str(user.branch.id), "name": user.branch.name} if user.branch else None),
         "permissions": sorted(user.permission_codes()),
+        # Faqat o'zi qabul qilgan to'lovlarni ko'radimi (ADR-30). Backend
+        # cheklovni o'zi qo'yadi; bu yerda — ekran "Mening to'lovlarim"
+        # deb aytishi va kassir filtrini yashirishi uchun.
+        "payments_own_only": bool(
+            user.role and user.role.payments_own_only and not user.is_org_owner
+        ),
         # 2FA holati (PLAN 5.4): sozlamalar ekrani buni ko'rsatishi
         # kerak, va u ALOHIDA so'rov bilan olinmaydi — "yoqilganmi?"
         # degan savol profil bilan birga keladi. Sir yoki kodlar

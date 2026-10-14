@@ -227,6 +227,16 @@ class Role(TenantScopedModel):
         blank=True,
         help_text="NULL = tashkilotning barcha filiallariga tegishli",
     )
+    # Bu roldagi odam faqat O'ZI qabul qilgan to'lovlarni ko'radi
+    # (mijoz so'rovi, 2026-10-14; ADR-30).
+    #
+    # Ruxsat emas, BAYROQ — ataylab. "`payments.read_all` yo'q bo'lsa
+    # cheklansin" degan qoida mavjud har bir rolni (direktor, buxgalter,
+    # bog'chaning o'zi yasagan rollari) deploy paytida birdaniga
+    # ko'r qilib qo'yardi, chunki ularning hech birida yangi ruxsat yo'q
+    # — 14-invariant aynan shundan ogohlantiradi. Bayroq esa sukut
+    # bo'yicha o'chiq: kimdir uni aniq yoqmaguncha hech kim cheklanmaydi.
+    payments_own_only = models.BooleanField(default=False)
 
     class Meta:
         db_table = "role"

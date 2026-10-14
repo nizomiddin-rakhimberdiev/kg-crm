@@ -53,6 +53,22 @@ def _deny(message: str) -> PermissionDenied:
     return PermissionDenied(message)
 
 
+def _widens_payment_scope(actor: Any, role: Any) -> bool:
+    """
+    "Faqat o'z to'lovlari" bilan cheklangan odam cheklanmagan rolni
+    berib yoki tahrirlab, ko'proq ko'rishni uzata olmaydi (ADR-25, ADR-30).
+
+    Ruxsat kodlari bir xil bo'lsa ham, bayroqsiz rol ko'proq ko'radi —
+    shuning uchun bu kodlar to'plamidan alohida tekshiriladi.
+    """
+    mine = getattr(actor, "role", None)
+    return bool(
+        mine is not None
+        and mine.payments_own_only
+        and not getattr(role, "payments_own_only", False)
+    )
+
+
 def can_assign_role(
     actor: Any,
     role: Any,
@@ -68,7 +84,7 @@ def can_assign_role(
     """
     if actor.is_org_owner:
         return True
-    if role.code == OWNER_ROLE_CODE:
+    if role.code == OWNER_ROLE_CODE or _widens_payment_scope(actor, role):
         return False
     mine = actor_codes if actor_codes is not None else actor.permission_codes()
     theirs = role_codes if role_codes is not None else _role_codes(role)
@@ -85,7 +101,11 @@ def can_edit_role(
     """`assert_can_edit_role` ning istisnosiz shakli (yangi ruxsatlarsiz)."""
     if actor.is_org_owner:
         return True
-    if role.code == OWNER_ROLE_CODE or actor.role_id == role.id:
+    if (
+        role.code == OWNER_ROLE_CODE
+        or actor.role_id == role.id
+        or _widens_payment_scope(actor, role)
+    ):
         return False
     mine = actor_codes if actor_codes is not None else actor.permission_codes()
     theirs = role_codes if role_codes is not None else _role_codes(role)
@@ -98,6 +118,13 @@ def assert_can_assign_role(actor: Any, role: Any) -> None:
         return
     if role.code == OWNER_ROLE_CODE:
         raise _deny(gettext("Tashkilot egasi rolini faqat tashkilot egasi bera oladi."))
+    if _widens_payment_scope(actor, role):
+        raise _deny(
+            gettext(
+                "Siz faqat oʻzingiz qabul qilgan toʻlovlarni koʻrasiz — "
+                "bu cheklovsiz rolni bera olmaysiz."
+            )
+        )
     extra = _role_codes(role) - actor.permission_codes()
     if extra:
         raise _deny(
@@ -149,6 +176,8 @@ def assert_can_edit_role(actor: Any, role: Any, new_codes: Iterable[str] | None 
         raise _deny(gettext("Tashkilot egasi rolini faqat tashkilot egasi oʻzgartira oladi."))
     if actor.role_id == role.id:
         raise _deny(gettext("Oʻz rolingizning ruxsatlarini oʻzgartira olmaysiz."))
+    if _widens_payment_scope(actor, role):
+        raise _deny(gettext("Sizdan kengroq huquqli rolni oʻzgartira olmaysiz."))
     mine = actor.permission_codes()
     if _role_codes(role) - mine:
         raise _deny(gettext("Sizdan kengroq huquqli rolni oʻzgartira olmaysiz."))

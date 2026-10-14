@@ -1558,16 +1558,26 @@ def receipt_for(payment: Payment) -> dict[str, Any]:
 
 
 def daily_cash_summary(
-    *, organization_id: Any, on_date: date, branch_id: Any = None
+    *,
+    organization_id: Any,
+    on_date: date,
+    branch_id: Any = None,
+    received_by_id: Any = None,
 ) -> dict[str, Any]:
-    """Kassirning kunlik hisoboti — usul bo'yicha (docs/04 §9.3)."""
-    queryset = Payment.objects.filter(
-        organization_id=organization_id,
-        paid_at__date=on_date,
-        reversed_at__isnull=True,
-    )
+    """
+    Kassirning kunlik hisoboti — usul bo'yicha (docs/04 §9.3).
+
+    `received_by_id` — faqat shu xodim qabul qilgan pul (ADR-30).
+    Filial va xodim filtri qaytarilganlar yig'indisiga ham tegadi:
+    ilgari u faqat tashkilot bo'yicha sanalardi va filial kassiri
+    boshqa filialning qaytarishlarini ham ko'rardi.
+    """
+    day = Payment.objects.filter(organization_id=organization_id, paid_at__date=on_date)
     if branch_id:
-        queryset = queryset.filter(branch_id=branch_id)
+        day = day.filter(branch_id=branch_id)
+    if received_by_id:
+        day = day.filter(received_by_id=received_by_id)
+    queryset = day.filter(reversed_at__isnull=True)
 
     by_method = {
         row["method"]: str(row["total"])
@@ -1575,11 +1585,9 @@ def daily_cash_summary(
     }
     total = queryset.aggregate(total=Sum("amount"))["total"] or Decimal("0")
 
-    reversed_total = Payment.objects.filter(
-        organization_id=organization_id,
-        paid_at__date=on_date,
-        reversed_at__isnull=False,
-    ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+    reversed_total = day.filter(reversed_at__isnull=False).aggregate(total=Sum("amount"))[
+        "total"
+    ] or Decimal("0")
 
     return {
         "date": on_date.isoformat(),

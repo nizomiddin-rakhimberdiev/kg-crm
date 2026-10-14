@@ -10,7 +10,7 @@ import { useState } from 'react'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ban, FileText, Plus, Printer, Search, Trash2, Users, Wallet } from 'lucide-react'
 import { DateInput } from '@/components/ui/DateInput'
-import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { paymentsApi, tariffsApi, type BoardRow } from '@/features/payments/api'
 import { GenerateInvoicesDialog } from '@/features/payments/components/GenerateInvoicesDialog'
 import { ReceiptModal } from '@/features/payments/components/ReceiptModal'
@@ -57,6 +57,9 @@ export default function PaymentsPage() {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
   const { can } = useCan()
+  // Kassir faqat o'zi qabul qilgan pulni ko'radi (ADR-30) — jurnal shuni
+  // ochiq aytadi, aks holda "Jami" butun bog'chaning tushumiga o'xshardi.
+  const ownOnly = useAuth().user?.payments_own_only ?? false
 
   const now = new Date()
   const [tab, setTab] = useState<'board' | 'payments' | 'tariffs'>('board')
@@ -275,7 +278,7 @@ export default function PaymentsPage() {
         {(
           [
             ['board', t('Toʻlov qabul qilish')],
-            ['payments', t('Jurnal')],
+            ['payments', ownOnly ? t('Mening toʻlovlarim') : t('Jurnal')],
             ['tariffs', t('Tariflar')],
           ] as const
         ).map(([key, label]) => (
@@ -400,24 +403,28 @@ export default function PaymentsPage() {
           {/* Oyning yakuni — SERVERDAN, ya'ni sahifadan qat'i nazar
               to'g'ri. Ilgari u yuklangan 25 qatordan hisoblanar va
               har doim kam ko'rsatardi. */}
-          <div className="grid gap-3 sm:grid-cols-3">
-            {(
-              [
-                [t('Hisoblangan'), summary?.charged, 'text-slate-900'],
-                [t('Toʻlangan'), summary?.paid, 'text-emerald-600'],
-                [t('Qolgan'), summary?.outstanding, 'text-amber-600'],
-              ] as const
-            ).map(([label, value, tone]) => (
-              <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                  {label}
-                </p>
-                <p className={cn('num mt-1 text-xl font-bold', tone)}>
-                  {value === undefined ? '…' : money(value)}
-                </p>
-              </div>
-            ))}
-          </div>
+          {/* Kassirga (ADR-30) bu raqamlar kelmaydi — `null`. Bo'sh
+              plitkalar o'rniga blok umuman ko'rsatilmaydi. */}
+          {summary?.paid !== null && (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {(
+                [
+                  [t('Hisoblangan'), summary?.charged, 'text-slate-900'],
+                  [t('Toʻlangan'), summary?.paid, 'text-emerald-600'],
+                  [t('Qolgan'), summary?.outstanding, 'text-amber-600'],
+                ] as const
+              ).map(([label, value, tone]) => (
+                <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    {label}
+                  </p>
+                  <p className={cn('num mt-1 text-xl font-bold', tone)}>
+                    {value === undefined || value === null ? '…' : money(value)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
 
           {(summary?.without_invoice ?? 0) > 0 && (
             <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -599,7 +606,7 @@ export default function PaymentsPage() {
             {/* Yig'indi — filtr bilan birga o'zgaradi. */}
             <div className="ml-auto text-right">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                {t('Jami qabul qilingan')}
+                {ownOnly ? t('Siz qabul qilgansiz') : t('Jami qabul qilingan')}
               </p>
               <p className="num text-xl font-bold text-slate-900">
                 {journalSummary.data

@@ -44,6 +44,13 @@ export interface NavItem {
    * `users.read` bilan ko'rsatadi).
    */
   permission: PermissionCode | PermissionCode[]
+  /**
+   * Qo'shimcha SHART — `permission` ga QO'SHIMCHA ravishda shu ham
+   * bo'lishi kerak. Hisobotlar uchun: moliya ruxsatlaridan biri VA
+   * `reports.read`. Usiz kassir (ADR-30) hisobotlar sahifasini ko'rardi,
+   * backend esa har bir bo'limda `403` qaytarardi.
+   */
+  requires?: PermissionCode
 }
 
 /**
@@ -134,6 +141,7 @@ const allNavItems: NavItem[] = [
     section: 'finance',
     icon: BarChart3,
     permission: ['payments.read', 'expenses.read', 'payroll.read'],
+    requires: 'reports.read',
   },
   {
     label: t('Bildirishnomalar'),
@@ -224,5 +232,8 @@ export const SECTION_ORDER: NavSection[] = [
 export function landingPathFor(
   allowed: (permission: PermissionCode | PermissionCode[]) => boolean,
 ): string {
-  return navItems.find((item) => allowed(item.permission))?.to ?? '/profile'
+  return (
+    navItems.find((item) => allowed(item.permission) && (!item.requires || allowed(item.requires)))
+      ?.to ?? '/profile'
+  )
 }

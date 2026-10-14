@@ -90,6 +90,17 @@ export function RolesPanel() {
     return [...byModule.entries()].sort(([a], [b]) => a.localeCompare(b))
   }, [permissionsQuery.data])
 
+  const ownOnlyMutation = useMutation({
+    mutationFn: (value: boolean) => rolesApi.setOwnPaymentsOnly(selectedRole!.id, value),
+    onSuccess: () => {
+      setError(null)
+      void queryClient.invalidateQueries({ queryKey: queryKeys.roles(organizationId) })
+    },
+    onError: (err) => {
+      setError(err instanceof ApiError ? err.message : t('Saqlab boʻlmadi.'))
+    },
+  })
+
   const saveMutation = useMutation({
     mutationFn: (codes: string[]) => rolesApi.setPermissions(selectedRole!.id, codes),
     onSuccess: () => {
@@ -274,6 +285,30 @@ export function RolesPanel() {
                 )}
               </div>
             </div>
+
+            {/* Qator darajasidagi cheklov (ADR-30) — ruxsat emas, rolning
+                bayrog'i. Faqat to'lov qabul qila oladigan rolda ma'noli. */}
+            {draft.has('payments.read') && (
+              <label className="mb-4 flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus-visible:ring-2 focus-visible:ring-brand-500"
+                  checked={Boolean(selectedRole.payments_own_only)}
+                  disabled={!editable || ownOnlyMutation.isPending}
+                  onChange={(event) => ownOnlyMutation.mutate(event.target.checked)}
+                />
+                <span>
+                  <span className="block text-sm font-medium text-slate-900">
+                    {t('Faqat oʻzi qabul qilgan toʻlovlarni koʻradi')}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-slate-600">
+                    {t(
+                      'Jurnal va kunlik hisobotda faqat shu xodim olgan pul; oyning umumiy tushumi koʻrinmaydi.',
+                    )}
+                  </span>
+                </span>
+              </label>
+            )}
 
             {error && (
               <div

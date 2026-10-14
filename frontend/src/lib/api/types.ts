@@ -116,6 +116,12 @@ export interface CurrentUser {
    * older session payload reads as "none".
    */
   features?: string[]
+  /**
+   * Faqat oʻzi qabul qilgan toʻlovlarni koʻradimi (ADR-30). Cheklovni
+   * backend qoʻyadi; ekran shunga qarab "Mening toʻlovlarim" deydi va
+   * kassir filtrini yashiradi.
+   */
+  payments_own_only?: boolean
 }
 
 export interface SubscriptionState {
@@ -172,6 +178,8 @@ export interface Role {
   is_system: boolean
   branch: string | null
   permissions: string[]
+  /** Bu roldagi odam faqat oʻzi qabul qilgan toʻlovlarni koʻradi (ADR-30). */
+  payments_own_only?: boolean
   /**
    * Joriy foydalanuvchi bu rolni bera oladimi / tahrirlay oladimi
    * (ADR-25). Backend hisoblaydi — UI faqat tugmani yashiradi.

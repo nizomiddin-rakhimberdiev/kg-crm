@@ -161,9 +161,13 @@ export interface Receipt {
 export interface BoardSummary {
   period_year: number
   period_month: number
-  charged: string
-  paid: string
-  outstanding: string
+  /**
+   * `null` — bu foydalanuvchiga oyning umumiy pul raqamlari
+   * koʻrsatilmaydi (kassir, ADR-30). Doskaning oʻzi ishlayveradi.
+   */
+  charged: string | null
+  paid: string | null
+  outstanding: string | null
   children: number
   with_invoice: number
   without_invoice: number

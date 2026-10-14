@@ -29,7 +29,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   // Nav ruxsat bo'yicha filtrlanadi — foydalanuvchi ochib bo'lmaydigan
   // sahifani ko'rmasin. Bu UX; haqiqiy to'siq backend'da.
   const allowed = (item: NavItem) =>
-    Array.isArray(item.permission) ? canAny(...item.permission) : can(item.permission)
+    (!item.requires || can(item.requires)) &&
+    (Array.isArray(item.permission) ? canAny(...item.permission) : can(item.permission))
   const visibleItems = navItems.filter(allowed)
 
   return (

@@ -518,13 +518,14 @@ class TestEndpoints:
         assert response.status_code == 200
         assert response.json()["data"]["total"] == "0.00"
 
-    def test_cashier_reads_reports_but_cannot_export(self, tenant_a):
+    def test_reports_read_without_export_is_refused_export(self, tenant_a):
         """
-        Kassirda `reports` faqat o'qish (docs/02 §11.2).
+        Menejerda `reports` faqat o'qish (docs/02 §11.2).
 
-        O'qish kerak — kassir kunlik tushumni solishtiradi. Eksport esa
-        butun moliyaviy tarixni fayl qilib chiqarish, va bu boshqa
-        darajadagi ish: u `reports.export` talab qiladi.
+        Eksport butun moliyaviy tarixni fayl qilib chiqarish, va bu boshqa
+        darajadagi ish: u `reports.export` talab qiladi. (Ilgari bu
+        kassir bilan sinalardi; ADR-30 dan keyin kassirda hisobot umuman
+        yo'q — `apps/finance/tests/test_own_payments_scope.py`.)
         """
         from rest_framework.test import APIClient
 
@@ -533,11 +534,11 @@ class TestEndpoints:
 
         with organization_context(tenant_a.organization.id):
             cashier = User.objects.create_user(
-                email="kassir-hisobot@alfa.uz",
+                email="menejer-hisobot@alfa.uz",
                 password="Juda-Kuchli-Parol-2026",  # noqa: S106
-                full_name="Kassir",
+                full_name="Menejer",
                 organization=tenant_a.organization,
-                role=tenant_a.role("cashier"),
+                role=tenant_a.role("manager"),
                 branch=tenant_a.branch,
             )
             tokens = issue_token_pair(cashier)

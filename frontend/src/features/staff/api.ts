@@ -88,6 +88,9 @@ export const rolesApi = {
     api.post<Role>('/roles', payload),
   // Tizim rolini o'chirib bo'lmaydi — backend `422` qaytaradi (docs/03 §10.2).
   remove: (id: string) => api.delete(`/roles/${id}`),
+  // Faqat bayroq (ADR-30): rol "faqat oʻzi qabul qilgan toʻlovlarni koʻrsin".
+  setOwnPaymentsOnly: (id: string, value: boolean) =>
+    api.patch<Role>(`/roles/${id}`, { payments_own_only: value }),
   permissions: () => api.get<Permission[]>('/permissions'),
   setPermissions: (roleId: string, codes: string[]) =>
     api.request<{ permissions: string[] }>('put', `/roles/${roleId}/permissions`, {

@@ -16,6 +16,7 @@ __all__ = [
     "PERMISSION_LABELS",
     "SYSTEM_ROLES",
     "ROLE_MATRIX",
+    "OWN_PAYMENTS_ROLES",
 ]
 
 # --- Modullar (docs/01 §6.1) ---
@@ -71,6 +72,11 @@ PERMISSION_LABELS: Final[dict[str, str]] = {
 
 # --- Tizim rollari (docs/02 §11.1) ---
 OWNER_ROLE_CODE: Final[str] = "org_owner"
+
+#: Yangi tashkilotda `payments_own_only` bayrog'i bilan tug'iladigan
+#: tizim rollari (ADR-30). Mavjud tashkilotlarga bu o'z-o'zidan
+#: yetmaydi — `manage.py restrict_cashier_role` (dry-run sukut).
+OWN_PAYMENTS_ROLES: Final[frozenset[str]] = frozenset({"cashier"})
 
 SYSTEM_ROLES: Final[dict[str, str]] = {
     OWNER_ROLE_CODE: "Tashkilot egasi",
@@ -161,16 +167,22 @@ ROLE_MATRIX: Final[dict[str, dict[str, tuple[str, ...]]]] = {
         "users": _N,
         "audit": _N,
     },
+    # Kassir pul qabul qiladi va faqat O'ZI qabul qilganini ko'radi
+    # (mijoz so'rovi, 2026-10-14; ADR-30). Boshqaruv paneli, chiqimlar va
+    # hisobotlar — bog'chaning umumiy tushumi, xarajati, oyligi va sof
+    # natijasi — unga yopiq. `payments.read` qoladi: to'lov doskasi
+    # aynan shu ruxsat bilan ochiladi va u kassirning asosiy ishi.
+    # "Faqat o'ziniki" cheklovi `Role.payments_own_only` dan keladi.
     "cashier": {
-        "dashboard": _R,
+        "dashboard": _N,
         "children": _RA,
         "payments": _F,
         "debtors": _W,
         "attendance": _N,
         "payroll": _N,
         "inventory": _N,
-        "expenses": _R,
-        "reports": _R,
+        "expenses": _N,
+        "reports": _N,
         "notifications": _W,
         "settings": _N,
         "branches": _N,

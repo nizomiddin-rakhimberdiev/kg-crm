@@ -175,8 +175,8 @@ class TestEndpoints:
         assert response.status_code == 200
         assert response.json()["data"]["total"] == "500000.00"
 
-    def test_cashier_can_read_but_not_approve(self, tenant_a, expense):
-        """Kassirda `expenses` faqat oʻqish (docs/02 §11.2)."""
+    def test_manager_can_read_but_not_approve(self, tenant_a, expense):
+        """Menejer chiqimni yoza oladi, lekin tasdiqlay olmaydi (docs/02 §11.2)."""
         from rest_framework.test import APIClient
 
         from apps.accounts.authentication import issue_token_pair
@@ -186,9 +186,9 @@ class TestEndpoints:
             cashier = User.objects.create_user(
                 email="kassir@alfa.uz",
                 password="Juda-Kuchli-Parol-2026",  # noqa: S106
-                full_name="Kassir",
+                full_name="Menejer",
                 organization=tenant_a.organization,
-                role=tenant_a.role("cashier"),
+                role=tenant_a.role("manager"),
                 branch=tenant_a.branch,
             )
             tokens = issue_token_pair(cashier)

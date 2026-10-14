@@ -1389,4 +1389,9 @@ export const messages: Record<string, string> = {
     'Money held before moving to the system, or a difference found when counting. The entry is never deleted — it stays in the journal with its reason.',
   'Toʻlangan deb belgilash': 'Mark as paid',
   'Kamida {MIN_PASSWORD_LENGTH} belgi.': 'At least {MIN_PASSWORD_LENGTH} characters.',
+  'Mening toʻlovlarim': 'My payments',
+  'Siz qabul qilgansiz': 'Taken by you',
+  'Faqat oʻzi qabul qilgan toʻlovlarni koʻradi': 'Sees only the payments they took',
+  'Jurnal va kunlik hisobotda faqat shu xodim olgan pul; oyning umumiy tushumi koʻrinmaydi.':
+    'The journal and daily report show only money this person took; total takings for the month stay hidden.',
 }

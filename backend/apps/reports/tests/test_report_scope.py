@@ -53,10 +53,12 @@ def _client_for(tenant: Any, role_code: str, email: str) -> APIClient:
             ["attendance"],
             ["revenue", "profit-loss", "payroll", "debtors", "expenses"],
         ),
+        # Kassirda hisobot yo'q (ADR-30): u faqat o'zi qabul qilgan pulni
+        # to'lovlar jurnalida ko'radi.
         (
             "cashier",
-            ["revenue", "debtors", "expenses"],
-            ["payroll", "profit-loss", "attendance"],
+            [],
+            ["revenue", "debtors", "expenses", "payroll", "profit-loss", "attendance"],
         ),
         ("director", ["revenue", "profit-loss", "payroll", "attendance", "expenses"], []),
     ],
@@ -123,7 +125,7 @@ def test_dashboard_hides_money_from_attendance_manager(tenant_a: Any):
     assert MONEY_KEYS.isdisjoint(data.keys()), sorted(set(data) & MONEY_KEYS)
 
 
-@pytest.mark.parametrize("role_code", ["cashier", "director", "manager"])
+@pytest.mark.parametrize("role_code", ["director", "manager"])
 def test_dashboard_keeps_money_for_finance_roles(tenant_a: Any, role_code: str):
     client = _client_for(tenant_a, role_code, f"{role_code}-dash@alfa.uz")
     data = client.get("/api/v1/dashboard").json()["data"]
@@ -147,17 +149,27 @@ def test_every_dashboard_block_has_its_own_permission(tenant_a: Any):
     Boshqaruv paneli — boshqa joyda ko'rsa bo'ladigan ma'lumotning
     qisqartmasi, YANGI kirish yo'li emas.
 
-    Kassirda `attendance` ruxsati yo'q, shuning uchun davomat foizi ham
-    javobda bo'lmasligi kerak — ilgari u har kimga ketardi.
+    Faqat panel va bolalarni ko'radigan rolda `attendance` ruxsati yo'q,
+    shuning uchun davomat foizi ham javobda bo'lmasligi kerak — ilgari u
+    har kimga ketardi. (Avval bu kassir edi; ADR-30 dan keyin kassirda
+    panel yo'q, shuning uchun rol shu yerda yasaladi.)
     """
-    cashier = (
-        _client_for(tenant_a, "cashier", "cashier-blocks@alfa.uz")
+    from apps.accounts.models import Permission, Role, RolePermission
+
+    with organization_context(tenant_a.organization.id):
+        narrow = Role.objects.create(
+            organization=tenant_a.organization, name="Panel", code="panel_only"
+        )
+        for code in ("dashboard.read", "children.read"):
+            RolePermission.objects.create(role=narrow, permission=Permission.objects.get(code=code))
+    blocks = (
+        _client_for(tenant_a, "panel_only", "panel-blocks@alfa.uz")
         .get("/api/v1/dashboard")
         .json()["data"]
     )
-    assert "attendance_month_pct" not in cashier
-    assert "low_stock_count" not in cashier
-    assert "active_children" in cashier  # `children: R` — matritsada bor
+    assert "attendance_month_pct" not in blocks
+    assert "low_stock_count" not in blocks
+    assert "active_children" in blocks
 
     teacher = (
         _client_for(tenant_a, "attendance_manager", "att-blocks@alfa.uz")
@@ -177,7 +189,9 @@ def test_cash_balance_needs_all_three_permissions(tenant_a: Any):
     """
     assert "cash" in tenant_a.client().get("/api/v1/dashboard").json()["data"]
 
-    for role_code in ("cashier", "manager", "attendance_manager"):
+    # Menejer tushum va chiqimni biladi, oylikni emas — kassirdan avvalgi
+    # misolning o'zi (kassirda ADR-30 dan beri panel yo'q).
+    for role_code in ("manager", "attendance_manager"):
         data = (
             _client_for(tenant_a, role_code, f"{role_code}-cash@alfa.uz")
             .get("/api/v1/dashboard")
@@ -221,10 +235,10 @@ class TestBranchScope:
         self._pay(tenant_a, tenant_a.branch, "100000")
         self._pay(tenant_a, gorkiy, "900000")
 
-        cashier = _client_for(tenant_a, "cashier", "kassir-scope@alfa.uz")
-        own = cashier.get("/api/v1/reports/revenue").json()["data"]["total"]
+        reader = _client_for(tenant_a, "manager", "menejer-scope@alfa.uz")
+        own = reader.get("/api/v1/reports/revenue").json()["data"]["total"]
         # Boshqa filialni so'rasa ham — o'zinikini oladi.
-        asked = cashier.get("/api/v1/reports/revenue", {"branch": str(gorkiy.id)})
+        asked = reader.get("/api/v1/reports/revenue", {"branch": str(gorkiy.id)})
         assert own == "100000.00"
         assert asked.json()["data"]["total"] == "100000.00"
 

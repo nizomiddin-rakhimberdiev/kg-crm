@@ -52,12 +52,17 @@ export function ProtectedRoute() {
 
 export function PermissionRoute({
   permission,
+  requires,
 }: {
   /** Bitta ruxsat yoki ro'yxat — ro'yxatda istalgan bittasi yetarli. */
   permission: PermissionCode | PermissionCode[]
+  /** Qo'shimcha shart — bu ham bo'lishi kerak (`NavItem.requires`). */
+  requires?: PermissionCode
 }) {
   const allows = useAllows()
-  if (!allows(permission)) return <Navigate to={landingPathFor(allows)} replace />
+  if (!allows(permission) || (requires && !allows(requires))) {
+    return <Navigate to={landingPathFor(allows)} replace />
+  }
   return <Outlet />
 }
 

@@ -1450,3 +1450,9 @@ msgstr ""
 "«{account}» holds {balance} UZS and {amount} UZS is going out — {short} UZS "
 "short. If money came in that was never recorded, enter that income first, or "
 "choose another account."
+
+msgid "Siz faqat oʻzingiz qabul qilgan toʻlovlarni koʻrasiz — bu cheklovni olib tashlay olmaysiz."
+msgstr "You see only the payments you took yourself, so you cannot remove this restriction."
+
+msgid "Siz faqat oʻzingiz qabul qilgan toʻlovlarni koʻrasiz — bu cheklovsiz rolni bera olmaysiz."
+msgstr "You see only the payments you took yourself, so you cannot assign a role without this restriction."

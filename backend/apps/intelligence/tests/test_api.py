@@ -63,8 +63,8 @@ class TestList:
         assert data["is_open"] is True
         assert "children" not in data or "full_name" not in str(data)
 
-    def test_cashier_reads_but_cannot_close(self, tenant_a):
-        """Kassirda `dashboard.read` bor, `dashboard.update` yoʻq → amal 403."""
+    def test_manager_reads_but_cannot_close(self, tenant_a):
+        """Menejerda `dashboard.read` bor, `dashboard.update` yoʻq → amal 403."""
         from rest_framework.test import APIClient
 
         from apps.accounts.authentication import issue_token_pair
@@ -78,7 +78,7 @@ class TestList:
                 full_name="Kassir",
                 organization=tenant_a.organization,
                 branch=tenant_a.branch,
-                role=tenant_a.role("cashier"),
+                role=tenant_a.role("manager"),
             )
             client = APIClient()
             client.credentials(HTTP_AUTHORIZATION=f"Bearer {issue_token_pair(cashier)['access']}")

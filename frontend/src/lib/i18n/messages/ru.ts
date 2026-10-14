@@ -1386,4 +1386,9 @@ export const messages: Record<string, string> = {
     'Деньги, которые были на руках до перехода на систему, или расхождение при пересчёте. Запись не удаляется — она остаётся в журнале с причиной.',
   'Toʻlangan deb belgilash': 'Отметить выплаченным',
   'Kamida {MIN_PASSWORD_LENGTH} belgi.': 'Минимум {MIN_PASSWORD_LENGTH} символов.',
+  'Mening toʻlovlarim': 'Мои платежи',
+  'Siz qabul qilgansiz': 'Принято вами',
+  'Faqat oʻzi qabul qilgan toʻlovlarni koʻradi': 'Видит только принятые им платежи',
+  'Jurnal va kunlik hisobotda faqat shu xodim olgan pul; oyning umumiy tushumi koʻrinmaydi.':
+    'В журнале и дневном отчёте — только деньги, принятые этим сотрудником; общая выручка за месяц не показывается.',
 }

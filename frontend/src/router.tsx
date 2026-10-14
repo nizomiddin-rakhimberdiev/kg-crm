@@ -302,7 +302,10 @@ export const routes: RouteObject[] = [
             // Sahifa moliyaviy — `reports.read` emas, moliya ruxsati
             // (config/navigation.ts dagi izoh).
             element: (
-              <PermissionRoute permission={['payments.read', 'expenses.read', 'payroll.read']} />
+              <PermissionRoute
+                permission={['payments.read', 'expenses.read', 'payroll.read']}
+                requires="reports.read"
+              />
             ),
             children: [{ path: 'reports', element: <ReportsPage /> }],
           },
