@@ -8,7 +8,7 @@
 
 import { useState } from 'react'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Ban, FileText, Plus, Printer, Search, Trash2, Users, Wallet } from 'lucide-react'
+import { Ban, FileText, Pencil, Plus, Printer, Search, Trash2, Users, Wallet } from 'lucide-react'
 import { DateInput } from '@/components/ui/DateInput'
 import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { paymentsApi, tariffsApi, type BoardRow } from '@/features/payments/api'
@@ -183,7 +183,27 @@ export default function PaymentsPage() {
 
   const removeTariff = useMutation({
     mutationFn: tariffsApi.remove,
-    onSuccess: invalidate,
+    onSuccess: () => {
+      setError(null)
+      invalidate()
+    },
+    onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
+  })
+
+  // Tarifni tahrirlash — kartaning o'zida (2026-10-14).
+  const [editingTariff, setEditingTariff] = useState<{
+    id: string
+    name: string
+    amount: string
+  } | null>(null)
+  const updateTariff = useMutation({
+    mutationFn: (draft: { id: string; name: string; amount: string }) =>
+      tariffsApi.update(draft.id, { name: draft.name, amount: draft.amount }),
+    onSuccess: () => {
+      setEditingTariff(null)
+      setError(null)
+      invalidate()
+    },
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
@@ -758,27 +778,111 @@ export default function PaymentsPage() {
           )}
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {tariffsQuery.data?.items.map((tariff) => (
-              <div key={tariff.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-slate-900">{tariff.name}</p>
-                    <p className="mt-0.5 text-sm text-slate-600">{money(tariff.amount)}</p>
-                  </div>
-                  {can('payments.delete') && (
+            {tariffsQuery.data?.items.map((tariff) =>
+              editingTariff?.id === tariff.id ? (
+                <form
+                  key={tariff.id}
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                    updateTariff.mutate(editingTariff)
+                  }}
+                  className="space-y-2 rounded-2xl border border-brand-300 bg-white p-4"
+                >
+                  <label className="block text-xs font-medium text-slate-600">
+                    {t('Tarif nomi')}
+                    <input
+                      autoFocus
+                      required
+                      value={editingTariff.name}
+                      onChange={(e) =>
+                        setEditingTariff((p) => (p ? { ...p, name: e.target.value } : p))
+                      }
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-500"
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-slate-600">
+                    {t('Oylik summa')}
+                    <input
+                      required
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={editingTariff.amount}
+                      onChange={(e) =>
+                        setEditingTariff((p) => (p ? { ...p, amount: e.target.value } : p))
+                      }
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-500"
+                    />
+                  </label>
+                  <p className="text-xs text-slate-500">
+                    {t('Yangi summa keyingi hisob-fakturadan ishlaydi.')}
+                  </p>
+                  <div className="flex justify-end gap-2">
                     <button
                       type="button"
-                      onClick={() => removeTariff.mutate(tariff.id)}
-                      className="shrink-0 rounded-lg p-1.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
-                      title={t('Oʻchirish')}
-                      aria-label={t('Oʻchirish')}
+                      onClick={() => setEditingTariff(null)}
+                      className="rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      {t('Bekor qilish')}
                     </button>
-                  )}
+                    <button
+                      type="submit"
+                      disabled={updateTariff.isPending}
+                      className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+                    >
+                      {t('Saqlash')}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div key={tariff.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-slate-900">{tariff.name}</p>
+                      <p className="mt-0.5 text-sm text-slate-600">{money(tariff.amount)}</p>
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      {can('payments.update') && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditingTariff({
+                              id: tariff.id,
+                              name: tariff.name,
+                              amount: tariff.amount,
+                            })
+                          }
+                          className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                          title={t('Tahrirlash')}
+                          aria-label={t('Tahrirlash')}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      )}
+                      {can('payments.delete') && (
+                        <button
+                          type="button"
+                          disabled={removeTariff.isPending}
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                t('«{name}» tarifi oʻchirilsinmi?', { name: tariff.name }),
+                              )
+                            )
+                              removeTariff.mutate(tariff.id)
+                          }}
+                          className="rounded-lg p-1.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
+                          title={t('Oʻchirish')}
+                          aria-label={t('Oʻchirish')}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ),
+            )}
           </div>
 
           {tariffsQuery.data?.items.length === 0 && (

@@ -1396,4 +1396,6 @@ export const messages: Record<string, string> = {
   '«{pot}» da {balance} bor — {short} yetmaydi.': '«{pot}» holds {balance} — {short} short.',
   'Baribir yozilsin — qoldiq manfiy boʻladi': 'Record it anyway — the balance goes negative',
   'Chiqimni tahrirlash': 'Edit expense',
+  'Yangi summa keyingi hisob-fakturadan ishlaydi.': 'The new amount applies from the next invoice.',
+  '«{name}» tarifi oʻchirilsinmi?': 'Delete the «{name}» tariff?',
 }

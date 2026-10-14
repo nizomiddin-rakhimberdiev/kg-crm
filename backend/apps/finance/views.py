@@ -54,6 +54,14 @@ class TariffPlanViewSet(BranchScopedMixin, TenantViewSet):
     serializer_class = TariffPlanSerializer
     search_fields = ["name"]
 
+    def get_base_queryset(self) -> Any:
+        # O'chirilgan tarif `is_active=False` bo'lib qoladi — u eski
+        # hisob-fakturalar va bolalar tarixida kerak. Lekin ro'yxatda,
+        # tahrirlashda va qayta o'chirishda u YO'Q: ilgari ro'yxat uni
+        # ham qaytarardi va mijoz "o'chirish ishlamayapti" deb ko'rdi
+        # (2026-10-14) — tugma ishlagan, karta esa joyida qolgan edi.
+        return super().get_base_queryset().filter(is_active=True)
+
     def perform_create(self, serializer: Any) -> None:
         user = request_user(self.request)
         branch = resolve_branch(user, self.request.data.get("branch_id"))

@@ -1393,4 +1393,6 @@ export const messages: Record<string, string> = {
   '«{pot}» da {balance} bor — {short} yetmaydi.': 'На «{pot}» {balance} — не хватает {short}.',
   'Baribir yozilsin — qoldiq manfiy boʻladi': 'Всё равно провести — остаток станет отрицательным',
   'Chiqimni tahrirlash': 'Редактировать расход',
+  'Yangi summa keyingi hisob-fakturadan ishlaydi.': 'Новая сумма действует со следующего счёта.',
+  '«{name}» tarifi oʻchirilsinmi?': 'Удалить тариф «{name}»?',
 }

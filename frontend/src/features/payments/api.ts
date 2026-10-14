@@ -14,6 +14,10 @@ export const tariffsApi = {
   list: () => api.list<TariffPlan>('/tariffs'),
   create: (payload: { name: string; amount: string }) =>
     api.post<TariffPlan>('/tariffs', withBranch(payload)),
+  // Tahrirlash (2026-10-14). Yangi summa KEYINGI hisob-fakturadan
+  // ishlaydi — chiqarilgan hujjat o'zgarmaydi (Q4).
+  update: (id: string, payload: { name: string; amount: string }) =>
+    api.patch<TariffPlan>(`/tariffs/${id}`, payload),
   remove: (id: string) => api.delete(`/tariffs/${id}`),
 }
 
