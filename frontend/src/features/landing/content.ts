@@ -487,7 +487,7 @@ const uz: Copy = {
       },
       {
         title: 'Pul qayerda turibdi',
-        text: 'Kassa, bank, terminal, Payme/Click — har biri alohida hisob. Qoldiq saqlanmaydi, har doim harakatlardan hisoblanadi.',
+        text: 'Naqd kassa va bank hisobi. Terminal, oʻtkazma va Payme/Click bankka tushadi, hisobotda esa nimadan qancha kelgani alohida koʻrinadi. Qoldiq saqlanmaydi — har doim harakatlardan hisoblanadi.',
       },
       {
         title: 'Chiqim qatorlari',
@@ -503,7 +503,7 @@ const uz: Copy = {
       },
       {
         title: 'Rollar va ruxsatlar',
-        text: 'Kim nimani koʻrishini egasi belgilaydi. Hech kim oʻzida yoʻq huquqni boshqaga bera olmaydi.',
+        text: 'Kim nimani koʻrishini egasi belgilaydi. Kassir faqat oʻzi qabul qilgan pulni koʻradi — bogʻchaning umumiy tushumini emas. Hech kim oʻzida yoʻq huquqni boshqaga bera olmaydi.',
       },
       {
         title: 'Filiallar',
@@ -1054,7 +1054,7 @@ const ru: Copy = {
       },
       {
         title: 'Где лежат деньги',
-        text: 'Касса, банк, терминал, Payme/Click — каждый отдельным счётом. Остаток не хранится, а всегда считается из движений.',
+        text: 'Наличная касса и банковский счёт. Терминал, перевод и Payme/Click поступают на банк, а в отчёте видно, сколько пришло каждым способом. Остаток не хранится — он всегда считается из движений.',
       },
       {
         title: 'Строки расхода',
@@ -1070,7 +1070,7 @@ const ru: Copy = {
       },
       {
         title: 'Роли и права',
-        text: 'Кто что видит, решает владелец. И никто не может выдать прав больше, чем есть у него самого.',
+        text: 'Владелец решает, кто что видит. Кассир видит только принятые им деньги — не общую выручку садика. И никто не может выдать больше прав, чем есть у него самого.',
       },
       {
         title: 'Филиалы',
@@ -1614,7 +1614,7 @@ const en: Copy = {
       },
       {
         title: 'Where the money sits',
-        text: 'Till, bank, terminal, Payme/Click — each its own account. A balance is never stored; it is always computed from the movements.',
+        text: 'A cash till and a bank account. Terminal, transfer and Payme/Click land in the bank, while the report still shows how much came in each way. A balance is never stored; it is always computed from the movements.',
       },
       {
         title: 'Expense lines',
@@ -1630,7 +1630,7 @@ const en: Copy = {
       },
       {
         title: 'Roles and permissions',
-        text: 'The owner decides who sees what. And nobody can hand out more access than they hold themselves.',
+        text: 'The owner decides who sees what. A cashier sees only the money they took — not the kindergarten’s total takings. And nobody can hand out more access than they hold themselves.',
       },
       {
         title: 'Branches',
