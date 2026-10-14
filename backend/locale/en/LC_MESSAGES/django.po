@@ -1471,3 +1471,6 @@ msgstr "A rejected expense cannot be edited."
 
 msgid "chiqim tahrirlandi"
 msgstr "expense edited"
+
+msgid "Qaror chiqqan daʼvoning hujjatini almashtirib boʻlmaydi."
+msgstr "The document of a decided claim cannot be replaced."

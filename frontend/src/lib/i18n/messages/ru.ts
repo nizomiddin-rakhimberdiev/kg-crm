@@ -59,7 +59,6 @@ export const messages: Record<string, string> = {
   'Bekor qilingan': 'Отменён',
   'Bekor qilish': 'Отменить',
   'Bekor qilish sababi:': 'Причина отмены:',
-  Belgilanmagan: 'Не отмечено',
   'Belgilanmagan bolalar kun oxirida kelmagan deb yoziladi.':
     'Неотмеченные дети в конце дня записываются как отсутствующие.',
   Beriladi: 'К выдаче',
@@ -161,8 +160,6 @@ export const messages: Record<string, string> = {
   'Faol bolalar': 'Активные дети',
   'Faol emas': 'Неактивен',
   Faolsizlantirish: 'Деактивировать',
-  'Faqat hujjat asosida: shifokor maʼlumotnomasi yoki ota-ona arizasi. Tasdiqlangach keyingi hisob-fakturaga minus qator boʻlib tushadi.':
-    'Только по документу: справка от врача или заявление родителя. После подтверждения попадёт в следующий счёт отдельной минус-строкой.',
   'Faqat muddati oʻtganlar': 'Только просроченные',
   'Faqat tasdiqlangan chiqim hisobotga kiradi.': 'В отчёт попадают только подтверждённые расходы.',
   'Fayl tanlash': 'Выбрать файл',
@@ -186,8 +183,6 @@ export const messages: Record<string, string> = {
   'Guruh toʻlgan': 'Группа заполнена',
   'Guruh toʻlgan — yangi bola qoʻshib boʻlmaydi': 'Группа заполнена — добавить ребёнка нельзя',
   Guruhlar: 'Группы',
-  'Guruhni tanlang va butun kunni bitta bosishda saqlang.':
-    'Выберите группу и сохраните весь день одним нажатием.',
   Guruhsiz: 'Без группы',
   Hafta: 'Неделя',
   'Hafta: {periodLabel}': 'Неделя: {periodLabel}',
@@ -1402,4 +1397,10 @@ export const messages: Record<string, string> = {
   'Bolaga kim boʻladi': 'Кем приходится ребёнку',
   'Bolani olib keta oladi': 'Может забирать ребёнка',
   'Buvi/bobo': 'Бабушка/дедушка',
+  'Belgilangan bolalar': 'Отмеченные дети',
+  'Faqat hujjat asosida: shifokor maʼlumotnomasi yoki ota-ona arizasi. Qoʻshilishi bilan hisob-fakturadan ayriladi — alohida tasdiqlash shart emas.':
+    'Только по документу: справка врача или заявление родителей. Сумма вычитается из счёта сразу при добавлении — отдельное подтверждение не нужно.',
+  'Hujjat bilan qayta hisob': 'Перерасчёт по документу',
+  'Qayta hisob': 'Перерасчёт',
+  '{done} / {total} belgilandi': 'Отмечено {done} из {total}',
 }

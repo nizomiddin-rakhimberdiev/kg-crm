@@ -212,16 +212,24 @@ def attach_document(*, claim: AbsenceClaim, uploaded: Any) -> AbsenceClaim:
     """
     Spravka yoki arizani da'voga biriktiradi (PLAN 7.7).
 
-    Faqat `pending` holatda. Qaror chiqqandan keyin hujjatni
-    almashtirish — pulni harakatga keltirgan dalilni orqadan
-    o'zgartirish bo'lardi: tasdiqlovchi bir narsani ko'rib imzolagan,
-    papkada esa boshqa narsa turardi. Xato bo'lsa — rad etish va
-    yangi da'vo (viewset'dagi izoh).
+    `pending` da'voga — istalgancha (eski fayl almashtiriladi). Qaror
+    chiqqan da'voga — faqat BIRINCHI hujjat (2026-10-14).
+
+    Qaror chiqqandan keyin hujjatni ALMASHTIRISH — pulni harakatga
+    keltirgan dalilni orqadan o'zgartirish bo'lardi: tasdiqlovchi bir
+    narsani ko'rib imzolagan, papkada esa boshqa narsa turardi. Lekin
+    da'vo endi yozilishi bilan tasdiqlanadi (yozgan odam tasdiqlashga
+    haqli bo'lsa), qog'oz esa ko'pincha keyin keladi — hujjatsiz
+    tasdiqlangan da'voga birinchi faylni qo'shish almashtirish emas.
 
     Eski fayl o'chiriladi: biriktirishni ikki marta bosish diskda
     egasiz nusxa qoldirardi.
     """
-    if claim.status != ClaimStatus.PENDING:
+    if claim.status != ClaimStatus.PENDING and claim.document_file:
+        raise BusinessRuleViolation(
+            gettext("Qaror chiqqan daʼvoning hujjatini almashtirib boʻlmaydi.")
+        )
+    if claim.status == ClaimStatus.REJECTED:
         raise BusinessRuleViolation(gettext("Qaror chiqqan daʼvoga hujjat biriktirib boʻlmaydi."))
     old = claim.document_file
     if old:

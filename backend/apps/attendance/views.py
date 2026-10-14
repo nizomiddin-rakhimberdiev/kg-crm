@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import PurePosixPath
 from typing import Any
 
+from django.db import transaction
 from django.http import FileResponse, Http404
 from django.utils.translation import gettext
 from rest_framework import status
@@ -203,24 +204,41 @@ class AbsenceClaimViewSet(BranchScopedMixin, TenantViewSet):
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
         user = request_user(request)
+        # Yozgan odam tasdiqlashga ham haqli bo'lsa — ikkinchi bosish
+        # so'ralmaydi (mijoz so'rovi, 2026-10-14). Haqli bo'lmasa da'vo
+        # avvalgidek kutadi: aks holda `attendance.create` jimgina pulni
+        # harakatga keltirish huquqiga aylanardi.
+        may_approve = user.is_org_owner or "attendance.approve" in user.permission_codes()
 
-        claim = absence.create_claim(
-            child=data["child"],
-            kind=data["kind"],
-            date_from=data["date_from"],
-            date_to=data["date_to"],
-            document_no=data.get("document_no", ""),
-            note=data.get("note", ""),
-            document_file=self._checked_document(data.get("document_file")),
-            created_by=user,
-        )
+        # Bitta tranzaksiya: tasdiqlab bo'lmaydigan da'vo (masalan faqat
+        # dam olish kunlari) "kutilmoqda" bo'lib qolib ketmasin.
+        with transaction.atomic():
+            claim = absence.create_claim(
+                child=data["child"],
+                kind=data["kind"],
+                date_from=data["date_from"],
+                date_to=data["date_to"],
+                document_no=data.get("document_no", ""),
+                note=data.get("note", ""),
+                document_file=self._checked_document(data.get("document_file")),
+                created_by=user,
+            )
+            if may_approve:
+                absence.approve_claim(claim=claim, approved_by=user)
+                claim.refresh_from_db()
         audit.record(
             action="create",
             request=request._request,
             actor=user,
             entity_type="absence_claim",
             entity_id=claim.id,
-            changes={"from": str(claim.date_from), "to": str(claim.date_to), "kind": claim.kind},
+            changes={
+                "from": str(claim.date_from),
+                "to": str(claim.date_to),
+                "kind": claim.kind,
+                "status": claim.status,
+                "credit": str(claim.credit_amount) if claim.credit_amount is not None else None,
+            },
         )
         return Response(AbsenceClaimSerializer(claim).data, status=status.HTTP_201_CREATED)
 

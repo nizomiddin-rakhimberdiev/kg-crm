@@ -1471,3 +1471,6 @@ msgstr "Отклонённый расход нельзя редактирова�
 
 msgid "chiqim tahrirlandi"
 msgstr "расход изменён"
+
+msgid "Qaror chiqqan daʼvoning hujjatini almashtirib boʻlmaydi."
+msgstr "Документ решённой заявки заменить нельзя."

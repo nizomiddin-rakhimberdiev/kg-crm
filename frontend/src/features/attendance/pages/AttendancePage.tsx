@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarCheck, Check, Save, X } from 'lucide-react'
+import { CalendarCheck, Check, FileText, Save, X } from 'lucide-react'
 import { DateInput } from '@/components/ui/DateInput'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { attendanceApi } from '@/features/attendance/api'
@@ -43,7 +43,12 @@ const STATUS_BUTTONS: Array<{
 
 const today = () => new Date().toISOString().slice(0, 10)
 
-function ChildrenAttendance() {
+function ChildrenAttendance({
+  onClaim,
+}: {
+  /** "Sababli" qatoridan qayta hisobga o'tish — bola va sana bilan. */
+  onClaim: (childId: string, date: string) => void
+}) {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
   const { can } = useCan()
@@ -193,8 +198,10 @@ function ChildrenAttendance() {
     apply()
   }
 
+  const marked = rows.length - counts.unmarked
+
   return (
-    <div className="space-y-6 pb-24 sm:pb-0">
+    <div className="space-y-4 pb-24 sm:pb-0">
       {/* Sabab oynasi — "Sababli" bosilganda darhol chiqadi. Sabab
           davomat bilan BIRGA saqlanadi: alohida so'rov yuborilsa,
           tarbiyachi "Saqlash" ni bosmasdan chiqib ketganda yarim
@@ -236,17 +243,16 @@ function ChildrenAttendance() {
         </form>
       </Modal>
 
-      <p className="text-sm text-slate-500">
-        {t('Guruhni tanlang va butun kunni bitta bosishda saqlang.')}
-      </p>
-
       {error && (
         <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <div className="flex flex-wrap items-end gap-3">
+      {/* Asboblar paneli — bitta kartada (2026-10-14): guruh, sana va
+          amallar bir qatorda, ostida esa belgilash jarayoni. Ilgari
+          ular uch xil blok edi va sahifa "bardak" ko'rinardi. */}
+      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4">
         <div className="min-w-[200px]">
           <label htmlFor="group" className="mb-1 block text-xs font-medium text-slate-600">
             {t('Guruh')}
@@ -306,19 +312,39 @@ function ChildrenAttendance() {
         )}
       </div>
 
+      {/* Jarayon — to'rtta katta plitka o'rniga bitta chiziq: asosiy
+          savol "hammasi belgilandimi?", qolgani uning izohi. */}
       {rows.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {[
-            [t('Keldi'), counts.present, 'text-emerald-700'],
-            [t('Sababli'), counts.excused, 'text-ildiz-700'],
-            [t('Kelmagan'), counts.absent, 'text-red-700'],
-            [t('Belgilanmagan'), counts.unmarked, 'text-slate-500'],
-          ].map(([label, value, tone]) => (
-            <div key={String(label)} className="rounded-xl bg-white p-3 text-center shadow-sm">
-              <p className={cn('text-xl font-bold', tone as string)}>{value}</p>
-              <p className="text-xs text-slate-500">{label}</p>
-            </div>
-          ))}
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-sm font-semibold text-slate-900">
+              {t('{done} / {total} belgilandi', { done: marked, total: rows.length })}
+            </p>
+            <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
+              <span className="text-emerald-700">
+                {t('Keldi')}: <b className="num">{counts.present}</b>
+              </span>
+              <span className="text-ildiz-700">
+                {t('Sababli')}: <b className="num">{counts.excused}</b>
+              </span>
+              <span className="text-red-700">
+                {t('Kelmagan')}: <b className="num">{counts.absent}</b>
+              </span>
+            </p>
+          </div>
+          <div
+            className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"
+            role="progressbar"
+            aria-label={t('Belgilangan bolalar')}
+            aria-valuemin={0}
+            aria-valuemax={rows.length}
+            aria-valuenow={marked}
+          >
+            <div
+              className="h-full rounded-full bg-nihol-500 transition-[width]"
+              style={{ width: `${rows.length ? (marked / rows.length) * 100 : 0}%` }}
+            />
+          </div>
         </div>
       )}
 
@@ -352,13 +378,18 @@ function ChildrenAttendance() {
             return (
               <li
                 key={row.child_id}
-                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                className={cn(
+                  'flex flex-wrap items-center justify-between gap-3 border-l-4 px-4 py-3',
+                  // Belgilanmagan bola ko'zga tashlanadi — 25 qatorda
+                  // "kim qoldi?" ni qidirmaslik uchun.
+                  current ? 'border-transparent' : 'border-orik-400 bg-orik-50/40',
+                )}
               >
                 <span className="min-w-0">
                   <span
                     className={cn(
-                      'block text-sm font-medium',
-                      current ? 'text-slate-800' : 'text-slate-500',
+                      'block text-[15px] font-medium',
+                      current ? 'text-slate-900' : 'text-slate-700',
                     )}
                   >
                     {row.full_name}
@@ -380,9 +411,21 @@ function ChildrenAttendance() {
                       {reasons[row.child_id]}
                     </span>
                   )}
+                  {/* Qayta hisob — KERAK bo'lgan joyda (2026-10-14): faqat
+                      "Sababli" bolada, bola va sana tanlangan holda. */}
+                  {current === 'excused' && can('attendance.create') && (
+                    <button
+                      type="button"
+                      onClick={() => switchGuarded(() => onClaim(row.child_id, date))}
+                      className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:underline"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      {t('Hujjat bilan qayta hisob')}
+                    </button>
+                  )}
                 </span>
 
-                <div className="flex gap-1">
+                <div className="flex gap-2">
                   {STATUS_BUTTONS.map(({ value, label, icon: Icon, active }) => (
                     <button
                       key={value}
@@ -405,10 +448,12 @@ function ChildrenAttendance() {
                       aria-pressed={current === value}
                       title={label}
                       className={cn(
-                        'flex min-h-11 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium transition sm:min-h-0 sm:px-2.5',
+                        // 44 px hamma ekranda (ui-ux-pro-max: touch target) —
+                        // davomat ko'pincha planshetda belgilanadi.
+                        'flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition',
                         current === value
                           ? active
-                          : 'bg-slate-50 text-slate-500 hover:bg-slate-100',
+                          : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
                         !editable && 'cursor-not-allowed opacity-60',
                       )}
                     >
@@ -449,17 +494,28 @@ function ChildrenAttendance() {
           </button>
         </div>
       )}
+    </div>
+  )
+}
 
-      {/* Hujjatli kelmaslik — kunlik registrdan ALOHIDA blok (ADR-19).
-          Ular bir-biridan hech narsa o'qimaydi: registr "bugun kim
-          keldi", bu esa "qaysi kunlar uchun pul qaytariladi". */}
+/**
+ * Hujjatli kelmaslik va bayram kalendari — o'z bo'limida (2026-10-14).
+ *
+ * Ilgari ular "Bolalar" ostida, har kuni ko'z oldida turardi: davomat
+ * belgilaydigan tarbiyachi har safar katta formadan o'tib ketardi.
+ * Endi ular kerak bo'lganda ochiladi — yorliqdan yoki "Sababli" bola
+ * qatoridagi havoladan. Bayram kalendari ATAYLAB shu yerda: u bo'sh
+ * bo'lsa, qayta hisob bayramni ham ish kuni deb sanaydi (ADR-19).
+ */
+function ClaimsTab({ initial }: { initial?: { childId: string; date: string } }) {
+  return (
+    <div className="space-y-6">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-        <AbsenceClaimsPanel />
+        <AbsenceClaimsPanel
+          key={initial ? `${initial.childId}:${initial.date}` : 'blank'}
+          initial={initial}
+        />
       </section>
-
-      {/* Bayram kalendari qaytarish bloki BILAN YONMA-YON: u bo'sh
-          bo'lsa, qayta hisob bayramni ham ish kuni deb sanaydi va
-          bog'cha ishlamagan kun uchun pul qaytarib yuboradi. */}
       <HolidaysPanel />
     </div>
   )
@@ -473,7 +529,14 @@ function ChildrenAttendance() {
  */
 export default function AttendancePage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const tab = searchParams.get('tab') === 'staff' ? 'staff' : 'children'
+  const raw = searchParams.get('tab')
+  const tab = raw === 'staff' || raw === 'claims' ? raw : 'children'
+  const claimChild = searchParams.get('child')
+  const claimDate = searchParams.get('date')
+  const initial =
+    tab === 'claims' && claimChild && claimDate
+      ? { childId: claimChild, date: claimDate }
+      : undefined
 
   return (
     <div className="space-y-5">
@@ -483,13 +546,14 @@ export default function AttendancePage() {
           [
             ['children', t('Bolalar')],
             ['staff', t('Xodimlar')],
+            ['claims', t('Qayta hisob')],
           ] as const
         ).map(([key, label]) => (
           <button
             key={key}
             type="button"
             onClick={() =>
-              setSearchParams(key === 'staff' ? { tab: 'staff' } : {}, { replace: true })
+              setSearchParams(key === 'children' ? {} : { tab: key }, { replace: true })
             }
             className={cn(
               '-mb-px border-b-2 px-4 py-2 text-sm font-medium transition',
@@ -502,7 +566,15 @@ export default function AttendancePage() {
           </button>
         ))}
       </div>
-      {tab === 'staff' ? <StaffAttendancePanel /> : <ChildrenAttendance />}
+      {tab === 'staff' ? (
+        <StaffAttendancePanel />
+      ) : tab === 'claims' ? (
+        <ClaimsTab initial={initial} />
+      ) : (
+        <ChildrenAttendance
+          onClaim={(childId, date) => setSearchParams({ tab: 'claims', child: childId, date })}
+        />
+      )}
     </div>
   )
 }

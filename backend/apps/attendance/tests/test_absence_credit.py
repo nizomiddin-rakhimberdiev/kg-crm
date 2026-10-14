@@ -382,6 +382,7 @@ def test_a_decided_claim_keeps_the_document_it_was_approved_with(tenant_a: Any):
     child = _child(tenant_a)
     with organization_context(tenant_a.organization.id):
         claim = _claim(tenant_a, child, date(2026, 9, 7), date(2026, 9, 11))
+        absence.attach_document(claim=claim, uploaded=_pdf("birinchi.pdf"))
         absence.approve_claim(claim=claim)
 
     response = tenant_a.client().post(

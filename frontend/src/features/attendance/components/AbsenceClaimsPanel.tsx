@@ -59,12 +59,25 @@ const EMPTY = {
 const fieldClass =
   'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500'
 
-export function AbsenceClaimsPanel() {
+export function AbsenceClaimsPanel({
+  initial,
+}: {
+  /**
+   * Davomatdagi "Sababli" qatoridan kelinganda — bola va sana oldindan
+   * tanlangan bo'ladi (2026-10-14): qayta hisob kerak bo'lgan joyda
+   * paydo bo'ladi, har kuni ko'z oldida turmaydi.
+   */
+  initial?: { childId: string; date: string }
+} = {}) {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
   const { can } = useCan()
 
-  const [form, setForm] = useState(EMPTY)
+  const [form, setForm] = useState(() =>
+    initial
+      ? { ...EMPTY, child_id: initial.childId, date_from: initial.date, date_to: initial.date }
+      : EMPTY,
+  )
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -140,7 +153,7 @@ export function AbsenceClaimsPanel() {
         </h2>
         <p className="mt-0.5 text-xs text-slate-500">
           {t(
-            'Faqat hujjat asosida: shifokor maʼlumotnomasi yoki ota-ona arizasi. Tasdiqlangach keyingi hisob-fakturaga minus qator boʻlib tushadi.',
+            'Faqat hujjat asosida: shifokor maʼlumotnomasi yoki ota-ona arizasi. Qoʻshilishi bilan hisob-fakturadan ayriladi — alohida tasdiqlash shart emas.',
           )}
         </p>
       </div>
@@ -311,9 +324,11 @@ export function AbsenceClaimsPanel() {
                         <Download className="h-3.5 w-3.5" /> {t('Hujjat')}
                       </button>
                     ) : (
-                      // Qaror chiqqandan keyin biriktirib bo'lmaydi:
-                      // tasdiqlovchi ko'rgan dalil keyin almashmasligi kerak.
-                      claim.status === 'pending' &&
+                      // Hujjati yo'q da'voga birinchi fayl qo'shiladi —
+                      // tasdiqlangan bo'lsa ham (qog'oz ko'pincha keyin
+                      // keladi). Almashtirish esa yopiq: tasdiqlovchi
+                      // ko'rgan dalil keyin o'zgarmasligi kerak.
+                      claim.status !== 'rejected' &&
                       can('attendance.create') && (
                         <label className="ml-1.5 inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-slate-500 transition hover:bg-slate-100">
                           <Paperclip className="h-3.5 w-3.5" /> {t('Biriktirish')}

@@ -60,7 +60,6 @@ export const messages: Record<string, string> = {
   'Bekor qilingan': 'Cancelled',
   'Bekor qilish': 'Cancel',
   'Bekor qilish sababi:': 'Cancellation reason:',
-  Belgilanmagan: 'Not marked',
   'Belgilanmagan bolalar kun oxirida kelmagan deb yoziladi.':
     'Unmarked children are recorded as absent at the end of the day.',
   Beriladi: 'To be handed over',
@@ -162,8 +161,6 @@ export const messages: Record<string, string> = {
   'Faol bolalar': 'Active children',
   'Faol emas': 'Inactive',
   Faolsizlantirish: 'Deactivate',
-  'Faqat hujjat asosida: shifokor maʼlumotnomasi yoki ota-ona arizasi. Tasdiqlangach keyingi hisob-fakturaga minus qator boʻlib tushadi.':
-    "Only against a document: a doctor's certificate or a parent's application. Once approved it lands on the next invoice as its own minus line.",
   'Faqat muddati oʻtganlar': 'Overdue only',
   'Faqat tasdiqlangan chiqim hisobotga kiradi.':
     'Only approved expenses are included in the report.',
@@ -188,8 +185,6 @@ export const messages: Record<string, string> = {
   'Guruh toʻlgan': 'Group is full',
   'Guruh toʻlgan — yangi bola qoʻshib boʻlmaydi': 'Group is full — no more children can be added',
   Guruhlar: 'Groups',
-  'Guruhni tanlang va butun kunni bitta bosishda saqlang.':
-    'Pick a group and save the whole day in one click.',
   Guruhsiz: 'No group',
   Hafta: 'Week',
   'Hafta: {periodLabel}': 'Week: {periodLabel}',
@@ -1405,4 +1400,10 @@ export const messages: Record<string, string> = {
   'Bolaga kim boʻladi': 'Relation to the child',
   'Bolani olib keta oladi': 'May pick the child up',
   'Buvi/bobo': 'Grandparent',
+  'Belgilangan bolalar': 'Children marked',
+  'Faqat hujjat asosida: shifokor maʼlumotnomasi yoki ota-ona arizasi. Qoʻshilishi bilan hisob-fakturadan ayriladi — alohida tasdiqlash shart emas.':
+    "Only on a document: a doctor's certificate or a parent's application. The credit comes off the invoice as soon as it is added — no separate approval.",
+  'Hujjat bilan qayta hisob': 'Credit with a document',
+  'Qayta hisob': 'Absence credits',
+  '{done} / {total} belgilandi': '{done} of {total} marked',
 }
