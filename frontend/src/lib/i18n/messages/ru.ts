@@ -1402,5 +1402,4 @@ export const messages: Record<string, string> = {
   'Bolaga kim boʻladi': 'Кем приходится ребёнку',
   'Bolani olib keta oladi': 'Может забирать ребёнка',
   'Buvi/bobo': 'Бабушка/дедушка',
-  Email: 'Email',
 }
