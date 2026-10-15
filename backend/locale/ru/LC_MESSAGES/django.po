@@ -1609,3 +1609,51 @@ msgstr "Самый старый долг — {period}. Чтобы выбрать
 
 msgid "{month} oyligi yopilgan — undan ushlab boʻlmaydi. Keyingi oy sanasi bilan kiriting yoki boshqa usulni tanlang."
 msgstr "Зарплата за {month} закрыта — удержать из неё нельзя. Укажите дату следующего месяца или выберите другой способ."
+
+msgid "Bu qop uchun bugungi kun allaqachon yopilgan."
+msgstr "Для этого счёта сегодняшний день уже закрыт."
+
+msgid "Bu topshiriq allaqachon koʻrib chiqilgan."
+msgstr "Эта передача уже рассмотрена."
+
+msgid "Faqat qabul qiluvchi tasdiqlaydi."
+msgstr "Подтверждает только получатель."
+
+msgid "Oʻzingizga topshirib boʻlmaydi."
+msgstr "Нельзя передать самому себе."
+
+msgid "Qabul qilindi"
+msgstr "Принято"
+
+msgid "Qabul qiluvchi topilmadi."
+msgstr "Получатель не найден."
+
+msgid "Qoʻlingizda {held} soʻm bor — {amount} soʻm topshirib boʻlmaydi."
+msgstr "У вас на руках {held} сум — передать {amount} сум нельзя."
+
+msgid "Sanoq manfiy boʻlishi mumkin emas."
+msgstr "Пересчёт не может быть отрицательным."
+
+msgid "Sanoqda {kind} {amount} soʻm — sababini yozing."
+msgstr "При пересчёте {kind} {amount} сум — укажите причину."
+
+msgid "kamomad"
+msgstr "недостача"
+
+msgid "ortiqcha"
+msgstr "излишек"
+
+msgid "Kamomad"
+msgstr "Недостача"
+
+msgid "Ortiqcha"
+msgstr "Излишек"
+
+msgid "Sanoq farqi"
+msgstr "Разница пересчёта"
+
+msgid "Tasdiq kutilmoqda"
+msgstr "Ожидает подтверждения"
+
+msgid "Rad etildi"
+msgstr "Отклонено"

@@ -1609,3 +1609,51 @@ msgstr "The oldest debt is {period}. Write a reason to choose another month."
 
 msgid "{month} oyligi yopilgan — undan ushlab boʻlmaydi. Keyingi oy sanasi bilan kiriting yoki boshqa usulni tanlang."
 msgstr "Payroll for {month} is closed — nothing can be deducted from it. Use a date in the next month or choose another method."
+
+msgid "Bu qop uchun bugungi kun allaqachon yopilgan."
+msgstr "Today is already closed for this pot."
+
+msgid "Bu topshiriq allaqachon koʻrib chiqilgan."
+msgstr "This handover has already been decided."
+
+msgid "Faqat qabul qiluvchi tasdiqlaydi."
+msgstr "Only the receiver can confirm."
+
+msgid "Oʻzingizga topshirib boʻlmaydi."
+msgstr "You cannot hand over to yourself."
+
+msgid "Qabul qilindi"
+msgstr "Received"
+
+msgid "Qabul qiluvchi topilmadi."
+msgstr "Receiver not found."
+
+msgid "Qoʻlingizda {held} soʻm bor — {amount} soʻm topshirib boʻlmaydi."
+msgstr "You hold {held} UZS — you cannot hand over {amount} UZS."
+
+msgid "Sanoq manfiy boʻlishi mumkin emas."
+msgstr "A count cannot be negative."
+
+msgid "Sanoqda {kind} {amount} soʻm — sababini yozing."
+msgstr "The count shows a {kind} of {amount} UZS — write the reason."
+
+msgid "kamomad"
+msgstr "shortage"
+
+msgid "ortiqcha"
+msgstr "surplus"
+
+msgid "Kamomad"
+msgstr "Shortage"
+
+msgid "Ortiqcha"
+msgstr "Surplus"
+
+msgid "Sanoq farqi"
+msgstr "Count difference"
+
+msgid "Tasdiq kutilmoqda"
+msgstr "Awaiting confirmation"
+
+msgid "Rad etildi"
+msgstr "Rejected"

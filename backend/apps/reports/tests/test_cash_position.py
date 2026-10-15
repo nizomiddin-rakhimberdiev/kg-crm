@@ -197,8 +197,11 @@ def test_reversed_payments_are_not_income(tenant_a: Any):
         )
 
     position = _position(tenant_a)
+    # Tushum yalpi; terminal komissiyasi (0,2 % = 1 000) — alohida xarajat
+    # (Bosqich 12.5), shuning uchun qoldiq 499 000.
     assert position["income"] == "500000.00"
-    assert position["balance"] == "500000.00"
+    assert position["expenses"] == "1000.00"
+    assert position["balance"] == "499000.00"
     # Tushum hisoboti ham, usul kesimi ham qaytarilganni sanamaydi.
     assert revenue["total"] == "500000.00"
     assert [row["method"] for row in revenue["by_method"]] == ["terminal"]
@@ -216,5 +219,6 @@ def test_the_balance_is_broken_down_by_pot(tenant_a: Any):
     by_kind = {row["kind"]: row["balance"] for row in position["accounts"]}
     # Ikki qop (2026-10-14): terminal va oʻtkazma — ikkalasi ham bankda.
     # "Nimadan qancha keldi" esa tushum hisobotining usul kesimida qoladi.
-    assert by_kind == {"cash": "1400000.00", "bank": "400000.00"}
-    assert position["balance"] == "1800000.00"
+    # Bankdan terminal komissiyasi 200 chiqdi (Bosqich 12.5).
+    assert by_kind == {"cash": "1400000.00", "bank": "399800.00"}
+    assert position["balance"] == "1799800.00"

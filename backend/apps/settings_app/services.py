@@ -50,6 +50,15 @@ DEFAULTS: dict[str, Any] = {
     # bilan kiritiladi (Excel'dagi 2025/2027/2029 yillar shu yerdan).
     # Kelajakdagi sana esa umuman qabul qilinmaydi.
     "finance.backdate_days": 60,
+    # Bosqich 12.5: to'lov usuli komissiyasi, foizda. To'lov bankka TO'LIQ
+    # (yalpi) tushadi, komissiya esa alohida "Bank komissiyasi" chiqimi
+    # bo'lib o'zi yoziladi. `0` — komissiya yo'q.
+    # Raqam (JSON), satr emas: Sozlamalar sahifasi uni raqam maydoni bilan
+    # ko'rsatadi; hisobda `Decimal(str(...))` — 0.2 aniq 0.2 bo'ladi.
+    "commission.terminal_percent": 0.2,
+    "commission.bank_transfer_percent": 0,
+    "commission.click_percent": 1,
+    "commission.payme_percent": 1,
     # --- Bosqich 12.2: imtiyozlar (Oriental Kinderland qiymatlari) ---
     #
     # Aka-uka: bir oiladagi (umumiy vasiy) har bir bolaga shuncha so'm

@@ -1140,8 +1140,9 @@ def record_payment(
     if method == PaymentMethod.PAYROLL:
         _sync_payroll_tuition(payment)
     else:
+        pot = cash.account_for_method(branch=payment.branch, method=method)
         cash.post_movement(
-            account=cash.account_for_method(branch=payment.branch, method=method),
+            account=pot,
             direction=MovementDirection.IN,
             amount=amount,
             source_type=MovementSource.PAYMENT,
@@ -1152,6 +1153,10 @@ def record_payment(
             occurred_at=payment.paid_at,
             created_by=received_by,
         )
+        # Usul komissiyasi — bank xarajati, o'sha qopdan (Bosqich 12.5).
+        from apps.expenses.services import record_bank_commission
+
+        record_bank_commission(payment=payment, account=pot, created_by=received_by)
 
     # Taqsimot (Q1): tanlangan hujjat → FIFO → qoldiq avans. Bu ATAYLAB
     # ledger yozuvidan keyin: ledger pulning KELGANINI yozadi va u

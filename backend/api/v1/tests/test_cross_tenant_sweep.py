@@ -257,6 +257,37 @@ def _create_row(tenant: Any, basename: str) -> Any:
                 name="Direktor seyfi",
                 kind=CashAccountKind.CASH,
             )
+        if basename in {"cash-handover", "cash-count"}:
+            from apps.cash import services as cash_services
+            from apps.cash.models import CashCount, CashHandover
+
+            pot = cash_services.cash_pot(branch=tenant.branch)
+            if basename == "cash-count":
+                return CashCount.objects.create(
+                    organization=tenant.organization,
+                    branch=tenant.branch,
+                    cash_account=pot,
+                    counted_on=date(2026, 9, 30),
+                    system_balance=Decimal("0"),
+                    counted=Decimal("0"),
+                    difference=Decimal("0"),
+                )
+            receiver = User.objects.create_user(
+                email=f"qabul-{tenant.organization.slug}@test.uz",
+                password="Juda-Kuchli-Parol-2026",  # noqa: S106
+                full_name="Qabul",
+                organization=tenant.organization,
+                role=tenant.role("director"),
+                branch=tenant.branch,
+            )
+            return CashHandover.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                cash_account=pot,
+                from_user=tenant.owner,
+                to_user=receiver,
+                amount=Decimal("1000"),
+            )
         if basename == "absence-kind":
             from apps.attendance.models_absence import AbsenceKind, RefundMode
 

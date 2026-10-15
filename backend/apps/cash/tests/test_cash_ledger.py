@@ -107,7 +107,8 @@ def test_payment_lands_in_the_account_for_its_method(tenant_a: Any):
         balances = _balances(tenant_a)
 
     assert balances["cash"] == Decimal("1400000.00")
-    assert balances["bank"] == Decimal("100000.00")
+    # Yalpi 100 000 tushdi, terminal komissiyasi 200 chiqdi (Bosqich 12.5).
+    assert balances["bank"] == Decimal("99800.00")
 
 
 def test_reversal_adds_a_counter_movement_and_keeps_the_original(tenant_a: Any):

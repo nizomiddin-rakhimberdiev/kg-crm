@@ -57,6 +57,9 @@ PURGE_ORDER: tuple[str, ...] = (
     # `source_id` bilan (FK'siz) bog'langan, qopga esa `RESTRICT` bilan.
     # Shuning uchun ular hammasidan OLDIN, qop esa eng oxirida ketadi.
     "apps.cash.CashMovement",
+    # Topshirish va sanoq — qopga va odamga `RESTRICT` (Bosqich 12.5).
+    "apps.cash.CashHandover",
+    "apps.cash.CashCount",
     # Online payments (PLAN 6.1): they point at payments and invoices with
     # `RESTRICT`, so they go before both.
     "apps.online_payments.OnlineTransaction",

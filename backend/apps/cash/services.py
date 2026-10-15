@@ -20,7 +20,10 @@ from django.utils.translation import gettext
 from apps.cash.models import (
     CashAccount,
     CashAccountKind,
+    CashCount,
+    CashHandover,
     CashMovement,
+    HandoverStatus,
     MovementDirection,
     MovementSource,
 )
@@ -33,6 +36,10 @@ __all__ = [
     "post_movement",
     "reverse_movements_for",
     "transfer",
+    "hand_over",
+    "confirm_handover",
+    "reject_handover",
+    "close_day",
 ]
 
 
@@ -355,3 +362,142 @@ def adjust_balance(
         # chiqqan pulni yozish ham xuddi shunday haqiqat.
         allow_negative=True,
     )
+
+
+# --- Bosqich 12.5: naqd pul qo'ldan qo'lga va kun yopilishi ---
+
+
+def cash_pot(*, branch: Any) -> CashAccount:
+    """Filialning naqd kassasi — topshirish shu qop ichida bo'ladi."""
+    return account_for_method(branch=branch, method="cash")
+
+
+@transaction.atomic
+def hand_over(
+    *, from_user: Any, to_user: Any, amount: Decimal, note: str = "", branch: Any = None
+) -> CashHandover:
+    """
+    Naqd pulni boshqa odamga topshirish — u TASDIQLAGUNCHA pul topshiruvchida.
+
+    Qopdan pul chiqmaydi: kassa bitta, faqat ushlab turgan qo'l almashadi.
+    Hech kim qo'lida yo'q pulni topshira olmaydi (ADR-29 ruhi) — kutilayotgan
+    topshiriqlar ham hisobga olinadi, aks holda bitta pul ikki marta
+    "berilardi".
+    """
+    from apps.cash.selectors import custody_of
+
+    amount = _money(amount)
+    if amount <= 0:
+        raise BusinessRuleViolation(gettext("Summa musbat boʻlishi kerak."))
+    if to_user.pk == from_user.pk:
+        raise BusinessRuleViolation(gettext("Oʻzingizga topshirib boʻlmaydi."))
+    if to_user.organization_id != from_user.organization_id or not to_user.is_active:
+        raise BusinessRuleViolation(gettext("Qabul qiluvchi topilmadi."))
+
+    pot = cash_pot(branch=branch or from_user.branch)
+    held = custody_of(user=from_user, account=pot)
+    if amount > held:
+        raise BusinessRuleViolation(
+            gettext("Qoʻlingizda {held} soʻm bor — {amount} soʻm topshirib boʻlmaydi.").format(
+                held=_som(held), amount=_som(amount)
+            )
+        )
+    return CashHandover.objects.create(
+        organization=pot.organization,
+        branch=pot.branch,
+        cash_account=pot,
+        from_user=from_user,
+        to_user=to_user,
+        amount=amount,
+        note=note.strip()[:255],
+    )
+
+
+def _decide(handover: CashHandover, user: Any, status: str, note: str) -> CashHandover:
+    if handover.to_user_id != user.pk:
+        from rest_framework.exceptions import PermissionDenied
+
+        # Tenant ichida — mavjudligi sir emas, lekin tasdiq faqat qabul
+        # qiluvchining so'zi. Egasi ham uning o'rniga "oldim" demaydi.
+        raise PermissionDenied(gettext("Faqat qabul qiluvchi tasdiqlaydi."))
+    if handover.status != HandoverStatus.PENDING:
+        raise BusinessRuleViolation(gettext("Bu topshiriq allaqachon koʻrib chiqilgan."))
+    handover.status = status
+    handover.decided_at = timezone.now()
+    handover.decision_note = note.strip()[:255]
+    handover.save(update_fields=["status", "decided_at", "decision_note", "updated_at"])
+    return handover
+
+
+@transaction.atomic
+def confirm_handover(*, handover: CashHandover, user: Any) -> CashHandover:
+    """Qabul qiluvchi "oldim" deydi — pul endi uning qo'lida hisoblanadi."""
+    locked = CashHandover.objects.select_for_update().get(pk=handover.pk)
+    return _decide(locked, user, HandoverStatus.CONFIRMED, "")
+
+
+@transaction.atomic
+def reject_handover(*, handover: CashHandover, user: Any, reason: str) -> CashHandover:
+    """Rad etish — SABAB bilan: "sanoqda 450 000 chiqdi"."""
+    if not reason.strip():
+        raise BusinessRuleViolation(gettext("Sabab yozilishi shart."))
+    locked = CashHandover.objects.select_for_update().get(pk=handover.pk)
+    return _decide(locked, user, HandoverStatus.REJECTED, reason)
+
+
+@transaction.atomic
+def close_day(
+    *, account: CashAccount, counted: Decimal, reason: str = "", created_by: Any = None
+) -> CashCount:
+    """
+    Kun yopilishi: jismoniy sanoq tizimdagi qoldiq bilan solishtiriladi.
+
+    Farq bo'lsa — SABABI bilan `count` harakati, va qop sanoqqa tenglashadi.
+    Excel'dagi "tenglashtiruvchi qator"dan farqi shu: farq yashirinmaydi,
+    u kim sanagani va nega deb yozilgan alohida yozuv.
+    """
+    from apps.cash.selectors import account_balance
+
+    counted = _money(counted)
+    if counted < 0:
+        raise BusinessRuleViolation(gettext("Sanoq manfiy boʻlishi mumkin emas."))
+    today = timezone.localdate()
+    if CashCount.objects.filter(cash_account=account, counted_on=today).exists():
+        raise BusinessRuleViolation(gettext("Bu qop uchun bugungi kun allaqachon yopilgan."))
+
+    system = _money(account_balance(account_id=account.id))
+    difference = counted - system
+    reason = reason.strip()[:255]
+    if difference != 0 and not reason:
+        raise BusinessRuleViolation(
+            gettext("Sanoqda {kind} {amount} soʻm — sababini yozing.").format(
+                kind=gettext("kamomad") if difference < 0 else gettext("ortiqcha"),
+                amount=_som(abs(difference)),
+            )
+        )
+
+    count = CashCount.objects.create(
+        organization=account.organization,
+        branch=account.branch,
+        cash_account=account,
+        counted_on=today,
+        system_balance=system,
+        counted=counted,
+        difference=difference,
+        reason=reason,
+        created_by=created_by,
+    )
+    if difference != 0:
+        post_movement(
+            account=account,
+            direction=MovementDirection.IN if difference > 0 else MovementDirection.OUT,
+            amount=abs(difference),
+            source_type=MovementSource.COUNT,
+            source_id=count.id,
+            description=(
+                f"{gettext('Kamomad') if difference < 0 else gettext('Ortiqcha')}: {reason}"
+            )[:255],
+            created_by=created_by,
+            allow_negative=True,
+        )
+    return count

@@ -16,7 +16,7 @@ from apps.attendance.views import (
 from apps.attendance.views_staff import StaffAttendanceViewSet
 from apps.audit.views import AuditLogViewSet
 from apps.branches.views import BranchViewSet
-from apps.cash.views import CashAccountViewSet
+from apps.cash.views import CashAccountViewSet, CashCountViewSet, CashHandoverViewSet
 from apps.children.views import ChildViewSet, GroupViewSet, GuardianViewSet
 from apps.contracts.views import ContractTemplateViewSet, ContractViewSet
 from apps.core import features
@@ -65,6 +65,8 @@ if features.enabled(features.KITCHEN):
     router.register("menu-days", MenuDayViewSet, basename="menu-day")
 router.register("groups", GroupViewSet, basename="group")
 router.register("cash-accounts", CashAccountViewSet, basename="cash-account")
+router.register("cash-handovers", CashHandoverViewSet, basename="cash-handover")
+router.register("cash-counts", CashCountViewSet, basename="cash-count")
 router.register("attendance", AttendanceViewSet, basename="attendance")
 router.register("staff-attendance", StaffAttendanceViewSet, basename="staff-attendance")
 # Kelmagan kunlar uchun qaytarish va bayram kalendari (ADR-19).

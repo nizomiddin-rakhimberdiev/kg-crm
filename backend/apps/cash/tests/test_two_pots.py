@@ -95,7 +95,10 @@ def test_non_cash_payment_lands_in_the_bank(tenant_a: Any, method: str):
         balances = _balances(tenant_a)
         payment = Payment.objects.get(child=child)
 
-    assert balances == {"cash": Decimal("0"), "bank": Decimal("500000.00")}
+    # Terminal 0,2 % komissiyasi bank xarajati bo'lib o'sha qopdan
+    # chiqadi (Bosqich 12.5); o'tkazma va eski `online` da komissiya yo'q.
+    commission = {"terminal": Decimal("1000"), "bank_transfer": 0, "online": 0}[method]
+    assert balances == {"cash": Decimal("0"), "bank": Decimal("500000.00") - commission}
     # Usul yoʻqolmaydi — hisobot "nimadan qancha keldi" ni shundan oladi.
     assert payment.method == method
 
@@ -128,7 +131,8 @@ def test_terminal_money_can_be_spent_from_the_bank(tenant_a: Any):
         )
         balances = _balances(tenant_a)
 
-    assert balances["bank"] == Decimal("490909.00")
+    # 1 440 909 − 950 000 − terminal komissiyasi 2 882 (0,2 %, Bosqich 12.5).
+    assert balances["bank"] == Decimal("488027.00")
 
 
 # --- Mavjud maʼlumot: birlashtirish buyrugʻi ---

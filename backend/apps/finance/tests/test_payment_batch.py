@@ -77,7 +77,8 @@ def test_two_methods_settle_one_invoice(tenant_a: Any):
 
     # Terminal puli bankka tushadi; usul toʻlovning oʻzida qoladi.
     assert balances["cash"] == Decimal("1400000.00")
-    assert balances["bank"] == Decimal("100000.00")
+    # Yalpi 100 000, minus terminal komissiyasi 200 (Bosqich 12.5).
+    assert balances["bank"] == Decimal("99800.00")
     assert sorted(p.method for p in payments) == ["cash", "terminal"]
 
 

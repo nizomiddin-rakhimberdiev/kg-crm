@@ -15,6 +15,7 @@ import {
   CreditCard as CreditCardIcon,
   Building2,
   Users2,
+  Vault,
   type LucideIcon,
 } from 'lucide-react'
 import type { PermissionCode } from '@/lib/rbac/useCan'
@@ -95,6 +96,15 @@ const allNavItems: NavItem[] = [
     section: 'finance',
     icon: AlertTriangle,
     permission: 'debtors.read',
+  },
+  // Kassa (Bosqich 12.5): qoplar, kimning qoʻlida qancha, topshirish,
+  // oʻtkazma va kunni yopish. Kassir ham koʻradi — faqat oʻzinikini.
+  {
+    label: t('Kassa'),
+    to: '/cash',
+    section: 'finance',
+    icon: Vault,
+    permission: 'payments.read',
   },
   {
     label: t('Davomat'),

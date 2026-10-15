@@ -78,6 +78,8 @@ OPERATIONAL_TABLES: tuple[str, ...] = (
     "branch",
     "cash_account",
     "cash_movement",
+    "cash_handover",
+    "cash_count",
     "child",
     "child_guardian",
     "child_pause",

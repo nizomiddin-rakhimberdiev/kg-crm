@@ -2000,3 +2000,20 @@ Testlar 5, 8.
   marta tushgan) — mavjud xatti-harakat, endi test bilan qotirildi.
 * ADR-34. Toʻliq backend: 1 746 test.
 
+### 12.5 Kassa va bank
+
+* **Komissiya** — usul boʻyicha sozlama (terminal 0,2 %, Click/Payme 1 %,
+  oʻtkazma 0). Toʻlov bankka yalpi tushadi, komissiya "Bank komissiyasi"
+  chiqimi boʻlib oʻzi yoziladi (13-test: 10 000 000 → 20 000). Buzuq
+  sozlama toʻlovni toʻxtatmaydi. Qaytarilgan toʻlovda komissiya qoladi.
+* **Oʻtkazma** — `POST /cash-accounts/transfer`: inkassa 40 mln — kassa
+  −40, bank +40, tushum va xarajat oʻzgarmaydi (14-test).
+* **Naqd pulni topshirish** — kassir → masʼul; faqat qabul qiluvchi
+  tasdiqlaydi yoki sababi bilan rad etadi; qoʻlidagidan koʻp topshirib
+  boʻlmaydi. "Kimning qoʻlida qancha" — harakatlardan hisoblanadi.
+* **Kun yopilishi** — sanoq tizim bilan; farq sababi bilan `count`
+  harakati boʻladi (bazada `CHECK`). Kuniga bitta yopish.
+* Yangi **Kassa** sahifasi (`/cash`): qoplar (manfiy — ogohlantirish),
+  kimda qancha, tasdiq kutayotgan topshiriqlar, oʻtkazma, kunni yopish.
+* ADR-35; RLS +2 jadval (`cash_handover`, `cash_count`). Backend 1 780 test.
+

@@ -86,6 +86,16 @@ class Expense(BranchScopedModel):
         null=True,
         blank=True,
     )
+    # Bank komissiyasi shu to'lovdan (Bosqich 12.5) — bitta to'lovga bitta
+    # komissiya. `SET_NULL`: chiqim to'lovning bolasi emas, u bankning
+    # alohida hujjati; to'lov qaytarilsa ham bank komissiyani qaytarmaydi.
+    payment = models.ForeignKey(
+        "finance.Payment",
+        on_delete=models.SET_NULL,
+        related_name="commissions",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         db_table = "expense"

@@ -20,7 +20,10 @@ from apps.core.models import BranchScopedModel
 __all__ = [
     "CashAccount",
     "CashAccountKind",
+    "CashCount",
+    "CashHandover",
     "CashMovement",
+    "HandoverStatus",
     "MovementDirection",
     "MovementSource",
 ]
@@ -89,6 +92,9 @@ class MovementSource(models.TextChoices):
     TRANSFER = "transfer", gettext_lazy("Qoplar orasida oʻtkazma")
     OPENING = "opening", gettext_lazy("Boshlangʻich qoldiq")
     MANUAL = "manual", gettext_lazy("Qoʻlda tuzatish")
+    # Kun yopilishidagi sanoq farqi — kamomad yoki ortiqcha, SABABI bilan
+    # (Bosqich 12.5). "Tenglashtiruvchi qator" emas: manbasi `cash_count`.
+    COUNT = "count", gettext_lazy("Sanoq farqi")
 
 
 class CashMovement(BranchScopedModel):
@@ -143,3 +149,102 @@ class CashMovement(BranchScopedModel):
     def __str__(self) -> str:
         sign = "+" if self.direction == MovementDirection.IN else "−"
         return f"{sign}{self.amount} {self.cash_account_id}"
+
+
+class HandoverStatus(models.TextChoices):
+    PENDING = "pending", gettext_lazy("Tasdiq kutilmoqda")
+    CONFIRMED = "confirmed", gettext_lazy("Qabul qilindi")
+    REJECTED = "rejected", gettext_lazy("Rad etildi")
+
+
+class CashHandover(BranchScopedModel):
+    """
+    Naqd pulni qo'ldan qo'lga topshirish — kassir → mas'ul shaxs (Bosqich 12.5).
+
+    Qopdagi pul O'ZGARMAYDI: u bitta "Naqd kassa"da turibdi, faqat uni
+    ushlab turgan odam almashadi. Shuning uchun bu `cash_movement` emas,
+    alohida yozuv. Qabul qiluvchi tasdiqlamaguncha pul topshiruvchida
+    hisoblanadi — "berdim" va "oldim" ikki odamning ikki so'zi.
+    """
+
+    cash_account = models.ForeignKey(
+        "cash.CashAccount", on_delete=models.RESTRICT, related_name="handovers"
+    )
+    from_user = models.ForeignKey(
+        "accounts.User", on_delete=models.RESTRICT, related_name="cash_handed_over"
+    )
+    to_user = models.ForeignKey(
+        "accounts.User", on_delete=models.RESTRICT, related_name="cash_received"
+    )
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    note = models.CharField(max_length=255, blank=True)
+    status = models.CharField(
+        max_length=10, choices=HandoverStatus.choices, default=HandoverStatus.PENDING
+    )
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decision_note = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = "cash_handover"
+        ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0), name="ck_cash_handover_amount_positive"
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(from_user=models.F("to_user")),
+                name="ck_cash_handover_two_people",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.amount}: {self.from_user_id} → {self.to_user_id}"
+
+
+class CashCount(BranchScopedModel):
+    """
+    Kun yopilishi — jismoniy sanoq tizimdagi qoldiq bilan (Bosqich 12.5).
+
+    Farq bo'lsa, u SABABI bilan `count` harakati bo'lib yoziladi va qop
+    sanoqqa tenglashadi. Excel'dagi "tenglashtiruvchi qator"dan farqi:
+    kim, qachon, qancha kam yoki ortiq sanagani va nega — hammasi shu
+    yerda qoladi.
+    """
+
+    cash_account = models.ForeignKey(
+        "cash.CashAccount", on_delete=models.RESTRICT, related_name="counts"
+    )
+    counted_on = models.DateField()
+    system_balance = models.DecimalField(max_digits=14, decimal_places=2)
+    counted = models.DecimalField(max_digits=14, decimal_places=2)
+    # counted − system_balance: manfiy — kamomad, musbat — ortiqcha.
+    difference = models.DecimalField(max_digits=14, decimal_places=2)
+    reason = models.CharField(max_length=255, blank=True)
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="cash_counts",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "cash_count"
+        ordering = ["-counted_on", "-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["cash_account", "counted_on"], name="uq_cash_count_account_day"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(counted__gte=0), name="ck_cash_count_counted"
+            ),
+            # Farq bor — sabab bor. Bazada ham, chunki "tenglashtiruvchi
+            # qator" aynan sababsiz farq edi.
+            models.CheckConstraint(
+                condition=models.Q(difference=0) | ~models.Q(reason=""),
+                name="ck_cash_count_reason",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.counted_on}: {self.counted} ({self.difference:+})"

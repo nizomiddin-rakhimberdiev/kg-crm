@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, time
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from typing import Any
 
 from django.db import transaction
@@ -14,7 +14,7 @@ from django.utils.translation import gettext
 from apps.cash import services as cash
 from apps.cash.models import MovementDirection, MovementSource
 from apps.core.exceptions import BusinessRuleViolation
-from apps.expenses.models import Expense, ExpenseItem, ExpenseStatus
+from apps.expenses.models import Expense, ExpenseCategory, ExpenseItem, ExpenseStatus
 
 __all__ = [
     "update_expense",
@@ -403,3 +403,84 @@ def expense_summary(
             {"category": row["category__name"], "total": str(row["total"])} for row in rows
         ],
     }
+
+
+# --- Bank komissiyasi (Bosqich 12.5, brif §5) ---
+
+#: Komissiya chiqimlari shu toifaga tushadi — har filialda bittadan.
+COMMISSION_CATEGORY = "Bank komissiyasi"
+
+
+def commission_percent(*, branch: Any, method: str) -> Decimal:
+    """Usul komissiyasi foizi — filial sozlamasi (`commission.<usul>_percent`)."""
+    from apps.settings_app.services import DEFAULTS, get_setting
+
+    key = f"commission.{method}_percent"
+    if key not in DEFAULTS:
+        return Decimal("0")
+    # Buzuq sozlama (masalan "0,2") to'lov qabulini YIQITMASLIGI kerak:
+    # pul kassirning qo'lida, komissiya esa keyin tuzatiladigan narsa.
+    try:
+        percent = Decimal(str(get_setting(key=key, branch=branch) or "0").replace(",", "."))
+    except InvalidOperation:
+        return Decimal("0")
+    return percent if percent > 0 else Decimal("0")
+
+
+@transaction.atomic
+def record_bank_commission(*, payment: Any, account: Any, created_by: Any = None) -> Any:
+    """
+    To'lov usulining komissiyasini bank xarajati qilib yozadi.
+
+    To'lov bankka YALPI tushadi (10 000 000), komissiya esa alohida
+    chiqim (20 000) — shunda "terminal orqali qancha keldi?" va "bank
+    qancha oldi?" ikki alohida savolga ikki to'g'ri javob bor. Chiqim
+    darhol `paid`: bank uni so'ramaydi, o'zi ushlab qoladi.
+
+    To'lov qaytarilsa komissiya QOLADI — bank uni qaytarmaydi.
+    """
+    percent = commission_percent(branch=payment.branch, method=payment.method)
+    amount = (payment.amount * percent / Decimal("100")).quantize(
+        Decimal("1"), rounding=ROUND_HALF_UP
+    )
+    if amount <= 0:
+        return None
+
+    category = (
+        ExpenseCategory.objects.filter(branch=payment.branch, name=COMMISSION_CATEGORY)
+        .order_by("-is_active")
+        .first()
+    )
+    if category is None:
+        category = ExpenseCategory.objects.create(
+            organization=payment.organization, branch=payment.branch, name=COMMISSION_CATEGORY
+        )
+
+    paid_on = timezone.localtime(payment.paid_at).date()
+    label = payment.get_method_display()
+    expense = Expense.objects.create(
+        organization=payment.organization,
+        branch=payment.branch,
+        category=category,
+        amount=amount,
+        expense_date=paid_on,
+        description=f"{label} {percent.normalize()}% — {payment.child.full_name}"[:255],
+        status=ExpenseStatus.PAID,
+        approved_by=created_by,
+        decided_at=timezone.now(),
+        cash_account=account,
+        payment=payment,
+    )
+    cash.post_movement(
+        account=account,
+        direction=MovementDirection.OUT,
+        amount=amount,
+        source_type=MovementSource.EXPENSE,
+        source_id=expense.id,
+        description=f"{COMMISSION_CATEGORY}: {expense.description}"[:255],
+        occurred_at=payment.paid_at,
+        created_by=created_by,
+        # Pul shu qopga hozirgina tushdi — komissiya undan kichik.
+        allow_negative=True,
+    )
+    return expense

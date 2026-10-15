@@ -829,8 +829,8 @@ Audit (bor / qisman / yoʻq per requirement) is in the conversation of
 | 12.1 ✅ (b165bc5) | Calendar, day rate, rounding, arrival/departure, trial, pause — and the single calculator | 1, 2, 3, 4, 10 |
 | 12.2 ✅ (9e0cc7d) | Typed benefits with mandatory reason + history; families via shared guardian; sibling rule; benefits report; migrate benefit-tariffs (dry-run) | 5, 8 (price) |
 | 12.3 ✅ (f30f9fc) | Configurable absence kinds (full rate / fixed per day / none, minimum days); certificate 1–2 days → food money; formula + "Nega?" on invoice lines; write-off instead of zeroing debt; month-by-month debt on the child card | 6, 7, 8, 9, 16 |
-| 12.4 ✅ | Payment date rules; payer guardian; Click and Payme separate; payroll deduction; reason for manual allocation | 11, 12 |
-| 12.5 | Per-method commission as bank expense; transfer endpoint + screen; cash handover chain with confirmation; day close (count vs system, shortage/surplus with reason) | 13, 14 |
+| 12.4 ✅ (35587f2) | Payment date rules; payer guardian; Click and Payme separate; payroll deduction; reason for manual allocation | 11, 12 |
+| 12.5 ✅ | Per-method commission as bank expense; transfer endpoint + screen; cash handover chain with confirmation; day close (count vs system, shortage/surplus with reason) | 13, 14 |
 | 12.6 | Monthly summary; "cash received" vs "collected for the month"; reconciliation check; month close and lock; Excel in the old "oylik toʻlov jadvali" layout | 15 |
 | 12.7 | Import: benefit column, transliteration-aware duplicates with confirmation, families by guardian phone, sibling price mismatch warning | — |
 

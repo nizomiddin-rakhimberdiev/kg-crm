@@ -32,6 +32,8 @@ interface SettingMeta {
   /** Raqam chegaralari. Ilgari hamma raqam 1–31 ga qotirilgan edi — bu `due_day` uchun edi. */
   min?: number
   max?: number
+  /** Kasr qadami — komissiya foizi uchun (0,2 %). */
+  step?: number
 }
 
 /**
@@ -151,6 +153,44 @@ const META: Record<string, SettingMeta> = {
       'Hisoblangan summa shu qadamgacha yaxlitlanadi: 1 161 905 → 1 162 000. Kunlik stavka emas, natija.',
     ),
   },
+  'finance.backdate_days': {
+    min: 0,
+    max: 3650,
+    label: t('Eski sana chegarasi (kun)'),
+    help: t(
+      'Shundan eski sana bilan toʻlov faqat sabab bilan kiritiladi. Kelajakdagi sana hech qachon.',
+    ),
+  },
+  'commission.terminal_percent': {
+    min: 0,
+    max: 10,
+    step: 0.01,
+    label: t('Terminal komissiyasi (%)'),
+    help: t(
+      'Toʻlov bankka toʻliq tushadi, komissiya “Bank komissiyasi” chiqimi boʻlib oʻzi yoziladi.',
+    ),
+  },
+  'commission.bank_transfer_percent': {
+    min: 0,
+    max: 10,
+    step: 0.01,
+    label: t('Oʻtkazma komissiyasi (%)'),
+    help: t('Odatda 0 — bank oʻtkazma uchun bogʻchadan olmaydi.'),
+  },
+  'commission.click_percent': {
+    min: 0,
+    max: 10,
+    step: 0.01,
+    label: t('Click komissiyasi (%)'),
+    help: t('Click oʻz ulushini ushlab qoladi — u bank xarajati boʻlib koʻrinadi.'),
+  },
+  'commission.payme_percent': {
+    min: 0,
+    max: 10,
+    step: 0.01,
+    label: t('Payme komissiyasi (%)'),
+    help: t('Payme oʻz ulushini ushlab qoladi — u bank xarajati boʻlib koʻrinadi.'),
+  },
   'finance.first_invoice_grace_days': {
     label: t('Birinchi faktura muddati (kun)'),
     help: t(
@@ -223,6 +263,7 @@ const META: Record<string, SettingMeta> = {
 const GROUPS: Array<[string, string]> = [
   ['general', t('Umumiy')],
   ['finance', t('Moliya')],
+  ['commission', t('Toʻlov komissiyasi')],
   ['notifications', t('Bildirishnomalar')],
   ['attendance', t('Davomat')],
   ['contracts', t('Shartnoma rekvizitlari')],
@@ -345,6 +386,7 @@ export default function SettingsPage() {
           type="number"
           min={meta?.min ?? 0}
           max={meta?.max}
+          step={meta?.step}
           defaultValue={value}
           disabled={!editable}
           aria-label={META[key]?.label ?? key}

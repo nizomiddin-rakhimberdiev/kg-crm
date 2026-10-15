@@ -506,6 +506,12 @@ Module: `finance` (Payments module UI). The **ledger** is the source of truth ([
 | PATCH | `/cash-accounts/{id}` | `payments.update` | Rename, or clear `handles_method` |
 | GET | `/cash-accounts/balances` | `payments.read` | `[{id, name, kind, balance}]` — `Σ in − Σ out`, never stored |
 | POST | `/cash-accounts/{id}/adjust` | `payments.update` | `{amount, reason, opening?, occurred_on?}` → `{id, balance}`. An opening balance or a counting difference (ADR-29) |
+| POST | `/cash-accounts/transfer` | `payments.update`, not own-only | `{from_account_id, to_account_id, amount, reason, occurred_on?, allow_negative?}` → `{transfer_group, from_balance, to_balance}`. Cash collection, bank withdrawal — neither income nor expense (Bosqich 12.5) |
+| GET | `/cash-accounts/custody` | `payments.read` | `[{user_id, full_name, amount}]` — who holds how much cash; an own-only user sees only themselves |
+| GET/POST | `/cash-handovers` | `payments.read` / `payments.create` | `{to_user_id, amount, note?}` — hand cash to a responsible person; an own-only user lists only their own. More than held → `422` |
+| GET | `/cash-handovers/receivers` | `payments.read` | Who can receive — people who see the whole till |
+| POST | `/cash-handovers/{id}/confirm` · `/reject` | receiver only (`403` for anyone else, `404` cross-tenant) | `reject` needs `{reason}` |
+| GET/POST | `/cash-counts` | `payments.update`, not own-only | `{cash_account_id, counted, reason?}` — closes today for that pot; a difference needs a reason and becomes a `count` movement; a second close the same day → `422` |
 
 **Why `/adjust` exists.** A kindergarten joins mid-year with money already in the safe, and until this endpoint there was no way to say so: `MovementSource` had `opening` and `manual` but nothing wrote either, so every pot started at zero and the first expense pushed the balance negative. Since ADR-29 refuses an `out` movement larger than the balance, the two had to ship together — a guard without a way to enter the opening balance would have stopped ordinary work on day one.
 

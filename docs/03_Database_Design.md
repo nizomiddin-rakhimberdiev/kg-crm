@@ -861,6 +861,24 @@ A branch with no matching pot still accepts the payment — it lands in the bran
 
 ---
 
+### 13a.3 Bank commission (Bosqich 12.5)
+
+A payment lands in its pot **gross**; the method's commission is booked as its own document — an `expense` in the branch's "Bank komissiyasi" category, `status = paid`, `cash_account` = the pot the payment reached, `payment_id` (FK → payment, `ON DELETE SET NULL`) — and a matching `out` movement, in the same transaction as the payment. Rates are branch settings `commission.<method>_percent` (terminal 0.2, Click 1, Payme 1, transfer 0); the result is rounded to the whole so'm (10 000 000 × 0.2 % = 20 000). A malformed setting reads as 0 rather than refusing the payment. A reversed payment keeps its commission — the bank does not return it.
+
+### 13a.4 Transfers
+
+`POST /cash-accounts/transfer` writes two `transfer` movements sharing a `transfer_group` — cash collection, a bank withdrawal. Income and expense are untouched (40 000 000 collected: cash −40 m, bank +40 m, nothing else). The source pot obeys ADR-29.
+
+### 13a.5 `cash_handover` — cash from hand to hand
+
+Organization-scoped (RLS). `cash_account_id` (the till, `RESTRICT`), `from_user_id`, `to_user_id` (`RESTRICT`, `CHECK` different people), `amount > 0`, `note`, `status` (`pending` · `confirmed` · `rejected`), `decided_at`, `decision_note`. **No `cash_movement` is written**: the money stays in the same till; only the person holding it changes. Until the receiver confirms, it counts as the sender's. Only the receiver confirms or rejects (with a reason) — the owner cannot confirm in their stead. Nobody hands over more than they hold, pending handovers included.
+
+**Custody** ("who holds how much") is derived, never stored: for the branch's `cash`-kind pots, `Σ signed movements` grouped by `created_by` (the cashier who took the payment, the manager who approved an expense, whoever closed the day), minus confirmed handovers given, plus confirmed handovers received. The rows sum to the till balance (movements without an author excepted). Receivers are people who see the whole till — `payments.read` and not `payments_own_only`.
+
+### 13a.6 `cash_count` — closing the day
+
+Organization-scoped (RLS). `cash_account_id`, `counted_on`, `system_balance`, `counted ≥ 0`, `difference = counted − system_balance`, `reason`, `created_by_id`; `UNIQUE (cash_account_id, counted_on)`; `CHECK (difference = 0 OR reason <> '')`. A non-zero difference writes a `count` movement (`source_id` = the count) with the reason, so the pot equals what was counted — a shortage or surplus with an author and a reason, never the Excel's anonymous balancing line. Closing is `payments.update` and closed to `payments_own_only` users: the cashier hands over, the responsible person counts.
+
 ## 14. Schema Domain: HR & Payroll
 
 ### 14.1 `position`

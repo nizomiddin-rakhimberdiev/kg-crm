@@ -486,8 +486,8 @@ const uz: Copy = {
         text: 'Shablon sizning guruhlaringiz va tariflaringiz bilan yuklanadi. Qarzdorlik ustuni ham bor — eski qarz birinchi kundanoq qarzdorlar roʻyxatida turadi.',
       },
       {
-        title: 'Pul qayerda turibdi',
-        text: 'Naqd kassa va bank hisobi. Terminal, oʻtkazma, Click va Payme bankka tushadi, hisobotda har biri alohida. Xodim farzandining toʻlovi oyligidan ushlanadi. Har toʻlovda bitta sana va toʻlovchi vasiy — kelajakdagi sana qabul qilinmaydi. Qoldiq saqlanmaydi — harakatlardan hisoblanadi.',
+        title: 'Pul qayerda va kimning qoʻlida',
+        text: 'Naqd kassa va bank: terminal, oʻtkazma, Click va Payme bankka tushadi, komissiyasi oʻzi xarajat boʻlib yoziladi. Kassir pulni masʼulga topshiradi — u tasdiqlaydi, kimda qancha turgani koʻrinadi. Kun sanoq bilan yopiladi, farq sababi bilan. Toʻlovda bitta sana va toʻlovchi vasiy; xodim farzandi uchun — oylikdan ushlash.',
       },
       {
         title: 'Imtiyozlar — sababi bilan',
@@ -1053,8 +1053,8 @@ const ru: Copy = {
         text: 'Шаблон скачивается с вашими группами и тарифами. Есть и колонка долга — прежняя задолженность с первого дня видна в списке должников.',
       },
       {
-        title: 'Где лежат деньги',
-        text: 'Наличная касса и банковский счёт. Терминал, перевод, Click и Payme поступают на банк, в отчёте — каждый отдельно. Оплата за ребёнка сотрудника удерживается из зарплаты. У каждой оплаты одна дата и плательщик-опекун — дата в будущем не принимается. Остаток не хранится — он считается из движений.',
+        title: 'Где деньги и у кого на руках',
+        text: 'Касса и банк: терминал, перевод, Click и Payme поступают на банк, комиссия сама записывается расходом. Кассир передаёт деньги ответственному — тот подтверждает, видно, у кого сколько. День закрывается пересчётом, разница — с причиной. У оплаты одна дата и плательщик-опекун; за ребёнка сотрудника — удержание из зарплаты.',
       },
       {
         title: 'Льготы — с причиной',
@@ -1613,8 +1613,8 @@ const en: Copy = {
         text: 'The template downloads with your own groups and tariffs. It has a debt column too, so an old balance shows up among the debtors from day one.',
       },
       {
-        title: 'Where the money sits',
-        text: 'A cash till and a bank account. Terminal, transfer, Click and Payme land in the bank, each shown separately in the report. A staff member’s child fee is deducted from salary. Every payment has one date and a guardian who paid — a future date is refused. A balance is never stored; it is computed from the movements.',
+        title: 'Where the money is, and who holds it',
+        text: 'A till and a bank: terminal, transfer, Click and Payme land in the bank, and the commission is booked as an expense by itself. The cashier hands cash to the person in charge, who confirms it — you can see who holds how much. The day closes with a count; any difference carries a reason. Every payment has one date and a guardian who paid; a staff parent can pay by salary deduction.',
       },
       {
         title: 'Benefits, with a reason',

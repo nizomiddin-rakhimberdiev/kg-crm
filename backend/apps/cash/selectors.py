@@ -18,7 +18,14 @@ from django.db.models.functions import Coalesce
 
 from apps.cash.models import CashAccount, CashMovement, MovementDirection
 
-__all__ = ["account_balance", "account_balances", "total_balance", "movement_totals"]
+__all__ = [
+    "account_balance",
+    "account_balances",
+    "custody",
+    "custody_of",
+    "total_balance",
+    "movement_totals",
+]
 
 ZERO = Value(Decimal("0"), output_field=DecimalField(max_digits=16, decimal_places=2))
 
@@ -120,3 +127,76 @@ def movement_totals(
         }
         for row in sorted(rows, key=lambda r: (r["cash_account__kind"], r["cash_account__name"]))
     ]
+
+
+# --- Kimning qo'lida qancha (Bosqich 12.5) ---
+
+
+def _custody_totals(*, accounts: Any) -> dict[Any, Decimal]:
+    """
+    Naqd kassadagi pul — odam bo'yicha.
+
+    Har bir naqd harakat uni yozgan odamga tegishli (to'lovni qabul qilgan
+    kassir, chiqimni tasdiqlagan rahbar, sanoqni yopgan odam); ustiga
+    TASDIQLANGAN topshiriqlar: berganidan ayiriladi, olganiga qo'shiladi.
+    Yig'indi qop qoldig'iga teng (muallifsiz eski yozuvlar bundan mustasno).
+    """
+    from apps.cash.models import CashHandover, HandoverStatus
+
+    totals: dict[Any, Decimal] = {}
+    for row in (
+        CashMovement.objects.filter(cash_account__in=accounts, created_by__isnull=False)
+        .values("created_by")
+        .annotate(total=_signed_sum())
+    ):
+        totals[row["created_by"]] = totals.get(row["created_by"], Decimal("0")) + row["total"]
+
+    confirmed = CashHandover.objects.filter(
+        cash_account__in=accounts, status=HandoverStatus.CONFIRMED
+    )
+    for row in confirmed.values("from_user").annotate(total=Sum("amount")):
+        totals[row["from_user"]] = totals.get(row["from_user"], Decimal("0")) - row["total"]
+    for row in confirmed.values("to_user").annotate(total=Sum("amount")):
+        totals[row["to_user"]] = totals.get(row["to_user"], Decimal("0")) + row["total"]
+    return totals
+
+
+def custody(
+    *, organization_id: Any, branch_id: Any = None, user_id: Any = None
+) -> list[dict[str, Any]]:
+    """Kimning qo'lida qancha naqd pul turgani — eng kattasidan."""
+    from apps.accounts.models import User
+
+    accounts = CashAccount.objects.filter(
+        organization_id=organization_id, kind="cash", is_active=True
+    )
+    if branch_id:
+        accounts = accounts.filter(branch_id=branch_id)
+    totals = _custody_totals(accounts=accounts)
+    if user_id is not None:
+        totals = {key: value for key, value in totals.items() if str(key) == str(user_id)}
+    names = dict(User.objects.filter(pk__in=totals).values_list("pk", "full_name"))
+    rows = [
+        {"user_id": str(key), "full_name": names.get(key, ""), "amount": f"{value:.2f}"}
+        for key, value in totals.items()
+        if value != 0
+    ]
+    return sorted(rows, key=lambda row: Decimal(row["amount"]), reverse=True)
+
+
+def custody_of(*, user: Any, account: Any) -> Decimal:
+    """
+    Bitta odamning qo'lidagi naqd pul — kutilayotgan topshiriqlari AYIRILGAN.
+
+    Topshirish uchun tekshiruv: bir pulni ikki odamga "berish" mumkin
+    bo'lmasin.
+    """
+    from apps.cash.models import CashHandover, HandoverStatus
+
+    held = _custody_totals(accounts=CashAccount.objects.filter(pk=account.pk)).get(
+        user.pk, Decimal("0")
+    )
+    pending = CashHandover.objects.filter(
+        cash_account=account, from_user=user, status=HandoverStatus.PENDING
+    ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+    return held - pending
