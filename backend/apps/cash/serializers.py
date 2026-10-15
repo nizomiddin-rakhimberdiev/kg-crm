@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from typing import Any
+
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.cash.models import CashAccount, CashCount, CashHandover
@@ -19,12 +22,45 @@ __all__ = [
 
 
 class CashAccountSerializer(serializers.ModelSerializer):
+    """
+    Qop — pul HAQIQATAN turgan joy: naqd yoki bank hisobi (egasining
+    qoidasi, 2026-10-15).
+
+    Terminal, o'tkazma, Click, Payme — to'lov USULI, qop emas: hammasi
+    bitta bank hisob raqamiga tushadi va o'sha yerdan chiqadi. Usul
+    to'lovning o'zida qoladi va hisobotda "qayerdan keldi" deb ko'rinadi.
+    Shuning uchun yangi qop faqat `cash` yoki `bank` bo'ladi.
+    """
+
     branch_name = serializers.CharField(source="branch.name", read_only=True)
+
+    #: Usul → qop: naqd — kassaga, qolgan hammasi — bankka.
+    _METHOD_FOR_KIND = {"cash": ("", "cash"), "bank": ("", "bank_transfer")}
 
     class Meta:
         model = CashAccount
         fields = ["id", "name", "kind", "handles_method", "branch", "branch_name", "is_active"]
-        read_only_fields = ["id", "branch_name"]
+        # Filial so'rovchidan (`perform_create`), mijozdan emas — ilgari
+        # bu maydon majburiy edi va yangi qop umuman ochilmasdi.
+        read_only_fields = ["id", "branch", "branch_name"]
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        kind = attrs.get("kind", getattr(self.instance, "kind", ""))
+        if kind not in self._METHOD_FOR_KIND:
+            raise serializers.ValidationError(
+                {
+                    "kind": gettext(
+                        "Qop — naqd kassa yoki bank hisobi. Terminal, oʻtkazma, Click va Payme — "
+                        "toʻlov usuli: pul bank hisobiga tushadi."
+                    )
+                }
+            )
+        method = attrs.get("handles_method", getattr(self.instance, "handles_method", ""))
+        if method not in self._METHOD_FOR_KIND[kind]:
+            raise serializers.ValidationError(
+                {"handles_method": gettext("Bu qop bunday toʻlovlarni qabul qilmaydi.")}
+            )
+        return attrs
 
 
 class CashAdjustSerializer(serializers.Serializer):
@@ -84,6 +120,10 @@ class CashHandoverSerializer(serializers.ModelSerializer):
 
 class CashHandoverWriteSerializer(serializers.Serializer):
     to_user_id = serializers.UUIDField()
+    # Naqd yoki bank hisobi bo'yicha (sukut — naqd kassa).
+    cash_account_id = TenantPrimaryKeyRelatedField(
+        model=CashAccount, source="cash_account", required=False, allow_null=True
+    )
     amount = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=1)
     note = serializers.CharField(max_length=255, required=False, allow_blank=True)
 

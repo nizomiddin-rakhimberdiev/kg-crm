@@ -1481,7 +1481,6 @@ export const messages: Record<string, string> = {
   'Ushlash': 'Deduct',
   'Xodimni tanlang': 'Choose an employee',
   'Asos': 'Basis',
-  'Hech kimning qoʻlida naqd pul yoʻq.': 'Nobody is holding cash.',
   'Inkassa': 'Cash collection',
   'Inkassa, bankdan naqd yechish — tushum ham, xarajat ham oʻzgarmaydi.': 'Cash collection, a bank withdrawal — neither income nor expense changes.',
   'Kamomad: {money}': 'Shortage: {money}',
@@ -1490,7 +1489,6 @@ export const messages: Record<string, string> = {
   'Manfiy qoldiq — qaysidir kirim yozilmagan. Boshlangʻich qoldiq yoki tuzatishni tekshiring.': 'Negative balance — some income was not recorded. Check the opening balance or a correction.',
   'Masʼul shaxsni tanlang': 'Choose the responsible person',
   'Mening qoʻlimda': 'In my hands',
-  'Naqd pul kimning qoʻlida': 'Who holds the cash',
   'Oʻtkazish': 'Transfer',
   'Oldim': 'Received',
   'Ortiqcha: {money}': 'Surplus: {money}',
@@ -1548,4 +1546,7 @@ export const messages: Record<string, string> = {
   'Bitta bola — takrorini oʻtkazib yuborish': 'One child — skip the repeat',
   'Dublikatlar bilan nima qilinsin': 'What to do with the duplicates',
   'Har xil bolalar — hammasini qoʻshish': 'Different children — add them all',
+  'Qaysi pul': 'Which money',
+  'Pul kimning javobgarligida': 'Who is responsible for the money',
+  'Hech kimning javobgarligida pul yoʻq.': 'Nobody is holding any money.',
 }

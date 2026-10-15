@@ -1741,3 +1741,12 @@ msgstr "{n} possible duplicates — choose to skip them or add them anyway."
 
 msgid "“Aka-uka” deb belgilangan, lekin umumiy vasiy topilmadi — chegirma qoʻllanmaydi. Ikkala bolaga bir xil telefon yozing."
 msgstr "Marked “siblings”, but no shared guardian was found — the discount will not apply. Give both children the same phone."
+
+msgid "Bu qop bunday toʻlovlarni qabul qilmaydi."
+msgstr "This pot does not take such payments."
+
+msgid "Qop topilmadi."
+msgstr "Pot not found."
+
+msgid "Qop — naqd kassa yoki bank hisobi. Terminal, oʻtkazma, Click va Payme — toʻlov usuli: pul bank hisobiga tushadi."
+msgstr "A pot is the cash till or the bank account. Terminal, transfer, Click and Payme are payment methods: the money lands in the bank account."

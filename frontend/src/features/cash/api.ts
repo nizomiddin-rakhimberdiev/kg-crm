@@ -50,9 +50,12 @@ export interface CashCount {
   created_at: string
 }
 
+/** Kimning javobgarligida qancha — naqd va bank hisobi alohida. */
 export interface CustodyRow {
   user_id: string
   full_name: string
+  cash: string
+  bank: string
   amount: string
 }
 
@@ -90,8 +93,13 @@ export const cashApi = {
 
   handovers: () => api.list<CashHandover>('/cash-handovers', { page_size: 30 }),
   receivers: () => api.get<Array<{ id: string; full_name: string }>>('/cash-handovers/receivers'),
-  handOver: (payload: { to_user_id: string; amount: string; note?: string }) =>
-    api.post<CashHandover>('/cash-handovers', payload),
+  handOver: (payload: {
+    to_user_id: string
+    amount: string
+    note?: string
+    /** Naqd kassa yoki bank hisobi; boʻsh — naqd. */
+    cash_account_id?: string
+  }) => api.post<CashHandover>('/cash-handovers', payload),
   confirmHandover: (id: string) => api.post<CashHandover>(`/cash-handovers/${id}/confirm`),
   rejectHandover: (id: string, reason: string) =>
     api.post<CashHandover>(`/cash-handovers/${id}/reject`, { reason }),

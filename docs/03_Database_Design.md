@@ -842,6 +842,8 @@ The first design seeded four pots, one per method, and it confused the two quest
 
 A branch with no matching pot still accepts the payment — it lands in the branch's `cash` account, because refusing money at the counter over a configuration gap is the wrong failure.
 
+**Two pots, by the owner's rule (2026-10-15).** Money sits in exactly two places: the **cash till** and the **bank account**. Terminal, transfer, Click and Payme are payment *methods* — all of them land in the one bank account, are spent from it, and stay visible only as `payment.method` in reports. A new pot therefore has `kind ∈ {cash, bank}` and `handles_method ∈ {'', cash}` / `{'', bank_transfer}` respectively (the serializer refuses anything else); `terminal` and `ewallet` survive only on deactivated legacy rows that `consolidate_cash_accounts` merged into the bank.
+
 ### 13a.2 `cash_movement` (append-only — THE source of truth for cash)
 
 | Column | Type | Constraints | Notes |
@@ -871,7 +873,7 @@ A branch with no matching pot still accepts the payment — it lands in the bran
 
 ### 13a.3 Bank commission (Bosqich 12.5)
 
-A payment lands in its pot **gross**; the method's commission is booked as its own document — an `expense` in the branch's "Bank komissiyasi" category, `status = paid`, `cash_account` = the pot the payment reached, `payment_id` (FK → payment, `ON DELETE SET NULL`) — and a matching `out` movement, in the same transaction as the payment. Rates are branch settings `commission.<method>_percent` (terminal 0.2, Click 1, Payme 1, transfer 0); the result is rounded to the whole so'm (10 000 000 × 0.2 % = 20 000). A malformed setting reads as 0 rather than refusing the payment. A reversed payment keeps its commission — the bank does not return it.
+A payment lands in its pot **gross**; the method's commission is booked as its own document — an `expense` in the branch's "Bank komissiyasi" category, `status = paid`, `cash_account` = the pot the payment reached, `payment_id` (FK → payment, `ON DELETE SET NULL`) — and a matching `out` movement, in the same transaction as the payment. Rates are branch settings `commission.<method>_percent` (terminal 0.2, Click 1, Payme 1, transfer 0); the result is rounded to the whole so'm (10 000 000 × 0.2 % = 20 000). A malformed setting reads as 0 rather than refusing the payment. The commission movement has **no author**: the bank keeps it, the cashier did not, so it never lowers a cashier's custody. A reversed payment keeps its commission — the bank does not return it.
 
 ### 13a.4 Transfers
 
@@ -879,9 +881,9 @@ A payment lands in its pot **gross**; the method's commission is booked as its o
 
 ### 13a.5 `cash_handover` — cash from hand to hand
 
-Organization-scoped (RLS). `cash_account_id` (the till, `RESTRICT`), `from_user_id`, `to_user_id` (`RESTRICT`, `CHECK` different people), `amount > 0`, `note`, `status` (`pending` · `confirmed` · `rejected`), `decided_at`, `decision_note`. **No `cash_movement` is written**: the money stays in the same till; only the person holding it changes. Until the receiver confirms, it counts as the sender's. Only the receiver confirms or rejects (with a reason) — the owner cannot confirm in their stead. Nobody hands over more than they hold, pending handovers included.
+Organization-scoped (RLS). `cash_account_id` (the cash till **or the bank account** — a cashier hands over both at the end of the day; default the till; `RESTRICT`), `from_user_id`, `to_user_id` (`RESTRICT`, `CHECK` different people), `amount > 0`, `note`, `status` (`pending` · `confirmed` · `rejected`), `decided_at`, `decision_note`. **No `cash_movement` is written**: the money stays in the same till; only the person holding it changes. Until the receiver confirms, it counts as the sender's. Only the receiver confirms or rejects (with a reason) — the owner cannot confirm in their stead. Nobody hands over more than they hold, pending handovers included.
 
-**Custody** ("who holds how much") is derived, never stored: for the branch's `cash`-kind pots, `Σ signed movements` grouped by `created_by` (the cashier who took the payment, the manager who approved an expense, whoever closed the day), minus confirmed handovers given, plus confirmed handovers received. The rows sum to the till balance (movements without an author excepted). Receivers are people who see the whole till — `payments.read` and not `payments_own_only`.
+**Custody** ("who is answerable for how much") is derived, never stored, **separately for cash and for the bank**: for each kind of pot, `Σ signed movements` grouped by `created_by` (the cashier who took the payment, the manager who approved an expense, whoever closed the day), minus confirmed handovers given, plus confirmed handovers received. The rows sum to the till balance (movements without an author excepted). Receivers are people who see the whole till — `payments.read` and not `payments_own_only`.
 
 ### 13a.6 `cash_count` — closing the day
 

@@ -1192,7 +1192,9 @@ def record_payment(
         # Usul komissiyasi — bank xarajati, o'sha qopdan (Bosqich 12.5).
         from apps.expenses.services import record_bank_commission
 
-        record_bank_commission(payment=payment, account=pot, created_by=received_by)
+        # Muallifsiz: komissiyani kassir emas, bank o'zi ushlaydi — u
+        # kassirning javobgarligidagi pulni kamaytirmasligi kerak.
+        record_bank_commission(payment=payment, account=pot)
 
     # Taqsimot (Q1): tanlangan hujjat → FIFO → qoldiq avans. Bu ATAYLAB
     # ledger yozuvidan keyin: ledger pulning KELGANINI yozadi va u

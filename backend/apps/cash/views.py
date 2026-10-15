@@ -253,7 +253,11 @@ class CashHandoverViewSet(BranchScopedMixin, TenantViewSet):
         if receiver is None:
             raise NotFound(gettext("Qabul qiluvchi topilmadi."))
         handover = services.hand_over(
-            from_user=user, to_user=receiver, amount=data["amount"], note=data.get("note", "")
+            from_user=user,
+            to_user=receiver,
+            amount=data["amount"],
+            note=data.get("note", ""),
+            account=data.get("cash_account"),
         )
         audit.record(
             action="create",

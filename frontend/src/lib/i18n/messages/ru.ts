@@ -1477,7 +1477,6 @@ export const messages: Record<string, string> = {
   'Ushlash': 'Удержать',
   'Xodimni tanlang': 'Выберите сотрудника',
   'Asos': 'Основание',
-  'Hech kimning qoʻlida naqd pul yoʻq.': 'Наличных ни у кого на руках нет.',
   'Inkassa': 'Инкассация',
   'Inkassa, bankdan naqd yechish — tushum ham, xarajat ham oʻzgarmaydi.': 'Инкассация, снятие наличных с банка — ни доход, ни расход не меняются.',
   'Kamomad: {money}': 'Недостача: {money}',
@@ -1486,7 +1485,6 @@ export const messages: Record<string, string> = {
   'Manfiy qoldiq — qaysidir kirim yozilmagan. Boshlangʻich qoldiq yoki tuzatishni tekshiring.': 'Отрицательный остаток — какой-то приход не записан. Проверьте начальный остаток или корректировку.',
   'Masʼul shaxsni tanlang': 'Выберите ответственного',
   'Mening qoʻlimda': 'У меня на руках',
-  'Naqd pul kimning qoʻlida': 'У кого наличные',
   'Oʻtkazish': 'Перевести',
   'Oldim': 'Получил',
   'Ortiqcha: {money}': 'Излишек: {money}',
@@ -1544,4 +1542,7 @@ export const messages: Record<string, string> = {
   'Bitta bola — takrorini oʻtkazib yuborish': 'Один ребёнок — пропустить повтор',
   'Dublikatlar bilan nima qilinsin': 'Что делать с дублями',
   'Har xil bolalar — hammasini qoʻshish': 'Разные дети — добавить всех',
+  'Qaysi pul': 'Какие деньги',
+  'Pul kimning javobgarligida': 'Деньги под чьей ответственностью',
+  'Hech kimning javobgarligida pul yoʻq.': 'Ни за кем деньги не числятся.',
 }

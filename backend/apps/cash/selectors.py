@@ -164,23 +164,40 @@ def _custody_totals(*, accounts: Any) -> dict[Any, Decimal]:
 def custody(
     *, organization_id: Any, branch_id: Any = None, user_id: Any = None
 ) -> list[dict[str, Any]]:
-    """Kimning qo'lida qancha naqd pul turgani — eng kattasidan."""
+    """
+    Kimning javobgarligida qancha pul — naqd va bank hisobi ALOHIDA.
+
+    Ikki qop, ikki ustun: naqd — qo'lda turgan pul, bank — u qabul qilgan
+    terminal/Click/Payme/o'tkazma tushumi (bitta bank hisob raqamida).
+    Eng kattasidan.
+    """
     from apps.accounts.models import User
 
-    accounts = CashAccount.objects.filter(
-        organization_id=organization_id, kind="cash", is_active=True
-    )
+    accounts = CashAccount.objects.filter(organization_id=organization_id, is_active=True)
     if branch_id:
         accounts = accounts.filter(branch_id=branch_id)
-    totals = _custody_totals(accounts=accounts)
+    by_kind = {
+        kind: _custody_totals(accounts=accounts.filter(kind=kind)) for kind in ("cash", "bank")
+    }
+    people = set(by_kind["cash"]) | set(by_kind["bank"])
     if user_id is not None:
-        totals = {key: value for key, value in totals.items() if str(key) == str(user_id)}
-    names = dict(User.objects.filter(pk__in=totals).values_list("pk", "full_name"))
-    rows = [
-        {"user_id": str(key), "full_name": names.get(key, ""), "amount": f"{value:.2f}"}
-        for key, value in totals.items()
-        if value != 0
-    ]
+        people = {key for key in people if str(key) == str(user_id)}
+    names = dict(User.objects.filter(pk__in=people).values_list("pk", "full_name"))
+    rows = []
+    for key in people:
+        cash = by_kind["cash"].get(key, Decimal("0"))
+        bank = by_kind["bank"].get(key, Decimal("0"))
+        if cash == 0 and bank == 0:
+            continue
+        rows.append(
+            {
+                "user_id": str(key),
+                "full_name": names.get(key, ""),
+                "cash": f"{cash:.2f}",
+                "bank": f"{bank:.2f}",
+                "amount": f"{cash + bank:.2f}",
+            }
+        )
     return sorted(rows, key=lambda row: Decimal(row["amount"]), reverse=True)
 
 

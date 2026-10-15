@@ -419,3 +419,75 @@ def test_a_broken_commission_setting_never_blocks_a_payment(tenant_a: Any):
     with organization_context(tenant_a.organization.id):
         assert Expense.objects.get(payment=terminal).amount == Decimal("20000")
         assert not Expense.objects.filter(payment=click).exists()
+
+
+# --- Ikki qop: naqd va bank (egasining qoidasi, 2026-10-15) ---
+
+
+def test_a_new_pot_is_either_cash_or_bank(tenant_a: Any):
+    """Terminal, Click/Payme, oʻtkazma — usul, qop emas: pul bankka tushadi."""
+    client = tenant_a.client()
+    refused = client.post(
+        "/api/v1/cash-accounts",
+        {"name": "Terminal", "kind": "terminal", "handles_method": "terminal"},
+        format="json",
+    )
+    assert refused.status_code == 400
+    assert (
+        client.post(
+            "/api/v1/cash-accounts",
+            {"name": "Payme", "kind": "bank", "handles_method": "payme"},
+            format="json",
+        ).status_code
+        == 400
+    )
+    allowed = client.post(
+        "/api/v1/cash-accounts", {"name": "Direktor seyfi", "kind": "cash"}, format="json"
+    )
+    assert allowed.status_code == 201, allowed.json()
+
+
+def test_custody_shows_cash_and_bank_apart(tenant_a: Any):
+    cashier, _ = _user(tenant_a, "cashier", "kassir@alfa.uz")
+    _pay(tenant_a, "cash", "500000", received_by=cashier)
+    _pay(tenant_a, "terminal", "1000000", received_by=cashier)
+    rows = tenant_a.client().get("/api/v1/cash-accounts/custody").json()["data"]
+    row = next(row for row in rows if row["user_id"] == str(cashier.id))
+    assert Decimal(row["cash"]) == Decimal("500000")
+    # Terminal 1 000 000 tushdi; komissiya chiqimini kassir emas, tizim yozdi.
+    assert Decimal(row["bank"]) == Decimal("1000000")
+    assert Decimal(row["amount"]) == Decimal("1500000")
+
+
+def test_the_day_is_handed_over_by_bank_too(tenant_a: Any):
+    cashier, cashier_client = _user(tenant_a, "cashier", "kassir@alfa.uz")
+    director, director_client = _user(tenant_a, "director", "direktor@alfa.uz")
+    _pay(tenant_a, "click", "800000", received_by=cashier)
+
+    created = cashier_client.post(
+        "/api/v1/cash-handovers",
+        {
+            "to_user_id": str(director.id),
+            "cash_account_id": str(_pot(tenant_a, "bank").id),
+            "amount": "800000",
+        },
+        format="json",
+    )
+    assert created.status_code == 201, created.json()
+    director_client.post(f"/api/v1/cash-handovers/{created.json()['data']['id']}/confirm")
+
+    rows = director_client.get("/api/v1/cash-accounts/custody").json()["data"]
+    held = {row["user_id"]: Decimal(row["bank"]) for row in rows}
+    assert held[str(director.id)] == Decimal("800000")
+    assert held.get(str(cashier.id), Decimal("0")) == 0
+
+
+def test_the_bank_balance_is_closed_against_the_statement(tenant_a: Any):
+    _pay(tenant_a, "bank_transfer", "2000000")
+    response = tenant_a.client().post(
+        "/api/v1/cash-counts",
+        {"cash_account_id": str(_pot(tenant_a, "bank").id), "counted": "2000000"},
+        format="json",
+    )
+    assert response.status_code == 201, response.json()
+    assert Decimal(response.json()["data"]["difference"]) == 0

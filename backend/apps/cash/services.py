@@ -374,7 +374,13 @@ def cash_pot(*, branch: Any) -> CashAccount:
 
 @transaction.atomic
 def hand_over(
-    *, from_user: Any, to_user: Any, amount: Decimal, note: str = "", branch: Any = None
+    *,
+    from_user: Any,
+    to_user: Any,
+    amount: Decimal,
+    note: str = "",
+    branch: Any = None,
+    account: CashAccount | None = None,
 ) -> CashHandover:
     """
     Naqd pulni boshqa odamga topshirish — u TASDIQLAGUNCHA pul topshiruvchida.
@@ -394,7 +400,11 @@ def hand_over(
     if to_user.organization_id != from_user.organization_id or not to_user.is_active:
         raise BusinessRuleViolation(gettext("Qabul qiluvchi topilmadi."))
 
-    pot = cash_pot(branch=branch or from_user.branch)
+    # Naqd yoki bank hisobi bo'yicha: kassir kun oxirida ikkalasini ham
+    # topshiradi — naqdni qo'lda, terminal/Click/o'tkazmani hisobot bilan.
+    pot = account or cash_pot(branch=branch or from_user.branch)
+    if pot.organization_id != from_user.organization_id or pot.kind not in ("cash", "bank"):
+        raise BusinessRuleViolation(gettext("Qop topilmadi."))
     held = custody_of(user=from_user, account=pot)
     if amount > held:
         raise BusinessRuleViolation(

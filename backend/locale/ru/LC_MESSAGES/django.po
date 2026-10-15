@@ -1741,3 +1741,12 @@ msgstr "Найдено возможных дублей: {n} — выберите
 
 msgid "“Aka-uka” deb belgilangan, lekin umumiy vasiy topilmadi — chegirma qoʻllanmaydi. Ikkala bolaga bir xil telefon yozing."
 msgstr "Отмечено «братья-сёстры», но общий опекун не найден — скидка не применится. Укажите обоим детям один телефон."
+
+msgid "Bu qop bunday toʻlovlarni qabul qilmaydi."
+msgstr "Этот счёт не принимает такие оплаты."
+
+msgid "Qop topilmadi."
+msgstr "Счёт не найден."
+
+msgid "Qop — naqd kassa yoki bank hisobi. Terminal, oʻtkazma, Click va Payme — toʻlov usuli: pul bank hisobiga tushadi."
+msgstr "Счёт — наличная касса или банковский счёт. Терминал, перевод, Click и Payme — способы оплаты: деньги поступают на банковский счёт."

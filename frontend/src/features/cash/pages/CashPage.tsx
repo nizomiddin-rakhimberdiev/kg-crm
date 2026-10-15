@@ -96,16 +96,28 @@ export default function CashPage() {
 
   // --- Topshirish ---
   const [handOpen, setHandOpen] = useState(false)
-  const [hand, setHand] = useState({ to_user_id: '', amount: '', note: '' })
+  const [hand, setHand] = useState({ to_user_id: '', amount: '', note: '', cash_account_id: '' })
+  // Ikki qop: naqd kassa va bank hisobi. Roʻyxat kassirga ham ochiq
+  // (qoldiqsiz) — u kun oxirida ikkalasini ham topshiradi.
+  const accounts = useQuery({ queryKey: [...key, 'accounts'], queryFn: cashApi.accounts })
+  const handPots = (accounts.data?.items ?? []).filter(
+    (account) => account.is_active && (account.kind === 'cash' || account.kind === 'bank'),
+  )
   const receivers = useQuery({
     queryKey: [...key, 'receivers'],
     queryFn: cashApi.receivers,
     enabled: handOpen,
   })
   const handOver = useMutation({
-    mutationFn: () => cashApi.handOver(hand),
+    mutationFn: () =>
+      cashApi.handOver({
+        to_user_id: hand.to_user_id,
+        amount: hand.amount,
+        note: hand.note,
+        ...(hand.cash_account_id ? { cash_account_id: hand.cash_account_id } : {}),
+      }),
     onSuccess: () => {
-      setHand({ to_user_id: '', amount: '', note: '' })
+      setHand({ to_user_id: '', amount: '', note: '', cash_account_id: '' })
       setHandOpen(false)
       done()
     },
@@ -148,7 +160,8 @@ export default function CashPage() {
   })
 
   // --- Kunni yopish ---
-  const tills = pots.filter((pot) => pot.kind === 'cash')
+  // Naqd — sanoq bilan, bank — koʻchirma (vypiska) bilan solishtiriladi.
+  const tills = pots
   const [count, setCount] = useState({ account: '', counted: '', reason: '' })
   const [countOpen, setCountOpen] = useState(false)
   const countPot = pots.find((pot) => pot.id === (count.account || tills[0]?.id))
@@ -310,7 +323,7 @@ export default function CashPage() {
         <section className="rounded-2xl border border-slate-200 bg-white p-4">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-slate-900">
-              {ownOnly ? t('Mening qoʻlimda') : t('Naqd pul kimning qoʻlida')}
+              {ownOnly ? t('Mening qoʻlimda') : t('Pul kimning javobgarligida')}
             </h2>
             {can('payments.create') && !handOpen && (
               <button
@@ -327,19 +340,33 @@ export default function CashPage() {
             <QueryError error={custody.error} onRetry={() => void custody.refetch()} />
           ) : (custody.data ?? []).length === 0 ? (
             <p className="mt-3 text-sm text-slate-500">
-              {t('Hech kimning qoʻlida naqd pul yoʻq.')}
+              {t('Hech kimning javobgarligida pul yoʻq.')}
             </p>
           ) : (
-            <ul className="mt-3 divide-y divide-slate-100">
-              {(custody.data ?? []).map((row) => (
-                <li key={row.user_id} className="flex items-center justify-between py-2 text-sm">
-                  <span className="text-slate-700">{row.full_name}</span>
-                  <span className="font-semibold tabular-nums text-slate-900">
-                    {som(row.amount)}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-slate-500">
+                    <th className="py-1.5 font-medium">{t('Kim')}</th>
+                    <th className="py-1.5 text-right font-medium">{t('Naqd')}</th>
+                    <th className="py-1.5 text-right font-medium">{t('Bank hisobi')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {(custody.data ?? []).map((row) => (
+                    <tr key={row.user_id}>
+                      <td className="py-2 text-slate-700">{row.full_name}</td>
+                      <td className="py-2 text-right font-semibold tabular-nums text-slate-900">
+                        {som(row.cash)}
+                      </td>
+                      <td className="py-2 text-right font-semibold tabular-nums text-slate-900">
+                        {som(row.bank)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {handOpen && (
@@ -365,6 +392,27 @@ export default function CashPage() {
                   {(receivers.data ?? []).map((person) => (
                     <option key={person.id} value={person.id}>
                       {person.full_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="hand-pot" className={label}>
+                  {t('Qaysi pul')}
+                </label>
+                <select
+                  id="hand-pot"
+                  value={
+                    hand.cash_account_id || handPots.find((pot) => pot.kind === 'cash')?.id || ''
+                  }
+                  onChange={(event) =>
+                    setHand((p) => ({ ...p, cash_account_id: event.target.value }))
+                  }
+                  className={field}
+                >
+                  {handPots.map((pot) => (
+                    <option key={pot.id} value={pot.id}>
+                      {pot.name}
                     </option>
                   ))}
                 </select>
