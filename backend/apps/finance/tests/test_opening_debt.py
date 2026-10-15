@@ -20,9 +20,10 @@ from apps.children.models import Child
 from apps.core.exceptions import BusinessRuleViolation
 from apps.core.tenancy import organization_context
 from apps.finance.balance import child_balance
+from apps.finance.charges import plan_month
 from apps.finance.models import TariffPlan
 from apps.finance.selectors import debtor_queryset
-from apps.finance.services import first_month_share, issue_invoice, record_opening_debt
+from apps.finance.services import issue_invoice, record_opening_debt
 
 pytestmark = [pytest.mark.django_db, pytest.mark.big_update]
 
@@ -47,6 +48,7 @@ def _child(tenant, *, existing: bool, enrolled_on: date | None = date(2026, 9, 2
             tariff=tariff,
             enrolled_on=enrolled_on,
             is_existing_client=existing,
+            skip_trial=True,  # sinov — test_month_charge.py
         )
 
 
@@ -55,7 +57,8 @@ class TestProration:
         """Oyning 25-kuni kiritilgan, lekin u allaqachon qatnab yurgan."""
         child = _child(tenant_a, existing=True)
         with organization_context(tenant_a.organization.id):
-            assert first_month_share(child=child, period_year=2026, period_month=9) is None
+            charge = plan_month(child, 2026, 9)
+            assert charge.billable_days == charge.working_days
             invoice = issue_invoice(child=child, period_year=2026, period_month=9)
         assert invoice.amount_due == PRICE
 
@@ -63,7 +66,8 @@ class TestProration:
         child = _child(tenant_a, existing=False)
         with organization_context(tenant_a.organization.id):
             invoice = issue_invoice(child=child, period_year=2026, period_month=9)
-        assert invoice.amount_due == Decimal("554545.00")
+        # 3 050 000 × 4 / 22 = 554 545 → 555 000 (Bosqich 12.1).
+        assert invoice.amount_due == Decimal("555000.00")
 
 
 class TestOpeningDebt:

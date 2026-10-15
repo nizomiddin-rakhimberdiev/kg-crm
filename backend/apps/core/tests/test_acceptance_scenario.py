@@ -40,8 +40,8 @@ def _commit_per_request(monkeypatch):
 
 TARIFF = Decimal("1500000")
 ADMITTED = date(2026, 9, 30)  # oyning oxirgi ish kuni
-PRORATED = Decimal("68182.00")  # 1 500 000 × 1/22, butun so'mgacha
-ADVANCE_LEFT = Decimal("131818.00")  # 200 000 − 68 182
+PRORATED = Decimal("68000.00")  # 1 500 000 × 1/22 = 68 182 → 1 000 gacha (Bosqich 12.1)
+ADVANCE_LEFT = Decimal("132000.00")  # 200 000 − 68 000
 
 
 def _data(response):
@@ -73,6 +73,8 @@ def story(tenant_a):
                 "gender": "male",
                 "tariff_id": str(tariff.id),
                 "enrolled_on": ADMITTED.isoformat(),
+                # Stsenariy proporsiyani sinaydi; sinov muddati alohida.
+                "skip_trial": True,
             },
             format="json",
         )
@@ -148,7 +150,7 @@ class TestAcceptance:
         # Muddat = qabul + 5 kun (Q3).
         assert invoice["due_date"] == (ADMITTED + timedelta(days=5)).isoformat()
 
-        # Avans avtomatik qo'llanadi → qarz 0, avans 131 818.
+        # Avans avtomatik qoʻllanadi → qarz 0, avans 132 000.
         balance = _data(client.get(f"/api/v1/ledger/balance?child={child_id}"))
         assert Decimal(balance["outstanding"]) == 0
         assert Decimal(balance["advance"]) == ADVANCE_LEFT

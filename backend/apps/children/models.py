@@ -62,6 +62,9 @@ class Child(BranchScopedModel):
     # "sanasi yo'q" degan holat (PLAN 7.1 dagi xato) yana jimgina
     # to'liq oyga aylanib ketardi. Bayroq esa niyatni ochiq aytadi.
     is_existing_client = models.BooleanField(default=False)
+    # Sinov muddati (`finance.trial_days`) bu bolaga qo'llanmaydi —
+    # masalan qayta qabul yoki kelishuv bo'yicha (Bosqich 12.1).
+    skip_trial = models.BooleanField(default=False)
 
     # Joriy tarif rejasi (docs/03 §11.1). Sprint 4 da qo'shildi.
     tariff = models.ForeignKey(
@@ -317,6 +320,43 @@ class ChildGuardian(BranchScopedModel):
 
     def __str__(self) -> str:
         return f"{self.child_id} ← {self.guardian_id}"
+
+
+class ChildPause(BranchScopedModel):
+    """
+    "Bir oylik ariza" — bola shu oy(lar) uchun kelmaydi, joyi saqlanadi
+    (Bosqich 12.1).
+
+    Holat (`enrollment_status`) O'ZGARMAYDI: bola ro'yxatda, guruhda va
+    "faol" bo'lib qoladi. Pauza oyi uchun hisob-faktura baribir
+    yoziladi — 0 so'm va sababi bilan, chunki "bu oy nega to'lamadi?"
+    degan savolga hujjat javob berishi kerak.
+
+    Oy butun oy sifatida saqlanadi (`month_from`/`month_to` — oyning
+    1-sanasi): ariza oyga beriladi, kunlarga emas.
+    """
+
+    child = models.ForeignKey("children.Child", on_delete=models.CASCADE, related_name="pauses")
+    month_from = models.DateField()
+    month_to = models.DateField()
+    reason = models.CharField(max_length=255)
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        db_table = "child_pause"
+        ordering = ["-month_from"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(month_to__gte=models.F("month_from")),
+                name="ck_child_pause_months",
+            ),
+        ]
 
 
 class Group(BranchScopedModel):

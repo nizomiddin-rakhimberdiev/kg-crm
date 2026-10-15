@@ -948,8 +948,6 @@ export const messages: Record<string, string> = {
   'Kunlik toʻlov shu kunlar boʻyicha hisoblanadi — shanba ishlaydigan bogʻcha uchun ham.':
     'Дневная плата считается по этим дням — в том числе для садика, работающего в субботу.',
   'Birinchi oy hisobi': 'Расчёт первого месяца',
-  'Oy oʻrtasida qabul qilingan bola uchun: toʻliq oy, ish kunlari boʻyicha yoki keyingi oydan.':
-    'Для ребёнка, принятого в середине месяца: полный месяц, по рабочим дням или со следующего месяца.',
   'Birinchi faktura muddati (kun)': 'Срок первого счёта (дней)',
   'Qabul sanasidan kamida shuncha kun keyin — bola kelgan kuniyoq qarzdor boʻlib qolmasin.':
     'Не раньше чем через столько дней после приёма — чтобы ребёнок не стал должником в первый же день.',
@@ -1403,4 +1401,18 @@ export const messages: Record<string, string> = {
   'Hujjat bilan qayta hisob': 'Перерасчёт по документу',
   'Qayta hisob': 'Перерасчёт',
   '{done} / {total} belgilandi': 'Отмечено {done} из {total}',
+  'Bir oylik ariza': 'Заявление на месяц',
+  'Hisoblangan summa shu qadamgacha yaxlitlanadi: 1 161 905 → 1 162 000. Kunlik stavka emas, natija.':
+    'Начисленная сумма округляется до этого шага: 1 161 905 → 1 162 000. Округляется результат, а не дневная ставка.',
+  'Oy oʻrtasida kelgan yoki ketgan bola uchun: toʻliq oy, ish kunlari boʻyicha yoki keyingi oydan.':
+    'Для ребёнка, пришедшего или ушедшего в середине месяца: полный месяц, по рабочим дням или со следующего месяца.',
+  'Shu oy uchun 0 soʻm hisoblanadi, bolaning joyi saqlanadi.':
+    'За этот месяц начисляется 0 сум, место ребёнка сохраняется.',
+  'Sinov muddati (ish kuni)': 'Пробный период (рабочих дней)',
+  'Sinov muddatisiz': 'Без пробного периода',
+  'Toʻlov birinchi kundan boshlanadi — bepul sinov kunlari qoʻllanmaydi.':
+    'Оплата начинается с первого дня — бесплатные пробные дни не применяются.',
+  'Yangi bolaning birinchi shuncha ish kuni bepul. Sinovda ketsa — hech narsa hisoblanmaydi. 0 — sinov yoʻq.':
+    'Первые столько рабочих дней нового ребёнка бесплатны. Ушёл во время пробы — ничего не начисляется. 0 — без пробы.',
+  'Yaxlitlash (soʻm)': 'Округление (сум)',
 }

@@ -117,6 +117,7 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.settings_app.SystemSetting",
     # CRM
     "apps.children.Enrollment",
+    "apps.children.ChildPause",
     "apps.children.ChildGuardian",
     "apps.children.Child",
     # Tarif BOLADAN KEYIN: `Child.tariff` — `RESTRICT`. Avval u moliya

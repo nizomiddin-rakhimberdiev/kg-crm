@@ -89,6 +89,7 @@ const EMPTY_FORM: ChildInput = {
   // endi keladi. Import esa teskarisi (sukut "mavjud"), chunki u
   // tizimga o'tish quroli (PLAN 7.8).
   is_existing_client: false,
+  skip_trial: false,
   opening_debt: '',
 }
 
@@ -614,6 +615,26 @@ export default function ChildrenPage() {
                 ))}
               </div>
             </div>
+          )}
+
+          {/* Sinov muddati (Bosqich 12.1): yangi bolaning birinchi ish
+              kunlari bepul — sozlamada nechta ekani. Kelishuv bo'lsa, shu
+              yerda o'chiriladi va to'lov birinchi kundan boshlanadi. */}
+          {!editing && !form.is_existing_client && (
+            <label className="flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={Boolean(form.skip_trial)}
+                onChange={(e) => setForm((p) => ({ ...p, skip_trial: e.target.checked }))}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 focus-visible:ring-2 focus-visible:ring-brand-500"
+              />
+              <span>
+                <span className="block font-medium">{t('Sinov muddatisiz')}</span>
+                <span className="block text-xs text-slate-500">
+                  {t('Toʻlov birinchi kundan boshlanadi — bepul sinov kunlari qoʻllanmaydi.')}
+                </span>
+              </span>
+            </label>
           )}
 
           {!editing && form.is_existing_client && (

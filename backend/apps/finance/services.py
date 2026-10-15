@@ -45,7 +45,6 @@ from apps.finance.models import (
     PaymentMethod,
     SourceType,
 )
-from apps.finance.selectors import child_monthly_price
 
 __all__ = [
     "child_balance",
@@ -56,7 +55,6 @@ __all__ = [
     "preview_monthly_invoices",
     "recompute_child_balance",
     "applicable_discount",
-    "first_month_share",
     "record_opening_debt",
     "apply_claim_to_open_invoice",
     "first_invoice_due_date",
@@ -254,9 +252,11 @@ def apply_claim_to_open_invoice(*, claim: Any, created_by: Any = None) -> bool:
     credit = _money(claim.credit_amount)
     InvoiceLine.objects.create(
         invoice=invoice,
+        kind="credit",
         description=gettext("Kelmagan kunlar uchun qayta hisob: {days} kun × {rate}").format(
-            days=claim.billable_days, rate=claim.daily_rate
+            days=claim.billable_days, rate=som(claim.daily_rate)
         )[:255],
+        formula=f"{claim.billable_days} × {som(claim.daily_rate)} = {som(claim.credit_amount)}",
         quantity=Decimal("1"),
         unit_amount=-credit,
         line_total=-credit,
@@ -322,9 +322,11 @@ def _apply_absence_credits(
 
         InvoiceLine.objects.create(
             invoice=invoice,
+            kind="credit",
             description=gettext("Kelmagan kunlar uchun qayta hisob: {days} kun × {rate}").format(
-                days=claim.billable_days, rate=claim.daily_rate
+                days=claim.billable_days, rate=som(claim.daily_rate)
             )[:255],
+            formula=f"{claim.billable_days} × {som(claim.daily_rate)} = {som(claim.credit_amount)}",
             quantity=Decimal("1"),
             unit_amount=-credit,
             line_total=-credit,
@@ -345,45 +347,20 @@ def _apply_absence_credits(
 
 SOM = Decimal("1")
 
-#: `finance.first_month_mode` qiymatlari.
-FIRST_MONTH_FULL = "full"
-FIRST_MONTH_PRORATED = "prorated"
-FIRST_MONTH_NEXT = "next_month"
+# Rejim qiymatlari va "birinchi oymi?" — hisoblagich bilan BITTA manba
+# (`charges.py`); bu yerda faqat qayta eksport, eski importlar uchun.
+from apps.finance.charges import (  # noqa: E402
+    FIRST_MONTH_NEXT,
+    _is_first_period,
+    plan_month,
+    som,
+)
 
 
 def _setting(key: str, branch: Any = None) -> Any:
     from apps.settings_app.services import get_setting
 
     return get_setting(key=key, branch=branch)
-
-
-def _whole_som(value: Decimal) -> Decimal:
-    """
-    Butun so'mgacha yaxlitlash (Q2).
-
-    Tiyin ishlatilmaydi: kvitansiyada "68 181,82 soʻm" degan raqam
-    ota-onaga hech narsa demaydi va kassada shunday pul yo'q.
-    """
-    return value.quantize(SOM, rounding=ROUND_HALF_UP)
-
-
-def _is_first_period(child: Child, period_year: int, period_month: int) -> bool:
-    """
-    Bu davr bolaning BIRINCHI hisob-faktura oyimi?
-
-    Ikki shart: qabul sanasi shu oyga tushadi va undan oldin hech qanday
-    hisob-faktura yozilmagan. Ikkinchi shart kerak — bola chiqib ketib,
-    keyin qaytib kelgan bo'lishi mumkin, va o'shanda ikkinchi marta
-    proporsional hisoblash noto'g'ri bo'lardi.
-    """
-    enrolled = child.enrolled_on
-    if enrolled is None:
-        return False
-    if (enrolled.year, enrolled.month) != (period_year, period_month):
-        return False
-    return not (
-        Invoice.objects.filter(child=child).exclude(status=InvoiceStatus.CANCELLED).exists()
-    )
 
 
 @transaction.atomic
@@ -417,43 +394,6 @@ def record_opening_debt(
         description=gettext("Tizimga oʻtishdagi eski qarz"),
         created_by=created_by,
     )
-
-
-def first_month_share(
-    *, child: Child, period_year: int, period_month: int
-) -> tuple[int, int] | None:
-    """
-    Birinchi oy uchun (bolaning kunlari, oyning ish kunlari).
-
-    `None` — bu oy proporsional hisoblanmaydi (birinchi oy emas yoki
-    sozlama `full`).
-    """
-    from apps.attendance.services_absence import billable_days, working_days_in_month
-
-    if child.is_existing_client:
-        # Tizimga o'tishdan oldin ham qatnab yurgan bola (PLAN 7.8):
-        # uning uchun bu oy "birinchi oy" emas, to'liq oy.
-        return None
-    if not _is_first_period(child, period_year, period_month):
-        return None
-    if str(_setting("finance.first_month_mode", child.branch)) != FIRST_MONTH_PRORATED:
-        return None
-
-    last_day = calendar.monthrange(period_year, period_month)[1]
-    assert child.enrolled_on is not None  # `_is_first_period` kafolati
-    attended = billable_days(
-        organization_id=child.organization_id,
-        date_from=child.enrolled_on,
-        date_to=date(period_year, period_month, last_day),
-        branch=child.branch,
-    )
-    total = working_days_in_month(
-        organization_id=child.organization_id,
-        year=period_year,
-        month=period_month,
-        branch=child.branch,
-    )
-    return attended, total
 
 
 def first_invoice_due_date(*, child: Child, period_year: int, period_month: int) -> date:
@@ -493,7 +433,10 @@ def issue_invoice(
     kafolatlanadi — ilova qatlamidagi tekshiruv poyga holatida yetarli
     emas (docs/03 §26).
     """
-    price = child_monthly_price(child)
+    # Summa va qatorlar — YAGONA hisoblagichdan (Bosqich 12.1): oldindan
+    # ko'rish, qayta hisob stavkasi va "Nega?" ham aynan shuni o'qiydi.
+    charge = plan_month(child, period_year, period_month)
+    price = charge.price
     if price is None:
         raise BusinessRuleViolation(
             gettext(
@@ -513,10 +456,7 @@ def issue_invoice(
     # Birinchi oy sozlamasi "keyingi oydan" bo'lsa, hujjat yozilmaydi
     # (Q2). Oy o'rtasida kelgan bola birinchi to'lovini keyingi oy
     # boshida to'liq qiladi.
-    if (
-        _is_first_period(child, period_year, period_month)
-        and str(_setting("finance.first_month_mode", child.branch)) == FIRST_MONTH_NEXT
-    ):
+    if charge.skip == "next_month":
         raise BusinessRuleViolation(
             gettext(
                 "{full_name}: sozlamaga koʻra birinchi hisob-faktura keyingi oydan yoziladi."
@@ -526,9 +466,9 @@ def issue_invoice(
     # Hujjat sanasi qabul sanasidan oldin bo'la olmaydi: 30-sentabrda
     # kelgan bolaning fakturasi 1-sentabrdan boshlansa, u kelmagan
     # kunlari uchun ham to'lagan bo'lardi.
-    issued = issued_date or date(period_year, period_month, 1)
-    if child.enrolled_on is not None and _is_first_period(child, period_year, period_month):
-        issued = max(issued, child.enrolled_on)
+    issued = issued_date or charge.issued_date or date(period_year, period_month, 1)
+    if issued_date is not None and charge.issued_date is not None:
+        issued = max(issued_date, charge.issued_date)
     if due_date is None:
         due_date = first_invoice_due_date(
             child=child, period_year=period_year, period_month=period_month
@@ -536,20 +476,7 @@ def issue_invoice(
     if due_date < issued:
         due_date = issued
 
-    discount = applicable_discount(child, issued)
-    amount_due, discount_amount = apply_discount(price.amount, discount)
-
-    # Proporsional birinchi oy (Q2): faqat bolaning ish kunlari.
-    share = first_month_share(child=child, period_year=period_year, period_month=period_month)
-    prorated_note = ""
-    if share is not None:
-        attended, total = share
-        if total > 0 and attended < total:
-            full_amount = amount_due
-            amount_due = _whole_som(full_amount * attended / total)
-            prorated_note = gettext("{month}, {total} ish kunidan {attended} kun").format(
-                month=f"{period_month:02d}/{period_year}", total=total, attended=attended
-            )
+    amount_due = charge.amount_due
 
     try:
         invoice = Invoice.objects.create(
@@ -580,29 +507,18 @@ def issue_invoice(
             return existing
         raise BusinessRuleViolation(gettext("Hisob-fakturani yaratib boʻlmadi.")) from exc
 
-    # Satr izohida proporsiya KO'RINADI. "68 182 soʻm" degan raqam
-    # sababsiz tushunarsiz; "22 ish kunidan 1 kun" esa ota-onaga ham,
-    # mudiraga ham bir qarashda hamma narsani aytadi.
-    InvoiceLine.objects.create(
-        invoice=invoice,
-        # Narx manbai — tarif YOKI individual narx (`child_monthly_price`);
-        # proporsiya bo'lsa, satr summasi va izohi shuni aytadi.
-        description=(
-            f"{price.label} — {prorated_note}"
-            if prorated_note
-            else f"{price.label} — {period_month:02d}/{period_year}"
-        )[:255],
-        quantity=Decimal("1"),
-        unit_amount=amount_due if prorated_note else price.amount,
-        line_total=amount_due if prorated_note else price.amount,
-    )
-    if discount_amount > 0 and discount is not None:
+    # Qatorlar hisoblagichdan — har biri o'z formulasi bilan: to'liq narx,
+    # imtiyoz, so'ng "21 ish kunidan 8 kun: 3 050 000 × 8 / 21 = 1 162 000".
+    # Raqam sababsiz turmaydi; "Nega?" ham shu formulani ko'rsatadi.
+    for line in charge.lines:
         InvoiceLine.objects.create(
             invoice=invoice,
-            description=f"Chegirma: {discount.reason or discount}",
+            kind=line.kind,
+            description=line.description[:255],
+            formula=line.formula[:255],
             quantity=Decimal("1"),
-            unit_amount=-discount_amount,
-            line_total=-discount_amount,
+            unit_amount=line.amount,
+            line_total=line.amount,
         )
 
     # Kelmagan kunlar uchun qaytarish — MINUS QATOR (ADR-19).
@@ -815,11 +731,11 @@ def preview_monthly_invoices(
     for child in _billing_candidates(
         period_year=period_year, period_month=period_month, branch=branch
     ):
-        # Narx — `issue_invoice` bilan BIR XIL manbadan (tarif yoki
-        # individual narx). Aks holda preview individual narxli bolani
-        # "tarifsiz" deb ko'rsatib, generatsiya esa unga faktura yozardi.
-        price = child_monthly_price(child)
-        if price is None:
+        # Summa — `issue_invoice` bilan BIR XIL hisoblagichdan
+        # (`charges.plan_month`). Ilgari bu yerda uning nusxasi turardi va
+        # preview bilan generatsiya bir kun ajralib qolishi mumkin edi.
+        charge = plan_month(child, period_year, period_month)
+        if charge.skip == "no_price":
             preview.skipped_no_tariff.append(child.full_name)
             continue
 
@@ -832,27 +748,12 @@ def preview_monthly_invoices(
             preview.skipped_existing += 1
             continue
 
-        if (
-            _is_first_period(child, period_year, period_month)
-            and str(_setting("finance.first_month_mode", child.branch)) == FIRST_MONTH_NEXT
-        ):
+        if charge.skip == "next_month":
             preview.skipped_next_month.append(child.full_name)
             continue
 
-        issued = date(period_year, period_month, 1)
-        if child.enrolled_on is not None and _is_first_period(child, period_year, period_month):
-            issued = max(issued, child.enrolled_on)
-        amount, _discount = apply_discount(price.amount, applicable_discount(child, issued))
-
-        note = ""
-        share = first_month_share(child=child, period_year=period_year, period_month=period_month)
-        if share is not None:
-            attended, total = share
-            if total > 0 and attended < total:
-                amount = _whole_som(amount * attended / total)
-                note = gettext("{month}, {total} ish kunidan {attended} kun").format(
-                    month=f"{period_month:02d}/{period_year}", total=total, attended=attended
-                )
+        amount = charge.amount_due
+        note = charge.proration_note
 
         group = (
             Enrollment.objects.filter(child=child, status=EnrollmentState.ACTIVE)

@@ -12,6 +12,7 @@ from apps.branches.models import Branch
 from apps.children.models import (
     Child,
     ChildGuardian,
+    ChildPause,
     Enrollment,
     EnrollmentStatus,
     Group,
@@ -141,6 +142,19 @@ class AddGuardianSerializer(serializers.Serializer):
         return attrs
 
 
+class ChildPauseSerializer(serializers.ModelSerializer):
+    """ "Bir oylik ariza" — o'qish uchun (Bosqich 12.1)."""
+
+    created_by_name = serializers.CharField(
+        source="created_by.full_name", read_only=True, default=None
+    )
+
+    class Meta:
+        model = ChildPause
+        fields = ["id", "month_from", "month_to", "reason", "created_by_name", "created_at"]
+        read_only_fields = fields
+
+
 class ChildGuardianSerializer(serializers.ModelSerializer):
     guardian = GuardianSerializer(read_only=True)
 
@@ -185,6 +199,7 @@ class ChildSerializer(serializers.ModelSerializer):
             "gender",
             "enrollment_status",
             "enrolled_on",
+            "skip_trial",
             "contract_number",
             "tariff",
             "tariff_name",
@@ -251,6 +266,8 @@ class ChildWriteSerializer(serializers.ModelSerializer):
             "enrolled_on",
             "contract_number",
             "is_existing_client",
+            # Sinov muddati bu bolaga qo'llanmaydi (Bosqich 12.1).
+            "skip_trial",
             "opening_debt",
             "notes",
             "allergies",

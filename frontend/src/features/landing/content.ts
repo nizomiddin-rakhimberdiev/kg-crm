@@ -478,8 +478,8 @@ const uz: Copy = {
     title: 'Kundalik ishning mayda-chuydasi ham oʻylangan.',
     items: [
       {
-        title: 'Kelmagan kunlar uchun qayta hisob',
-        text: 'Shifokor maʼlumotnomasi yoki ota-ona arizasi asosida — davomat jadvalidan emas. Hujjatning oʻzi biriktiriladi va shu oy toʻlanmagan boʻlsa, summadan darhol ayriladi.',
+        title: 'Har bir kun hisobda',
+        text: 'Oy oʻrtasida kelgan yoki ketgan bola faqat bogʻchada boʻlgan ish kunlari uchun toʻlaydi, birinchi kunlari — bepul sinov. Bir oylik ariza bilan oy 0 soʻm, joy saqlanadi. Kelmagan kunlar maʼlumotnoma yoki ariza bilan qaytariladi — davomat jadvalidan emas.',
       },
       {
         title: 'Excelʼdan koʻchirish',
@@ -1045,8 +1045,8 @@ const ru: Copy = {
     title: 'Мелочи ежедневной работы тоже продуманы.',
     items: [
       {
-        title: 'Перерасчёт за дни отсутствия',
-        text: 'По справке или заявлению, а не по табелю. Сам документ прикрепляется, и если месяц ещё не оплачен — сумма уменьшается сразу.',
+        title: 'Каждый день на счету',
+        text: 'Ребёнок, пришедший или ушедший в середине месяца, платит только за рабочие дни в саду, а первые дни — бесплатная проба. По заявлению на месяц начисляется 0, место сохраняется. Пропуски возвращаются по справке или заявлению — не по табелю.',
       },
       {
         title: 'Перенос из Excel',
@@ -1605,8 +1605,8 @@ const en: Copy = {
     title: 'The small parts of the daily work are thought through too.',
     items: [
       {
-        title: 'Credit for days absent',
-        text: 'From a certificate or an application, never from the attendance grid. The document itself is attached, and if the month is unpaid the amount drops straight away.',
+        title: 'Every day accounted for',
+        text: 'A child who arrives or leaves mid-month pays only for the working days spent at the kindergarten, and the first days are a free trial. A one-month leave charges nothing and keeps the place. Absences are credited from a certificate or an application — never from the attendance grid.',
       },
       {
         title: 'Import from Excel',

@@ -21,8 +21,9 @@ import pytest
 
 from apps.children.models import Child
 from apps.core.tenancy import organization_context
+from apps.finance.charges import plan_month
 from apps.finance.models import TariffPlan
-from apps.finance.services import first_month_share, issue_invoice
+from apps.finance.services import issue_invoice
 
 pytestmark = [pytest.mark.django_db, pytest.mark.big_update]
 
@@ -46,6 +47,7 @@ def _child(tenant, enrolled_on: date | None) -> Child:
             gender="male",
             tariff=tariff,
             enrolled_on=enrolled_on,
+            skip_trial=True,  # sinov — `test_month_charge.py` da
         )
 
 
@@ -53,21 +55,18 @@ def test_a_child_arriving_late_pays_only_for_the_days_left(tenant_a):
     """Oyning oxirida kelgan bola — qolgan ish kunlari uchun, to'liq oy emas."""
     child = _child(tenant_a, date(2026, 9, 25))
     with organization_context(tenant_a.organization.id):
-        share = first_month_share(child=child, period_year=2026, period_month=9)
+        charge = plan_month(child, 2026, 9)
         invoice = issue_invoice(child=child, period_year=2026, period_month=9)
 
-    assert share is not None
-    attended, total = share
+    attended, total = charge.billable_days, charge.working_days
     # Sentabr 25-30: 25, 28, 29, 30 ish kuni (26-27 — shanba/yakshanba).
     assert attended == 4, f"kutilgani 4 ish kuni, chiqqani {attended}"
     assert total == 22, f"2026-sentabrda 22 ish kuni, chiqqani {total}"
 
-    # Egasining formulasi: 3 050 000 / 22 * 4 = 554 545,45 — va hisob
-    # BUTUN so'mga yaxlitlanadi: bog'cha to'lovida tiyin ishlatilmaydi.
-    expected = (PRICE / total * attended).quantize(Decimal("1"))
-    assert invoice.amount_due == expected
+    # Egasining formulasi: 3 050 000 / 22 * 4 = 554 545,45 — natija
+    # 1 000 so'mgacha yaxlitlanadi (brif 2026-10-14, `finance.rounding_step`).
     assert invoice.amount_due < PRICE
-    assert str(invoice.amount_due) == "554545.00"
+    assert str(invoice.amount_due) == "555000.00"
 
 
 def test_a_child_arriving_on_the_first_pays_the_full_month(tenant_a):
@@ -87,6 +86,7 @@ def test_without_an_enrolment_date_the_full_month_is_charged(tenant_a):
     """
     child = _child(tenant_a, None)
     with organization_context(tenant_a.organization.id):
-        assert first_month_share(child=child, period_year=2026, period_month=9) is None
+        charge = plan_month(child, 2026, 9)
+        assert charge.billable_days == charge.working_days
         invoice = issue_invoice(child=child, period_year=2026, period_month=9)
     assert invoice.amount_due == PRICE

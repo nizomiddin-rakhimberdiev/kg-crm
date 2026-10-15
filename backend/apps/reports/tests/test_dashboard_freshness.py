@@ -49,6 +49,7 @@ def test_a_payment_and_its_reversal_show_up_immediately(
             gender="male",
             tariff=tariff,
             enrolled_on=date(2026, 9, 1),
+            skip_trial=True,  # kesh sinaladi, sinov muddati emas
         )
         issue_invoice(child=child, period_year=2026, period_month=9)
 

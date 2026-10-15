@@ -949,8 +949,6 @@ export const messages: Record<string, string> = {
   'Kunlik toʻlov shu kunlar boʻyicha hisoblanadi — shanba ishlaydigan bogʻcha uchun ham.':
     'The day rate is counted over these days — including a kindergarten open on Saturday.',
   'Birinchi oy hisobi': 'First month billing',
-  'Oy oʻrtasida qabul qilingan bola uchun: toʻliq oy, ish kunlari boʻyicha yoki keyingi oydan.':
-    'For a child enrolled mid-month: the full month, pro rata by working days, or from next month.',
   'Birinchi faktura muddati (kun)': 'First invoice grace (days)',
   'Qabul sanasidan kamida shuncha kun keyin — bola kelgan kuniyoq qarzdor boʻlib qolmasin.':
     'At least this many days after enrolment — so a child is not a debtor on day one.',
@@ -1406,4 +1404,18 @@ export const messages: Record<string, string> = {
   'Hujjat bilan qayta hisob': 'Credit with a document',
   'Qayta hisob': 'Absence credits',
   '{done} / {total} belgilandi': '{done} of {total} marked',
+  'Bir oylik ariza': 'One-month leave',
+  'Hisoblangan summa shu qadamgacha yaxlitlanadi: 1 161 905 → 1 162 000. Kunlik stavka emas, natija.':
+    'The computed amount is rounded to this step: 1 161 905 → 1 162 000. The result is rounded, not the day rate.',
+  'Oy oʻrtasida kelgan yoki ketgan bola uchun: toʻliq oy, ish kunlari boʻyicha yoki keyingi oydan.':
+    'For a child who arrives or leaves mid-month: the full month, by working days, or from next month.',
+  'Shu oy uchun 0 soʻm hisoblanadi, bolaning joyi saqlanadi.':
+    'Nothing is charged for that month, and the child keeps their place.',
+  'Sinov muddati (ish kuni)': 'Trial period (working days)',
+  'Sinov muddatisiz': 'No trial period',
+  'Toʻlov birinchi kundan boshlanadi — bepul sinov kunlari qoʻllanmaydi.':
+    'Billing starts on the first day — the free trial days do not apply.',
+  'Yangi bolaning birinchi shuncha ish kuni bepul. Sinovda ketsa — hech narsa hisoblanmaydi. 0 — sinov yoʻq.':
+    "A new child's first working days are free. Leaving during the trial costs nothing. 0 means no trial.",
+  'Yaxlitlash (soʻm)': 'Rounding (UZS)',
 }

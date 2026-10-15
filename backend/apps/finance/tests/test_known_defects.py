@@ -55,6 +55,7 @@ def _child(tenant_a, tariff, *, first: str, last: str, enrolled_on: date | None 
             gender="female",
             tariff=tariff,
             enrolled_on=enrolled_on,
+            skip_trial=True,  # proporsiya sinaladi; sinov — test_month_charge.py
         )
 
 
@@ -203,8 +204,8 @@ class TestFirstInvoice:
         with organization_context(tenant_a.organization.id):
             invoice = services.issue_invoice(child=child, period_year=2026, period_month=9)
 
-        # 1 500 000 ÷ 22 × 1 = 68 182 (butun so'mgacha).
-        assert invoice.amount_due == Decimal("68182.00")
+        # 1 500 000 ÷ 22 × 1 = 68 182 → 68 000 (1 000 gacha, Bosqich 12.1).
+        assert invoice.amount_due == Decimal("68000.00")
 
     def test_first_invoice_is_not_overdue_on_the_day_it_is_created(self, tenant_a, tariff):
         child = _child(

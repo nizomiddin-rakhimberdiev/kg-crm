@@ -158,7 +158,40 @@ class Tenant:
         return client
 
 
+def _ensure_plan() -> None:
+    """
+    Tarif reja bor bo'lsin — tranzaksion testdan keyin ham.
+
+    `TransactionTestCase` (masalan `test_concurrency.py`) oxirida jadvallarni
+    tozalaydi, migratsiya ekkan `subscription_plan` bilan birga. Undan keyin
+    yurgan tranzaksion test tashkilot ocholmay "'standard' uchun amaldagi
+    plan topilmadi" bilan yiqilardi — natija testlar TARTIBIGA bog'liq edi
+    (2026-10-15 da `apps/finance` `apps/attendance` dan oldin yurganda
+    topildi). Plan bor bo'lsa, bu chaqiruv hech narsa yozmaydi.
+    """
+    from datetime import date
+    from decimal import Decimal
+
+    from apps.core.tenancy import platform_context
+    from apps.subscriptions.models import SubscriptionPlan
+
+    with platform_context():
+        if SubscriptionPlan.objects.filter(code="standard").exists():
+            return
+        SubscriptionPlan.objects.create(
+            code="standard",
+            valid_from=date(2026, 1, 1),
+            name="Standart",
+            currency="UZS",
+            base_price=Decimal("500000.00"),
+            included_children=50,
+            overage_step_children=10,
+            overage_step_price=Decimal("80000.00"),
+        )
+
+
 def _register(name: str, email: str) -> Tenant:
+    _ensure_plan()
     password = "Juda-Kuchli-Parol-2026"  # noqa: S105 — test ma'lumoti
     result = register_organization(
         organization_name=name,

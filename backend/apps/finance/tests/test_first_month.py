@@ -23,6 +23,7 @@ from apps.children.models import Child
 from apps.core.exceptions import BusinessRuleViolation
 from apps.core.tenancy import organization_context
 from apps.finance import services
+from apps.finance.charges import plan_month
 from apps.finance.models import TariffPlan
 from apps.settings_app.services import set_setting
 
@@ -53,16 +54,26 @@ def _child(tenant_a, tariff, enrolled_on: date | None) -> Child:
             gender="female",
             tariff=tariff,
             enrolled_on=enrolled_on,
+            # Bu fayl PROPORSIYANI sinaydi — sinov muddati
+            # (`test_month_charge.py`) bu yerda ataylab o'chirilgan.
+            skip_trial=True,
         )
+
+
+def _share(child: Child) -> tuple[int, int] | None:
+    """Ilgarigi `first_month_share` o'rnida — hisoblagichdan (Bosqich 12.1)."""
+    charge = plan_month(child, 2026, 9)
+    return charge.billable_days, charge.working_days
 
 
 class TestProration:
     @pytest.mark.parametrize(
         ("enrolled_day", "attended_days", "expected"),
         [
-            # 2026-09: 22 ish kuni (Du–Ju, bayramsiz).
-            (30, 1, Decimal("68182.00")),  # chorshanba, oxirgi ish kuni
-            (17, 10, Decimal("681818.00")),  # payshanba
+            # 2026-09: 22 ish kuni (Du–Ju, bayramsiz). Natija 1 000 so'mgacha
+            # yaxlitlanadi (`finance.rounding_step`, Bosqich 12.1).
+            (30, 1, Decimal("68000.00")),  # chorshanba, oxirgi ish kuni
+            (17, 10, Decimal("682000.00")),  # payshanba
             (1, 22, TARIFF),  # oyning boshi — to'liq oy
         ],
     )
@@ -71,7 +82,7 @@ class TestProration:
     ):
         child = _child(tenant_a, tariff, date(2026, 9, enrolled_day))
         with organization_context(tenant_a.organization.id):
-            share = services.first_month_share(child=child, period_year=2026, period_month=9)
+            share = _share(child)
             invoice = services.issue_invoice(child=child, period_year=2026, period_month=9)
 
         assert share == (attended_days, 22)
@@ -91,12 +102,12 @@ class TestProration:
                 holiday_date=date(2026, 9, 29),
                 name="Sinov bayrami",
             )
-            share = services.first_month_share(child=child, period_year=2026, period_month=9)
+            share = _share(child)
             invoice = services.issue_invoice(child=child, period_year=2026, period_month=9)
 
         # Oyda 21 ish kuni qoldi, boladan 2 kun.
         assert share == (2, 21)
-        assert invoice.amount_due == Decimal("142857.00")
+        assert invoice.amount_due == Decimal("143000.00")
 
     def test_only_the_first_month_is_prorated(self, tenant_a, tariff):
         """Ikkinchi oy — toʻliq tarif, garchi qabul oy oʻrtasida boʻlsa ham."""
@@ -119,11 +130,14 @@ class TestProration:
         child = _child(tenant_a, tariff, date(2026, 9, 30))
         with organization_context(tenant_a.organization.id):
             invoice = services.issue_invoice(child=child, period_year=2026, period_month=9)
-            line = invoice.lines.first()
+            line = invoice.lines.get(kind="proration")
+            total = sum(row.line_total for row in invoice.lines.all())
 
-        assert line is not None
+        # Sabab endi alohida qatorda, formulasi bilan (Bosqich 12.1):
+        # to'liq narx + "22 ish kunidan 1 kun: 1 500 000 × 1 / 22 = 68 000".
         assert "22" in line.description and "1" in line.description
-        assert line.line_total == invoice.amount_due
+        assert "× 1 / 22" in line.formula
+        assert total == invoice.amount_due
 
 
 class TestFirstMonthMode:
@@ -260,7 +274,7 @@ class TestBillingPreview:
                 organization=tenant_a.organization, period_year=2026, period_month=9
             )
 
-        assert preview.rows[0].amount == Decimal("68182.00")
+        assert preview.rows[0].amount == Decimal("68000.00")
         assert "22" in preview.rows[0].note
 
     def test_preview_shows_the_advance_that_will_be_consumed(self, tenant_a, tariff):

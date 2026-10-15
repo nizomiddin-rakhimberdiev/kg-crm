@@ -1474,3 +1474,45 @@ msgstr "расход изменён"
 
 msgid "Qaror chiqqan daʼvoning hujjatini almashtirib boʻlmaydi."
 msgstr "Документ решённой заявки заменить нельзя."
+
+msgid "Bu oylar uchun pauza allaqachon bor."
+msgstr "Пауза на эти месяцы уже есть."
+
+msgid "Chegirma: {reason}"
+msgstr "Скидка: {reason}"
+
+msgid "Pauza oxiri boshidan oldin boʻlishi mumkin emas."
+msgstr "Конец паузы не может быть раньше начала."
+
+msgid "Pauza sababini yozing."
+msgstr "Укажите причину паузы."
+
+msgid "Vaqtincha toʻxtatilgan: {reason}"
+msgstr "Временно приостановлено: {reason}"
+
+msgid "kelgan: {d}"
+msgstr "пришёл: {d}"
+
+msgid "sinov {n} ish kuni bepul"
+msgstr "пробные {n} рабочих дня бесплатно"
+
+msgid "oxirgi kun: {d}"
+msgstr "последний день: {d}"
+
+msgid "{total} ish kunidan {days} kun ({detail})"
+msgstr "{days} из {total} рабочих дней ({detail})"
+
+msgid "{total} ish kunidan {days} kun"
+msgstr "{days} из {total} рабочих дней"
+
+msgid "{full_name}: narx belgilanmagan."
+msgstr "{full_name}: цена не установлена."
+
+msgid "Oy «YYYY-MM» koʻrinishida boʻlishi kerak."
+msgstr "Месяц указывается в виде «ГГГГ-ММ»."
+
+msgid "pauza: {reason}"
+msgstr "пауза: {reason}"
+
+msgid "{month} uchun toʻlov tushgan — avval toʻlovni qaytaring yoki pauzani keyingi oydan boshlang."
+msgstr "За {month} уже есть оплата — сначала верните платёж или начните паузу со следующего месяца."

@@ -478,6 +478,24 @@ Authentication identity.
 
 **Future-proofing:** a `guardian` can later be linked 1–1 to a `user` for the Parent Portal (add nullable `user_id`).
 
+### 11.2a Billing window of a child (Bosqich 12.1)
+
+`child.skip_trial BOOLEAN NOT NULL DEFAULT false` and table **`child_pause`** (tenant-scoped, RLS, `organization_id`/`branch_id` like every operational table):
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `child_id` | `UUID` | `NOT NULL` FK → child `ON DELETE CASCADE` | |
+| `month_from`, `month_to` | `DATE` | `NOT NULL`, first of a month, `CHECK (month_to >= month_from)` | A "bir oylik ariza" covers whole months |
+| `reason` | `VARCHAR(255)` | `NOT NULL` | Mandatory |
+| `created_by_id` | `UUID` | `NULL` FK → user `ON DELETE SET NULL` | |
+
+How a month is billed — `charges.plan_month()`, in this order; every value is a branch setting with Oriental Kinderland's figure as the default:
+
+1. Price: tariff or individual fee; then the benefit. The result is the **monthly amount** — the base of the day rate (ADR-31).
+2. Window inside the month, when `finance.first_month_mode = prorated`: from the arrival date (new children only, not `is_existing_client`), moved past a **trial** of `finance.trial_days` working days (default 3, not for `skip_trial`), up to the day before `status_changed_on` for a child who left. A child withdrawn inside the trial owes nothing.
+3. Days = working days in that window (`attendance.working_weekdays` per branch, `holiday` per organization). The whole month → the monthly amount unchanged; otherwise `monthly × days / working days`, rounded to `finance.rounding_step` (default 1 000). The day rate itself is never rounded — the result is.
+4. A month covered by `child_pause` is 0, the child stays `active` and keeps their place. If that month's invoice was already issued and nothing paid, it is cancelled and re-issued at 0; if money was received, the pause is refused with the reason, because what happens to that money is a person's decision.
+
 ### 11.3 `child_guardian` (bridge — carries the relationship semantics)
 
 | Column | Type | Constraints | Notes |
@@ -686,11 +704,13 @@ For itemization beyond the base tariff (extra meals, activities, one-off fees).
 |--------|------|-------------|-------|
 | `invoice_id` | `UUID` | `NOT NULL` FK → invoice `ON DELETE CASCADE` | |
 | `description` | `VARCHAR(255)` | `NOT NULL` | |
+| `kind` | `VARCHAR(20)` | `NOT NULL DEFAULT ''` | `base` · `benefit` · `proration` · `pause` · `credit` · `correction` (Bosqich 12.1) — reports and "Nega?" read the kind, never parse the text |
+| `formula` | `VARCHAR(255)` | `NOT NULL DEFAULT ''` | How the line's amount came about: `3 050 000 × 8 / 21 = 1 162 000` |
 | `quantity` | `NUMERIC(10,2)` | `NOT NULL DEFAULT 1`, `CHECK (quantity > 0)` | |
-| `unit_amount` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (unit_amount >= 0)` | |
+| `unit_amount` | `NUMERIC(12,2)` | `NOT NULL` | Negative for `benefit`, `proration`, `pause` and `credit` lines |
 | `line_total` | `NUMERIC(12,2)` | `NOT NULL` | `= quantity * unit_amount` (enforced in service) |
 
-**Rule:** `SUM(line_total)` should reconcile to `invoice.amount_due` (validated in service; deviations only via explicit discount lines).
+**Rule:** `SUM(line_total)` equals `invoice.amount_due` exactly. Since Bosqich 12.1 the lines are written by one calculator, `apps/finance/charges.py::plan_month()`: the full price (`base`), the benefit, and — when the child is not billed for the whole month — one `proration` line whose formula states the days (`21 ish kunidan 8 kun`), or a `pause` line. Absence credits follow as `credit` lines. Preview, issue, the absence day rate and the "Nega?" explanation all read that same calculator, so they cannot drift apart.
 
 ### 13.5 `payment`
 A money-received event.

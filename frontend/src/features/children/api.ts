@@ -11,6 +11,15 @@ export interface GroupInput {
   teacher_id?: string | null
 }
 
+export interface ChildPause {
+  id: string
+  month_from: string
+  month_to: string
+  reason: string
+  created_by_name: string | null
+  created_at: string
+}
+
 export interface ChildInput {
   first_name: string
   last_name: string
@@ -23,6 +32,8 @@ export interface ChildInput {
   contract_number?: string
   /** Bola tizimga o'tishdan oldin ham bog'chada bo'lganmi (PLAN 7.8). */
   is_existing_client?: boolean
+  /** Sinov muddati (`finance.trial_days`) bu bolaga qoʻllanmaydi (Bosqich 12.1). */
+  skip_trial?: boolean
   /** Eski qarz — faqat yaratishda; ledger'ga debet bo'lib tushadi. */
   opening_debt?: string
   notes?: string
@@ -81,6 +92,11 @@ export const childrenApi = {
 
   unlinkGuardian: (childId: string, linkId: string) =>
     api.delete(`/children/${childId}/guardians/${linkId}`),
+
+  /** "Bir oylik ariza" (Bosqich 12.1) — shu oy(lar) 0 soʻm, joy saqlanadi. */
+  pauses: (childId: string) => api.get<ChildPause[]>(`/children/${childId}/pauses`),
+  addPause: (childId: string, payload: { month: string; month_to?: string; reason: string }) =>
+    api.post<ChildPause>(`/children/${childId}/pauses`, payload),
 
   addGuardian: (
     childId: string,

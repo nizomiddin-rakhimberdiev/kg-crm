@@ -1474,3 +1474,45 @@ msgstr "expense edited"
 
 msgid "Qaror chiqqan daʼvoning hujjatini almashtirib boʻlmaydi."
 msgstr "The document of a decided claim cannot be replaced."
+
+msgid "Bu oylar uchun pauza allaqachon bor."
+msgstr "There is already a pause for these months."
+
+msgid "Chegirma: {reason}"
+msgstr "Discount: {reason}"
+
+msgid "Pauza oxiri boshidan oldin boʻlishi mumkin emas."
+msgstr "A pause cannot end before it starts."
+
+msgid "Pauza sababini yozing."
+msgstr "Give the reason for the pause."
+
+msgid "Vaqtincha toʻxtatilgan: {reason}"
+msgstr "Paused: {reason}"
+
+msgid "kelgan: {d}"
+msgstr "arrived: {d}"
+
+msgid "sinov {n} ish kuni bepul"
+msgstr "{n}-working-day trial free"
+
+msgid "oxirgi kun: {d}"
+msgstr "last day: {d}"
+
+msgid "{total} ish kunidan {days} kun ({detail})"
+msgstr "{days} of {total} working days ({detail})"
+
+msgid "{total} ish kunidan {days} kun"
+msgstr "{days} of {total} working days"
+
+msgid "{full_name}: narx belgilanmagan."
+msgstr "{full_name}: no price is set."
+
+msgid "Oy «YYYY-MM» koʻrinishida boʻlishi kerak."
+msgstr "The month must look like «YYYY-MM»."
+
+msgid "pauza: {reason}"
+msgstr "pause: {reason}"
+
+msgid "{month} uchun toʻlov tushgan — avval toʻlovni qaytaring yoki pauzani keyingi oydan boshlang."
+msgstr "{month} has already been paid — refund the payment first or start the pause next month."

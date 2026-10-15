@@ -36,6 +36,16 @@ DEFAULTS: dict[str, Any] = {
     # keyin bo'ladi. Ya'ni oyning 30-kunida kelgan bola fakturasi
     # yaratilgan kuniyoq kechikkan bo'lib qolmaydi.
     "finance.first_invoice_grace_days": 5,
+    # --- Bosqich 12.1: hisoblash qoidalari (Oriental Kinderland qiymatlari) ---
+    #
+    # Yangi bolaning birinchi shuncha ISH kuni bepul (sinov). Bola sinov
+    # ichida ketsa — hech narsa yozilmaydi; qolsa — to'lov sinovdan
+    # keyingi kundan. `0` — sinov yo'q.
+    "finance.trial_days": 3,
+    # Hisoblangan summa shu qadamgacha yaxlitlanadi (so'm). Kunlik
+    # stavka emas, KUNLAR × STAVKA natijasi: bir xil holatdagi ikki
+    # bolaga har doim bir xil raqam chiqadi. `1` — butun so'mgacha.
+    "finance.rounding_step": 1000,
     "notifications.sms_enabled": True,
     # --- Asosiy kanal (PLAN 3.7, ADR-23) ---
     #

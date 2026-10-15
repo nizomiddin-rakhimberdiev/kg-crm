@@ -205,6 +205,12 @@ class InvoiceLine(BaseModel):
 
     invoice = models.ForeignKey("finance.Invoice", on_delete=models.CASCADE, related_name="lines")
     description = models.CharField(max_length=255)
+    # Bosqich 12.1: qator turi (`base`, `benefit`, `proration`, `pause`,
+    # `credit`, `correction`) va uni keltirib chiqargan formula —
+    # "3 050 000 × 8 / 21 = 1 162 000". "Nega?" va oylik yig'ma shu
+    # ikkisini o'qiydi; matndan raqam qidirilmaydi.
+    kind = models.CharField(max_length=20, blank=True, default="")
+    formula = models.CharField(max_length=255, blank=True, default="")
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("1"))
     unit_amount = models.DecimalField(max_digits=12, decimal_places=2)
     line_total = models.DecimalField(max_digits=12, decimal_places=2)

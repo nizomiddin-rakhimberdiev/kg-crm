@@ -118,45 +118,21 @@ def daily_rate_for(*, child: Any, on_date: date) -> tuple[Decimal, int]:
     """
     Bolaning o'sha oydagi bir kunlik narxi va oyning ish kunlari.
 
-    Manba — o'sha oyning hisob-fakturasi (`amount_due`, ya'ni
-    chegirmadan KEYINGI summa). Hisob-faktura hali chiqarilmagan
-    bo'lsa, tarifga qaytamiz.
+    Manba — imtiyozdan keyingi TO'LIQ oylik (`charges.plan_month`),
+    hisob-fakturaning `amount_due` si EMAS (Bosqich 12.1). Oy o'rtasida
+    kelgan bolaning fakturasi allaqachon qisqartirilgan, va undan olingan
+    stavka uning har bir kunini arzonroq qilib qo'yardi.
     """
-    from apps.finance.models import Invoice, InvoiceStatus
+    from apps.finance.charges import plan_month
 
-    days = working_days_in_month(
-        organization_id=child.organization_id,
-        year=on_date.year,
-        month=on_date.month,
-        branch=child.branch,
-    )
-    if days <= 0:
-        raise BusinessRuleViolation(
-            gettext("{year}-{month:02d} oyida ish kuni yoʻq — kalendarni tekshiring.").format(
-                year=on_date.year, month=on_date.month
-            )
-        )
-
-    invoice = (
-        Invoice.objects.filter(child=child, period_year=on_date.year, period_month=on_date.month)
-        .exclude(status=InvoiceStatus.CANCELLED)
-        .first()
-    )
-    if invoice is not None:
-        base = invoice.amount_due
-    else:
-        # Narx manbai — tarif YOKI individual narx (`child_monthly_price`).
-        from apps.finance.selectors import child_monthly_price
-
-        price = child_monthly_price(child)
-        base = price.amount if price is not None else None
-    if base is None:
+    charge = plan_month(child, on_date.year, on_date.month)
+    if charge.price is None:
         raise BusinessRuleViolation(
             gettext("{full_name}: narx ham, hisob-faktura ham yoʻq.").format(
                 full_name=child.full_name
             )
         )
-    return _money(Decimal(base) / Decimal(days)), days
+    return _money(charge.monthly / Decimal(charge.working_days)), charge.working_days
 
 
 @transaction.atomic
@@ -268,8 +244,10 @@ def approve_claim(*, claim: AbsenceClaim, approved_by: Any = None, note: str = "
             )
         )
 
-    rate, _ = daily_rate_for(child=child, on_date=claim.date_from)
-    credit = _money(rate * days)
+    # Kunlar × stavka natijasi yaxlitlanadi, stavka emas (Bosqich 12.1).
+    from apps.finance.charges import credit_for_days
+
+    credit, rate, _ = credit_for_days(child=child, on_date=claim.date_from, days=days)
 
     # Chegirma o'sha oyda hisoblanganidan oshib ketmaydi.
     from apps.finance.models import Invoice, InvoiceStatus

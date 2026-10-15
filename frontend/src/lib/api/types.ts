@@ -257,6 +257,8 @@ export interface Child {
   archived_at: string | null
   is_active: boolean
   created_at: string
+  /** Sinov muddati qoʻllanmaydi (Bosqich 12.1). */
+  skip_trial?: boolean
 }
 
 export interface Group {

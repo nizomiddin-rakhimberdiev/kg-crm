@@ -20,6 +20,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type GuardianLink } from '@/lib/api/types'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { ChildBalanceCard } from '@/features/children/components/ChildBalanceCard'
+import { PausePanel } from '@/features/children/components/PausePanel'
 import { ChildEditDialog } from '@/features/children/components/ChildEditDialog'
 import { ChildStatusDialog } from '@/features/children/components/ChildStatusDialog'
 import { ChildTabs } from '@/features/children/components/ChildTabs'
@@ -637,6 +638,9 @@ export default function ChildDetailPage() {
 
       {/* Contracts (PLAN 6.5) — next to the guardians they are made with. */}
       {contractsOn && <ContractsCard childId={childId} />}
+
+      {/* "Bir oylik ariza" (Bosqich 12.1) — oy uchun 0 so'm, joy saqlanadi. */}
+      <PausePanel childId={childId} />
 
       {/* Hisob-fakturalar, to'lovlar va tarix — mudiraning savollari
           endi bitta kartada, boshqa ekranga o'tmasdan (PLAN 2.1). */}

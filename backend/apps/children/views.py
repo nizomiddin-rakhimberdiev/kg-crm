@@ -23,6 +23,7 @@ from apps.children.models import Child, Enrollment, Group, Guardian
 from apps.children.serializers import (
     AddGuardianSerializer,
     ChildGuardianSerializer,
+    ChildPauseSerializer,
     ChildSerializer,
     ChildStatusSerializer,
     ChildWriteSerializer,
@@ -268,6 +269,54 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
             changes={"child": str(child.id), "group": str(enrollment.group_id)},
         )
         return Response(EnrollmentSerializer(enrollment).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["get", "post"], url_path="pauses")
+    def pauses(self, request: Request, pk: str | None = None) -> Response:
+        """
+        "Bir oylik ariza" (Bosqich 12.1): `GET` ro'yxat, `POST {month, reason}`.
+
+        `month` — "YYYY-MM"; ixtiyoriy `month_to` bir necha oy uchun.
+        """
+        child = self.get_object()
+        if request.method == "GET":
+            return Response(
+                ChildPauseSerializer(child.pauses.order_by("-month_from"), many=True).data
+            )
+
+        def _parse(value: Any) -> tuple[int, int]:
+            try:
+                year, month = str(value).split("-")
+                return int(year), int(month)
+            except (ValueError, AttributeError) as exc:
+                raise BusinessRuleViolation(
+                    gettext("Oy «YYYY-MM» koʻrinishida boʻlishi kerak.")
+                ) from exc
+
+        year, month = _parse(request.data.get("month"))
+        year_to, month_to = _parse(request.data.get("month_to") or request.data.get("month"))
+        user = request_user(request)
+        pause = services.pause_child(
+            child=child,
+            year=year,
+            month=month,
+            year_to=year_to,
+            month_to=month_to,
+            reason=str(request.data.get("reason") or ""),
+            created_by=user,
+        )
+        audit.record(
+            action="create",
+            request=request._request,
+            actor=user,
+            entity_type="child_pause",
+            entity_id=pause.id,
+            changes={
+                "from": pause.month_from.isoformat(),
+                "to": pause.month_to.isoformat(),
+                "reason": pause.reason,
+            },
+        )
+        return Response(ChildPauseSerializer(pause).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"], url_path="guardians")
     def add_guardian(self, request: Request, pk: str | None = None) -> Response:

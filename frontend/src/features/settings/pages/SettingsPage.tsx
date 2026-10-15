@@ -85,7 +85,19 @@ const META: Record<string, SettingMeta> = {
   'finance.first_month_mode': {
     label: t('Birinchi oy hisobi'),
     help: t(
-      'Oy oʻrtasida qabul qilingan bola uchun: toʻliq oy, ish kunlari boʻyicha yoki keyingi oydan.',
+      'Oy oʻrtasida kelgan yoki ketgan bola uchun: toʻliq oy, ish kunlari boʻyicha yoki keyingi oydan.',
+    ),
+  },
+  'finance.trial_days': {
+    label: t('Sinov muddati (ish kuni)'),
+    help: t(
+      'Yangi bolaning birinchi shuncha ish kuni bepul. Sinovda ketsa — hech narsa hisoblanmaydi. 0 — sinov yoʻq.',
+    ),
+  },
+  'finance.rounding_step': {
+    label: t('Yaxlitlash (soʻm)'),
+    help: t(
+      'Hisoblangan summa shu qadamgacha yaxlitlanadi: 1 161 905 → 1 162 000. Kunlik stavka emas, natija.',
     ),
   },
   'finance.first_invoice_grace_days': {

@@ -216,6 +216,104 @@ CLOSED_STATUSES = (
     EnrollmentStatus.WITHDRAWN,
 )
 
+# --- "Bir oylik ariza" (Bosqich 12.1) ---
+
+
+def pause_for(child: Child, year: int, month: int) -> Any:
+    """Shu oyni qamraydigan pauza yoki `None`."""
+    from apps.children.models import ChildPause
+
+    first = date(year, month, 1)
+    return (
+        ChildPause.objects.filter(child=child, month_from__lte=first, month_to__gte=first)
+        .order_by("-month_from")
+        .first()
+    )
+
+
+@transaction.atomic
+def pause_child(
+    *,
+    child: Child,
+    year: int,
+    month: int,
+    reason: str,
+    year_to: int | None = None,
+    month_to: int | None = None,
+    created_by: Any = None,
+) -> Any:
+    """
+    Bolani bir (yoki bir necha) oyga to'xtatadi — joyi saqlanadi.
+
+    Holat O'ZGARMAYDI: bola faol, guruhda. O'sha oy(lar)ning hisob-fakturasi
+    0 so'm bo'lib, sababi bilan yoziladi (`charges.plan_month`).
+    """
+    from apps.children.models import ChildPause
+
+    cleaned = (reason or "").strip()
+    if not cleaned:
+        raise BusinessRuleViolation(gettext("Pauza sababini yozing."))
+    start = date(year, month, 1)
+    end = date(year_to or year, month_to or month, 1)
+    if end < start:
+        raise BusinessRuleViolation(gettext("Pauza oxiri boshidan oldin boʻlishi mumkin emas."))
+    if ChildPause.objects.filter(child=child, month_from__lte=end, month_to__gte=start).exists():
+        raise BusinessRuleViolation(gettext("Bu oylar uchun pauza allaqachon bor."))
+    pause = ChildPause.objects.create(
+        organization=child.organization,
+        branch=child.branch,
+        child=child,
+        month_from=start,
+        month_to=end,
+        reason=cleaned[:255],
+        created_by=created_by,
+    )
+    _reissue_paused_months(child=child, pause=pause, created_by=created_by)
+    return pause
+
+
+def _reissue_paused_months(*, child: Child, pause: Any, created_by: Any = None) -> None:
+    """
+    Pauza oyiga faktura allaqachon chiqqan bo'lsa — bekor qilib, 0 so'mlik qayta yozadi.
+
+    Ariza ko'pincha oyning 1-kunidagi avtomatik fakturadan KEYIN keladi.
+    Hujjat tahrirlanmaydi: mavjud yo'l — `cancel_invoice` (qarshi yozuv) va
+    yangi `issue_invoice`, u esa pauzani ko'rib 0 yozadi. To'lov tushgan
+    oyda tizim to'xtaydi: bu pulni qaytarish yoki keyingi oyga o'tkazish —
+    odamning qarori, jimgina avans qilib qo'yish emas.
+    """
+    from apps.finance import services as finance
+    from apps.finance.models import Invoice, InvoiceStatus
+
+    month = pause.month_from
+    while month <= pause.month_to:
+        invoice = (
+            Invoice.objects.filter(child=child, period_year=month.year, period_month=month.month)
+            .exclude(status=InvoiceStatus.CANCELLED)
+            .first()
+        )
+        if invoice is not None and invoice.amount_due > 0:
+            if invoice.amount_paid > 0:
+                raise BusinessRuleViolation(
+                    gettext(
+                        "{month} uchun toʻlov tushgan — avval toʻlovni qaytaring yoki "
+                        "pauzani keyingi oydan boshlang."
+                    ).format(month=f"{month.month:02d}/{month.year}")
+                )
+            finance.cancel_invoice(
+                invoice=invoice,
+                reason=gettext("pauza: {reason}").format(reason=pause.reason),
+                created_by=created_by,
+            )
+            finance.issue_invoice(
+                child=child,
+                period_year=month.year,
+                period_month=month.month,
+                created_by=created_by,
+            )
+        month = date(month.year + (month.month // 12), month.month % 12 + 1, 1)
+
+
 #: Xato yozuvni o'chirish oynasi (Q6).
 DELETE_WINDOW = timedelta(hours=24)
 
