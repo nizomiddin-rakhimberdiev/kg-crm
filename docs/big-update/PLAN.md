@@ -786,3 +786,55 @@ oylik "toʻlangan" deb belgilandi va boshqaruv panelida qoldiq
   yoʻq edi. Bu nafaqat tozalashga, balki vendor tomonidagi
   `purge_organization()` ga ham tegishli edi. Tranzaksiya ichida boʻlgani
   uchun jonli maʼlumot zarar koʻrmadi.
+
+---
+
+### Bosqich 12 — Billing as the kindergarten actually runs it `[~]`
+
+Owner's brief of 2026-10-14 ("Toʻlov va hisob-kitob modulini real bogʻcha
+jarayoni asosida mustahkamlash"), approved 2026-10-15 for all seven parts in
+order, built as one connected system. Reference customer: Oriental
+Kinderland — ~211 children, 12 groups, base fee 3 050 000, five-day week.
+Every value below is a **branch/organization setting** with Oriental's
+figure as the system default; nothing kindergarten-specific is hard-coded.
+
+**The spine that connects the seven parts — one calculator.** Today the
+month's charge is computed twice (`issue_invoice` and
+`preview_monthly_invoices`, near-identical copies), and the absence day rate
+is taken from `invoice.amount_due` — which is already prorated for a child who
+arrived mid-month, so their day rate comes out too low. Phase 1 introduces
+`apps/finance/charges.py::plan_month(child, year, month) -> MonthCharge`:
+base price → benefits (typed, incl. sibling) → working-day window (arrival,
+trial, departure, pause) → rounding → lines, each carrying its own formula.
+Issue, preview, the day rate for credits, the "Nega?" explanation, the
+monthly summary and the reconciliation all read this one object.
+
+Audit (bor / qisman / yoʻq per requirement) is in the conversation of
+2026-10-15; the gaps it found are what the phases below close.
+
+**Assumptions the owner did not correct (2026-10-15):**
+1. The medical-certificate rule (1–2 days → food money, 3+ → full rate)
+   supersedes the 2026-09-30 "no minimum length" decision → new ADR.
+2. Holidays stay organization-wide (national); working weekdays stay
+   per branch.
+3. Trial: a child withdrawn before the trial ends owes nothing; otherwise
+   billing starts the day after the trial. No separate "stayed" click.
+4. Commission: the payment lands gross in the bank; the commission is a
+   separate bank expense ("Bank komissiyasi").
+5. The owner or director closes a month; afterwards it changes only by a
+   correction line on the next month.
+
+| # | Phase | Acceptance tests (brief §8) |
+|---|---|---|
+| 12.1 | Calendar, day rate, rounding, arrival/departure, trial, pause — and the single calculator | 1, 2, 3, 4, 10 |
+| 12.2 | Typed benefits with mandatory reason + history; families via shared guardian; sibling rule; benefits report; migrate benefit-tariffs (dry-run) | 5, 8 (price) |
+| 12.3 | Configurable absence kinds (full rate / fixed per day / none, minimum days); certificate 1–2 days → food money; formula + "Nega?" on invoice lines; write-off instead of zeroing debt; month-by-month debt on the child card | 6, 7, 8, 9, 16 |
+| 12.4 | Payment date rules; payer guardian; Click and Payme separate; payroll deduction; reason for manual allocation | 11, 12 |
+| 12.5 | Per-method commission as bank expense; transfer endpoint + screen; cash handover chain with confirmation; day close (count vs system, shortage/surplus with reason) | 13, 14 |
+| 12.6 | Monthly summary; "cash received" vs "collected for the month"; reconciliation check; month close and lock; Excel in the old "oylik toʻlov jadvali" layout | 15 |
+| 12.7 | Import: benefit column, transliteration-aware duplicates with confirmation, families by guardian phone, sibling price mismatch warning | — |
+
+Each phase ends with: red test first for every money rule, full
+`ci-local.sh`, docs/ADR updated, a short report with how to check it on the
+demo data. Existing data changes only through `--dry-run` commands the owner
+runs.
