@@ -33,10 +33,12 @@ from apps.finance.serializers import (
     InvoiceSerializer,
     LedgerEntrySerializer,
     PaymentBatchSerializer,
+    PaymentDetailSerializer,
     PaymentSerializer,
     PaymentWriteSerializer,
     TariffPlanSerializer,
 )
+from apps.settings_app.services import get_setting
 from apps.subscriptions.permissions import SubscriptionWriteGate
 
 __all__ = [
@@ -325,6 +327,22 @@ class LedgerViewSet(BranchScopedMixin, TenantReadOnlyViewSet):
                 "open_invoices": open_invoices,
                 # Qaysi oylar uchun qancha (Bosqich 12.3).
                 "months": balance.open_months(child),
+                # Shundan eski sana — sabab bilan (Bosqich 12.4). Kassir
+                # oynasi maydonni oldindan ko'rsatsin, server rad etgach emas.
+                "backdate_days": int(get_setting(key="finance.backdate_days") or 0),
+                # Kim to'lashi mumkin — kassir oynasidagi "to'lovchi"
+                # tanlovi uchun (Bosqich 12.4).
+                "guardians": [
+                    {
+                        "id": str(link.guardian_id),
+                        "full_name": link.guardian.full_name,
+                        "relation": link.relation,
+                        "is_primary": link.is_primary,
+                    }
+                    for link in child.guardian_links.select_related("guardian").order_by(
+                        "-is_primary", "created_at"
+                    )
+                ],
             }
         )
 
@@ -361,9 +379,10 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
     http_method_names = ["get", "post", "head", "options"]
 
     def get_serializer_class(self) -> Any:
-        return (
-            PaymentSerializer if self.request.method in ("GET", "HEAD") else PaymentWriteSerializer
-        )
+        if self.request.method not in ("GET", "HEAD"):
+            return PaymentWriteSerializer
+        # Bitta to'lov — pul qaysi oylarga ketgani bilan (Bosqich 12.4).
+        return PaymentDetailSerializer if self.action == "retrieve" else PaymentSerializer
 
     def get_base_queryset(self) -> Any:
         # Ro'yxat, bitta to'lov, kvitansiya va qaytarish — hammasi shu
@@ -393,6 +412,10 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
             paid_at=data.get("paid_at"),
             received_by=user,
             idempotency_key=request.headers.get("Idempotency-Key", "").strip(),
+            payer=data.get("payer"),
+            employee=data.get("employee"),
+            backdate_reason=data.get("backdate_reason", ""),
+            allocation_reason=data.get("allocation_reason", ""),
         )
         audit.record(
             action="create",
@@ -502,6 +525,9 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
             paid_at=data.get("paid_at"),
             received_by=user,
             idempotency_key=request.headers.get("Idempotency-Key", "").strip(),
+            payer=data.get("payer"),
+            backdate_reason=data.get("backdate_reason", ""),
+            allocation_reason=data.get("allocation_reason", ""),
         )
         for payment in payments:
             audit.record(

@@ -729,14 +729,22 @@ A money-received event.
 | `invoice_id` | `UUID` | `NULL` FK → invoice `ON DELETE RESTRICT` | Direct link (MVP); NULL = unapplied credit |
 | `child_id` | `UUID` | `NOT NULL` FK → child `ON DELETE RESTRICT` | Denormalized for fast child statements |
 | `amount` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (amount > 0)` | |
-| `method` | `VARCHAR(20)` | `NOT NULL`, `CHECK (... IN ('cash','terminal','bank_transfer','online'))` | The four ways a kindergarten here is actually paid |
+| `method` | `VARCHAR(20)` | `NOT NULL`, `CHECK (... IN ('cash','terminal','bank_transfer','click','payme','payroll','online'))` | How a kindergarten here is actually paid. Click and Payme are separate since Bosqich 12.4 (commission and reports tell them apart); `online` ("Payme / Click") stays only for rows written before 2026-10-15 and is refused for new payments. `payroll` — a staff parent's fee withheld from salary (below) |
 | `reference` | `VARCHAR(100)` | `NULL` | External txn ref |
 | `paid_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | |
 | `received_by` | `UUID` | `NULL` FK → user `ON DELETE SET NULL` | Cashier |
 | `receipt_path` | `VARCHAR(255)` | `NULL` | Generated receipt PDF |
 | `batch_id` | `UUID` | `NULL` | Rows entered in **one cashier action** share it (§13.5a) |
+| `payer_id` | `UUID` | `NULL` FK → guardian `ON DELETE SET NULL` | Who paid — must be one of the child's guardians (Bosqich 12.4) |
+| `payer_name` | `VARCHAR(255)` | | Snapshot of the payer's name, so the receipt still answers after the guardian is removed |
+| `employee_id` | `UUID` | `NULL` FK → employee `ON DELETE RESTRICT` | `CHECK`: set **iff** `method = 'payroll'` |
+| `backdate_reason` | `VARCHAR(255)` | | Required when `paid_at` is older than `finance.backdate_days` (60) |
+| `allocation_reason` | `VARCHAR(255)` | | Required when the cashier starts allocation at a month other than the oldest open one |
 
 **Business rules:**
+- **One payment, one date** (Bosqich 12.4, ADR-34). `paid_at` in the future is refused; older than `finance.backdate_days` (setting, default 60) only with `backdate_reason`. The check lives in `record_payment`, so the counter, the batch, online payments and any import obey it alike.
+- **Salary deduction** (`payroll`): no `cash_movement` is written — the money never reaches a pot; it stays in the till when the salary is paid. `payroll_item.tuition` carries it into that month's draft run (period by `paid_at`, synced like advances, reversed with the payment); a finalized run refuses both the deduction and its reversal.
+- **Manual allocation needs a reason.** Allocation is FIFO; naming a starting invoice other than the oldest open one requires `allocation_reason` (an online payment carries one automatically — the parent paid that very invoice). `GET /payments/{id}` lists the live allocations.
 - A payment is **immutable**; corrections are made via a **reversal payment** (`amount` reversal recorded as a credit-reversing ledger entry) or a `refund` ledger entry — never an UPDATE/DELETE (D3).
 - Recording a payment, in one transaction: inserts the payment, inserts a **credit** `child_ledger_entry`, updates `invoice.amount_paid`/`status`, updates `child.balance`.
 - **Future-proofing (multi-invoice settlement):** introduce `payment_allocation (payment_id, invoice_id, amount)` to split one payment across invoices; MVP uses the direct `invoice_id`.

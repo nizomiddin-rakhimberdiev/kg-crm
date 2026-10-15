@@ -34,6 +34,7 @@ class PayrollItemSerializer(serializers.ModelSerializer):
             "bonus",
             "deduction",
             "advance",
+            "tuition",
             "official_base",
             "tax_income",
             "tax_pension",

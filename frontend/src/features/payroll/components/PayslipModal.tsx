@@ -78,6 +78,9 @@ export function PayslipModal({ item, onClose }: { item: PayrollItem | null; onCl
             {Number(item.deduction) > 0 && (
               <Row label={t('Ushlab qolish')} value={item.deduction} negative />
             )}
+            {Number(item.tuition) > 0 && (
+              <Row label={t('Farzandining bogʻcha toʻlovi')} value={item.tuition} negative />
+            )}
             {Number(item.advance) > 0 && (
               <Row label={t('Avans (allaqachon berilgan)')} value={item.advance} negative />
             )}

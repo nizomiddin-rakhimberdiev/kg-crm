@@ -374,9 +374,19 @@ export interface Payment {
   invoice: string | null
   invoice_number: string | null
   amount: string
-  method: 'cash' | 'terminal' | 'bank_transfer' | 'online'
+  /** `online` — 2026-10-15 gacha yozilgan eski birlashgan Payme / Click. */
+  method: 'cash' | 'terminal' | 'bank_transfer' | 'click' | 'payme' | 'payroll' | 'online'
   reference: string
   paid_at: string
+  payer: string | null
+  payer_name: string
+  employee: string | null
+  employee_name: string | null
+  received_by_name: string | null
+  backdate_reason: string
+  allocation_reason: string
+  /** Faqat bitta toʻlov soʻralganda: pul qaysi oylarga ketgan. */
+  allocations?: Array<{ invoice_id: string; number: string; period: string; amount: string }>
   is_reversed: boolean
   reversed_at: string | null
   reversal_reason: string
@@ -483,6 +493,8 @@ export interface PayrollItem {
   deduction: string
   /** Oy davomida berib yuborilgan pul — ushlab qolishdan alohida. */
   advance: string
+  /** Farzandining bogʻcha toʻlovi — oyligidan ushlangan (Bosqich 12.4). */
+  tuition: string
   /**
    * Rasmiy qism va undan ushlanmalar (ADR-18). Rasmiy sof maosh
    * bankka, naqd qism kassadan chiqadi — shuning uchun ular alohida.

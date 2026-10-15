@@ -8,23 +8,48 @@
  * faylda yashaydi.
  */
 
-import { Banknote, Building2, CreditCard, Globe, type LucideIcon } from 'lucide-react'
+import {
+  Banknote,
+  Building2,
+  CreditCard,
+  Globe,
+  Smartphone,
+  Wallet,
+  type LucideIcon,
+} from 'lucide-react'
 import { BRAND, CHART } from '@/lib/brand'
 import { t } from '@/lib/i18n'
 
 /**
- * To'rtta usul — mijozning o'z lug'ati bilan (docs/03 §13.5).
- * `card` qiymati 2026-09-30 da `terminal` ga o'zgartirildi.
+ * Usullar — mijozning o'z lug'ati bilan (docs/03 §13.5).
+ * `card` qiymati 2026-09-30 da `terminal` ga o'zgartirildi; Click va
+ * Payme 2026-10-15 dan alohida (Bosqich 12.4) — `online` faqat eski
+ * yozuvlar uchun qoladi.
  */
 export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   cash: t('Naqd'),
   terminal: t('Terminal'),
   bank_transfer: t('Oʻtkazma'),
+  click: 'Click',
+  payme: 'Payme',
+  payroll: t('Oylikdan ushlash'),
   online: t('Payme / Click'),
 }
 
-/** Tanlash ro'yxatlari uchun — tartibi ekranda ko'rinadigan tartib. */
-export const PAYMENT_METHODS: readonly string[] = ['cash', 'terminal', 'bank_transfer', 'online']
+/** Kassir tugmalari — tartibi ekranda ko'rinadigan tartib. */
+export const PAYMENT_METHODS: readonly string[] = [
+  'cash',
+  'terminal',
+  'bank_transfer',
+  'click',
+  'payme',
+]
+
+/**
+ * Filtr va hisobotlar uchun — eski `online` ham, chunki u yozuvlarda bor.
+ * `payroll` kassir tugmalarida alohida: u xodimni so'raydi.
+ */
+export const ALL_PAYMENT_METHODS: readonly string[] = [...PAYMENT_METHODS, 'payroll', 'online']
 
 /** Noma'lum kod ham xom ko'rinmasin: baribir o'qiladigan matn qaytadi. */
 export const paymentMethodLabel = (method: string): string =>
@@ -35,6 +60,9 @@ export const PAYMENT_METHOD_COLORS: Record<string, string> = {
   cash: BRAND.nihol,
   terminal: BRAND.ildiz,
   bank_transfer: BRAND.orik,
+  click: CHART.niholSoft,
+  payme: CHART.ildizMid,
+  payroll: CHART.axis,
   online: CHART.niholSoft,
 }
 
@@ -45,6 +73,9 @@ const ICONS: Record<string, LucideIcon> = {
   cash: Banknote,
   terminal: CreditCard,
   bank_transfer: Building2,
+  click: Smartphone,
+  payme: Smartphone,
+  payroll: Wallet,
   online: Globe,
 }
 

@@ -76,7 +76,7 @@ def test_prepare_then_complete_records_the_payment(api_client, tenant_a, click, 
 
     assert _balance(tenant_a, invoice) == Decimal("0")
     with organization_context(tenant_a.organization.id):
-        assert Payment.objects.get().method == "online"
+        assert Payment.objects.get().method == "click"
 
 
 def test_a_repeated_complete_records_money_once(api_client, tenant_a, click, invoice):

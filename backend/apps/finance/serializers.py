@@ -8,9 +8,10 @@ from typing import Any
 from django.utils.translation import gettext
 from rest_framework import serializers
 
-from apps.children.models import Child
+from apps.children.models import Child, Guardian
 from apps.core.fields import TenantPrimaryKeyRelatedField
 from apps.finance.models import (
+    NEW_PAYMENT_METHODS,
     BenefitKind,
     Discount,
     DiscountType,
@@ -18,9 +19,9 @@ from apps.finance.models import (
     InvoiceLine,
     InvoiceWriteOff,
     Payment,
-    PaymentMethod,
     TariffPlan,
 )
+from apps.hr.models import Employee
 
 __all__ = [
     "TariffPlanSerializer",
@@ -211,6 +212,10 @@ class PaymentSerializer(serializers.ModelSerializer):
     child_name = serializers.CharField(source="child.full_name", read_only=True)
     invoice_number = serializers.CharField(source="invoice.number", read_only=True, default=None)
     is_reversed = serializers.BooleanField(read_only=True)
+    employee_name = serializers.CharField(source="employee.full_name", read_only=True, default=None)
+    received_by_name = serializers.CharField(
+        source="received_by.full_name", read_only=True, default=None
+    )
 
     class Meta:
         model = Payment
@@ -225,6 +230,13 @@ class PaymentSerializer(serializers.ModelSerializer):
             "reference",
             "paid_at",
             "batch_id",
+            "payer",
+            "payer_name",
+            "employee",
+            "employee_name",
+            "received_by_name",
+            "backdate_reason",
+            "allocation_reason",
             "is_reversed",
             "reversed_at",
             "reversal_reason",
@@ -233,12 +245,42 @@ class PaymentSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class PaymentDetailSerializer(PaymentSerializer):
+    """Bitta to'lov — pul qaysi oylarga ketgani bilan (brif §4)."""
+
+    allocations = serializers.SerializerMethodField()
+
+    class Meta(PaymentSerializer.Meta):
+        fields = [*PaymentSerializer.Meta.fields, "allocations"]
+        read_only_fields = fields
+
+    def get_allocations(self, payment: Payment) -> list[dict[str, Any]]:
+        rows = (
+            payment.allocations.filter(released_at__isnull=True)
+            .select_related("invoice")
+            .order_by("invoice__period_year", "invoice__period_month")
+        )
+        return [
+            {
+                "invoice_id": str(row.invoice_id),
+                "number": row.invoice.number,
+                "period": f"{row.invoice.period_year}-{row.invoice.period_month:02d}",
+                "amount": f"{row.amount:.2f}",
+            }
+            for row in rows
+        ]
+
+
 class PaymentLineSerializer(serializers.Serializer):
     """Bitta to'lov usuli va undan kelgan summa (docs/03 §13.5a)."""
 
-    method = serializers.ChoiceField(choices=PaymentMethod.choices)
+    method = serializers.ChoiceField(choices=NEW_PAYMENT_METHODS)
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
     reference = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    # `payroll` qatori uchun — kimning oyligidan.
+    employee_id = TenantPrimaryKeyRelatedField(
+        model=Employee, source="employee", required=False, allow_null=True
+    )
 
 
 class PaymentBatchSerializer(serializers.Serializer):
@@ -255,6 +297,11 @@ class PaymentBatchSerializer(serializers.Serializer):
     )
     lines = PaymentLineSerializer(many=True, allow_empty=False)
     paid_at = serializers.DateTimeField(required=False)
+    payer_id = TenantPrimaryKeyRelatedField(
+        model=Guardian, source="payer", required=False, allow_null=True
+    )
+    backdate_reason = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    allocation_reason = serializers.CharField(required=False, allow_blank=True, max_length=255)
 
 
 class PaymentWriteSerializer(serializers.Serializer):
@@ -271,6 +318,14 @@ class PaymentWriteSerializer(serializers.Serializer):
         model=Invoice, source="invoice", required=False, allow_null=True
     )
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
-    method = serializers.ChoiceField(choices=PaymentMethod.choices)
+    method = serializers.ChoiceField(choices=NEW_PAYMENT_METHODS)
     reference = serializers.CharField(required=False, allow_blank=True, max_length=100)
     paid_at = serializers.DateTimeField(required=False)
+    payer_id = TenantPrimaryKeyRelatedField(
+        model=Guardian, source="payer", required=False, allow_null=True
+    )
+    employee_id = TenantPrimaryKeyRelatedField(
+        model=Employee, source="employee", required=False, allow_null=True
+    )
+    backdate_reason = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    allocation_reason = serializers.CharField(required=False, allow_blank=True, max_length=255)

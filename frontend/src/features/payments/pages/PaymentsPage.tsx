@@ -15,7 +15,7 @@ import { paymentsApi, tariffsApi, type BoardRow } from '@/features/payments/api'
 import { GenerateInvoicesDialog } from '@/features/payments/components/GenerateInvoicesDialog'
 import { ReceiptModal } from '@/features/payments/components/ReceiptModal'
 import { TakePaymentModal } from '@/features/payments/components/TakePaymentModal'
-import { PAYMENT_METHODS, paymentMethodLabel } from '@/features/payments/methods'
+import { ALL_PAYMENT_METHODS, paymentMethodLabel } from '@/features/payments/methods'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { invalidateMoney } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -615,7 +615,7 @@ export default function PaymentsPage() {
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
               >
                 <option value="">{t('Hammasi')}</option>
-                {PAYMENT_METHODS.map((value) => (
+                {ALL_PAYMENT_METHODS.map((value) => (
                   <option key={value} value={value}>
                     {paymentMethodLabel(value)}
                   </option>

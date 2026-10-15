@@ -1588,3 +1588,24 @@ msgstr "Фиксированная сумма в день"
 
 msgid "Qaytarilmaydi"
 msgstr "Не возвращается"
+
+msgid "Oylikdan ushlash"
+msgstr "Удержание из зарплаты"
+
+msgid "Toʻlov sanasi kelajakda boʻlishi mumkin emas: {day}."
+msgstr "Дата оплаты не может быть в будущем: {day}."
+
+msgid "{days} kundan eski sana faqat sabab bilan kiritiladi."
+msgstr "Дату старше {days} дней можно указать только с причиной."
+
+msgid "Toʻlovchi bu bolaning vasiysi emas."
+msgstr "Плательщик не является опекуном этого ребёнка."
+
+msgid "Oylikdan ushlash uchun xodimni tanlang — kimning oyligidan?"
+msgstr "Для удержания из зарплаты выберите сотрудника — из чьей зарплаты?"
+
+msgid "Eng eski qarz — {period}. Boshqa oyni tanlash uchun sababini yozing."
+msgstr "Самый старый долг — {period}. Чтобы выбрать другой месяц, укажите причину."
+
+msgid "{month} oyligi yopilgan — undan ushlab boʻlmaydi. Keyingi oy sanasi bilan kiriting yoki boshqa usulni tanlang."
+msgstr "Зарплата за {month} закрыта — удержать из неё нельзя. Укажите дату следующего месяца или выберите другой способ."

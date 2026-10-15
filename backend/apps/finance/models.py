@@ -280,7 +280,22 @@ class PaymentMethod(models.TextChoices):
     CASH = "cash", gettext_lazy("Naqd")
     TERMINAL = "terminal", gettext_lazy("Terminal")
     BANK_TRANSFER = "bank_transfer", gettext_lazy("Oʻtkazma")
+    CLICK = "click", "Click"
+    PAYME = "payme", "Payme"
+    # Xodim farzandining to'lovi oyligidan ushlanadi (Bosqich 12.4): pul
+    # hech qaysi qopga TUSHMAYDI — u oylik to'lanayotganda kassadan
+    # chiqmay qoladi. Shuning uchun `employee` majburiy.
+    PAYROLL = "payroll", gettext_lazy("Oylikdan ushlash")
+    # Eski birlashgan usul — 2026-10-15 gacha yozilgan to'lovlar uchun.
+    # Yangi to'lov uni tanlay olmaydi (`NEW_PAYMENT_METHODS`): hisobot
+    # Click va Payme'ni alohida ko'rsatishi kerak.
     ONLINE = "online", gettext_lazy("Payme / Click")
+
+
+#: Yangi to'lov uchun tanlanadigan usullar — eski `online` siz.
+NEW_PAYMENT_METHODS = [
+    (value, label) for value, label in PaymentMethod.choices if value != PaymentMethod.ONLINE
+]
 
 
 class Payment(BranchScopedModel):
@@ -316,6 +331,31 @@ class Payment(BranchScopedModel):
         blank=True,
     )
     receipt_path = models.CharField(max_length=255, blank=True)
+
+    # --- Bosqich 12.4: kim to'ladi, nega shu sana, nega shu oy ---
+    #
+    # To'lovchi — bolaning vasiysi. Ism ham SURATGA olinadi: vasiy keyin
+    # o'chirilsa ham kvitansiya "kim to'lagan" degan savolga javob beradi.
+    payer = models.ForeignKey(
+        "children.Guardian",
+        on_delete=models.SET_NULL,
+        related_name="payments",
+        null=True,
+        blank=True,
+    )
+    payer_name = models.CharField(max_length=255, blank=True)
+    # `payroll` usulida — oyligidan ushlanadigan xodim.
+    employee = models.ForeignKey(
+        "hr.Employee",
+        on_delete=models.RESTRICT,
+        related_name="tuition_payments",
+        null=True,
+        blank=True,
+    )
+    # 60 kundan (sozlama) eski sana — faqat sabab bilan.
+    backdate_reason = models.CharField(max_length=255, blank=True)
+    # Kassir eng eski qarzni chetlab o'tib boshqa oyni tanlasa.
+    allocation_reason = models.CharField(max_length=255, blank=True)
 
     # Qaytarilgan to'lov: asl qator qoladi, faqat belgilanadi.
     reversed_at = models.DateTimeField(null=True, blank=True)
@@ -358,8 +398,27 @@ class Payment(BranchScopedModel):
             # darajasida tekshirilardi, ya'ni servis orqali kelgan
             # noto'g'ri qiymat jimgina yozilaverardi.
             models.CheckConstraint(
-                condition=models.Q(method__in=["cash", "terminal", "bank_transfer", "online"]),
+                condition=models.Q(
+                    method__in=[
+                        "cash",
+                        "terminal",
+                        "bank_transfer",
+                        "click",
+                        "payme",
+                        "payroll",
+                        "online",
+                    ]
+                ),
                 name="ck_payment_method_known",
+            ),
+            # Oylikdan ushlash — xodimsiz bo'lmaydi, xodim esa faqat shu
+            # usulda (boshqa usulda u ma'nosiz va hisobotni chalg'itadi).
+            models.CheckConstraint(
+                condition=(
+                    models.Q(method="payroll", employee__isnull=False)
+                    | (~models.Q(method="payroll") & models.Q(employee__isnull=True))
+                ),
+                name="ck_payment_payroll_employee",
             ),
             # Qisman indeks: kalitsiz to'lovlar (import, seed, eski
             # yozuvlar) cheklovga tushmaydi. Poyga holatida ikkinchi

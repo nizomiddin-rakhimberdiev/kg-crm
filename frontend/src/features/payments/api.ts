@@ -177,6 +177,10 @@ export interface ChildBalance {
     outstanding: string
     due_date: string
   }>
+  /** Shundan eski sana faqat sabab bilan (Bosqich 12.4, `finance.backdate_days`). */
+  backdate_days?: number
+  /** Toʻlovchi boʻla oladiganlar — bolaning vasiylari. */
+  guardians?: Array<{ id: string; full_name: string; relation: string; is_primary: boolean }>
 }
 
 /** To'lovlar jurnalining filtri (PLAN 1.8). */
@@ -204,6 +208,8 @@ export interface Receipt {
   child: string
   branch: string
   cashier: string
+  /** Toʻlovchi vasiy (Bosqich 12.4) — boʻsh boʻlishi mumkin. */
+  payer?: string
   reversed: boolean
   lines: Array<{ method: string; amount: string; reference: string }>
   total: string
@@ -298,7 +304,17 @@ export const paymentsApi = {
     payload: {
       child_id: string
       invoice_id?: string | null
-      lines: Array<{ method: string; amount: string; reference?: string }>
+      lines: Array<{
+        method: string
+        amount: string
+        reference?: string
+        /** `payroll` qatori uchun — kimning oyligidan. */
+        employee_id?: string
+      }>
+      paid_at?: string
+      payer_id?: string
+      backdate_reason?: string
+      allocation_reason?: string
     },
     idempotencyKey?: string,
   ) =>

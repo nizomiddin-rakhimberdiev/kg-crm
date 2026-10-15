@@ -1588,3 +1588,24 @@ msgstr "Fixed amount per day"
 
 msgid "Qaytarilmaydi"
 msgstr "Not refunded"
+
+msgid "Oylikdan ushlash"
+msgstr "Salary deduction"
+
+msgid "Toʻlov sanasi kelajakda boʻlishi mumkin emas: {day}."
+msgstr "The payment date cannot be in the future: {day}."
+
+msgid "{days} kundan eski sana faqat sabab bilan kiritiladi."
+msgstr "A date older than {days} days needs a reason."
+
+msgid "Toʻlovchi bu bolaning vasiysi emas."
+msgstr "The payer is not a guardian of this child."
+
+msgid "Oylikdan ushlash uchun xodimni tanlang — kimning oyligidan?"
+msgstr "Choose the employee for a salary deduction — whose salary?"
+
+msgid "Eng eski qarz — {period}. Boshqa oyni tanlash uchun sababini yozing."
+msgstr "The oldest debt is {period}. Write a reason to choose another month."
+
+msgid "{month} oyligi yopilgan — undan ushlab boʻlmaydi. Keyingi oy sanasi bilan kiriting yoki boshqa usulni tanlang."
+msgstr "Payroll for {month} is closed — nothing can be deducted from it. Use a date in the next month or choose another method."

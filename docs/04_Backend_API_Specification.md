@@ -464,8 +464,8 @@ Module: `finance` (Payments module UI). The **ledger** is the source of truth ([
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/payments` | `payments.read` | List (filters: `child`, `invoice`, `method`, `paid_at` range) |
-| POST | `/payments` | `payments.create` | Record a payment (optionally linked to invoice) |
-| GET | `/payments/{id}` | `payments.read` | Detail |
+| POST | `/payments` | `payments.create` | Record a payment (optionally linked to invoice). Bosqich 12.4: `method` ∈ `cash · terminal · bank_transfer · click · payme · payroll` (`online` is legacy, `400`); `payer_id?` (a guardian of the child, else `422`); `employee_id` (required for `payroll`); `paid_at` in the future → `422`, older than `finance.backdate_days` → `422` unless `backdate_reason`; `invoice_id` other than the oldest open one → `422` unless `allocation_reason`. `POST /payments/batch` takes the same `paid_at`, `payer_id`, `backdate_reason`, `allocation_reason`, and `employee_id` per line |
+| GET | `/payments/{id}` | `payments.read` | Detail, with `allocations` — which months the money settled |
 | POST | `/payments/{id}/reverse` | `payments.update` | Reverse a payment (creates counter-entry; never deletes) |
 | GET | `/payments/{id}/receipt` | `payments.read` | Receipt PDF |
 | GET | `/payments/daily-summary` | `payments.read` | Cashier daily totals (`?date=`) by method |

@@ -13,7 +13,7 @@ from __future__ import annotations
 import calendar
 import uuid
 from dataclasses import dataclass, field
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
@@ -1026,9 +1026,18 @@ def record_payment(
     received_by: Any = None,
     idempotency_key: str = "",
     batch_id: Any = None,
+    payer: Any = None,
+    employee: Any = None,
+    backdate_reason: str = "",
+    allocation_reason: str = "",
 ) -> Payment:
     """
     To'lovni qayd etadi — BITTA tranzaksiyada (docs/03 §13.5, §26).
+
+    Bosqich 12.4 qoidalari shu yerda — har bir yo'l (kassa, onlayn, import)
+    shu funksiyadan o'tadi: sana (`check_payment_date`), to'lovchi vasiy,
+    `payroll` usulida xodim, va eng eski qarzni chetlab o'tgan tanlovga
+    sabab (`_check_manual_allocation`).
 
     Tartib muhim:
       1. Hisob-faktura qatorini QULFLAYMIZ (`SELECT ... FOR UPDATE`)
@@ -1057,6 +1066,11 @@ def record_payment(
         if existing is not None:
             return existing
 
+    paid_at = paid_at or timezone.now()
+    backdate_reason = check_payment_date(paid_at, backdate_reason)
+    payer_name = _check_payer(child, payer)
+    _check_payroll(method, employee)
+
     if invoice is not None:
         if invoice.child_id != child.id:
             raise BusinessRuleViolation(gettext("Hisob-faktura boshqa bolaga tegishli."))
@@ -1064,6 +1078,7 @@ def record_payment(
             raise BusinessRuleViolation(
                 gettext("Bekor qilingan hisob-fakturaga toʻlov qabul qilinmaydi.")
             )
+        allocation_reason = _check_manual_allocation(child, invoice, allocation_reason)
         locked = Invoice.objects.select_for_update().get(pk=invoice.pk)
     else:
         locked = None
@@ -1083,10 +1098,15 @@ def record_payment(
                 amount=amount,
                 method=method,
                 reference=reference[:100],
-                paid_at=paid_at or timezone.now(),
+                paid_at=paid_at,
                 received_by=received_by,
                 idempotency_key=idempotency_key[:64],
                 batch_id=batch_id,
+                payer=payer,
+                payer_name=payer_name,
+                employee=employee if method == PaymentMethod.PAYROLL else None,
+                backdate_reason=backdate_reason,
+                allocation_reason=allocation_reason if invoice is not None else "",
             )
     except IntegrityError:
         if not idempotency_key:
@@ -1113,16 +1133,25 @@ def record_payment(
     # bir savolga emas, ikki savolga javob beradi — "oila qancha qarz?"
     # va "qaysi qopda qancha pul bor?" — lekin bitta hodisadan keladi va
     # biri yozilib, ikkinchisi yozilmay qolishi mumkin emas.
-    cash.post_movement(
-        account=cash.account_for_method(branch=payment.branch, method=method),
-        direction=MovementDirection.IN,
-        amount=amount,
-        source_type=MovementSource.PAYMENT,
-        source_id=payment.id,
-        description=(f"{child.full_name} — {locked.number}" if locked else child.full_name)[:255],
-        occurred_at=payment.paid_at,
-        created_by=received_by,
-    )
+    #
+    # Oylikdan ushlashda qopga hech narsa TUSHMAYDI: pul kassadan oylik
+    # bo'lib chiqmay qoladi. Uni bu yerda "kirim" desak, oylik to'langanda
+    # yana "chiqim" bo'lmay, kassa yo'q pulni ko'rsatardi.
+    if method == PaymentMethod.PAYROLL:
+        _sync_payroll_tuition(payment)
+    else:
+        cash.post_movement(
+            account=cash.account_for_method(branch=payment.branch, method=method),
+            direction=MovementDirection.IN,
+            amount=amount,
+            source_type=MovementSource.PAYMENT,
+            source_id=payment.id,
+            description=(f"{child.full_name} — {locked.number}" if locked else child.full_name)[
+                :255
+            ],
+            occurred_at=payment.paid_at,
+            created_by=received_by,
+        )
 
     # Taqsimot (Q1): tanlangan hujjat → FIFO → qoldiq avans. Bu ATAYLAB
     # ledger yozuvidan keyin: ledger pulning KELGANINI yozadi va u
@@ -1139,6 +1168,109 @@ def record_payment(
 
     notify_payment_received(payment=payment)
     return payment
+
+
+# --- To'lov qoidalari (Bosqich 12.4, brif §4) ---
+
+
+def check_payment_date(paid_at: Any, reason: str = "") -> str:
+    """
+    To'lov sanasini tekshiradi; kerak bo'lsa sababni qaytaradi.
+
+    Excel'da bitta katakda ikki sana, 2027 va 2029 yillar, sanasiz
+    to'lovlar bor edi. Bu yerda: bitta yozuv — bitta sana (ustun bitta),
+    kelajak — yo'q, `finance.backdate_days` dan eski — faqat sabab bilan.
+    """
+    from apps.settings_app.services import get_setting
+
+    if not isinstance(paid_at, datetime):
+        day = paid_at  # sana sifatida kelgan (import, testlar)
+    elif timezone.is_aware(paid_at):
+        day = timezone.localtime(paid_at).date()
+    else:
+        day = paid_at.date()
+    today = timezone.localdate()
+    if day > today:
+        raise BusinessRuleViolation(
+            gettext("Toʻlov sanasi kelajakda boʻlishi mumkin emas: {day}.").format(
+                day=day.strftime("%d.%m.%Y")
+            )
+        )
+    limit = int(get_setting(key="finance.backdate_days") or 0)
+    reason = (reason or "").strip()[:255]
+    if limit and (today - day).days > limit and not reason:
+        raise BusinessRuleViolation(
+            gettext("{days} kundan eski sana faqat sabab bilan kiritiladi.").format(days=limit)
+        )
+    return reason
+
+
+def _check_payer(child: Child, payer: Any) -> str:
+    """To'lovchi — shu bolaning vasiysi. Ismi suratga olinadi."""
+    if payer is None:
+        return ""
+    from apps.children.models import ChildGuardian
+
+    if not ChildGuardian.objects.filter(child=child, guardian=payer).exists():
+        raise BusinessRuleViolation(gettext("Toʻlovchi bu bolaning vasiysi emas."))
+    return str(payer.full_name)[:255]
+
+
+def _check_payroll(method: str, employee: Any) -> None:
+    if method == PaymentMethod.PAYROLL and employee is None:
+        raise BusinessRuleViolation(
+            gettext("Oylikdan ushlash uchun xodimni tanlang — kimning oyligidan?")
+        )
+
+
+def _check_manual_allocation(child: Child, invoice: Invoice, reason: str) -> str:
+    """
+    Eng eski qarzni chetlab o'tish — faqat sabab bilan (brif §4).
+
+    Sukut bo'yicha pul eng eski ochiq hujjatga ketadi. Kassir boshqa oyni
+    tanlasa, eski qarz ochiq qoladi — buning sababi yozilmasa, keyin
+    "nega avgust ochiq qoldi?" degan savolga hech kim javob bera olmaydi.
+    Eng eskisini tanlash esa tanlov emas — sabab so'ralmaydi.
+    """
+    reason = (reason or "").strip()[:255]
+    oldest = open_invoices(child).first()
+    if oldest is not None and oldest.pk != invoice.pk and not reason:
+        raise BusinessRuleViolation(
+            gettext("Eng eski qarz — {period}. Boshqa oyni tanlash uchun sababini yozing.").format(
+                period=f"{oldest.period_month:02d}.{oldest.period_year}"
+            )
+        )
+    return reason
+
+
+def _sync_payroll_tuition(payment: Payment) -> None:
+    """
+    Oylikdan ushlashni o'sha oyning oylik hisoblashiga yetkazadi.
+
+    Hisoblash hali yo'q bo'lsa — u yaratilganda o'zi oladi (davr bo'yicha
+    bog'lanadi, avans kabi). Yakunlangan bo'lsa — rad etiladi: yopilgan
+    oylik o'zgarmaydi, demak ushlab ham bo'lmaydi.
+    """
+    from apps.payroll.models import PayrollRun, PayrollStatus
+    from apps.payroll.services import sync_advances
+
+    paid_at = payment.paid_at
+    day = timezone.localtime(paid_at).date() if isinstance(paid_at, datetime) else paid_at
+    run = PayrollRun.objects.filter(
+        branch=payment.employee.branch if payment.employee else payment.branch,
+        period_year=day.year,
+        period_month=day.month,
+    ).first()
+    if run is None:
+        return
+    if run.status != PayrollStatus.DRAFT:
+        raise BusinessRuleViolation(
+            gettext(
+                "{month} oyligi yopilgan — undan ushlab boʻlmaydi. Keyingi oy sanasi bilan "
+                "kiriting yoki boshqa usulni tanlang."
+            ).format(month=f"{day.month:02d}.{day.year}")
+        )
+    sync_advances(run)
 
 
 # --- Taqsimot: qaysi pul qaysi hisob-fakturani yopadi (PLAN 1.2, Q1) ---
@@ -1377,6 +1509,9 @@ def record_payment_batch(
     paid_at: Any = None,
     received_by: Any = None,
     idempotency_key: str = "",
+    payer: Any = None,
+    backdate_reason: str = "",
+    allocation_reason: str = "",
 ) -> list[Payment]:
     """
     Bitta kassir harakatida bir nechta usulda to'lov (docs/03 §13.5a).
@@ -1458,6 +1593,10 @@ def record_payment_batch(
                     received_by=received_by,
                     idempotency_key=key(f"{index}a"),
                     batch_id=batch_id,
+                    payer=payer,
+                    employee=line.get("employee"),
+                    backdate_reason=backdate_reason,
+                    allocation_reason=allocation_reason,
                 )
             )
             outstanding -= applied
@@ -1475,6 +1614,9 @@ def record_payment_batch(
                     received_by=received_by,
                     idempotency_key=key(f"{index}b"),
                     batch_id=batch_id,
+                    payer=payer,
+                    employee=line.get("employee"),
+                    backdate_reason=backdate_reason,
                 )
             )
 
@@ -1519,6 +1661,12 @@ def reverse_payment(*, payment: Payment, reason: str = "", created_by: Any = Non
     # Taqsimot bo'shaydi: pul endi hech qaysi hujjatni yopmaydi va
     # yopilgan deb belgilangan hisob-fakturalar yana ochiladi.
     release_allocations(payment=payment, reason=reason or gettext("toʻlov qaytarildi"))
+
+    # Oylikdan ushlangan bo'lsa — oylik hisoblashidan ham qaytadi. Oylik
+    # yopilgan bo'lsa bu rad etiladi va butun qaytarish ham bekor bo'ladi:
+    # xodimga to'langan oylik endi o'zgarmaydi.
+    if payment.method == PaymentMethod.PAYROLL:
+        _sync_payroll_tuition(payment)
 
     recompute_child_balance(payment.child)
     return payment
@@ -1583,6 +1731,7 @@ def receipt_for(payment: Payment) -> dict[str, Any]:
         "child": first.child.full_name,
         "branch": first.branch.name,
         "cashier": first.received_by.full_name if first.received_by_id else "",
+        "payer": first.payer_name,
         "reversed": any(line.reversed_at for line in lines),
         "lines": [
             {

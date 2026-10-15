@@ -1980,3 +1980,23 @@ Testlar 5, 8.
 * Testlar 6, 7, 8 (kredit), 9, 16. Toʻliq backend toʻplami: 1 725 ta
   test, cross-tenant sweep `absence-kinds` ni ham qamraydi.
 
+### 12.4 Toʻlov: bitta sana, toʻlovchi, aniq usul
+
+* **Sana** — `record_payment` da (kassa, toʻplam, onlayn, import — hammasi
+  shu yoʻldan): kelajak rad etiladi (2029 → `422`), `finance.backdate_days`
+  (60) dan eski — faqat sabab bilan. Kassir oynasida sana maydoni (sukut —
+  bugun) va kerak boʻlganda sabab maydoni.
+* **Toʻlovchi** — bolaning vasiysi (`payer`, ismi suratga olinadi);
+  kvitansiyada koʻrinadi. Begona vasiy → `422`.
+* **Click va Payme alohida**; eski `online` faqat eski yozuvlarda.
+  Onlayn toʻlov endi provayderga qarab `click`/`payme` yoziladi.
+* **Oylikdan ushlash** (`payroll`) — xodim majburiy; qopga pul tushmaydi;
+  oʻsha oyning qoralama oylik hisoblashida `tuition` ustuni boʻlib
+  ushlanadi, payslipda "Farzandining bogʻcha toʻlovi". Yopilgan oylik
+  ushlashni ham, qaytarishni ham rad etadi.
+* **Qoʻlda taqsimlash** — eng eski qarzni chetlab oʻtish faqat sabab bilan;
+  `GET /payments/{id}` pul qaysi oylarga ketganini koʻrsatadi.
+* **11-test** (avans keyingi oyni oʻzi yopadi, usul oʻzgarmaydi, bankka bir
+  marta tushgan) — mavjud xatti-harakat, endi test bilan qotirildi.
+* ADR-34. Toʻliq backend: 1 746 test.
+

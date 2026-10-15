@@ -487,7 +487,7 @@ const uz: Copy = {
       },
       {
         title: 'Pul qayerda turibdi',
-        text: 'Naqd kassa va bank hisobi. Terminal, oʻtkazma va Payme/Click bankka tushadi, hisobotda esa nimadan qancha kelgani alohida koʻrinadi. Qoldiq saqlanmaydi — har doim harakatlardan hisoblanadi.',
+        text: 'Naqd kassa va bank hisobi. Terminal, oʻtkazma, Click va Payme bankka tushadi, hisobotda har biri alohida. Xodim farzandining toʻlovi oyligidan ushlanadi. Har toʻlovda bitta sana va toʻlovchi vasiy — kelajakdagi sana qabul qilinmaydi. Qoldiq saqlanmaydi — harakatlardan hisoblanadi.',
       },
       {
         title: 'Imtiyozlar — sababi bilan',
@@ -1054,7 +1054,7 @@ const ru: Copy = {
       },
       {
         title: 'Где лежат деньги',
-        text: 'Наличная касса и банковский счёт. Терминал, перевод и Payme/Click поступают на банк, а в отчёте видно, сколько пришло каждым способом. Остаток не хранится — он всегда считается из движений.',
+        text: 'Наличная касса и банковский счёт. Терминал, перевод, Click и Payme поступают на банк, в отчёте — каждый отдельно. Оплата за ребёнка сотрудника удерживается из зарплаты. У каждой оплаты одна дата и плательщик-опекун — дата в будущем не принимается. Остаток не хранится — он считается из движений.',
       },
       {
         title: 'Льготы — с причиной',
@@ -1614,7 +1614,7 @@ const en: Copy = {
       },
       {
         title: 'Where the money sits',
-        text: 'A cash till and a bank account. Terminal, transfer and Payme/Click land in the bank, while the report still shows how much came in each way. A balance is never stored; it is always computed from the movements.',
+        text: 'A cash till and a bank account. Terminal, transfer, Click and Payme land in the bank, each shown separately in the report. A staff member’s child fee is deducted from salary. Every payment has one date and a guardian who paid — a future date is refused. A balance is never stored; it is computed from the movements.',
       },
       {
         title: 'Benefits, with a reason',

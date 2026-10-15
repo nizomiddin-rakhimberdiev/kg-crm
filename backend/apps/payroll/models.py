@@ -117,6 +117,10 @@ class PayrollItem(BranchScopedModel):
     # maoshning bir qismi. Ularni bitta ustunga qo'shish payslipni
     # tushunarsiz qilardi ("nega 3 mln ushlab qolindi?").
     advance = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
+    # Farzandining bog'cha to'lovi — oyligidan ushlangan (Bosqich 12.4).
+    # Alohida ustun: payslip "jarima" emas, "bog'cha to'lovi" deb aytsin.
+    # Manba — `payment.method = payroll` qatorlari, davr bo'yicha.
+    tuition = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
     # Ish beruvchi ijtimoiy solig'i — rasmiy qismdan hisoblanadi va
     # xodimdan USHLANMAYDI (Q10).
     tax_social = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))

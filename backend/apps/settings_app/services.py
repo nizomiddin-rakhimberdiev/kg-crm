@@ -46,6 +46,10 @@ DEFAULTS: dict[str, Any] = {
     # stavka emas, KUNLAR × STAVKA natijasi: bir xil holatdagi ikki
     # bolaga har doim bir xil raqam chiqadi. `1` — butun so'mgacha.
     "finance.rounding_step": 1000,
+    # Bosqich 12.4: shuncha kundan eski sana bilan to'lov faqat SABAB
+    # bilan kiritiladi (Excel'dagi 2025/2027/2029 yillar shu yerdan).
+    # Kelajakdagi sana esa umuman qabul qilinmaydi.
+    "finance.backdate_days": 60,
     # --- Bosqich 12.2: imtiyozlar (Oriental Kinderland qiymatlari) ---
     #
     # Aka-uka: bir oiladagi (umumiy vasiy) har bir bolaga shuncha so'm

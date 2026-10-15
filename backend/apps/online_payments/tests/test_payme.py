@@ -138,7 +138,7 @@ class TestPerform:
         assert balance.balance == Decimal("0")
         with organization_context(tenant_a.organization.id):
             payment = Payment.objects.get()
-            assert payment.method == "online"
+            assert payment.method == "payme"
             assert payment.amount == Decimal("1500000.00")
             movement = CashMovement.objects.get(source_id=payment.id)
             # Payme puli bank hisobiga tushadi (2026-10-14); usul — toʻlovda.

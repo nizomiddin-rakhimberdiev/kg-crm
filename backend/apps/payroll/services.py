@@ -99,7 +99,7 @@ def recompute_item(
     item.tax_social = _money(official * social_rate / Decimal("100"))
 
     cash_gross = (item.base_amount - official) + item.bonus
-    cash_net = cash_gross - item.deduction - item.advance
+    cash_net = cash_gross - item.deduction - item.advance - item.tuition
     if cash_net < 0:
         # Ataylab xato: naqd qism ushlab qolish va avansni ko'tara
         # olmasa, payslip ma'nosiz raqam beradi. Buxgalter qaror
@@ -110,7 +110,7 @@ def recompute_item(
                 "ketdi. Rasmiy maoshni yoki avansni toʻgʻrilang."
             ).format(
                 employee=item.employee.full_name,
-                taken=_money(item.deduction + item.advance),
+                taken=_money(item.deduction + item.advance + item.tuition),
                 cash=_money(cash_gross),
             )
         )
@@ -384,16 +384,28 @@ def sync_advances(run: PayrollRun) -> PayrollRun:
     shunda qayta hisoblash idempotent: bir necha marta chaqirilsa ham
     natija bir xil bo'ladi.
     """
+    from apps.finance.selectors import payroll_tuition_totals
+
     _assert_editable(run)
     totals = _advance_totals(run)
+    items = list(run.items.select_related("employee"))
+    # Farzandining bog'cha to'lovi ham shu yo'l bilan keladi (Bosqich
+    # 12.4): davr bo'yicha, idempotent.
+    tuition = payroll_tuition_totals(
+        employee_ids=[item.employee_id for item in items],
+        period_year=run.period_year,
+        period_month=run.period_month,
+    )
     rates = _rates()
-    for item in run.items.select_related("employee"):
+    for item in items:
         advance = _money(totals.get(item.employee_id, Decimal("0")))
-        if advance == item.advance:
+        withheld = _money(tuition.get(item.employee_id, Decimal("0")))
+        if advance == item.advance and withheld == item.tuition:
             continue
         item.advance = advance
+        item.tuition = withheld
         recompute_item(item, rates=rates)
-        item.save(update_fields=["advance", *ITEM_FIELDS])
+        item.save(update_fields=["advance", "tuition", *ITEM_FIELDS])
     return run
 
 
@@ -865,6 +877,7 @@ def payslip(*, item: PayrollItem) -> dict[str, Any]:
         "bonus": str(item.bonus),
         "deduction": str(item.deduction),
         "advance": str(item.advance),
+        "tuition": str(item.tuition),
         "gross": str(item.gross),
         "net": str(item.net),
         "note": item.note,

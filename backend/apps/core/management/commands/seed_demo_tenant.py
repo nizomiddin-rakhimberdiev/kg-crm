@@ -363,6 +363,9 @@ class Command(SeedDemo):
                         )
                     ),
                     received_by=owner,
+                    # Demo tarixi oylar orqaga ketadi (Bosqich 12.4 qoidalari).
+                    backdate_reason="Demo maʼlumot",
+                    allocation_reason="Demo maʼlumot",
                 )
                 payments += 1
 

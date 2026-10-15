@@ -103,6 +103,12 @@ export function ReceiptModal({ paymentId, onClose }: { paymentId: string; onClos
                 <dt className="text-slate-500">{t('Bola')}</dt>
                 <dd className="font-semibold text-slate-900">{data.child}</dd>
               </div>
+              {data.payer && (
+                <div className="mt-1 flex justify-between gap-3">
+                  <dt className="text-slate-500">{t('Toʻlovchi')}</dt>
+                  <dd className="text-slate-700">{data.payer}</dd>
+                </div>
+              )}
               {data.cashier && (
                 <div className="mt-1 flex justify-between gap-3">
                   <dt className="text-slate-500">{t('Qabul qildi')}</dt>

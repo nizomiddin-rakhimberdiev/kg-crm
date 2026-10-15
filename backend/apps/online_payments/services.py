@@ -233,8 +233,13 @@ def perform(txn: OnlineTransaction) -> OnlineTransaction:
     payment = record_payment(
         child=txn.invoice.child,
         amount=txn.amount,
-        method=PaymentMethod.ONLINE,
+        # Click va Payme alohida usul (Bosqich 12.4): hisobot va
+        # komissiya ularni ajratadi.
+        method=PaymentMethod.PAYME if txn.provider == "payme" else PaymentMethod.CLICK,
         invoice=txn.invoice,
+        # Ota-ona havolada AYNAN shu hujjatni to'ladi — bu tanlovning
+        # sababi, kassir tanlovi emas.
+        allocation_reason="Ota-ona havola orqali shu hisob-fakturani toʻladi",
         reference=f"{txn.provider}:{txn.provider_txn_id}"[:100],
         idempotency_key=f"{txn.provider}:{txn.provider_txn_id}"[:64],
     )

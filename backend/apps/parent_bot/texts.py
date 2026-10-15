@@ -150,6 +150,9 @@ METHODS: Final = {
     "terminal": {"uz": "terminal", "ru": "терминал", "en": "card terminal"},
     "bank_transfer": {"uz": "oʻtkazma", "ru": "перевод", "en": "bank transfer"},
     "online": {"uz": "Payme / Click", "ru": "Payme / Click", "en": "Payme / Click"},
+    "click": {"uz": "Click", "ru": "Click", "en": "Click"},
+    "payme": {"uz": "Payme", "ru": "Payme", "en": "Payme"},
+    "payroll": {"uz": "oylikdan ushlash", "ru": "удержание из зарплаты", "en": "salary deduction"},
 }
 
 CURRENCY: Final = {"uz": "soʻm", "ru": "сум", "en": "UZS"}

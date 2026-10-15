@@ -13,14 +13,22 @@
  * Qoldiq har bosishdan keyin qayta hisoblanadi va keyingi summa
  * o'zi kiritilib turadi, ya'ni odatiy holatda kassir hech narsa
  * yozmaydi: "Naqd" ni bosadi va tamom.
+ *
+ * Bosqich 12.4: sana (bugun sukut, kelajak yo'q, eski sana — sabab
+ * bilan), to'lovchi vasiy, Click va Payme alohida, oylikdan ushlash —
+ * xodim bilan, va eng eski qarzni chetlab o'tish — sabab bilan. Sabab
+ * maydonlari faqat kerak bo'lganda chiqadi: odatiy to'lovda oyna
+ * avvalgidek bitta summa va bitta tugma.
  */
 
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ban, Banknote, X } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { DateInput } from '@/components/ui/DateInput'
 import { Modal } from '@/components/ui/Modal'
 import { invoicesApi, paymentsApi, type BoardRow, type OpenInvoice } from '@/features/payments/api'
+import { employeesApi } from '@/features/staff/api'
 import {
   PAYMENT_METHODS,
   paymentMethodColor,
@@ -32,14 +40,24 @@ import { invalidateMoney } from '@/lib/api/invalidate'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
-import { money } from '@/lib/format'
+import { money, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
 interface Tender {
   key: string
   method: string
   amount: number
+  /** `payroll` uchun — kimning oyligidan ushlanadi. */
+  employeeId?: string
+  employeeName?: string
 }
+
+const field =
+  'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500'
+
+/** `dd` kunlar oralig'i — ikkala sana ISO (`yyyy-mm-dd`). */
+const daysBetween = (from: string, to: string): number =>
+  Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000)
 
 interface Allocation {
   invoice: OpenInvoice
@@ -113,6 +131,35 @@ export function TakePaymentModal({
   const [preferred, setPreferred] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // --- Bosqich 12.4: sana, to'lovchi, sabablar ---
+  const now = today()
+  const [paidOn, setPaidOn] = useState(now)
+  const [backdateReason, setBackdateReason] = useState('')
+  const [allocationReason, setAllocationReason] = useState('')
+  const guardians = useMemo(() => detail?.guardians ?? [], [detail])
+  const [payerId, setPayerId] = useState<string | null>(null)
+  const payer = payerId ?? guardians.find((guardian) => guardian.is_primary)?.id ?? ''
+  const age = daysBetween(paidOn, now)
+  const limit = detail?.backdate_days ?? 60
+  const isFuture = age < 0
+  const needsBackdateReason = limit > 0 && age > limit
+  // Eng eski qarz — ro'yxatning birinchisi (FIFO). Boshqasini tanlash —
+  // sabab bilan; eng eskisini tanlash esa tanlov emas.
+  const skipsOldest = preferred !== null && openInvoices[0]?.id !== preferred
+  const missingReason =
+    (needsBackdateReason && !backdateReason.trim()) || (skipsOldest && !allocationReason.trim())
+
+  // Oylikdan ushlash — xodimni ko'ra oladigan foydalanuvchi uchun.
+  const canWithhold = can('payroll.read')
+  const [payrollOpen, setPayrollOpen] = useState(false)
+  const [employeeId, setEmployeeId] = useState('')
+  const employeesQuery = useQuery({
+    queryKey: ['org', organizationId, 'employees', 'active'],
+    queryFn: () => employeesApi.list({ employment_status: 'active', page_size: 200 }),
+    enabled: payrollOpen && canWithhold,
+  })
+  const employees = employeesQuery.data?.items ?? []
+
   const taken = tenders.reduce((sum, tender) => sum + tender.amount, 0)
   const left = Math.max(0, due - taken)
   const advance = Math.max(0, taken - due)
@@ -149,7 +196,17 @@ export function TakePaymentModal({
 
   const add = (method: string) => {
     if (entered <= 0) return
-    setTenders((prev) => [...prev, { key: crypto.randomUUID(), method, amount: entered }])
+    if (method === 'payroll' && !employeeId) return
+    const employee = employees.find((row) => row.id === employeeId)
+    setTenders((prev) => [
+      ...prev,
+      {
+        key: crypto.randomUUID(),
+        method,
+        amount: entered,
+        ...(method === 'payroll' ? { employeeId, employeeName: employee?.full_name } : {}),
+      },
+    ])
     // Keyingi summa — qolgani. Qoldiq tugagan bo'lsa maydon bo'shaydi,
     // ya'ni ortiqcha pul faqat ATAYLAB kiritiladi.
     const rest = Math.max(0, due - (taken + entered))
@@ -187,7 +244,13 @@ export function TakePaymentModal({
           lines: tenders.map((tender) => ({
             method: tender.method,
             amount: String(tender.amount),
+            ...(tender.employeeId ? { employee_id: tender.employeeId } : {}),
           })),
+          // Bugungi sana yuborilmaydi — server vaqtini oladi.
+          ...(paidOn !== now ? { paid_at: `${paidOn}T12:00:00` } : {}),
+          ...(payer ? { payer_id: payer } : {}),
+          ...(needsBackdateReason ? { backdate_reason: backdateReason.trim() } : {}),
+          ...(skipsOldest ? { allocation_reason: allocationReason.trim() } : {}),
         },
         idempotencyKey,
       ),
@@ -217,7 +280,7 @@ export function TakePaymentModal({
   const needsConfirm = advance > ADVANCE_ASK_FROM
 
   const submit = () => {
-    if (save.isPending || taken <= 0) return
+    if (save.isPending || taken <= 0 || isFuture || missingReason) return
     if (
       needsConfirm &&
       !window.confirm(
@@ -325,6 +388,75 @@ export function TakePaymentModal({
                 {t('Avval tanlangan hujjat yopiladi, ortigʻi keyingisiga oʻtadi.')}
               </p>
             )}
+            {skipsOldest && (
+              <div className="pt-1">
+                <label
+                  htmlFor="take-allocation-reason"
+                  className="mb-1 block text-xs font-medium text-orik-700"
+                >
+                  {t('Eng eski qarz ochiq qoladi — sababi (majburiy)')}
+                </label>
+                <input
+                  id="take-allocation-reason"
+                  required
+                  maxLength={255}
+                  value={allocationReason}
+                  onChange={(event) => setAllocationReason(event.target.value)}
+                  className={field}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Sana va to'lovchi — odatda tegilmaydi: bugun va asosiy vasiy. */}
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <div>
+            <label htmlFor="take-date" className="mb-1 block text-xs font-medium text-slate-600">
+              {t('Toʻlov sanasi')}
+            </label>
+            <DateInput id="take-date" value={paidOn} onChange={(iso) => setPaidOn(iso || now)} />
+          </div>
+          <div>
+            <label htmlFor="take-payer" className="mb-1 block text-xs font-medium text-slate-600">
+              {t('Toʻlovchi')}
+            </label>
+            <select
+              id="take-payer"
+              value={payer}
+              onChange={(event) => setPayerId(event.target.value)}
+              className={field}
+            >
+              <option value="">{t('Koʻrsatilmagan')}</option>
+              {guardians.map((guardian) => (
+                <option key={guardian.id} value={guardian.id}>
+                  {guardian.full_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        {isFuture && (
+          <p role="alert" className="mt-1.5 text-xs font-medium text-red-700">
+            {t('Toʻlov sanasi kelajakda boʻlishi mumkin emas.')}
+          </p>
+        )}
+        {needsBackdateReason && (
+          <div className="mt-2">
+            <label
+              htmlFor="take-backdate-reason"
+              className="mb-1 block text-xs font-medium text-orik-700"
+            >
+              {t('{n} kundan eski sana — sababi (majburiy)', { n: limit })}
+            </label>
+            <input
+              id="take-backdate-reason"
+              required
+              maxLength={255}
+              value={backdateReason}
+              onChange={(event) => setBackdateReason(event.target.value)}
+              className={field}
+            />
           </div>
         )}
 
@@ -400,6 +532,51 @@ export function TakePaymentModal({
               )
             })}
           </div>
+
+          {/* Oylikdan ushlash — xodim farzandi uchun. Kassaga pul
+              tushmaydi: u oylik to'langanda kassadan chiqmay qoladi. */}
+          {canWithhold &&
+            (payrollOpen ? (
+              <div className="mt-2 flex items-end gap-2 rounded-xl border border-slate-200 p-2">
+                <div className="min-w-0 flex-1">
+                  <label
+                    htmlFor="take-employee"
+                    className="mb-1 block text-xs font-medium text-slate-600"
+                  >
+                    {t('Kimning oyligidan?')}
+                  </label>
+                  <select
+                    id="take-employee"
+                    value={employeeId}
+                    onChange={(event) => setEmployeeId(event.target.value)}
+                    className={field}
+                  >
+                    <option value="">{t('Xodimni tanlang')}</option>
+                    {employees.map((employee) => (
+                      <option key={employee.id} value={employee.id}>
+                        {employee.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => add('payroll')}
+                  disabled={entered <= 0 || !employeeId}
+                  className="shrink-0 rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+                >
+                  {t('Ushlash')}
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setPayrollOpen(true)}
+                className="mt-2 text-xs font-medium text-slate-600 underline-offset-2 hover:underline"
+              >
+                {t('Oylikdan ushlash…')}
+              </button>
+            ))}
         </div>
 
         {tenders.length > 0 && (
@@ -415,6 +592,9 @@ export function TakePaymentModal({
                 />
                 <span className="flex-1 text-sm text-slate-600">
                   {paymentMethodLabel(tender.method)}
+                  {tender.employeeName && (
+                    <span className="block text-xs text-slate-500">{tender.employeeName}</span>
+                  )}
                 </span>
                 <span className="text-sm font-semibold tabular-nums text-slate-900">
                   {money(tender.amount)}
@@ -528,10 +708,12 @@ export function TakePaymentModal({
             soniya, kunda yuzlab marta. Esc esa `Modal` ning oʻzida. */}
         <button
           type="submit"
-          disabled={save.isPending || taken <= 0}
+          disabled={save.isPending || taken <= 0 || isFuture || missingReason}
           className={cn(
             'mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition',
-            save.isPending || taken <= 0 ? 'bg-slate-300' : 'bg-emerald-600 hover:bg-emerald-700',
+            save.isPending || taken <= 0 || isFuture || missingReason
+              ? 'bg-slate-300'
+              : 'bg-emerald-600 hover:bg-emerald-700',
           )}
         >
           <Banknote className="h-4 w-4" />

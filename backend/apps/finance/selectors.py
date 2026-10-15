@@ -644,3 +644,29 @@ def open_invoices_fifo(child: Any) -> list[Invoice]:
         .order_by("due_date", "created_at")
         if invoice.amount_paid < invoice.amount_due
     ]
+
+
+def payroll_tuition_totals(
+    *, employee_ids: Any, period_year: int, period_month: int
+) -> dict[Any, Decimal]:
+    """
+    Oylikdan ushlanadigan bog'cha to'lovlari — xodim bo'yicha (Bosqich 12.4).
+
+    Oylik moduli `payment` modelini o'zi o'qimaydi (invariant 1): u shu
+    selektordan oladi. Davr — to'lov sanasi bo'yicha, avans kabi;
+    qaytarilgan to'lov hisoblanmaydi.
+    """
+    from apps.finance.models import Payment, PaymentMethod
+
+    rows = (
+        Payment.objects.filter(
+            method=PaymentMethod.PAYROLL,
+            employee_id__in=list(employee_ids),
+            reversed_at__isnull=True,
+            paid_at__year=period_year,
+            paid_at__month=period_month,
+        )
+        .values("employee_id")
+        .annotate(total=Sum("amount"))
+    )
+    return {row["employee_id"]: row["total"] or Decimal("0") for row in rows}
