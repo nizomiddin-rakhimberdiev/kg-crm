@@ -8,6 +8,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
+from django.db.models import Q
 from django.http import Http404
 from django.utils import timezone
 from django.utils.translation import gettext
@@ -83,18 +84,70 @@ class DiscountViewSet(BranchScopedMixin, TenantViewSet):
     model = Discount
     serializer_class = DiscountSerializer
     select_related_fields = ("child",)
-    filterset_fields = ["child", "discount_type"]
+    filterset_fields = ["child", "discount_type", "kind"]
+    # Joyida tahrirlash va o'chirish YO'Q (Bosqich 12.2): o'zgarish — eskisini
+    # `end` bilan tugatish va yangisini yozish, shunda tarix o'zi saqlanadi.
+    http_method_names = ["get", "post", "head", "options"]
+    permission_action_map = {"end": "update"}
 
     def perform_create(self, serializer: Any) -> None:
-        child = serializer.validated_data["child"]
-        serializer.save(organization=child.organization, branch=child.branch)
+        data = serializer.validated_data
+        child = data["child"]
+        start, end = data["valid_from"], data.get("valid_to")
+        overlapping = Discount.objects.filter(child=child, is_active=True).filter(
+            Q(valid_to__isnull=True) | Q(valid_to__gte=start)
+        )
+        if end is not None:
+            overlapping = overlapping.filter(valid_from__lte=end)
+        if overlapping.exists():
+            raise BusinessRuleViolation(
+                gettext(
+                    "Bu davrda bolada boshqa imtiyoz bor — avval uni tugating, keyin yangisini "
+                    "kiriting."
+                )
+            )
+        user = request_user(self.request)
+        serializer.save(organization=child.organization, branch=child.branch, created_by=user)
         audit.record(
             action="create",
             request=self.request._request,
-            actor=request_user(self.request),
+            actor=user,
             entity_type="discount",
             entity_id=serializer.instance.id,
+            changes={
+                "child": child.full_name,
+                "kind": serializer.instance.kind,
+                "reason": serializer.instance.reason,
+                "from": str(start),
+                "to": str(end) if end else None,
+            },
         )
+
+    @action(detail=True, methods=["post"])
+    def end(self, request: Request, pk: str | None = None) -> Response:
+        """`POST /discounts/{id}/end {valid_to}` — imtiyozni tugatadi, o'chirmaydi."""
+        discount = self.get_object()
+        raw = request.data.get("valid_to")
+        try:
+            valid_to = date.fromisoformat(str(raw))
+        except ValueError as exc:
+            raise BusinessRuleViolation(gettext("Tugash sanasini kiriting.")) from exc
+        if valid_to < discount.valid_from:
+            raise BusinessRuleViolation(
+                gettext("Tugash sanasi boshlanishdan oldin boʻlishi mumkin emas.")
+            )
+        before = discount.valid_to
+        discount.valid_to = valid_to
+        discount.save(update_fields=["valid_to", "updated_at"])
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="discount",
+            entity_id=discount.id,
+            changes={"valid_to": [str(before) if before else None, str(valid_to)]},
+        )
+        return Response(DiscountSerializer(discount).data)
 
 
 class InvoiceViewSet(BranchScopedMixin, TenantReadOnlyViewSet):

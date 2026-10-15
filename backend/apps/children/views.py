@@ -270,6 +270,29 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
         )
         return Response(EnrollmentSerializer(enrollment).data, status=status.HTTP_201_CREATED)
 
+    @action(detail=True, methods=["get"])
+    def family(self, request: Request, pk: str | None = None) -> Response:
+        """
+        `GET /children/{id}/family` — umumiy vasiy orqali bog'langan bolalar
+        (Bosqich 12.2). Aka-uka chegirmasi shu ro'yxatdan chiqadi; karta uni
+        ko'rsatadi, chunki "nega bu bola chegirma oladi?" degan savolga javob
+        familiyada emas, vasiyda.
+        """
+        child = self.get_object()
+        members = services.family_of(child)
+        return Response(
+            [
+                {
+                    "id": str(member.id),
+                    "full_name": member.full_name,
+                    "enrollment_status": member.enrollment_status,
+                    "is_self": member.id == child.id,
+                }
+                for member in members
+                if member.is_active and member.archived_at is None
+            ]
+        )
+
     @action(detail=True, methods=["get", "post"], url_path="pauses")
     def pauses(self, request: Request, pk: str | None = None) -> Response:
         """

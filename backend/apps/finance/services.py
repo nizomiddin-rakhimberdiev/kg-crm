@@ -32,6 +32,7 @@ from apps.children.models import (
 from apps.core.exceptions import BusinessRuleViolation
 from apps.finance import balance
 from apps.finance.models import (
+    BenefitKind,
     ChildLedgerEntry,
     Direction,
     Discount,
@@ -166,18 +167,72 @@ def applicable_discount(child: Child, on_date: date) -> Discount | None:
     )
 
 
+#: Turi bor imtiyozlar — qiymati sozlamadan (`benefits.*`), yozuvdan emas.
+_BENEFIT_PERCENT_SETTING: dict[str, str] = {
+    BenefitKind.STAFF_CHILD: "benefits.staff_child_percent",
+    BenefitKind.LOW_INCOME: "benefits.low_income_percent",
+    BenefitKind.FULL: "benefits.full_percent",
+}
+
+
+def benefit_terms(kind: str, branch: Any = None) -> tuple[str, Decimal]:
+    """Imtiyoz turining amaldagi shartlari: (`percent` | `fixed`, qiymat)."""
+    if kind == BenefitKind.SIBLING:
+        return DiscountType.FIXED, Decimal(str(_setting("benefits.sibling_amount", branch) or 0))
+    key = _BENEFIT_PERCENT_SETTING[kind]
+    return DiscountType.PERCENT, Decimal(str(_setting(key, branch) or 0))
+
+
 def apply_discount(base: Decimal, discount: Discount | None) -> tuple[Decimal, Decimal]:
-    """Qaytaradi: (chegirmadan keyingi summa, chegirma summasi)."""
+    """
+    Qaytaradi: (chegirmadan keyingi summa, chegirma summasi).
+
+    `custom` — yozuvdagi qiymat; boshqa turlar — sozlamadagi (Bosqich 12.2).
+    """
     if discount is None:
         return _money(base), Decimal("0.00")
 
-    if discount.discount_type == DiscountType.PERCENT:
-        reduction = base * discount.value / Decimal("100")
+    if discount.kind and discount.kind != BenefitKind.CUSTOM:
+        discount_type, value = benefit_terms(discount.kind, discount.branch)
     else:
-        reduction = discount.value
+        discount_type, value = discount.discount_type, discount.value
+    return _reduce(base, discount_type, value)
 
+
+def _reduce(base: Decimal, discount_type: str, value: Decimal) -> tuple[Decimal, Decimal]:
+    reduction = base * value / Decimal("100") if discount_type == DiscountType.PERCENT else value
     reduction = min(_money(reduction), _money(base))  # manfiy hisob-faktura bo'lmaydi
     return _money(base - reduction), reduction
+
+
+def sibling_reduction(child: Child, year: int, month: int) -> Decimal:
+    """
+    Aka-uka chegirmasi — oila (umumiy vasiy) bo'yicha, avtomatik (Bosqich 12.2).
+
+    Oilada shu oy hisob-faktura oladigan kamida ikki bola bo'lsa — har biriga
+    `benefits.sibling_amount`. `benefits.sibling_rule = after_first` da eng
+    oldin qabul qilingan bola to'liq to'laydi. Ikkinchi bola paydo bo'lishi
+    bilan chegirma birinchisiga ham o'zi tushadi — hech kim uni qo'lda
+    kiritmaydi va unutmaydi.
+    """
+    from apps.children.services import family_of, is_billable_for
+
+    members = [
+        member
+        for member in family_of(child)
+        if member.is_active
+        and member.archived_at is None
+        and is_billable_for(member, period_year=year, period_month=month)
+    ]
+    if len(members) < 2 or child.id not in {member.id for member in members}:
+        return Decimal("0.00")
+    if (
+        str(_setting("benefits.sibling_rule", child.branch)) == "after_first"
+        and members[0].id == child.id
+    ):
+        return Decimal("0.00")
+    _kind, amount = benefit_terms(BenefitKind.SIBLING, child.branch)
+    return _money(amount)
 
 
 # --- Hisob-faktura ---
@@ -516,6 +571,8 @@ def issue_invoice(
             kind=line.kind,
             description=line.description[:255],
             formula=line.formula[:255],
+            benefit_kind=line.benefit_kind,
+            discount_id=line.discount_id,
             quantity=Decimal("1"),
             unit_amount=line.amount,
             line_total=line.amount,

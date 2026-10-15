@@ -26,6 +26,11 @@ import { APP_LOCALES, t } from '@/lib/i18n'
 interface SettingMeta {
   label: string
   help: string
+  /** Tanlovli qiymat — erkin matn emas (xato yozilgan "prorate" jimgina toʻliq oyga aylanardi). */
+  options?: Array<[string, string]>
+  /** Raqam chegaralari. Ilgari hamma raqam 1–31 ga qotirilgan edi — bu `due_day` uchun edi. */
+  min?: number
+  max?: number
 }
 
 /**
@@ -41,10 +46,14 @@ const META: Record<string, SettingMeta> = {
   'finance.due_day': {
     label: t('Toʻlov muddati (oy kuni)'),
     help: t('Hisob-faktura shu kungacha toʻlanishi kutiladi.'),
+    min: 1,
+    max: 31,
   },
   'finance.reminder_day': {
     label: t('Eslatma kuni'),
     help: t('Qarzdorlarga eslatma shu kundan boshlab yuboriladi.'),
+    min: 1,
+    max: 31,
   },
   'notifications.sms_enabled': {
     label: t('Xabarnomalar'),
@@ -87,14 +96,55 @@ const META: Record<string, SettingMeta> = {
     help: t(
       'Oy oʻrtasida kelgan yoki ketgan bola uchun: toʻliq oy, ish kunlari boʻyicha yoki keyingi oydan.',
     ),
+    options: [
+      ['prorated', t('Ish kunlari boʻyicha')],
+      ['full', t('Toʻliq oy')],
+      ['next_month', t('Keyingi oydan')],
+    ],
+  },
+  'benefits.sibling_amount': {
+    label: t('Aka-uka chegirmasi (soʻm)'),
+    help: t(
+      'Bir oiladagi (umumiy vasiy) har bir bolaga shuncha chegirma — avtomatik, qoʻlda kiritilmaydi.',
+    ),
+    min: 0,
+  },
+  'benefits.sibling_rule': {
+    label: t('Aka-uka qoidasi'),
+    help: t('Chegirma kimga tushadi.'),
+    options: [
+      ['all', t('Hammasiga, birinchisiga ham')],
+      ['after_first', t('Birinchisi toʻliq, keyingilarga chegirma')],
+    ],
+  },
+  'benefits.staff_child_percent': {
+    label: t('Xodim farzandi (%)'),
+    help: t('Oylik narxdan shuncha foiz chegirma.'),
+    min: 0,
+    max: 100,
+  },
+  'benefits.low_income_percent': {
+    label: t('Kam taʼminlangan (%)'),
+    help: t('Oylik narxdan shuncha foiz chegirma.'),
+    min: 0,
+    max: 100,
+  },
+  'benefits.full_percent': {
+    label: t('Toʻliq imtiyoz (%)'),
+    help: t('Oylik narxdan shuncha foiz chegirma.'),
+    min: 0,
+    max: 100,
   },
   'finance.trial_days': {
+    min: 0,
+    max: 20,
     label: t('Sinov muddati (ish kuni)'),
     help: t(
       'Yangi bolaning birinchi shuncha ish kuni bepul. Sinovda ketsa — hech narsa hisoblanmaydi. 0 — sinov yoʻq.',
     ),
   },
   'finance.rounding_step': {
+    min: 1,
     label: t('Yaxlitlash (soʻm)'),
     help: t(
       'Hisoblangan summa shu qadamgacha yaxlitlanadi: 1 161 905 → 1 162 000. Kunlik stavka emas, natija.',
@@ -258,6 +308,25 @@ export default function SettingsPage() {
       )
     }
 
+    const meta = META[key]
+    if (meta?.options) {
+      return (
+        <select
+          value={String(value ?? '')}
+          disabled={!editable}
+          aria-label={meta.label}
+          onChange={(e) => save.mutate({ key, value: e.target.value })}
+          className="w-60 rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500 disabled:bg-slate-50"
+        >
+          {meta.options.map(([option, label]) => (
+            <option key={option} value={option}>
+              {label}
+            </option>
+          ))}
+        </select>
+      )
+    }
+
     if (typeof value === 'boolean') {
       return (
         <Switch
@@ -273,14 +342,17 @@ export default function SettingsPage() {
       return (
         <input
           type="number"
-          min={1}
-          max={31}
+          min={meta?.min ?? 0}
+          max={meta?.max}
           defaultValue={value}
           disabled={!editable}
           aria-label={META[key]?.label ?? key}
           onBlur={(e) => {
             const next = Number(e.target.value)
-            if (Number.isFinite(next) && next !== value) save.mutate({ key, value: next })
+            const inRange =
+              next >= (meta?.min ?? 0) && (meta?.max === undefined || next <= meta.max)
+            if (Number.isFinite(next) && inRange && next !== value)
+              save.mutate({ key, value: next })
           }}
           className="w-24 rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500 disabled:bg-slate-50"
         />

@@ -69,15 +69,48 @@ class DiscountType(models.TextChoices):
     FIXED = "fixed", gettext_lazy("Belgilangan summa")
 
 
+class BenefitKind(models.TextChoices):
+    """
+    Imtiyoz turi (Bosqich 12.2). Toifa FAQAT shu maydon — rang ham, erkin
+    matn ham emas (brif: "imtiyoz toifasi faqat rang bilan belgilanadi").
+
+    `custom` dan boshqa turlarning qiymati yozuvda emas, SOZLAMADA
+    (`benefits.*`): bog'cha "xodim farzandi 50%" ni 40% ga o'zgartirsa,
+    bu siyosat, va u keyingi oydan barcha shunday bolalarga tegadi.
+    `sibling` qo'lda kiritilmaydi — hisoblagich oiladan o'zi chiqaradi.
+    """
+
+    SIBLING = "sibling", gettext_lazy("Aka-uka")
+    STAFF_CHILD = "staff_child", gettext_lazy("Xodim farzandi")
+    LOW_INCOME = "low_income", gettext_lazy("Kam taʼminlangan")
+    FULL = "full", gettext_lazy("Toʻliq imtiyoz")
+    CUSTOM = "custom", gettext_lazy("Boshqa")
+
+
 class Discount(BranchScopedModel):
-    """Bolaga biriktirilgan takrorlanuvchi chegirma (aka-uka, xodim farzandi)."""
+    """
+    Bolaga biriktirilgan imtiyoz — turi, sababi va muddati bilan.
+
+    Joyida TAHRIRLANMAYDI (Bosqich 12.2): o'zgarish — eskisini tugatish
+    (`valid_to`) va yangisini yozish. Shunda "kim, qachon, qancha va nega"
+    tarixi o'zi saqlanadi.
+    """
 
     child = models.ForeignKey("children.Child", on_delete=models.CASCADE, related_name="discounts")
+    kind = models.CharField(max_length=20, choices=BenefitKind.choices, default=BenefitKind.CUSTOM)
+    # `custom` uchun qiymat shu yerda; boshqa turlarda `benefits.*` sozlamasidan.
     discount_type = models.CharField(max_length=12, choices=DiscountType.choices)
     value = models.DecimalField(max_digits=12, decimal_places=2)
     reason = models.CharField(max_length=255, blank=True)
     valid_from = models.DateField()
     valid_to = models.DateField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
 
     class Meta:
         db_table = "discount"
@@ -211,6 +244,16 @@ class InvoiceLine(BaseModel):
     # ikkisini o'qiydi; matndan raqam qidirilmaydi.
     kind = models.CharField(max_length=20, blank=True, default="")
     formula = models.CharField(max_length=255, blank=True, default="")
+    # `benefit` qatori uchun: qaysi imtiyoz va uning turi (Bosqich 12.2).
+    # "Imtiyozlar" hisoboti shu ikkisidan quriladi — matndan emas.
+    benefit_kind = models.CharField(max_length=20, blank=True, default="")
+    discount = models.ForeignKey(
+        "finance.Discount",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invoice_lines",
+    )
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("1"))
     unit_amount = models.DecimalField(max_digits=12, decimal_places=2)
     line_total = models.DecimalField(max_digits=12, decimal_places=2)

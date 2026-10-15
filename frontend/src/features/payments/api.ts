@@ -66,14 +66,47 @@ export interface BillingPreview {
   rows: BillingPreviewRow[]
 }
 
-export const discountsApi = {
+/** Imtiyoz turi (Bosqich 12.2). `sibling` — oiladan avtomatik, qoʻlda kiritilmaydi. */
+export type BenefitKind = 'sibling' | 'staff_child' | 'low_income' | 'full' | 'custom'
+
+export interface Benefit {
+  id: string
+  child_id: string
+  child_name: string
+  kind: BenefitKind
+  discount_type: 'percent' | 'fixed'
+  value: string
+  /** Amaldagi shart — "50%" yoki "100 000" (sozlamadan). */
+  terms: string
+  reason: string
+  valid_from: string
+  valid_to: string | null
+  created_by_name: string | null
+  created_at: string
+}
+
+export interface FamilyMember {
+  id: string
+  full_name: string
+  enrollment_status: string
+  is_self: boolean
+}
+
+export const benefitsApi = {
+  list: (childId: string) => api.list<Benefit>('/discounts', { child: childId, page_size: 100 }),
   create: (payload: {
     child_id: string
-    discount_type: 'percent' | 'fixed'
-    value: string
+    kind: Exclude<BenefitKind, 'sibling'>
+    reason: string
     valid_from: string
-    reason?: string
-  }) => api.post('/discounts', payload),
+    valid_to?: string
+    discount_type?: 'percent' | 'fixed'
+    value?: string
+  }) => api.post<Benefit>('/discounts', payload),
+  /** Imtiyoz oʻchirilmaydi — tugatiladi, tarix qoladi. */
+  end: (id: string, validTo: string) =>
+    api.post<Benefit>(`/discounts/${id}/end`, { valid_to: validTo }),
+  family: (childId: string) => api.get<FamilyMember[]>(`/children/${childId}/family`),
 }
 
 /** To'lov qabul qilish ekranining bitta qatori (docs/04 §9.7). */

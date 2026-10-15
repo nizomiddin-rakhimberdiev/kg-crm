@@ -11,7 +11,9 @@ from rest_framework import serializers
 from apps.children.models import Child
 from apps.core.fields import TenantPrimaryKeyRelatedField
 from apps.finance.models import (
+    BenefitKind,
     Discount,
+    DiscountType,
     Invoice,
     InvoiceLine,
     Payment,
@@ -39,8 +41,26 @@ class TariffPlanSerializer(serializers.ModelSerializer):
 
 
 class DiscountSerializer(serializers.ModelSerializer):
+    """
+    Imtiyoz (Bosqich 12.2): turi, MAJBURIY sababi, muddati va kim kiritgani.
+
+    `custom` dan boshqa turlarda `discount_type`/`value` mijozdan olinmaydi —
+    qiymat sozlamadan (`benefits.*`) keladi va `terms` da ko'rinadi.
+    `sibling` qo'lda kiritilmaydi: hisoblagich uni oiladan o'zi chiqaradi.
+    """
+
     child_id = TenantPrimaryKeyRelatedField(model=Child, source="child")
     child_name = serializers.CharField(source="child.full_name", read_only=True)
+    created_by_name = serializers.CharField(
+        source="created_by.full_name", read_only=True, default=None
+    )
+    discount_type = serializers.ChoiceField(
+        choices=DiscountType.choices, required=False, allow_null=True
+    )
+    value = serializers.DecimalField(
+        max_digits=12, decimal_places=2, required=False, allow_null=True
+    )
+    terms = serializers.SerializerMethodField()
 
     class Meta:
         model = Discount
@@ -48,19 +68,63 @@ class DiscountSerializer(serializers.ModelSerializer):
             "id",
             "child_id",
             "child_name",
+            "kind",
             "discount_type",
             "value",
+            "terms",
             "reason",
             "valid_from",
             "valid_to",
+            "created_by_name",
+            "created_at",
             "is_active",
         ]
-        read_only_fields = ["id", "child_name"]
+        read_only_fields = ["id", "child_name", "terms", "created_by_name", "created_at"]
+
+    def get_terms(self, obj: Discount) -> str:
+        """Amaldagi shart — "50%" yoki "100 000" — ko'rsatish uchun."""
+        from apps.finance.charges import som
+        from apps.finance.services import benefit_terms
+
+        if obj.kind and obj.kind != BenefitKind.CUSTOM:
+            discount_type, value = benefit_terms(obj.kind, obj.branch)
+        else:
+            discount_type, value = obj.discount_type, obj.value
+        return f"{value:g}%" if discount_type == DiscountType.PERCENT else som(value)
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
-        if attrs.get("discount_type") == "percent" and attrs.get("value", 0) > 100:
+        reason = (attrs.get("reason") or "").strip()
+        if not reason:
+            raise serializers.ValidationError({"reason": gettext("Imtiyoz sababini yozing.")})
+        attrs["reason"] = reason
+
+        kind = attrs.get("kind") or BenefitKind.CUSTOM
+        if kind == BenefitKind.SIBLING:
             raise serializers.ValidationError(
-                {"value": gettext("Foizli chegirma 100 dan oshmasligi kerak.")}
+                {
+                    "kind": gettext(
+                        "Aka-uka chegirmasi qoʻlda kiritilmaydi — u umumiy vasiy orqali oʻzi "
+                        "qoʻllanadi."
+                    )
+                }
+            )
+        if kind == BenefitKind.CUSTOM:
+            if not attrs.get("discount_type") or attrs.get("value") is None:
+                raise serializers.ValidationError(
+                    {"value": gettext("Boshqa turdagi imtiyoz uchun turi va qiymatini kiriting.")}
+                )
+            if attrs["discount_type"] == DiscountType.PERCENT and attrs["value"] > 100:
+                raise serializers.ValidationError(
+                    {"value": gettext("Foizli chegirma 100 dan oshmasligi kerak.")}
+                )
+        else:
+            # Qiymat sozlamadan — yozuvda saqlanmaydi, ikki manba bo'lmasin.
+            attrs["discount_type"] = DiscountType.PERCENT
+            attrs["value"] = Decimal("0")
+        valid_to = attrs.get("valid_to")
+        if valid_to is not None and valid_to < attrs["valid_from"]:
+            raise serializers.ValidationError(
+                {"valid_to": gettext("Tugash sanasi boshlanishdan oldin boʻlishi mumkin emas.")}
             )
         return attrs
 
@@ -68,7 +132,16 @@ class DiscountSerializer(serializers.ModelSerializer):
 class InvoiceLineSerializer(serializers.ModelSerializer):
     class Meta:
         model = InvoiceLine
-        fields = ["id", "description", "quantity", "unit_amount", "line_total"]
+        fields = [
+            "id",
+            "kind",
+            "benefit_kind",
+            "description",
+            "formula",
+            "quantity",
+            "unit_amount",
+            "line_total",
+        ]
         read_only_fields = fields
 
 

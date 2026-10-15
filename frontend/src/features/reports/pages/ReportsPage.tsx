@@ -59,6 +59,7 @@ import { QueryError } from '@/components/ui/QueryError'
 import { formatDateTime } from '@/lib/format'
 import { cn, formatMoney, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { BenefitsReport } from '@/features/reports/components/BenefitsReport'
 
 // Usul nomlari `features/payments/methods.ts` da — bu yerda o'z nusxasi
 // bor edi va u eskirgan `transfer` kalitini tutardi, shuning uchun
@@ -738,6 +739,9 @@ export default function ReportsPage() {
           )}
         </div>
       )}
+
+      {/* Imtiyozlar (Bosqich 12.2) — o'sha davr bo'yicha. */}
+      {canRevenue && <BenefitsReport from={period.from} to={period.to} />}
 
       {can('reports.export') && (
         <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">

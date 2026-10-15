@@ -866,3 +866,94 @@ def payment_journal_summary(
         "reversed_count": queryset.filter(reversed_at__isnull=False).count(),
         "by_method": by_method,
     }
+
+
+# --- Imtiyozlar (Bosqich 12.2) ---
+
+
+def _months_between(date_from: date, date_to: date) -> list[tuple[int, int]]:
+    months: list[tuple[int, int]] = []
+    year, month = date_from.year, date_from.month
+    while (year, month) <= (date_to.year, date_to.month):
+        months.append((year, month))
+        year, month = (year + 1, 1) if month == 12 else (year, month + 1)
+    return months
+
+
+def benefits_report(
+    *, organization_id: Any, date_from: date, date_to: date, branch_id: Any = None
+) -> dict[str, Any]:
+    """
+    Kim, qaysi bolaga, qancha va qaysi sabab bilan imtiyoz bergani (brif §1).
+
+    Manba — hisob-fakturalarning `benefit` qatorlari, ya'ni HAQIQATAN berilgan
+    summa, imtiyoz yozuvlarining o'zi emas: kelgan oyi qisqartirilgan bola
+    yoki o'rtada tugagan imtiyoz bu yerda aynan hujjatdagi raqam bilan
+    turadi. Davr — hisob-faktura OYI bo'yicha.
+    """
+    from apps.finance.models import BenefitKind, InvoiceLine, InvoiceStatus
+
+    months = _months_between(date_from, date_to)
+    if not months:
+        return {"total": "0.00", "rows": [], "by_kind": [], "by_month": []}
+    period = Q()
+    for year, month in months:
+        period |= Q(invoice__period_year=year, invoice__period_month=month)
+
+    # `invoice_line` da `organization_id` yo'q — tashkilot chegarasi
+    # hisob-faktura orqali, OCHIQ yoziladi (2-invariant).
+    lines = (
+        InvoiceLine.objects.filter(kind="benefit", invoice__organization_id=organization_id)
+        .exclude(invoice__status=InvoiceStatus.CANCELLED)
+        .filter(period)
+        .select_related("invoice__child", "discount__created_by")
+    )
+    if branch_id:
+        lines = lines.filter(invoice__branch_id=branch_id)
+
+    labels = dict(BenefitKind.choices)
+    rows: dict[tuple[Any, str, Any], dict[str, Any]] = {}
+    by_kind: dict[str, Decimal] = {}
+    by_month: dict[str, Decimal] = {}
+    total = Decimal("0")
+    for line in lines:
+        amount = -Decimal(line.line_total)
+        kind = line.benefit_kind or BenefitKind.CUSTOM
+        key = (line.invoice.child_id, kind, line.discount_id)
+        discount = line.discount
+        row = rows.setdefault(
+            key,
+            {
+                "child_id": str(line.invoice.child_id),
+                "child_name": line.invoice.child.full_name,
+                "kind": kind,
+                "kind_label": str(labels.get(kind, kind)),
+                "reason": discount.reason if discount is not None else "",
+                "created_by": (
+                    discount.created_by.full_name
+                    if discount is not None and discount.created_by is not None
+                    else None
+                ),
+                "total": Decimal("0"),
+            },
+        )
+        row["total"] += amount
+        by_kind[kind] = by_kind.get(kind, Decimal("0")) + amount
+        month_key = f"{line.invoice.period_year}-{line.invoice.period_month:02d}"
+        by_month[month_key] = by_month.get(month_key, Decimal("0")) + amount
+        total += amount
+
+    ordered = sorted(rows.values(), key=lambda row: (row["kind"], row["child_name"]))
+    return {
+        "date_from": date_from.isoformat(),
+        "date_to": date_to.isoformat(),
+        "total": f"{total:.2f}",
+        "rows": [{**row, "total": f"{row['total']:.2f}"} for row in ordered],
+        "by_kind": [
+            {"kind": kind, "label": str(labels.get(kind, kind)), "total": f"{value:.2f}"}
+            for kind, value in sorted(by_kind.items())
+        ],
+        "by_month": [
+            {"month": month, "total": f"{value:.2f}"} for month, value in sorted(by_month.items())
+        ],
+    }

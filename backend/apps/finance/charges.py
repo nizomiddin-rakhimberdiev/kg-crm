@@ -92,6 +92,9 @@ class ChargeLine:
     description: str
     amount: Decimal
     formula: str = ""
+    #: `benefit` qatorida: imtiyoz turi va (qo'lda kiritilgan bo'lsa) yozuvi.
+    benefit_kind: str = ""
+    discount_id: Any = None
 
 
 @dataclass
@@ -169,8 +172,14 @@ def plan_month(child: Any, year: int, month: int) -> MonthCharge:
     """Bolaning `year-month` uchun summasi va qatorlari — hech narsa yozmaydi."""
     from apps.attendance.services_absence import billable_days, working_days_in_month
     from apps.children.services import CLOSED_STATUSES, pause_for
+    from apps.finance.models import BenefitKind
     from apps.finance.selectors import child_monthly_price
-    from apps.finance.services import applicable_discount, apply_discount
+    from apps.finance.services import (
+        applicable_discount,
+        apply_discount,
+        benefit_terms,
+        sibling_reduction,
+    )
 
     price = child_monthly_price(child)
     working = working_days_in_month(
@@ -208,8 +217,20 @@ def plan_month(child: Any, year: int, month: int) -> MonthCharge:
         charge.skip = "next_month"
         return charge
 
+    # Imtiyoz: qo'lda kiritilgani (turi, sababi bilan) ustun; yo'q bo'lsa —
+    # oiladan aka-uka chegirmasi (Bosqich 12.2). Ular QO'SHILMAYDI:
+    # qo'lda kiritilgan imtiyoz — odamning ongli qarori.
     discount = applicable_discount(child, issued)
-    monthly, discount_amount = apply_discount(price.amount, discount)
+    benefit_kind = ""
+    if discount is not None:
+        monthly, discount_amount = apply_discount(price.amount, discount)
+        benefit_kind = discount.kind or BenefitKind.CUSTOM
+    else:
+        sibling = sibling_reduction(child, year, month)
+        discount_amount = min(sibling, Decimal(price.amount).quantize(Decimal("0.01")))
+        monthly = (Decimal(price.amount) - discount_amount).quantize(Decimal("0.01"))
+        if discount_amount > 0:
+            benefit_kind = BenefitKind.SIBLING
     charge.monthly = monthly
     charge.discount = discount
     charge.discount_amount = discount_amount
@@ -271,15 +292,24 @@ def plan_month(child: Any, year: int, month: int) -> MonthCharge:
             amount=Decimal(price.amount).quantize(Decimal("0.01")),
         )
     )
-    if discount_amount > 0 and discount is not None:
+    if discount_amount > 0:
+        label = str(BenefitKind(benefit_kind).label) if benefit_kind else gettext("Chegirma")
+        reason = discount.reason if discount is not None else ""
+        if benefit_kind and benefit_kind != BenefitKind.CUSTOM:
+            kind_type, value = benefit_terms(benefit_kind, child.branch)
+            rule = f"{value:g}%" if kind_type == "percent" else som(value)
+        elif discount is not None and discount.discount_type == "percent":
+            rule = f"{discount.value:g}%"
+        else:
+            rule = som(discount_amount)
         charge.lines.append(
             ChargeLine(
                 kind="benefit",
-                description=gettext("Chegirma: {reason}").format(
-                    reason=discount.reason or str(discount)
-                ),
+                description=(f"{label}: {reason}" if reason else label)[:255],
                 amount=-discount_amount,
-                formula=f"{som(price.amount)} − {som(discount_amount)} = {som(monthly)}",
+                formula=f"{som(price.amount)} − {rule} = {som(monthly)}",
+                benefit_kind=benefit_kind,
+                discount_id=discount.id if discount is not None else None,
             )
         )
     if charge.paused:

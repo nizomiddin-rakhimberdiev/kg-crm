@@ -1516,3 +1516,33 @@ msgstr "pause: {reason}"
 
 msgid "{month} uchun toʻlov tushgan — avval toʻlovni qaytaring yoki pauzani keyingi oydan boshlang."
 msgstr "{month} has already been paid — refund the payment first or start the pause next month."
+
+msgid "Aka-uka"
+msgstr "Siblings"
+
+msgid "Aka-uka chegirmasi qoʻlda kiritilmaydi — u umumiy vasiy orqali oʻzi qoʻllanadi."
+msgstr "The sibling discount is not entered by hand — it applies itself through a shared guardian."
+
+msgid "Boshqa turdagi imtiyoz uchun turi va qiymatini kiriting."
+msgstr "For an 'other' benefit, give its type and value."
+
+msgid "Bu davrda bolada boshqa imtiyoz bor — avval uni tugating, keyin yangisini kiriting."
+msgstr "The child already has another benefit in this period — end it first, then enter the new one."
+
+msgid "Imtiyoz sababini yozing."
+msgstr "Give the reason for the benefit."
+
+msgid "Kam taʼminlangan"
+msgstr "Low income"
+
+msgid "Toʻliq imtiyoz"
+msgstr "Full exemption"
+
+msgid "Tugash sanasi boshlanishdan oldin boʻlishi mumkin emas."
+msgstr "The end date cannot be before the start."
+
+msgid "Tugash sanasini kiriting."
+msgstr "Give the end date."
+
+msgid "Xodim farzandi"
+msgstr "Staff member's child"

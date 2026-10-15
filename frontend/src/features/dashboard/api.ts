@@ -13,6 +13,23 @@ export const dashboardApi = {
   kpis: () => api.get<DashboardKpis>('/dashboard'),
 }
 
+export interface BenefitsReport {
+  date_from: string
+  date_to: string
+  total: string
+  rows: Array<{
+    child_id: string
+    child_name: string
+    kind: string
+    kind_label: string
+    reason: string
+    created_by: string | null
+    total: string
+  }>
+  by_kind: Array<{ kind: string; label: string; total: string }>
+  by_month: Array<{ month: string; total: string }>
+}
+
 export const reportsApi = {
   revenue: (from: string, to: string, groupBy: ReportGroupBy = 'month') =>
     api.get<RevenueReport>('/reports/revenue', { from, to, group_by: groupBy }),
@@ -22,6 +39,9 @@ export const reportsApi = {
     api.get<ExpenseReport>('/reports/expenses', { from, to, group_by: groupBy }),
   profitLoss: (from: string, to: string, groupBy: ReportGroupBy = 'month') =>
     api.get<ProfitLoss>('/reports/profit-loss', { from, to, group_by: groupBy }),
+  /** Imtiyozlar (Bosqich 12.2): kim, kimga, qancha, nega — hisob-faktura qatorlaridan. */
+  benefits: (from: string, to: string) =>
+    api.get<BenefitsReport>('/reports/benefits', { from, to }),
 
   /** Eksportni navbatga qo'yadi — javob darhol qaytadi, fayl fonda tayyorlanadi. */
   requestExport: (reportType: string, params: Record<string, unknown> = {}) =>

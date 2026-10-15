@@ -666,14 +666,18 @@ Staff timesheet — one row per employee per day. Asked for by a customer so the
 
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
-| `child_id` | `UUID` | `NOT NULL` FK → child `ON DELETE CASCADE` | Recurring child-level discount |
-| `discount_type` | `VARCHAR(12)` | `NOT NULL`, `CHECK (... IN ('percent','fixed'))` | |
-| `value` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (value >= 0)` | % or amount |
-| `reason` | `VARCHAR(255)` | `NULL` | Sibling discount, staff child, etc. |
+| `child_id` | `UUID` | `NOT NULL` FK → child `ON DELETE CASCADE` | Recurring child-level benefit |
+| `kind` | `VARCHAR(20)` | `NOT NULL DEFAULT 'custom'` | `staff_child` · `low_income` · `full` · `custom` (Bosqich 12.2). The category lives **only** here — never in a colour or free text |
+| `discount_type` | `VARCHAR(12)` | `NOT NULL`, `CHECK (... IN ('percent','fixed'))` | Used for `custom` only |
+| `value` | `NUMERIC(12,2)` | `NOT NULL`, `CHECK (value >= 0)` | Used for `custom` only |
+| `reason` | `VARCHAR(255)` | `NOT NULL` via the API | Mandatory since 12.2; legacy rows may be blank |
 | `valid_from` | `DATE` | `NOT NULL` | |
 | `valid_to` | `DATE` | `NULL` | |
+| `created_by_id` | `UUID` | `NULL` FK → user `ON DELETE SET NULL` | Who entered it |
 
 **Constraints:** `ck_discount_percent CHECK (discount_type <> 'percent' OR value <= 100)`; `ck_discount_dates CHECK (valid_to IS NULL OR valid_to >= valid_from)`.
+
+**Benefits (Bosqich 12.2, ADR-32).** A typed benefit takes its terms from settings, not from the row: `benefits.staff_child_percent` (50), `benefits.low_income_percent` (100), `benefits.full_percent` (100) — changing the policy reaches every such child from the next month. Rows are never edited or deleted: a change is `POST /discounts/{id}/end` plus a new row, so the history is the table itself; two benefits may not overlap. The **sibling discount has no row**: `finance.services.sibling_reduction()` finds the family through shared guardians (`children.services.family_of`, transitive), counts the members billable that month, and gives each `benefits.sibling_amount` (100 000) — or all but the earliest-enrolled under `benefits.sibling_rule = after_first`. An explicit benefit wins over the sibling discount; they do not stack. Every applied benefit becomes an `invoice_line` with `kind = 'benefit'`, `benefit_kind` and `discount_id`, and the benefits report (`GET /reports/benefits`) sums those lines — what invoices actually gave, not what rows promised. `manage.py convert_benefit_tariffs` (dry-run) moves children off "benefit tariffs" such as "XODIMLAR FARZANDLARI — 1 525 000" onto the base tariff plus a typed benefit.
 
 ### 13.3 `invoice`
 

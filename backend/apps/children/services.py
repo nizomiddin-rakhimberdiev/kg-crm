@@ -216,6 +216,45 @@ CLOSED_STATUSES = (
     EnrollmentStatus.WITHDRAWN,
 )
 
+# --- Oila (Bosqich 12.2) ---
+
+
+def family_of(child: Child) -> list[Child]:
+    """
+    Bola va umumiy vasiy orqali bog'langan barcha bolalar — o'zi ham ichida.
+
+    Oila FAMILIYA bilan emas, vasiy bilan aniqlanadi (brif §1): Excel'da
+    aka-ukalik familiyaga qarab taxmin qilinardi, va ikki xil oilaning bir
+    xil familiyali bolalari chegirma olardi, onasining familiyasini
+    olgan uka esa olmasdi. Bog'lanish o'tishli: ota Ali va Vali bilan, ona
+    Vali va Soli bilan bog'langan bo'lsa — uchalasi bitta oila.
+    Vasiylar telefon bo'yicha bir xil yozuvga tushadi (`upsert_guardian`),
+    ya'ni importda ham oila o'zi yig'iladi.
+    """
+    from apps.children.models import ChildGuardian
+
+    seen_children = {child.id}
+    seen_guardians: set[Any] = set()
+    frontier = {child.id}
+    while frontier:
+        guardians = set(
+            ChildGuardian.objects.filter(child_id__in=frontier)
+            .exclude(guardian_id__in=seen_guardians)
+            .values_list("guardian_id", flat=True)
+        )
+        if not guardians:
+            break
+        seen_guardians |= guardians
+        children = set(
+            ChildGuardian.objects.filter(guardian_id__in=guardians).values_list(
+                "child_id", flat=True
+            )
+        )
+        frontier = children - seen_children
+        seen_children |= children
+    return list(Child.objects.filter(id__in=seen_children).order_by("enrolled_on", "created_at"))
+
+
 # --- "Bir oylik ariza" (Bosqich 12.1) ---
 
 

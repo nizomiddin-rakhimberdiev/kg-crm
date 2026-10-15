@@ -1516,3 +1516,33 @@ msgstr "пауза: {reason}"
 
 msgid "{month} uchun toʻlov tushgan — avval toʻlovni qaytaring yoki pauzani keyingi oydan boshlang."
 msgstr "За {month} уже есть оплата — сначала верните платёж или начните паузу со следующего месяца."
+
+msgid "Aka-uka"
+msgstr "Братья и сёстры"
+
+msgid "Aka-uka chegirmasi qoʻlda kiritilmaydi — u umumiy vasiy orqali oʻzi qoʻllanadi."
+msgstr "Скидка для братьев и сестёр не вводится вручную — она применяется сама через общего опекуна."
+
+msgid "Boshqa turdagi imtiyoz uchun turi va qiymatini kiriting."
+msgstr "Для льготы типа «другое» укажите вид и значение."
+
+msgid "Bu davrda bolada boshqa imtiyoz bor — avval uni tugating, keyin yangisini kiriting."
+msgstr "У ребёнка в этот период уже есть другая льгота — сначала завершите её, затем введите новую."
+
+msgid "Imtiyoz sababini yozing."
+msgstr "Укажите причину льготы."
+
+msgid "Kam taʼminlangan"
+msgstr "Малообеспеченные"
+
+msgid "Toʻliq imtiyoz"
+msgstr "Полная льгота"
+
+msgid "Tugash sanasi boshlanishdan oldin boʻlishi mumkin emas."
+msgstr "Дата окончания не может быть раньше начала."
+
+msgid "Tugash sanasini kiriting."
+msgstr "Укажите дату окончания."
+
+msgid "Xodim farzandi"
+msgstr "Ребёнок сотрудника"

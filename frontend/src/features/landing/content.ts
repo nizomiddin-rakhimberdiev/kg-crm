@@ -490,8 +490,8 @@ const uz: Copy = {
         text: 'Naqd kassa va bank hisobi. Terminal, oʻtkazma va Payme/Click bankka tushadi, hisobotda esa nimadan qancha kelgani alohida koʻrinadi. Qoldiq saqlanmaydi — har doim harakatlardan hisoblanadi.',
       },
       {
-        title: 'Chiqim qatorlari',
-        text: 'Kartoshka, 50 kg, 3 000 → 150 000. “Bozorlik — 600 000” emas: nima olinganini keyin ham koʻrasiz.',
+        title: 'Imtiyozlar — sababi bilan',
+        text: 'Xodim farzandi, kam taʼminlangan, toʻliq imtiyoz — har biri turi, sababi va kim kiritgani bilan. Aka-uka chegirmasi umumiy vasiy orqali oʻzi qoʻllanadi, familiya boʻyicha taxmin emas. Oyiga kim, kimga, qancha bergani — alohida hisobotda.',
       },
       {
         title: 'Oʻzgarmas audit jurnali',
@@ -515,7 +515,7 @@ const uz: Copy = {
       },
       {
         title: 'Kassada yoʻq pul chiqmaydi',
-        text: 'Qoldiqdan ortiq chiqim rad etiladi — qaysi hisob, qancha bor, qancha yetmaydi. Baribir yozish kerak boʻlsa, ogohlantirishni oʻqib belgilaysiz.',
+        text: 'Qoldiqdan ortiq chiqim rad etiladi — qaysi hisob, qancha bor, qancha yetmaydi. Har bir chiqim qator-qator: «Bozorlik — 600 000» emas, «Kartoshka, 50 kg × 3 000».',
       },
       {
         title: 'Hisobot — Excel fayl boʻlib',
@@ -1057,8 +1057,8 @@ const ru: Copy = {
         text: 'Наличная касса и банковский счёт. Терминал, перевод и Payme/Click поступают на банк, а в отчёте видно, сколько пришло каждым способом. Остаток не хранится — он всегда считается из движений.',
       },
       {
-        title: 'Строки расхода',
-        text: 'Картошка, 50 кг, 3 000 → 150 000. Не «рынок — 600 000»: через полгода видно, что именно купили.',
+        title: 'Льготы — с причиной',
+        text: 'Ребёнок сотрудника, малообеспеченные, полная льгота — у каждой вид, причина и кто её ввёл. Скидка братьям и сёстрам применяется сама через общего опекуна, а не по фамилии. Кто, кому и сколько дал за месяц — в отдельном отчёте.',
       },
       {
         title: 'Неизменяемый журнал',
@@ -1082,7 +1082,7 @@ const ru: Copy = {
       },
       {
         title: 'Из пустой кассы деньги не уйдут',
-        text: 'Расход больше остатка отклоняется — с названием счёта, остатком и суммой нехватки. Если провести всё-таки нужно, вы ставите галочку, прочитав предупреждение.',
+        text: 'Расход больше остатка отклоняется — с названием счёта, остатком и суммой нехватки. Каждый расход построчно: не «рынок — 600 000», а «картошка, 50 кг × 3 000».',
       },
       {
         title: 'Отчёт — файлом Excel',
@@ -1617,8 +1617,8 @@ const en: Copy = {
         text: 'A cash till and a bank account. Terminal, transfer and Payme/Click land in the bank, while the report still shows how much came in each way. A balance is never stored; it is always computed from the movements.',
       },
       {
-        title: 'Expense lines',
-        text: 'Potatoes, 50 kg, 3 000 → 150 000. Not “market — 600 000”: six months later you can still see what was bought.',
+        title: 'Benefits, with a reason',
+        text: 'Staff child, low income, full exemption — each with its type, its reason and who entered it. The sibling discount applies itself through a shared guardian, never guessed from a surname. Who gave whom how much each month sits in its own report.',
       },
       {
         title: 'An audit log that cannot be edited',
@@ -1642,7 +1642,7 @@ const en: Copy = {
       },
       {
         title: 'An empty till pays nothing out',
-        text: 'A payment larger than the balance is refused, and the message names the account, what it holds and what is short. If it has to go through anyway, you tick a box after reading the warning.',
+        text: 'A payment larger than the balance is refused, naming the account, what it holds and what is short. Every expense is itemised: not “market — 600 000” but “potatoes, 50 kg × 3 000”.',
       },
       {
         title: 'Reports as Excel files',

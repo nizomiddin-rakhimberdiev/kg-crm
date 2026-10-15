@@ -154,6 +154,8 @@ REPORT_SCOPE: dict[str, str] = {
     "payroll": "payroll.read",
     "profit-loss": "payroll.read",
     "attendance": "attendance.read",
+    # Imtiyozlar — pul (Bosqich 12.2): kassirga emas, to'lovlarni ko'radiganga.
+    "benefits": "payments.read",
 }
 
 # View action nomi → hisobot turi (`REPORT_SCOPE` kaliti).
@@ -164,6 +166,7 @@ _ACTION_REPORT: dict[str, str] = {
     "payroll": "payroll",
     "profit_loss": "profit-loss",
     "attendance": "attendance",
+    "benefits": "benefits",
 }
 
 
@@ -208,6 +211,11 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
     @action(detail=False)
     def expenses(self, request: Request) -> Response:
         return Response(selectors.expense_report(**self.period_scope(request)))
+
+    @action(detail=False)
+    def benefits(self, request: Request) -> Response:
+        """`GET /reports/benefits?from=&to=` — imtiyozlar: kim, kimga, qancha, nega."""
+        return Response(selectors.benefits_report(**self.scope(request)))
 
     @action(detail=False, url_path="profit-loss")
     def profit_loss(self, request: Request) -> Response:

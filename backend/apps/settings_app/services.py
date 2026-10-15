@@ -46,6 +46,17 @@ DEFAULTS: dict[str, Any] = {
     # stavka emas, KUNLAR × STAVKA natijasi: bir xil holatdagi ikki
     # bolaga har doim bir xil raqam chiqadi. `1` — butun so'mgacha.
     "finance.rounding_step": 1000,
+    # --- Bosqich 12.2: imtiyozlar (Oriental Kinderland qiymatlari) ---
+    #
+    # Aka-uka: bir oiladagi (umumiy vasiy) har bir bolaga shuncha so'm
+    # chegirma. `all` — hammasiga, birinchisiga ham; `after_first` —
+    # birinchi (eng oldin qabul qilingan) bola to'liq to'laydi.
+    "benefits.sibling_amount": 100000,
+    "benefits.sibling_rule": "all",
+    # Foiz bilan beriladigan turlar.
+    "benefits.staff_child_percent": 50,
+    "benefits.low_income_percent": 100,
+    "benefits.full_percent": 100,
     "notifications.sms_enabled": True,
     # --- Asosiy kanal (PLAN 3.7, ADR-23) ---
     #
