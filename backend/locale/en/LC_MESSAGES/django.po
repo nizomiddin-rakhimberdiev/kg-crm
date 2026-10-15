@@ -1726,3 +1726,18 @@ msgstr "not refunded"
 
 msgid "{month} oyi yopilgan — u faqat keyingi oyga tuzatish qatori orqali oʻzgaradi."
 msgstr "{month} is closed — it changes only through a correction line on the next month."
+
+msgid "Bir oila ({phone}) bolalari har xil narxda: qatorlar {rows}. Aka-uka chegirmasi umumiy vasiy orqali oʻzi qoʻllanadi — tarifni tekshiring."
+msgstr "Children of one family ({phone}) are at different prices: rows {rows}. The sibling discount applies by itself through the shared guardian — check the tariff."
+
+msgid "Excel importidan: {word}"
+msgstr "From the Excel import: {word}"
+
+msgid "Imtiyozni tushunmadim: '{value}'. Mumkin: xodim farzandi, kam taʼminlangan, toʻliq imtiyoz, aka-uka."
+msgstr "Unknown benefit: '{value}'. Allowed: staff member's child, low income, full benefit, siblings."
+
+msgid "{n} ta ehtimoliy dublikat bor — ularni oʻtkazib yuborish yoki baribir qoʻshishni tanlang."
+msgstr "{n} possible duplicates — choose to skip them or add them anyway."
+
+msgid "“Aka-uka” deb belgilangan, lekin umumiy vasiy topilmadi — chegirma qoʻllanmaydi. Ikkala bolaga bir xil telefon yozing."
+msgstr "Marked “siblings”, but no shared guardian was found — the discount will not apply. Give both children the same phone."

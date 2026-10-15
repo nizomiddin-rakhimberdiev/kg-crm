@@ -2036,3 +2036,24 @@ Testlar 5, 8.
 * Excel: eski "oylik toʻlov jadvali" (`/reports/monthly/export`).
 * Hisobotlar sahifasida "Oylik yigʻma" boʻlimi. ADR-36. Backend 1 793 test.
 
+### 12.7 Import va maʼlumot sifati
+
+* **Imtiyoz ustuni** ("Imtiyoz", "Imtiyoz sababi") — turi bor yozuv
+  boʻladi; sabab boʻsh boʻlsa "Excel importidan: …". Notanish soʻz — qator
+  xatosi. "Aka-uka" — yozuv emas, umumiy vasiy orqali.
+* **Telefon normallashadi** — topilgan nosozlik: "90 111 11 11" va
+  "+998901111111" ikki vasiy boʻlib, oila (va aka-uka chegirmasi) uzilib
+  qolardi. Endi bitta vasiy; oʻqilmaydigan raqam — qator xatosi.
+* **Ehtimoliy dublikatlar** — ism "skeleti" (Oʻ/O', X/H, unlilar):
+  Boxodirova/Bohodirova/Bahodirova, Doniyorov/Donyorov; faylning ichida
+  va tizimdagi bolalarga qarshi. Qarorsiz hech narsa yozilmaydi:
+  "oʻtkazib yuborish" yoki "hammasini qoʻshish".
+* **Bir oilada har xil narx** — ogohlantirish (import toʻxtamaydi).
+* Import oynasi Excel faylini tanlashga ham ruxsat beradi (ilgari tanlash
+  oynasi faqat `.csv` koʻrsatardi).
+* Backend 1 808 test.
+
+**Bosqich 12 yopildi.** Brifning 16 qabul testi: 1–4, 10 (12.1); 5, 8
+(12.2); 6, 7, 9, 16 (12.3); 11, 12 (12.4); 13, 14 (12.5); 15 va 11
+davomi (12.6) — hammasi avtomatik testlarda yashil.
+

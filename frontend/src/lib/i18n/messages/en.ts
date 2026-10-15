@@ -1542,4 +1542,10 @@ export const messages: Record<string, string> = {
   'Toʻliq narx boʻyicha': 'At full price',
   'Yopilgan: {date}, {name}': 'Closed: {date}, {name}',
   '{n} bola': '{n} children',
+  '{n} ta ehtimoliy dublikat — bitta bolami yoki ikkitami?': '{n} possible duplicates — one child or two?',
+  '{name} ({row}-qator)': '{name} (row {row})',
+  '{name} (tizimda)': '{name} (already in the system)',
+  'Bitta bola — takrorini oʻtkazib yuborish': 'One child — skip the repeat',
+  'Dublikatlar bilan nima qilinsin': 'What to do with the duplicates',
+  'Har xil bolalar — hammasini qoʻshish': 'Different children — add them all',
 }

@@ -118,11 +118,17 @@ export const childrenApi = {
    * emas, `httpClient` bevosita ishlatiladi (Content-Type'ni brauzer
    * boundary bilan o'zi qo'yishi kerak).
    */
-  async importFile(file: File, dryRun: boolean, branchId?: string | null) {
+  async importFile(
+    file: File,
+    dryRun: boolean,
+    branchId?: string | null,
+    duplicateDecision?: 'skip' | 'keep' | '',
+  ) {
     const form = new FormData()
     form.append('file', file)
     form.append('dry_run', String(dryRun))
     if (branchId) form.append('branch_id', branchId)
+    if (duplicateDecision) form.append('duplicate_decision', duplicateDecision)
 
     const response = await httpClient.post<Envelope<ImportReport>>('/children/import', form, {
       headers: { 'Content-Type': undefined },

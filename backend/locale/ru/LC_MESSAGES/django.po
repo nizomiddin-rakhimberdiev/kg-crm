@@ -1726,3 +1726,18 @@ msgstr "не возвращается"
 
 msgid "{month} oyi yopilgan — u faqat keyingi oyga tuzatish qatori orqali oʻzgaradi."
 msgstr "Месяц {month} закрыт — он меняется только строкой корректировки в следующем месяце."
+
+msgid "Bir oila ({phone}) bolalari har xil narxda: qatorlar {rows}. Aka-uka chegirmasi umumiy vasiy orqali oʻzi qoʻllanadi — tarifni tekshiring."
+msgstr "Дети одной семьи ({phone}) с разной ценой: строки {rows}. Скидка для братьев и сестёр применяется сама через общего опекуна — проверьте тариф."
+
+msgid "Excel importidan: {word}"
+msgstr "Из импорта Excel: {word}"
+
+msgid "Imtiyozni tushunmadim: '{value}'. Mumkin: xodim farzandi, kam taʼminlangan, toʻliq imtiyoz, aka-uka."
+msgstr "Не понял льготу: '{value}'. Можно: ребёнок сотрудника, малообеспеченные, полная льгота, братья-сёстры."
+
+msgid "{n} ta ehtimoliy dublikat bor — ularni oʻtkazib yuborish yoki baribir qoʻshishni tanlang."
+msgstr "Найдено возможных дублей: {n} — выберите: пропустить их или всё равно добавить."
+
+msgid "“Aka-uka” deb belgilangan, lekin umumiy vasiy topilmadi — chegirma qoʻllanmaydi. Ikkala bolaga bir xil telefon yozing."
+msgstr "Отмечено «братья-сёстры», но общий опекун не найден — скидка не применится. Укажите обоим детям один телефон."

@@ -4,6 +4,10 @@
  * Oqim ataylab ikki qadam: fayl → **tekshiruv natijasi** → saqlash.
  * Foydalanuvchi 200 qatorli faylni ko'r-ko'rona yuklamasligi kerak; u
  * nima yaratilishini va qaysi qatorda xato borligini oldindan ko'radi.
+ *
+ * Bosqich 12.7: transliteratsiya farqi bilan bir xil ismlar (Boxodirova /
+ * Bohodirova) — ehtimoliy dublikat, foydalanuvchi qaror qiladi; bir
+ * oilada har xil narx — ogohlantirish.
  */
 
 import { useRef, useState } from 'react'
@@ -28,10 +32,11 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
   const [report, setReport] = useState<ImportReport | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
+  const [decision, setDecision] = useState<'' | 'skip' | 'keep'>('')
 
   const runImport = useMutation({
     mutationFn: ({ target, dryRun }: { target: File; dryRun: boolean }) =>
-      childrenApi.importFile(target, dryRun, selectedBranchId),
+      childrenApi.importFile(target, dryRun, selectedBranchId, decision),
     onSuccess: (result) => {
       setReport(result)
       setError(null)
@@ -52,6 +57,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
     setReport(null)
     setDone(false)
     setError(null)
+    setDecision('')
     if (selected) runImport.mutate({ target: selected, dryRun: true })
   }
 
@@ -85,7 +91,19 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
     }
   }
 
-  const canSave = report !== null && report.errors.length === 0 && !done && file !== null
+  const duplicates = report?.possible_duplicates ?? []
+  const warnings = report?.warnings ?? []
+  const canSave =
+    report !== null &&
+    report.errors.length === 0 &&
+    !done &&
+    file !== null &&
+    (duplicates.length === 0 || decision !== '')
+  // "O'tkazib yuborish" tanlansa, dublikat qatorlar yaratilmaydi.
+  const toCreate =
+    report && decision === 'skip' && !done
+      ? Math.max(0, report.created - duplicates.length)
+      : report?.created
 
   return (
     <Modal open onClose={onClose} className="max-w-2xl">
@@ -124,7 +142,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
           <input
             ref={inputRef}
             type="file"
-            accept=".csv,text/csv"
+            accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
             className="hidden"
             onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
           />
@@ -162,6 +180,67 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
                 </div>
               ))}
             </div>
+
+            {duplicates.length > 0 && !done && (
+              <div className="rounded-lg border border-orik-200 bg-orik-50 p-3">
+                <p className="text-sm font-semibold text-slate-900">
+                  {t('{n} ta ehtimoliy dublikat — bitta bolami yoki ikkitami?', {
+                    n: duplicates.length,
+                  })}
+                </p>
+                <ul className="mt-2 max-h-48 space-y-1.5 overflow-y-auto text-sm text-slate-700">
+                  {duplicates.map((item) => (
+                    <li key={item.row}>
+                      <span className="font-mono text-xs">
+                        {t('{row}-qator', { row: item.row })}
+                      </span>{' '}
+                      <span className="font-medium">{item.name}</span>
+                      {item.group && <span className="text-slate-500"> · {item.group}</span>}
+                      {' ≈ '}
+                      {item.matches
+                        .map((match) =>
+                          match.source === 'system'
+                            ? t('{name} (tizimda)', { name: match.name })
+                            : t('{name} ({row}-qator)', { name: match.name, row: match.row ?? '' }),
+                        )
+                        .join(', ')}
+                    </li>
+                  ))}
+                </ul>
+                <fieldset className="mt-3 flex flex-wrap gap-3 text-sm">
+                  <legend className="sr-only">{t('Dublikatlar bilan nima qilinsin')}</legend>
+                  <label className="flex items-center gap-1.5">
+                    <input
+                      type="radio"
+                      name="duplicate-decision"
+                      checked={decision === 'skip'}
+                      onChange={() => setDecision('skip')}
+                    />
+                    {t('Bitta bola — takrorini oʻtkazib yuborish')}
+                  </label>
+                  <label className="flex items-center gap-1.5">
+                    <input
+                      type="radio"
+                      name="duplicate-decision"
+                      checked={decision === 'keep'}
+                      onChange={() => setDecision('keep')}
+                    />
+                    {t('Har xil bolalar — hammasini qoʻshish')}
+                  </label>
+                </fieldset>
+              </div>
+            )}
+
+            {warnings.length > 0 && (
+              <ul className="space-y-1 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
+                {warnings.map((warning, index) => (
+                  <li key={`${warning.row}-${warning.field}-${index}`} className="flex gap-2">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-orik-700" />
+                    {warning.message}
+                  </li>
+                ))}
+              </ul>
+            )}
 
             {report.errors.length > 0 ? (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
@@ -215,7 +294,7 @@ export function ImportWizard({ onClose }: { onClose: () => void }) {
               )}
             >
               <Upload className="h-4 w-4" />
-              {t('{created} ta bolani saqlash', { created: report?.created })}
+              {t('{created} ta bolani saqlash', { created: toCreate })}
             </button>
           )}
         </div>

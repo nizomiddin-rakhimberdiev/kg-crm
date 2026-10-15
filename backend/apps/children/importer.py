@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import csv
 import io
+import re
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
@@ -54,7 +55,64 @@ COLUMNS: dict[str, tuple[str, ...]] = {
     "tariff": ("tarif", "tarif rejasi", "tariff", "narx"),
     "client_kind": ("mijoz", "mijoz turi", "holat", "client"),
     "opening_debt": ("qarzdorlik", "qarz", "eski qarz", "debt"),
+    # Bosqich 12.7: toifa — rang emas, ustun; sababi bilan.
+    "benefit": ("imtiyoz", "toifa", "imtiyoz turi", "benefit", "category"),
+    "benefit_reason": ("imtiyoz sababi", "sabab", "benefit_reason", "reason"),
 }
+
+#: "Imtiyoz" ustunining so'zlari → `BenefitKind`. Bo'sh — imtiyoz yo'q.
+#: Aka-uka yozuv bo'lib kiritilmaydi: u umumiy vasiy orqali o'zi
+#: qo'llanadi (ADR-32) — ustundagi so'z faqat tekshiruv uchun.
+_BENEFIT_WORDS: dict[str, str] = {
+    "xodim farzandi": "staff_child",
+    "xodim": "staff_child",
+    "hodim farzandi": "staff_child",
+    "kam ta'minlangan": "low_income",
+    "kam taminlangan": "low_income",
+    "to'liq imtiyoz": "full",
+    "toliq imtiyoz": "full",
+    "to'liq": "full",
+    "imtiyozli": "full",
+    "aka-uka": "sibling",
+    "aka uka": "sibling",
+    "opa-singil": "sibling",
+    "sibling": "sibling",
+    "staff_child": "staff_child",
+    "low_income": "low_income",
+    "full": "full",
+    "yo'q": "",
+    "yoq": "",
+    "-": "",
+}
+
+_APOSTROPHES = "ʻʼ‘’`"
+
+
+def _plain(value: str) -> str:
+    """Kichik harf va bitta turdagi apostrof — so'z lug'atlari uchun."""
+    cleaned = value.strip().casefold()
+    for mark in _APOSTROPHES:
+        cleaned = cleaned.replace(mark, "'")
+    return cleaned
+
+
+def name_skeleton(value: str) -> str:
+    """
+    Ismning "skeleti" — transliteratsiya farqlarini yutadi (brif §7).
+
+    Oʻ/O', X/H va unlilardagi tebranish (Boxodirova / Bohodirova /
+    Bahodirova, Doniyorov / Donyorov) bir xil skeletga tushadi: birinchi
+    harf, keyin faqat undoshlar, takrorlanganlari bittaga. Bu taxmin —
+    shuning uchun natija "ehtimoliy dublikat" bo'lib, TASDIQ uchun
+    ko'rsatiladi, o'zi hech narsani o'chirmaydi.
+    """
+    cleaned = _plain(value).replace("'", "").replace("x", "h")
+    cleaned = re.sub(r"[^a-z]", "", cleaned)
+    if not cleaned:
+        return ""
+    tail = re.sub(r"[aeiou]", "", cleaned[1:])
+    return cleaned[0] + re.sub(r"(.)\1+", r"\1", tail)
+
 
 #: "Mijoz" ustunining qiymatlari. Shablonda sukut — MAVJUD: import
 #: bog'cha tizimga o'tayotganda ishlatiladi, ya'ni undagi bolalarning
@@ -102,6 +160,10 @@ class ImportReport:
     skipped_duplicates: int = 0
     errors: list[RowError] = field(default_factory=list)
     dry_run: bool = True
+    # Bosqich 12.7: importni to'xtatmaydigan, lekin ko'rish kerak bo'lgan
+    # narsalar (bir oilada har xil narx) va tasdiq kutayotgan dublikatlar.
+    warnings: list[RowError] = field(default_factory=list)
+    possible_duplicates: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def is_valid(self) -> bool:
@@ -114,6 +176,10 @@ class ImportReport:
             "skipped_duplicates": self.skipped_duplicates,
             "dry_run": self.dry_run,
             "errors": [{"row": e.row, "field": e.field, "message": e.message} for e in self.errors],
+            "warnings": [
+                {"row": w.row, "field": w.field, "message": w.message} for w in self.warnings
+            ],
+            "possible_duplicates": self.possible_duplicates,
         }
 
 
@@ -311,7 +377,16 @@ def _validate(row: dict[str, str], line: int) -> tuple[dict[str, Any] | None, li
         )
     gender = gender or Gender.MALE
 
+    # Telefon bir xil ko'rinishga keltiriladi (Bosqich 12.7): "90 111 11 11"
+    # va "+998901111111" — bitta vasiy, ya'ni bitta oila. Ilgari ular ikki
+    # vasiy bo'lib qolardi va aka-uka chegirmasi jimgina tushib qolardi.
+    from apps.core.phone import PhoneFormatError, normalise_phone
+
     phone = row.get("guardian_phone", "").strip()
+    try:
+        phone = normalise_phone(phone)
+    except PhoneFormatError as exc:
+        errors.append(RowError(line, "guardian_phone", str(exc)))
     guardian_name = row.get("guardian_name", "").strip()
     if phone and not guardian_name:
         errors.append(
@@ -339,10 +414,27 @@ def _validate(row: dict[str, str], line: int) -> tuple[dict[str, Any] | None, li
                     )
                 )
 
+    raw_benefit = row.get("benefit", "").strip()
+    benefit = _BENEFIT_WORDS.get(_plain(raw_benefit), None) if raw_benefit else ""
+    if benefit is None:
+        errors.append(
+            RowError(
+                line,
+                "benefit",
+                gettext(
+                    "Imtiyozni tushunmadim: '{value}'. Mumkin: xodim farzandi, kam taʼminlangan, "
+                    "toʻliq imtiyoz, aka-uka."
+                ).format(value=raw_benefit),
+            )
+        )
+
     if errors:
         return None, errors
 
     return {
+        "benefit": benefit or "",
+        "benefit_word": raw_benefit,
+        "benefit_reason": row.get("benefit_reason", "").strip(),
         "last_name": last_name,
         "first_name": first_name,
         "middle_name": row.get("middle_name", "").strip(),
@@ -364,6 +456,7 @@ def import_children(
     branch: Any,
     file_bytes: bytes,
     dry_run: bool = True,
+    duplicate_decision: str = "",
 ) -> ImportReport:
     """
     Faylni tekshiradi va (dry_run=False bo'lsa) yozadi.
@@ -434,6 +527,26 @@ def import_children(
         # qayta yuborsa dublikat oladi.
         return report
 
+    # --- Bosqich 12.7: ehtimoliy dublikatlar va oilalar ---
+    skip_rows = _find_possible_duplicates(report, prepared, branch)
+    _warn_about_families(report, prepared, branch)
+    if report.possible_duplicates and not dry_run and duplicate_decision not in ("skip", "keep"):
+        # Tasdiqsiz yozilmaydi: "Boxodirova" va "Bohodirova" — bitta
+        # bolami yoki ikkitami, buni faqat odam biladi.
+        report.errors.append(
+            RowError(
+                row=0,
+                field="duplicates",
+                message=gettext(
+                    "{n} ta ehtimoliy dublikat bor — ularni oʻtkazib yuborish yoki "
+                    "baribir qoʻshishni tanlang."
+                ).format(n=len(report.possible_duplicates)),
+            )
+        )
+        return report
+    if duplicate_decision == "skip":
+        prepared = [data for data in prepared if data["_row"] not in skip_rows]
+
     groups: dict[str, Group] = {}
     # Tariflar nomi bo'yicha — katta-kichik harf farqi bo'lmasin
     # (kotib "Full" deb ham, "full" deb ham yozadi).
@@ -481,6 +594,26 @@ def import_children(
             tariff=tariffs.get(data["tariff_name"].casefold()) if data["tariff_name"] else None,
         )
 
+        # Toifa — turi va sababi bilan imtiyoz yozuvi (Bosqich 12.7). Sabab
+        # ustuni bo'sh bo'lsa, manbasi yoziladi: "qayerdan kelgan?" degan
+        # savolga baribir javob bor. Aka-uka yozuv emas — vasiy orqali.
+        if data["benefit"] and data["benefit"] != "sibling":
+            from apps.finance.models import Discount, DiscountType
+
+            Discount.objects.create(
+                organization=organization,
+                branch=branch,
+                child=child,
+                kind=data["benefit"],
+                discount_type=DiscountType.PERCENT,
+                value=Decimal("0"),
+                reason=(
+                    data["benefit_reason"]
+                    or gettext("Excel importidan: {word}").format(word=data["benefit_word"])
+                )[:255],
+                valid_from=date.today().replace(day=1),
+            )
+
         # Eski qarz — ledger'ga debet, ya'ni bola darhol qarzdorlar
         # ro'yxatida ko'rinadi (4-invariant).
         if data["opening_debt"] > 0:
@@ -520,6 +653,133 @@ def import_children(
     return report
 
 
+def _find_possible_duplicates(
+    report: ImportReport, prepared: list[dict[str, Any]], branch: Any
+) -> set[int]:
+    """
+    Transliteratsiya farqi bilan bir xil bolalarni topadi — faylda va tizimda.
+
+    Aniq dublikat (ism, familiya va sana aynan bir xil, tizimda bor) —
+    avvalgidek jimgina o'tkaziladi: bu faylni qayta yuborish. Bu yerda
+    esa "o'xshash" — tasdiq so'raladi. Qaytaradi: "o'tkazib yuborish"
+    tanlansa tashlab ketiladigan qatorlar.
+    """
+
+    def key(first: str, last: str) -> tuple[str, str]:
+        return name_skeleton(last), name_skeleton(first)
+
+    existing: dict[tuple[str, str], list[Child]] = {}
+    for child in Child.objects.filter(branch=branch, is_active=True).only(
+        "id", "first_name", "last_name", "date_of_birth"
+    ):
+        existing.setdefault(key(child.first_name, child.last_name), []).append(child)
+
+    seen: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    skip: set[int] = set()
+    for data in prepared:
+        name_key = key(data["first_name"], data["last_name"])
+        if not all(name_key):
+            continue
+        matches: list[dict[str, Any]] = [
+            {
+                "source": "file",
+                "row": earlier["_row"],
+                "name": f"{earlier['last_name']} {earlier['first_name']}",
+                "date_of_birth": earlier["date_of_birth"].isoformat(),
+                "group": earlier["group_name"],
+            }
+            for earlier in seen.get(name_key, [])
+        ]
+        for child in existing.get(name_key, []):
+            exact = (
+                child.first_name.casefold() == data["first_name"].casefold()
+                and child.last_name.casefold() == data["last_name"].casefold()
+                and child.date_of_birth == data["date_of_birth"]
+            )
+            if exact:
+                continue  # qayta yuborish — eski qoida bilan o'tkaziladi
+            matches.append(
+                {
+                    "source": "system",
+                    "child_id": str(child.id),
+                    "name": child.full_name,
+                    "date_of_birth": child.date_of_birth.isoformat(),
+                    "group": "",
+                }
+            )
+        seen.setdefault(name_key, []).append(data)
+        if matches:
+            skip.add(data["_row"])
+            report.possible_duplicates.append(
+                {
+                    "row": data["_row"],
+                    "name": f"{data['last_name']} {data['first_name']}",
+                    "date_of_birth": data["date_of_birth"].isoformat(),
+                    "group": data["group_name"],
+                    "matches": matches,
+                }
+            )
+    return skip
+
+
+def _warn_about_families(report: ImportReport, prepared: list[dict[str, Any]], branch: Any) -> None:
+    """
+    Bir oila (bitta vasiy telefoni) — har xil narx bo'lsa ogohlantiradi.
+
+    Excel'da aka-ukalik familiyaga qarab taxmin qilinardi va chegirma bir
+    xil qo'llanmasdi. Bu xato emas — import to'xtamaydi — lekin ko'rinishi
+    kerak: bir bola "Aka-uka" tarifida, ikkinchisi "Asosiy"da bo'lsa,
+    kimdir unutgan.
+    """
+    from apps.children.models import Guardian
+
+    families: dict[str, list[dict[str, Any]]] = {}
+    for data in prepared:
+        if data["guardian_phone"]:
+            families.setdefault(data["guardian_phone"], []).append(data)
+
+    for phone, members in families.items():
+        prices = {(member["tariff_name"].casefold(), member["benefit"] or "") for member in members}
+        guardian = Guardian.objects.filter(branch=branch, phone=phone, is_active=True).first()
+        if guardian is not None:
+            for link in guardian.child_links.select_related("child__tariff"):
+                tariff = link.child.tariff.name.casefold() if link.child.tariff_id else ""
+                prices.add((tariff, ""))
+        if len(prices) > 1:
+            rows = ", ".join(str(member["_row"]) for member in members)
+            report.warnings.append(
+                RowError(
+                    row=members[0]["_row"],
+                    field="family",
+                    message=gettext(
+                        "Bir oila ({phone}) bolalari har xil narxda: qatorlar {rows}. "
+                        "Aka-uka chegirmasi umumiy vasiy orqali oʻzi qoʻllanadi — "
+                        "tarifni tekshiring."
+                    ).format(phone=phone, rows=rows),
+                )
+            )
+
+    for data in prepared:
+        if data["benefit"] == "sibling" and len(families.get(data["guardian_phone"], [])) < 2:
+            if (
+                data["guardian_phone"]
+                and Guardian.objects.filter(
+                    branch=branch, phone=data["guardian_phone"], child_links__isnull=False
+                ).exists()
+            ):
+                continue
+            report.warnings.append(
+                RowError(
+                    row=data["_row"],
+                    field="benefit",
+                    message=gettext(
+                        "“Aka-uka” deb belgilangan, lekin umumiy vasiy topilmadi — chegirma "
+                        "qoʻllanmaydi. Ikkala bolaga bir xil telefon yozing."
+                    ),
+                )
+            )
+
+
 # --- Shablon ---
 
 # Shablondagi ustunlar va ularning izohi. Tartib muhim: majburiylari
@@ -541,6 +801,14 @@ _TEMPLATE_COLUMNS: tuple[tuple[str, str, bool], ...] = (
     ("Qarzdorlik", "Eski qarz so'mda. Qarz yo'q bo'lsa 0 qoldiring", False),
     ("Ota-ona", "Familiya va ism, masalan: Valiyeva Nodira", False),
     ("Telefon", "+998901234567 — xabar shu raqamga ketadi", False),
+    # Bosqich 12.7: toifa — rang emas, ustun.
+    (
+        "Imtiyoz",
+        "xodim farzandi, kam ta'minlangan, to'liq imtiyoz yoki bo'sh. Aka-uka — bir xil "
+        "telefon yozilsa o'zi qo'llanadi",
+        False,
+    ),
+    ("Imtiyoz sababi", "Qisqa sabab, masalan: oshpaz farzandi", False),
 )
 
 _TEMPLATE_EXAMPLES: tuple[tuple[str, ...], ...] = (
@@ -556,6 +824,8 @@ _TEMPLATE_EXAMPLES: tuple[tuple[str, ...], ...] = (
         "0",
         "Valiyeva Nodira",
         "+998901112233",
+        "",
+        "",
     ),
     (
         "Karimova",
@@ -569,6 +839,8 @@ _TEMPLATE_EXAMPLES: tuple[tuple[str, ...], ...] = (
         "1200000",
         "Karimov Bahodir",
         "+998939874455",
+        "xodim farzandi",
+        "Oshpaz farzandi",
     ),
 )
 

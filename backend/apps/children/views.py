@@ -480,6 +480,9 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
             branch=branch,
             file_bytes=uploaded.read(),
             dry_run=dry_run,
+            # Ehtimoliy dublikatlar uchun foydalanuvchi qarori (Bosqich 12.7):
+            # `skip` — o'tkazib yuborish, `keep` — baribir qo'shish.
+            duplicate_decision=str(request.data.get("duplicate_decision", "")),
         )
 
         if not dry_run and report.is_valid:

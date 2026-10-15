@@ -483,7 +483,7 @@ const uz: Copy = {
       },
       {
         title: 'Excelʼdan koʻchirish',
-        text: 'Shablon sizning guruhlaringiz va tariflaringiz bilan yuklanadi. Qarzdorlik ustuni ham bor — eski qarz birinchi kundanoq qarzdorlar roʻyxatida turadi.',
+        text: 'Shablon sizning guruhlaringiz va tariflaringiz bilan yuklanadi; qarzdorlik va imtiyoz ustunlari bor. Boxodirova va Bohodirova — bitta bolami, sizdan soʻraladi. Bir telefon — bitta oila, aka-ukalar narxi farq qilsa ogohlantiriladi.',
       },
       {
         title: 'Pul qayerda va kimning qoʻlida',
@@ -1050,7 +1050,7 @@ const ru: Copy = {
       },
       {
         title: 'Перенос из Excel',
-        text: 'Шаблон скачивается с вашими группами и тарифами. Есть и колонка долга — прежняя задолженность с первого дня видна в списке должников.',
+        text: 'Шаблон скачивается с вашими группами и тарифами; есть колонки долга и льготы. Бохадирова и Боходирова — один ребёнок или два, система спросит. Один телефон — одна семья, разная цена у братьев и сестёр — предупреждение.',
       },
       {
         title: 'Где деньги и у кого на руках',
@@ -1610,7 +1610,7 @@ const en: Copy = {
       },
       {
         title: 'Import from Excel',
-        text: 'The template downloads with your own groups and tariffs. It has a debt column too, so an old balance shows up among the debtors from day one.',
+        text: 'The template downloads with your own groups and tariffs, with debt and benefit columns. Boxodirova and Bohodirova — one child or two? You are asked. One phone is one family, and siblings at different prices are flagged.',
       },
       {
         title: 'Where the money is, and who holds it',

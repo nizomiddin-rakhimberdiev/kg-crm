@@ -281,12 +281,32 @@ export interface ImportRowError {
   message: string
 }
 
+/** Ehtimoliy dublikat (Bosqich 12.7) — transliteratsiya farqi bilan bir xil ism. */
+export interface ImportDuplicate {
+  row: number
+  name: string
+  date_of_birth: string
+  group: string
+  matches: Array<{
+    source: 'file' | 'system'
+    row?: number
+    child_id?: string
+    name: string
+    date_of_birth: string
+    group: string
+  }>
+}
+
 export interface ImportReport {
   total_rows: number
   created: number
   skipped_duplicates: number
   dry_run: boolean
   errors: ImportRowError[]
+  /** Importni toʻxtatmaydi, lekin koʻrish kerak (bir oilada har xil narx). */
+  warnings?: ImportRowError[]
+  /** Tasdiq kutadi: "oʻtkazib yuborish" yoki "baribir qoʻshish". */
+  possible_duplicates?: ImportDuplicate[]
 }
 
 // --- Davomat ---
