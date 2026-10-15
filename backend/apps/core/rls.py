@@ -73,6 +73,7 @@ AUTH_TABLES: tuple[str, ...] = ("user", "refresh_token")
 # himoyasiz jadval. `test_rls.py` uni modellar ro'yxati bilan solishtiradi.
 OPERATIONAL_TABLES: tuple[str, ...] = (
     "absence_claim",
+    "absence_kind",
     "attendance_record",
     "branch",
     "cash_account",
@@ -96,6 +97,7 @@ OPERATIONAL_TABLES: tuple[str, ...] = (
     "holiday",
     "insight",
     "invoice",
+    "invoice_write_off",
     "menu_day",
     "menu_item",
     "merchant_credential",

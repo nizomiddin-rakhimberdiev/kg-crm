@@ -1546,3 +1546,45 @@ msgstr "Укажите дату окончания."
 
 msgid "Xodim farzandi"
 msgstr "Ребёнок сотрудника"
+
+msgid "Bu hisob-fakturada qarz yoʻq."
+msgstr "По этому счёту нет долга."
+
+msgid "Bunday qayta hisob turi yoʻq."
+msgstr "Такого вида перерасчёта нет."
+
+msgid "Bunday qayta hisob turi yoʻq: {code}."
+msgstr "Такого вида перерасчёта нет: {code}."
+
+msgid "Hisobdan chiqarildi ({number}): {reason}"
+msgstr "Списано ({number}): {reason}"
+
+msgid "Hisobdan chiqarildi: {reason}"
+msgstr "Списано: {reason}"
+
+msgid "Hisobdan chiqarish sababini yozing."
+msgstr "Укажите причину списания."
+
+msgid "Hisobdan faqat qolgan qarz chiqariladi: {outstanding}."
+msgstr "Списать можно только оставшийся долг: {outstanding}."
+
+msgid "Kelmagan kunlar: {days} kun × {rate} (ovqat puli)"
+msgstr "Пропущенные дни: {days} дн. × {rate} (питание)"
+
+msgid "Summani kiriting."
+msgstr "Укажите сумму."
+
+msgid "Tur kodini oʻzgartirib boʻlmaydi."
+msgstr "Код вида изменить нельзя."
+
+msgid "«{kind}» uchun kamida {n} ish kuni kerak — bu oraliqda {days}."
+msgstr "Для «{kind}» нужно не меньше {n} рабочих дней — в этом периоде {days}."
+
+msgid "Toʻliq kunlik stavka"
+msgstr "Полная дневная ставка"
+
+msgid "Kuniga qatʼiy summa"
+msgstr "Фиксированная сумма в день"
+
+msgid "Qaytarilmaydi"
+msgstr "Не возвращается"

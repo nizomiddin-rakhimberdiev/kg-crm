@@ -18,10 +18,11 @@ from rest_framework.response import Response
 from apps.attendance import services
 from apps.attendance import services_absence as absence
 from apps.attendance.models import AttendanceRecord
-from apps.attendance.models_absence import AbsenceClaim, Holiday
+from apps.attendance.models_absence import AbsenceClaim, AbsenceKind, Holiday
 from apps.attendance.serializers import (
     AbsenceClaimSerializer,
     AbsenceClaimWriteSerializer,
+    AbsenceKindSerializer,
     AttendanceRecordSerializer,
     AttendanceWriteSerializer,
     BulkAttendanceSerializer,
@@ -183,7 +184,7 @@ class AbsenceClaimViewSet(BranchScopedMixin, TenantViewSet):
     """
 
     permission_module = "attendance"
-    permission_action_map = {"approve": "approve", "reject": "approve"}
+    permission_action_map = {"approve": "approve", "reject": "approve", "kinds": "read"}
     model = AbsenceClaim
     serializer_class = AbsenceClaimSerializer
     select_related_fields = ("child", "approved_by")
@@ -200,7 +201,7 @@ class AbsenceClaimViewSet(BranchScopedMixin, TenantViewSet):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        payload = AbsenceClaimWriteSerializer(data=request.data)
+        payload = AbsenceClaimWriteSerializer(data=request.data, context={"request": request})
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
         user = request_user(request)
@@ -241,6 +242,20 @@ class AbsenceClaimViewSet(BranchScopedMixin, TenantViewSet):
             },
         )
         return Response(AbsenceClaimSerializer(claim).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["get"])
+    def kinds(self, request: Request) -> Response:
+        """
+        `GET /absence-claims/kinds` — da'vo formasi uchun faol turlar (Bosqich 12.3).
+
+        `attendance.read` bilan: tarbiyachi tur tanlashi kerak. Qoidani
+        o'zgartirish esa `/absence-kinds` da va `settings.update` talab qiladi
+        — bu pul siyosati.
+        """
+        absence.ensure_absence_kinds(request_user(request).organization)
+        return Response(
+            AbsenceKindSerializer(AbsenceKind.objects.filter(is_active=True), many=True).data
+        )
 
     def _checked_document(self, uploaded: Any) -> Any:
         """Hajm va kengaytma — biriktirishning ikkala yo'lida bir xil."""
@@ -323,3 +338,45 @@ class AbsenceClaimViewSet(BranchScopedMixin, TenantViewSet):
         )
         claim.refresh_from_db()
         return Response(AbsenceClaimSerializer(claim).data)
+
+
+class AbsenceKindViewSet(TenantViewSet):
+    """
+    `/absence-kinds` — qayta hisob turlari va qoidalari (Bosqich 12.3, ADR-33).
+
+    `settings` moduli: qaytarish usuli va summa — bog'chaning pul siyosati,
+    tarbiyachi uni o'zgartirmaydi. O'chirish yo'q — `is_active=false`:
+    eski da'volar tur kodiga bog'langan.
+    """
+
+    permission_module = "settings"
+    model = AbsenceKind
+    serializer_class = AbsenceKindSerializer
+    http_method_names = ["get", "post", "patch", "head", "options"]
+
+    def get_base_queryset(self) -> Any:
+        absence.ensure_absence_kinds(request_user(self.request).organization)
+        return super().get_base_queryset()
+
+    def perform_create(self, serializer: Any) -> None:
+        user = request_user(self.request)
+        serializer.save(organization=user.organization)
+        audit.record(
+            action="create",
+            request=self.request._request,
+            actor=user,
+            entity_type="absence_kind",
+            entity_id=serializer.instance.id,
+            changes={k: str(v) for k, v in serializer.validated_data.items()},
+        )
+
+    def perform_update(self, serializer: Any) -> None:
+        serializer.save()
+        audit.record(
+            action="update",
+            request=self.request._request,
+            actor=request_user(self.request),
+            entity_type="absence_kind",
+            entity_id=serializer.instance.id,
+            changes={k: str(v) for k, v in serializer.validated_data.items()},
+        )

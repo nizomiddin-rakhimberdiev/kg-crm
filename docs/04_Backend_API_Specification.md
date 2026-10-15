@@ -389,10 +389,12 @@ A fee credit comes from an approved **document**, never from the attendance grid
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/absence-claims` | `attendance.read` | Filters: `status`, `kind`, `child` |
-| POST | `/absence-claims` | `attendance.create` | `{child_id, kind: medical\|parental, date_from, date_to, document_no?, note?}`; accepts `multipart/form-data` with `document_file` |
+| POST | `/absence-claims` | `attendance.create` | `{child_id, kind, date_from, date_to, document_no?, note?}` — `kind` is an active `AbsenceKind.code` (Bosqich 12.3); fewer working days than the kind's `min_days` → `422`. Approved in the same transaction when the caller may approve. Accepts `multipart/form-data` with `document_file` |
+| GET | `/absence-claims/kinds` | `attendance.read` | Active kinds for the claim form |
+| GET/POST/PATCH | `/absence-kinds` | `settings.*` | The kinds and their rules: `refund_mode` (`full_rate` · `fixed_per_day` · `none`), `daily_amount` (empty → `contracts.daily_meal_fee`), `min_days`, `full_rate_from_days`, `requires_document`. No delete — `is_active=false`; `code` never changes |
 | POST | `/absence-claims/{id}/document` | `attendance.create` | `multipart/form-data`, field `file` — the certificate/application, ≤ 10 MB, `.pdf .png .jpg .jpeg .webp .heic`. Only while `pending` |
 | GET | `/absence-claims/{id}/document/download` | `attendance.read` | The file itself, as an attachment. `404` when there is none — and `404`, not `403`, for another organization's claim |
-| POST | `/absence-claims/{id}/approve` | `attendance.**approve**` | Freezes `billable_days`, `daily_rate`, `credit_amount` |
+| POST | `/absence-claims/{id}/approve` | `attendance.**approve**` | Freezes `billable_days`, `daily_rate`, `credit_amount` and `basis` (which rule produced them) |
 | POST | `/absence-claims/{id}/reject` | `attendance.approve` | The row stays as a record of what was asked |
 | GET / POST / DELETE | `/holidays` | `attendance.read` / `.create` / `.delete` | The organization's closed days — `{holiday_date, name}` |
 
@@ -1123,3 +1125,18 @@ Module: `platform`. **Not part of the customer API surface** — separate auth p
 - How the frontend consumes these (query keys, interceptors, forms): [05_Frontend_Architecture](./05_Frontend_Architecture.md).
 
 *End of Backend API Specification v1.1 — signup/tenant scoping, billing (§18) and platform console (§19) added. Contract only — no implementation.*
+
+---
+
+## Bosqich 12 additions (billing as the kindergarten runs it)
+
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| GET/POST | `/children/{id}/pauses` | `children.read` / `children.create` | "Bir oylik ariza": `{month: "YYYY-MM", month_to?, reason}` — the month is billed at 0, the child stays active. An issued unpaid invoice for that month is cancelled and re-issued at 0; a paid one → `422` |
+| GET | `/children/{id}/family` | `children.read` | Children linked through shared guardians — the family the sibling discount is computed from |
+| GET/POST | `/discounts` | `payments.read` / `payments.create` | Benefits: `{child_id, kind: staff_child\|low_income\|full\|custom, reason, valid_from, valid_to?, discount_type?, value?}` (the last two for `custom` only). Reason mandatory; overlapping benefits → `422`; `PATCH`/`DELETE` → `405` |
+| POST | `/discounts/{id}/end` | `payments.update` | `{valid_to}` — ends a benefit; the row stays as history |
+| GET | `/reports/benefits?from=&to=` | `reports.read` + `payments.read` | Who gave which child how much and why — summed from invoice `benefit` lines, with `by_kind` and `by_month` |
+| POST | `/debtors/write-off` | `debtors.**approve**` | `{invoice_id, amount, reason}` — the only way to forgive debt: a minus line on the invoice with the reason, a ledger credit and an `invoice_write_off` record. Amount ≤ what is still owed |
+| GET | `/ledger/balance?child=` | `payments.read` | Adds `months`: each open invoice's period and outstanding amount |
+

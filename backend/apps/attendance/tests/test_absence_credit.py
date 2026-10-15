@@ -240,7 +240,9 @@ def test_without_an_invoice_the_credit_simply_waits(tenant_a: Any):
 def test_a_credit_is_applied_only_once(tenant_a: Any):
     child = _child(tenant_a, "2200000")
     with organization_context(tenant_a.organization.id):
-        claim = _claim(tenant_a, child, date(2026, 9, 7), date(2026, 9, 8))
+        # Ariza — to'liq stavka (2 kunlik maʼlumotnoma endi faqat ovqat puli,
+        # Bosqich 12.3; bu test esa "bir marta" ni sinaydi).
+        claim = _claim(tenant_a, child, date(2026, 9, 7), date(2026, 9, 8), ClaimKind.PARENTAL)
         absence.approve_claim(claim=claim)
 
         october = finance.issue_invoice(child=child, period_year=2026, period_month=10)
@@ -307,11 +309,15 @@ def test_a_rejected_claim_frees_the_days(tenant_a: Any):
     assert second.status == ClaimStatus.PENDING
 
 
-def test_there_is_no_minimum_length(tenant_a: Any):
-    """Egasining qarori: uch kun ham, oʻn besh kun ham qaytariladi."""
+def test_a_one_day_application_is_credited_in_full(tenant_a: Any):
+    """
+    Ariza uchun minimal kun — sozlama, sukut 1 (brif 2026-10-14). Ilgari
+    "minimal kun yo'q" qarori hamma turga to'liq stavka berardi; endi bir
+    kunlik maʼlumotnoma ovqat pulini qaytaradi (`test_absence_kinds.py`).
+    """
     child = _child(tenant_a, "2200000")
     with organization_context(tenant_a.organization.id):
-        short = _claim(tenant_a, child, date(2026, 9, 7), date(2026, 9, 7))
+        short = _claim(tenant_a, child, date(2026, 9, 7), date(2026, 9, 7), ClaimKind.PARENTAL)
         absence.approve_claim(claim=short)
         short.refresh_from_db()
 

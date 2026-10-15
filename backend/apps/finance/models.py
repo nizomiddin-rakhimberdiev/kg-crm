@@ -482,6 +482,40 @@ class Direction(models.TextChoices):
     CREDIT = "credit", gettext_lazy("Kredit")
 
 
+class InvoiceWriteOff(BranchScopedModel):
+    """
+    Qarzni kechirish — faqat shu yozuv orqali (Bosqich 12.3, brif §3).
+
+    Excel'da qarz qo'lda 0 qilinardi va yashirin qarz paydo bo'lardi.
+    Tizimda qarzni qo'lda o'zgartirishning yo'li yo'q; kechirish — hujjat:
+    summa, SABAB va kim qilgani. Fakturada minus qator (`kind=write_off`)
+    va ledgerda kredit yozuvi bilan birga, bitta tranzaksiyada yoziladi.
+    Append-only: bekor qilish kerak bo'lsa — yangi hujjat.
+    """
+
+    invoice = models.ForeignKey(
+        "finance.Invoice", on_delete=models.RESTRICT, related_name="write_offs"
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    reason = models.CharField(max_length=255)
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        db_table = "invoice_write_off"
+        ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0), name="ck_invoice_write_off_amount"
+            ),
+        ]
+
+
 class SourceType(models.TextChoices):
     INVOICE = "invoice", gettext_lazy("Hisob-faktura")
     PAYMENT = "payment", gettext_lazy("Toʻlov")

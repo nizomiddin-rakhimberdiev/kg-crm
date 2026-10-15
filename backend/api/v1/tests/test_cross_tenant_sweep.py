@@ -257,6 +257,15 @@ def _create_row(tenant: Any, basename: str) -> Any:
                 name="Direktor seyfi",
                 kind=CashAccountKind.CASH,
             )
+        if basename == "absence-kind":
+            from apps.attendance.models_absence import AbsenceKind, RefundMode
+
+            return AbsenceKind.objects.create(
+                organization=tenant.organization,
+                code="safar",
+                name="Safar",
+                refund_mode=RefundMode.FULL_RATE,
+            )
         if basename in {"absence-claim", "holiday"}:
             from apps.attendance.models_absence import AbsenceClaim, ClaimKind, Holiday
 

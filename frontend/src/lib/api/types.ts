@@ -331,7 +331,12 @@ export interface TariffPlan {
 
 export interface InvoiceLine {
   id: string
+  /** `base` · `benefit` · `proration` · `pause` · `credit` · `write_off` (Bosqich 12). */
+  kind?: string
+  benefit_kind?: string
   description: string
+  /** "3 050 000 × 8 / 21 = 1 162 000" — "Nega?" shuni koʻrsatadi. */
+  formula?: string
   quantity: string
   unit_amount: string
   line_total: string
@@ -776,7 +781,8 @@ export interface AbsenceClaim {
   id: string
   child: string
   child_name: string
-  kind: 'medical' | 'parental'
+  /** `AbsenceKind.code` (Bosqich 12.3). */
+  kind: string
   date_from: string
   date_to: string
   document_no: string
@@ -788,6 +794,8 @@ export interface AbsenceClaim {
   billable_days: number
   daily_rate: string
   credit_amount: string
+  /** Qaysi qoida bilan: `full_rate` · `fixed_per_day` · `none`. */
+  basis?: string
   approved_by_name: string | null
   decided_at: string | null
   decision_note: string

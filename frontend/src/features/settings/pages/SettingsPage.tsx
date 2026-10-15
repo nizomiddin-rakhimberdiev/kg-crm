@@ -15,6 +15,7 @@ import { Switch } from '@/components/ui/primitives'
 import { settingsApi } from '@/features/notifications/api'
 import { ContractTemplatesSettings } from '@/features/contracts/components/ContractTemplatesSettings'
 import { OnlinePaymentSettings } from '@/features/online-payments/components/OnlinePaymentSettings'
+import { AbsenceKindsSettings } from '@/features/attendance/components/AbsenceKindsSettings'
 import { TestModeBanner } from '@/features/notifications/components/TestModeBanner'
 import { WeekdayPicker } from '@/features/settings/components/WeekdayPicker'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -430,6 +431,8 @@ export default function SettingsPage() {
           </section>
         )
       })}
+
+      <AbsenceKindsSettings />
 
       <OnlinePaymentSettings />
 

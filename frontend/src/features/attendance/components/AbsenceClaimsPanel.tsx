@@ -22,7 +22,7 @@ import { CalendarX2, Check, Download, Paperclip, Plus, X } from 'lucide-react'
 import { DateInput } from '@/components/ui/DateInput'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { EmptyRow } from '@/components/ui/EmptyState'
-import { absenceApi } from '@/features/attendance/api'
+import { absenceApi, absenceKindsApi } from '@/features/attendance/api'
 import { childrenApi } from '@/features/children/api'
 import { invalidateAttendance } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -35,10 +35,6 @@ import { t } from '@/lib/i18n'
 // Yaxlitlanadi: kun narxi bo'linishdan chiqadi va "340 909,1 so'm"
 // degan yarim tiyin ekranda ma'nosiz — ilovadagi qolgan pul
 // maydonlari ham butun songa yaxlitlaydi.
-const KIND_LABELS: Record<string, string> = {
-  medical: t('Shifokor maʼlumotnomasi'),
-  parental: t('Ota-ona arizasi'),
-}
 
 const STATUS: Record<AbsenceClaim['status'], [string, string]> = {
   pending: [t('Kutilmoqda'), 'bg-amber-50 text-amber-700'],
@@ -49,7 +45,7 @@ const STATUS: Record<AbsenceClaim['status'], [string, string]> = {
 
 const EMPTY = {
   child_id: '',
-  kind: 'medical' as 'medical' | 'parental',
+  kind: 'medical',
   date_from: '',
   date_to: '',
   document_no: '',
@@ -80,6 +76,14 @@ export function AbsenceClaimsPanel({
   )
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // Turlar — backend'dan (Bosqich 12.3): bog'cha o'z turini qo'shishi mumkin.
+  const kindsQuery = useQuery({
+    queryKey: ['org', organizationId, 'absence-kinds', 'active'],
+    queryFn: absenceKindsApi.active,
+  })
+  const kindName = (code: string) =>
+    kindsQuery.data?.find((kind) => kind.code === code)?.name ?? code
 
   const claimsQuery = useQuery({
     queryKey: queryKeys.absenceClaims(organizationId),
@@ -199,14 +203,12 @@ export function AbsenceClaimsPanel({
             <select
               id="ac-kind"
               value={form.kind}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, kind: e.target.value as typeof EMPTY.kind }))
-              }
+              onChange={(e) => setForm((p) => ({ ...p, kind: e.target.value }))}
               className={fieldClass}
             >
-              {Object.entries(KIND_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
+              {(kindsQuery.data ?? []).map((kind) => (
+                <option key={kind.code} value={kind.code}>
+                  {kind.name}
                 </option>
               ))}
             </select>
@@ -305,7 +307,7 @@ export function AbsenceClaimsPanel({
                 <tr key={claim.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3 font-medium text-slate-800">{claim.child_name}</td>
                   <td className="px-4 py-3 text-slate-600">
-                    {KIND_LABELS[claim.kind] ?? claim.kind}
+                    {kindName(claim.kind)}
                     {claim.document_no && (
                       <span className="ml-1.5 text-xs text-slate-500">{claim.document_no}</span>
                     )}
@@ -359,6 +361,13 @@ export function AbsenceClaimsPanel({
                     {Number(claim.credit_amount) > 0
                       ? t('{money} soʻm', { money: money(claim.credit_amount) })
                       : '—'}
+                    {/* Qaysi qoida bilan — "Nega shuncha?" ga javob (Bosqich 12.3). */}
+                    {Number(claim.credit_amount) > 0 && claim.billable_days > 0 && (
+                      <span className="block text-xs text-slate-500">
+                        {claim.billable_days} × {money(claim.daily_rate)}
+                        {claim.basis === 'fixed_per_day' ? ` · ${t('ovqat puli')}` : ''}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <span

@@ -72,12 +72,38 @@ export const staffAttendanceApi = {
  * Davomat API'sidan ALOHIDA turadi va bu ataylab: pul faqat hujjat
  * asosida harakat qiladi, davomat jadvalidan emas.
  */
+/** Qayta hisob turi va qoidasi (Bosqich 12.3). */
+export interface AbsenceKind {
+  id: string
+  code: string
+  name: string
+  refund_mode: 'full_rate' | 'fixed_per_day' | 'none'
+  /** `fixed_per_day` uchun; boʻsh — shartnomadagi kunlik ovqat puli. */
+  daily_amount: string | null
+  min_days: number
+  /** Shuncha kundan boshlab — hamma kunlar toʻliq stavkada. */
+  full_rate_from_days: number | null
+  requires_document: boolean
+  is_active: boolean
+}
+
+export const absenceKindsApi = {
+  /** Da'vo formasi uchun — `attendance.read` bilan. */
+  active: () => api.get<AbsenceKind[]>('/absence-claims/kinds'),
+  /** Qoidalarni boshqarish — `settings.*` bilan. */
+  list: () => api.list<AbsenceKind>('/absence-kinds', { page_size: 100 }),
+  create: (payload: Omit<AbsenceKind, 'id' | 'is_active'>) =>
+    api.post<AbsenceKind>('/absence-kinds', payload),
+  update: (id: string, payload: Partial<Omit<AbsenceKind, 'id' | 'code'>>) =>
+    api.patch<AbsenceKind>(`/absence-kinds/${id}`, payload),
+}
+
 export const absenceApi = {
   list: (params?: Record<string, unknown>) =>
     api.list<AbsenceClaim>('/absence-claims', { page_size: 100, ...params }),
   create: (payload: {
     child_id: string
-    kind: 'medical' | 'parental'
+    kind: string
     date_from: string
     date_to: string
     document_no?: string

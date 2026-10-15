@@ -69,6 +69,8 @@ KEEP: frozenset[str] = frozenset(
         "apps.accounts.RefreshToken",
         # Sozlama — mijoz kiritgan maʼlumot emas.
         "apps.notifications.NotificationTemplate",
+        # Qayta hisob turlari — pul siyosati sozlamasi (Bosqich 12.3).
+        "apps.attendance.AbsenceKind",
         "apps.settings_app.SystemSetting",
         "apps.contracts.ContractTemplate",
     }

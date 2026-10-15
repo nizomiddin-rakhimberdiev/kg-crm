@@ -1546,3 +1546,45 @@ msgstr "Give the end date."
 
 msgid "Xodim farzandi"
 msgstr "Staff member's child"
+
+msgid "Bu hisob-fakturada qarz yoʻq."
+msgstr "There is no debt on this invoice."
+
+msgid "Bunday qayta hisob turi yoʻq."
+msgstr "No such kind of absence credit."
+
+msgid "Bunday qayta hisob turi yoʻq: {code}."
+msgstr "No such kind of absence credit: {code}."
+
+msgid "Hisobdan chiqarildi ({number}): {reason}"
+msgstr "Written off ({number}): {reason}"
+
+msgid "Hisobdan chiqarildi: {reason}"
+msgstr "Written off: {reason}"
+
+msgid "Hisobdan chiqarish sababini yozing."
+msgstr "Give the reason for the write-off."
+
+msgid "Hisobdan faqat qolgan qarz chiqariladi: {outstanding}."
+msgstr "Only the remaining debt can be written off: {outstanding}."
+
+msgid "Kelmagan kunlar: {days} kun × {rate} (ovqat puli)"
+msgstr "Days absent: {days} × {rate} (meals)"
+
+msgid "Summani kiriting."
+msgstr "Enter the amount."
+
+msgid "Tur kodini oʻzgartirib boʻlmaydi."
+msgstr "The kind's code cannot be changed."
+
+msgid "«{kind}» uchun kamida {n} ish kuni kerak — bu oraliqda {days}."
+msgstr "«{kind}» needs at least {n} working days — this range has {days}."
+
+msgid "Toʻliq kunlik stavka"
+msgstr "Full day rate"
+
+msgid "Kuniga qatʼiy summa"
+msgstr "Fixed amount per day"
+
+msgid "Qaytarilmaydi"
+msgstr "Not refunded"

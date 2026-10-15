@@ -146,7 +146,9 @@ DEFAULTS: dict[str, Any] = {
     "contracts.bank_account": "",
     "contracts.bank_mfo": "",
     # Bola kelmagan kun uchun qaytariladigan ovqat puli (so'm/kun).
-    "contracts.daily_meal_fee": "0",
+    # Bosqich 12.3: 1–2 kunlik maʼlumotnoma aynan shu summani qaytaradi
+    # (`AbsenceKind.daily_amount` bo'sh bo'lsa). Oriental Kinderland: 37 500.
+    "contracts.daily_meal_fee": "37500",
     # Yil davomida to'lovsiz saqlanadigan kunlar soni.
     "contracts.free_absence_days": 30,
     # Bolani saqlash vaqti (soat) — shartnomaning 1-bandi.

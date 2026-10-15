@@ -121,12 +121,22 @@ class AttendanceRecord(BranchScopedModel):
 # hech narsa o'qimaydi, va shu ajratish aynan shuni ko'rsatib turadi.
 from apps.attendance.models_absence import (  # noqa: E402
     AbsenceClaim,
+    AbsenceKind,
     ClaimKind,
     ClaimStatus,
     Holiday,
+    RefundMode,
 )
 
-__all__ = [*__all__, "AbsenceClaim", "ClaimKind", "ClaimStatus", "Holiday"]
+__all__ = [
+    *__all__,
+    "AbsenceClaim",
+    "AbsenceKind",
+    "ClaimKind",
+    "ClaimStatus",
+    "Holiday",
+    "RefundMode",
+]
 
 # Xodimlar davomati (tabel) — alohida faylda: bolalar jurnali bilan bir
 # modulda (bir xil "davomat" ruxsati), lekin bir-biridan hech narsa o'qimaydi.

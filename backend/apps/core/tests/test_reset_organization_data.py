@@ -91,7 +91,7 @@ def _absence_claim(tenant: Any) -> None:
         finance.issue_invoice(child=child, period_year=2026, period_month=10)
         claim = create_claim(
             child=child,
-            kind="sick",
+            kind="medical",
             date_from=date(2026, 10, 13),
             date_to=date(2026, 10, 16),
             note="Kasallik",

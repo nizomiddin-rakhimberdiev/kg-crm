@@ -494,8 +494,8 @@ const uz: Copy = {
         text: 'Xodim farzandi, kam taʼminlangan, toʻliq imtiyoz — har biri turi, sababi va kim kiritgani bilan. Aka-uka chegirmasi umumiy vasiy orqali oʻzi qoʻllanadi, familiya boʻyicha taxmin emas. Oyiga kim, kimga, qancha bergani — alohida hisobotda.',
       },
       {
-        title: 'Oʻzgarmas audit jurnali',
-        text: 'Kim, nimani, qachon oʻzgartirdi. Yozuvni tahrirlab yoki oʻchirib boʻlmaydi — xodim almashsa ham tarix qoladi.',
+        title: 'Qarz yashirinmaydi',
+        text: 'Qarzni qoʻlda 0 qilib boʻlmaydi — faqat sababi va kim qilgani bilan hisobdan chiqariladi. Har bir summa yonida «Nega?»: «3 050 000 × 8 / 21 = 1 162 000». Kim nimani oʻzgartirgani — oʻchmaydigan jurnalda.',
       },
       {
         title: 'Uch til',
@@ -1061,8 +1061,8 @@ const ru: Copy = {
         text: 'Ребёнок сотрудника, малообеспеченные, полная льгота — у каждой вид, причина и кто её ввёл. Скидка братьям и сёстрам применяется сама через общего опекуна, а не по фамилии. Кто, кому и сколько дал за месяц — в отдельном отчёте.',
       },
       {
-        title: 'Неизменяемый журнал',
-        text: 'Кто, что и когда изменил. Запись нельзя поправить или удалить — сотрудники меняются, история остаётся.',
+        title: 'Долг не спрячешь',
+        text: 'Долг нельзя обнулить вручную — только списать, с причиной и автором. У каждой суммы есть «Почему?»: «3 050 000 × 8 / 21 = 1 162 000». Кто что менял — в журнале, который нельзя стереть.',
       },
       {
         title: 'Три языка',
@@ -1621,8 +1621,8 @@ const en: Copy = {
         text: 'Staff child, low income, full exemption — each with its type, its reason and who entered it. The sibling discount applies itself through a shared guardian, never guessed from a surname. Who gave whom how much each month sits in its own report.',
       },
       {
-        title: 'An audit log that cannot be edited',
-        text: 'Who changed what, and when. Entries cannot be edited or deleted — staff come and go, the history stays.',
+        title: 'Debt cannot hide',
+        text: 'Nobody can set a debt to zero by hand — it is written off with a reason and a name, or not at all. Every amount has a “Why?”: “3 050 000 × 8 / 21 = 1 162 000”. Who changed what sits in a log that cannot be erased.',
       },
       {
         title: 'Three languages',

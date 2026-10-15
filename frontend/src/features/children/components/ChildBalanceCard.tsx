@@ -16,7 +16,7 @@ import { Wallet } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { paymentsApi } from '@/features/payments/api'
 import { cn, formatDate } from '@/lib/utils'
-import { money } from '@/lib/format'
+import { money, monthLabel } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
 export function ChildBalanceCard({ childId }: { childId: string }) {
@@ -83,6 +83,29 @@ export function ChildBalanceCard({ childId }: { childId: string }) {
                 </div>
               )}
             </dl>
+          )}
+
+          {/* Qarz oyma-oy (Bosqich 12.3): "jami 5 100 000" yetarli emas —
+              mudira ham, ota-ona ham "qaysi oylar uchun?" deb soʻraydi. */}
+          {(data?.months?.length ?? 0) > 0 && (
+            <div className="mt-3 border-t border-slate-100 pt-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                {t('Oylar boʻyicha')}
+              </p>
+              <ul className="mt-1.5 space-y-1 text-sm">
+                {data?.months?.map((row) => {
+                  const [year, month] = row.period.split('-').map(Number)
+                  return (
+                    <li key={row.invoice_id} className="flex justify-between gap-3">
+                      <span className="text-slate-700">{monthLabel(year, month)}</span>
+                      <span className="num font-medium text-orik-700">
+                        {money(row.outstanding)}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
           )}
         </>
       )}

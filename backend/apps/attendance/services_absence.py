@@ -25,10 +25,19 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext
 
-from apps.attendance.models_absence import AbsenceClaim, ClaimStatus, Holiday
+from apps.attendance.models_absence import (
+    AbsenceClaim,
+    AbsenceKind,
+    ClaimKind,
+    ClaimStatus,
+    Holiday,
+    RefundMode,
+)
 from apps.core.exceptions import BusinessRuleViolation
 
 __all__ = [
+    "ensure_absence_kinds",
+    "kind_for",
     "create_claim",
     "attach_document",
     "working_weekdays",
@@ -135,6 +144,57 @@ def daily_rate_for(*, child: Any, on_date: date) -> tuple[Decimal, int]:
     return _money(charge.monthly / Decimal(charge.working_days)), charge.working_days
 
 
+# --- Qayta hisob turlari (Bosqich 12.3) ---
+
+#: Tizim bilan keladigan turlar — brifdagi Oriental Kinderland qoidasi.
+#: Maʼlumotnoma: 1–2 kun ovqat puli, 3+ kun hamma kunlar to'liq stavkada.
+DEFAULT_KINDS: tuple[dict[str, Any], ...] = (
+    {
+        "code": ClaimKind.MEDICAL,
+        "name": "Shifokor maʼlumotnomasi",
+        "refund_mode": RefundMode.FIXED_PER_DAY,
+        "full_rate_from_days": 3,
+        "min_days": 1,
+        "requires_document": True,
+    },
+    {
+        "code": ClaimKind.PARENTAL,
+        "name": "Ota-ona arizasi",
+        "refund_mode": RefundMode.FULL_RATE,
+        "full_rate_from_days": None,
+        "min_days": 1,
+        "requires_document": False,
+    },
+)
+
+
+def ensure_absence_kinds(organization: Any) -> None:
+    """Tizim turlari bor boʻlsin — idempotent, mavjudiga TEGMAYDI."""
+    existing = set(AbsenceKind.objects.filter(is_active=True).values_list("code", flat=True))
+    for spec in DEFAULT_KINDS:
+        if spec["code"] in existing:
+            continue
+        AbsenceKind.objects.create(organization=organization, **spec)
+
+
+def kind_for(*, organization: Any, code: str) -> AbsenceKind:
+    ensure_absence_kinds(organization)
+    kind = AbsenceKind.objects.filter(code=code, is_active=True).first()
+    if kind is None:
+        raise BusinessRuleViolation(
+            gettext("Bunday qayta hisob turi yoʻq: {code}.").format(code=code)
+        )
+    return kind
+
+
+def _per_day_amount(kind: AbsenceKind, branch: Any = None) -> Decimal:
+    if kind.daily_amount is not None:
+        return Decimal(kind.daily_amount)
+    from apps.settings_app.services import get_setting
+
+    return Decimal(str(get_setting(key="contracts.daily_meal_fee", branch=branch) or 0))
+
+
 @transaction.atomic
 def create_claim(
     *,
@@ -157,6 +217,20 @@ def create_claim(
     """
     if date_to < date_from:
         raise BusinessRuleViolation(gettext("Tugash sanasi boshlanishdan oldin boʻlolmaydi."))
+
+    absence_kind = kind_for(organization=child.organization, code=kind)
+    days = billable_days(
+        organization_id=child.organization_id,
+        date_from=date_from,
+        date_to=date_to,
+        branch=child.branch,
+    )
+    if days < absence_kind.min_days:
+        raise BusinessRuleViolation(
+            gettext("«{kind}» uchun kamida {n} ish kuni kerak — bu oraliqda {days}.").format(
+                kind=absence_kind.name, n=absence_kind.min_days, days=days
+            )
+        )
 
     clash = (
         AbsenceClaim.objects.filter(child=child, date_from__lte=date_to, date_to__gte=date_from)
@@ -220,8 +294,10 @@ def approve_claim(*, claim: AbsenceClaim, approved_by: Any = None, note: str = "
     """
     Da'voni tasdiqlaydi va qaytariladigan summani MUZLATADI.
 
-    Chegara yo'q (egasining qarori, 2026-09-30): uch kun ham, o'n besh
-    kun ham hujjat bilan tasdiqlansa qaytariladi.
+    Qoida da'vo TURIDAN (Bosqich 12.3): to'liq stavka, kuniga qat'iy summa
+    yoki qaytarilmaydi; `full_rate_from_days` dan boshlab — hamma kunlar
+    to'liq stavkada. Bu 2026-09-30 dagi "chegara yo'q" qarorini almashtiradi
+    (brif 2026-10-14, ADR-33).
     """
     if claim.status != ClaimStatus.PENDING:
         raise BusinessRuleViolation(
@@ -247,7 +323,20 @@ def approve_claim(*, claim: AbsenceClaim, approved_by: Any = None, note: str = "
     # Kunlar × stavka natijasi yaxlitlanadi, stavka emas (Bosqich 12.1).
     from apps.finance.charges import credit_for_days
 
-    credit, rate, _ = credit_for_days(child=child, on_date=claim.date_from, days=days)
+    absence_kind = kind_for(organization=claim.organization, code=claim.kind)
+    basis = absence_kind.refund_mode
+    if absence_kind.full_rate_from_days and days >= absence_kind.full_rate_from_days:
+        basis = RefundMode.FULL_RATE
+
+    if basis == RefundMode.FULL_RATE:
+        credit, rate, _ = credit_for_days(child=child, on_date=claim.date_from, days=days)
+    elif basis == RefundMode.FIXED_PER_DAY:
+        from apps.finance.charges import round_to_step
+
+        rate = _money(_per_day_amount(absence_kind, child.branch))
+        credit = round_to_step(rate * days, child.branch)
+    else:
+        rate, credit = Decimal("0.00"), Decimal("0.00")
 
     # Chegirma o'sha oyda hisoblanganidan oshib ketmaydi.
     from apps.finance.models import Invoice, InvoiceStatus
@@ -265,6 +354,7 @@ def approve_claim(*, claim: AbsenceClaim, approved_by: Any = None, note: str = "
         credit = min(credit, invoice.amount_due)
 
     claim.status = ClaimStatus.APPROVED
+    claim.basis = basis
     claim.billable_days = days
     claim.daily_rate = rate
     claim.credit_amount = credit
@@ -277,6 +367,7 @@ def approve_claim(*, claim: AbsenceClaim, approved_by: Any = None, note: str = "
             "billable_days",
             "daily_rate",
             "credit_amount",
+            "basis",
             "approved_by",
             "decided_at",
             "decision_note",

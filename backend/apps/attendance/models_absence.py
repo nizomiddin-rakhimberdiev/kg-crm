@@ -22,7 +22,7 @@ from django.utils.translation import gettext_lazy
 
 from apps.core.models import BranchScopedModel, TenantScopedModel
 
-__all__ = ["AbsenceClaim", "ClaimKind", "ClaimStatus", "Holiday"]
+__all__ = ["AbsenceClaim", "AbsenceKind", "ClaimKind", "ClaimStatus", "Holiday", "RefundMode"]
 
 
 class Holiday(TenantScopedModel):
@@ -57,8 +57,59 @@ class Holiday(TenantScopedModel):
 
 
 class ClaimKind(models.TextChoices):
+    """Tizim bilan keladigan ikki tur — kodlari. Qolganlari `AbsenceKind` da."""
+
     MEDICAL = "medical", gettext_lazy("Shifokor maʼlumotnomasi")
     PARENTAL = "parental", gettext_lazy("Ota-ona arizasi")
+
+
+class RefundMode(models.TextChoices):
+    FULL_RATE = "full_rate", gettext_lazy("Toʻliq kunlik stavka")
+    FIXED_PER_DAY = "fixed_per_day", gettext_lazy("Kuniga qatʼiy summa")
+    NONE = "none", gettext_lazy("Qaytarilmaydi")
+
+
+class AbsenceKind(TenantScopedModel):
+    """
+    Qayta hisob turi va uning qoidasi (Bosqich 12.3, brif §2).
+
+    Ilgari ikki qotirilgan tur bor edi va ikkalasi to'liq stavka qaytarardi.
+    Endi tur — tashkilotning MA'LUMOTI: qaytarish usuli, kuniga summa,
+    minimal kunlar va "shuncha kundan boshlab to'liq stavka" chegarasi.
+
+    Maʼlumotnoma qoidasi shu ikki maydonning birikmasi: `fixed_per_day`
+    (ovqat puli) + `full_rate_from_days = 3`. 1–2 kun — ovqat puli; 3 va undan
+    ko'p — HAMMA kunlar uchun to'liq stavka.
+
+    `daily_amount` bo'sh bo'lsa — `contracts.daily_meal_fee` sozlamasi
+    (shartnoma shablonidagi o'sha ovqat puli: ikkinchi nusxa bo'lmasin).
+    """
+
+    code = models.SlugField(max_length=40)
+    name = models.CharField(max_length=80)
+    refund_mode = models.CharField(max_length=15, choices=RefundMode.choices)
+    daily_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    min_days = models.PositiveSmallIntegerField(default=1)
+    full_rate_from_days = models.PositiveSmallIntegerField(null=True, blank=True)
+    requires_document = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = "absence_kind"
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "code"],
+                condition=models.Q(is_active=True),
+                name="uq_absence_kind_code",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(daily_amount__isnull=True) | models.Q(daily_amount__gte=0),
+                name="ck_absence_kind_amount",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class ClaimStatus(models.TextChoices):
@@ -93,7 +144,8 @@ class AbsenceClaim(BranchScopedModel):
     child = models.ForeignKey(
         "children.Child", on_delete=models.RESTRICT, related_name="absence_claims"
     )
-    kind = models.CharField(max_length=10, choices=ClaimKind.choices)
+    # `AbsenceKind.code` — tur endi ma'lumot, ro'yxat emas (Bosqich 12.3).
+    kind = models.CharField(max_length=40)
     date_from = models.DateField()
     date_to = models.DateField()
     document_no = models.CharField(max_length=60, blank=True)
@@ -116,6 +168,9 @@ class AbsenceClaim(BranchScopedModel):
     billable_days = models.SmallIntegerField(default=0)
     daily_rate = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
     credit_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
+    # Qaysi qoida bilan hisoblangan: `full_rate` · `fixed_per_day` · `none`.
+    # Faktura qatoridagi formula va "Nega?" shundan.
+    basis = models.CharField(max_length=15, blank=True, default="")
 
     approved_by = models.ForeignKey(
         "accounts.User",

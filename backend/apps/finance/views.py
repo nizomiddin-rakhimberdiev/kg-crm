@@ -323,6 +323,8 @@ class LedgerViewSet(BranchScopedMixin, TenantReadOnlyViewSet):
                 "balance": str(services.child_balance(child.id)),
                 "cached_balance": str(child.balance),
                 "open_invoices": open_invoices,
+                # Qaysi oylar uchun qancha (Bosqich 12.3).
+                "months": balance.open_months(child),
             }
         )
 
@@ -637,6 +639,46 @@ class DebtorViewSet(viewsets.ViewSet):
 
     permission_classes = [HasModulePermission, SubscriptionWriteGate]
     permission_module = "debtors"
+    # Qarzni kechirish — `debtors.approve` (egasi, direktor). Kassirda
+    # `debtors` bor, lekin `approve` yo'q: qarzni kechirish uning ishi emas.
+    permission_action_map = {"write_off": "approve"}
+
+    @action(detail=False, methods=["post"], url_path="write-off")
+    def write_off(self, request: Request) -> Response:
+        """
+        `POST /debtors/write-off {invoice_id, amount, reason}` (Bosqich 12.3).
+
+        Qarzni qo'lda 0 qilishning o'rniga — hujjat: summa, sabab, kim.
+        """
+        from apps.finance.serializers import InvoiceWriteOffSerializer
+
+        invoice = Invoice.objects.filter(pk=request.data.get("invoice_id")).first()
+        if invoice is None:
+            raise Http404
+        user = request_user(request)
+        try:
+            amount = Decimal(str(request.data.get("amount")))
+        except (ArithmeticError, ValueError) as exc:
+            raise BusinessRuleViolation(gettext("Summani kiriting.")) from exc
+        record = services.write_off_invoice(
+            invoice=invoice,
+            amount=amount,
+            reason=str(request.data.get("reason") or ""),
+            created_by=user,
+        )
+        audit.record(
+            action="create",
+            request=request._request,
+            actor=user,
+            entity_type="invoice_write_off",
+            entity_id=record.id,
+            changes={
+                "invoice": invoice.number,
+                "amount": str(record.amount),
+                "reason": record.reason,
+            },
+        )
+        return Response(InvoiceWriteOffSerializer(record).data, status=status.HTTP_201_CREATED)
 
     def list(self, request: Request) -> Response:
         from decimal import Decimal as D

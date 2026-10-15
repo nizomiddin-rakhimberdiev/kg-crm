@@ -16,6 +16,7 @@ from apps.finance.models import (
     DiscountType,
     Invoice,
     InvoiceLine,
+    InvoiceWriteOff,
     Payment,
     PaymentMethod,
     TariffPlan,
@@ -127,6 +128,19 @@ class DiscountSerializer(serializers.ModelSerializer):
                 {"valid_to": gettext("Tugash sanasi boshlanishdan oldin boʻlishi mumkin emas.")}
             )
         return attrs
+
+
+class InvoiceWriteOffSerializer(serializers.ModelSerializer):
+    """Qarzni kechirish hujjati — o'qish uchun (Bosqich 12.3)."""
+
+    created_by_name = serializers.CharField(
+        source="created_by.full_name", read_only=True, default=None
+    )
+
+    class Meta:
+        model = InvoiceWriteOff
+        fields = ["id", "invoice", "amount", "reason", "created_by_name", "created_at"]
+        read_only_fields = fields
 
 
 class InvoiceLineSerializer(serializers.ModelSerializer):

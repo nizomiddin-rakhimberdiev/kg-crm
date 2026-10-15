@@ -58,6 +58,7 @@ __all__ = [
     "oldest_overdue_subquery",
     "with_balance",
     "child_balance",
+    "open_months",
 ]
 
 MONEY: DecimalField = DecimalField(max_digits=14, decimal_places=2)
@@ -246,3 +247,32 @@ def child_balance(child: Any, *, today: date | None = None) -> ChildBalance:
         oldest_overdue_date=oldest,
         open_invoices=open_invoices.count(),
     )
+
+
+def open_months(child: Any) -> list[dict[str, Any]]:
+    """
+    Qarz oyma-oy — bola kartasi uchun (Bosqich 12.3, brif §3).
+
+    "Jami qarz 5 100 000" yetarli emas: mudira va ota-ona "qaysi oylar
+    uchun?" deb so'raydi. Har bir ochiq hujjatning qoldig'i — xuddi shu
+    fayldagi boshqa formulalar kabi `amount_due − amount_paid`.
+    """
+    rows = (
+        Invoice.objects.filter(child=child, status__in=OPEN_STATUSES)
+        .order_by("period_year", "period_month")
+        .values(
+            "id", "number", "period_year", "period_month", "amount_due", "amount_paid", "due_date"
+        )
+    )
+    return [
+        {
+            "invoice_id": str(row["id"]),
+            "number": row["number"],
+            "period": f"{row['period_year']}-{row['period_month']:02d}",
+            "amount_due": f"{row['amount_due']:.2f}",
+            "paid": f"{row['amount_paid']:.2f}",
+            "outstanding": f"{row['amount_due'] - row['amount_paid']:.2f}",
+            "due_date": row["due_date"].isoformat(),
+        }
+        for row in rows
+    ]

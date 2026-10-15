@@ -8,7 +8,7 @@ from django.utils.translation import gettext
 from rest_framework import serializers
 
 from apps.attendance.models import AttendanceRecord, AttendanceStatus
-from apps.attendance.models_absence import AbsenceClaim, ClaimKind, Holiday
+from apps.attendance.models_absence import AbsenceClaim, AbsenceKind, Holiday
 from apps.attendance.models_staff import StaffAttendanceStatus
 from apps.children.models import Child, Group
 from apps.core.fields import TenantPrimaryKeyRelatedField
@@ -137,6 +137,7 @@ class AbsenceClaimSerializer(serializers.ModelSerializer):
             "billable_days",
             "daily_rate",
             "credit_amount",
+            "basis",
             "approved_by_name",
             "decided_at",
             "decision_note",
@@ -156,7 +157,9 @@ class AbsenceClaimWriteSerializer(serializers.Serializer):
     """Da'vo yozish — servis orqali, chunki kesishma tekshiriladi."""
 
     child_id = TenantPrimaryKeyRelatedField(model=Child, source="child")
-    kind = serializers.ChoiceField(choices=ClaimKind.choices)
+    # Tur — `AbsenceKind.code` (Bosqich 12.3); mavjudligi va faolligi shu
+    # yerda tekshiriladi, noma'lum kod `400`.
+    kind = serializers.SlugField(max_length=40)
     date_from = serializers.DateField()
     date_to = serializers.DateField()
     document_no = serializers.CharField(required=False, allow_blank=True, max_length=60)
@@ -165,6 +168,45 @@ class AbsenceClaimWriteSerializer(serializers.Serializer):
     # lekin shart emas: qog'oz ko'pincha keyinroq keladi — o'shanda
     # `POST .../document` ishlatiladi.
     document_file = serializers.FileField(required=False, allow_null=True)
+
+    def validate_kind(self, value: str) -> str:
+        from apps.attendance.models_absence import AbsenceKind
+        from apps.attendance.services_absence import ensure_absence_kinds
+
+        request = self.context.get("request")
+        organization = getattr(getattr(request, "user", None), "organization", None)
+        if organization is not None:
+            ensure_absence_kinds(organization)
+        if not AbsenceKind.objects.filter(code=value, is_active=True).exists():
+            raise serializers.ValidationError(gettext("Bunday qayta hisob turi yoʻq."))
+        return value
+
+
+class AbsenceKindSerializer(serializers.ModelSerializer):
+    """Qayta hisob turi va qoidasi (Bosqich 12.3)."""
+
+    class Meta:
+        model = AbsenceKind
+        fields = [
+            "id",
+            "code",
+            "name",
+            "refund_mode",
+            "daily_amount",
+            "min_days",
+            "full_rate_from_days",
+            "requires_document",
+            "is_active",
+        ]
+        read_only_fields = ["id"]
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        if self.instance is not None and "code" in attrs and attrs["code"] != self.instance.code:
+            # Kod — da'volarning bog'lanish kaliti; o'zgarsa eski da'volar yetim qoladi.
+            raise serializers.ValidationError(
+                {"code": gettext("Tur kodini oʻzgartirib boʻlmaydi.")}
+            )
+        return attrs
 
 
 # --- Xodimlar davomati (tabel) ---

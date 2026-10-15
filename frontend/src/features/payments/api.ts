@@ -24,6 +24,13 @@ export const tariffsApi = {
 export const invoicesApi = {
   list: (params?: Record<string, unknown>) => api.list<Invoice>('/invoices', params),
 
+  /**
+   * Qarzni kechirish — faqat hujjat bilan (Bosqich 12.3): summa, SABAB, kim.
+   * Qarzni qoʻlda 0 qilishning yoʻli yoʻq; bu uning oʻrni.
+   */
+  writeOff: (invoiceId: string, amount: string, reason: string) =>
+    api.post('/debtors/write-off', { invoice_id: invoiceId, amount, reason }),
+
   generate: (periodYear: number, periodMonth: number) =>
     api.post<BillingRunResult>('/invoices/generate', {
       period_year: periodYear,
@@ -160,6 +167,16 @@ export interface ChildBalance {
   overdue_days: number
   oldest_overdue_date: string | null
   open_invoices: OpenInvoice[]
+  /** Qarz oyma-oy (Bosqich 12.3) — "qaysi oylar uchun qancha?". */
+  months?: Array<{
+    invoice_id: string
+    number: string
+    period: string
+    amount_due: string
+    paid: string
+    outstanding: string
+    due_date: string
+  }>
 }
 
 /** To'lovlar jurnalining filtri (PLAN 1.8). */

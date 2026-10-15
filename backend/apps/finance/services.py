@@ -41,6 +41,7 @@ from apps.finance.models import (
     Invoice,
     InvoiceLine,
     InvoiceStatus,
+    InvoiceWriteOff,
     Payment,
     PaymentAllocation,
     PaymentMethod,
@@ -308,10 +309,8 @@ def apply_claim_to_open_invoice(*, claim: Any, created_by: Any = None) -> bool:
     InvoiceLine.objects.create(
         invoice=invoice,
         kind="credit",
-        description=gettext("Kelmagan kunlar uchun qayta hisob: {days} kun × {rate}").format(
-            days=claim.billable_days, rate=som(claim.daily_rate)
-        )[:255],
-        formula=f"{claim.billable_days} × {som(claim.daily_rate)} = {som(claim.credit_amount)}",
+        description=_credit_text(claim)[:255],
+        formula=_credit_formula(claim, credit),
         quantity=Decimal("1"),
         unit_amount=-credit,
         line_total=-credit,
@@ -341,6 +340,29 @@ def apply_claim_to_open_invoice(*, claim: Any, created_by: Any = None) -> bool:
     claim.applied_invoice = invoice
     claim.save(update_fields=["status", "applied_invoice", "updated_at"])
     return True
+
+
+def _credit_text(claim: Any) -> str:
+    """Qayta hisob qatorining matni — qaysi qoida bilan (Bosqich 12.3)."""
+    if claim.basis == "fixed_per_day":
+        return gettext("Kelmagan kunlar: {days} kun × {rate} (ovqat puli)").format(
+            days=claim.billable_days, rate=som(claim.daily_rate)
+        )
+    return gettext("Kelmagan kunlar uchun qayta hisob: {days} kun × {rate}").format(
+        days=claim.billable_days, rate=som(claim.daily_rate)
+    )
+
+
+def _credit_formula(claim: Any, amount: Decimal) -> str:
+    """
+    "2 × 37 500 = 75 000". Faktura qoldig'i kichik bo'lsa, qatorga tushgan
+    summa alohida aytiladi — formula hech qachon noto'g'ri arifmetika
+    ko'rsatmaydi.
+    """
+    full = f"{claim.billable_days} × {som(claim.daily_rate)} = {som(claim.credit_amount)}"
+    if _money(amount) != _money(claim.credit_amount):
+        return f"{full} → {som(amount)}"
+    return full
 
 
 def _apply_absence_credits(
@@ -378,10 +400,8 @@ def _apply_absence_credits(
         InvoiceLine.objects.create(
             invoice=invoice,
             kind="credit",
-            description=gettext("Kelmagan kunlar uchun qayta hisob: {days} kun × {rate}").format(
-                days=claim.billable_days, rate=som(claim.daily_rate)
-            )[:255],
-            formula=f"{claim.billable_days} × {som(claim.daily_rate)} = {som(claim.credit_amount)}",
+            description=_credit_text(claim)[:255],
+            formula=_credit_formula(claim, credit),
             quantity=Decimal("1"),
             unit_amount=-credit,
             line_total=-credit,
@@ -624,6 +644,73 @@ def issue_invoice(
 
     recompute_child_balance(child)
     return invoice
+
+
+@transaction.atomic
+def write_off_invoice(
+    *, invoice: Invoice, amount: Decimal, reason: str, created_by: Any = None
+) -> InvoiceWriteOff:
+    """
+    Qarzning bir qismini yoki hammasini kechiradi — hujjat bilan (Bosqich 12.3).
+
+    Mavjud yo'ldan (qayta hisob, PLAN 7.7): fakturaga sababi yozilgan minus
+    qator, `amount_due` kamayadi, ledgerda KREDIT. Shuning uchun "qarz" ni
+    hisoblaydigan hamma joy — doska, qarzdorlar, bola kartasi, hisobot — hech
+    narsa o'zgartirmasdan to'g'ri qoladi (13-invariant: formula bitta).
+    """
+    cleaned = (reason or "").strip()
+    if not cleaned:
+        raise BusinessRuleViolation(gettext("Hisobdan chiqarish sababini yozing."))
+    invoice = Invoice.objects.select_for_update().get(pk=invoice.pk)
+    if invoice.status not in (
+        InvoiceStatus.ISSUED,
+        InvoiceStatus.PARTIALLY_PAID,
+        InvoiceStatus.OVERDUE,
+    ):
+        raise BusinessRuleViolation(gettext("Bu hisob-fakturada qarz yoʻq."))
+    amount = _money(Decimal(amount))
+    outstanding = _money(invoice.amount_due - invoice.amount_paid)
+    if amount <= 0 or amount > outstanding:
+        raise BusinessRuleViolation(
+            gettext("Hisobdan faqat qolgan qarz chiqariladi: {outstanding}.").format(
+                outstanding=som(outstanding)
+            )
+        )
+
+    InvoiceLine.objects.create(
+        invoice=invoice,
+        kind="write_off",
+        description=gettext("Hisobdan chiqarildi: {reason}").format(reason=cleaned)[:255],
+        formula=f"{som(outstanding)} − {som(amount)} = {som(outstanding - amount)}",
+        quantity=Decimal("1"),
+        unit_amount=-amount,
+        line_total=-amount,
+    )
+    Invoice.objects.filter(pk=invoice.pk).update(amount_due=invoice.amount_due - amount)
+    invoice.amount_due -= amount
+    post_ledger_entry(
+        child=invoice.child,
+        entry_type=EntryType.ADJUSTMENT,
+        direction=Direction.CREDIT,
+        amount=amount,
+        source_type=SourceType.INVOICE,
+        source_id=invoice.id,
+        description=gettext("Hisobdan chiqarildi ({number}): {reason}").format(
+            number=invoice.number, reason=cleaned
+        )[:255],
+        created_by=created_by,
+    )
+    _refresh_invoice_payment_state(invoice)
+    record = InvoiceWriteOff.objects.create(
+        organization=invoice.organization,
+        branch=invoice.branch,
+        invoice=invoice,
+        amount=amount,
+        reason=cleaned[:255],
+        created_by=created_by,
+    )
+    recompute_child_balance(invoice.child)
+    return record
 
 
 @transaction.atomic
@@ -1259,7 +1346,12 @@ def _refresh_invoice_payment_state(invoice: Invoice) -> Invoice:
     # emas — u bolaning kassadagi puli bo'lsa ham yetadi.
     paid = _money(invoice_allocated(invoice))
 
-    if paid <= 0:
+    if invoice.amount_due <= 0:
+        # To'liq qayta hisob yoki hisobdan chiqarish — to'lanadigan narsa
+        # qolmadi. Ilgari bu `paid <= 0` ga tushib "chiqarilgan" bo'lib
+        # qolardi va qarzdorlar ro'yxatida 0 so'mlik qarz turardi.
+        status = InvoiceStatus.PAID
+    elif paid <= 0:
         status = InvoiceStatus.ISSUED
     elif paid >= invoice.amount_due:
         status = InvoiceStatus.PAID

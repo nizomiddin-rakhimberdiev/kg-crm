@@ -1937,3 +1937,46 @@ Buning narxi aniq: bu yerdagi har bir qoʻriqchi test — RLS roʻyxati,
 obuna darvozasi, `DateInput`, formatlash uyi, fokus tutqichi, parol
 uzunligi — hozircha faqat kimdir **qoʻlda** ishga tushirganda
 qizaradi.
+
+## Bosqich 12 — billing bogʻchadagi haqiqiy jarayon boʻyicha
+
+Egasining 2026-10-14 brifi (16 ta qabul testi) yetti qismga boʻlindi
+([PLAN](./PLAN.md) Bosqich 12). Hamma qism bitta hisoblagichga ulanadi —
+`charges.plan_month` (ADR-31).
+
+### 12.1 Bitta hisoblagich (b165bc5)
+
+Oy hisobi endi bir joyda: narx → imtiyoz → ish kunlari oynasi (kelish,
+sinov, ketish, pauza) → yaxlitlash (`finance.rounding_step`, 1 000).
+Faktura, oldindan koʻrish va kunlik stavka bitta obyektni oʻqiydi. Oy
+oʻrtasida kelgan bolaning kunlik stavkasi endi toʻliq narxdan olinadi —
+ilgari kesilgan fakturadan olinib, past chiqardi. "Bir oylik ariza" —
+`child_pause`, oy 0 soʻm, bola faol qoladi. Testlar 1, 2, 3, 4, 10.
+
+### 12.2 Imtiyozlar sababi bilan (9e0cc7d)
+
+Imtiyoz — turi bor yozuv (xodim farzandi, kam taʼminlangan, toʻliq,
+boshqa), sababi majburiy, kim kiritgani saqlanadi, tahrirlanmaydi —
+tugatiladi. Aka-uka chegirmasi umumiy vasiy orqali oʻzi qoʻllanadi
+(ADR-32). Imtiyozlar hisoboti. Imtiyoz-tariflarni koʻchirish —
+`convert_benefit_tariffs` (dry-run; haqiqiy ishga tushirish egasida).
+Testlar 5, 8.
+
+### 12.3 Qayta hisob turlari va qarzni hisobdan chiqarish
+
+* **`absence_kind`** — qaytarish qoidasi maʼlumot sifatida (ADR-33):
+  maʼlumotnoma 1–2 kun → faqat ovqat puli (`contracts.daily_meal_fee`,
+  37 500), 3+ kun → hamma kunlar uchun toʻliq stavka; ariza — toʻliq
+  stavka; yangi turlar Sozlamalarda qoʻshiladi (minimal kunlar, kuniga
+  summa yoki qaytarilmaydi). Arizada `basis` — qaysi qoida ishlagani.
+  Bu 2026-09-30 dagi "minimal yoʻq, har doim toʻliq stavka" qarorini
+  almashtiradi.
+* **"Nega?"** — faktura qatorida formula: `2 × 37 500 = 75 000`.
+* **`invoice_write_off`** — qarzni kechirishning yagona yoʻli: summa,
+  sabab, muallif; fakturada minus qator va daftarda kredit. Faqat
+  `debtors.approve` (egasi, direktor) — kassir emas. Qarzni qoʻlda 0
+  qilishning yoʻli yoʻqligi testda isbotlangan (16-test).
+* Bola kartasida qarz **oyma-oy**.
+* Testlar 6, 7, 8 (kredit), 9, 16. Toʻliq backend toʻplami: 1 725 ta
+  test, cross-tenant sweep `absence-kinds` ni ham qamraydi.
+
