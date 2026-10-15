@@ -156,6 +156,8 @@ REPORT_SCOPE: dict[str, str] = {
     "attendance": "attendance.read",
     # Imtiyozlar — pul (Bosqich 12.2): kassirga emas, to'lovlarni ko'radiganga.
     "benefits": "payments.read",
+    # Oylik yig'ma, oyni yopish va eski jadval (Bosqich 12.6).
+    "monthly": "payments.read",
 }
 
 # View action nomi → hisobot turi (`REPORT_SCOPE` kaliti).
@@ -167,6 +169,8 @@ _ACTION_REPORT: dict[str, str] = {
     "profit_loss": "profit-loss",
     "attendance": "attendance",
     "benefits": "benefits",
+    "monthly_summary": "monthly",
+    "monthly_close": "monthly",
 }
 
 
@@ -197,6 +201,9 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
         "exports": "read",
         "export_detail": "read",
         "download": "read",
+        # Oyni yopish — egasi va direktor (`reports.approve`); kassirda
+        # `reports` umuman yo'q.
+        "monthly_close": "approve",
     }
     lookup_value_regex = "|".join(REPORT_TYPES)
     # `ScopedRateThrottle` shu nomdagi tezlikni qidiradi. U faqat
@@ -216,6 +223,65 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
     def benefits(self, request: Request) -> Response:
         """`GET /reports/benefits?from=&to=` — imtiyozlar: kim, kimga, qancha, nega."""
         return Response(selectors.benefits_report(**self.scope(request)))
+
+    @action(detail=False, url_path="monthly-summary")
+    def monthly_summary(self, request: Request) -> Response:
+        """`GET /reports/monthly-summary?year=&month=` — oyning yig'masi (Bosqich 12.6)."""
+        from apps.finance.selectors import monthly_summary
+
+        today = timezone.localdate()
+        return Response(
+            monthly_summary(
+                organization_id=request_user(request).organization_id,
+                year=_parse_int(request.query_params.get("year"), today.year, low=2000, high=2100),
+                month=_parse_int(request.query_params.get("month"), today.month, low=1, high=12),
+                branch_id=self.branch_for(request, request.query_params.get("branch")),
+            )
+        )
+
+    @action(detail=False, methods=["post"], url_path="monthly-summary/close")
+    def monthly_close(self, request: Request) -> Response:
+        """
+        `POST /reports/monthly-summary/close {year, month, branch_id?}` — oyni
+        yopish (Bosqich 12.6). Faqat tugagan va tengligi yashil oy, bir marta.
+        """
+        from apps.audit import services as audit
+        from apps.branches.models import Branch
+        from apps.finance.services import close_month
+
+        user = request_user(request)
+        if not request.data.get("year") or not request.data.get("month"):
+            raise BusinessRuleViolation(gettext("Yil va oyni koʻrsating."))
+        branch_id = self.branch_for(request, request.data.get("branch_id"))
+        if branch_id:
+            branch = Branch.objects.filter(pk=branch_id).first()
+            if branch is None:
+                raise Http404
+        else:
+            branches = list(Branch.objects.filter(is_active=True)[:2])
+            if len(branches) != 1:
+                raise BusinessRuleViolation(
+                    gettext("Qaysi filial oyini yopish — filialni tanlang.")
+                )
+            branch = branches[0]
+        record = close_month(
+            branch=branch,
+            year=_parse_int(request.data.get("year"), 0, low=2000, high=2100),
+            month=_parse_int(request.data.get("month"), 0, low=1, high=12),
+            closed_by=user,
+        )
+        audit.record(
+            action="approve",
+            request=request._request,
+            actor=user,
+            entity_type="month_close",
+            entity_id=record.id,
+            changes={"period": f"{record.period_year}-{record.period_month:02d}"},
+        )
+        return Response(
+            {"id": str(record.id), "period": f"{record.period_year}-{record.period_month:02d}"},
+            status=status.HTTP_201_CREATED,
+        )
 
     @action(detail=False, url_path="profit-loss")
     def profit_loss(self, request: Request) -> Response:

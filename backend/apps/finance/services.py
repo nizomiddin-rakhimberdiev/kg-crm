@@ -42,6 +42,7 @@ from apps.finance.models import (
     InvoiceLine,
     InvoiceStatus,
     InvoiceWriteOff,
+    MonthClose,
     Payment,
     PaymentAllocation,
     PaymentMethod,
@@ -257,6 +258,21 @@ def _next_invoice_number(branch: Any, year: int, month: int) -> str:
     return f"{prefix}-{sequence:04d}"
 
 
+def is_month_closed(*, branch: Any, year: int, month: int) -> bool:
+    """Shu filialning shu oyi yopilganmi (Bosqich 12.6)."""
+    return MonthClose.objects.filter(branch=branch, period_year=year, period_month=month).exists()
+
+
+def assert_month_open(*, branch: Any, year: int, month: int) -> None:
+    """Yopilgan oyga tegadigan amalni rad etadi — sababi va yo'li bilan."""
+    if is_month_closed(branch=branch, year=year, month=month):
+        raise BusinessRuleViolation(
+            gettext(
+                "{month} oyi yopilgan — u faqat keyingi oyga tuzatish qatori orqali oʻzgaradi."
+            ).format(month=f"{month:02d}.{year}")
+        )
+
+
 @transaction.atomic
 def apply_claim_to_open_invoice(*, claim: Any, created_by: Any = None) -> bool:
     """
@@ -286,6 +302,12 @@ def apply_claim_to_open_invoice(*, claim: Any, created_by: Any = None) -> bool:
 
     if claim.status != ClaimStatus.APPROVED or claim.credit_amount <= 0:
         return False
+    # Yopilgan oy fakturasi o'zgarmaydi — kredit keyingi fakturaga
+    # tuzatish qatori bo'lib tushadi (Bosqich 12.6).
+    if is_month_closed(
+        branch=claim.child.branch, year=claim.date_from.year, month=claim.date_from.month
+    ):
+        return False
 
     invoice = (
         Invoice.objects.select_for_update()
@@ -311,6 +333,7 @@ def apply_claim_to_open_invoice(*, claim: Any, created_by: Any = None) -> bool:
         kind="credit",
         description=_credit_text(claim)[:255],
         formula=_credit_formula(claim, credit),
+        absence_claim=claim,
         quantity=Decimal("1"),
         unit_amount=-credit,
         line_total=-credit,
@@ -397,11 +420,22 @@ def _apply_absence_credits(
         if credit <= 0:
             continue
 
+        text = _credit_text(claim)
+        if (claim.date_from.year, claim.date_from.month) != (
+            invoice.period_year,
+            invoice.period_month,
+        ):
+            # Boshqa (ko'pincha yopilgan) oyning qayta hisobi — tuzatish
+            # qatori: qaysi oy uchunligi matnda turadi (brif §2).
+            text = gettext("Tuzatish ({month}): {text}").format(
+                month=claim.date_from.strftime("%m.%Y"), text=text
+            )
         InvoiceLine.objects.create(
             invoice=invoice,
             kind="credit",
-            description=_credit_text(claim)[:255],
+            description=text[:255],
             formula=_credit_formula(claim, credit),
+            absence_claim=claim,
             quantity=Decimal("1"),
             unit_amount=-credit,
             line_total=-credit,
@@ -508,6 +542,7 @@ def issue_invoice(
     kafolatlanadi — ilova qatlamidagi tekshiruv poyga holatida yetarli
     emas (docs/03 §26).
     """
+    assert_month_open(branch=child.branch, year=period_year, month=period_month)
     # Summa va qatorlar — YAGONA hisoblagichdan (Bosqich 12.1): oldindan
     # ko'rish, qayta hisob stavkasi va "Nega?" ham aynan shuni o'qiydi.
     charge = plan_month(child, period_year, period_month)
@@ -723,6 +758,7 @@ def cancel_invoice(*, invoice: Invoice, reason: str = "", created_by: Any = None
     """
     if invoice.status == InvoiceStatus.CANCELLED:
         return invoice
+    assert_month_open(branch=invoice.branch, year=invoice.period_year, month=invoice.period_month)
     if invoice.amount_paid > 0:
         raise BusinessRuleViolation(
             gettext(
@@ -1800,3 +1836,43 @@ def daily_cash_summary(
         "reversed_total": str(_money(reversed_total)),
         "count": queryset.count(),
     }
+
+
+# --- Oyni yopish (Bosqich 12.6) ---
+
+
+@transaction.atomic
+def close_month(*, branch: Any, year: int, month: int, closed_by: Any = None) -> MonthClose:
+    """
+    Oyni yopadi — faqat tugagan, tengligi "yashil" oy, bir marta.
+
+    Qizil oy yopilmaydi: noto'g'ri raqamni "rasmiy" qilib qotirish —
+    Excel'dagi "tenglashtiruvchi qator"ning o'zi. Yig'ma suratga olinadi.
+    """
+    from apps.finance.selectors import monthly_summary
+
+    if not 1 <= month <= 12:
+        raise BusinessRuleViolation(gettext("Oy 1–12 oraligʻida boʻlishi kerak."))
+    last_day = date(year + month // 12, month % 12 + 1, 1) - timedelta(days=1)
+    if timezone.localdate() <= last_day:
+        raise BusinessRuleViolation(gettext("Oy hali tugamagan — uni tugagach yopish mumkin."))
+    if is_month_closed(branch=branch, year=year, month=month):
+        raise BusinessRuleViolation(gettext("Bu oy allaqachon yopilgan."))
+
+    summary = monthly_summary(
+        organization_id=branch.organization_id, year=year, month=month, branch_id=branch.id
+    )
+    if not summary["check"]["ok"]:
+        raise BusinessRuleViolation(
+            gettext("Tenglik buzilgan ({equation}) — avval farqni toping, keyin yoping.").format(
+                equation=summary["check"]["equation"]
+            )
+        )
+    return MonthClose.objects.create(
+        organization=branch.organization,
+        branch=branch,
+        period_year=year,
+        period_month=month,
+        closed_by=closed_by,
+        snapshot=summary,
+    )

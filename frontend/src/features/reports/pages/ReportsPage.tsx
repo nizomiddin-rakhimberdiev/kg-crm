@@ -60,6 +60,7 @@ import { formatDateTime } from '@/lib/format'
 import { cn, formatMoney, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { BenefitsReport } from '@/features/reports/components/BenefitsReport'
+import { MonthlySummary } from '@/features/reports/components/MonthlySummary'
 
 // Usul nomlari `features/payments/methods.ts` da — bu yerda o'z nusxasi
 // bor edi va u eskirgan `transfer` kalitini tutardi, shuning uchun
@@ -741,6 +742,9 @@ export default function ReportsPage() {
       )}
 
       {/* Imtiyozlar (Bosqich 12.2) — o'sha davr bo'yicha. */}
+      {/* Oylik yigʻma va oyni yopish (Bosqich 12.6). */}
+      {canRevenue && <MonthlySummary />}
+
       {canRevenue && <BenefitsReport from={period.from} to={period.to} />}
 
       {can('reports.export') && (

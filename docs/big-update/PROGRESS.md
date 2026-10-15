@@ -2017,3 +2017,22 @@ Testlar 5, 8.
   kimda qancha, tasdiq kutayotgan topshiriqlar, oʻtkazma, kunni yopish.
 * ADR-35; RLS +2 jadval (`cash_handover`, `cash_count`). Backend 1 780 test.
 
+### 12.6 Oylik yigʻma va oyni yopish
+
+* `GET /reports/monthly-summary` — toifalar (imtiyoz qatoridan; fakturasiz
+  bolalar ham sanaladi), kutilgan summa, imtiyozlar, qayta hisoblar turi
+  boʻyicha (maʼlumotnoma — ovqat puli / toʻliq, ariza, kelgan/ketgan,
+  pauza, hisobdan chiqarish), **oy uchun yigʻilgan** (taqsimot boʻyicha:
+  oldindan / shu oyda / keyin) va **kassa tushumi** (toʻlov sanasi
+  boʻyicha), keyingi oylar uchun avans, qarz aging.
+* **Tenglik** uchta mustaqil manbadan: qatorlar = faktura summasi,
+  taqsimot = toʻlangan, hisoblangan = yigʻilgan + qarz. Kesh siljisa —
+  qizil (15-test yashil; 11-test: avans avgust tushumida bir marta,
+  sentabr "oy uchun yigʻilgan"da bir marta).
+* **Oyni yopish** — faqat tugagan, yashil oy, bir marta, `reports.approve`.
+  Keyin: faktura chiqarish/bekor qilish va pauza rad etiladi; kechikkan
+  qayta hisob keyingi fakturaga "Tuzatish (MM.YYYY)" qatori boʻlib
+  tushadi. Qayta ochish yoʻq.
+* Excel: eski "oylik toʻlov jadvali" (`/reports/monthly/export`).
+* Hisobotlar sahifasida "Oylik yigʻma" boʻlimi. ADR-36. Backend 1 793 test.
+

@@ -1657,3 +1657,72 @@ msgstr "Awaiting confirmation"
 
 msgid "Rad etildi"
 msgstr "Rejected"
+
+msgid "Ariza"
+msgstr "Application"
+
+msgid "Bir oylik ariza (pauza)"
+msgstr "One-month leave (pause)"
+
+msgid "Boshqa imtiyoz"
+msgstr "Other benefit"
+
+msgid "Bu oy allaqachon yopilgan."
+msgstr "This month is already closed."
+
+msgid "Fakturasiz"
+msgstr "No invoice"
+
+msgid "Hisobdan chiqarilgan"
+msgstr "Written off"
+
+msgid "Imtiyoz"
+msgstr "Benefit"
+
+msgid "Kelgan / ketgan"
+msgstr "Arrived / left"
+
+msgid "Kelgan / ketgan / sinov"
+msgstr "Arrived / left / trial"
+
+msgid "Narx"
+msgstr "Price"
+
+msgid "Oy hali tugamagan — uni tugagach yopish mumkin."
+msgstr "The month has not ended yet — it can be closed once it has."
+
+msgid "Qaysi filial oyini yopish — filialni tanlang."
+msgstr "Which branch's month to close — choose a branch."
+
+msgid "Qoldiq"
+msgstr "Balance"
+
+msgid "Tenglik buzilgan ({equation}) — avval farqni toping, keyin yoping."
+msgstr "The equation does not hold ({equation}) — find the difference first, then close."
+
+msgid "Toʻlov sanalari"
+msgstr "Payment dates"
+
+msgid "Toʻliq narx"
+msgstr "Full price"
+
+msgid "Tuzatish ({month}): {text}"
+msgstr "Correction ({month}): {text}"
+
+msgid "Vaqtincha toʻxtatilgan"
+msgstr "Temporarily paused"
+
+msgid "Yil va oyni koʻrsating."
+msgstr "Give the year and the month."
+
+msgid "kuniga summa"
+msgstr "fixed per day"
+
+msgid "toʻliq stavka"
+msgstr "full rate"
+
+msgid "qaytarilmaydi"
+msgstr "not refunded"
+
+msgid "{month} oyi yopilgan — u faqat keyingi oyga tuzatish qatori orqali oʻzgaradi."
+msgstr "{month} is closed — it changes only through a correction line on the next month."

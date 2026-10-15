@@ -706,6 +706,14 @@ Staff timesheet — one row per employee per day. Asked for by a customer so the
 
 The only way to forgive debt. The Excel sheets sometimes typed a debt as 0 and the debt simply vanished; the system has no way to edit a balance, an invoice amount or a ledger row by hand (`PATCH /invoices` is `405`, the ledger is read-only, `child.balance` is a cache nobody can write). `POST /debtors/write-off` (`debtors.approve` — owner and director; the cashier holds `debtors` but not `approve`) writes, in one transaction: a `write_off` line on the invoice with the reason and the formula (`3 050 000 − 50 000 = 3 000 000`), `amount_due` reduced, a ledger **credit**, and this row — `invoice_id` (`RESTRICT`), `amount > 0`, `reason NOT NULL`, `created_by_id`. It goes through the same path as an absence credit (PLAN 7.7) on purpose: every formula that computes "debt" as `amount_due − amount_paid` stays correct without being touched (invariant 13). The amount may not exceed what is still owed; an invoice written off in full becomes `paid`.
 
+### 13.3b `month_close` — a closed month (Bosqich 12.6)
+
+Organization-scoped (RLS). `branch_id`, `period_year`, `period_month`, `closed_by_id`, `snapshot` (the monthly summary at closing time); `UNIQUE (branch_id, period_year, period_month)`. Only an ended month whose check is green closes, once; there is no reopening. After it: `issue_invoice` and `cancel_invoice` for that period and a pause covering it are refused (`422`); an absence claim for its dates is **not** applied to its invoice but waits for the next one, where `_apply_absence_credits` writes it as `Tuzatish (MM.YYYY): …`. Payments and write-offs still settle its debt — they are correction documents in their own right.
+
+**The monthly check** compares three sources: `Σ invoice_line = Σ invoice.amount_due`; `Σ live payment_allocation = Σ invoice.amount_paid`; and `charged + benefits + recalculations = collected + outstanding`. A drifted cache turns it red, and a red month does not close.
+
+`invoice_line.absence_claim_id` (FK → absence_claim, `SET_NULL`) records which claim a `credit` line came from, so the summary splits recalculations by kind and basis (certificate — meal money / full rate, application, …) without parsing text.
+
 ### 13.4 `invoice_line`
 For itemization beyond the base tariff (extra meals, activities, one-off fees).
 

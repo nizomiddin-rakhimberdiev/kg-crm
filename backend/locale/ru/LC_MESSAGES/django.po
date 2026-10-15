@@ -1657,3 +1657,72 @@ msgstr "Ожидает подтверждения"
 
 msgid "Rad etildi"
 msgstr "Отклонено"
+
+msgid "Ariza"
+msgstr "Заявление"
+
+msgid "Bir oylik ariza (pauza)"
+msgstr "Заявление на месяц (пауза)"
+
+msgid "Boshqa imtiyoz"
+msgstr "Другая льгота"
+
+msgid "Bu oy allaqachon yopilgan."
+msgstr "Этот месяц уже закрыт."
+
+msgid "Fakturasiz"
+msgstr "Без счёта"
+
+msgid "Hisobdan chiqarilgan"
+msgstr "Списано"
+
+msgid "Imtiyoz"
+msgstr "Льгота"
+
+msgid "Kelgan / ketgan"
+msgstr "Пришёл / ушёл"
+
+msgid "Kelgan / ketgan / sinov"
+msgstr "Пришёл / ушёл / проба"
+
+msgid "Narx"
+msgstr "Цена"
+
+msgid "Oy hali tugamagan — uni tugagach yopish mumkin."
+msgstr "Месяц ещё не закончился — закрыть можно после его окончания."
+
+msgid "Qaysi filial oyini yopish — filialni tanlang."
+msgstr "Месяц какого филиала закрыть — выберите филиал."
+
+msgid "Qoldiq"
+msgstr "Остаток"
+
+msgid "Tenglik buzilgan ({equation}) — avval farqni toping, keyin yoping."
+msgstr "Равенство нарушено ({equation}) — сначала найдите расхождение, затем закрывайте."
+
+msgid "Toʻlov sanalari"
+msgstr "Даты оплат"
+
+msgid "Toʻliq narx"
+msgstr "Полная цена"
+
+msgid "Tuzatish ({month}): {text}"
+msgstr "Корректировка ({month}): {text}"
+
+msgid "Vaqtincha toʻxtatilgan"
+msgstr "Временно приостановлен"
+
+msgid "Yil va oyni koʻrsating."
+msgstr "Укажите год и месяц."
+
+msgid "kuniga summa"
+msgstr "сумма в день"
+
+msgid "toʻliq stavka"
+msgstr "полная ставка"
+
+msgid "qaytarilmaydi"
+msgstr "не возвращается"
+
+msgid "{month} oyi yopilgan — u faqat keyingi oyga tuzatish qatori orqali oʻzgaradi."
+msgstr "Месяц {month} закрыт — он меняется только строкой корректировки в следующем месяце."

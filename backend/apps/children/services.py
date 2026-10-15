@@ -298,6 +298,13 @@ def pause_child(
         raise BusinessRuleViolation(gettext("Pauza oxiri boshidan oldin boʻlishi mumkin emas."))
     if ChildPause.objects.filter(child=child, month_from__lte=end, month_to__gte=start).exists():
         raise BusinessRuleViolation(gettext("Bu oylar uchun pauza allaqachon bor."))
+    # Yopilgan oy pauzaga qo'yilmaydi (Bosqich 12.6) — u o'zgarmaydi.
+    from apps.finance.services import assert_month_open
+
+    cursor = start
+    while cursor <= end:
+        assert_month_open(branch=child.branch, year=cursor.year, month=cursor.month)
+        cursor = date(cursor.year + cursor.month // 12, cursor.month % 12 + 1, 1)
     pause = ChildPause.objects.create(
         organization=child.organization,
         branch=child.branch,

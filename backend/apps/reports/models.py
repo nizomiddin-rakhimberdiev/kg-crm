@@ -32,6 +32,8 @@ REPORT_TYPES: tuple[str, ...] = (
     "debtors",
     "profit-loss",
     "staff-attendance",
+    # Eski "oylik to'lov jadvali" ko'rinishi (Bosqich 12.6).
+    "monthly",
 )
 
 

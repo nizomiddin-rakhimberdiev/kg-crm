@@ -1143,6 +1143,9 @@ Module: `platform`. **Not part of the customer API surface** — separate auth p
 | GET/POST | `/discounts` | `payments.read` / `payments.create` | Benefits: `{child_id, kind: staff_child\|low_income\|full\|custom, reason, valid_from, valid_to?, discount_type?, value?}` (the last two for `custom` only). Reason mandatory; overlapping benefits → `422`; `PATCH`/`DELETE` → `405` |
 | POST | `/discounts/{id}/end` | `payments.update` | `{valid_to}` — ends a benefit; the row stays as history |
 | GET | `/reports/benefits?from=&to=` | `reports.read` + `payments.read` | Who gave which child how much and why — summed from invoice `benefit` lines, with `by_kind` and `by_month` |
+| GET | `/reports/monthly-summary?year=&month=` | `reports.read` + `payments.read` | Bosqich 12.6: `roster`, `categories` (children and expected sum per category), `invoiced`, `recalculations` by kind, `collected_for_month` (by allocation: `before_month` / `in_month` / `after_month`, `by_method`), `cash_received` (by payment date, `advances_for_later`), `outstanding`, `aging`, `check {ok, equation}`, `closed` |
+| POST | `/reports/monthly-summary/close` | `reports.approve` + `payments.read` | `{year, month, branch_id?}` — only an ended month whose check is green, once; `422` otherwise |
+| POST | `/reports/monthly/export` | `reports.export` + `payments.read` | `{params: {year, month}}` — the old "oylik toʻlov jadvali": one row per child, payments by method with dates, certificate / application credits, arrival / departure, balance |
 | POST | `/debtors/write-off` | `debtors.**approve**` | `{invoice_id, amount, reason}` — the only way to forgive debt: a minus line on the invoice with the reason, a ledger credit and an `invoice_write_off` record. Amount ≤ what is still owed |
 | GET | `/ledger/balance?child=` | `payments.read` | Adds `months`: each open invoice's period and outstanding amount |
 

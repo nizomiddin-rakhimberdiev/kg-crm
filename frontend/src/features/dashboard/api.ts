@@ -30,6 +30,44 @@ export interface BenefitsReport {
   by_month: Array<{ month: string; total: string }>
 }
 
+/** Oylik yigʻma (Bosqich 12.6). */
+export interface MonthlySummary {
+  period: string
+  roster: number
+  categories: Array<{
+    category: string
+    label: string
+    children: number
+    charged: string
+    benefit: string
+    due: string
+  }>
+  invoiced: { charged: string; benefits: string; recalculations: string; amount_due: string }
+  benefits_total: string
+  recalculations: Array<{ kind: string; label: string; count: number; amount: string }>
+  collected_for_month: {
+    total: string
+    before_month: string
+    in_month: string
+    after_month: string
+    by_method: Array<{ method: string; total: string }>
+  }
+  cash_received: {
+    total: string
+    by_method: Array<{ method: string; total: string }>
+    advances_for_later: string
+  }
+  outstanding: string
+  aging: Array<{ period: string; outstanding: string; children: number }>
+  check: {
+    ok: boolean
+    lines_match_invoices: boolean
+    allocations_match_paid: boolean
+    equation: string
+  }
+  closed: { closed_at: string; closed_by: string } | null
+}
+
 export const reportsApi = {
   revenue: (from: string, to: string, groupBy: ReportGroupBy = 'month') =>
     api.get<RevenueReport>('/reports/revenue', { from, to, group_by: groupBy }),
@@ -42,6 +80,10 @@ export const reportsApi = {
   /** Imtiyozlar (Bosqich 12.2): kim, kimga, qancha, nega — hisob-faktura qatorlaridan. */
   benefits: (from: string, to: string) =>
     api.get<BenefitsReport>('/reports/benefits', { from, to }),
+  monthlySummary: (year: number, month: number) =>
+    api.get<MonthlySummary>('/reports/monthly-summary', { year, month }),
+  closeMonth: (year: number, month: number) =>
+    api.post<{ id: string; period: string }>('/reports/monthly-summary/close', { year, month }),
 
   /** Eksportni navbatga qo'yadi — javob darhol qaytadi, fayl fonda tayyorlanadi. */
   requestExport: (reportType: string, params: Record<string, unknown> = {}) =>

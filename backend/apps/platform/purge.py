@@ -81,6 +81,7 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.finance.Payment",
     "apps.finance.ChildLedgerEntry",
     "apps.finance.InvoiceWriteOff",
+    "apps.finance.MonthClose",
     "apps.finance.Invoice",
     "apps.finance.Discount",
     # Operatsion yozuvlar

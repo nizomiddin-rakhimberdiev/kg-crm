@@ -97,6 +97,13 @@ def _staff_timesheet_rows(**kwargs: Any) -> list[dict[str, Any]]:
     return timesheet_rows(**kwargs)
 
 
+def _monthly_table_rows(**kwargs: Any) -> list[dict[str, Any]]:
+    """Oylik to'lov jadvali — moliya modulining selektoridan (invariant 1)."""
+    from apps.finance.selectors import monthly_table_rows
+
+    return monthly_table_rows(**kwargs)
+
+
 def _detail_rows(report_type: str, organization_id: Any, params: dict[str, Any]) -> list[Any]:
     """
     Eksport uchun BATAFSIL qatorlar.
@@ -132,6 +139,7 @@ def _detail_rows(report_type: str, organization_id: Any, params: dict[str, Any])
         "debtors": selectors.debtor_rows,
         "attendance": selectors.attendance_rows,
         "staff-attendance": _staff_timesheet_rows,
+        "monthly": _monthly_table_rows,
     }
     builder = builders.get(report_type)
     if builder is None:

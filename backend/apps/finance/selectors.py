@@ -11,7 +11,7 @@ haqiqatdan ajralmaydi.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -27,6 +27,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Coalesce
 from django.utils import timezone
+from django.utils.translation import gettext, gettext_lazy
 
 from apps.children.models import (
     Child,
@@ -670,3 +671,372 @@ def payroll_tuition_totals(
         .annotate(total=Sum("amount"))
     )
     return {row["employee_id"]: row["total"] or Decimal("0") for row in rows}
+
+
+# --- Oylik yig'ma (Bosqich 12.6, brif §6) ---
+
+#: Toifa — fakturadagi imtiyoz qatoridan; rang yoki matndan emas.
+_CATEGORY_LABELS = {
+    "full": gettext_lazy("Toʻliq narx"),
+    "sibling": gettext_lazy("Aka-uka"),
+    "staff_child": gettext_lazy("Xodim farzandi"),
+    "low_income": gettext_lazy("Kam taʼminlangan"),
+    "full_benefit": gettext_lazy("Toʻliq imtiyoz"),
+    "custom": gettext_lazy("Boshqa imtiyoz"),
+    "pause": gettext_lazy("Vaqtincha toʻxtatilgan"),
+    "no_invoice": gettext_lazy("Fakturasiz"),
+}
+
+_RECALC_LABELS = {
+    "proration": gettext_lazy("Kelgan / ketgan / sinov"),
+    "pause": gettext_lazy("Bir oylik ariza (pauza)"),
+    "write_off": gettext_lazy("Hisobdan chiqarilgan"),
+}
+
+
+def _month_end(year: int, month: int) -> date:
+    return date(year + month // 12, month % 12 + 1, 1) - timedelta(days=1)
+
+
+def _category(lines: list[Any]) -> str:
+    for line in lines:
+        if line.kind == "pause":
+            return "pause"
+    for line in lines:
+        if line.kind == "benefit":
+            kind = line.benefit_kind or "custom"
+            return "full_benefit" if kind == "full" else kind
+    return "full"
+
+
+def _month_invoices(
+    *, organization_id: Any, branch_id: Any, year: int, month: int
+) -> list[Invoice]:
+    queryset = Invoice.objects.filter(
+        organization_id=organization_id, period_year=year, period_month=month
+    ).exclude(status=InvoiceStatus.CANCELLED)
+    if branch_id:
+        queryset = queryset.filter(branch_id=branch_id)
+    return list(
+        queryset.select_related("child").prefetch_related("lines__absence_claim").order_by("number")
+    )
+
+
+def monthly_summary(
+    *, organization_id: Any, year: int, month: int, branch_id: Any = None
+) -> dict[str, Any]:
+    """
+    Oyning yig'masi — bitta ekran, bitta raqamlar to'plami (brif §6).
+
+    Ikki ko'rinish ataylab ALOHIDA:
+
+    * `cash_received` — pul QAYSI OYDA kelgan (to'lov sanasi bo'yicha);
+    * `collected_for_month` — pul QAYSI OY fakturasini yopgan
+      (taqsimot bo'yicha), qachon kelganidan qat'i nazar.
+
+    Bitta to'lov ikkalasida bittadan bo'ladi — ikki marta emas. Tenglik
+    turli MANBALARNI solishtiradi (qatorlar, faktura keshi, taqsimot),
+    shuning uchun u haqiqiy tekshiruv: kesh siljisa — qizil.
+    """
+    from apps.finance.models import MonthClose, Payment, PaymentAllocation
+
+    zero = Decimal("0")
+    start, end = date(year, month, 1), _month_end(year, month)
+    invoices = _month_invoices(
+        organization_id=organization_id, branch_id=branch_id, year=year, month=month
+    )
+    invoice_ids = [invoice.id for invoice in invoices]
+
+    # --- Toifalar va hisoblangan summa ---
+    categories: dict[str, dict[str, Any]] = {}
+    recalcs: dict[str, dict[str, Any]] = {}
+    charged = benefits = recalculated = lines_total = zero
+    for invoice in invoices:
+        lines = list(invoice.lines.all())
+        key = _category(lines)
+        row = categories.setdefault(
+            key, {"children": 0, "charged": zero, "benefit": zero, "due": zero}
+        )
+        row["children"] += 1
+        row["due"] += invoice.amount_due
+        for line in lines:
+            lines_total += line.line_total
+            if line.kind == "base":
+                row["charged"] += line.line_total
+                charged += line.line_total
+            elif line.kind == "benefit":
+                row["benefit"] += line.line_total
+                benefits += line.line_total
+            else:
+                if line.kind == "credit" and line.absence_claim is not None:
+                    claim = line.absence_claim
+                    bucket = f"{claim.kind}:{claim.basis or 'full_rate'}"
+                    label = f"{claim.kind} — {claim.basis or 'full_rate'}"
+                else:
+                    bucket = line.kind or "other"
+                    label = str(_RECALC_LABELS.get(bucket, bucket))
+                entry = recalcs.setdefault(bucket, {"label": label, "count": 0, "amount": zero})
+                entry["count"] += 1
+                entry["amount"] += line.line_total
+                recalculated += line.line_total
+
+    invoiced_children = {invoice.child_id for invoice in invoices}
+    roster = board_children(organization_id=organization_id, branch_id=branch_id).filter(
+        Q(enrolled_on__isnull=True) | Q(enrolled_on__lte=end)
+    )
+    no_invoice = roster.exclude(pk__in=invoiced_children).count()
+    if no_invoice:
+        categories["no_invoice"] = {
+            "children": no_invoice,
+            "charged": zero,
+            "benefit": zero,
+            "due": zero,
+        }
+
+    # Qayta hisob turlarining nomi — arizalar turidan.
+    from apps.attendance.models_absence import AbsenceKind
+
+    kind_names = dict(
+        AbsenceKind.objects.filter(organization_id=organization_id).values_list("code", "name")
+    )
+    basis_names = {
+        "fixed_per_day": gettext("kuniga summa"),
+        "full_rate": gettext("toʻliq stavka"),
+        "none": gettext("qaytarilmaydi"),
+    }
+    for bucket, entry in recalcs.items():
+        if ":" in bucket:
+            code, basis = bucket.split(":", 1)
+            entry["label"] = f"{kind_names.get(code, code)} — {basis_names.get(basis, basis)}"
+
+    amount_due = sum((invoice.amount_due for invoice in invoices), zero)
+    amount_paid = sum((invoice.amount_paid for invoice in invoices), zero)
+
+    # --- Oy uchun yig'ilgan: taqsimot bo'yicha ---
+    allocations = PaymentAllocation.objects.filter(
+        invoice_id__in=invoice_ids, released_at__isnull=True
+    ).select_related("payment")
+    collected = before = during = after = zero
+    collected_by_method: dict[str, Decimal] = {}
+    for allocation in allocations:
+        amount = allocation.amount
+        collected += amount
+        paid_on = timezone.localtime(allocation.payment.paid_at).date()
+        if paid_on < start:
+            before += amount
+        elif paid_on > end:
+            after += amount
+        else:
+            during += amount
+        method = allocation.payment.method
+        collected_by_method[method] = collected_by_method.get(method, zero) + amount
+
+    # --- Kassa tushumi: to'lov sanasi bo'yicha ---
+    payments = Payment.objects.filter(
+        organization_id=organization_id,
+        reversed_at__isnull=True,
+        paid_at__date__gte=start,
+        paid_at__date__lte=end,
+    )
+    if branch_id:
+        payments = payments.filter(branch_id=branch_id)
+    cash_by_method = {
+        row["method"]: row["total"]
+        for row in payments.values("method").annotate(total=Sum("amount")).order_by("method")
+    }
+    cash_total = sum(cash_by_method.values(), zero)
+    # Shu oyda kelib, KEYINGI oylar fakturasini yopgan yoki hali hech
+    # narsani yopmagan pul — keyingi oylar uchun avans.
+    future_allocated = (
+        PaymentAllocation.objects.filter(payment__in=payments, released_at__isnull=True)
+        .filter(
+            Q(invoice__period_year__gt=year)
+            | Q(invoice__period_year=year, invoice__period_month__gt=month)
+        )
+        .aggregate(total=Sum("amount"))["total"]
+        or zero
+    )
+    unallocated = cash_total - (
+        PaymentAllocation.objects.filter(payment__in=payments, released_at__isnull=True).aggregate(
+            total=Sum("amount")
+        )["total"]
+        or zero
+    )
+    advances = future_allocated + unallocated
+
+    # --- Qarz: shu oy va eskilari (aging) ---
+    outstanding = amount_due - amount_paid
+    aging_qs = Invoice.objects.filter(
+        organization_id=organization_id,
+        status__in=[InvoiceStatus.ISSUED, InvoiceStatus.PARTIALLY_PAID, InvoiceStatus.OVERDUE],
+    ).filter(Q(period_year__lt=year) | Q(period_year=year, period_month__lte=month))
+    if branch_id:
+        aging_qs = aging_qs.filter(branch_id=branch_id)
+    aging = [
+        {
+            "period": f"{row['period_year']}-{row['period_month']:02d}",
+            "outstanding": f"{row['due'] - row['paid']:.2f}",
+            "children": row["children"],
+        }
+        for row in aging_qs.values("period_year", "period_month")
+        .annotate(
+            due=Sum("amount_due"), paid=Sum("amount_paid"), children=Count("child", distinct=True)
+        )
+        .order_by("-period_year", "-period_month")
+        if row["due"] - row["paid"] > 0
+    ]
+
+    # --- Tenglik ---
+    lines_ok = lines_total == amount_due
+    allocation_ok = collected == amount_paid
+    balance_ok = charged + benefits + recalculated == collected + outstanding
+    check = {
+        "ok": bool(lines_ok and allocation_ok and balance_ok),
+        "lines_match_invoices": lines_ok,
+        "allocations_match_paid": allocation_ok,
+        "equation": f"{charged:.2f} + ({benefits:.2f}) + ({recalculated:.2f}) = "
+        f"{collected:.2f} + {outstanding:.2f}",
+    }
+
+    closed = None
+    close_qs = MonthClose.objects.filter(
+        organization_id=organization_id, period_year=year, period_month=month
+    ).select_related("closed_by")
+    if branch_id:
+        close_qs = close_qs.filter(branch_id=branch_id)
+    record = close_qs.first()
+    if record is not None:
+        closed = {
+            "closed_at": record.created_at.isoformat(),
+            "closed_by": record.closed_by.full_name if record.closed_by_id else "",
+        }
+
+    def money(value: Decimal) -> str:
+        return f"{value:.2f}"
+
+    return {
+        "period": f"{year}-{month:02d}",
+        "roster": len(invoiced_children) + no_invoice,
+        "categories": [
+            {
+                "category": key,
+                "label": str(_CATEGORY_LABELS.get(key, key)),
+                "children": row["children"],
+                "charged": money(row["charged"]),
+                "benefit": money(row["benefit"]),
+                "due": money(row["due"]),
+            }
+            for key, row in sorted(categories.items(), key=lambda item: -item[1]["children"])
+        ],
+        "invoiced": {
+            "charged": money(charged),
+            "benefits": money(benefits),
+            "recalculations": money(recalculated),
+            "amount_due": money(amount_due),
+        },
+        "benefits_total": money(benefits),
+        "recalculations": [
+            {
+                "kind": key,
+                "label": entry["label"],
+                "count": entry["count"],
+                "amount": money(entry["amount"]),
+            }
+            for key, entry in sorted(recalcs.items())
+        ],
+        "collected_for_month": {
+            "total": money(collected),
+            "before_month": money(before),
+            "in_month": money(during),
+            "after_month": money(after),
+            "by_method": [
+                {"method": method, "total": money(total)}
+                for method, total in sorted(collected_by_method.items())
+            ],
+        },
+        "cash_received": {
+            "total": money(cash_total),
+            "by_method": [
+                {"method": method, "total": money(total)}
+                for method, total in cash_by_method.items()
+            ],
+            "advances_for_later": money(advances),
+        },
+        "outstanding": money(outstanding),
+        "aging": aging,
+        "check": check,
+        "closed": closed,
+    }
+
+
+def monthly_table_rows(
+    *, organization_id: Any, year: int, month: int, branch_id: Any = None, **_: Any
+) -> list[dict[str, Any]]:
+    """
+    Eski "oylik to'lov jadvali" ko'rinishi — o'tish davrida Excel bilan
+    solishtirish uchun (brif §6). Bitta bola — bitta qator.
+    """
+    from apps.finance.models import PaymentAllocation
+
+    invoices = _month_invoices(
+        organization_id=organization_id, branch_id=branch_id, year=year, month=month
+    )
+    groups = dict(
+        Child.objects.filter(
+            pk__in=[invoice.child_id for invoice in invoices],
+            enrollments__status=EnrollmentState.ACTIVE,
+            enrollments__end_date__isnull=True,
+        ).values_list("pk", "enrollments__group__name")
+    )
+    paid: dict[Any, dict[str, Decimal]] = {}
+    dates: dict[Any, list[str]] = {}
+    for allocation in (
+        PaymentAllocation.objects.filter(invoice__in=invoices, released_at__isnull=True)
+        .select_related("payment")
+        .order_by("payment__paid_at")
+    ):
+        per = paid.setdefault(allocation.invoice_id, {})
+        method = allocation.payment.method
+        per[method] = per.get(method, Decimal("0")) + allocation.amount
+        stamp = timezone.localtime(allocation.payment.paid_at).strftime("%d.%m")
+        if stamp not in dates.setdefault(allocation.invoice_id, []):
+            dates[allocation.invoice_id].append(stamp)
+
+    rows = []
+    for invoice in invoices:
+        lines = list(invoice.lines.all())
+
+        def total(predicate: Any, lines: list[Any] = lines) -> Decimal:
+            return sum((line.line_total for line in lines if predicate(line)), Decimal("0"))
+
+        methods = paid.get(invoice.id, {})
+        rows.append(
+            {
+                "child": invoice.child.full_name,
+                "group": groups.get(invoice.child_id) or "",
+                "price": total(lambda line: line.kind == "base"),
+                "benefit": total(lambda line: line.kind == "benefit"),
+                "cash": methods.get("cash", Decimal("0")),
+                "terminal": methods.get("terminal", Decimal("0")),
+                "bank_transfer": methods.get("bank_transfer", Decimal("0")),
+                "click": methods.get("click", Decimal("0")) + methods.get("online", Decimal("0")),
+                "payme": methods.get("payme", Decimal("0")),
+                "payroll": methods.get("payroll", Decimal("0")),
+                "paid_dates": ", ".join(dates.get(invoice.id, [])),
+                "medical": total(
+                    lambda line: line.kind == "credit"
+                    and line.absence_claim is not None
+                    and line.absence_claim.kind == "medical"
+                ),
+                "application": total(
+                    lambda line: line.kind == "credit"
+                    and not (
+                        line.absence_claim is not None and line.absence_claim.kind == "medical"
+                    )
+                ),
+                "proration": total(lambda line: line.kind in ("proration", "pause")),
+                "due": invoice.amount_due,
+                "balance": invoice.amount_due - invoice.amount_paid,
+            }
+        )
+    return rows

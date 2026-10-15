@@ -48,6 +48,7 @@ FILENAME_BY_TYPE: dict[str, dict[str, str]] = {
     "attendance": {"uz": "davomat", "ru": "poseshchaemost", "en": "attendance"},
     "debtors": {"uz": "qarzdorlar", "ru": "dolzhniki", "en": "debtors"},
     "profit-loss": {"uz": "foyda-zarar", "ru": "pribyl-ubytok", "en": "profit-loss"},
+    "monthly": {"uz": "oylik-tolov-jadvali", "ru": "mesyachnaya-tablica", "en": "monthly-table"},
 }
 
 
@@ -185,6 +186,27 @@ def COLUMNS(report_type: str) -> list[Column]:  # noqa: N802 — jadval nomi kab
             ("sick", gettext("Kasal"), "number"),
             ("leave", gettext("Taʼtilda"), "number"),
             ("working_days", gettext("Ish kunlari"), "number"),
+        ]
+    if report_type == "monthly":
+        # Eski Excel'ning ustunlari — o'tish davrida qatorma-qator
+        # solishtirish uchun (Bosqich 12.6).
+        return [
+            ("child", gettext("Bola"), "text"),
+            ("group", gettext("Guruh"), "text"),
+            ("price", gettext("Narx"), "money"),
+            ("benefit", gettext("Imtiyoz"), "money"),
+            ("cash", gettext("Naqd"), "money"),
+            ("terminal", gettext("Terminal"), "money"),
+            ("bank_transfer", gettext("Oʻtkazma"), "money"),
+            ("click", "Click", "money"),
+            ("payme", "Payme", "money"),
+            ("payroll", gettext("Oylikdan ushlash"), "money"),
+            ("paid_dates", gettext("Toʻlov sanalari"), "text"),
+            ("medical", gettext("Maʼlumotnoma"), "money"),
+            ("application", gettext("Ariza"), "money"),
+            ("proration", gettext("Kelgan / ketgan"), "money"),
+            ("due", gettext("Hisoblangan"), "money"),
+            ("balance", gettext("Qoldiq"), "money"),
         ]
     if report_type == "profit-loss":
         return [

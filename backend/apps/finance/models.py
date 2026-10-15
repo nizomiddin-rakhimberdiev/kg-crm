@@ -28,6 +28,7 @@ __all__ = [
     "Payment",
     "PaymentAllocation",
     "ChildLedgerEntry",
+    "MonthClose",
 ]
 
 
@@ -253,6 +254,16 @@ class InvoiceLine(BaseModel):
         null=True,
         blank=True,
         related_name="invoice_lines",
+    )
+    # Qayta hisob qatori qaysi arizadan (Bosqich 12.6): oylik yig'ma
+    # qayta hisoblarni TURI bo'yicha (ma'lumotnoma — ovqat puli / to'liq,
+    # ariza) aynan shu qatorlardan ajratadi, matndan taxmin qilmasdan.
+    absence_claim = models.ForeignKey(
+        "attendance.AbsenceClaim",
+        on_delete=models.SET_NULL,
+        related_name="invoice_lines",
+        null=True,
+        blank=True,
     )
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("1"))
     unit_amount = models.DecimalField(max_digits=12, decimal_places=2)
@@ -643,3 +654,45 @@ class ChildLedgerEntry(BranchScopedModel):
     @property
     def signed_amount(self) -> Decimal:
         return self.amount if self.direction == Direction.DEBIT else -self.amount
+
+
+class MonthClose(BranchScopedModel):
+    """
+    Yopilgan oy (Bosqich 12.6, brif §6).
+
+    Yopilgandan keyin o'sha oy uchun faktura chiqarilmaydi va bekor
+    qilinmaydi, pauza qo'yilmaydi; kechikkan qayta hisob esa KEYINGI oy
+    fakturasiga tuzatish qatori bo'lib tushadi. To'lov va hisobdan
+    chiqarish o'zi tuzatish hujjati — ular yopilgan oy qarziga ham
+    qo'llanadi. Qayta ochish yo'q: yopish — kelishuv.
+
+    `snapshot` — yopilgan paytdagi yig'ma: keyin "o'shanda nima edi?"
+    degan savolga javob.
+    """
+
+    period_year = models.PositiveSmallIntegerField()
+    period_month = models.PositiveSmallIntegerField()
+    closed_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="months_closed",
+        null=True,
+        blank=True,
+    )
+    snapshot = models.JSONField(default=dict)
+
+    class Meta:
+        db_table = "month_close"
+        ordering = ["-period_year", "-period_month"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["branch", "period_year", "period_month"], name="uq_month_close_period"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(period_month__gte=1, period_month__lte=12),
+                name="ck_month_close_month",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.period_year}-{self.period_month:02d}"

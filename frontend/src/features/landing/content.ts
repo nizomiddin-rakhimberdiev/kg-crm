@@ -518,8 +518,8 @@ const uz: Copy = {
         text: 'Qoldiqdan ortiq chiqim rad etiladi — qaysi hisob, qancha bor, qancha yetmaydi. Har bir chiqim qator-qator: «Bozorlik — 600 000» emas, «Kartoshka, 50 kg × 3 000».',
       },
       {
-        title: 'Hisobot — Excel fayl boʻlib',
-        text: 'Tushum, xarajat, ish haqi, davomat, qarzdorlar — har biri .xlsx boʻlib yuklanadi. Buxgalterga yuborish uchun qayta terish shart emas.',
+        title: 'Oy oʻzi yigʻiladi va yopiladi',
+        text: 'Toifalar, imtiyozlar, qayta hisoblar, «kassa tushumi» va «oy uchun yigʻilgan» alohida — avans ikki marta sanalmaydi. Tenglik oʻzi tekshiriladi; yopilgan oy faqat tuzatish qatori bilan oʻzgaradi. Eski «oylik toʻlov jadvali» va boshqa hisobotlar — .xlsx.',
       },
       {
         title: 'Ikki bosqichli himoya',
@@ -1085,8 +1085,8 @@ const ru: Copy = {
         text: 'Расход больше остатка отклоняется — с названием счёта, остатком и суммой нехватки. Каждый расход построчно: не «рынок — 600 000», а «картошка, 50 кг × 3 000».',
       },
       {
-        title: 'Отчёт — файлом Excel',
-        text: 'Выручка, расходы, зарплата, посещаемость, должники — каждый выгружается в .xlsx. Чтобы отправить бухгалтеру, ничего не нужно перенабирать.',
+        title: 'Месяц сводится и закрывается сам',
+        text: 'Категории, льготы, перерасчёты, «поступления в кассу» и «собрано за месяц» — отдельно, аванс не считается дважды. Равенство проверяется само; закрытый месяц меняется только строкой корректировки. Привычная «месячная таблица оплат» и другие отчёты — в .xlsx.',
       },
       {
         title: 'Двухэтапная защита',
@@ -1645,8 +1645,8 @@ const en: Copy = {
         text: 'A payment larger than the balance is refused, naming the account, what it holds and what is short. Every expense is itemised: not “market — 600 000” but “potatoes, 50 kg × 3 000”.',
       },
       {
-        title: 'Reports as Excel files',
-        text: 'Revenue, expenses, payroll, attendance, debtors — each downloads as .xlsx. Nothing has to be retyped to send it to an accountant.',
+        title: 'The month sums and closes itself',
+        text: 'Categories, benefits, recalculations, “cash received” and “collected for the month” kept apart, so an advance is never counted twice. The equation checks itself; a closed month changes only through a correction line. The familiar monthly payment table and every other report download as .xlsx.',
       },
       {
         title: 'Two-step protection',
