@@ -68,7 +68,78 @@ export interface MonthlySummary {
   closed: { closed_at: string; closed_by: string } | null
 }
 
+/** "Bogʻcha moliyasi bugun" (Bosqich 13.4). */
+export type CardStatus = 'ok' | 'warning' | 'critical'
+export interface HomeCard {
+  key: 'money' | 'debts' | 'spending' | 'profit' | 'checks' | 'growth'
+  title: string
+  value: string | number
+  status: CardStatus
+  note: string
+  detail?: {
+    cash: string
+    bank: string
+    in_transit: string
+    custody: Array<{
+      user_id: string
+      full_name: string
+      cash: string
+      bank: string
+      amount: string
+    }>
+  }
+  top?: Array<{ category: string; total: string }>
+  margin?: string | null
+  attention?: number
+  occupancy?: number | null
+  capacity?: number
+}
+export interface CheckRow {
+  id: string
+  title: string
+  status: 'ok' | 'fail' | 'na'
+  detail: string
+  link: string
+}
+export interface AttentionItem {
+  rule: string
+  title: string
+  severity: 'info' | 'warning' | 'critical'
+  message: string
+  amount: string | null
+  link: string
+  at: string | null
+}
+export interface DailyView {
+  date: string
+  receipts: { total: string; by_method: Array<{ method: string; total: string }> }
+  expenses: {
+    total: string
+    items: Array<{
+      id: string
+      category: string
+      amount: string
+      description: string
+      pot: string | null
+      has_receipt: boolean
+    }>
+  }
+  counts: Array<{ pot: string; counted: string; difference: string; reason: string }>
+  handovers: Array<{ from: string; to: string; amount: string; status: string }>
+  new_debts: { count: number; total: string }
+  attention: AttentionItem[]
+}
+
 export const reportsApi = {
+  home: (date?: string) =>
+    api.get<{ date: string; cards: HomeCard[]; all_clear: boolean }>(
+      '/reports/home',
+      date ? { date } : undefined,
+    ),
+  daily: (date: string) => api.get<DailyView>('/reports/daily', { date }),
+  checks: (year: number, month: number) => api.get<CheckRow[]>('/reports/checks', { year, month }),
+  attention: (year: number, month: number) =>
+    api.get<{ items: AttentionItem[]; count: number }>('/reports/attention', { year, month }),
   revenue: (from: string, to: string, groupBy: ReportGroupBy = 'month') =>
     api.get<RevenueReport>('/reports/revenue', { from, to, group_by: groupBy }),
   // Chiqimlar alohida — foyda-zararga ruxsati yo'q (oylik maoshni ko'rmaydigan)

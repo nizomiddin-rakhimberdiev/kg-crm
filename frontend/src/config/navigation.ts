@@ -16,6 +16,7 @@ import {
   Building2,
   Users2,
   Vault,
+  Gauge,
   type LucideIcon,
 } from 'lucide-react'
 import type { PermissionCode } from '@/lib/rbac/useCan'
@@ -82,6 +83,16 @@ const allNavItems: NavItem[] = [
     section: 'children',
     icon: Users2,
     permission: 'children.read',
+  },
+  // Moliya markazi (Bosqich 13.4): bugun, kun, nazorat — egasi va
+  // direktor uchun; foyda va oylik jamini koʻrsatgani uchun `payroll.read`.
+  {
+    label: t('Moliya markazi'),
+    to: '/finance',
+    section: 'finance',
+    icon: Gauge,
+    permission: 'payroll.read',
+    requires: 'reports.read',
   },
   {
     label: t('Toʻlovlar'),

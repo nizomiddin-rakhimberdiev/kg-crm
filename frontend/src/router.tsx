@@ -83,6 +83,7 @@ const PayrollPage = lazy(() => import('./features/payroll/pages/PayrollPage'))
 const InventoryPage = lazy(() => import('./features/inventory/pages/InventoryPage'))
 const ExpensesPage = lazy(() => import('./features/expenses/pages/ExpensesPage'))
 const CashPage = lazy(() => import('./features/cash/pages/CashPage'))
+const FinanceCenterPage = lazy(() => import('./features/finance-center/pages/FinanceCenterPage'))
 const ReportsPage = lazy(() => import('./features/reports/pages/ReportsPage'))
 const BranchesPage = lazy(() => import('./features/branches/pages/BranchesPage'))
 const NotificationsPage = lazy(() => import('./features/notifications/pages/NotificationsPage'))
@@ -302,6 +303,10 @@ export const routes: RouteObject[] = [
           {
             element: <PermissionRoute permission="payments.read" />,
             children: [{ path: 'cash', element: <CashPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="payroll.read" requires="reports.read" />,
+            children: [{ path: 'finance', element: <FinanceCenterPage /> }],
           },
           {
             // Sahifa moliyaviy — `reports.read` emas, moliya ruxsati

@@ -28,7 +28,7 @@ describe('navigatsiya boʻlimlari', () => {
 
   it('moliya boʻlimida pul bilan ishlaydigan sahifalar', () => {
     const finance = navItems.filter((item) => item.section === 'finance').map((item) => item.to)
-    expect(finance).toEqual(['/payments', '/debtors', '/cash', '/expenses', '/reports'])
+    expect(finance).toEqual(['/finance', '/payments', '/debtors', '/cash', '/expenses', '/reports'])
   })
 
   it('bolalar boʻlimida kundalik ish', () => {
