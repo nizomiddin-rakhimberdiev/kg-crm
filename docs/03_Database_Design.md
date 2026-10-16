@@ -722,6 +722,10 @@ Organization-scoped (RLS). `branch_id` (nullable — organisation-wide pack), `p
 
 All organization-scoped (RLS). **`report_review`** — one row per (organization, branch, period), `UNIQUE … NULLS NOT DISTINCT`: `status` (`draft` · `submitted` · `question` · `returned` · `resubmitted` · `accepted`), `snapshot_id` (the version under review, `RESTRICT`), `submitted_by_id`, `submitted_at`, `late_notified_at`. It holds the process, never a number. **`report_event`** — append-only history: `kind` (`note` · `submit` · `question` · `answer` · `accept` · `return` · `approve`), `path` (a number path, `checks:<id>` or `attention:<rule>:<type>:<id>`), `text`, `parent_id` (an answer under its question), `snapshot_id`, `author_id`. **`report_share_link`** — `snapshot_id`, `token_hash` (SHA-256, unique; the token itself is never stored), `label`, `expires_at`, `revoked_at`, `opened_count`, `last_opened_at`, `created_by_id`.
 
+### 13.3e `budget_line` — the monthly plan (Bosqich 13.7, ADR-43)
+
+Organization-scoped (RLS). `branch_id` (nullable — organization-wide plan), `period_year`, `period_month`, `kind` (`revenue` · `other_income` · `payroll` · `category`), `category_id` (FK → expense_category, `RESTRICT`; required exactly when `kind = 'category'` — `CHECK`), `amount` (`NUMERIC(14,2)`, `CHECK ≥ 0`), `updated_by_id`; `UNIQUE (organization, branch, period, kind, category) NULLS NOT DISTINCT`. Editable data, not a ledger: saving a month replaces its lines. The actual beside each line is computed, never stored.
+
 ### 13.4 `invoice_line`
 For itemization beyond the base tariff (extra meals, activities, one-off fees).
 

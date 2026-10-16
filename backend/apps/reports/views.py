@@ -222,6 +222,15 @@ _ACTION_REPORT: dict[str, str] = {
     "review_share": "pack",
     "review_share_revoke": "pack",
     "network": "pack",
+    "budget": "finance",
+    "budget_save": "finance",
+    "budget_copy": "finance",
+    "forecast": "finance",
+    "trends": "finance",
+    "kpi": "finance",
+    "annual": "finance",
+    "annual_pdf": "finance",
+    "annual_xlsx": "finance",
     "cash_flow": "finance",
     "position": "finance",
     "completeness": "monthly",
@@ -277,6 +286,17 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
         "review_share": "approve",
         "review_share_revoke": "approve",
         "network": "read",
+        # Reja (13.7): o'qish — moliya ko'radigan har kim; o'zgartirish —
+        # `reports.update` (egasi, direktor).
+        "budget": "read",
+        "budget_save": "update",
+        "budget_copy": "update",
+        "forecast": "read",
+        "trends": "read",
+        "kpi": "read",
+        "annual": "read",
+        "annual_pdf": "read",
+        "annual_xlsx": "read",
     }
     lookup_value_regex = "|".join(REPORT_TYPES)
     # `ScopedRateThrottle` shu nomdagi tezlikni qidiradi. U faqat
@@ -745,6 +765,162 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
         year, month = self._year_month(request)
         return Response(
             network.network(organization_id=user.organization_id, year=year, month=month)
+        )
+
+    # --- Reja, prognoz, ko'rsatkichlar, trend, yillik (Bosqich 13.7) ---
+
+    @action(detail=False, methods=["get"], url_path="budget")
+    def budget(self, request: Request) -> Response:
+        """`GET /reports/budget?year=&month=` — reja va fakt yonma-yon."""
+        from apps.reports import planning
+
+        organization_id, year, month, branch = self._pack_scope(request)
+        return Response(
+            planning.budget(
+                organization_id=organization_id, year=year, month=month, branch_id=branch
+            )
+        )
+
+    @budget.mapping.put
+    def budget_save(self, request: Request) -> Response:
+        """`PUT /reports/budget {year, month, lines:[{kind, category_id?, amount}]}`."""
+        from apps.audit import services as audit
+        from apps.reports import planning
+
+        organization_id, year, month, branch = self._pack_scope(request)
+        lines = request.data.get("lines")
+        if not isinstance(lines, list):
+            raise BusinessRuleViolation(gettext("Reja qatorlari roʻyxat boʻlishi kerak."))
+        user = request_user(request)
+        planning.save_budget(
+            organization=user.organization,
+            year=year,
+            month=month,
+            branch_id=branch,
+            lines=lines,
+            user=user,
+        )
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="budget",
+            changes={"period": f"{year}-{month:02d}", "lines": len(lines)},
+        )
+        return Response(
+            planning.budget(
+                organization_id=organization_id, year=year, month=month, branch_id=branch
+            )
+        )
+
+    @action(detail=False, methods=["post"], url_path="budget/copy")
+    def budget_copy(self, request: Request) -> Response:
+        """`POST /reports/budget/copy {from_year, from_month, year, month}`."""
+        from apps.reports import planning
+
+        organization_id, year, month, branch = self._pack_scope(request)
+        source = (
+            _parse_int(request.data.get("from_year"), 0, low=2000, high=2100),
+            _parse_int(request.data.get("from_month"), 0, low=1, high=12),
+        )
+        user = request_user(request)
+        planning.copy_budget(
+            organization=user.organization,
+            branch_id=branch,
+            source=source,
+            target=(year, month),
+            user=user,
+        )
+        return Response(
+            planning.budget(
+                organization_id=organization_id, year=year, month=month, branch_id=branch
+            )
+        )
+
+    @action(detail=False)
+    def forecast(self, request: Request) -> Response:
+        """`GET /reports/forecast?date=` — 30/60/90 kun va xavfsiz olish summasi."""
+        from apps.reports import forecast
+
+        organization_id, _year, _month, branch = self._pack_scope(request)
+        day = _parse_date(request.query_params.get("date"), timezone.localdate())
+        return Response(
+            forecast.forecast(organization_id=organization_id, as_of=day, branch_id=branch)
+        )
+
+    @action(detail=False)
+    def trends(self, request: Request) -> Response:
+        """`GET /reports/trends?year=&month=` — shu oy bilan tugaydigan 12 oy."""
+        from apps.reports import planning
+
+        organization_id, year, month, branch = self._pack_scope(request)
+        return Response(
+            planning.trends(
+                organization_id=organization_id, year=year, month=month, branch_id=branch
+            )
+        )
+
+    @action(detail=False)
+    def kpi(self, request: Request) -> Response:
+        """`GET /reports/kpi?year=&month=` — ko'rsatkichlar va ularning ta'rifi."""
+        from apps.reports import planning
+
+        organization_id, year, month, branch = self._pack_scope(request)
+        return Response(
+            planning.kpis(organization_id=organization_id, year=year, month=month, branch_id=branch)
+        )
+
+    def _annual(self, request: Request) -> tuple[dict[str, Any], int]:
+        from apps.audit import services as audit
+        from apps.reports import planning
+
+        organization_id, _year, _month, branch = self._pack_scope(request)
+        year = _parse_int(
+            request.query_params.get("year"), timezone.localdate().year, low=2000, high=2100
+        )
+        audit.record(
+            action="view",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="report_annual",
+            changes={"year": year, "branch": str(branch) if branch else None},
+        )
+        return planning.annual(organization_id=organization_id, year=year, branch_id=branch), year
+
+    @action(detail=False)
+    def annual(self, request: Request) -> Response:
+        """`GET /reports/annual?year=` — yillik hisobot (12 oy yig'indisi)."""
+        data, _year = self._annual(request)
+        return Response(data)
+
+    @action(detail=False, url_path="annual/pdf")
+    def annual_pdf(self, request: Request) -> FileResponse:
+        import io
+
+        from apps.reports import pack_render
+
+        data, year = self._annual(request)
+        content = pack_render.to_pdf(
+            data,
+            title=gettext("Yillik moliyaviy hisobot — {year}").format(year=year),
+            prepared_by=request_user(request).full_name,
+        )
+        return FileResponse(
+            io.BytesIO(content), filename=f"yillik-{year}.pdf", content_type="application/pdf"
+        )
+
+    @action(detail=False, url_path="annual/xlsx")
+    def annual_xlsx(self, request: Request) -> FileResponse:
+        import io
+
+        from apps.reports import pack_render
+
+        data, year = self._annual(request)
+        months = next(section for section in data["sections"] if section["key"] == "months")
+        return FileResponse(
+            io.BytesIO(pack_render.to_xlsx(data, raw={gettext("Oylar"): months["rows"]})),
+            filename=f"yillik-{year}.xlsx",
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
     @action(detail=False, url_path="pack/pdf")

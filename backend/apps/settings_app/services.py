@@ -88,6 +88,15 @@ DEFAULTS: dict[str, Any] = {
     "governance.acceptors": "owner",
     # Topshirish muddati — keyingi oyning shu sanasi.
     "governance.deadline_day": 5,
+    # Bosqich 13.7: prognoz va xavfsiz olish summasi. Zaxira — summa
+    # (0 bo'lsa) yoki shuncha oylik ish haqi fondi (yalpi + ijtimoiy soliq).
+    "forecast.reserve_amount": 0,
+    "forecast.reserve_months": 0.5,
+    # Oylik qaysi kuni to'lanadi (o'tgan oy uchun) va soliq qaysi kuni.
+    "forecast.pay_day": 10,
+    "forecast.tax_day": 15,
+    # "Bir yangi bolaga marketing xarajati" shu toifa (va ichki toifalari).
+    "report.marketing_category": "Marketing",
     # --- Bosqich 12.2: imtiyozlar (Oriental Kinderland qiymatlari) ---
     #
     # Aka-uka: bir oiladagi (umumiy vasiy) har bir bolaga shuncha so'm

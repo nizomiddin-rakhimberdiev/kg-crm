@@ -167,14 +167,23 @@ def home(*, organization_id: Any, day: date, branch_id: Any = None) -> dict[str,
         organization_id=organization_id, year=day.year, month=day.month, branch_id=branch_id
     )
     profit = Decimal(pnl["operating_profit"])
+    # "...va qancha pul olsam bo'ladi?" — xavfsiz olish summasi (13.7).
+    from apps.reports import forecast
+
+    safe = forecast.forecast(organization_id=organization_id, as_of=day, branch_id=branch_id)[
+        "safe_withdrawal"
+    ]
     cards.append(
         _card(
             "profit",
-            gettext("Foyda qancha?"),
+            gettext("Foyda qancha va qancha olsa boʻladi?"),
             _money(profit),
             "critical" if profit < 0 else "ok",
-            gettext("Marja {margin}%").format(margin=pnl["margin"] or "—"),
+            gettext("Marja {margin}%; xavfsiz olish {safe} soʻm").format(
+                margin=pnl["margin"] or "—", safe=_som(Decimal(safe["amount"]))
+            ),
             margin=pnl["margin"],
+            safe_withdrawal=safe,
         )
     )
 

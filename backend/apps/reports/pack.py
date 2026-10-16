@@ -482,6 +482,28 @@ def _expenses(
     }
 
 
+def _plan(org: Any, branch: Any, year: int, month: int) -> dict[str, Any]:
+    """Reja va fakt; oy oxiridan 30/60/90 kunlik prognoz (13.7)."""
+    from apps.reports import forecast, planning
+
+    _start, end = _bounds(year, month)
+    budget = planning.budget(organization_id=org, year=year, month=month, branch_id=branch)
+    outlook = forecast.forecast(organization_id=org, as_of=end, branch_id=branch)
+    return {
+        "available": True,
+        "has_plan": budget["has_plan"],
+        "budget": budget["lines"],
+        "totals": budget["totals"],
+        "forecast": {
+            "as_of": outlook["as_of"],
+            "opening": outlook["opening"],
+            "buckets": outlook["buckets"],
+            "basis": outlook["basis"],
+            "safe_withdrawal": outlook["safe_withdrawal"],
+        },
+    }
+
+
 def _payroll(org: Any, branch: Any, year: int, month: int, revenue: Decimal) -> dict[str, Any]:
     from apps.payroll.models import PayrollItem, PayrollPayout
 
@@ -772,7 +794,7 @@ def build(*, organization_id: Any, year: int, month: int, branch_id: Any = None)
         },
         "profit_vs_cash": _profit_vs_cash(pnl, flow),
         "position": position_section,
-        "plan": {"available": False, "note": gettext("Reja va prognoz — Bosqich 13.7.")},
+        "plan": _plan(org, branch, year, month),
         "taxes": {
             "liability_end": position_end["liabilities"]["taxes"],
             "paid_in_month": flow["outflows"].get("taxes", "0.00"),

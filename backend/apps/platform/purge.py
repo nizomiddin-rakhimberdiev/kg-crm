@@ -118,6 +118,8 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.expenses.ExpenseDraft",
     "apps.expenses.ExpenseItem",
     "apps.expenses.Expense",
+    # Reja toifaga `RESTRICT` bilan bog'langan — toifadan OLDIN (13.7).
+    "apps.reports.BudgetLine",
     "apps.expenses.ExpenseCategory",
     # Yetkazib beruvchi chiqimdan KEYIN: nasiya chiqim unga `RESTRICT` (13.2a).
     "apps.inventory.Supplier",

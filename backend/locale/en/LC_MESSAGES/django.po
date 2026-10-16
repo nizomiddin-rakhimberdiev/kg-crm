@@ -2359,3 +2359,165 @@ msgstr "❓ {who} asked a question ({period}): {text}"
 
 msgid "📄 Hisobot topshirildi: {period} (v{version}), {who}."
 msgstr "📄 Report submitted: {period} (v{version}), {who}."
+
+msgid "(Toʻliq narxdagi summa − imtiyozdan keyingi summa) ÷ toʻliq narxdagi summa."
+msgstr "(Full-price amount − amount after benefits) ÷ full-price amount."
+
+msgid "Bandlik"
+msgstr "Occupancy"
+
+msgid "Bir bola-kunga oziq-ovqat"
+msgstr "Food per child-day"
+
+msgid "Bir boladan oʻrtacha daromad"
+msgstr "Average revenue per child"
+
+msgid "Bir yangi bolaga marketing xarajati"
+msgstr "Marketing cost per new child"
+
+msgid "Daromad (toʻlovlar)"
+msgstr "Revenue (fees)"
+
+msgid "Doimiy xarajatlar ÷ (bir boladan oʻrtacha daromad − bir boladagi oʻzgaruvchan xarajat). Doimiy — ish haqi va oziq-ovqatdan boshqa xarajatlar; oʻzgaruvchan — oziq-ovqat."
+msgstr "Fixed costs ÷ (average revenue per child − variable cost per child). Fixed: payroll and expenses other than food; variable: food."
+
+msgid "Eski qarzlar va kreditlar jadvali kirimga qoʻshilmagan."
+msgstr "Old debts and loan schedules are not counted as income."
+
+msgid "Faol bolalar ÷ guruhlar sigʻimi."
+msgstr "Active children ÷ group capacity."
+
+msgid "Foyda qancha va qancha olsa boʻladi?"
+msgstr "What is the profit and how much can be taken out?"
+
+msgid "Foyda-zarar (yil)"
+msgstr "Profit and loss (year)"
+
+msgid "Hamma qabullar boʻyicha: ketganlar — kelgan kunidan ketgan kunigacha, qolganlar — oy oxirigacha."
+msgstr "Across all enrolments: those who left — from arrival to leaving; those who stay — to the month end."
+
+msgid "Hisoblangan, hali toʻlanmagan oylik"
+msgstr "Accrued payroll not yet paid"
+
+msgid "Hisoblangan, hali toʻlanmagan soliqlar"
+msgstr "Accrued taxes not yet paid"
+
+msgid "Holat — yil oxiri"
+msgstr "Position — year end"
+
+msgid "Imtiyoz ulushi"
+msgstr "Benefit share"
+
+msgid "Ish haqi (ijtimoiy soliq bilan)"
+msgstr "Payroll (with social tax)"
+
+msgid "Ish haqi ulushi"
+msgstr "Payroll share"
+
+msgid "Kassa + bank + yoʻldagi pul − kelgusi 30 kun majburiyatlari − zaxira. Zaxira sozlanadi, sukut — 0,5 oylik ish haqi fondi."
+msgstr "Cash + bank + money in transit − obligations for the next 30 days − reserve. The reserve is a setting; by default half a month’s payroll fund."
+
+msgid "Ketish darajasi"
+msgstr "Churn rate"
+
+msgid "Koʻchiriladigan oyda reja yoʻq."
+msgstr "The source month has no plan."
+
+msgid "Marja {margin}%; xavfsiz olish {safe} soʻm"
+msgstr "Margin {margin}%; safe to take {safe} so‘m"
+
+msgid "Marketing toifasidagi xarajat ÷ oy davomida kelgan bolalar."
+msgstr "Marketing category spending ÷ children who joined during the month."
+
+msgid "Nasiya: {supplier}, muddati {due}"
+msgstr "On credit: {supplier}, due {due}"
+
+msgid "Operatsion foyda ÷ daromad."
+msgstr "Operating profit ÷ revenue."
+
+msgid "Operatsion marja"
+msgstr "Operating margin"
+
+msgid "Oy davomida ketganlar ÷ oy boshidagi bolalar."
+msgstr "Children who left during the month ÷ children at the start."
+
+msgid "Oy uchun yigʻilgan ÷ toʻlanishi kerak boʻlgan summa."
+msgstr "Collected for the month ÷ amount due."
+
+msgid "Oylar"
+msgstr "Months"
+
+msgid "Oylar boʻyicha"
+msgstr "By month"
+
+msgid "Oziq-ovqat xarajati ÷ davomat boʻyicha bola-kunlar."
+msgstr "Food spending ÷ child-days from attendance."
+
+msgid "Oʻrtacha qolish muddati (oy)"
+msgstr "Average stay (months)"
+
+msgid "Pul oqimi (yil)"
+msgstr "Cash flow (year)"
+
+msgid "Reja qatori turi notoʻgʻri: {kind}"
+msgstr "Invalid plan line type: {kind}"
+
+msgid "Reja qatorlari roʻyxat boʻlishi kerak."
+msgstr "Plan lines must be a list."
+
+msgid "Reja summasi manfiy boʻlmaydi."
+msgstr "A plan amount cannot be negative."
+
+msgid "Shu oy ish haqi xarajati (ijtimoiy soliq bilan) ÷ daromad."
+msgstr "This month’s payroll cost (with social tax) ÷ revenue."
+
+msgid "Sozlamadagi summa"
+msgstr "Amount from settings"
+
+msgid "Summa notoʻgʻri: {value}"
+msgstr "Invalid amount: {value}"
+
+msgid "Toʻlanishi kerak boʻlgan summa ÷ faol bolalar."
+msgstr "Amount due ÷ active children."
+
+msgid "Xarajat toifasi"
+msgstr "Expense category"
+
+msgid "Xarajatlar toifalar boʻyicha"
+msgstr "Expenses by category"
+
+msgid "Xarajatlar — oxirgi 3 oy oʻrtachasi"
+msgstr "Expenses — last 3 months’ average"
+
+msgid "Xavfsiz olish summasi"
+msgstr "Safe withdrawal amount"
+
+msgid "Yigʻish darajasi"
+msgstr "Collection rate"
+
+msgid "Yillik moliyaviy hisobot — {year}"
+msgstr "Annual financial report — {year}"
+
+msgid "Zararsizlik nuqtasi (bola soni)"
+msgstr "Break-even point (children)"
+
+msgid "oxirgi 3 oy yigʻish darajasi {rate}%"
+msgstr "last 3 months’ collection rate {rate}%"
+
+msgid "yigʻish tarixi yoʻq — 100% olindi"
+msgstr "no collection history — 100% assumed"
+
+msgid "{month:02d}.{year} fakturalari × {rate}, yigʻilgani ayirildi"
+msgstr "{month:02d}.{year} invoices × {rate}, less what is collected"
+
+msgid "{month:02d}.{year} oyligi — oxirgi hisob boʻyicha"
+msgstr "{month:02d}.{year} payroll — from the last run"
+
+msgid "{month:02d}.{year} oylik soliqlari — oxirgi hisob boʻyicha"
+msgstr "{month:02d}.{year} payroll taxes — from the last run"
+
+msgid "{month:02d}.{year}: joriy oy summasi × {rate}"
+msgstr "{month:02d}.{year}: this month’s amount × {rate}"
+
+msgid "{months} oylik ish haqi fondi"
+msgstr "{months} months of the payroll fund"

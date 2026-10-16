@@ -2359,3 +2359,165 @@ msgstr "❓ {who} задал(а) вопрос ({period}): {text}"
 
 msgid "📄 Hisobot topshirildi: {period} (v{version}), {who}."
 msgstr "📄 Отчёт сдан: {period} (v{version}), {who}."
+
+msgid "(Toʻliq narxdagi summa − imtiyozdan keyingi summa) ÷ toʻliq narxdagi summa."
+msgstr "(Сумма по полной цене − сумма после льгот) ÷ сумма по полной цене."
+
+msgid "Bandlik"
+msgstr "Заполненность"
+
+msgid "Bir bola-kunga oziq-ovqat"
+msgstr "Питание на ребёнко-день"
+
+msgid "Bir boladan oʻrtacha daromad"
+msgstr "Средний доход на ребёнка"
+
+msgid "Bir yangi bolaga marketing xarajati"
+msgstr "Маркетинг на одного нового ребёнка"
+
+msgid "Daromad (toʻlovlar)"
+msgstr "Доход (оплаты)"
+
+msgid "Doimiy xarajatlar ÷ (bir boladan oʻrtacha daromad − bir boladagi oʻzgaruvchan xarajat). Doimiy — ish haqi va oziq-ovqatdan boshqa xarajatlar; oʻzgaruvchan — oziq-ovqat."
+msgstr "Постоянные расходы ÷ (средний доход на ребёнка − переменный расход на ребёнка). Постоянные — зарплата и расходы кроме питания; переменные — питание."
+
+msgid "Eski qarzlar va kreditlar jadvali kirimga qoʻshilmagan."
+msgstr "Старые долги и график кредитов в поступления не включены."
+
+msgid "Faol bolalar ÷ guruhlar sigʻimi."
+msgstr "Активные дети ÷ вместимость групп."
+
+msgid "Foyda qancha va qancha olsa boʻladi?"
+msgstr "Какова прибыль и сколько можно забрать?"
+
+msgid "Foyda-zarar (yil)"
+msgstr "Прибыли и убытки (год)"
+
+msgid "Hamma qabullar boʻyicha: ketganlar — kelgan kunidan ketgan kunigacha, qolganlar — oy oxirigacha."
+msgstr "По всем зачислениям: ушедшие — от прихода до ухода, оставшиеся — до конца месяца."
+
+msgid "Hisoblangan, hali toʻlanmagan oylik"
+msgstr "Начисленная, ещё не выплаченная зарплата"
+
+msgid "Hisoblangan, hali toʻlanmagan soliqlar"
+msgstr "Начисленные, ещё не уплаченные налоги"
+
+msgid "Holat — yil oxiri"
+msgstr "Положение — конец года"
+
+msgid "Imtiyoz ulushi"
+msgstr "Доля льгот"
+
+msgid "Ish haqi (ijtimoiy soliq bilan)"
+msgstr "Зарплата (с социальным налогом)"
+
+msgid "Ish haqi ulushi"
+msgstr "Доля зарплаты"
+
+msgid "Kassa + bank + yoʻldagi pul − kelgusi 30 kun majburiyatlari − zaxira. Zaxira sozlanadi, sukut — 0,5 oylik ish haqi fondi."
+msgstr "Касса + банк + деньги в пути − обязательства на 30 дней − резерв. Резерв настраивается, по умолчанию — 0,5 месячного фонда оплаты труда."
+
+msgid "Ketish darajasi"
+msgstr "Отток"
+
+msgid "Koʻchiriladigan oyda reja yoʻq."
+msgstr "В месяце-источнике нет плана."
+
+msgid "Marja {margin}%; xavfsiz olish {safe} soʻm"
+msgstr "Маржа {margin}%; можно забрать {safe} сум"
+
+msgid "Marketing toifasidagi xarajat ÷ oy davomida kelgan bolalar."
+msgstr "Расходы категории «Маркетинг» ÷ дети, пришедшие за месяц."
+
+msgid "Nasiya: {supplier}, muddati {due}"
+msgstr "В долг: {supplier}, срок {due}"
+
+msgid "Operatsion foyda ÷ daromad."
+msgstr "Операционная прибыль ÷ доход."
+
+msgid "Operatsion marja"
+msgstr "Операционная маржа"
+
+msgid "Oy davomida ketganlar ÷ oy boshidagi bolalar."
+msgstr "Ушедшие за месяц ÷ дети на начало месяца."
+
+msgid "Oy uchun yigʻilgan ÷ toʻlanishi kerak boʻlgan summa."
+msgstr "Собрано за месяц ÷ сумма к оплате."
+
+msgid "Oylar"
+msgstr "Месяцы"
+
+msgid "Oylar boʻyicha"
+msgstr "По месяцам"
+
+msgid "Oziq-ovqat xarajati ÷ davomat boʻyicha bola-kunlar."
+msgstr "Расходы на питание ÷ ребёнко-дни по посещаемости."
+
+msgid "Oʻrtacha qolish muddati (oy)"
+msgstr "Средний срок пребывания (мес.)"
+
+msgid "Pul oqimi (yil)"
+msgstr "Движение денег (год)"
+
+msgid "Reja qatori turi notoʻgʻri: {kind}"
+msgstr "Неверный тип строки плана: {kind}"
+
+msgid "Reja qatorlari roʻyxat boʻlishi kerak."
+msgstr "Строки плана должны быть списком."
+
+msgid "Reja summasi manfiy boʻlmaydi."
+msgstr "Сумма плана не может быть отрицательной."
+
+msgid "Shu oy ish haqi xarajati (ijtimoiy soliq bilan) ÷ daromad."
+msgstr "Зарплата этого месяца (с социальным налогом) ÷ доход."
+
+msgid "Sozlamadagi summa"
+msgstr "Сумма из настроек"
+
+msgid "Summa notoʻgʻri: {value}"
+msgstr "Неверная сумма: {value}"
+
+msgid "Toʻlanishi kerak boʻlgan summa ÷ faol bolalar."
+msgstr "Сумма к оплате ÷ активные дети."
+
+msgid "Xarajat toifasi"
+msgstr "Категория расходов"
+
+msgid "Xarajatlar toifalar boʻyicha"
+msgstr "Расходы по категориям"
+
+msgid "Xarajatlar — oxirgi 3 oy oʻrtachasi"
+msgstr "Расходы — среднее за 3 месяца"
+
+msgid "Xavfsiz olish summasi"
+msgstr "Сумма, которую можно забрать"
+
+msgid "Yigʻish darajasi"
+msgstr "Уровень сбора"
+
+msgid "Yillik moliyaviy hisobot — {year}"
+msgstr "Годовой финансовый отчёт — {year}"
+
+msgid "Zararsizlik nuqtasi (bola soni)"
+msgstr "Точка безубыточности (детей)"
+
+msgid "oxirgi 3 oy yigʻish darajasi {rate}%"
+msgstr "уровень сбора за 3 месяца {rate}%"
+
+msgid "yigʻish tarixi yoʻq — 100% olindi"
+msgstr "истории сбора нет — принято 100%"
+
+msgid "{month:02d}.{year} fakturalari × {rate}, yigʻilgani ayirildi"
+msgstr "Счета за {month:02d}.{year} × {rate}, собранное вычтено"
+
+msgid "{month:02d}.{year} oyligi — oxirgi hisob boʻyicha"
+msgstr "Зарплата за {month:02d}.{year} — по последнему расчёту"
+
+msgid "{month:02d}.{year} oylik soliqlari — oxirgi hisob boʻyicha"
+msgstr "Налоги с зарплаты за {month:02d}.{year} — по последнему расчёту"
+
+msgid "{month:02d}.{year}: joriy oy summasi × {rate}"
+msgstr "{month:02d}.{year}: сумма текущего месяца × {rate}"
+
+msgid "{months} oylik ish haqi fondi"
+msgstr "{months} мес. фонда оплаты труда"

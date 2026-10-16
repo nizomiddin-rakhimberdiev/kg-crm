@@ -251,3 +251,76 @@ class ReportShareLink(TenantScopedModel):
     class Meta:
         db_table = "report_share_link"
         ordering = ["-created_at"]
+
+
+# --- Reja (Bosqich 13.7) ---
+
+
+class BudgetKind(models.TextChoices):
+    REVENUE = "revenue", gettext_lazy("Daromad")
+    OTHER_INCOME = "other_income", gettext_lazy("Boshqa daromad")
+    PAYROLL = "payroll", gettext_lazy("Ish haqi")
+    CATEGORY = "category", gettext_lazy("Xarajat toifasi")
+
+
+class BudgetLine(TenantScopedModel):
+    """
+    Oylik reja — bitta qator. Bu hujjat emas, ledger ham emas: reja
+    o'zgartiriladi. Fakt har doim modul selektorlaridan (`money.profit_and_loss`)
+    olinadi — reja raqamni "to'g'rilay" olmaydi.
+    """
+
+    branch = models.ForeignKey(
+        "branches.Branch",
+        on_delete=models.RESTRICT,
+        related_name="budget_lines",
+        null=True,
+        blank=True,
+    )
+    period_year = models.PositiveSmallIntegerField()
+    period_month = models.PositiveSmallIntegerField()
+    kind = models.CharField(max_length=14, choices=BudgetKind.choices)
+    category = models.ForeignKey(
+        "expenses.ExpenseCategory",
+        on_delete=models.RESTRICT,
+        related_name="budget_lines",
+        null=True,
+        blank=True,
+    )
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    updated_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="+",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "budget_line"
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "organization",
+                    "branch",
+                    "period_year",
+                    "period_month",
+                    "kind",
+                    "category",
+                ],
+                name="uq_budget_line",
+                nulls_distinct=False,
+            ),
+            models.CheckConstraint(condition=models.Q(amount__gte=0), name="ck_budget_amount"),
+            models.CheckConstraint(
+                condition=models.Q(period_month__gte=1, period_month__lte=12),
+                name="ck_budget_month",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(kind="category", category__isnull=False)
+                    | (~models.Q(kind="category") & models.Q(category__isnull=True))
+                ),
+                name="ck_budget_category",
+            ),
+        ]
