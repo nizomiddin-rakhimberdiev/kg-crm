@@ -838,3 +838,113 @@ Each phase ends with: red test first for every money rule, full
 `ci-local.sh`, docs/ADR updated, a short report with how to check it on the
 demo data. Existing data changes only through `--dry-run` commands the owner
 runs.
+
+---
+
+## Bosqich 13 — "Moliya markazi": finance management and reporting [ ] (awaiting approval)
+
+Owner's brief of 2026-10-16 (sections 0–13, acceptance tests 1–20). The brief
+requires an audit and a plan first; nothing is built before approval.
+
+**The spine.** One deterministic report function
+`finance_report(tenant, branches, period, as_of) -> JSON` (sections, numbers,
+and for each number its definition and a link to its source rows). Web, PDF,
+Excel, Telegram and the archive all render that one JSON. It extends what
+Bosqich 12 already built — `charges.plan_month`, `balance.py`,
+`monthly_summary`, `cash_movement`, `month_close` — and never recomputes money
+a second way (invariant 13). Checks and "Diqqat" rules live in one registry,
+built on the Radix Intelligence engine (ADR-14: deterministic rules +
+evidence), so instant Telegram alerts and the report read the same rules.
+
+### Audit — bor / qisman / yo'q
+
+| Brief § | Requirement | State | Where / gap |
+|---|---|---|---|
+| 2 | Governance model A/B/C per branch | yo'q | — |
+| 2 | Roles: owner, director, finance manager, cashier, external accountant, teacher | qisman | owner/director/manager/cashier/attendance_manager; no read+export accountant, no teacher role; data-driven RBAC can add them |
+| 2 | Per-employee salary hidden from non-permitted roles | qisman | `payroll.read` is all-or-nothing |
+| 2 | Maker-checker (optional, off) | qisman | expenses have approve flow; write-off/reversal/benefit have none |
+| 2 | Log who opened which report | yo'q | audit records writes only |
+| 3.1 | Several tills / several bank accounts | qisman | pots table supports it; owner rule 2026-10-15: cash + bank, methods are not pots |
+| 3.1 | "Money in transit" (terminal/Click/Payme until it reaches the bank) | yo'q | today credited to the bank immediately |
+| 3.2 | Operation types: income, expense, transfer, refund to parent, owner draw/dividend, owner contribution/loan, credit, cash difference, correction | qisman | payment, expense, transfer, count difference, opening/manual exist; no refund document, no owner draw/contribution, no loans, no other income |
+| 3.3 | Two dates: cash date and accrual month | qisman | invoices and payroll runs carry their month; expenses do not |
+| 3.4 | Capex flag + amortisation | yo'q | — |
+| 3.5 | Receivables/liabilities at month end | qisman | parent debt, advances, unpaid payroll derivable; supplier AP, taxes, subsidy, loans missing |
+| 3.5 | Purchases on credit (nasiya) | yo'q | stock purchase creates an already-paid expense |
+| 3.6 | Two-level expense categories + account codes | qisman | flat `expense_category`, no parent, no code |
+| 4 | Expense in 20 s, receipt photo, accrual month | qisman | expense form exists; no photo, no month |
+| 4 | Expense via Telegram bot | yo'q | bot is parent-only |
+| 4 | Daily cash close, denominations | qisman | `cash_count` (12.5); no denominations |
+| 4 | Handover with confirmation | bor | `cash_handover` (12.5) |
+| 4 | Bank statement import + auto-matching + unmatched queue | yo'q | — |
+| 4 | Data completeness indicator | yo'q | — |
+| 5.1 | Home screen, six cards, mobile first | qisman | dashboard KPIs exist, not the six questions |
+| 5.2 | Daily view | qisman | `daily_cash_summary`, payment journal |
+| 5.3 | Monthly pack, 16 sections, prev month / plan / 3-month avg | qisman | `monthly_summary` (12.6) covers parts of §2–5 and checks |
+| 5.3 §3 | Revenue variance split into factors | yo'q | — |
+| 5.3 §4 | Method × target-month matrix, collection curve | qisman | collected by method and before/in/after month |
+| 5.3 §8 | Bridge per account | qisman | movements exist; no bridge view |
+| 5.3 §9–11 | P&L by accrual, cash flow waterfall, simplified balance | qisman | `profit_loss` is cash-based by date |
+| 5.3 §12 | Budget, 30/60/90 forecast, safe withdrawal | yo'q | — |
+| 5.3 §13 | Taxes and calendar | yo'q | payroll taxes computed only |
+| 5.4 | Network view + consolidation without inter-branch transfers | qisman | owner reads org-wide; no branch table, no elimination |
+| 5.5 | Archive with versions and diffs | qisman | `month_close.snapshot` only |
+| 7 | Checks registry, "Diqqat", instant alerts, daily digest 20:00 | qisman | intelligence `payment_delay`, `attendance_drop`; parent Telegram only |
+| 8 | Submit/accept workflow, questions on numbers, share links | yo'q | — |
+| 8 | PDF (A4) and Excel per section | qisman | xlsx exports exist; no PDF engine |
+| 9 | Tax presets, fiscal receipt status, employer payer + STIR, parent annual statement, subsidies, accountant journal with codes | yo'q | — |
+| 10 | Money as whole so'm | qisman | `NUMERIC(…,2)` Decimal, whole-so'm rounding in one place (`round_to_step`) |
+| 10 | Asia/Tashkent day boundaries | bor | settings `TIME_ZONE` |
+
+### Data the reports need that nobody enters today
+
+Expense receipt photo, accrual month and capex flag; supplier on an expense
+and credit purchases; other income (subsidy, clubs, rent); refunds to parents;
+owner draws and contributions; loans; fiscal receipt number/QR per payment;
+payer type "employer" with name and STIR; bank statement lines; budgets;
+tax obligations and due dates; cash denominations; who opened a report;
+group capacity (field exists, often 0); last contact with a debtor beyond the
+reminder log.
+
+### Decisions proposed (owner approves)
+
+1. **Money type.** Keep `NUMERIC` + Decimal (docs/03 §3) and add `CHECK
+   (amount = round(amount))` on new money columns; rounding stays in one
+   place. Converting three append-only ledgers to BIGINT is a large migration
+   with no behavioural gain.
+2. **Money in transit inside the one bank account.** Terminal/Click/Payme
+   movements land in the bank pot with status `in_transit` and an expected
+   amount (gross − commission) and date; a statement line clears them. The
+   bank balance shows "received" and "in transit" separately — consistent with
+   the 2026-10-15 rule that methods are not pots.
+3. **Several tills = custody, not pots.** "Cash in the cashier's hands" is
+   the derived custody of 12.5; extra pots stay possible (a safe, a second
+   bank account).
+4. **One rule registry** extends `apps/intelligence` (checks + Diqqat +
+   instant alerts), not a second engine.
+5. **Owner/staff Telegram** through the existing bot with a staff deep link
+   (chat_id on `accounts.User`), not a second bot.
+6. **PDF** server-side with WeasyPrint (system libraries added to the
+   backend image).
+7. **Legal presets** (PQ-403 exemption, social tax 12 / 5 / 1 %, JShDS 12 %,
+   INPS 0.1 %, dividend tax 5 %, parent JShDS limit 3 000 000, account codes)
+   ship as editable defaults marked "buxgalter tasdiqlashi kerak"; nothing
+   is claimed as legal advice.
+
+### Phases (MVP = 13.2–13.5 + minimal A/B)
+
+| # | Phase | Acceptance tests |
+|---|---|---|
+| 13.1 | This audit and plan | — |
+| 13.2 | Financial core: operation types (refund, owner draw/contribution, loan, other income), accrual month on expenses (payroll → its run month), capex + amortisation, credit purchases (AP), money in transit, two-level categories with codes, receivables/liabilities at a date | 3, 4, 5, 6, 7, 8 |
+| 13.3 | Input: 20-second expense with photo, Telegram expense for staff, denominations in day close, bank statement import with column mapping, auto-matching and unmatched queue, completeness indicator | 8, 9, 14 (matching) |
+| 13.4 | Home (six cards), daily view, rule registry: checks + Diqqat + instant alerts + 20:00 digest | 12, 13 |
+| 13.5 | Monthly pack (16 sections) from one JSON; prev month / 3-month avg; revenue factor split; bridges; P&L ≠ cash waterfall; balance; drill-down to source rows; PDF + Excel; immutable snapshot with checksum, versions and number-level diff; report-open log | 2, 10, 15, 16, 19, 20 |
+| 13.6 | Governance A/B/C: submit → questions → accept/return per leader, numbers read-only for the manager, deadlines, consolidation with inter-branch elimination, share links with watermark | 1, 17, 18 |
+| 13.7 | Budget vs actual, 30/60/90 forecast, safe withdrawal, KPI definitions (i), 12-month trends, annual report | 11 |
+| 13.8 | Legal settings: tax presets and calendar, fiscal receipt status and coverage, employer payer + parent annual statement PDF, state support income, accountant journal export with codes | 13, 14 (statement) |
+
+Each phase: red tests first for money rules, full `ci-local.sh`, ADRs for
+every superseded decision, landing copy in three locales, a short report with
+the demo path and which defaults still need the accountant's confirmation.
