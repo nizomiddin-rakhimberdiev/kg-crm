@@ -19,6 +19,7 @@ import { tariffsApi } from '@/features/payments/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type GuardianLink } from '@/lib/api/types'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { AnnualStatementButton } from '@/features/children/components/AnnualStatementButton'
 import { ChildBalanceCard } from '@/features/children/components/ChildBalanceCard'
 import { BenefitsPanel } from '@/features/children/components/BenefitsPanel'
 import { PausePanel } from '@/features/children/components/PausePanel'
@@ -341,6 +342,8 @@ export default function ChildDetailPage() {
           )}
         </div>
       )}
+
+      {can('payments.read') && <AnnualStatementButton childId={childId} />}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <ChildBalanceCard childId={childId} />

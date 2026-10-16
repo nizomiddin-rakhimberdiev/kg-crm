@@ -400,6 +400,9 @@ export interface Payment {
   paid_at: string
   payer: string | null
   payer_name: string
+  /** Bosqich 13.8: `employer` — ota-onaning ish beruvchisi (nomi `payer_name` da). */
+  payer_kind?: 'guardian' | 'employer' | 'other'
+  payer_tin?: string
   employee: string | null
   employee_name: string | null
   received_by_name: string | null
@@ -407,10 +410,22 @@ export interface Payment {
   allocation_reason: string
   /** Faqat bitta toʻlov soʻralganda: pul qaysi oylarga ketgan. */
   allocations?: Array<{ invoice_id: string; number: string; period: string; amount: string }>
+  /** Faqat bitta toʻlov soʻralganda (13.8). */
+  fiscal?: PaymentFiscal
   is_reversed: boolean
   reversed_at: string | null
   reversal_reason: string
   created_at: string
+}
+
+/** Fiskal chek holati (Bosqich 13.8). */
+export interface PaymentFiscal {
+  status: 'issued' | 'missing' | 'provider' | 'not_required'
+  kind: 'advance' | 'sale' | 'credit'
+  number?: string
+  qr?: string
+  issuer?: 'kindergarten' | 'provider'
+  recorded_at?: string
 }
 
 export interface DebtorRow {

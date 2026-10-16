@@ -138,7 +138,14 @@ export function TakePaymentModal({
   const [allocationReason, setAllocationReason] = useState('')
   const guardians = useMemo(() => detail?.guardians ?? [], [detail])
   const [payerId, setPayerId] = useState<string | null>(null)
-  const payer = payerId ?? guardians.find((guardian) => guardian.is_primary)?.id ?? ''
+  // Bosqich 13.8: toʻlovchi ota-onaning ish beruvchisi boʻlishi mumkin.
+  const EMPLOYER = '__employer'
+  const [payerOrg, setPayerOrg] = useState('')
+  const [payerTin, setPayerTin] = useState('')
+  const employerPays = payerId === EMPLOYER
+  const payer = employerPays
+    ? ''
+    : (payerId ?? guardians.find((guardian) => guardian.is_primary)?.id ?? '')
   const age = daysBetween(paidOn, now)
   const limit = detail?.backdate_days ?? 60
   const isFuture = age < 0
@@ -249,6 +256,9 @@ export function TakePaymentModal({
           // Bugungi sana yuborilmaydi — server vaqtini oladi.
           ...(paidOn !== now ? { paid_at: `${paidOn}T12:00:00` } : {}),
           ...(payer ? { payer_id: payer } : {}),
+          ...(employerPays
+            ? { payer_kind: 'employer', payer_org: payerOrg.trim(), payer_tin: payerTin.trim() }
+            : {}),
           ...(needsBackdateReason ? { backdate_reason: backdateReason.trim() } : {}),
           ...(skipsOldest ? { allocation_reason: allocationReason.trim() } : {}),
         },
@@ -423,7 +433,7 @@ export function TakePaymentModal({
             </label>
             <select
               id="take-payer"
-              value={payer}
+              value={employerPays ? EMPLOYER : payer}
               onChange={(event) => setPayerId(event.target.value)}
               className={field}
             >
@@ -433,9 +443,38 @@ export function TakePaymentModal({
                   {guardian.full_name}
                 </option>
               ))}
+              <option value={EMPLOYER}>{t('Ota-onaning ish beruvchisi')}</option>
             </select>
           </div>
         </div>
+        {employerPays && (
+          <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_10rem]">
+            <div>
+              <label htmlFor="take-org" className="mb-1 block text-xs font-medium text-slate-600">
+                {t('Tashkilot nomi')}
+              </label>
+              <input
+                id="take-org"
+                value={payerOrg}
+                onChange={(event) => setPayerOrg(event.target.value)}
+                className={field}
+              />
+            </div>
+            <div>
+              <label htmlFor="take-tin" className="mb-1 block text-xs font-medium text-slate-600">
+                {t('STIR')}
+              </label>
+              <input
+                id="take-tin"
+                inputMode="numeric"
+                maxLength={9}
+                value={payerTin}
+                onChange={(event) => setPayerTin(event.target.value.replace(/\D/g, ''))}
+                className={field}
+              />
+            </div>
+          </div>
+        )}
         {isFuture && (
           <p role="alert" className="mt-1.5 text-xs font-medium text-red-700">
             {t('Toʻlov sanasi kelajakda boʻlishi mumkin emas.')}

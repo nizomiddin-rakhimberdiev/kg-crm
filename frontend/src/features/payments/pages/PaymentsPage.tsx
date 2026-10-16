@@ -14,6 +14,7 @@ import {
   Pencil,
   Plus,
   Printer,
+  ReceiptText,
   Search,
   Trash2,
   Undo2,
@@ -24,6 +25,7 @@ import { DateInput } from '@/components/ui/DateInput'
 import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { paymentsApi, tariffsApi, type BoardRow } from '@/features/payments/api'
 import { GenerateInvoicesDialog } from '@/features/payments/components/GenerateInvoicesDialog'
+import { FiscalModal } from '@/features/payments/components/FiscalModal'
 import { RefundModal } from '@/features/payments/components/RefundModal'
 import { ReceiptModal } from '@/features/payments/components/ReceiptModal'
 import { TakePaymentModal } from '@/features/payments/components/TakePaymentModal'
@@ -103,6 +105,7 @@ export default function PaymentsPage() {
   const [reverseReason, setReverseReason] = useState('')
   // Avansni ota-onaga qaytarish (Bosqich 13.2b).
   const [refunding, setRefunding] = useState<Payment | null>(null)
+  const [fiscalFor, setFiscalFor] = useState<Payment | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   // Sahifalar `useInfiniteQuery` bilan yig'iladi — qo'lda emas.
@@ -288,6 +291,7 @@ export default function PaymentsPage() {
       {receiptFor && <ReceiptModal paymentId={receiptFor} onClose={() => setReceiptFor(null)} />}
 
       {refunding && <RefundModal payment={refunding} onClose={() => setRefunding(null)} />}
+      {fiscalFor && <FiscalModal payment={fiscalFor} onClose={() => setFiscalFor(null)} />}
 
       {generating && (
         <GenerateInvoicesDialog
@@ -715,6 +719,19 @@ export default function PaymentsPage() {
                         ) : (
                           can('payments.update') && (
                             <>
+                              {/* Fiskal chek — naqd va karta; Click/Payme chekini
+                                  toʻlov tizimi beradi (13.8). */}
+                              {(payment.method === 'cash' || payment.method === 'terminal') && (
+                                <button
+                                  type="button"
+                                  onClick={() => setFiscalFor(payment)}
+                                  title={t('Fiskal chek')}
+                                  aria-label={t('Fiskal chek')}
+                                  className="mr-1 rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                                >
+                                  <ReceiptText className="h-4 w-4" />
+                                </button>
+                              )}
                               {!ownOnly && (
                                 <button
                                   type="button"

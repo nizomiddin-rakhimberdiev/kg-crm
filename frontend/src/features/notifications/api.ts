@@ -64,4 +64,13 @@ export const settingsApi = {
   all: () => api.get<EffectiveSettings>('/settings'),
   set: (key: string, value: SettingValue) =>
     api.request<{ key: string; value: SettingValue }>('put', `/settings/${key}`, { value }),
+  /** Soliq rejimi presetlari (Bosqich 13.8). */
+  taxPresets: () =>
+    api.get<{
+      current: string
+      note: string
+      presets: Array<{ id: string; title: string; values: Record<string, SettingValue> }>
+    }>('/settings/tax-presets'),
+  applyTaxPreset: (preset: string) =>
+    api.post<{ preset: string }>('/settings/tax-presets/apply', { preset }),
 }

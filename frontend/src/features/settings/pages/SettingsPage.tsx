@@ -17,6 +17,7 @@ import { ContractTemplatesSettings } from '@/features/contracts/components/Contr
 import { OnlinePaymentSettings } from '@/features/online-payments/components/OnlinePaymentSettings'
 import { AbsenceKindsSettings } from '@/features/attendance/components/AbsenceKindsSettings'
 import { TestModeBanner } from '@/features/notifications/components/TestModeBanner'
+import { TaxPresetPanel } from '@/features/settings/components/TaxPresetPanel'
 import { WeekdayPicker } from '@/features/settings/components/WeekdayPicker'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type SettingValue } from '@/lib/api/types'
@@ -256,6 +257,52 @@ const META: Record<string, SettingMeta> = {
     min: 1,
     max: 28,
   },
+  // Bosqich 13.7–13.8: prognoz, soliq, fiskal chek, hisob kodlari.
+  'forecast.reserve_amount': {
+    label: t('Zaxira summasi'),
+    help: t('0 boʻlsa — quyidagi oylar soni × oylik ish haqi fondi.'),
+  },
+  'forecast.reserve_months': {
+    label: t('Zaxira (oylik fondi, oy)'),
+    help: t('Xavfsiz olish summasidan ayiriladi. Sukut 0,5.'),
+  },
+  'forecast.pay_day': {
+    label: t('Oylik toʻlanadigan kun'),
+    help: t('Prognozda oʻtgan oy oyligi shu kuni chiqadi.'),
+    min: 1,
+    max: 28,
+  },
+  'forecast.tax_day': {
+    label: t('Soliq toʻlanadigan kun'),
+    help: t('Soliq taqvimidagi muddat — keyingi oyning shu kuni.'),
+    min: 1,
+    max: 28,
+  },
+  'tax.regime': {
+    label: t('Soliq rejimi'),
+    help: t('Yuqoridagi preset bilan oʻrnatiladi.'),
+    options: [
+      ['pq403', t('Nodavlat MTT imtiyozi (PQ-403)')],
+      ['general', t('Umumiy rejim')],
+      ['turnover', t('Aylanmadan olinadigan soliq')],
+    ],
+  },
+  'tax.turnover_percent': {
+    label: t('Aylanma soligʻi (%)'),
+    help: t('Faqat aylanma rejimida: oy daromadidan.'),
+  },
+  'tax.dividend_percent': {
+    label: t('Dividend soligʻi (%)'),
+    help: t('Egasiga dividend toʻlanganda majburiyat boʻlib yoziladi.'),
+  },
+  'tax.parent_exemption_monthly': {
+    label: t('Ota-ona JShDS imtiyozi limiti (oyiga)'),
+    help: t('Yillik maʼlumotnomada har oy shu summagacha koʻrsatiladi.'),
+  },
+  'fiscal.control_from': {
+    label: t('Fiskal chek nazorati qachondan'),
+    help: t('YYYY-MM-DD. Boʻsh — nazorat oʻchiq. Naqd va karta toʻlovida chek kerak.'),
+  },
   // Shartnoma rekvizitlari (PLAN 9.3) — shablondagi {{...}} maydonlar
   // shu yerdan to'ldiriladi.
   'contracts.director_name': {
@@ -285,6 +332,29 @@ const META: Record<string, SettingMeta> = {
   },
 }
 
+// Buxgalter jurnali hisob kodlari (13.8c): hammasi bir xil izoh bilan.
+const ACCOUNT_LABELS: Array<[string, string]> = [
+  ['cash', t('Kassa')],
+  ['bank', t('Hisob-kitob schyoti')],
+  ['receivables', t('Ota-onalar qarzi')],
+  ['advances', t('Olingan avanslar')],
+  ['payroll', t('Ish haqi boʻyicha qarz')],
+  ['budget', t('Byudjetga toʻlovlar')],
+  ['revenue', t('Xizmat daromadi')],
+  ['suppliers', t('Yetkazib beruvchilar')],
+  ['expenses', t('Xarajatlar (toifada kod boʻlmasa)')],
+  ['payroll_expense', t('Ish haqi xarajati')],
+  ['fixed_assets', t('Asosiy vositalar')],
+  ['other_income', t('Boshqa daromad')],
+  ['adjustments', t('Tuzatishlar')],
+  ['owner', t('Egasiga toʻlov')],
+  ['capital', t('Egadan kiritma')],
+  ['loans', t('Kreditlar')],
+]
+for (const [key, label] of ACCOUNT_LABELS) {
+  META[`accounts.${key}`] = { label, help: t('Hisob kodi; buxgalter tasdiqlaydi.') }
+}
+
 const GROUPS: Array<[string, string]> = [
   ['general', t('Umumiy')],
   ['finance', t('Moliya')],
@@ -292,6 +362,10 @@ const GROUPS: Array<[string, string]> = [
   ['notifications', t('Bildirishnomalar')],
   ['attendance', t('Davomat')],
   ['governance', t('Oylik hisobotni topshirish')],
+  ['forecast', t('Prognoz va zaxira')],
+  ['tax', t('Soliqlar')],
+  ['fiscal', t('Fiskal chek')],
+  ['accounts', t('Buxgalteriya hisob kodlari')],
   ['contracts', t('Shartnoma rekvizitlari')],
 ]
 
@@ -453,6 +527,7 @@ export default function SettingsPage() {
       {/* "SMS yoqilgan" degan sozlama ko'rinib turgan joyda, SMS
           haqiqatda yuborilmayotgani ham ko'rinishi kerak (PLAN 3.2). */}
       <TestModeBanner />
+      <TaxPresetPanel editable={editable} />
 
       {!editable && (
         <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">

@@ -280,6 +280,18 @@ export interface TrendMonth {
   money_end: string
 }
 
+/** Soliq taqvimi (Bosqich 13.8). */
+export interface TaxItem {
+  id: string
+  kind: string
+  title: string
+  period: string
+  due_date: string
+  amount: string
+  status: 'paid' | 'due' | 'overdue' | 'upcoming'
+  paid_on: string | null
+}
+
 export const reportsApi = {
   pack: (at: PackUnit) => api.get<Pack>('/reports/pack', unit(at)),
   packSnapshot: (at: PackUnit) =>
@@ -332,6 +344,12 @@ export const reportsApi = {
     api.get<ForecastView>('/reports/forecast', branch ? { branch } : undefined),
   kpi: (at: PackUnit) => api.get<{ period: string; items: KpiItem[] }>('/reports/kpi', unit(at)),
   trends: (at: PackUnit) => api.get<{ months: TrendMonth[] }>('/reports/trends', unit(at)),
+  taxCalendar: (year: number) =>
+    api.get<{ year: number; items: TaxItem[]; unpaid: string }>('/reports/tax-calendar', { year }),
+  payTax: (id: string, cashAccountId: string) =>
+    api.post<{ id: string; status: string }>(`/reports/tax-calendar/${id}/pay`, {
+      cash_account_id: cashAccountId,
+    }),
   network: (year: number, month: number) =>
     api.get<NetworkView>('/reports/network', { year, month }),
   home: (date?: string) =>

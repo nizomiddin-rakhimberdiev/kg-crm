@@ -27,12 +27,13 @@ import {
 } from '@/features/dashboard/api'
 import { MonthlyPack } from '@/features/finance-center/components/MonthlyPack'
 import { PlanTab } from '@/features/finance-center/components/PlanTab'
+import { TaxTab } from '@/features/finance-center/components/TaxTab'
 import { paymentMethodLabel } from '@/features/payments/methods'
 import { formatDate, som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
-type Tab = 'today' | 'day' | 'control' | 'pack' | 'plan'
+type Tab = 'today' | 'day' | 'control' | 'pack' | 'plan' | 'tax'
 
 const STATUS_STYLE: Record<CardStatus, string> = {
   ok: 'border-l-emerald-500',
@@ -354,9 +355,7 @@ function ControlTab() {
 export default function FinanceCenterPage() {
   const initial = new URLSearchParams(window.location.search).get('tab')
   const [tab, setTab] = useState<Tab>(
-    initial === 'control' || initial === 'day' || initial === 'pack' || initial === 'plan'
-      ? (initial as Tab)
-      : 'today',
+    ['control', 'day', 'pack', 'plan', 'tax'].includes(initial ?? '') ? (initial as Tab) : 'today',
   )
   const tabs: Array<[Tab, string]> = [
     ['today', t('Bugun')],
@@ -364,6 +363,7 @@ export default function FinanceCenterPage() {
     ['control', t('Nazorat')],
     ['pack', t('Oylik hisobot')],
     ['plan', t('Reja va prognoz')],
+    ['tax', t('Soliq')],
   ]
   return (
     <div className="space-y-5">
@@ -376,7 +376,7 @@ export default function FinanceCenterPage() {
       <div
         role="tablist"
         aria-label={t('Moliya markazi')}
-        className="flex gap-1 rounded-xl bg-slate-100 p-1"
+        className="flex gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1"
       >
         {tabs.map(([key, label]) => (
           <button
@@ -386,7 +386,7 @@ export default function FinanceCenterPage() {
             aria-selected={tab === key}
             onClick={() => setTab(key)}
             className={cn(
-              'flex-1 rounded-lg px-3 py-2 text-sm font-medium transition',
+              'flex-1 shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition',
               tab === key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600',
             )}
           >
@@ -399,6 +399,7 @@ export default function FinanceCenterPage() {
       {tab === 'control' && <ControlTab />}
       {tab === 'pack' && <MonthlyPack />}
       {tab === 'plan' && <PlanTab />}
+      {tab === 'tax' && <TaxTab />}
       <p className="text-xs text-slate-500">{formatDate(today())}</p>
     </div>
   )

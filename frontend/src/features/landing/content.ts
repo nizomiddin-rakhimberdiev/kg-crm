@@ -498,8 +498,8 @@ const uz: Copy = {
         text: 'Qarzni qoʻlda 0 qilib boʻlmaydi — faqat sababi va kim qilgani bilan hisobdan chiqariladi. Har bir summa yonida «Nega?»: «3 050 000 × 8 / 21 = 1 162 000». Kim nimani oʻzgartirgani — oʻchmaydigan jurnalda.',
       },
       {
-        title: 'Uch til',
-        text: 'Oʻzbek, rus, ingliz — har bir xodim oʻzi tanlaydi. Bot ham ota-onaning tilida yozadi.',
+        title: 'Soliq, chek va buxgalter',
+        text: 'PQ-403 imtiyozi bir bosishda; soliq taqvimi muddati va eslatmasi bilan. Naqd va karta toʻlovida fiskal chek nazorati. Ish beruvchi toʻlasa — nomi va STIR, ota-onaga yillik maʼlumotnoma. Buxgalterga Dt/Kt kodli jurnal.',
       },
       {
         title: 'Rollar va ruxsatlar',
@@ -1066,8 +1066,8 @@ const ru: Copy = {
         text: 'Долг нельзя обнулить вручную — только списать, с причиной и автором. У каждой суммы есть «Почему?»: «3 050 000 × 8 / 21 = 1 162 000». Кто что менял — в журнале, который нельзя стереть.',
       },
       {
-        title: 'Три языка',
-        text: 'Узбекский, русский, английский — каждый сотрудник выбирает свой. Бот пишет на языке родителя.',
+        title: 'Налоги, чеки и бухгалтер',
+        text: 'Льгота ПП-403 в один клик; налоговый календарь со сроками и напоминаниями. Контроль фискальных чеков при оплате наличными и картой. Платит работодатель — название и ИНН, родителю годовая справка. Бухгалтеру — журнал с кодами Дт/Кт.',
       },
       {
         title: 'Роли и права',
@@ -1627,8 +1627,8 @@ const en: Copy = {
         text: 'Nobody can set a debt to zero by hand — it is written off with a reason and a name, or not at all. Every amount has a “Why?”: “3 050 000 × 8 / 21 = 1 162 000”. Who changed what sits in a log that cannot be erased.',
       },
       {
-        title: 'Three languages',
-        text: 'Uzbek, Russian, English — each member of staff picks their own. The bot writes in the parent’s language.',
+        title: 'Taxes, receipts and the accountant',
+        text: 'The PQ-403 exemption in one click; a tax calendar with due dates and reminders. Fiscal receipt control on cash and card payments. When an employer pays — its name and TIN, and an annual statement for the parent. A Dr/Cr coded journal for the accountant.',
       },
       {
         title: 'Roles and permissions',

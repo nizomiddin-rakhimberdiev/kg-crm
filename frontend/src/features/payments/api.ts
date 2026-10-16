@@ -7,6 +7,7 @@ import type {
   DebtorList,
   Invoice,
   Payment,
+  PaymentFiscal,
   TariffPlan,
 } from '@/lib/api/types'
 
@@ -313,6 +314,10 @@ export const paymentsApi = {
       }>
       paid_at?: string
       payer_id?: string
+      /** Bosqich 13.8: ota-onaning ish beruvchisi. */
+      payer_kind?: 'guardian' | 'employer' | 'other'
+      payer_org?: string
+      payer_tin?: string
       backdate_reason?: string
       allocation_reason?: string
     },
@@ -325,6 +330,12 @@ export const paymentsApi = {
     ),
 
   receipt: (id: string) => api.get<Receipt>(`/payments/${id}/receipt`),
+
+  /** Bitta toʻlov — taqsimot va fiskal chek holati bilan (Bosqich 13.8). */
+  detail: (id: string) => api.get<Payment>(`/payments/${id}`),
+  /** Fiskal chek: raqam yoki QR (Bosqich 13.8). */
+  fiscal: (id: string, payload: { number: string; qr: string }) =>
+    api.post<PaymentFiscal>(`/payments/${id}/fiscal`, payload),
 
   reverse: (id: string, reason: string) => api.post<Payment>(`/payments/${id}/reverse`, { reason }),
 
