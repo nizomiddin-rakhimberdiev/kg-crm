@@ -324,3 +324,59 @@ class BudgetLine(TenantScopedModel):
                 name="ck_budget_category",
             ),
         ]
+
+
+# --- Soliq taqvimi (Bosqich 13.8) ---
+
+
+class TaxKind(models.TextChoices):
+    INCOME_TAX = "income_tax", gettext_lazy("JShDS (daromad soligʻi)")
+    PENSION = "pension", gettext_lazy("INPS (pensiya badali)")
+    SOCIAL_TAX = "social_tax", gettext_lazy("Ijtimoiy soliq")
+    DIVIDEND_TAX = "dividend_tax", gettext_lazy("Dividend soligʻi")
+    TURNOVER_TAX = "turnover_tax", gettext_lazy("Aylanmadan olinadigan soliq")
+
+
+class TaxObligation(TenantScopedModel):
+    """
+    Bitta soliq majburiyati: qaysi oy uchun, qancha, qachongacha.
+
+    Summa hujjatlardan hisoblanadi (oylik hisobi, egaga to'lov, daromad) va
+    to'lanmaguncha yangilanadi; to'langanda `operation` — haqiqiy
+    `tax_payment` pul harakati — bilan qotadi. Holat saqlanmaydi:
+    to'langan / muddati yaqin / o'tgan — sanadan hisoblanadi.
+    """
+
+    branch = models.ForeignKey(
+        "branches.Branch",
+        on_delete=models.RESTRICT,
+        related_name="tax_obligations",
+        null=True,
+        blank=True,
+    )
+    kind = models.CharField(max_length=14, choices=TaxKind.choices)
+    period_year = models.PositiveSmallIntegerField()
+    period_month = models.PositiveSmallIntegerField()
+    due_date = models.DateField()
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    operation = models.OneToOneField(
+        "cash.MoneyOperation",
+        on_delete=models.RESTRICT,
+        related_name="tax_obligation",
+        null=True,
+        blank=True,
+    )
+    reminded_at = models.DateTimeField(null=True, blank=True)
+    overdue_notified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "tax_obligation"
+        ordering = ["due_date", "kind"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "branch", "kind", "period_year", "period_month"],
+                name="uq_tax_obligation",
+                nulls_distinct=False,
+            ),
+            models.CheckConstraint(condition=models.Q(amount__gte=0), name="ck_tax_amount"),
+        ]

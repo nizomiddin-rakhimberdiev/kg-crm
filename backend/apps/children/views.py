@@ -61,6 +61,7 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
         "restore": "update",
         "hard_delete": "delete",
         "guardian_link": "update",
+        "annual_statement": "read",
     }
     model = Child
     # `search_fields` ataylab qoldirilgan: u DRF ning standart qidiruvi
@@ -149,6 +150,36 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
             actor=request_user(self.request),
             entity_type="child",
             entity_id=instance.id,
+        )
+
+    @action(detail=True, methods=["get"], url_path="annual-statement")
+    def annual_statement(self, request: Request, pk: str | None = None) -> FileResponse:
+        """
+        `GET /children/{id}/annual-statement?year=` — ota-onaga yillik to'lovlar
+        ma'lumotnomasi, PDF (13.8). Pul ko'rsatadi, shuning uchun
+        `payments.read` ham kerak; "faqat o'ziniki" kassirga — yo'q (u bola
+        bo'yicha hamma to'lovni ko'rmaydi).
+        """
+        from django.utils import timezone
+        from rest_framework.exceptions import PermissionDenied
+
+        from apps.core.permissions import has_permission_code
+        from apps.finance.scope import payments_own_only
+        from apps.finance.statement import statement_pdf
+
+        user = request_user(request)
+        if not has_permission_code(user, "payments.read") or payments_own_only(user):
+            raise PermissionDenied(gettext("Bu amalga ruxsat yoʻq."))
+        child = self.get_object()
+        try:
+            year = int(request.query_params.get("year") or timezone.localdate().year)
+        except ValueError:
+            year = timezone.localdate().year
+        content = statement_pdf(child=child, year=year, organization=user.organization)
+        return FileResponse(
+            io.BytesIO(content),
+            filename=f"malumotnoma-{year}.pdf",
+            content_type="application/pdf",
         )
 
     @action(detail=True, methods=["post"], url_path="change-status")

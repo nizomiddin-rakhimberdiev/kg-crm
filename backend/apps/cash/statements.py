@@ -160,6 +160,7 @@ class ParsedLine:
     purpose: str
     counterparty: str
     reference: str
+    counterparty_tin: str = ""
 
 
 def _parse(rows: list[list[Any]], mapping: dict[str, str]) -> list[ParsedLine]:
@@ -181,6 +182,7 @@ def _parse(rows: list[list[Any]], mapping: dict[str, str]) -> list[ParsedLine]:
     if amount_col is None and credit_col is None and debit_col is None:
         raise BusinessRuleViolation(gettext("Summa yoki debet/kredit ustunlarini tanlang."))
     purpose_col, party_col, ref_col = column("purpose"), column("counterparty"), column("reference")
+    tin_col = column("counterparty_tin")
 
     def get(row: list[Any], index: int | None) -> Any:
         return row[index] if index is not None and index < len(row) else None
@@ -207,6 +209,7 @@ def _parse(rows: list[list[Any]], mapping: dict[str, str]) -> list[ParsedLine]:
                 purpose=_cell(get(row, purpose_col)),
                 counterparty=_cell(get(row, party_col))[:255],
                 reference=_cell(get(row, ref_col))[:100],
+                counterparty_tin="".join(_cell(get(row, tin_col)).split())[:20],
             )
         )
     return parsed
@@ -330,6 +333,28 @@ def _find_child(line: BankStatementLine) -> Any:
     return matches[0] if len(matches) == 1 else None
 
 
+#: Tashkilot shakli — kontragent nomida bo'lsa, to'lovchi yuridik shaxs.
+_LEGAL_FORMS = ("mchj", "aj", "xk", "duk", "qk", "xf", "ooo", "ооо", "ао", "ип", "llc", "jsc")
+
+
+def _payer(line: BankStatementLine) -> dict[str, Any]:
+    """
+    Tashkilotdan kelgan o'tkazma — ota-onaning ish beruvchisi (13.8, test 14):
+    kontragentning 9 xonali STIR'i bor yoki nomida tashkilot shakli bor.
+    Jismoniy shaxs (ota-onaning o'zi) — oddiy vasiy to'lovi.
+    """
+    name = line.counterparty.strip()
+    tin = line.counterparty_tin if line.counterparty_tin.isdigit() else ""
+    words = {word.strip(".,\"'«»()").lower() for word in name.split()}
+    if name and ((len(tin) == 9) or words & set(_LEGAL_FORMS)):
+        return {
+            "payer_kind": "employer",
+            "payer_org": name,
+            "payer_tin": tin if len(tin) == 9 else "",
+        }
+    return {}
+
+
 def _create_payment(line: BankStatementLine, user: Any) -> str | None:
     from apps.finance.services import record_payment
 
@@ -346,6 +371,7 @@ def _create_payment(line: BankStatementLine, user: Any) -> str | None:
         backdate_reason=gettext("Bank koʻchirmasidan"),
         allocation_reason=gettext("Bank koʻchirmasidan"),
         idempotency_key=f"stmt:{line.fingerprint}"[:64],
+        **_payer(line),
     )
     return str(payment.id)
 
@@ -451,6 +477,7 @@ def import_statement(
                 amount=item.amount,
                 purpose=item.purpose,
                 counterparty=item.counterparty,
+                counterparty_tin=item.counterparty_tin,
                 reference=item.reference,
                 fingerprint=fingerprint,
             )
@@ -561,6 +588,7 @@ def payment_from_line(*, line: BankStatementLine, child: Any, user: Any = None) 
         backdate_reason=gettext("Bank koʻchirmasidan"),
         allocation_reason=gettext("Bank koʻchirmasidan"),
         idempotency_key=f"stmt:{line.fingerprint}"[:64],
+        **_payer(line),
     )
     _decide(line, user, "payment_created", [str(payment.id)])
     return payment

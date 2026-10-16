@@ -60,6 +60,8 @@ PURGE_ORDER: tuple[str, ...] = (
     # Topshirish va sanoq — qopga va odamga `RESTRICT` (Bosqich 12.5).
     "apps.cash.CashHandover",
     "apps.cash.CashCount",
+    # Soliq majburiyati to'lov operatsiyasiga `RESTRICT` (13.8b).
+    "apps.reports.TaxObligation",
     "apps.cash.MoneyOperation",
     # Ko'chirma qatorlari ko'chirmaga, ikkalasi qopga RESTRICT (13.3d).
     "apps.cash.BankStatementLine",
@@ -84,6 +86,7 @@ PURGE_ORDER: tuple[str, ...] = (
     # Qaytarish to'lovga, bolaga va qopga RESTRICT (13.2b).
     "apps.finance.Refund",
     "apps.finance.PaymentSettlement",
+    "apps.finance.PaymentFiscal",
     "apps.finance.PaymentAllocation",
     "apps.finance.Payment",
     "apps.finance.ChildLedgerEntry",

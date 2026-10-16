@@ -292,12 +292,28 @@ OPERATION_DIRECTION: dict[str, str] = {
 
 #: Turi → ruxsat etilgan aniqlik (bo'sh — aniqlik yo'q).
 OPERATION_SUBTYPES: dict[str, tuple[str, ...]] = {
-    OperationKind.OTHER_INCOME: ("subsidy", "club", "rent", "other"),
+    # Davlat ko'magi (13.8, brif §9): subsidiya, pedagoglar oyligining
+    # byudjetdan qoplanishi, kommunal kompensatsiya — daromad turlari.
+    OperationKind.OTHER_INCOME: (
+        "subsidy",
+        "state_salary",
+        "utility_compensation",
+        "club",
+        "rent",
+        "other",
+    ),
     OperationKind.OWNER_DRAW: ("dividend", "draw"),
     OperationKind.OWNER_CONTRIBUTION: ("",),
     OperationKind.LOAN_IN: ("",),
     OperationKind.LOAN_REPAY: ("",),
-    OperationKind.TAX_PAYMENT: ("dividend_tax", "social_tax", "income_tax", "other"),
+    OperationKind.TAX_PAYMENT: (
+        "dividend_tax",
+        "social_tax",
+        "income_tax",
+        "pension",
+        "turnover_tax",
+        "other",
+    ),
 }
 
 
@@ -424,6 +440,8 @@ class BankStatementLine(BranchScopedModel):
     amount = models.DecimalField(max_digits=16, decimal_places=2)
     purpose = models.TextField(blank=True)
     counterparty = models.CharField(max_length=255, blank=True)
+    # Kontragent STIR (13.8): tashkilotdan kelgan to'lov — ish beruvchi.
+    counterparty_tin = models.CharField(max_length=20, blank=True)
     reference = models.CharField(max_length=100, blank=True)
     fingerprint = models.CharField(max_length=64)
     status = models.CharField(

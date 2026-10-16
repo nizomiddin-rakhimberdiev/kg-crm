@@ -232,6 +232,8 @@ class PaymentSerializer(serializers.ModelSerializer):
             "batch_id",
             "payer",
             "payer_name",
+            "payer_kind",
+            "payer_tin",
             "employee",
             "employee_name",
             "received_by_name",
@@ -249,10 +251,27 @@ class PaymentDetailSerializer(PaymentSerializer):
     """Bitta to'lov — pul qaysi oylarga ketgani bilan (brif §4)."""
 
     allocations = serializers.SerializerMethodField()
+    fiscal = serializers.SerializerMethodField()
 
     class Meta(PaymentSerializer.Meta):
-        fields = [*PaymentSerializer.Meta.fields, "allocations"]
+        fields = [*PaymentSerializer.Meta.fields, "allocations", "fiscal"]
         read_only_fields = fields
+
+    def get_fiscal(self, payment: Payment) -> dict[str, Any]:
+        """Fiskal chek holati (13.8): yozilgan, to'lov tizimida yoki kerak emas."""
+        from apps.finance import fiscal as rules
+        from apps.finance.models import PaymentFiscal
+
+        row = PaymentFiscal.objects.filter(payment=payment).first()
+        if row is not None:
+            return fiscal_data(row)
+        if payment.method in rules.PROVIDER_METHODS:
+            status = "provider"
+        elif payment.method in rules.REQUIRED_METHODS:
+            status = "missing"
+        else:
+            status = "not_required"
+        return {"status": status, "kind": rules.receipt_kind(payment)}
 
     def get_allocations(self, payment: Payment) -> list[dict[str, Any]]:
         rows = (
@@ -302,6 +321,11 @@ class PaymentBatchSerializer(serializers.Serializer):
     )
     backdate_reason = serializers.CharField(required=False, allow_blank=True, max_length=255)
     allocation_reason = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    payer_kind = serializers.ChoiceField(
+        choices=["guardian", "employer", "other"], required=False, default="guardian"
+    )
+    payer_org = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    payer_tin = serializers.CharField(required=False, allow_blank=True, max_length=20)
 
 
 class PaymentWriteSerializer(serializers.Serializer):
@@ -329,3 +353,20 @@ class PaymentWriteSerializer(serializers.Serializer):
     )
     backdate_reason = serializers.CharField(required=False, allow_blank=True, max_length=255)
     allocation_reason = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    # Bosqich 13.8: ota-onaning ish beruvchisi to'lasa.
+    payer_kind = serializers.ChoiceField(
+        choices=["guardian", "employer", "other"], required=False, default="guardian"
+    )
+    payer_org = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    payer_tin = serializers.CharField(required=False, allow_blank=True, max_length=20)
+
+
+def fiscal_data(row: Any) -> dict[str, Any]:
+    return {
+        "status": "issued",
+        "number": row.number,
+        "qr": row.qr,
+        "issuer": row.issuer,
+        "kind": row.kind,
+        "recorded_at": row.created_at.isoformat(),
+    }

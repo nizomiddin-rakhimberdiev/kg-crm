@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from django.utils.translation import gettext
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -30,7 +31,32 @@ class SettingsViewSet(viewsets.ViewSet):
 
     permission_classes = [HasModulePermission, SubscriptionWriteGate]
     permission_module = "settings"
+    permission_action_map = {"tax_presets": "read", "apply_tax_preset": "update"}
     lookup_value_regex = r"[^/]+"
+
+    @action(detail=False, methods=["get"], url_path="tax-presets")
+    def tax_presets(self, request: Request) -> Response:
+        """`GET /settings/tax-presets` — soliq rejimlari va ularning qiymatlari (13.8)."""
+        from apps.settings_app import legal
+
+        return Response(legal.presets())
+
+    @action(detail=False, methods=["post"], url_path="tax-presets/apply")
+    def apply_tax_preset(self, request: Request) -> Response:
+        """`POST /settings/tax-presets/apply {preset}` — stavkalarni birdan yozadi."""
+        from apps.settings_app import legal
+
+        user = request_user(request)
+        preset = str(request.data.get("preset", ""))
+        values = legal.apply_preset(organization=user.organization, preset=preset)
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="tax_preset",
+            changes={"preset": preset, "values": values},
+        )
+        return Response({"preset": preset, "values": values})
 
     def list(self, request: Request) -> Response:
         user = request_user(request)

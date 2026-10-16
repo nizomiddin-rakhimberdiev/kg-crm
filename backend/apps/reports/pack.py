@@ -482,6 +482,14 @@ def _expenses(
     }
 
 
+def _fiscal(org: Any, branch: Any, year: int, month: int) -> dict[str, Any]:
+    """Fiskal chek bilan qoplanganlik (13.8, brif §5.3-13)."""
+    from apps.finance import fiscal
+
+    start, end = _bounds(year, month)
+    return fiscal.coverage(organization_id=org, start=start, end=end, branch_id=branch)
+
+
 def _plan(org: Any, branch: Any, year: int, month: int) -> dict[str, Any]:
     """Reja va fakt; oy oxiridan 30/60/90 kunlik prognoz (13.7)."""
     from apps.reports import forecast, planning
@@ -800,6 +808,7 @@ def build(*, organization_id: Any, year: int, month: int, branch_id: Any = None)
             "paid_in_month": flow["outflows"].get("taxes", "0.00"),
             "payroll_withheld": payroll["withheld_taxes"],
             "social_tax": payroll["social_tax"],
+            "fiscal_coverage": _fiscal(org, branch, year, month),
         },
         "checks": {"items": checks},
         "attention": {"items": attention},

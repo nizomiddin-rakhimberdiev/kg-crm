@@ -97,6 +97,33 @@ DEFAULTS: dict[str, Any] = {
     "forecast.tax_day": 15,
     # "Bir yangi bolaga marketing xarajati" shu toifa (va ichki toifalari).
     "report.marketing_category": "Marketing",
+    # Bosqich 13.8 (brif §9): fiskal chek nazorati shu sanadan boshlanadi —
+    # bo'sh bo'lsa o'chiq. Eski oylar yoqilgan kuni qizarib ketmasin.
+    "fiscal.control_from": "2026-11-01",
+    # Ota-onaning JShDS imtiyozi: bir bola uchun oyiga shu summagacha.
+    "tax.parent_exemption_monthly": 3000000,
+    # Soliq rejimi (13.8b): "pq403" · "general" · "turnover". Preset
+    # (`settings_app/legal.py`) stavkalarni birdan yozadi.
+    "tax.regime": "pq403",
+    "tax.turnover_percent": 0,
+    # Buxgalter jurnali (13.8c): hisob kodlari. Birinchi yettitasi brif §9
+    # dan, qolganlari — boshlang'ich taklif; hammasini buxgalter tasdiqlaydi.
+    "accounts.cash": "5010",
+    "accounts.bank": "5110",
+    "accounts.receivables": "4010",
+    "accounts.advances": "6310",
+    "accounts.payroll": "6710",
+    "accounts.budget": "6410",
+    "accounts.revenue": "9030",
+    "accounts.suppliers": "6010",
+    "accounts.expenses": "9420",
+    "accounts.payroll_expense": "9420",
+    "accounts.fixed_assets": "0100",
+    "accounts.other_income": "9390",
+    "accounts.adjustments": "9390",
+    "accounts.owner": "8710",
+    "accounts.capital": "8330",
+    "accounts.loans": "6810",
     # --- Bosqich 12.2: imtiyozlar (Oriental Kinderland qiymatlari) ---
     #
     # Aka-uka: bir oiladagi (umumiy vasiy) har bir bolaga shuncha so'm

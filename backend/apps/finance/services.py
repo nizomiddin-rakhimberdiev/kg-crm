@@ -1083,6 +1083,9 @@ def record_payment(
     employee: Any = None,
     backdate_reason: str = "",
     allocation_reason: str = "",
+    payer_kind: str = "guardian",
+    payer_org: str = "",
+    payer_tin: str = "",
 ) -> Payment:
     """
     To'lovni qayd etadi — BITTA tranzaksiyada (docs/03 §13.5, §26).
@@ -1122,6 +1125,9 @@ def record_payment(
     paid_at = paid_at or timezone.now()
     backdate_reason = check_payment_date(paid_at, backdate_reason)
     payer_name = _check_payer(child, payer)
+    payer_kind, payer_name, payer_tin = _check_payer_kind(
+        payer_kind, payer_name, payer_org, payer_tin
+    )
     _check_payroll(method, employee)
 
     if invoice is not None:
@@ -1157,6 +1163,8 @@ def record_payment(
                 batch_id=batch_id,
                 payer=payer,
                 payer_name=payer_name,
+                payer_kind=payer_kind,
+                payer_tin=payer_tin,
                 employee=employee if method == PaymentMethod.PAYROLL else None,
                 backdate_reason=backdate_reason,
                 allocation_reason=allocation_reason if invoice is not None else "",
@@ -1274,6 +1282,27 @@ def _check_payer(child: Child, payer: Any) -> str:
     if not ChildGuardian.objects.filter(child=child, guardian=payer).exists():
         raise BusinessRuleViolation(gettext("Toʻlovchi bu bolaning vasiysi emas."))
     return str(payer.full_name)[:255]
+
+
+def _check_payer_kind(kind: str, name: str, organization: str, tin: str) -> tuple[str, str, str]:
+    """
+    Ota-onaning ish beruvchisi to'laganda — tashkilot nomi va STIR (13.8).
+    STIR 9 raqam; bo'sh qolishi mumkin, noto'g'risi — yo'q.
+    """
+    from apps.finance.models import PayerKind
+
+    kind = kind or PayerKind.GUARDIAN
+    if kind not in PayerKind.values:
+        raise BusinessRuleViolation(gettext("Toʻlovchi turi notoʻgʻri."))
+    tin = "".join(str(tin or "").split())
+    if tin and not (tin.isdigit() and len(tin) == 9):
+        raise BusinessRuleViolation(gettext("STIR 9 ta raqamdan iborat boʻlishi kerak."))
+    if kind == PayerKind.GUARDIAN:
+        return kind, name, ""
+    organization = str(organization or "").strip()[:255]
+    if not organization:
+        raise BusinessRuleViolation(gettext("Toʻlovchi tashkilot nomini kiriting."))
+    return kind, organization, tin
 
 
 def _check_payroll(method: str, employee: Any) -> None:
@@ -1579,6 +1608,9 @@ def record_payment_batch(
     payer: Any = None,
     backdate_reason: str = "",
     allocation_reason: str = "",
+    payer_kind: str = "guardian",
+    payer_org: str = "",
+    payer_tin: str = "",
 ) -> list[Payment]:
     """
     Bitta kassir harakatida bir nechta usulda to'lov (docs/03 §13.5a).
@@ -1664,6 +1696,9 @@ def record_payment_batch(
                     employee=line.get("employee"),
                     backdate_reason=backdate_reason,
                     allocation_reason=allocation_reason,
+                    payer_kind=payer_kind,
+                    payer_org=payer_org,
+                    payer_tin=payer_tin,
                 )
             )
             outstanding -= applied
@@ -1684,6 +1719,9 @@ def record_payment_batch(
                     payer=payer,
                     employee=line.get("employee"),
                     backdate_reason=backdate_reason,
+                    payer_kind=payer_kind,
+                    payer_org=payer_org,
+                    payer_tin=payer_tin,
                 )
             )
 

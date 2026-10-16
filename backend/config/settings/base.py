@@ -329,6 +329,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "reports.remind_late_reports",
         "schedule": crontab(hour=9, minute=15),
     },
+    # Soliq muddatlari (Bosqich 13.8): 3 kun oldin va o'tganda — bir martadan.
+    "remind-taxes": {
+        "task": "reports.remind_taxes",
+        "schedule": crontab(hour=9, minute=20),
+    },
     # --- Obuna (ADR-11) ---
     #
     # Kunlik o'lchov o'tkazib yuborilsa hisob KAMAYADI va o'tmishdagi

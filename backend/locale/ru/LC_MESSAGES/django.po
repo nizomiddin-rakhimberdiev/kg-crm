@@ -2521,3 +2521,198 @@ msgstr "{month:02d}.{year}: сумма текущего месяца × {rate}"
 
 msgid "{months} oylik ish haqi fondi"
 msgstr "{months} мес. фонда оплаты труда"
+
+msgid "Yanvar"
+msgstr "Январь"
+
+msgid "Fevral"
+msgstr "Февраль"
+
+msgid "Mart"
+msgstr "Март"
+
+msgid "Aprel"
+msgstr "Апрель"
+
+msgid "May"
+msgstr "Май"
+
+msgid "Iyun"
+msgstr "Июнь"
+
+msgid "Iyul"
+msgstr "Июль"
+
+msgid "Avgust"
+msgstr "Август"
+
+msgid "Sentabr"
+msgstr "Сентябрь"
+
+msgid "Oktabr"
+msgstr "Октябрь"
+
+msgid "Noyabr"
+msgstr "Ноябрь"
+
+msgid "Dekabr"
+msgstr "Декабрь"
+
+msgid "Aylanma"
+msgstr "Обороты"
+
+msgid "Aylanmadan olinadigan soliq"
+msgstr "Налог с оборота"
+
+msgid "Bogʻcha (onlayn-NKM / virtual kassa)"
+msgstr "Детсад (онлайн-ККМ / виртуальная касса)"
+
+msgid "Bogʻcha toʻlovlari haqida maʼlumotnoma — {year}"
+msgstr "Справка об оплате детского сада — {year}"
+
+msgid "Bu soliq allaqachon toʻlangan."
+msgstr "Этот налог уже уплачен."
+
+msgid "Bunday soliq rejimi yoʻq: {preset}"
+msgstr "Нет такого налогового режима: {preset}"
+
+msgid "Chek raqami yoki QR havolasini kiriting."
+msgstr "Введите номер чека или ссылку QR."
+
+msgid "Direktor"
+msgstr "Директор"
+
+msgid "Dividend"
+msgstr "Дивиденд"
+
+msgid "Dividend soligʻi"
+msgstr "Налог на дивиденды"
+
+msgid "Dividend soligʻi hisoblandi"
+msgstr "Начислен налог на дивиденды"
+
+msgid "Fiskal cheksiz naqd yoki karta toʻlovi"
+msgstr "Оплата наличными или картой без фискального чека"
+
+msgid "Hisob"
+msgstr "Счёт"
+
+msgid "Hisob kodlari — boshlangʻich; buxgalter tasdiqlashi kerak."
+msgstr "Коды счетов — начальные; их должен утвердить бухгалтер."
+
+msgid "Hisoblandi: {child}"
+msgstr "Начислено: {child}"
+
+msgid "Hujjat"
+msgstr "Документ"
+
+msgid "INPS (pensiya badali)"
+msgstr "ИНПС (пенсионный взнос)"
+
+msgid "Ijtimoiy soliq"
+msgstr "Социальный налог"
+
+msgid "Ijtimoiy soliq hisoblandi"
+msgstr "Начислен социальный налог"
+
+msgid "Ish haqi hisoblandi"
+msgstr "Начислена зарплата"
+
+msgid "Ish haqi toʻlandi"
+msgstr "Выплачена зарплата"
+
+msgid "JShDS (daromad soligʻi)"
+msgstr "НДФЛ (подоходный налог)"
+
+msgid "JShDS va INPS ushlandi"
+msgstr "Удержаны НДФЛ и ИНПС"
+
+msgid "Jami"
+msgstr "Итого"
+
+msgid "Jurnal"
+msgstr "Журнал"
+
+msgid "Limit ichida"
+msgstr "В пределах лимита"
+
+msgid "Mazmun"
+msgstr "Содержание"
+
+msgid "Naqd va karta toʻlovlarida fiskal chek bor"
+msgstr "У оплат наличными и картой есть фискальный чек"
+
+msgid "Nasiya"
+msgstr "В долг"
+
+msgid "Nasiya toʻlandi"
+msgstr "Долг поставщику погашен"
+
+msgid "Nodavlat MTT imtiyozi (PQ-403)"
+msgstr "Льгота негосударственных ДОО (ПП-403)"
+
+msgid "Nodavlat maktabgacha taʼlim tashkilotiga toʻlov — ota-onaning JShDS imtiyozi uchun. Oylik limit: {limit} soʻm (bogʻcha sozlamasi, buxgalter tasdiqlaydi)."
+msgstr "Оплата негосударственной дошкольной организации — для льготы родителя по НДФЛ. Месячный лимит: {limit} сум (настройка детсада, утверждает бухгалтер)."
+
+msgid "Ota-onaga qaytarildi"
+msgstr "Возвращено родителю"
+
+msgid "Ota-onaning ish beruvchisi"
+msgstr "Работодатель родителя"
+
+msgid "Oy"
+msgstr "Месяц"
+
+msgid "Oylik {period}"
+msgstr "Зарплата {period}"
+
+msgid "Pul qaysi qopdan toʻlanishini tanlang."
+msgstr "Выберите, из какой кассы платить."
+
+msgid "Qaytarilgan toʻlovga chek yozilmaydi."
+msgstr "На отменённую оплату чек не записывается."
+
+msgid "Qiymatlar — boshlangʻich; buxgalter tasdiqlashi kerak."
+msgstr "Значения — начальные; их должен утвердить бухгалтер."
+
+msgid "STIR 9 ta raqamdan iborat boʻlishi kerak."
+msgstr "ИНН должен состоять из 9 цифр."
+
+msgid "Sotuv"
+msgstr "Продажа"
+
+msgid "Toʻlov tizimi"
+msgstr "Платёжная система"
+
+msgid "Toʻlov: {child}"
+msgstr "Оплата: {child}"
+
+msgid "Toʻlovchi tashkilot nomini kiriting."
+msgstr "Введите название организации-плательщика."
+
+msgid "Toʻlovchi turi notoʻgʻri."
+msgstr "Неверный тип плательщика."
+
+msgid "Toʻlovchilar"
+msgstr "Плательщики"
+
+msgid "Umumiy rejim"
+msgstr "Общий режим"
+
+msgid "Vasiylar"
+msgstr "Опекуны"
+
+msgid "Xarajat"
+msgstr "Расход"
+
+msgid "{n} ta toʻlovda chek yoʻq, jami {amount} soʻm"
+msgstr "{n} оплат без чека, всего {amount} сум"
+
+msgid "{title}, {period}"
+msgstr "{title}, {period}"
+
+msgid "⚠️ {title} ({period}): {amount} soʻm — muddati oʻtdi ({due})."
+msgstr "⚠️ {title} ({period}): {amount} сум — срок прошёл ({due})."
+
+msgid "🧾 {title} ({period}): {amount} soʻm, muddat {due}."
+msgstr "🧾 {title} ({period}): {amount} сум, срок {due}."

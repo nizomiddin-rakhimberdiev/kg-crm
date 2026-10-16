@@ -89,6 +89,8 @@ OPERATIONAL_TABLES: tuple[str, ...] = (
     "report_event",
     "report_share_link",
     "budget_line",
+    "payment_fiscal",
+    "tax_obligation",
     "child",
     "child_guardian",
     "child_pause",

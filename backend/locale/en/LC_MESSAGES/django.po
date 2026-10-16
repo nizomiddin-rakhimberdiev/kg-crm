@@ -2521,3 +2521,198 @@ msgstr "{month:02d}.{year}: this month’s amount × {rate}"
 
 msgid "{months} oylik ish haqi fondi"
 msgstr "{months} months of the payroll fund"
+
+msgid "Yanvar"
+msgstr "January"
+
+msgid "Fevral"
+msgstr "February"
+
+msgid "Mart"
+msgstr "March"
+
+msgid "Aprel"
+msgstr "April"
+
+msgid "May"
+msgstr "May"
+
+msgid "Iyun"
+msgstr "June"
+
+msgid "Iyul"
+msgstr "July"
+
+msgid "Avgust"
+msgstr "August"
+
+msgid "Sentabr"
+msgstr "September"
+
+msgid "Oktabr"
+msgstr "October"
+
+msgid "Noyabr"
+msgstr "November"
+
+msgid "Dekabr"
+msgstr "December"
+
+msgid "Aylanma"
+msgstr "Turnover"
+
+msgid "Aylanmadan olinadigan soliq"
+msgstr "Turnover tax"
+
+msgid "Bogʻcha (onlayn-NKM / virtual kassa)"
+msgstr "Kindergarten (online till / virtual till)"
+
+msgid "Bogʻcha toʻlovlari haqida maʼlumotnoma — {year}"
+msgstr "Statement of kindergarten payments — {year}"
+
+msgid "Bu soliq allaqachon toʻlangan."
+msgstr "This tax has already been paid."
+
+msgid "Bunday soliq rejimi yoʻq: {preset}"
+msgstr "No such tax regime: {preset}"
+
+msgid "Chek raqami yoki QR havolasini kiriting."
+msgstr "Enter the receipt number or QR link."
+
+msgid "Direktor"
+msgstr "Director"
+
+msgid "Dividend"
+msgstr "Dividend"
+
+msgid "Dividend soligʻi"
+msgstr "Dividend tax"
+
+msgid "Dividend soligʻi hisoblandi"
+msgstr "Dividend tax accrued"
+
+msgid "Fiskal cheksiz naqd yoki karta toʻlovi"
+msgstr "Cash or card payment without a fiscal receipt"
+
+msgid "Hisob"
+msgstr "Account"
+
+msgid "Hisob kodlari — boshlangʻich; buxgalter tasdiqlashi kerak."
+msgstr "Account codes are a starting point; the accountant must confirm them."
+
+msgid "Hisoblandi: {child}"
+msgstr "Charged: {child}"
+
+msgid "Hujjat"
+msgstr "Document"
+
+msgid "INPS (pensiya badali)"
+msgstr "INPS (pension contribution)"
+
+msgid "Ijtimoiy soliq"
+msgstr "Social tax"
+
+msgid "Ijtimoiy soliq hisoblandi"
+msgstr "Social tax accrued"
+
+msgid "Ish haqi hisoblandi"
+msgstr "Payroll accrued"
+
+msgid "Ish haqi toʻlandi"
+msgstr "Payroll paid"
+
+msgid "JShDS (daromad soligʻi)"
+msgstr "Personal income tax"
+
+msgid "JShDS va INPS ushlandi"
+msgstr "Income tax and INPS withheld"
+
+msgid "Jami"
+msgstr "Total"
+
+msgid "Jurnal"
+msgstr "Journal"
+
+msgid "Limit ichida"
+msgstr "Within the limit"
+
+msgid "Mazmun"
+msgstr "Description"
+
+msgid "Naqd va karta toʻlovlarida fiskal chek bor"
+msgstr "Cash and card payments have a fiscal receipt"
+
+msgid "Nasiya"
+msgstr "On credit"
+
+msgid "Nasiya toʻlandi"
+msgstr "Credit purchase paid"
+
+msgid "Nodavlat MTT imtiyozi (PQ-403)"
+msgstr "Private preschool exemption (PQ-403)"
+
+msgid "Nodavlat maktabgacha taʼlim tashkilotiga toʻlov — ota-onaning JShDS imtiyozi uchun. Oylik limit: {limit} soʻm (bogʻcha sozlamasi, buxgalter tasdiqlaydi)."
+msgstr "Payment to a private preschool — for the parent's income tax exemption. Monthly limit: {limit} so‘m (kindergarten setting, confirmed by the accountant)."
+
+msgid "Ota-onaga qaytarildi"
+msgstr "Refunded to the parent"
+
+msgid "Ota-onaning ish beruvchisi"
+msgstr "Parent’s employer"
+
+msgid "Oy"
+msgstr "Month"
+
+msgid "Oylik {period}"
+msgstr "Payroll {period}"
+
+msgid "Pul qaysi qopdan toʻlanishini tanlang."
+msgstr "Choose which pot to pay from."
+
+msgid "Qaytarilgan toʻlovga chek yozilmaydi."
+msgstr "A reversed payment cannot get a receipt."
+
+msgid "Qiymatlar — boshlangʻich; buxgalter tasdiqlashi kerak."
+msgstr "The values are a starting point; the accountant must confirm them."
+
+msgid "STIR 9 ta raqamdan iborat boʻlishi kerak."
+msgstr "The TIN must be 9 digits."
+
+msgid "Sotuv"
+msgstr "Sale"
+
+msgid "Toʻlov tizimi"
+msgstr "Payment provider"
+
+msgid "Toʻlov: {child}"
+msgstr "Payment: {child}"
+
+msgid "Toʻlovchi tashkilot nomini kiriting."
+msgstr "Enter the paying organization's name."
+
+msgid "Toʻlovchi turi notoʻgʻri."
+msgstr "Invalid payer type."
+
+msgid "Toʻlovchilar"
+msgstr "Payers"
+
+msgid "Umumiy rejim"
+msgstr "General regime"
+
+msgid "Vasiylar"
+msgstr "Guardians"
+
+msgid "Xarajat"
+msgstr "Expense"
+
+msgid "{n} ta toʻlovda chek yoʻq, jami {amount} soʻm"
+msgstr "{n} payments without a receipt, {amount} so‘m in total"
+
+msgid "{title}, {period}"
+msgstr "{title}, {period}"
+
+msgid "⚠️ {title} ({period}): {amount} soʻm — muddati oʻtdi ({due})."
+msgstr "⚠️ {title} ({period}): {amount} so‘m — overdue since {due}."
+
+msgid "🧾 {title} ({period}): {amount} soʻm, muddat {due}."
+msgstr "🧾 {title} ({period}): {amount} so‘m, due {due}."

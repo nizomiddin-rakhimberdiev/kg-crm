@@ -312,6 +312,12 @@ NEW_PAYMENT_METHODS = [
 ]
 
 
+class PayerKind(models.TextChoices):
+    GUARDIAN = "guardian", gettext_lazy("Vasiy")
+    EMPLOYER = "employer", gettext_lazy("Ota-onaning ish beruvchisi")
+    OTHER = "other", gettext_lazy("Boshqa")
+
+
 class Payment(BranchScopedModel):
     """
     Pul kelib tushgan hodisa (docs/03 §13.5).
@@ -400,10 +406,22 @@ class Payment(BranchScopedModel):
     # EKRANGA kerak: "menga o'sha bitta harakatni ko'rsat".
     batch_id = models.UUIDField(null=True, blank=True, editable=False)
 
+    # Bosqich 13.8 (brif §9): to'lovchi ota-onaning ish beruvchisi bo'lishi
+    # mumkin — nomi `payer_name` da, STIR shu yerda. Ota-onaning JShDS
+    # imtiyozi uchun yillik ma'lumotnoma shu ma'lumotni ko'rsatadi.
+    payer_kind = models.CharField(
+        max_length=10, choices=PayerKind.choices, default=PayerKind.GUARDIAN
+    )
+    payer_tin = models.CharField(max_length=9, blank=True)
+
     class Meta:
         db_table = "payment"
         ordering = ["-paid_at"]
         constraints = [
+            models.CheckConstraint(
+                condition=models.Q(payer_tin="") | models.Q(payer_tin__regex=r"^[0-9]{9}$"),
+                name="ck_payment_payer_tin",
+            ),
             models.CheckConstraint(
                 condition=models.Q(amount__gt=0), name="ck_payment_amount_positive"
             ),
@@ -776,3 +794,52 @@ class PaymentSettlement(BranchScopedModel):
 
     def __str__(self) -> str:
         return f"{self.payment_id} @ {self.settled_on}"
+
+
+# --- Fiskal chek (Bosqich 13.8, brif §9) ---
+
+
+class FiscalIssuer(models.TextChoices):
+    KINDERGARTEN = "kindergarten", gettext_lazy("Bogʻcha (onlayn-NKM / virtual kassa)")
+    PROVIDER = "provider", gettext_lazy("Toʻlov tizimi")
+
+
+class FiscalKind(models.TextChoices):
+    ADVANCE = "advance", gettext_lazy("Avans")
+    SALE = "sale", gettext_lazy("Sotuv")
+    CREDIT = "credit", gettext_lazy("Kredit")
+
+
+class PaymentFiscal(BranchScopedModel):
+    """
+    To'lovning fiskal cheki — raqam yoki QR, kim bergani, turi.
+
+    Alohida jadval: to'lov o'zgarmas hujjat (D3), chek esa keyin, boshqa
+    odam tomonidan qo'shilishi mumkin. Bitta to'lov — bitta chek. Virtual
+    kassa integratsiyasi keyingi bosqich; hozircha chek qo'lda yoziladi.
+    """
+
+    payment = models.OneToOneField(
+        "finance.Payment", on_delete=models.RESTRICT, related_name="fiscal"
+    )
+    number = models.CharField(max_length=64, blank=True)
+    qr = models.CharField(max_length=500, blank=True)
+    issuer = models.CharField(
+        max_length=14, choices=FiscalIssuer.choices, default=FiscalIssuer.KINDERGARTEN
+    )
+    kind = models.CharField(max_length=8, choices=FiscalKind.choices)
+    recorded_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="+",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "payment_fiscal"
+        constraints = [
+            models.CheckConstraint(
+                condition=~models.Q(number="", qr=""), name="ck_payment_fiscal_reference"
+            ),
+        ]

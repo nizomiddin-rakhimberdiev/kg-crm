@@ -381,6 +381,7 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
         "board_summary": "read",
         "journal_summary": "read",
         "receipt": "read",
+        "fiscal": "update",
     }
     model = Payment
     select_related_fields = ("child", "invoice")
@@ -433,6 +434,9 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
             employee=data.get("employee"),
             backdate_reason=data.get("backdate_reason", ""),
             allocation_reason=data.get("allocation_reason", ""),
+            payer_kind=data.get("payer_kind", "guardian"),
+            payer_org=data.get("payer_org", ""),
+            payer_tin=data.get("payer_tin", ""),
         )
         audit.record(
             action="create",
@@ -545,6 +549,9 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
             payer=data.get("payer"),
             backdate_reason=data.get("backdate_reason", ""),
             allocation_reason=data.get("allocation_reason", ""),
+            payer_kind=data.get("payer_kind", "guardian"),
+            payer_org=data.get("payer_org", ""),
+            payer_tin=data.get("payer_tin", ""),
         )
         for payment in payments:
             audit.record(
@@ -680,6 +687,34 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
             {"id": str(refund.id), "amount": f"{refund.amount:.2f}"},
             status=status.HTTP_201_CREATED,
         )
+
+    @action(detail=True, methods=["post"])
+    def fiscal(self, request: Request, pk: str | None = None) -> Response:
+        """
+        `POST /payments/{id}/fiscal {number?, qr?}` — fiskal chek (13.8, test 13).
+        Kassir o'zi qabul qilgan to'lovga chek yozadi ("faqat o'ziniki"
+        `get_object` da qo'llanadi).
+        """
+        from apps.finance import fiscal as rules
+        from apps.finance.serializers import fiscal_data
+
+        payment = self.get_object()
+        user = request_user(request)
+        row = rules.record_receipt(
+            payment=payment,
+            number=str(request.data.get("number", "")),
+            qr=str(request.data.get("qr", "")),
+            user=user,
+        )
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="payment_fiscal",
+            entity_id=row.id,
+            changes={"payment": str(payment.id), "number": row.number},
+        )
+        return Response(fiscal_data(row), status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"])
     def reverse(self, request: Request, pk: str | None = None) -> Response:

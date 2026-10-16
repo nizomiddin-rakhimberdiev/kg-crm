@@ -33,6 +33,7 @@ __all__ = [
     "recompute_balances",
     "purge_old_exports",
     "remind_late_reports",
+    "remind_taxes",
 ]
 
 
@@ -380,4 +381,62 @@ def remind_late_reports() -> dict[str, int]:
             logger.exception(
                 "Kechikkan hisobot eslatmasi yiqildi: organization=%s", organization.id
             )
+    return totals
+
+
+@reliable_task(name="reports.remind_taxes")
+def remind_taxes() -> dict[str, int]:
+    """
+    Har kuni: soliq muddatiga 3 kun qolganda bir marta, o'tib ketganda yana
+    bir marta rahbarlarga eslatma (Bosqich 13.8, brif §9). Avval o'tgan va
+    joriy oy majburiyatlari hujjatlardan yangilanadi.
+    """
+    from django.utils.translation import gettext
+
+    from apps.intelligence import alerts
+    from apps.organizations.models import Organization
+    from apps.reports import taxes
+    from apps.reports.models import TaxKind, TaxObligation
+
+    today = timezone.localdate()
+    previous = (today.year, today.month - 1) if today.month > 1 else (today.year - 1, 12)
+    with platform_context():
+        organizations = list(Organization.objects.filter(is_active=True))
+    totals = {"organizations": 0, "reminded": 0, "failed": 0}
+    for organization in organizations:
+        try:
+            with organization_context(organization.id):
+                totals["organizations"] += 1
+                for year, month in (previous, (today.year, today.month)):
+                    taxes.sync(organization=organization, year=year, month=month)
+                for row in TaxObligation.objects.filter(operation__isnull=True, amount__gt=0):
+                    days = (row.due_date - today).days
+                    title = str(TaxKind(row.kind).label)
+                    period = f"{row.period_month:02d}.{row.period_year}"
+                    amount = f"{int(row.amount):,}".replace(",", " ")
+                    if 0 <= days <= 3 and row.reminded_at is None:
+                        text = gettext("🧾 {title} ({period}): {amount} soʻm, muddat {due}.")
+                        field = "reminded_at"
+                    elif days < 0 and row.overdue_notified_at is None:
+                        text = gettext(
+                            "⚠️ {title} ({period}): {amount} soʻm — muddati oʻtdi ({due})."
+                        )
+                        field = "overdue_notified_at"
+                    else:
+                        continue
+                    alerts.notify(
+                        organization_id=organization.id,
+                        text=text.format(
+                            title=title,
+                            period=period,
+                            amount=amount,
+                            due=row.due_date.strftime("%d.%m.%Y"),
+                        ),
+                    )
+                    setattr(row, field, timezone.now())
+                    row.save(update_fields=[field, "updated_at"])
+                    totals["reminded"] += 1
+        except Exception:  # noqa: BLE001 — bitta tashkilot boshqalarini to'xtatmasin
+            totals["failed"] += 1
+            logger.exception("Soliq eslatmasi yiqildi: organization=%s", organization.id)
     return totals

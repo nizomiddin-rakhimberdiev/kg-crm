@@ -726,6 +726,14 @@ All organization-scoped (RLS). **`report_review`** — one row per (organization
 
 Organization-scoped (RLS). `branch_id` (nullable — organization-wide plan), `period_year`, `period_month`, `kind` (`revenue` · `other_income` · `payroll` · `category`), `category_id` (FK → expense_category, `RESTRICT`; required exactly when `kind = 'category'` — `CHECK`), `amount` (`NUMERIC(14,2)`, `CHECK ≥ 0`), `updated_by_id`; `UNIQUE (organization, branch, period, kind, category) NULLS NOT DISTINCT`. Editable data, not a ledger: saving a month replaces its lines. The actual beside each line is computed, never stored.
 
+### 13.3f Legal settings — `payment_fiscal`, `tax_obligation` (Bosqich 13.8, ADR-44)
+
+**`payment.payer_kind`** (`guardian` · `employer` · `other`, default `guardian`) and **`payment.payer_tin`** (`CHECK` empty or nine digits); for an employer `payer_name` holds the organisation. **`bank_statement_line.counterparty_tin`** — the counterparty's TIN when the statement has that column.
+
+**`payment_fiscal`** — organization-scoped (RLS), one per payment (`OneToOne`, `RESTRICT`): `number`, `qr` (`CHECK` at least one), `issuer` (`kindergarten` · `provider`), `kind` (`advance` · `sale` · `credit`, from the month the money settled), `recorded_by_id`.
+
+**`tax_obligation`** — organization-scoped (RLS): `kind` (`income_tax` · `pension` · `social_tax` · `dividend_tax` · `turnover_tax`), `period_year`, `period_month`, `due_date`, `amount` (`CHECK ≥ 0`), `operation_id` (OneToOne → `money_operation`, `RESTRICT` — the `tax_payment` that paid it), `reminded_at`, `overdue_notified_at`; `UNIQUE (organization, branch, kind, period) NULLS NOT DISTINCT`. The amount is recomputed from the documents until `operation_id` is set.
+
 ### 13.4 `invoice_line`
 For itemization beyond the base tariff (extra meals, activities, one-off fees).
 

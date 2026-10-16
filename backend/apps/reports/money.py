@@ -401,7 +401,7 @@ def position(*, organization_id: Any, as_of: date, branch_id: Any = None) -> dic
         or ZERO
     )
     payroll_taxes -= op_sum(
-        kind=OperationKind.TAX_PAYMENT, subtype__in=["income_tax", "social_tax"]
+        kind=OperationKind.TAX_PAYMENT, subtype__in=["income_tax", "social_tax", "pension"]
     )
     taxes = max(dividend_tax, ZERO) + max(payroll_taxes, ZERO)
     loans = max(op_sum(kind=OperationKind.LOAN_IN) - op_sum(kind=OperationKind.LOAN_REPAY), ZERO)

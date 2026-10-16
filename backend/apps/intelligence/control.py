@@ -73,6 +73,7 @@ CHECK_TITLES = {
     "cash_counts": gettext_lazy("Kassa sanoqlari"),
     "bank_statement": gettext_lazy("Bank koʻchirmasi bilan mos"),
     "month_closed": gettext_lazy("Oy yopilgan"),
+    "fiscal_receipts": gettext_lazy("Naqd va karta toʻlovlarida fiskal chek bor"),
 }
 
 
@@ -221,6 +222,25 @@ def checks(
         .exists()
     )
     rows.append(_check("month_closed", closed_month if finished else None, "", "/reports"))
+
+    # Fiskal chek (13.8, test 13): nazorat yoqilgan sanadan; Click/Payme
+    # chekini to'lov tizimi beradi, ular bu yerga tushmaydi.
+    from apps.finance import fiscal
+
+    if fiscal.control_from(branch_id) is None:
+        rows.append(_check("fiscal_receipts", None))
+    else:
+        cover = fiscal.coverage(
+            organization_id=organization_id, start=start, end=end, branch_id=branch_id
+        )
+        rows.append(
+            _check(
+                "fiscal_receipts",
+                cover["covered"] == cover["required"] if cover["required"] else True,
+                f"{cover['covered']}/{cover['required']}" if cover["required"] else "",
+                "/payments",
+            )
+        )
     return rows
 
 
@@ -242,6 +262,7 @@ RULE_TITLES = {
     "attendance_without_invoice": gettext_lazy("Davomatda bor, fakturasi 0 yoki ketgan"),
     "active_without_attendance": gettext_lazy("Faol, lekin davomati yoʻq"),
     "staff_child_unpaid": gettext_lazy("Xodim farzandi toʻlamagan"),
+    "payment_without_fiscal": gettext_lazy("Fiskal cheksiz naqd yoki karta toʻlovi"),
 }
 
 
@@ -369,6 +390,30 @@ def _expense_rules(organization_id: Any, branch_id: Any, start: date, end: date)
                 )
             )
     return items
+
+
+def _fiscal_rules(organization_id: Any, branch_id: Any, start: date, end: date) -> list[dict]:
+    """Bitta band — oy bo'yicha jami; har to'lovga alohida band ro'yxatni ko'mib yuborardi."""
+    from apps.finance import fiscal
+
+    rows = fiscal.missing(
+        organization_id=organization_id, start=start, end=end, branch_id=branch_id
+    )
+    total = rows.aggregate(total=Sum("amount"))["total"]
+    count = rows.count()
+    if not count:
+        return []
+    return [
+        _item(
+            "payment_without_fiscal",
+            "warning",
+            gettext("{n} ta toʻlovda chek yoʻq, jami {amount} soʻm").format(
+                n=count, amount=_som(total)
+            ),
+            amount=total,
+            link="/payments",
+        )
+    ]
 
 
 def _money_rules(organization_id: Any, branch_id: Any, start: date, end: date) -> list[dict]:
@@ -628,6 +673,7 @@ def attention(
     items = (
         _expense_rules(organization_id, branch_id, start, end)
         + _money_rules(organization_id, branch_id, start, end)
+        + _fiscal_rules(organization_id, branch_id, start, end)
         + _children_rules(organization_id, branch_id, start, end)
     )
     order = {"critical": 0, "warning": 1, "info": 2}

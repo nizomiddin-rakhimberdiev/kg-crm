@@ -231,6 +231,9 @@ _ACTION_REPORT: dict[str, str] = {
     "annual": "finance",
     "annual_pdf": "finance",
     "annual_xlsx": "finance",
+    "tax_calendar": "finance",
+    "tax_pay": "finance",
+    "journal": "finance",
     "cash_flow": "finance",
     "position": "finance",
     "completeness": "monthly",
@@ -297,6 +300,10 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
         "annual": "read",
         "annual_pdf": "read",
         "annual_xlsx": "read",
+        # Soliq taqvimi (13.8): to'lash — pul chiqadi, rahbar ishi.
+        "tax_calendar": "read",
+        "tax_pay": "approve",
+        "journal": "read",
     }
     lookup_value_regex = "|".join(REPORT_TYPES)
     # `ScopedRateThrottle` shu nomdagi tezlikni qidiradi. U faqat
@@ -921,6 +928,102 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
             io.BytesIO(pack_render.to_xlsx(data, raw={gettext("Oylar"): months["rows"]})),
             filename=f"yillik-{year}.xlsx",
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+    @action(detail=False)
+    def journal(self, request: Request) -> Any:
+        """
+        `GET /reports/journal?year=&month=&file=xlsx|csv` — Dt/Kt jurnal (13.8).
+        `format` emas: DRF uni javob formatini tanlash uchun o'zi ushlab oladi.
+        """
+        import io
+
+        from apps.audit import services as audit
+        from apps.reports import journal
+
+        organization_id, year, month, branch = self._pack_scope(request)
+        data = journal.build(
+            organization_id=organization_id, year=year, month=month, branch_id=branch
+        )
+        kind = request.query_params.get("file", "")
+        if kind not in ("xlsx", "csv"):
+            return Response(data)
+        audit.record(
+            action="export",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="journal",
+            changes={"period": f"{year}-{month:02d}", "format": kind},
+        )
+        if kind == "csv":
+            return FileResponse(
+                io.BytesIO(journal.to_csv(data)),
+                filename=f"jurnal-{year}-{month:02d}.csv",
+                content_type="text/csv; charset=utf-8",
+            )
+        return FileResponse(
+            io.BytesIO(journal.to_xlsx(data)),
+            filename=f"jurnal-{year}-{month:02d}.xlsx",
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+    # --- Soliq taqvimi (Bosqich 13.8) ---
+
+    @action(detail=False, url_path="tax-calendar")
+    def tax_calendar(self, request: Request) -> Response:
+        """`GET /reports/tax-calendar?year=` — majburiyatlar, muddat va holat."""
+        from apps.reports import taxes
+
+        year = _parse_int(
+            request.query_params.get("year"), timezone.localdate().year, low=2000, high=2100
+        )
+        return Response(
+            taxes.calendar_for(organization=request_user(request).organization, year=year)
+        )
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path=r"tax-calendar/(?P<obligation_id>[0-9a-f-]{36})/pay",
+    )
+    def tax_pay(self, request: Request, obligation_id: str = "") -> Response:
+        """`POST /reports/tax-calendar/{id}/pay {cash_account_id, paid_on?}`."""
+        from apps.audit import services as audit
+        from apps.cash.models import CashAccount
+        from apps.reports import taxes
+        from apps.reports.models import TaxObligation
+
+        obligation = TaxObligation.objects.filter(pk=_parse_uuid(obligation_id)).first()
+        if obligation is None:
+            raise Http404
+        account = CashAccount.objects.filter(
+            pk=_parse_uuid(request.data.get("cash_account_id"))
+        ).first()
+        if account is None:
+            raise BusinessRuleViolation(gettext("Pul qaysi qopdan toʻlanishini tanlang."))
+        user = request_user(request)
+        paid_on = request.data.get("paid_on")
+        obligation = taxes.pay(
+            obligation=obligation,
+            account=account,
+            user=user,
+            paid_on=_parse_date(paid_on, timezone.localdate()) if paid_on else None,
+            allow_negative=str(request.data.get("allow_negative", "")).lower() == "true",
+        )
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="tax_obligation",
+            entity_id=obligation.id,
+            changes={"paid": str(obligation.amount), "kind": obligation.kind},
+        )
+        return Response(
+            {
+                "id": str(obligation.id),
+                "status": taxes.status_of(obligation),
+                "amount": f"{obligation.amount:.2f}",
+            }
         )
 
     @action(detail=False, url_path="pack/pdf")
