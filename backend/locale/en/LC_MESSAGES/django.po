@@ -1816,3 +1816,18 @@ msgstr "Choose which pot the money is returned from."
 
 msgid "Summa raqam boʻlishi kerak."
 msgstr "The amount must be a number."
+
+msgid "Kamida bitta toʻlovni tanlang."
+msgstr "Choose at least one payment."
+
+msgid "Bu toʻlov yoʻlda emas: {child}."
+msgstr "This payment is not in transit: {child}."
+
+msgid "Bu toʻlov allaqachon bankka tushgan: {child}."
+msgstr "This payment has already reached the bank: {child}."
+
+msgid "`payment_ids` roʻyxat boʻlishi kerak."
+msgstr "`payment_ids` must be a list."
+
+msgid "Toʻlov topilmadi."
+msgstr "Payment not found."

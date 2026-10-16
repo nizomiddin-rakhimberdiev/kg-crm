@@ -359,6 +359,8 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
     permission_action_map = {
         "reverse": "update",
         "refund": "update",
+        "in_transit": "read",
+        "settle": "update",
         "daily_summary": "read",
         "batch": "create",
         "board": "read",
@@ -556,6 +558,71 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
         o'sha bo'ladi.
         """
         return Response(services.receipt_for(self.get_object()))
+
+    @action(detail=False, methods=["get"], url_path="in-transit")
+    def in_transit(self, request: Request) -> Response:
+        """
+        `GET /payments/in-transit` — bankka hali tushmagan terminal/Click/Payme
+        pullari (Bosqich 13.2c). Kassir faqat o'zi qabul qilganlarini ko'radi.
+        """
+        user = request_user(request)
+        branch = request.query_params.get("branch") or None
+        items = selectors.in_transit(
+            organization_id=user.organization_id,
+            branch_id=branch if user.is_org_owner else user.branch_id,
+            received_by_id=user.id if payments_own_only(user) else None,
+        )
+        total = sum((Decimal(row["expected_amount"]) for row in items), Decimal("0"))
+        return Response(
+            {
+                "items": items,
+                "expected_total": f"{total:.2f}",
+                "overdue_count": sum(1 for row in items if row["overdue"]),
+            }
+        )
+
+    @action(detail=False, methods=["post"])
+    def settle(self, request: Request) -> Response:
+        """
+        `POST /payments/settle {payment_ids, settled_on, reference?}` — bank
+        tushumini tasdiqlash. Bank ko'chirmasi importi (13.3) ham shu servisni
+        chaqiradi.
+        """
+        from datetime import date as date_type
+
+        from rest_framework.exceptions import PermissionDenied
+
+        user = request_user(request)
+        if payments_own_only(user):
+            raise PermissionDenied(gettext("Bu amalga ruxsat yoʻq."))
+        ids = request.data.get("payment_ids") or []
+        if not isinstance(ids, list):
+            raise BusinessRuleViolation(gettext("`payment_ids` roʻyxat boʻlishi kerak."))
+        payments = list(Payment.objects.filter(pk__in=ids).select_related("child"))
+        if len(payments) != len(set(ids)):
+            raise NotFound(gettext("Toʻlov topilmadi."))
+        raw_day = request.data.get("settled_on")
+        try:
+            settled_on = date_type.fromisoformat(str(raw_day)) if raw_day else timezone.localdate()
+        except ValueError as exc:
+            raise BusinessRuleViolation(gettext("Sana YYYY-MM-DD koʻrinishida boʻlsin.")) from exc
+        total = services.settle_payments(
+            payments=payments,
+            settled_on=settled_on,
+            reference=str(request.data.get("reference", "")),
+            created_by=user,
+        )
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="payment_settlement",
+            changes={"payments": [str(p.id) for p in payments], "total": str(total)},
+        )
+        return Response(
+            {"count": len(payments), "expected_total": f"{total:.2f}"},
+            status=status.HTTP_201_CREATED,
+        )
 
     @action(detail=True, methods=["post"])
     def refund(self, request: Request, pk: str | None = None) -> Response:

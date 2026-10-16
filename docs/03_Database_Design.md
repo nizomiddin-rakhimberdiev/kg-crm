@@ -897,6 +897,10 @@ Organization-scoped (RLS), immutable. `kind`: `other_income` (subtype `subsidy` 
 
 Organization-scoped (RLS), immutable: `payment_id`, `child_id`, `cash_account_id` (all `RESTRICT`), `amount > 0`, `refunded_on`, `reason NOT NULL`. Only the unused part of that payment can go back (`payment_unallocated`, which now subtracts refunds — so returned money is never allocated to the next invoice); money that settled invoices must be released first. One transaction: the document, a ledger **debit** (`refund`) and an `out` movement. A payment with a refund can no longer be reversed as a whole — that would return the same money twice.
 
+### 13a.9 Money in transit — `payment_settlement` (Bosqich 13.2c)
+
+Terminal, Click and Payme money (and legacy `online`) is credited to the bank pot at once — it is the kindergarten's money — but it is **in transit** until a `payment_settlement` row says the bank received it (`payment_id` one-to-one `RESTRICT`, `settled_on`, `reference`). Expected amount = payment − its commission expense; expected date = paid day + `transit.settle_days` (default 1); past that date and unsettled it is **overdue**. `GET /cash-accounts/balances` splits each pot into `arrived` and `in_transit`; the 2026-10-15 rule stands — there is one bank account, transit is a state of money inside it, not a pot. Settlements come from the statement import (13.3) or by hand (`POST /payments/settle`, several payments in one bank credit). `in_transit(as_of=…)` gives the month-end picture for the balance.
+
 ## 14. Schema Domain: HR & Payroll
 
 ### 14.1 `position`

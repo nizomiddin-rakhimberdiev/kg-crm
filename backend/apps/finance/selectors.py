@@ -1040,3 +1040,77 @@ def monthly_table_rows(
             }
         )
     return rows
+
+
+# --- Yo'ldagi pul (Bosqich 13.2c) ---
+
+
+def in_transit(
+    *,
+    organization_id: Any,
+    branch_id: Any = None,
+    as_of: date | None = None,
+    received_by_id: Any = None,
+) -> list[dict[str, Any]]:
+    """
+    Bankka hali tushmagan terminal/Click/Payme to'lovlari.
+
+    Kutilgan summa = to'lov − komissiya (komissiya chiqimi to'lovning o'zida,
+    `expense.payment`); kutilgan sana = to'lov kuni + `transit.settle_days`.
+    `as_of` — o'sha kun oxiridagi holat (oy oxiri balansi uchun).
+    """
+    from apps.cash.models import CashMovement
+    from apps.expenses.models import Expense
+    from apps.finance.models import TRANSIT_METHODS, Payment
+    from apps.settings_app.services import get_setting
+
+    day = as_of or timezone.localdate()
+    payments = Payment.objects.filter(
+        organization_id=organization_id,
+        method__in=TRANSIT_METHODS,
+        reversed_at__isnull=True,
+        paid_at__date__lte=day,
+    ).filter(Q(settlement__isnull=True) | Q(settlement__settled_on__gt=day))
+    if branch_id:
+        payments = payments.filter(branch_id=branch_id)
+    if received_by_id:
+        payments = payments.filter(received_by_id=received_by_id)
+    payments = list(payments.select_related("child", "branch").order_by("paid_at"))
+    ids = [payment.id for payment in payments]
+    commissions = {
+        row["payment"]: row["total"]
+        for row in Expense.objects.filter(payment_id__in=ids)
+        .values("payment")
+        .annotate(total=Sum("amount"))
+    }
+    pots = dict(
+        CashMovement.objects.filter(source_type="payment", source_id__in=ids).values_list(
+            "source_id", "cash_account_id"
+        )
+    )
+    today = timezone.localdate()
+    days_cache: dict[Any, int] = {}
+    rows = []
+    for payment in payments:
+        if payment.branch_id not in days_cache:
+            days_cache[payment.branch_id] = int(
+                get_setting(key="transit.settle_days", branch=payment.branch) or 0
+            )
+        paid_on = timezone.localtime(payment.paid_at).date()
+        expected_on = paid_on + timedelta(days=days_cache[payment.branch_id])
+        commission = commissions.get(payment.id) or Decimal("0")
+        rows.append(
+            {
+                "payment_id": str(payment.id),
+                "child": payment.child.full_name,
+                "method": payment.method,
+                "paid_on": paid_on.isoformat(),
+                "amount": f"{payment.amount:.2f}",
+                "commission": f"{commission:.2f}",
+                "expected_amount": f"{payment.amount - commission:.2f}",
+                "expected_on": expected_on.isoformat(),
+                "overdue": expected_on < today,
+                "cash_account_id": str(pots.get(payment.id) or ""),
+            }
+        )
+    return rows

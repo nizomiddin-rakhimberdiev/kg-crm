@@ -30,6 +30,8 @@ __all__ = [
     "ChildLedgerEntry",
     "MonthClose",
     "Refund",
+    "PaymentSettlement",
+    "TRANSIT_METHODS",
 ]
 
 
@@ -738,3 +740,39 @@ class Refund(BranchScopedModel):
 
     def __str__(self) -> str:
         return f"{self.amount} → {self.child_id}"
+
+
+#: Pul bankka darhol emas, to'lov tizimi orqali keladigan usullar.
+#: `online` — 2026-10-15 gacha yozilgan eski Payme/Click.
+TRANSIT_METHODS: tuple[str, ...] = ("terminal", "click", "payme", "online")
+
+
+class PaymentSettlement(BranchScopedModel):
+    """
+    Yo'ldagi pul bankka tushdi (Bosqich 13.2c).
+
+    Terminal/Click/Payme to'lovi bank qopiga darhol yoziladi (u bog'chaning
+    puli), lekin "yo'lda" hisoblanadi — shu yozuv paydo bo'lguncha. Bank
+    ko'chirmasi importi (13.3) ularni o'zi yaratadi; hozircha qo'lda.
+    Bitta to'lov — bitta tushum.
+    """
+
+    payment = models.OneToOneField(
+        "finance.Payment", on_delete=models.RESTRICT, related_name="settlement"
+    )
+    settled_on = models.DateField()
+    reference = models.CharField(max_length=120, blank=True)
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="settlements",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "payment_settlement"
+        ordering = ["-settled_on"]
+
+    def __str__(self) -> str:
+        return f"{self.payment_id} @ {self.settled_on}"

@@ -80,6 +80,7 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.attendance.AbsenceClaim",
     # Qaytarish to'lovga, bolaga va qopga RESTRICT (13.2b).
     "apps.finance.Refund",
+    "apps.finance.PaymentSettlement",
     "apps.finance.PaymentAllocation",
     "apps.finance.Payment",
     "apps.finance.ChildLedgerEntry",

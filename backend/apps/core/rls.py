@@ -103,6 +103,7 @@ OPERATIONAL_TABLES: tuple[str, ...] = (
     "invoice_write_off",
     "month_close",
     "refund",
+    "payment_settlement",
     "menu_day",
     "menu_item",
     "merchant_credential",

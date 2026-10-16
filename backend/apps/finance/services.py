@@ -1966,3 +1966,46 @@ def refund_payment(
     )
     recompute_child_balance(payment.child)
     return refund
+
+
+# --- Yo'ldagi pul bankka tushdi (Bosqich 13.2c) ---
+
+
+@transaction.atomic
+def settle_payments(
+    *, payments: list[Payment], settled_on: Any, reference: str = "", created_by: Any = None
+) -> Decimal:
+    """
+    Bank tushumini tasdiqlaydi — bir nechta to'lov bitta tushum bo'lib
+    kelishi mumkin (Click kunlik reestri). Qaytaradi: kutilgan jami.
+    """
+    from apps.expenses.models import Expense
+    from apps.finance.models import TRANSIT_METHODS, PaymentSettlement
+
+    if not payments:
+        raise BusinessRuleViolation(gettext("Kamida bitta toʻlovni tanlang."))
+    total = Decimal("0")
+    for payment in payments:
+        if payment.method not in TRANSIT_METHODS or payment.is_reversed:
+            raise BusinessRuleViolation(
+                gettext("Bu toʻlov yoʻlda emas: {child}.").format(child=payment.child.full_name)
+            )
+        if PaymentSettlement.objects.filter(payment=payment).exists():
+            raise BusinessRuleViolation(
+                gettext("Bu toʻlov allaqachon bankka tushgan: {child}.").format(
+                    child=payment.child.full_name
+                )
+            )
+        PaymentSettlement.objects.create(
+            organization=payment.organization,
+            branch=payment.branch,
+            payment=payment,
+            settled_on=settled_on,
+            reference=reference.strip()[:120],
+            created_by=created_by,
+        )
+        commission = Expense.objects.filter(payment=payment).aggregate(total=Sum("amount"))[
+            "total"
+        ] or Decimal("0")
+        total += payment.amount - commission
+    return _money(total)

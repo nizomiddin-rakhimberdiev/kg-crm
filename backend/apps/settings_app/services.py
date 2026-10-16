@@ -62,6 +62,9 @@ DEFAULTS: dict[str, Any] = {
     # Bosqich 13.2b: egasiga dividend solig'i, foizda (buxgalter tasdiqlaydi).
     # Dividend to'langanda shu foiz majburiyat bo'lib yoziladi.
     "tax.dividend_percent": 5,
+    # Bosqich 13.2c: terminal/Click/Payme puli to'lovdan shuncha kun
+    # keyin bankka tushishi kutiladi; tushmasa — "kechikkan".
+    "transit.settle_days": 1,
     # --- Bosqich 12.2: imtiyozlar (Oriental Kinderland qiymatlari) ---
     #
     # Aka-uka: bir oiladagi (umumiy vasiy) har bir bolaga shuncha so'm

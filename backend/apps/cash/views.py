@@ -9,6 +9,7 @@ Bu yerda faqat "qaysi qoplar bor va ularda qancha" degan savol.
 from __future__ import annotations
 
 from datetime import datetime, time
+from decimal import Decimal
 from typing import Any
 
 from django.db.models import Q
@@ -85,12 +86,21 @@ class CashAccountViewSet(BranchScopedMixin, TenantViewSet):
         if payments_own_only(user):
             raise PermissionDenied(gettext("Bu amalga ruxsat yoʻq."))
         branch = request.query_params.get("branch") or None
-        return Response(
-            selectors.account_balances(
-                organization_id=user.organization_id,
-                branch_id=branch if user.is_org_owner else user.branch_id,
-            )
-        )
+        branch_id = branch if user.is_org_owner else user.branch_id
+        rows = selectors.account_balances(organization_id=user.organization_id, branch_id=branch_id)
+        # Bank qoldig'i ikkiga bo'linadi (Bosqich 13.2c): tushgan va yo'lda —
+        # terminal/Click/Payme puli hali bankka kelmagan.
+        from apps.finance.selectors import in_transit
+
+        transit: dict[str, Decimal] = {}
+        for item in in_transit(organization_id=user.organization_id, branch_id=branch_id):
+            key = item["cash_account_id"]
+            transit[key] = transit.get(key, Decimal("0")) + Decimal(item["expected_amount"])
+        for row in rows:
+            moving = transit.get(row["id"], Decimal("0"))
+            row["in_transit"] = f"{moving:.2f}"
+            row["arrived"] = f"{Decimal(row['balance']) - moving:.2f}"
+        return Response(rows)
 
     @action(detail=True, methods=["post"])
     def adjust(self, request: Request, pk: str | None = None) -> Response:
