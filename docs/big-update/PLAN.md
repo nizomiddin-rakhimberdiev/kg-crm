@@ -841,7 +841,7 @@ runs.
 
 ---
 
-## Bosqich 13 — "Moliya markazi": finance management and reporting [ ] (awaiting approval)
+## Bosqich 13 — "Moliya markazi": finance management and reporting [~] (approved 2026-10-16)
 
 Owner's brief of 2026-10-16 (sections 0–13, acceptance tests 1–20). The brief
 requires an audit and a plan first; nothing is built before approval.
@@ -936,8 +936,8 @@ reminder log.
 
 | # | Phase | Acceptance tests |
 |---|---|---|
-| 13.1 | This audit and plan | — |
-| 13.2 | Financial core: operation types (refund, owner draw/contribution, loan, other income), accrual month on expenses (payroll → its run month), capex + amortisation, credit purchases (AP), money in transit, two-level categories with codes, receivables/liabilities at a date | 3, 4, 5, 6, 7, 8 |
+| 13.1 ✅ (912afc7) | This audit and plan | — |
+| 13.2 ✅ (89c35dd…a06bb52) | Financial core: operation types (refund, owner draw/contribution, loan, other income), accrual month on expenses (payroll → its run month), capex + amortisation, credit purchases (AP), money in transit, two-level categories with codes, receivables/liabilities at a date | 3, 4, 5, 6, 7, 8 |
 | 13.3 | Input: 20-second expense with photo, Telegram expense for staff, denominations in day close, bank statement import with column mapping, auto-matching and unmatched queue, completeness indicator | 8, 9, 14 (matching) |
 | 13.4 | Home (six cards), daily view, rule registry: checks + Diqqat + instant alerts + 20:00 digest | 12, 13 |
 | 13.5 | Monthly pack (16 sections) from one JSON; prev month / 3-month avg; revenue factor split; bridges; P&L ≠ cash waterfall; balance; drill-down to source rows; PDF + Excel; immutable snapshot with checksum, versions and number-level diff; report-open log | 2, 10, 15, 16, 19, 20 |

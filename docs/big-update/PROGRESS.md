@@ -2057,3 +2057,30 @@ Testlar 5, 8.
 (12.2); 6, 7, 9, 16 (12.3); 11, 12 (12.4); 13, 14 (12.5); 15 va 11
 davomi (12.6) — hammasi avtomatik testlarda yashil.
 
+## Bosqich 13 — "Moliya markazi"
+
+Egasining 2026-10-16 brifi; audit va reja tasdiqlandi (PLAN Bosqich 13,
+7 ta qaror). MVP — 13.2–13.5 va A/B ning minimal jarayoni.
+
+### 13.2 Moliyaviy yadro
+
+* **Chiqim**: tegishli oy (sukut — toʻlangan oy; eski yozuvlar
+  oʻzgartirilmadi), investitsiya + N oyga taqsimlash, nasiya (yetkazib
+  beruvchi, muddat; pul `mark-paid` da chiqadi), ikki darajali toifa +
+  hisob kodi, toifasiz filialga sukut roʻyxat.
+* **Pul harakatlari** (`money_operation`): boshqa daromad, egaga toʻlov
+  (dividend — soligʻi `tax.dividend_percent` 5 % majburiyat), egadan
+  kiritma, kredit, soliq toʻlovi. **Ota-onaga qaytarish** (`refund`) —
+  faqat toʻlovning ishlatilmagan qismi. ADR-37.
+* **Yoʻldagi pul**: terminal/Click/Payme — toʻlov − komissiya, ertasi kun
+  kutiladi (`transit.settle_days`); `payment_settlement` bilan yopiladi;
+  bank qoldigʻi "tushgan / yoʻlda".
+* **Uch koʻrinish** (`apps/reports/money.py`): foyda-zarar tegishli oy
+  boʻyicha, pul oqimi pul sanasi boʻyicha (koʻprik tekshiruvi), sanaga
+  holat (talablar va majburiyatlar). ADR-38. Oylik endi boʻlib toʻlanadi.
+* Ekran: Kassa — yoʻldagi pul va boshqa harakatlar; toʻlovlar jurnalida
+  "Ota-onaga qaytarish". Chiqim formasidagi yangi maydonlar — 13.3.
+* Qabul testlari **3, 4, 5, 6, 7, 8** yashil. Backend 1 862 test.
+* Default, buxgalter tasdiqlashi kerak: dividend soligʻi 5 %, ish haqi
+  xarajati = yalpi + ijtimoiy soliq, yoʻldagi pul 1 kun.
+
