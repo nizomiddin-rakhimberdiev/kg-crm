@@ -1768,3 +1768,51 @@ msgstr "Категории двухуровневые: внутрь подкат
 
 msgid "Toifa oʻziga ota boʻla olmaydi."
 msgstr "Категория не может быть родителем самой себя."
+
+msgid "Boshqa daromad"
+msgstr "Прочий доход"
+
+msgid "Egasiga toʻlov"
+msgstr "Выплата владельцу"
+
+msgid "Egadan kiritma"
+msgstr "Взнос владельца"
+
+msgid "Kredit olindi"
+msgstr "Получен кредит"
+
+msgid "Kredit qaytarildi"
+msgstr "Кредит погашен"
+
+msgid "Soliq toʻlovi"
+msgstr "Уплата налога"
+
+msgid "Moliyaviy operatsiya"
+msgstr "Финансовая операция"
+
+msgid "Ota-onaga qaytarish"
+msgstr "Возврат родителю"
+
+msgid "Notoʻgʻri operatsiya turi."
+msgstr "Неверный тип операции."
+
+msgid "Bu turda bunday aniqlik yoʻq."
+msgstr "У этого типа нет такого уточнения."
+
+msgid "Sana kelajakda boʻlishi mumkin emas."
+msgstr "Дата не может быть в будущем."
+
+msgid "Bu toʻlovdan {spare} soʻmgacha qaytarish mumkin — qolgani fakturalarni yopgan."
+msgstr "Из этой оплаты можно вернуть до {spare} сум — остальное закрыло счета."
+
+msgid "Ota-onaga qaytarildi: {reason}"
+msgstr "Возвращено родителю: {reason}"
+
+msgid "Bu toʻlovdan ota-onaga pul qaytarilgan — uni bekor qilib boʻlmaydi."
+msgstr "Из этой оплаты деньги уже возвращены родителю — её нельзя отменить."
+
+msgid "Pul qaysi qopdan qaytarilishini tanlang."
+msgstr "Выберите, с какого счёта вернуть деньги."
+
+msgid "Summa raqam boʻlishi kerak."
+msgstr "Сумма должна быть числом."

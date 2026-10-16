@@ -59,6 +59,9 @@ DEFAULTS: dict[str, Any] = {
     "commission.bank_transfer_percent": 0,
     "commission.click_percent": 1,
     "commission.payme_percent": 1,
+    # Bosqich 13.2b: egasiga dividend solig'i, foizda (buxgalter tasdiqlaydi).
+    # Dividend to'langanda shu foiz majburiyat bo'lib yoziladi.
+    "tax.dividend_percent": 5,
     # --- Bosqich 12.2: imtiyozlar (Oriental Kinderland qiymatlari) ---
     #
     # Aka-uka: bir oiladagi (umumiy vasiy) har bir bolaga shuncha so'm

@@ -29,6 +29,7 @@ __all__ = [
     "PaymentAllocation",
     "ChildLedgerEntry",
     "MonthClose",
+    "Refund",
 ]
 
 
@@ -591,6 +592,7 @@ class SourceType(models.TextChoices):
     PAYMENT = "payment", gettext_lazy("Toʻlov")
     DISCOUNT = "discount", gettext_lazy("Chegirma")
     MANUAL = "manual", gettext_lazy("Qoʻlda")
+    REFUND = "refund", gettext_lazy("Qaytarish")
 
 
 class ChildLedgerEntry(BranchScopedModel):
@@ -696,3 +698,43 @@ class MonthClose(BranchScopedModel):
 
     def __str__(self) -> str:
         return f"{self.period_year}-{self.period_month:02d}"
+
+
+class Refund(BranchScopedModel):
+    """
+    Ota-onaga avansni qaytarish (Bosqich 13.2b) — o'zgarmas hujjat.
+
+    Qaytariladigan pul — aniq to'lovning hali hech qaysi fakturani yopmagan
+    qismi; shuning uchun `payment` ga bog'lanadi va `payment_unallocated`
+    uni ayiradi: qaytarilgan pul keyingi fakturaga ikkinchi marta
+    taqsimlanmaydi. Bitta tranzaksiyada: ledger DEBET + qopdan `out`.
+    """
+
+    payment = models.ForeignKey(
+        "finance.Payment", on_delete=models.RESTRICT, related_name="refunds"
+    )
+    child = models.ForeignKey("children.Child", on_delete=models.RESTRICT, related_name="refunds")
+    cash_account = models.ForeignKey(
+        "cash.CashAccount", on_delete=models.RESTRICT, related_name="refunds"
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    refunded_on = models.DateField()
+    reason = models.CharField(max_length=255)
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="refunds_made",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "refund"
+        ordering = ["-refunded_on", "-created_at"]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name="ck_refund_amount"),
+            models.CheckConstraint(condition=~models.Q(reason=""), name="ck_refund_reason"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.amount} → {self.child_id}"

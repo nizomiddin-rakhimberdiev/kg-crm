@@ -7,7 +7,14 @@ from typing import Any
 from django.utils.translation import gettext
 from rest_framework import serializers
 
-from apps.cash.models import CashAccount, CashCount, CashHandover
+from apps.cash.models import (
+    OPERATION_SUBTYPES,
+    CashAccount,
+    CashCount,
+    CashHandover,
+    MoneyOperation,
+    OperationKind,
+)
 from apps.core.fields import TenantPrimaryKeyRelatedField
 
 __all__ = [
@@ -18,6 +25,8 @@ __all__ = [
     "CashHandoverSerializer",
     "CashHandoverWriteSerializer",
     "CashTransferSerializer",
+    "MoneyOperationSerializer",
+    "MoneyOperationWriteSerializer",
 ]
 
 
@@ -155,3 +164,52 @@ class CashCountWriteSerializer(serializers.Serializer):
     cash_account_id = TenantPrimaryKeyRelatedField(model=CashAccount, source="cash_account")
     counted = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=0)
     reason = serializers.CharField(max_length=255, required=False, allow_blank=True)
+
+
+class MoneyOperationSerializer(serializers.ModelSerializer):
+    """Xarajat bo'lmagan pul harakati (Bosqich 13.2b)."""
+
+    cash_account_name = serializers.CharField(source="cash_account.name", read_only=True)
+    created_by_name = serializers.CharField(
+        source="created_by.full_name", read_only=True, default=None
+    )
+    period = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MoneyOperation
+        fields = [
+            "id",
+            "kind",
+            "subtype",
+            "cash_account",
+            "cash_account_name",
+            "amount",
+            "occurred_on",
+            "period",
+            "counterparty",
+            "reason",
+            "tax_amount",
+            "created_by_name",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_period(self, operation: MoneyOperation) -> str:
+        return f"{operation.period_year}-{operation.period_month:02d}"
+
+
+class MoneyOperationWriteSerializer(serializers.Serializer):
+    kind = serializers.ChoiceField(choices=OperationKind.choices)
+    subtype = serializers.CharField(max_length=20, required=False, allow_blank=True, default="")
+    cash_account_id = TenantPrimaryKeyRelatedField(model=CashAccount, source="cash_account")
+    amount = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=1)
+    occurred_on = serializers.DateField()
+    reason = serializers.CharField(max_length=255)
+    period = serializers.RegexField(r"^\d{4}-(0[1-9]|1[0-2])$", required=False, allow_blank=True)
+    counterparty = serializers.CharField(max_length=120, required=False, allow_blank=True)
+    allow_negative = serializers.BooleanField(required=False, default=False)
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        if attrs.get("subtype", "") not in OPERATION_SUBTYPES[attrs["kind"]]:
+            raise serializers.ValidationError({"subtype": gettext("Bu turda bunday aniqlik yoʻq.")})
+        return attrs

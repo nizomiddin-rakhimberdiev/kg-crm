@@ -24,6 +24,8 @@ __all__ = [
     "CashHandover",
     "CashMovement",
     "HandoverStatus",
+    "MoneyOperation",
+    "OperationKind",
     "MovementDirection",
     "MovementSource",
 ]
@@ -95,6 +97,11 @@ class MovementSource(models.TextChoices):
     # Kun yopilishidagi sanoq farqi — kamomad yoki ortiqcha, SABABI bilan
     # (Bosqich 12.5). "Tenglashtiruvchi qator" emas: manbasi `cash_count`.
     COUNT = "count", gettext_lazy("Sanoq farqi")
+    # Bosqich 13.2b: xarajat ham, tushum ham bo'lmagan pul harakatlari —
+    # manbasi `money_operation` (turi o'sha yerda).
+    OPERATION = "operation", gettext_lazy("Moliyaviy operatsiya")
+    # Ota-onaga avansni qaytarish — manbasi `finance.Refund`.
+    REFUND = "refund", gettext_lazy("Ota-onaga qaytarish")
 
 
 class CashMovement(BranchScopedModel):
@@ -248,3 +255,100 @@ class CashCount(BranchScopedModel):
 
     def __str__(self) -> str:
         return f"{self.counted_on}: {self.counted} ({self.difference:+})"
+
+
+class OperationKind(models.TextChoices):
+    """
+    Pul harakatining turi (Bosqich 13.2b, brif §3.2).
+
+    Hech biri xarajat emas va hech biri ota-ona to'lovi emas: shuning uchun
+    alohida hujjat. O'tkazma (`cash.transfer`) va sanoq farqi (`cash_count`)
+    o'z joyida qoladi.
+    """
+
+    OTHER_INCOME = "other_income", gettext_lazy("Boshqa daromad")
+    OWNER_DRAW = "owner_draw", gettext_lazy("Egasiga toʻlov")
+    OWNER_CONTRIBUTION = "owner_contribution", gettext_lazy("Egadan kiritma")
+    LOAN_IN = "loan_in", gettext_lazy("Kredit olindi")
+    LOAN_REPAY = "loan_repay", gettext_lazy("Kredit qaytarildi")
+    TAX_PAYMENT = "tax_payment", gettext_lazy("Soliq toʻlovi")
+
+
+#: Turi → pul yo'nalishi.
+OPERATION_DIRECTION: dict[str, str] = {
+    OperationKind.OTHER_INCOME: "in",
+    OperationKind.OWNER_DRAW: "out",
+    OperationKind.OWNER_CONTRIBUTION: "in",
+    OperationKind.LOAN_IN: "in",
+    OperationKind.LOAN_REPAY: "out",
+    OperationKind.TAX_PAYMENT: "out",
+}
+
+#: Turi → ruxsat etilgan aniqlik (bo'sh — aniqlik yo'q).
+OPERATION_SUBTYPES: dict[str, tuple[str, ...]] = {
+    OperationKind.OTHER_INCOME: ("subsidy", "club", "rent", "other"),
+    OperationKind.OWNER_DRAW: ("dividend", "draw"),
+    OperationKind.OWNER_CONTRIBUTION: ("",),
+    OperationKind.LOAN_IN: ("",),
+    OperationKind.LOAN_REPAY: ("",),
+    OperationKind.TAX_PAYMENT: ("dividend_tax", "social_tax", "income_tax", "other"),
+}
+
+
+class MoneyOperation(BranchScopedModel):
+    """
+    Xarajat bo'lmagan pul harakati — hujjat (Bosqich 13.2b).
+
+    Pul harakati (`cash_movement`) shu hujjat bilan BITTA tranzaksiyada
+    yoziladi (invariant 12). Hujjat o'zgarmaydi: xato — teskari operatsiya.
+
+    * Egasiga to'lov xarajat EMAS: foyda-zararga kirmaydi, pul oqimida
+      alohida qator. Dividendda soliq (`tax.dividend_percent`) shu yerda
+      hisoblanadi va `tax_payment` bilan yopilguncha majburiyat bo'ladi.
+    * Egadan kiritma va kredit — tushum EMAS.
+    * Boshqa daromad (subsidiya, to'garak, ijara) — daromad, tegishli oyi bilan.
+    """
+
+    kind = models.CharField(max_length=20, choices=OperationKind.choices)
+    subtype = models.CharField(max_length=20, blank=True)
+    cash_account = models.ForeignKey(
+        "cash.CashAccount", on_delete=models.RESTRICT, related_name="operations"
+    )
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    occurred_on = models.DateField()
+    # Daromad uchun tegishli oy (boshqa turlarda — pul oyi).
+    period_year = models.PositiveSmallIntegerField()
+    period_month = models.PositiveSmallIntegerField()
+    counterparty = models.CharField(max_length=120, blank=True)
+    reason = models.CharField(max_length=255)
+    # Dividend soliqi — majburiyat (to'languncha).
+    tax_amount = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="money_operations",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "money_operation"
+        ordering = ["-occurred_on", "-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0), name="ck_money_operation_amount"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(tax_amount__gte=0), name="ck_money_operation_tax"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(period_month__gte=1, period_month__lte=12),
+                name="ck_money_operation_month",
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(reason=""), name="ck_money_operation_reason"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.kind} {self.amount}"

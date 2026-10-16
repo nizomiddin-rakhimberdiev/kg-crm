@@ -358,6 +358,7 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
     permission_module = "payments"
     permission_action_map = {
         "reverse": "update",
+        "refund": "update",
         "daily_summary": "read",
         "batch": "create",
         "board": "read",
@@ -555,6 +556,49 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
         o'sha bo'ladi.
         """
         return Response(services.receipt_for(self.get_object()))
+
+    @action(detail=True, methods=["post"])
+    def refund(self, request: Request, pk: str | None = None) -> Response:
+        """
+        `POST /payments/{id}/refund {amount, cash_account_id, reason}` — avansni
+        ota-onaga qaytarish (Bosqich 13.2b). Pul qopdan chiqadi, shuning uchun
+        "faqat o'ziniki" kassirga yopiq.
+        """
+        from rest_framework.exceptions import PermissionDenied
+
+        from apps.cash.models import CashAccount
+
+        user = request_user(request)
+        if payments_own_only(user):
+            raise PermissionDenied(gettext("Bu amalga ruxsat yoʻq."))
+        payment = self.get_object()
+        account = CashAccount.objects.filter(pk=request.data.get("cash_account_id")).first()
+        if account is None:
+            raise BusinessRuleViolation(gettext("Pul qaysi qopdan qaytarilishini tanlang."))
+        try:
+            amount = Decimal(str(request.data.get("amount", "")))
+        except ArithmeticError as exc:
+            raise BusinessRuleViolation(gettext("Summa raqam boʻlishi kerak.")) from exc
+        refund = services.refund_payment(
+            payment=payment,
+            amount=amount,
+            account=account,
+            reason=str(request.data.get("reason", "")),
+            created_by=user,
+            allow_negative=str(request.data.get("allow_negative", "")).lower() == "true",
+        )
+        audit.record(
+            action="create",
+            request=request._request,
+            actor=user,
+            entity_type="refund",
+            entity_id=refund.id,
+            changes={"payment": str(payment.id), "amount": str(refund.amount)},
+        )
+        return Response(
+            {"id": str(refund.id), "amount": f"{refund.amount:.2f}"},
+            status=status.HTTP_201_CREATED,
+        )
 
     @action(detail=True, methods=["post"])
     def reverse(self, request: Request, pk: str | None = None) -> Response:

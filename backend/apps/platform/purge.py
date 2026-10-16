@@ -60,6 +60,7 @@ PURGE_ORDER: tuple[str, ...] = (
     # Topshirish va sanoq — qopga va odamga `RESTRICT` (Bosqich 12.5).
     "apps.cash.CashHandover",
     "apps.cash.CashCount",
+    "apps.cash.MoneyOperation",
     # Online payments (PLAN 6.1): they point at payments and invoices with
     # `RESTRICT`, so they go before both.
     "apps.online_payments.OnlineTransaction",
@@ -77,6 +78,8 @@ PURGE_ORDER: tuple[str, ...] = (
     # tasdiqlangan da'vo yo'q edi. Jonli bazada esa bitta shunday da'vo
     # butun o'chirishni yiqitdi (PLAN 11.4).
     "apps.attendance.AbsenceClaim",
+    # Qaytarish to'lovga, bolaga va qopga RESTRICT (13.2b).
+    "apps.finance.Refund",
     "apps.finance.PaymentAllocation",
     "apps.finance.Payment",
     "apps.finance.ChildLedgerEntry",

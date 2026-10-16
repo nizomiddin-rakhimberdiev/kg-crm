@@ -889,6 +889,14 @@ Organization-scoped (RLS). `cash_account_id` (the cash till **or the bank accoun
 
 Organization-scoped (RLS). `cash_account_id`, `counted_on`, `system_balance`, `counted ≥ 0`, `difference = counted − system_balance`, `reason`, `created_by_id`; `UNIQUE (cash_account_id, counted_on)`; `CHECK (difference = 0 OR reason <> '')`. A non-zero difference writes a `count` movement (`source_id` = the count) with the reason, so the pot equals what was counted — a shortage or surplus with an author and a reason, never the Excel's anonymous balancing line. Closing is `payments.update` and closed to `payments_own_only` users: the cashier hands over, the responsible person counts.
 
+### 13a.7 `money_operation` — money that is neither tuition nor expense (Bosqich 13.2b)
+
+Organization-scoped (RLS), immutable. `kind`: `other_income` (subtype `subsidy` · `club` · `rent` · `other`), `owner_draw` (`dividend` · `draw`), `owner_contribution`, `loan_in`, `loan_repay`, `tax_payment` (`dividend_tax` · `social_tax` · `income_tax` · `other`); `cash_account_id`, `amount > 0`, `occurred_on` (not in the future), `period_year/month` (the income month for `other_income`), `counterparty`, `reason NOT NULL`, `tax_amount`, `created_by_id`. Each writes one `operation` `cash_movement` in the same transaction; outflows obey ADR-29. An owner draw is **not an expense** — it never enters the P&L; a `dividend` accrues `tax_amount = amount × tax.dividend_percent` (default 5 %, the accountant confirms) which stays a liability until a `tax_payment / dividend_tax`. A contribution and a loan are not income; the loan balance is `Σ loan_in − Σ loan_repay`.
+
+### 13a.8 `refund` — returning an advance to a parent (Bosqich 13.2b)
+
+Organization-scoped (RLS), immutable: `payment_id`, `child_id`, `cash_account_id` (all `RESTRICT`), `amount > 0`, `refunded_on`, `reason NOT NULL`. Only the unused part of that payment can go back (`payment_unallocated`, which now subtracts refunds — so returned money is never allocated to the next invoice); money that settled invoices must be released first. One transaction: the document, a ledger **debit** (`refund`) and an `out` movement. A payment with a refund can no longer be reversed as a whole — that would return the same money twice.
+
 ## 14. Schema Domain: HR & Payroll
 
 ### 14.1 `position`

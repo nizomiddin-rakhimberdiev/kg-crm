@@ -23,7 +23,7 @@ from rest_framework.response import Response
 from apps.audit import services as audit
 from apps.branches.selectors import resolve_branch
 from apps.cash import selectors, services
-from apps.cash.models import CashAccount, CashCount, CashHandover
+from apps.cash.models import CashAccount, CashCount, CashHandover, MoneyOperation
 from apps.cash.serializers import (
     CashAccountSerializer,
     CashAdjustSerializer,
@@ -32,12 +32,19 @@ from apps.cash.serializers import (
     CashHandoverSerializer,
     CashHandoverWriteSerializer,
     CashTransferSerializer,
+    MoneyOperationSerializer,
+    MoneyOperationWriteSerializer,
 )
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchScopedMixin, TenantViewSet
 from apps.finance.scope import payments_own_only
 
-__all__ = ["CashAccountViewSet", "CashCountViewSet", "CashHandoverViewSet"]
+__all__ = [
+    "CashAccountViewSet",
+    "CashCountViewSet",
+    "CashHandoverViewSet",
+    "MoneyOperationViewSet",
+]
 
 
 class CashAccountViewSet(BranchScopedMixin, TenantViewSet):
@@ -371,3 +378,57 @@ class CashCountViewSet(BranchScopedMixin, TenantViewSet):
             },
         )
         return Response(CashCountSerializer(count).data, status=status.HTTP_201_CREATED)
+
+
+class MoneyOperationViewSet(BranchScopedMixin, TenantViewSet):
+    """
+    `/money-operations` — boshqa daromad, egaga to'lov, egadan kiritma,
+    kredit, soliq to'lovi (Bosqich 13.2b).
+
+    Butun qopga va egasining puliga tegadi: "faqat o'ziniki" kassirga yopiq;
+    yozish — `payments.update`. Hujjat o'zgarmaydi va o'chmaydi.
+    """
+
+    permission_module = "payments"
+    permission_action_map = {"create": "update"}
+    model = MoneyOperation
+    serializer_class = MoneyOperationSerializer
+    http_method_names = ["get", "post", "head", "options"]
+    filterset_fields = ["kind"]
+
+    def get_base_queryset(self) -> Any:
+        _refuse_own_only(request_user(self.request))
+        return super().get_base_queryset().select_related("cash_account", "created_by")
+
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        user = request_user(request)
+        _refuse_own_only(user)
+        payload = MoneyOperationWriteSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        data = payload.validated_data
+        period = data.get("period") or ""
+        operation = services.record_operation(
+            kind=data["kind"],
+            subtype=data.get("subtype", ""),
+            account=data["cash_account"],
+            amount=data["amount"],
+            occurred_on=data["occurred_on"],
+            reason=data["reason"],
+            period=tuple(int(part) for part in period.split("-")) if period else None,  # type: ignore[arg-type]
+            counterparty=data.get("counterparty", ""),
+            created_by=user,
+            allow_negative=data.get("allow_negative", False),
+        )
+        audit.record(
+            action="create",
+            request=request._request,
+            actor=user,
+            entity_type="money_operation",
+            entity_id=operation.id,
+            changes={
+                "kind": operation.kind,
+                "amount": str(operation.amount),
+                "reason": operation.reason,
+            },
+        )
+        return Response(MoneyOperationSerializer(operation).data, status=status.HTTP_201_CREATED)

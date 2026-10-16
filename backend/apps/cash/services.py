@@ -10,6 +10,7 @@ shu servisni chaqiradi (1-invariant).
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, time
 from decimal import Decimal
 from typing import Any
 
@@ -24,8 +25,10 @@ from apps.cash.models import (
     CashHandover,
     CashMovement,
     HandoverStatus,
+    MoneyOperation,
     MovementDirection,
     MovementSource,
+    OperationKind,
 )
 from apps.core.exceptions import BusinessRuleViolation
 
@@ -40,6 +43,7 @@ __all__ = [
     "confirm_handover",
     "reject_handover",
     "close_day",
+    "record_operation",
 ]
 
 
@@ -511,3 +515,86 @@ def close_day(
             allow_negative=True,
         )
     return count
+
+
+# --- Xarajat bo'lmagan pul harakatlari (Bosqich 13.2b) ---
+
+
+def _dividend_tax(amount: Decimal, branch: Any) -> Decimal:
+    from apps.settings_app.services import get_setting
+
+    try:
+        percent = Decimal(str(get_setting(key="tax.dividend_percent", branch=branch) or "0"))
+    except ArithmeticError:
+        percent = Decimal("0")
+    return (amount * percent / Decimal("100")).quantize(Decimal("1"))
+
+
+@transaction.atomic
+def record_operation(
+    *,
+    kind: str,
+    account: CashAccount,
+    amount: Decimal,
+    occurred_on: Any,
+    reason: str,
+    subtype: str = "",
+    period: tuple[int, int] | None = None,
+    counterparty: str = "",
+    created_by: Any = None,
+    allow_negative: bool = False,
+) -> MoneyOperation:
+    """
+    Hujjat + pul harakati, bitta tranzaksiyada (invariant 12).
+
+    Chiqadigan pul ADR-29 ga bo'ysunadi: qopda yo'q pul egaga ham
+    berilmaydi (`allow_negative` — ogohlantirishni o'qigan odam uchun).
+    """
+    from apps.cash.models import OPERATION_DIRECTION, OPERATION_SUBTYPES
+
+    if kind not in OPERATION_DIRECTION:
+        raise BusinessRuleViolation(gettext("Notoʻgʻri operatsiya turi."))
+    if subtype not in OPERATION_SUBTYPES[kind]:
+        raise BusinessRuleViolation(gettext("Bu turda bunday aniqlik yoʻq."))
+    reason = (reason or "").strip()
+    if not reason:
+        raise BusinessRuleViolation(gettext("Sabab yozilishi shart."))
+    amount = _money(amount)
+    if amount <= 0:
+        raise BusinessRuleViolation(gettext("Summa musbat boʻlishi kerak."))
+    if occurred_on > timezone.localdate():
+        raise BusinessRuleViolation(gettext("Sana kelajakda boʻlishi mumkin emas."))
+
+    year, month = period or (occurred_on.year, occurred_on.month)
+    tax = (
+        _dividend_tax(amount, account.branch)
+        if kind == OperationKind.OWNER_DRAW and subtype == "dividend"
+        else Decimal("0")
+    )
+    operation = MoneyOperation.objects.create(
+        organization=account.organization,
+        branch=account.branch,
+        kind=kind,
+        subtype=subtype,
+        cash_account=account,
+        amount=amount,
+        occurred_on=occurred_on,
+        period_year=year,
+        period_month=month,
+        counterparty=counterparty.strip()[:120],
+        reason=reason[:255],
+        tax_amount=tax,
+        created_by=created_by,
+    )
+    post_movement(
+        account=account,
+        direction=OPERATION_DIRECTION[kind],
+        amount=amount,
+        source_type=MovementSource.OPERATION,
+        source_id=operation.id,
+        description=f"{operation.get_kind_display()}: {reason}"[:255],
+        occurred_at=timezone.make_aware(datetime.combine(occurred_on, time(12))),
+        created_by=created_by,
+        allow_negative=allow_negative,
+    )
+    return operation

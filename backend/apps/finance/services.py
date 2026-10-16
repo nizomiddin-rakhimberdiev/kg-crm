@@ -13,7 +13,7 @@ from __future__ import annotations
 import calendar
 import uuid
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
@@ -46,6 +46,7 @@ from apps.finance.models import (
     Payment,
     PaymentAllocation,
     PaymentMethod,
+    Refund,
     SourceType,
 )
 
@@ -1356,7 +1357,11 @@ def payment_unallocated(payment: Payment) -> Decimal:
     allocated = PaymentAllocation.objects.filter(
         payment=payment, released_at__isnull=True
     ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
-    return _money(payment.amount - allocated)
+    # Ota-onaga qaytarilgan qismi ham endi bizda emas (Bosqich 13.2b).
+    refunded = Refund.objects.filter(payment=payment).aggregate(total=Sum("amount"))[
+        "total"
+    ] or Decimal("0")
+    return _money(payment.amount - allocated - refunded)
 
 
 def child_advance(child: Child) -> Decimal:
@@ -1374,7 +1379,10 @@ def child_advance(child: Child) -> Decimal:
     allocated = PaymentAllocation.objects.filter(
         payment__child=child, released_at__isnull=True
     ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
-    return _money(paid - allocated)
+    refunded = Refund.objects.filter(child=child, payment__reversed_at__isnull=True).aggregate(
+        total=Sum("amount")
+    )["total"] or Decimal("0")
+    return _money(paid - allocated - refunded)
 
 
 def allocate_payment(
@@ -1677,6 +1685,12 @@ def reverse_payment(*, payment: Payment, reason: str = "", created_by: Any = Non
     """
     if payment.is_reversed:
         raise BusinessRuleViolation(gettext("Bu toʻlov allaqachon qaytarilgan."))
+    if Refund.objects.filter(payment=payment).exists():
+        # Qismi ota-onaga qaytarilgan: butun to'lovni bekor qilish o'sha
+        # pulni ikkinchi marta qaytarardi.
+        raise BusinessRuleViolation(
+            gettext("Bu toʻlovdan ota-onaga pul qaytarilgan — uni bekor qilib boʻlmaydi.")
+        )
 
     payment.reversed_at = timezone.now()
     payment.reversal_reason = reason[:255]
@@ -1878,3 +1892,77 @@ def close_month(*, branch: Any, year: int, month: int, closed_by: Any = None) ->
         closed_by=closed_by,
         snapshot=summary,
     )
+
+
+# --- Ota-onaga pul qaytarish (Bosqich 13.2b) ---
+
+
+@transaction.atomic
+def refund_payment(
+    *,
+    payment: Payment,
+    amount: Decimal,
+    account: Any,
+    reason: str,
+    refunded_on: Any = None,
+    created_by: Any = None,
+    allow_negative: bool = False,
+) -> Refund:
+    """
+    To'lovning ishlatilmagan (avans) qismini ota-onaga qaytaradi.
+
+    Faktura yopgan pul qaytarilmaydi — avval taqsimot bo'shatilishi kerak
+    (hisobdan chiqarish yoki fakturani bekor qilish). Bitta tranzaksiya:
+    hujjat, ledger DEBET (oila endi o'sha pulga ega emas) va qopdan `out`.
+    """
+    reason = (reason or "").strip()
+    if not reason:
+        raise BusinessRuleViolation(gettext("Sabab yozilishi shart."))
+    payment = Payment.objects.select_for_update().get(pk=payment.pk)
+    if payment.is_reversed:
+        raise BusinessRuleViolation(gettext("Bu toʻlov allaqachon qaytarilgan."))
+    amount = _money(amount)
+    spare = payment_unallocated(payment)
+    if amount <= 0 or amount > spare:
+        raise BusinessRuleViolation(
+            gettext(
+                "Bu toʻlovdan {spare} soʻmgacha qaytarish mumkin — qolgani fakturalarni yopgan."
+            ).format(spare=som(spare))
+        )
+    if account.organization_id != payment.organization_id:
+        raise BusinessRuleViolation(gettext("Kassa hisobi boshqa tashkilotga tegishli."))
+    day = refunded_on or timezone.localdate()
+    refund = Refund.objects.create(
+        organization=payment.organization,
+        branch=payment.branch,
+        payment=payment,
+        child=payment.child,
+        cash_account=account,
+        amount=amount,
+        refunded_on=day,
+        reason=reason[:255],
+        created_by=created_by,
+    )
+    post_ledger_entry(
+        child=payment.child,
+        entry_type=EntryType.REFUND,
+        direction=Direction.DEBIT,
+        amount=amount,
+        source_type=SourceType.REFUND,
+        source_id=refund.id,
+        description=gettext("Ota-onaga qaytarildi: {reason}").format(reason=reason)[:255],
+        created_by=created_by,
+    )
+    cash.post_movement(
+        account=account,
+        direction=MovementDirection.OUT,
+        amount=amount,
+        source_type=MovementSource.REFUND,
+        source_id=refund.id,
+        description=f"{payment.child.full_name}: {reason}"[:255],
+        occurred_at=timezone.make_aware(datetime.combine(day, time(12))),
+        created_by=created_by,
+        allow_negative=allow_negative,
+    )
+    recompute_child_balance(payment.child)
+    return refund

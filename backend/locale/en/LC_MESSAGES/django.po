@@ -1768,3 +1768,51 @@ msgstr "Categories have two levels: a subcategory cannot hold another."
 
 msgid "Toifa oʻziga ota boʻla olmaydi."
 msgstr "A category cannot be its own parent."
+
+msgid "Boshqa daromad"
+msgstr "Other income"
+
+msgid "Egasiga toʻlov"
+msgstr "Owner draw"
+
+msgid "Egadan kiritma"
+msgstr "Owner contribution"
+
+msgid "Kredit olindi"
+msgstr "Loan received"
+
+msgid "Kredit qaytarildi"
+msgstr "Loan repaid"
+
+msgid "Soliq toʻlovi"
+msgstr "Tax payment"
+
+msgid "Moliyaviy operatsiya"
+msgstr "Financial operation"
+
+msgid "Ota-onaga qaytarish"
+msgstr "Refund to parent"
+
+msgid "Notoʻgʻri operatsiya turi."
+msgstr "Wrong operation type."
+
+msgid "Bu turda bunday aniqlik yoʻq."
+msgstr "This type has no such subtype."
+
+msgid "Sana kelajakda boʻlishi mumkin emas."
+msgstr "The date cannot be in the future."
+
+msgid "Bu toʻlovdan {spare} soʻmgacha qaytarish mumkin — qolgani fakturalarni yopgan."
+msgstr "Up to {spare} UZS of this payment can be returned — the rest has settled invoices."
+
+msgid "Ota-onaga qaytarildi: {reason}"
+msgstr "Returned to the parent: {reason}"
+
+msgid "Bu toʻlovdan ota-onaga pul qaytarilgan — uni bekor qilib boʻlmaydi."
+msgstr "Money from this payment was returned to the parent — it cannot be reversed."
+
+msgid "Pul qaysi qopdan qaytarilishini tanlang."
+msgstr "Choose which pot the money is returned from."
+
+msgid "Summa raqam boʻlishi kerak."
+msgstr "The amount must be a number."

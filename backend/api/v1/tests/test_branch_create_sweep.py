@@ -37,6 +37,7 @@ CUSTOM_CREATE = {
     "menu-day": "set_menu() takes the branch from resolve_branch (PLAN 6.6)",
     "cash-handover": "hand_over() takes the branch from the cash pot (Bosqich 12.5)",
     "cash-count": "close_day() takes the branch from the cash pot (Bosqich 12.5)",
+    "money-operation": "record_operation() takes the branch from the pot (Bosqich 13.2b)",
 }
 
 
