@@ -48,3 +48,5 @@ openpyxl==3.1.5
 # 46.0.3. Only `Fernet` is used, whose token format is fixed by its spec,
 # so secrets encrypted by the old version still decrypt.
 cryptography==50.0.2
+# Oylik hisobot PDF — serverda HTML→PDF (Bosqich 13.5).
+weasyprint==66.0

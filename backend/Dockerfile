@@ -23,11 +23,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     DJANGO_SETTINGS_MODULE=config.settings.production
 
+# Pango/HarfBuzz va DejaVu shrifti — oylik hisobot PDF'i uchun (WeasyPrint,
+# Bosqich 13.5; DejaVu ʻ/ʼ va kirill harflarini qamraydi).
 # `gettext` — tarjima kataloglarini (`locale/*/django.po`) build paytida
 # `.mo` ga kompilyatsiya qilish uchun (docs/02 ADR-16). Binar `.mo` git'da
 # saqlanmaydi: manba `.po`, natija — tasvir ichida.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libpq5 curl gettext \
+        libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 # Root bo'lmagan foydalanuvchi: konteyner buzilsa ham zarar doirasi tor.

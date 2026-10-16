@@ -161,6 +161,8 @@ REPORT_SCOPE: dict[str, str] = {
     # Foyda-zarar, pul oqimi, holat (Bosqich 13.2d): oylik jami ham bor,
     # shuning uchun profit-loss kabi `payroll.read`.
     "finance": "payroll.read",
+    # Oylik hisobot paketi (Bosqich 13.5): foyda, oylik jami — `payroll.read`.
+    "pack": "payroll.read",
 }
 
 # View action nomi → hisobot turi (`REPORT_SCOPE` kaliti).
@@ -175,6 +177,13 @@ _ACTION_REPORT: dict[str, str] = {
     "monthly_summary": "monthly",
     "monthly_close": "monthly",
     "pnl": "finance",
+    "pack": "pack",
+    "pack_snapshot": "pack",
+    "pack_versions": "pack",
+    "pack_diff": "pack",
+    "pack_source": "pack",
+    "pack_pdf": "pack",
+    "pack_xlsx": "pack",
     "cash_flow": "finance",
     "position": "finance",
     "completeness": "monthly",
@@ -215,6 +224,8 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
         # Oyni yopish — egasi va direktor (`reports.approve`); kassirda
         # `reports` umuman yo'q.
         "monthly_close": "approve",
+        # O'zgarmas nusxa — topshirish/tasdiqlash (egasi, direktor).
+        "pack_snapshot": "approve",
     }
     lookup_value_regex = "|".join(REPORT_TYPES)
     # `ScopedRateThrottle` shu nomdagi tezlikni qidiradi. U faqat
@@ -271,6 +282,210 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
                 branch_id=self.branch_for(request, request.query_params.get("branch")),
             )
         )
+
+    # --- Oylik hisobot paketi (Bosqich 13.5) ---
+
+    def _pack_scope(self, request: Request) -> tuple[Any, int, int, Any]:
+        year, month = self._year_month(request)
+        branch = self.branch_for(
+            request, request.query_params.get("branch") or request.data.get("branch")
+        )
+        return request_user(request).organization_id, year, month, branch
+
+    def _snapshots(self, organization_id: Any, year: int, month: int, branch: Any) -> Any:
+        from apps.reports.models import ReportSnapshot
+
+        return ReportSnapshot.objects.filter(
+            period_year=year, period_month=month, branch_id=branch
+        ).order_by("-version")
+
+    @action(detail=False, url_path="pack")
+    def pack(self, request: Request) -> Response:
+        """`GET /reports/pack?year=&month=` — 16 bo'lim; ochilishi jurnalda."""
+        from apps.audit import services as audit
+        from apps.reports import pack
+
+        organization_id, year, month, branch = self._pack_scope(request)
+        data = pack.build(organization_id=organization_id, year=year, month=month, branch_id=branch)
+        latest = self._snapshots(organization_id, year, month, branch).first()
+        audit.record(
+            action="view",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="report_pack",
+            changes={"period": f"{year}-{month:02d}", "branch": str(branch) if branch else None},
+        )
+        return Response(
+            {
+                **data,
+                "checksum": pack.checksum(data),
+                "latest_version": latest.version if latest else None,
+                "changed_since_snapshot": bool(latest and latest.checksum != pack.checksum(data)),
+            }
+        )
+
+    @action(detail=False, methods=["post"], url_path="pack/snapshot")
+    def pack_snapshot(self, request: Request) -> Response:
+        """
+        `POST /reports/pack/snapshot {year, month}` — o'zgarmas nusxa. Ma'lumot
+        o'zgarmagan bo'lsa yangi versiya yaratilmaydi.
+        """
+        from django.db import transaction
+
+        from apps.audit import services as audit
+        from apps.reports import pack
+        from apps.reports.models import ReportSnapshot
+
+        if not request.data.get("year") or not request.data.get("month"):
+            raise BusinessRuleViolation(gettext("Yil va oyni koʻrsating."))
+        user = request_user(request)
+        year = _parse_int(request.data.get("year"), 0, low=2000, high=2100)
+        month = _parse_int(request.data.get("month"), 0, low=1, high=12)
+        branch = self.branch_for(request, request.data.get("branch"))
+        data = pack.build(
+            organization_id=user.organization_id, year=year, month=month, branch_id=branch
+        )
+        digest = pack.checksum(data)
+        with transaction.atomic():
+            latest = (
+                self._snapshots(user.organization_id, year, month, branch)
+                .select_for_update()
+                .first()
+            )
+            if latest is not None and latest.checksum == digest:
+                snapshot = latest
+            else:
+                snapshot = ReportSnapshot.objects.create(
+                    organization=user.organization,
+                    branch_id=branch,
+                    period_year=year,
+                    period_month=month,
+                    version=(latest.version + 1) if latest else 1,
+                    data=data,
+                    checksum=digest,
+                    created_by=user,
+                )
+                audit.record(
+                    action="create",
+                    request=request._request,
+                    actor=user,
+                    entity_type="report_snapshot",
+                    entity_id=snapshot.id,
+                    changes={"period": f"{year}-{month:02d}", "version": snapshot.version},
+                )
+        return Response(
+            {"id": str(snapshot.id), "version": snapshot.version, "checksum": snapshot.checksum},
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=False, url_path="pack/versions")
+    def pack_versions(self, request: Request) -> Response:
+        organization_id, year, month, branch = self._pack_scope(request)
+        return Response(
+            [
+                {
+                    "version": row.version,
+                    "checksum": row.checksum,
+                    "created_at": row.created_at.isoformat(),
+                    "created_by": row.created_by.full_name if row.created_by_id else "",
+                }
+                for row in self._snapshots(organization_id, year, month, branch).select_related(
+                    "created_by"
+                )
+            ]
+        )
+
+    @action(detail=False, url_path="pack/diff")
+    def pack_diff(self, request: Request) -> Response:
+        """`GET /reports/pack/diff?from=1&to=2` (`to` bo'lmasa — jonli paket bilan)."""
+        from apps.reports import pack
+
+        organization_id, year, month, branch = self._pack_scope(request)
+        rows = {row.version: row for row in self._snapshots(organization_id, year, month, branch)}
+        old = rows.get(_parse_int(request.query_params.get("from"), 0, low=0, high=100000))
+        if old is None:
+            raise Http404
+        target = request.query_params.get("to")
+        if target:
+            new_row = rows.get(_parse_int(target, 0, low=0, high=100000))
+            if new_row is None:
+                raise Http404
+            new = new_row.data
+        else:
+            new = pack.build(
+                organization_id=organization_id, year=year, month=month, branch_id=branch
+            )
+        return Response({"changes": pack.diff(old.data, new)})
+
+    @action(detail=False, url_path="pack/source")
+    def pack_source(self, request: Request) -> Response:
+        """`GET /reports/pack/source?key=allocations:collected` — raqam manbasi (test 19)."""
+        from apps.reports import pack
+
+        organization_id, year, month, branch = self._pack_scope(request)
+        rows = pack.source_rows(
+            organization_id=organization_id,
+            year=year,
+            month=month,
+            key=str(request.query_params.get("key") or ""),
+            branch_id=branch,
+        )
+        return Response({"rows": rows})
+
+    def _pack_file(self, request: Request, kind: str) -> FileResponse:
+        import io
+
+        from apps.audit import services as audit
+        from apps.reports import pack, pack_render
+
+        organization_id, year, month, branch = self._pack_scope(request)
+        data = pack.build(organization_id=organization_id, year=year, month=month, branch_id=branch)
+        title = gettext("Oylik moliyaviy hisobot — {period}").format(period=f"{month:02d}.{year}")
+        audit.record(
+            action="view",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="report_pack",
+            changes={"period": f"{year}-{month:02d}", "format": kind},
+        )
+        if kind == "pdf":
+            content = pack_render.to_pdf(
+                data, title=title, prepared_by=request_user(request).full_name
+            )
+            return FileResponse(
+                io.BytesIO(content),
+                filename=f"hisobot-{year}-{month:02d}.pdf",
+                content_type="application/pdf",
+            )
+        raw = {
+            gettext("Yigʻilgan pul"): pack.source_rows(
+                organization_id=organization_id,
+                year=year,
+                month=month,
+                key="allocations:collected",
+                branch_id=branch,
+            ),
+            gettext("Fakturalar"): pack.source_rows(
+                organization_id=organization_id,
+                year=year,
+                month=month,
+                key="invoices:due",
+                branch_id=branch,
+            ),
+        }
+        return FileResponse(
+            io.BytesIO(pack_render.to_xlsx(data, raw=raw)),
+            filename=f"hisobot-{year}-{month:02d}.xlsx",
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+    @action(detail=False, url_path="pack/pdf")
+    def pack_pdf(self, request: Request) -> FileResponse:
+        return self._pack_file(request, "pdf")
+
+    @action(detail=False, url_path="pack/xlsx")
+    def pack_xlsx(self, request: Request) -> FileResponse:
+        return self._pack_file(request, "xlsx")
 
     @action(detail=False)
     def checks(self, request: Request) -> Response:

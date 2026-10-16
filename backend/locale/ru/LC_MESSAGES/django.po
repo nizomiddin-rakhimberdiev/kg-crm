@@ -2104,3 +2104,144 @@ msgstr "Корректировка закрытого месяца"
 
 msgid "Yoʻldagi pul oʻz vaqtida tushgan"
 msgstr "Деньги в пути поступили вовремя"
+
+msgid "Amortizatsiya (pul emas)"
+msgstr "Амортизация (не деньги)"
+
+msgid "Bolalar"
+msgstr "Дети"
+
+msgid "Bolalar soni taʼsiri"
+msgstr "Влияние числа детей"
+
+msgid "Bolalar va bandlik"
+msgstr "Дети и заполненность"
+
+msgid "Boshqa daromad: hisoblangan va kelgan farqi"
+msgstr "Прочий доход: разница начисленного и поступившего"
+
+msgid "Boshqa harakatlar"
+msgstr "Прочие движения"
+
+msgid "Daromad"
+msgstr "Доход"
+
+msgid "Daromad {value} soʻm, oʻtgan oyga nisbatan {delta} soʻm."
+msgstr "Доход {value} сум, к прошлому месяцу {delta} сум."
+
+msgid "Diqqat"
+msgstr "Внимание"
+
+msgid "Fakturalar"
+msgstr "Счета"
+
+msgid "Foyda-zarar"
+msgstr "Прибыль и убыток"
+
+msgid "Ilovalar"
+msgstr "Приложения"
+
+msgid "Imtiyoz taʼsiri"
+msgstr "Влияние льгот"
+
+msgid "Imtiyozlar"
+msgstr "Льготы"
+
+msgid "Ish haqi"
+msgstr "Зарплата"
+
+msgid "Kapital xarajat"
+msgstr "Капитальные расходы"
+
+msgid "Kassa va bank"
+msgstr "Касса и банк"
+
+msgid "Kredit (olindi − qaytarildi)"
+msgstr "Кредит (получен − погашен)"
+
+msgid "Narx taʼsiri"
+msgstr "Влияние цены"
+
+msgid "Nasiya va xarajat vaqti farqi"
+msgstr "Долги поставщикам и сдвиг расходов"
+
+msgid "Nazorat tekshiruvlari"
+msgstr "Контрольные проверки"
+
+msgid "Operatsion foyda"
+msgstr "Операционная прибыль"
+
+msgid "Operatsion foyda {value} soʻm."
+msgstr "Операционная прибыль {value} сум."
+
+msgid "Oy uchun yigʻilgan"
+msgstr "Собрано за месяц"
+
+msgid "Oylik moliyaviy hisobot — {period}"
+msgstr "Месячный финансовый отчёт — {period}"
+
+msgid "Oʻtkazmalar (filiallar orasida)"
+msgstr "Переводы (между филиалами)"
+
+msgid "Pul (kassa + bank + yoʻlda)"
+msgstr "Деньги (касса + банк + в пути)"
+
+msgid "Pul oqimi: foyda ≠ pul"
+msgstr "Денежный поток: прибыль ≠ деньги"
+
+msgid "Qarzlar va avanslar"
+msgstr "Долги и авансы"
+
+msgid "Qarzlar va avanslar oʻzgarishi"
+msgstr "Изменение долгов и авансов"
+
+msgid "Qayta hisob taʼsiri"
+msgstr "Влияние перерасчётов"
+
+msgid "Qayta hisoblar"
+msgstr "Перерасчёты"
+
+msgid "Reja va prognoz"
+msgstr "План и прогноз"
+
+msgid "Reja va prognoz — Bosqich 13.7."
+msgstr "План и прогноз — этап 13.7."
+
+msgid "Soliq toʻlovlari"
+msgstr "Уплата налогов"
+
+msgid "Soliq va majburiy toʻlovlar"
+msgstr "Налоги и обязательные платежи"
+
+msgid "Toʻlanishi kerak"
+msgstr "К оплате"
+
+msgid "Toʻlanmagan ish haqi oʻzgarishi"
+msgstr "Изменение невыплаченной зарплаты"
+
+msgid "Toʻliq narxdagi summa"
+msgstr "Сумма по полной цене"
+
+msgid "Tushum (pul)"
+msgstr "Поступления (деньги)"
+
+msgid "Tuzatishlar (sanoq, boshlangʻich qoldiq)"
+msgstr "Корректировки (пересчёт, начальный остаток)"
+
+msgid "Xarajatlar"
+msgstr "Расходы"
+
+msgid "Xulosa"
+msgstr "Итоги"
+
+msgid "Yigʻilgan"
+msgstr "Собрано"
+
+msgid "Yigʻilgan pul"
+msgstr "Собранные деньги"
+
+msgid "Yigʻish darajasi {rate}%."
+msgstr "Уровень сбора {rate}%."
+
+msgid "{failing} ta tekshiruv qizil, {attention} ta Diqqat."
+msgstr "{failing} проверок красные, {attention} пунктов «Внимание»."

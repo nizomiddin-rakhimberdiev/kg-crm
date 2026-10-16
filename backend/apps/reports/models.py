@@ -20,7 +20,7 @@ from django.utils.translation import gettext_lazy
 
 from apps.core.models import TenantScopedModel
 
-__all__ = ["ExportStatus", "ReportExport", "REPORT_TYPES"]
+__all__ = ["ExportStatus", "ReportExport", "ReportSnapshot", "REPORT_TYPES"]
 
 # Eksport qilinadigan hisobot turlari — ro'yxat YOPIQ. Ochiq bo'lsa,
 # mijoz yuborgan matn bevosita funksiya nomiga aylanardi.
@@ -73,3 +73,48 @@ class ReportExport(TenantScopedModel):
 
     def __str__(self) -> str:
         return f"{self.report_type} ({self.status})"
+
+
+class ReportSnapshot(TenantScopedModel):
+    """
+    Oylik hisobot paketining O'ZGARMAS nusxasi (Bosqich 13.5, brif §8).
+
+    JSON + nazorat summasi. Keyin ma'lumot o'zgarsa, jonli paketning
+    summasi boshqacha chiqadi — "o'zgarish bor" — va yangi versiya
+    yaratiladi; eskisi o'chmaydi. 13.6 bu yerga topshirish/qabul holatini
+    qo'shadi.
+    """
+
+    branch = models.ForeignKey(
+        "branches.Branch",
+        on_delete=models.RESTRICT,
+        related_name="report_snapshots",
+        null=True,
+        blank=True,
+    )
+    period_year = models.PositiveSmallIntegerField()
+    period_month = models.PositiveSmallIntegerField()
+    version = models.PositiveIntegerField()
+    data = models.JSONField()
+    checksum = models.CharField(max_length=64)
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="report_snapshots",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "report_snapshot"
+        ordering = ["-version"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "branch", "period_year", "period_month", "version"],
+                name="uq_report_snapshot_version",
+                nulls_distinct=False,
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.period_year}-{self.period_month:02d} v{self.version}"

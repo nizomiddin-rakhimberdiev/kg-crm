@@ -714,6 +714,10 @@ Organization-scoped (RLS). `branch_id`, `period_year`, `period_month`, `closed_b
 
 `invoice_line.absence_claim_id` (FK → absence_claim, `SET_NULL`) records which claim a `credit` line came from, so the summary splits recalculations by kind and basis (certificate — meal money / full rate, application, …) without parsing text.
 
+### 13.3c `report_snapshot` — the monthly pack, frozen (Bosqich 13.5)
+
+Organization-scoped (RLS). `branch_id` (nullable — organisation-wide pack), `period_year`, `period_month`, `version`, `data` (the pack JSON), `checksum` (SHA-256 of its canonical form), `created_by_id`; `UNIQUE (organization, branch, period, version) NULLS NOT DISTINCT`. A snapshot is never edited: when the live pack's checksum differs from the latest version, the page says "changed" and the next snapshot becomes a new version; the diff compares numeric leaves by path. 13.6 adds the submit / accept workflow on top.
+
 ### 13.4 `invoice_line`
 For itemization beyond the base tariff (extra meals, activities, one-off fees).
 

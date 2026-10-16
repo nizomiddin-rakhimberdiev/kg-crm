@@ -51,6 +51,11 @@ class AuditLog(models.Model):
         ("create", "Yaratildi"),
         ("update", "Yangilandi"),
         ("delete", "O'chirildi"),
+        # Tasdiqlash amallari (topshirishni qabul qilish, rad etish) va
+        # hisobot ochilishi (Bosqich 13.5: "kim qaysi hisobotni qachon ochdi").
+        ("approve", "Tasdiqlandi"),
+        ("reject", "Rad etildi"),
+        ("view", "Ochildi"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

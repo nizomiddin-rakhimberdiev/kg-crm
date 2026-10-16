@@ -2104,3 +2104,144 @@ msgstr "Correction to a closed month"
 
 msgid "Yoʻldagi pul oʻz vaqtida tushgan"
 msgstr "Money in transit arrived on time"
+
+msgid "Amortizatsiya (pul emas)"
+msgstr "Amortisation (not cash)"
+
+msgid "Bolalar"
+msgstr "Children"
+
+msgid "Bolalar soni taʼsiri"
+msgstr "Number of children effect"
+
+msgid "Bolalar va bandlik"
+msgstr "Children and occupancy"
+
+msgid "Boshqa daromad: hisoblangan va kelgan farqi"
+msgstr "Other income: accrued vs received"
+
+msgid "Boshqa harakatlar"
+msgstr "Other movements"
+
+msgid "Daromad"
+msgstr "Revenue"
+
+msgid "Daromad {value} soʻm, oʻtgan oyga nisbatan {delta} soʻm."
+msgstr "Revenue {value} UZS, {delta} UZS against last month."
+
+msgid "Diqqat"
+msgstr "Attention"
+
+msgid "Fakturalar"
+msgstr "Invoices"
+
+msgid "Foyda-zarar"
+msgstr "Profit and loss"
+
+msgid "Ilovalar"
+msgstr "Appendices"
+
+msgid "Imtiyoz taʼsiri"
+msgstr "Benefit effect"
+
+msgid "Imtiyozlar"
+msgstr "Benefits"
+
+msgid "Ish haqi"
+msgstr "Payroll"
+
+msgid "Kapital xarajat"
+msgstr "Capital expenditure"
+
+msgid "Kassa va bank"
+msgstr "Till and bank"
+
+msgid "Kredit (olindi − qaytarildi)"
+msgstr "Loans (received − repaid)"
+
+msgid "Narx taʼsiri"
+msgstr "Price effect"
+
+msgid "Nasiya va xarajat vaqti farqi"
+msgstr "Credit purchases and expense timing"
+
+msgid "Nazorat tekshiruvlari"
+msgstr "Control checks"
+
+msgid "Operatsion foyda"
+msgstr "Operating profit"
+
+msgid "Operatsion foyda {value} soʻm."
+msgstr "Operating profit {value} UZS."
+
+msgid "Oy uchun yigʻilgan"
+msgstr "Collected for the month"
+
+msgid "Oylik moliyaviy hisobot — {period}"
+msgstr "Monthly financial report — {period}"
+
+msgid "Oʻtkazmalar (filiallar orasida)"
+msgstr "Transfers (between branches)"
+
+msgid "Pul (kassa + bank + yoʻlda)"
+msgstr "Money (till + bank + in transit)"
+
+msgid "Pul oqimi: foyda ≠ pul"
+msgstr "Cash flow: profit ≠ cash"
+
+msgid "Qarzlar va avanslar"
+msgstr "Debts and advances"
+
+msgid "Qarzlar va avanslar oʻzgarishi"
+msgstr "Change in debts and advances"
+
+msgid "Qayta hisob taʼsiri"
+msgstr "Recalculation effect"
+
+msgid "Qayta hisoblar"
+msgstr "Recalculations"
+
+msgid "Reja va prognoz"
+msgstr "Plan and forecast"
+
+msgid "Reja va prognoz — Bosqich 13.7."
+msgstr "Plan and forecast — phase 13.7."
+
+msgid "Soliq toʻlovlari"
+msgstr "Tax payments"
+
+msgid "Soliq va majburiy toʻlovlar"
+msgstr "Taxes and mandatory payments"
+
+msgid "Toʻlanishi kerak"
+msgstr "Due"
+
+msgid "Toʻlanmagan ish haqi oʻzgarishi"
+msgstr "Change in unpaid salaries"
+
+msgid "Toʻliq narxdagi summa"
+msgstr "Amount at full price"
+
+msgid "Tushum (pul)"
+msgstr "Receipts (cash)"
+
+msgid "Tuzatishlar (sanoq, boshlangʻich qoldiq)"
+msgstr "Adjustments (counts, opening balance)"
+
+msgid "Xarajatlar"
+msgstr "Expenses"
+
+msgid "Xulosa"
+msgstr "Summary"
+
+msgid "Yigʻilgan"
+msgstr "Collected"
+
+msgid "Yigʻilgan pul"
+msgstr "Money collected"
+
+msgid "Yigʻish darajasi {rate}%."
+msgstr "Collection rate {rate}%."
+
+msgid "{failing} ta tekshiruv qizil, {attention} ta Diqqat."
+msgstr "{failing} checks red, {attention} attention items."

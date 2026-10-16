@@ -84,6 +84,7 @@ OPERATIONAL_TABLES: tuple[str, ...] = (
     "bank_statement",
     "bank_statement_line",
     "expense_draft",
+    "report_snapshot",
     "child",
     "child_guardian",
     "child_pause",

@@ -126,6 +126,7 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.notifications.Notification",
     "apps.parent_bot.ContactIndex",
     "apps.notifications.NotificationTemplate",
+    "apps.reports.ReportSnapshot",
     "apps.reports.ReportExport",
     "apps.attendance.Holiday",
     "apps.attendance.AbsenceKind",

@@ -77,6 +77,9 @@ DEFAULTS: dict[str, Any] = {
     # "owner,director".
     "alerts.digest_hour": 20,
     "alerts.recipients": "owner",
+    # Bosqich 13.5: "bir bola-kunga oziq-ovqat" shu toifa (va uning ichki
+    # toifalari) bo'yicha hisoblanadi.
+    "report.food_category": "Oziq-ovqat",
     # --- Bosqich 12.2: imtiyozlar (Oriental Kinderland qiymatlari) ---
     #
     # Aka-uka: bir oiladagi (umumiy vasiy) har bir bolaga shuncha so'm
