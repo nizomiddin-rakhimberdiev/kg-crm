@@ -324,6 +324,9 @@ def approve_expense(
         created_by=approved_by,
         allow_negative=allow_negative,
     )
+    from apps.intelligence import alerts
+
+    alerts.expense_recorded(expense)
     return expense
 
 

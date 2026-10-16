@@ -534,6 +534,14 @@ def close_day(
             created_by=created_by,
             allow_negative=True,
         )
+        from apps.intelligence import alerts
+
+        alerts.notify(
+            organization_id=account.organization_id,
+            text=gettext("💰 Kassa farqi ({pot}): {amount} soʻm. Sabab: {reason}").format(
+                pot=account.name, amount=_som(difference), reason=reason
+            ),
+        )
     return count
 
 

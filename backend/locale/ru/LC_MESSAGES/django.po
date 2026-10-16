@@ -1903,3 +1903,204 @@ msgstr "Строка не найдена."
 
 msgid "Toifani tanlang."
 msgstr "Выберите категорию."
+
+msgid "Bogʻcha oʻsyaptimi?"
+msgstr "Растёт ли сад?"
+
+msgid "Bu oy {arrived} ta keldi, {left} ta ketdi"
+msgstr "В этом месяце пришло {arrived}, ушло {left}"
+
+msgid "Bugun {today}, oy boshidan {month} soʻm keldi"
+msgstr "Сегодня {today}, с начала месяца {month} сум"
+
+msgid "Diqqat: {n}"
+msgstr "Внимание: {n}"
+
+msgid "Foyda qancha?"
+msgstr "Какая прибыль?"
+
+msgid "Hammasi joyidami?"
+msgstr "Всё в порядке?"
+
+msgid "Kim qancha qarz?"
+msgstr "Кто сколько должен?"
+
+msgid "Marja {margin}%"
+msgstr "Маржа {margin}%"
+
+msgid "Oy boshida {before} soʻm edi"
+msgstr "На начало месяца было {before} сум"
+
+msgid "Oʻtgan oyning shu kunigacha {before} soʻm"
+msgstr "К этому дню прошлого месяца {before} сум"
+
+msgid "Pul qancha keldi va qayerda?"
+msgstr "Сколько денег пришло и где они?"
+
+msgid "Pul qayerga ketdi?"
+msgstr "Куда ушли деньги?"
+
+msgid "Tushum: {amount} soʻm"
+msgstr "Поступления: {amount} сум"
+
+msgid "Xarajat: {amount} soʻm"
+msgstr "Расходы: {amount} сум"
+
+msgid "faktura 0"
+msgstr "счёт 0"
+
+msgid "faktura yoʻq"
+msgstr "счёта нет"
+
+msgid "holati: ketgan"
+msgstr "статус: выбыл"
+
+msgid "{category}, {day}: {amount} soʻm × {n}"
+msgstr "{category}, {day}: {amount} сум × {n}"
+
+msgid "{category}, {day}: {n} ta xarajat, jami {amount} soʻm"
+msgstr "{category}, {day}: {n} расходов, всего {amount} сум"
+
+msgid "{category}: {amount} soʻm, chek yoʻq"
+msgstr "{category}: {amount} сум, чека нет"
+
+msgid "{category}: {before} → {after} soʻm ({percent:+.0f}%)"
+msgstr "{category}: {before} → {after} сум ({percent:+.0f}%)"
+
+msgid "{child}: oy davomida bironta kelgan kuni yoʻq"
+msgstr "{child}: за месяц ни одного дня посещения"
+
+msgid "{child}: {amount} soʻm qarz"
+msgstr "{child}: долг {amount} сум"
+
+msgid "{child}: {amount} soʻm — {reason}"
+msgstr "{child}: {amount} сум — {reason}"
+
+msgid "{child}: {amount} soʻm — {reason} ({who})"
+msgstr "{child}: {amount} сум — {reason} ({who})"
+
+msgid "{child}: {amount} soʻm, sana {day} — {reason}"
+msgstr "{child}: {amount} сум, дата {day} — {reason}"
+
+msgid "{child}: {days} kun kelgan — {why}"
+msgstr "{child}: был {days} дн. — {why}"
+
+msgid "{child}: {kind} — {reason} ({who})"
+msgstr "{child}: {kind} — {reason} ({who})"
+
+msgid "{closed} / {active} kun yopilgan"
+msgstr "{closed} / {active} дней закрыто"
+
+msgid "{day}: {amount} soʻm — {reason}"
+msgstr "{day}: {amount} сум — {reason}"
+
+msgid "{failing} ta tekshiruv qizil, {attention} ta Diqqat"
+msgstr "{failing} проверок красные, {attention} пунктов «Внимание»"
+
+msgid "{n} ta imtiyozda sabab yoʻq"
+msgstr "У {n} льгот нет причины"
+
+msgid "{n} ta toʻlov kechikkan"
+msgstr "{n} оплат задерживаются"
+
+msgid "{n} ta xarajatda chek yoʻq"
+msgstr "У {n} расходов нет чека"
+
+msgid "↩️ Toʻlov bekor qilindi: {child} — {amount} soʻm. Sabab: {reason}"
+msgstr "↩️ Оплата отменена: {child} — {amount} сум. Причина: {reason}"
+
+msgid "⚠️ Katta xarajat: {amount} soʻm — {category}. {note}"
+msgstr "⚠️ Крупный расход: {amount} сум — {category}. {note}"
+
+msgid "✏️ Yopilgan oyga tuzatish: {child} — {text}"
+msgstr "✏️ Корректировка закрытого месяца: {child} — {text}"
+
+msgid "🎁 Imtiyoz: {child} — {kind} {rule}. Sabab: {reason}"
+msgstr "🎁 Льгота: {child} — {kind} {rule}. Причина: {reason}"
+
+msgid "🏦 Bank koʻchirmasi farqi: koʻchirmada {statement}, tizimda {system}."
+msgstr "🏦 Расхождение с выпиской: в выписке {statement}, в системе {system}."
+
+msgid "💰 Kassa farqi ({pot}): {amount} soʻm. Sabab: {reason}"
+msgstr "💰 Расхождение кассы ({pot}): {amount} сум. Причина: {reason}"
+
+msgid "📊 Kunlik xulosa — {day}"
+msgstr "📊 Итоги дня — {day}"
+
+msgid "🧾 Qarz hisobdan chiqarildi: {child} — {amount} soʻm. Sabab: {reason}"
+msgstr "🧾 Долг списан: {child} — {amount} сум. Причина: {reason}"
+
+msgid "Bank koʻchirmasi bilan mos"
+msgstr "Совпадает с банковской выпиской"
+
+msgid "Bir kunda bir toifaga bir nechta mayda xarajat"
+msgstr "Несколько мелких расходов в одну категорию за день"
+
+msgid "Daromad tengligi"
+msgstr "Равенство дохода"
+
+msgid "Davomatda bor, fakturasi 0 yoki ketgan"
+msgstr "В посещаемости есть, а счёт 0 или выбыл"
+
+msgid "Faol, lekin davomati yoʻq"
+msgstr "Активен, но посещаемости нет"
+
+msgid "Har imtiyozda sabab bor"
+msgstr "У каждой льготы есть причина"
+
+msgid "Hujjatsiz katta xarajat"
+msgstr "Крупный расход без документа"
+
+msgid "Kassa farqi"
+msgstr "Расхождение кассы"
+
+msgid "Kassa sanoqlari"
+msgstr "Пересчёты кассы"
+
+msgid "Katta xarajatlarda hujjat bor"
+msgstr "У крупных расходов есть документ"
+
+msgid "Kelajak sanali yozuv yoʻq"
+msgstr "Нет записей с будущей датой"
+
+msgid "Manfiy qoldiq yoʻq"
+msgstr "Нет отрицательного остатка"
+
+msgid "Orqa sana bilan toʻlov"
+msgstr "Оплата задним числом"
+
+msgid "Ota-onaga pul qaytarildi"
+msgstr "Деньги возвращены родителю"
+
+msgid "Oy yopilgan"
+msgstr "Месяц закрыт"
+
+msgid "Qarz hisobdan chiqarildi"
+msgstr "Долг списан"
+
+msgid "Qoplar koʻprigi"
+msgstr "Мост по счетам"
+
+msgid "Takrorlangan xarajat"
+msgstr "Повторный расход"
+
+msgid "Toʻlov bekor qilindi"
+msgstr "Оплата отменена"
+
+msgid "Toʻlov qoʻlda boshqa oyga taqsimlandi"
+msgstr "Оплата вручную распределена на другой месяц"
+
+msgid "Xarajat keskin oʻzgardi"
+msgstr "Расход резко изменился"
+
+msgid "Xodim farzandi toʻlamagan"
+msgstr "Ребёнок сотрудника не оплатил"
+
+msgid "Yangi imtiyoz"
+msgstr "Новая льгота"
+
+msgid "Yopilgan oyga tuzatish"
+msgstr "Корректировка закрытого месяца"
+
+msgid "Yoʻldagi pul oʻz vaqtida tushgan"
+msgstr "Деньги в пути поступили вовремя"

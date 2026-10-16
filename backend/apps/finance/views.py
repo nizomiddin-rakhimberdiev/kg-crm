@@ -110,6 +110,20 @@ class DiscountViewSet(BranchScopedMixin, TenantViewSet):
             )
         user = request_user(self.request)
         serializer.save(organization=child.organization, branch=child.branch, created_by=user)
+        # Katta imtiyoz — egaga darhol (Bosqich 13.4).
+        from apps.intelligence import alerts
+
+        discount = serializer.instance
+        kind_type, value = (
+            services.benefit_terms(discount.kind, discount.branch)
+            if (discount.kind and discount.kind != "custom")
+            else (discount.discount_type, discount.value)
+        )
+        alerts.benefit_given(
+            discount,
+            Decimal(value) if kind_type == "percent" else None,
+            Decimal(value) if kind_type != "percent" else None,
+        )
         audit.record(
             action="create",
             request=self.request._request,

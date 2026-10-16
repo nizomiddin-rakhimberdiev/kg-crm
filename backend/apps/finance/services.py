@@ -431,6 +431,14 @@ def _apply_absence_credits(
             text = gettext("Tuzatish ({month}): {text}").format(
                 month=claim.date_from.strftime("%m.%Y"), text=text
             )
+            from apps.intelligence import alerts
+
+            alerts.notify(
+                organization_id=invoice.organization_id,
+                text=gettext("✏️ Yopilgan oyga tuzatish: {child} — {text}").format(
+                    child=invoice.child.full_name, text=text
+                ),
+            )
         InvoiceLine.objects.create(
             invoice=invoice,
             kind="credit",
@@ -746,6 +754,14 @@ def write_off_invoice(
         created_by=created_by,
     )
     recompute_child_balance(invoice.child)
+    from apps.intelligence import alerts
+
+    alerts.notify(
+        organization_id=invoice.organization_id,
+        text=gettext(
+            "🧾 Qarz hisobdan chiqarildi: {child} — {amount} soʻm. Sabab: {reason}"
+        ).format(child=invoice.child.full_name, amount=som(amount), reason=reason),
+    )
     return record
 
 
@@ -1726,6 +1742,14 @@ def reverse_payment(*, payment: Payment, reason: str = "", created_by: Any = Non
         _sync_payroll_tuition(payment)
 
     recompute_child_balance(payment.child)
+    from apps.intelligence import alerts
+
+    alerts.notify(
+        organization_id=payment.organization_id,
+        text=gettext("↩️ Toʻlov bekor qilindi: {child} — {amount} soʻm. Sabab: {reason}").format(
+            child=payment.child.full_name, amount=som(payment.amount), reason=reason or "—"
+        ),
+    )
     return payment
 
 

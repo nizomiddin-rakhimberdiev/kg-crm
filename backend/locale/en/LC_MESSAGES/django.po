@@ -1903,3 +1903,204 @@ msgstr "Line not found."
 
 msgid "Toifani tanlang."
 msgstr "Choose the category."
+
+msgid "Bogʻcha oʻsyaptimi?"
+msgstr "Is the kindergarten growing?"
+
+msgid "Bu oy {arrived} ta keldi, {left} ta ketdi"
+msgstr "This month {arrived} arrived, {left} left"
+
+msgid "Bugun {today}, oy boshidan {month} soʻm keldi"
+msgstr "Today {today}, since the month began {month} UZS"
+
+msgid "Diqqat: {n}"
+msgstr "Attention: {n}"
+
+msgid "Foyda qancha?"
+msgstr "What is the profit?"
+
+msgid "Hammasi joyidami?"
+msgstr "Is everything in order?"
+
+msgid "Kim qancha qarz?"
+msgstr "Who owes how much?"
+
+msgid "Marja {margin}%"
+msgstr "Margin {margin}%"
+
+msgid "Oy boshida {before} soʻm edi"
+msgstr "It was {before} UZS at the start of the month"
+
+msgid "Oʻtgan oyning shu kunigacha {before} soʻm"
+msgstr "By this day last month: {before} UZS"
+
+msgid "Pul qancha keldi va qayerda?"
+msgstr "How much money came in, and where is it?"
+
+msgid "Pul qayerga ketdi?"
+msgstr "Where did the money go?"
+
+msgid "Tushum: {amount} soʻm"
+msgstr "Received: {amount} UZS"
+
+msgid "Xarajat: {amount} soʻm"
+msgstr "Spent: {amount} UZS"
+
+msgid "faktura 0"
+msgstr "invoice 0"
+
+msgid "faktura yoʻq"
+msgstr "no invoice"
+
+msgid "holati: ketgan"
+msgstr "status: left"
+
+msgid "{category}, {day}: {amount} soʻm × {n}"
+msgstr "{category}, {day}: {amount} UZS × {n}"
+
+msgid "{category}, {day}: {n} ta xarajat, jami {amount} soʻm"
+msgstr "{category}, {day}: {n} expenses, {amount} UZS in total"
+
+msgid "{category}: {amount} soʻm, chek yoʻq"
+msgstr "{category}: {amount} UZS, no receipt"
+
+msgid "{category}: {before} → {after} soʻm ({percent:+.0f}%)"
+msgstr "{category}: {before} → {after} UZS ({percent:+.0f}%)"
+
+msgid "{child}: oy davomida bironta kelgan kuni yoʻq"
+msgstr "{child}: not a single day attended this month"
+
+msgid "{child}: {amount} soʻm qarz"
+msgstr "{child}: owes {amount} UZS"
+
+msgid "{child}: {amount} soʻm — {reason}"
+msgstr "{child}: {amount} UZS — {reason}"
+
+msgid "{child}: {amount} soʻm — {reason} ({who})"
+msgstr "{child}: {amount} UZS — {reason} ({who})"
+
+msgid "{child}: {amount} soʻm, sana {day} — {reason}"
+msgstr "{child}: {amount} UZS, dated {day} — {reason}"
+
+msgid "{child}: {days} kun kelgan — {why}"
+msgstr "{child}: attended {days} days — {why}"
+
+msgid "{child}: {kind} — {reason} ({who})"
+msgstr "{child}: {kind} — {reason} ({who})"
+
+msgid "{closed} / {active} kun yopilgan"
+msgstr "{closed} / {active} days closed"
+
+msgid "{day}: {amount} soʻm — {reason}"
+msgstr "{day}: {amount} UZS — {reason}"
+
+msgid "{failing} ta tekshiruv qizil, {attention} ta Diqqat"
+msgstr "{failing} checks red, {attention} attention items"
+
+msgid "{n} ta imtiyozda sabab yoʻq"
+msgstr "{n} benefits have no reason"
+
+msgid "{n} ta toʻlov kechikkan"
+msgstr "{n} payments are late"
+
+msgid "{n} ta xarajatda chek yoʻq"
+msgstr "{n} expenses have no receipt"
+
+msgid "↩️ Toʻlov bekor qilindi: {child} — {amount} soʻm. Sabab: {reason}"
+msgstr "↩️ Payment reversed: {child} — {amount} UZS. Reason: {reason}"
+
+msgid "⚠️ Katta xarajat: {amount} soʻm — {category}. {note}"
+msgstr "⚠️ Large expense: {amount} UZS — {category}. {note}"
+
+msgid "✏️ Yopilgan oyga tuzatish: {child} — {text}"
+msgstr "✏️ Correction to a closed month: {child} — {text}"
+
+msgid "🎁 Imtiyoz: {child} — {kind} {rule}. Sabab: {reason}"
+msgstr "🎁 Benefit: {child} — {kind} {rule}. Reason: {reason}"
+
+msgid "🏦 Bank koʻchirmasi farqi: koʻchirmada {statement}, tizimda {system}."
+msgstr "🏦 Bank statement difference: statement {statement}, system {system}."
+
+msgid "💰 Kassa farqi ({pot}): {amount} soʻm. Sabab: {reason}"
+msgstr "💰 Till difference ({pot}): {amount} UZS. Reason: {reason}"
+
+msgid "📊 Kunlik xulosa — {day}"
+msgstr "📊 Daily summary — {day}"
+
+msgid "🧾 Qarz hisobdan chiqarildi: {child} — {amount} soʻm. Sabab: {reason}"
+msgstr "🧾 Debt written off: {child} — {amount} UZS. Reason: {reason}"
+
+msgid "Bank koʻchirmasi bilan mos"
+msgstr "Matches the bank statement"
+
+msgid "Bir kunda bir toifaga bir nechta mayda xarajat"
+msgstr "Several small expenses in one category on one day"
+
+msgid "Daromad tengligi"
+msgstr "Revenue equation"
+
+msgid "Davomatda bor, fakturasi 0 yoki ketgan"
+msgstr "Attending, but the invoice is 0 or the child left"
+
+msgid "Faol, lekin davomati yoʻq"
+msgstr "Active, but no attendance"
+
+msgid "Har imtiyozda sabab bor"
+msgstr "Every benefit has a reason"
+
+msgid "Hujjatsiz katta xarajat"
+msgstr "Large expense without a document"
+
+msgid "Kassa farqi"
+msgstr "Till difference"
+
+msgid "Kassa sanoqlari"
+msgstr "Till counts"
+
+msgid "Katta xarajatlarda hujjat bor"
+msgstr "Large expenses have a document"
+
+msgid "Kelajak sanali yozuv yoʻq"
+msgstr "No future-dated records"
+
+msgid "Manfiy qoldiq yoʻq"
+msgstr "No negative balance"
+
+msgid "Orqa sana bilan toʻlov"
+msgstr "Back-dated payment"
+
+msgid "Ota-onaga pul qaytarildi"
+msgstr "Money returned to a parent"
+
+msgid "Oy yopilgan"
+msgstr "Month closed"
+
+msgid "Qarz hisobdan chiqarildi"
+msgstr "Debt written off"
+
+msgid "Qoplar koʻprigi"
+msgstr "Pot bridge"
+
+msgid "Takrorlangan xarajat"
+msgstr "Repeated expense"
+
+msgid "Toʻlov bekor qilindi"
+msgstr "Payment reversed"
+
+msgid "Toʻlov qoʻlda boshqa oyga taqsimlandi"
+msgstr "Payment manually allocated to another month"
+
+msgid "Xarajat keskin oʻzgardi"
+msgstr "Expense changed sharply"
+
+msgid "Xodim farzandi toʻlamagan"
+msgstr "Staff member's child has not paid"
+
+msgid "Yangi imtiyoz"
+msgstr "New benefit"
+
+msgid "Yopilgan oyga tuzatish"
+msgstr "Correction to a closed month"
+
+msgid "Yoʻldagi pul oʻz vaqtida tushgan"
+msgstr "Money in transit arrived on time"

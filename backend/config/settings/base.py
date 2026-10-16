@@ -318,6 +318,12 @@ CELERY_BEAT_SCHEDULE = {
         "task": "intelligence.generate_insights",
         "schedule": crontab(hour=3, minute=30),
     },
+    # Egaga kunlik xulosa (Bosqich 13.4): har soat boshida; har bog'cha o'z
+    # soatini (`alerts.digest_hour`) tanlaydi, vazifa o'sha soatda yuboradi.
+    "send-daily-digests": {
+        "task": "intelligence.send_daily_digests",
+        "schedule": crontab(minute=0),
+    },
     # --- Obuna (ADR-11) ---
     #
     # Kunlik o'lchov o'tkazib yuborilsa hisob KAMAYADI va o'tmishdagi

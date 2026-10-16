@@ -178,6 +178,10 @@ _ACTION_REPORT: dict[str, str] = {
     "cash_flow": "finance",
     "position": "finance",
     "completeness": "monthly",
+    "home": "finance",
+    "daily": "monthly",
+    "checks": "monthly",
+    "attention": "monthly",
 }
 
 
@@ -264,6 +268,61 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
                 organization_id=request_user(request).organization_id,
                 year=year,
                 month=month,
+                branch_id=self.branch_for(request, request.query_params.get("branch")),
+            )
+        )
+
+    @action(detail=False)
+    def checks(self, request: Request) -> Response:
+        """`GET /reports/checks?year=&month=` — nazorat tekshiruvlari (13.4)."""
+        from apps.intelligence import control
+
+        year, month = self._year_month(request)
+        return Response(
+            control.checks(
+                organization_id=request_user(request).organization_id,
+                year=year,
+                month=month,
+                branch_id=self.branch_for(request, request.query_params.get("branch")),
+            )
+        )
+
+    @action(detail=False)
+    def attention(self, request: Request) -> Response:
+        """`GET /reports/attention?year=&month=` — "Diqqat" ro'yxati (13.4)."""
+        from apps.intelligence import control
+
+        year, month = self._year_month(request)
+        items = control.attention(
+            organization_id=request_user(request).organization_id,
+            year=year,
+            month=month,
+            branch_id=self.branch_for(request, request.query_params.get("branch")),
+        )
+        return Response({"items": items, "count": len(items)})
+
+    @action(detail=False)
+    def home(self, request: Request) -> Response:
+        """`GET /reports/home` — "Bog'cha moliyasi bugun": oltita savol (13.4)."""
+        from apps.reports import home
+
+        return Response(
+            home.home(
+                organization_id=request_user(request).organization_id,
+                day=_parse_date(request.query_params.get("date"), timezone.localdate()),
+                branch_id=self.branch_for(request, request.query_params.get("branch")),
+            )
+        )
+
+    @action(detail=False)
+    def daily(self, request: Request) -> Response:
+        """`GET /reports/daily?date=` — kunlik ko'rinish (13.4)."""
+        from apps.reports import home
+
+        return Response(
+            home.daily(
+                organization_id=request_user(request).organization_id,
+                day=_parse_date(request.query_params.get("date"), timezone.localdate()),
                 branch_id=self.branch_for(request, request.query_params.get("branch")),
             )
         )

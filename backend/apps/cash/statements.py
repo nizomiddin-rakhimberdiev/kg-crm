@@ -471,6 +471,18 @@ def import_statement(
             "updated_at",
         ]
     )
+    if closing_balance is not None and closing_balance != statement.system_balance:
+        from apps.intelligence import alerts
+
+        alerts.notify(
+            organization_id=account.organization_id,
+            text=gettext(
+                "🏦 Bank koʻchirmasi farqi: koʻchirmada {statement}, tizimda {system}."
+            ).format(
+                statement=f"{int(closing_balance):,}".replace(",", " "),
+                system=f"{int(statement.system_balance or 0):,}".replace(",", " "),
+            ),
+        )
     return statement
 
 

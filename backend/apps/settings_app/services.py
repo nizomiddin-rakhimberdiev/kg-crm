@@ -65,6 +65,18 @@ DEFAULTS: dict[str, Any] = {
     # Bosqich 13.2c: terminal/Click/Payme puli to'lovdan shuncha kun
     # keyin bankka tushishi kutiladi; tushmasa — "kechikkan".
     "transit.settle_days": 1,
+    # Bosqich 13.4: nazorat chegaralari va egaga xabarlar.
+    # Shundan katta xarajatda chek bo'lishi kerak ("Diqqat" va tekshiruv).
+    "control.document_threshold": 1000000,
+    # Toifa oldingi oyga nisbatan shuncha foizdan ko'p o'zgarsa — "Diqqat".
+    "control.change_percent": 15,
+    # Darhol xabar: shundan katta xarajat; shu foizdan katta imtiyoz.
+    "alerts.expense_threshold": 5000000,
+    "alerts.benefit_percent": 50,
+    # Kunlik xulosa soati (Toshkent vaqti) va kimlarga: "owner" yoki
+    # "owner,director".
+    "alerts.digest_hour": 20,
+    "alerts.recipients": "owner",
     # --- Bosqich 12.2: imtiyozlar (Oriental Kinderland qiymatlari) ---
     #
     # Aka-uka: bir oiladagi (umumiy vasiy) har bir bolaga shuncha so'm

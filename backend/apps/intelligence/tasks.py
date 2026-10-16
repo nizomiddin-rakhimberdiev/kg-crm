@@ -21,7 +21,7 @@ from apps.intelligence import selectors, services
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["generate_insights"]
+__all__ = ["generate_insights", "send_daily_digests"]
 
 
 @reliable_task(name="intelligence.generate_insights")
@@ -60,4 +60,35 @@ def generate_insights(organization_id: Any = None) -> dict[str, int]:
             logger.exception("Insight generatsiyasi yiqildi: organization=%s", organization.id)
 
     logger.info("Insight generatsiyasi: %s", totals)
+    return totals
+
+
+@reliable_task(name="intelligence.send_daily_digests")
+def send_daily_digests() -> dict[str, int]:
+    """
+    Har soat ishga tushadi; xulosa faqat `alerts.digest_hour` (sukut 20,
+    Toshkent) soati kelgan tashkilotlarga ketadi (Bosqich 13.4). Soat
+    sozlama bo'lgani uchun jadval soatlik — har bog'cha o'z vaqtini tanlaydi.
+    """
+    from django.utils import timezone
+
+    from apps.intelligence import alerts
+    from apps.organizations.models import Organization
+    from apps.settings_app.services import get_setting
+
+    now = timezone.localtime()
+    with platform_context():
+        organizations = list(Organization.objects.filter(is_active=True))
+    totals = {"organizations": 0, "delivered": 0, "failed": 0}
+    for organization in organizations:
+        try:
+            with organization_context(organization.id):
+                hour = int(get_setting(key="alerts.digest_hour") or 20)
+                if hour != now.hour:
+                    continue
+                totals["organizations"] += 1
+                totals["delivered"] += alerts.send_digest(organization=organization, day=now.date())
+        except Exception:  # noqa: BLE001 — bitta tashkilot boshqalarini to'xtatmasin
+            totals["failed"] += 1
+            logger.exception("Kunlik xulosa yiqildi: organization=%s", organization.id)
     return totals
