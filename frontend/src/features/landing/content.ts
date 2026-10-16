@@ -503,11 +503,11 @@ const uz: Copy = {
       },
       {
         title: 'Rollar va ruxsatlar',
-        text: 'Kim nimani koʻrishini egasi belgilaydi. Kassir faqat oʻzi qabul qilgan pulni koʻradi — bogʻchaning umumiy tushumini emas. Hech kim oʻzida yoʻq huquqni boshqaga bera olmaydi.',
+        text: 'Kim nimani koʻrishini egasi belgilaydi. Kassir faqat oʻzi qabul qilgan pulni koʻradi. Boshqaruvchi oylik hisobotni topshiradi — kim qancha maosh olishini koʻrmasdan; rahbar raqam yonida savol beradi, qaytaradi yoki qabul qiladi. Bankka — faqat oʻqish uchun, muddatli havola.',
       },
       {
         title: 'Filiallar',
-        text: 'Bitta obuna — cheksiz filial. Ega hammasini birga koʻradi, xodim esa faqat oʻz filialini.',
+        text: 'Bitta obuna — cheksiz filial. Filiallar yonma-yon: bandlik, yigʻish, marja — eng yaxshisi va eng yomoni belgilangan; umumiy hisobotda filiallararo oʻtkazma chiqarib tashlanadi. Xodim faqat oʻz filialini koʻradi.',
       },
       {
         title: 'Shartnoma — qoʻlda emas',
@@ -996,7 +996,8 @@ const ru: Copy = {
         id: 'reports',
         title: 'Отчёты и контроль',
         text: 'Выручка, расходы, зарплата, задолженность — на одном экране. Прибыль — по месяцу начисления, денежный поток — по дате денег: июльская зарплата, выплаченная в августе, — расход июля; дивиденд — не расход; кондиционер распределяется по месяцам. Деньги терминала и Click видны «в пути», пока не поступят в банк.',
-        caption: 'Шесть вопросов, проверки и «Внимание» — на одном экране; владельцу — сообщение в Telegram',
+        caption:
+          'Шесть вопросов, проверки и «Внимание» — на одном экране; владельцу — сообщение в Telegram',
       },
     ],
   },
@@ -1070,11 +1071,11 @@ const ru: Copy = {
       },
       {
         title: 'Роли и права',
-        text: 'Владелец решает, кто что видит. Кассир видит только принятые им деньги — не общую выручку садика. И никто не может выдать больше прав, чем есть у него самого.',
+        text: 'Владелец решает, кто что видит. Кассир видит только принятые им деньги. Управляющий сдаёт месячный отчёт — не видя, кто сколько получает; руководитель задаёт вопрос у цифры, возвращает или принимает. Банку — ссылка только для чтения и со сроком.',
       },
       {
         title: 'Филиалы',
-        text: 'Одна подписка — сколько угодно филиалов. Владелец видит всё вместе, сотрудник — только свой.',
+        text: 'Одна подписка — сколько угодно филиалов. Филиалы рядом: заполненность, сбор, маржа — лучший и худший отмечены; в общем отчёте переводы между филиалами исключены. Сотрудник видит только свой.',
       },
       {
         title: 'Договор — не вручную',
@@ -1556,7 +1557,8 @@ const en: Copy = {
         id: 'reports',
         title: 'Reports and control',
         text: 'Revenue, expenses, payroll, debt — on one screen. Profit by the month it belongs to, cash flow by the day money moved: July salaries paid in August are a July cost, a dividend is not an expense, an air conditioner is spread over months. Terminal and Click money shows as “in transit” until it reaches the bank.',
-        caption: 'Six questions, checks and attention items on one screen; the owner gets a Telegram message',
+        caption:
+          'Six questions, checks and attention items on one screen; the owner gets a Telegram message',
       },
     ],
   },
@@ -1630,11 +1632,11 @@ const en: Copy = {
       },
       {
         title: 'Roles and permissions',
-        text: 'The owner decides who sees what. A cashier sees only the money they took — not the kindergarten’s total takings. And nobody can hand out more access than they hold themselves.',
+        text: 'The owner decides who sees what. A cashier sees only the money they took. A manager submits the monthly report without seeing who earns what; a leader asks at a number, returns it or accepts it. For the bank — a read-only link that expires.',
       },
       {
         title: 'Branches',
-        text: 'One subscription, as many branches as you like. The owner sees them together, staff see only theirs.',
+        text: 'One subscription, as many branches as you like. Branches side by side — occupancy, collection, margin, with the best and worst marked; the combined report leaves out transfers between branches. Staff see only their own.',
       },
       {
         title: 'Contracts, not retyping',

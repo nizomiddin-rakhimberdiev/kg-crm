@@ -231,6 +231,31 @@ const META: Record<string, SettingMeta> = {
     label: t('Avtomatik "kelmadi"'),
     help: t('Belgilanmagan bolalar kun oxirida kelmagan deb yoziladi.'),
   },
+  // Hisobot topshirish (Bosqich 13.6, ADR-42): raqamlar modelga bogʻliq
+  // emas, faqat jarayon.
+  'governance.model': {
+    label: t('Boshqaruv modeli'),
+    help: t('Oylik hisobotni kim tayyorlaydi va kim qabul qiladi.'),
+    options: [
+      ['A', t('A — ega oʻzi tasdiqlaydi')],
+      ['B', t('B — boshqaruvchi topshiradi, rahbar qabul qiladi')],
+      ['C', t('C — filiallar topshiradi, ega konsolidatsiyani tasdiqlaydi')],
+    ],
+  },
+  'governance.acceptors': {
+    label: t('Kim qabul qiladi'),
+    help: t('Har biri alohida «Qabul qildim» bosadi.'),
+    options: [
+      ['owner', t('Ega')],
+      ['owner,director', t('Ega va direktor')],
+    ],
+  },
+  'governance.deadline_day': {
+    label: t('Topshirish muddati (keyingi oy kuni)'),
+    help: t('Muddat oʻtsa, rahbarga bir marta eslatma boradi.'),
+    min: 1,
+    max: 28,
+  },
   // Shartnoma rekvizitlari (PLAN 9.3) — shablondagi {{...}} maydonlar
   // shu yerdan to'ldiriladi.
   'contracts.director_name': {
@@ -266,6 +291,7 @@ const GROUPS: Array<[string, string]> = [
   ['commission', t('Toʻlov komissiyasi')],
   ['notifications', t('Bildirishnomalar')],
   ['attendance', t('Davomat')],
+  ['governance', t('Oylik hisobotni topshirish')],
   ['contracts', t('Shartnoma rekvizitlari')],
 ]
 

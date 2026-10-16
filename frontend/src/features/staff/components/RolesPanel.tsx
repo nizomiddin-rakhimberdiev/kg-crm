@@ -34,6 +34,9 @@ const ACTION_LABELS: Record<string, string> = {
   delete: t('Oʻchirish'),
   export: t('Eksport'),
   approve: t('Tasdiqlash'),
+  read_all: t('Hammasini koʻrish'),
+  // Bosqich 13.6 (ADR-42): Moliya markazi, faqat jami summalar.
+  finance: t('Moliya markazi (jami)'),
 }
 
 export function RolesPanel() {

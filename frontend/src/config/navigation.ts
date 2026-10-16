@@ -84,14 +84,15 @@ const allNavItems: NavItem[] = [
     icon: Users2,
     permission: 'children.read',
   },
-  // Moliya markazi (Bosqich 13.4): bugun, kun, nazorat — egasi va
-  // direktor uchun; foyda va oylik jamini koʻrsatgani uchun `payroll.read`.
+  // Moliya markazi (Bosqich 13.4): bugun, kun, nazorat, oylik hisobot.
+  // `reports.finance` — faqat jami summalar (ADR-42), shuning uchun ega
+  // uni boshqaruvchiga bera oladi; `payroll.read` ham ochadi.
   {
     label: t('Moliya markazi'),
     to: '/finance',
     section: 'finance',
     icon: Gauge,
-    permission: 'payroll.read',
+    permission: ['reports.finance', 'payroll.read'],
     requires: 'reports.read',
   },
   {

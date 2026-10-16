@@ -10,10 +10,15 @@
 import { Fragment, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Download, FileText, Lock } from 'lucide-react'
-import { useOrganizationId } from '@/app/providers/AuthProvider'
+import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
+import { useBranchScope } from '@/app/providers/BranchProvider'
 import { Modal } from '@/components/ui/Modal'
 import { QueryError } from '@/components/ui/QueryError'
-import { reportsApi, type PackSection } from '@/features/dashboard/api'
+import { reportsApi, type PackSection, type PackUnit } from '@/features/dashboard/api'
+import { branchesApi } from '@/features/branches/api'
+import { queryKeys } from '@/lib/api/queryKeys'
+import { NetworkTable } from './NetworkTable'
+import { ReviewPanel } from './ReviewPanel'
 import { httpClient } from '@/lib/api/client'
 import { ApiError } from '@/lib/api/types'
 import { formatDate, som, today } from '@/lib/format'
@@ -115,22 +120,20 @@ interface ChainRow {
 }
 
 function SourceModal({
-  year,
-  month,
+  at,
   source,
   title,
   onClose,
 }: {
-  year: number
-  month: number
+  at: PackUnit
   source: string
   title: string
   onClose: () => void
 }) {
   const organizationId = useOrganizationId()
   const rows = useQuery({
-    queryKey: ['org', organizationId, 'reports', 'pack-source', year, month, source],
-    queryFn: () => reportsApi.packSource(year, month, source),
+    queryKey: ['org', organizationId, 'reports', 'pack-source', at, source],
+    queryFn: () => reportsApi.packSource(at, source),
   })
   return (
     <Modal open onClose={onClose} className="max-w-2xl">
@@ -287,22 +290,27 @@ export function MonthlyPack() {
     return `${previous.getFullYear()}-${String(previous.getMonth() + 1).padStart(2, '0')}`
   })
   const [year, month] = period.split('-').map(Number)
-  const key = ['org', organizationId, 'reports', 'pack', period]
-  const pack = useQuery({ queryKey: key, queryFn: () => reportsApi.pack(year, month) })
+  // Egasi yuqoridagi filial tanlovi bilan filial hisobotiga oʻtadi (C model);
+  // boshqa rollarni backend oʻz filialiga bogʻlaydi.
+  const { user } = useAuth()
+  const { selectedBranchId } = useBranchScope()
+  const at: PackUnit = { year, month, branch: selectedBranchId }
+  const key = ['org', organizationId, 'reports', 'pack', period, selectedBranchId]
+  const pack = useQuery({ queryKey: key, queryFn: () => reportsApi.pack(at) })
   const versions = useQuery({
     queryKey: [...key, 'versions'],
-    queryFn: () => reportsApi.packVersions(year, month),
+    queryFn: () => reportsApi.packVersions(at),
   })
   const [source, setSource] = useState<ChainRow | null>(null)
   const [diffFrom, setDiffFrom] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const diff = useQuery({
     queryKey: [...key, 'diff', diffFrom],
-    queryFn: () => reportsApi.packDiff(year, month, diffFrom as number),
+    queryFn: () => reportsApi.packDiff(at, diffFrom as number),
     enabled: diffFrom !== null,
   })
   const snapshot = useMutation({
-    mutationFn: () => reportsApi.packSnapshot(year, month),
+    mutationFn: () => reportsApi.packSnapshot(at),
     onSuccess: () => {
       setError(null)
       void queryClient.invalidateQueries({ queryKey: key })
@@ -311,7 +319,14 @@ export function MonthlyPack() {
   })
 
   const data = pack.data
-  const params = { year, month }
+  const params = { year, month, ...(selectedBranchId ? { branch: selectedBranchId } : {}) }
+  const isOwner = user?.role?.code === 'org_owner'
+  const branches = useQuery({
+    queryKey: queryKeys.branches(organizationId),
+    queryFn: branchesApi.list,
+    enabled: isOwner,
+  })
+  const network = isOwner && !selectedBranchId && (branches.data?.items.length ?? 0) > 1
 
   return (
     <div className="space-y-4">
@@ -420,6 +435,9 @@ export function MonthlyPack() {
         </Modal>
       )}
 
+      <ReviewPanel at={at} />
+      {network && <NetworkTable year={year} month={month} />}
+
       {pack.isError && <QueryError error={pack.error} onRetry={() => void pack.refetch()} />}
 
       {data?.sections.map((section, index) => (
@@ -441,8 +459,7 @@ export function MonthlyPack() {
 
       {source && source.source && (
         <SourceModal
-          year={year}
-          month={month}
+          at={at}
           source={source.source}
           title={source.label}
           onClose={() => setSource(null)}

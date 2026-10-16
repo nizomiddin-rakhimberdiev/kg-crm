@@ -305,7 +305,12 @@ export const routes: RouteObject[] = [
             children: [{ path: 'cash', element: <CashPage /> }],
           },
           {
-            element: <PermissionRoute permission="payroll.read" requires="reports.read" />,
+            element: (
+              <PermissionRoute
+                permission={['reports.finance', 'payroll.read']}
+                requires="reports.read"
+              />
+            ),
             children: [{ path: 'finance', element: <FinanceCenterPage /> }],
           },
           {

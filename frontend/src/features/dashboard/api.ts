@@ -144,19 +144,84 @@ export interface Pack {
   changed_since_snapshot: boolean
 }
 
+/** Hisobot birligi: davr va (egasi tanlagan boʻlsa) filial. */
+export interface PackUnit {
+  year: number
+  month: number
+  branch?: string | null
+}
+const unit = ({ year, month, branch }: PackUnit) => ({ year, month, ...(branch ? { branch } : {}) })
+
+/** Boshqaruv: topshirish, savol, qabul (Bosqich 13.6, ADR-42). */
+export type ReviewStatus =
+  'draft' | 'submitted' | 'question' | 'returned' | 'resubmitted' | 'accepted'
+export interface ReviewEvent {
+  id: string
+  kind: 'note' | 'submit' | 'question' | 'answer' | 'accept' | 'return' | 'approve'
+  path: string
+  text: string
+  parent: string | null
+  author: string
+  version: number | null
+  created_at: string
+}
+export interface ReviewState {
+  model: 'A' | 'B' | 'C'
+  consolidation: boolean
+  status: ReviewStatus
+  ready: boolean
+  blockers: Array<{ path: string; kind: 'check' | 'attention'; title: string; detail: string }>
+  deadline: string
+  late: boolean
+  snapshot: { version: number; checksum: string; created_at: string } | null
+  changed: boolean
+  submitted_by: string
+  submitted_at: string | null
+  acceptors: string[]
+  accepted_by: string[]
+  can_accept: boolean
+  events: ReviewEvent[]
+  opens: Array<{ user: string; at: string; format: string }>
+  share_links: Array<{
+    id: string
+    label: string
+    version: number
+    expires_at: string
+    revoked: boolean
+    opened: number
+    last_opened_at: string | null
+  }>
+}
+export interface NetworkRow {
+  branch_id: string
+  branch: string
+  children: number
+  occupancy: string | null
+  average_per_child: string | null
+  collection_rate: string | null
+  payroll_share: string | null
+  margin: string | null
+  food_per_child_day: string | null
+  attention: number
+}
+export interface NetworkView {
+  period: string
+  rows: NetworkRow[]
+  best: Record<string, string | null>
+  worst: Record<string, string | null>
+  eliminated_transfers: string
+}
+
 export const reportsApi = {
-  pack: (year: number, month: number) => api.get<Pack>('/reports/pack', { year, month }),
-  packSnapshot: (year: number, month: number) =>
-    api.post<{ id: string; version: number; checksum: string }>('/reports/pack/snapshot', {
-      year,
-      month,
-    }),
-  packVersions: (year: number, month: number) =>
+  pack: (at: PackUnit) => api.get<Pack>('/reports/pack', unit(at)),
+  packSnapshot: (at: PackUnit) =>
+    api.post<{ id: string; version: number; checksum: string }>('/reports/pack/snapshot', unit(at)),
+  packVersions: (at: PackUnit) =>
     api.get<Array<{ version: number; checksum: string; created_at: string; created_by: string }>>(
       '/reports/pack/versions',
-      { year, month },
+      unit(at),
     ),
-  packDiff: (year: number, month: number, from: number, to?: number) =>
+  packDiff: (at: PackUnit, from: number, to?: number) =>
     api.get<{
       changes: Array<{
         path: string
@@ -164,9 +229,28 @@ export const reportsApi = {
         after: string | null
         delta: string | null
       }>
-    }>('/reports/pack/diff', { year, month, from, ...(to ? { to } : {}) }),
-  packSource: (year: number, month: number, key: string) =>
-    api.get<{ rows: Array<Record<string, string>> }>('/reports/pack/source', { year, month, key }),
+    }>('/reports/pack/diff', { ...unit(at), from, ...(to ? { to } : {}) }),
+  packSource: (at: PackUnit, key: string) =>
+    api.get<{ rows: Array<Record<string, string>> }>('/reports/pack/source', {
+      ...unit(at),
+      key,
+    }),
+  review: (at: PackUnit) => api.get<ReviewState>('/reports/review', unit(at)),
+  reviewAct: (
+    at: PackUnit,
+    step: 'submit' | 'approve' | 'accept' | 'return' | 'question' | 'note' | 'answer',
+    body: Record<string, string> = {},
+  ) => api.post<unknown>(`/reports/review/${step}`, { ...unit(at), ...body }),
+  share: (at: PackUnit, label: string, days: number) =>
+    api.post<{ id: string; url: string; expires_at: string }>('/reports/review/share', {
+      ...unit(at),
+      label,
+      days,
+    }),
+  revokeShare: (id: string) =>
+    api.post<{ id: string; revoked: boolean }>(`/reports/review/share/${id}/revoke`),
+  network: (year: number, month: number) =>
+    api.get<NetworkView>('/reports/network', { year, month }),
   home: (date?: string) =>
     api.get<{ date: string; cards: HomeCard[]; all_clear: boolean }>(
       '/reports/home',
