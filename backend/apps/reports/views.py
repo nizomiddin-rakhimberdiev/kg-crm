@@ -158,6 +158,9 @@ REPORT_SCOPE: dict[str, str] = {
     "benefits": "payments.read",
     # Oylik yig'ma, oyni yopish va eski jadval (Bosqich 12.6).
     "monthly": "payments.read",
+    # Foyda-zarar, pul oqimi, holat (Bosqich 13.2d): oylik jami ham bor,
+    # shuning uchun profit-loss kabi `payroll.read`.
+    "finance": "payroll.read",
 }
 
 # View action nomi → hisobot turi (`REPORT_SCOPE` kaliti).
@@ -171,6 +174,9 @@ _ACTION_REPORT: dict[str, str] = {
     "benefits": "benefits",
     "monthly_summary": "monthly",
     "monthly_close": "monthly",
+    "pnl": "finance",
+    "cash_flow": "finance",
+    "position": "finance",
 }
 
 
@@ -223,6 +229,56 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
     def benefits(self, request: Request) -> Response:
         """`GET /reports/benefits?from=&to=` — imtiyozlar: kim, kimga, qancha, nega."""
         return Response(selectors.benefits_report(**self.scope(request)))
+
+    def _year_month(self, request: Request) -> tuple[int, int]:
+        today = timezone.localdate()
+        return (
+            _parse_int(request.query_params.get("year"), today.year, low=2000, high=2100),
+            _parse_int(request.query_params.get("month"), today.month, low=1, high=12),
+        )
+
+    @action(detail=False)
+    def pnl(self, request: Request) -> Response:
+        """`GET /reports/pnl?year=&month=` — foyda-zarar, tegishli oy bo'yicha (13.2d)."""
+        from apps.reports import money
+
+        year, month = self._year_month(request)
+        return Response(
+            money.profit_and_loss(
+                organization_id=request_user(request).organization_id,
+                year=year,
+                month=month,
+                branch_id=self.branch_for(request, request.query_params.get("branch")),
+            )
+        )
+
+    @action(detail=False, url_path="cash-flow")
+    def cash_flow(self, request: Request) -> Response:
+        """`GET /reports/cash-flow?year=&month=` — pul qachon harakatlangan (13.2d)."""
+        from apps.reports import money
+
+        year, month = self._year_month(request)
+        return Response(
+            money.cash_flow(
+                organization_id=request_user(request).organization_id,
+                year=year,
+                month=month,
+                branch_id=self.branch_for(request, request.query_params.get("branch")),
+            )
+        )
+
+    @action(detail=False)
+    def position(self, request: Request) -> Response:
+        """`GET /reports/position?as_of=YYYY-MM-DD` — talablar va majburiyatlar (13.2d)."""
+        from apps.reports import money
+
+        return Response(
+            money.position(
+                organization_id=request_user(request).organization_id,
+                as_of=_parse_date(request.query_params.get("as_of"), timezone.localdate()),
+                branch_id=self.branch_for(request, request.query_params.get("branch")),
+            )
+        )
 
     @action(detail=False, url_path="monthly-summary")
     def monthly_summary(self, request: Request) -> Response:

@@ -793,9 +793,17 @@ def pay_run(
             allow_negative=allow_negative,
         )
 
-    run.status = PayrollStatus.PAID
-    run.paid_at = timezone.now()
-    run.save(update_fields=["status", "paid_at", "updated_at"])
+    # Bo'lib to'lash (Bosqich 13.2d): iyul oyligi 28.08 da yarmi, 08.09 da
+    # qolgani. Hisoblash faqat hammasi to'langanda "to'langan" bo'ladi —
+    # ilgari birinchi qisman to'lovdayoq yopilib, qolganini to'lab bo'lmasdi.
+    owed = sum((item.official_net + item.cash_net for item in items.values()), Decimal("0"))
+    paid = PayrollPayout.objects.filter(payroll_run=run).aggregate(total=Sum("amount"))[
+        "total"
+    ] or Decimal("0")
+    if paid >= owed:
+        run.status = PayrollStatus.PAID
+        run.paid_at = timezone.now()
+        run.save(update_fields=["status", "paid_at", "updated_at"])
     return run
 
 
