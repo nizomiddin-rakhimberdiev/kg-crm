@@ -614,6 +614,12 @@ export interface ExpenseCategory {
   name: string
   is_active: boolean
   created_at: string
+  /** Bosqich 13.2a: ikki daraja va hisob kodi. */
+  parent_id?: string | null
+  parent_name?: string | null
+  account_code?: string
+  /** Bosqich 13.3a: oxirgi ishlatilgan — tezkor kiritishda tepada. */
+  last_used_at?: string | null
 }
 
 export interface Expense {
@@ -631,6 +637,17 @@ export interface Expense {
   cash_account: string | null
   cash_account_name: string | null
   created_at: string
+  /** Bosqich 13.2a: tegishli oy ("YYYY-MM"), investitsiya, nasiya. */
+  period: string
+  is_capex: boolean
+  amortize_months: number | null
+  on_credit: boolean
+  supplier: string | null
+  supplier_name: string | null
+  due_date: string | null
+  paid_on: string | null
+  /** Bosqich 13.3a: chek biriktirilganmi. */
+  has_receipt: boolean
   /** Chiqim qatorlari (PLAN 7.5) — eski chiqimlarda bo'sh. */
   items: Array<{
     id: string

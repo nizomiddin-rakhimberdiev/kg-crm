@@ -14,6 +14,7 @@ import { useAuth } from '@/app/providers/AuthProvider'
 import { Avatar } from '@/components/ui/Avatar'
 import { authApi } from '@/features/auth/api'
 import { PasswordInput } from '@/components/ui/PasswordInput'
+import { TelegramCard } from '@/features/auth/components/TelegramCard'
 import { TwoFactorCard } from '@/features/auth/components/TwoFactorCard'
 import { subscriptionStatusLabel } from '@/features/billing/status'
 import { ApiError } from '@/lib/api/types'
@@ -250,6 +251,9 @@ export default function ProfilePage() {
 
         {/* --- Ikki bosqichli tasdiqlash (PLAN 5.4) --- */}
         <TwoFactorCard />
+
+        {/* --- Telegram: chiqim va xabarlar (Bosqich 13.3c) --- */}
+        <TelegramCard />
 
         {/* --- Parol --- */}
         <div className="rounded-2xl border border-slate-200 bg-white p-5">

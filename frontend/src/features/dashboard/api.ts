@@ -80,6 +80,17 @@ export const reportsApi = {
   /** Imtiyozlar (Bosqich 12.2): kim, kimga, qancha, nega — hisob-faktura qatorlaridan. */
   benefits: (from: string, to: string) =>
     api.get<BenefitsReport>('/reports/benefits', { from, to }),
+  /** Maʼlumot toʻliqligi (Bosqich 13.3e). */
+  completeness: (year: number, month: number) =>
+    api.get<{
+      expenses: { total: number; with_receipt: number; percent: number | null }
+      cash: { active_days: number; closed_days: number }
+      bank: {
+        statement_uploaded: boolean
+        last_statement_on: string | null
+        unmatched_lines: number
+      }
+    }>('/reports/completeness', { year, month }),
   monthlySummary: (year: number, month: number) =>
     api.get<MonthlySummary>('/reports/monthly-summary', { year, month }),
   closeMonth: (year: number, month: number) =>

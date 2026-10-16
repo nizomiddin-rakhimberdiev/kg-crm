@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Pencil, Plus, Receipt, Trash2, X } from 'lucide-react'
+import { Check, Pencil, Plus, Receipt, Trash2, X, Zap } from 'lucide-react'
 import { DateInput } from '@/components/ui/DateInput'
 import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/drafts'
@@ -20,6 +20,8 @@ import {
   usableItems,
 } from '@/features/expenses/components/ExpenseItemsEditor'
 import { ExpenseEditModal } from '@/features/expenses/components/ExpenseEditModal'
+import { ExpenseFlags } from '@/features/expenses/components/ExpenseFlags'
+import { QuickExpenseModal } from '@/features/expenses/components/QuickExpenseModal'
 import { PotSelect, ShortfallNotice } from '@/features/expenses/components/PotSelect'
 import { shortfall, usePots } from '@/features/expenses/pots'
 import { invalidateMoney } from '@/lib/api/invalidate'
@@ -202,6 +204,9 @@ export default function ExpensesPage() {
     onError: fail,
   })
 
+  // Tezkor chiqim (Bosqich 13.3a) — 20 soniyada.
+  const [quick, setQuick] = useState(false)
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -211,6 +216,16 @@ export default function ExpensesPage() {
             {t('Faqat tasdiqlangan chiqim hisobotga kiradi.')}
           </p>
         </div>
+        {can('expenses.create') && (
+          <button
+            type="button"
+            onClick={() => setQuick(true)}
+            className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+          >
+            <Zap className="h-4 w-4" />
+            {t('Tezkor chiqim')}
+          </button>
+        )}
         {summaryQuery.data && (
           <div className="sm:text-right">
             <p className="text-xs text-slate-500">{t('Shu oy (tasdiqlangan)')}</p>
@@ -486,6 +501,7 @@ export default function ExpensesPage() {
                       {label}
                     </span>
                     {e.approved_by_name && <span>{e.approved_by_name}</span>}
+                    <ExpenseFlags expense={e} />
                   </p>
                   {e.items?.length ? (
                     <ul className="mt-1 space-y-0.5">
@@ -565,7 +581,12 @@ export default function ExpensesPage() {
                   return (
                     <tr key={e.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3 text-slate-500">{formatDate(e.expense_date)}</td>
-                      <td className="px-4 py-3 text-slate-700">{e.category_name}</td>
+                      <td className="px-4 py-3 text-slate-700">
+                        {e.category_name}
+                        <span className="mt-1 block">
+                          <ExpenseFlags expense={e} />
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-slate-600">
                         {/* Qatorlar bo'lsa — aynan nima olingani
                             ko'rinadi (PLAN 7.5): "50 kg × 3 000". */}
@@ -673,6 +694,7 @@ export default function ExpensesPage() {
       </div>
 
       {editing && <ExpenseEditModal expense={editing} onClose={() => setEditing(null)} />}
+      {quick && <QuickExpenseModal onClose={() => setQuick(false)} />}
     </div>
   )
 }

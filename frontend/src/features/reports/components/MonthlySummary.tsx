@@ -52,6 +52,13 @@ export function MonthlySummary() {
     enabled: Boolean(year && month),
   })
   const excel = useExcelExport('monthly')
+  // Hisobot faqat kiritilgan maʼlumotchalik yaxshi (Bosqich 13.3e).
+  const completeness = useQuery({
+    queryKey: [...key, 'completeness'],
+    queryFn: () => reportsApi.completeness(year, month),
+    enabled: Boolean(year && month),
+  })
+  const full = completeness.data
   const [error, setError] = useState<string | null>(null)
   const close = useMutation({
     mutationFn: () => reportsApi.closeMonth(year, month),
@@ -160,6 +167,38 @@ export function MonthlySummary() {
             )}
           </div>
           {!data.check.ok && <p className="num text-xs text-red-700">{data.check.equation}</p>}
+          {full && (
+            <ul className="flex flex-wrap gap-2 text-xs">
+              <li className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">
+                {full.expenses.percent === null
+                  ? t('Xarajat yoʻq')
+                  : t('Chekli xarajat: {p}%', { p: full.expenses.percent })}
+              </li>
+              <li className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">
+                {t('Kassa yopilgan kunlar: {closed} / {active}', {
+                  closed: full.cash.closed_days,
+                  active: full.cash.active_days,
+                })}
+              </li>
+              <li
+                className={cn(
+                  'rounded-full px-2.5 py-1',
+                  full.bank.statement_uploaded
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'bg-orik-50 text-orik-700',
+                )}
+              >
+                {full.bank.statement_uploaded
+                  ? t('Bank koʻchirmasi yuklangan')
+                  : t('Bank koʻchirmasi yuklanmagan')}
+              </li>
+              {full.bank.unmatched_lines > 0 && (
+                <li className="rounded-full bg-orik-50 px-2.5 py-1 text-orik-700">
+                  {t('Moslashtirilmagan bank qatorlari: {n}', { n: full.bank.unmatched_lines })}
+                </li>
+              )}
+            </ul>
+          )}
 
           <div className="grid gap-4 lg:grid-cols-2">
             {/* Toifalar */}

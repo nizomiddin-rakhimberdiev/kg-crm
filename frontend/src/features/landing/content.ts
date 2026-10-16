@@ -422,7 +422,7 @@ const uz: Copy = {
       {
         id: 'inventory',
         title: 'Ombor va xarajatlar',
-        text: 'Kirim, chiqim, qoldiq. Xarajat kategoriyalar boʻyicha — oziq-ovqat, kommunal, taʼmir — va u hisobotga oʻzi tushadi.',
+        text: 'Kirim, chiqim, qoldiq. Xarajat 20 soniyada — summa, toifa, chek rasmi; xodim uni Telegram botga yuborib ham kiritadi. Nasiya xarid va investitsiya alohida. Bank koʻchirmasini yuklang — toʻlovlar, Click/Payme tushumlari va xarajatlar oʻzi bogʻlanadi.',
         caption: 'Qoldiq kamayadi → xarajat paydo boʻladi',
       },
       {
@@ -989,7 +989,7 @@ const ru: Copy = {
       {
         id: 'inventory',
         title: 'Склад и расходы',
-        text: 'Приход, расход, остаток. Расходы по категориям — продукты, коммунальные, ремонт — и они сами попадают в отчёт.',
+        text: 'Приход, расход, остаток. Расход за 20 секунд — сумма, категория, фото чека; сотрудник может отправить его и в Telegram-бот. Покупки в долг и инвестиции — отдельно. Загрузите банковскую выписку — оплаты, поступления Click/Payme и расходы сопоставятся сами.',
         caption: 'Остаток уменьшается → появляется расход',
       },
       {
@@ -1549,7 +1549,7 @@ const en: Copy = {
       {
         id: 'inventory',
         title: 'Inventory and expenses',
-        text: 'Receipts, issues, stock on hand. Expenses by category — food, utilities, repairs — flow into the report on their own.',
+        text: 'Receipts, issues, stock on hand. An expense in 20 seconds — amount, category, receipt photo; staff can also send it to the Telegram bot. Credit purchases and investments kept apart. Upload the bank statement and payments, Click/Payme receipts and expenses match themselves.',
         caption: 'Stock goes down → an expense appears',
       },
       {

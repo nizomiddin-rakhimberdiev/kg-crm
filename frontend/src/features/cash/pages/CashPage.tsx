@@ -22,6 +22,7 @@ import { AlertTriangle, ArrowLeftRight, Check, HandCoins, Lock, X } from 'lucide
 import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { QueryError } from '@/components/ui/QueryError'
 import { cashApi, type CashHandover } from '@/features/cash/api'
+import { BankStatementPanel } from '@/features/cash/components/BankStatementPanel'
 import { InTransitPanel } from '@/features/cash/components/InTransitPanel'
 import { MoneyOperationsPanel } from '@/features/cash/components/MoneyOperationsPanel'
 import { invalidateMoney } from '@/lib/api/invalidate'
@@ -36,6 +37,9 @@ const field =
 const label = 'mb-1 block text-xs font-medium text-slate-600'
 const primary =
   'rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60'
+
+/** Oʻzbekiston soʻmi kupyuralari — sanoq oynasi uchun (Bosqich 13.3b). */
+const NOTES = [200000, 100000, 50000, 20000, 10000, 5000, 2000, 1000]
 
 const HANDOVER_STATUS: Record<CashHandover['status'], string> = {
   pending: t('Tasdiq kutilmoqda'),
@@ -165,6 +169,22 @@ export default function CashPage() {
   // Naqd — sanoq bilan, bank — koʻchirma (vypiska) bilan solishtiriladi.
   const tills = pots
   const [count, setCount] = useState({ account: '', counted: '', reason: '' })
+  // Kupyuralar boʻyicha sanoq (Bosqich 13.3b): yigʻindi oʻzi chiqadi.
+  const [notes, setNotes] = useState<Record<string, string>>({})
+  const setNote = (note: string, value: string) => {
+    const next = { ...notes, [note]: value.replace(/\D/g, '') }
+    setNotes(next)
+    const total = Object.entries(next).reduce(
+      (sum, [face, pieces]) => sum + Number(face) * (Number(pieces) || 0),
+      0,
+    )
+    setCount((p) => ({ ...p, counted: total > 0 ? String(total) : '' }))
+  }
+  const usedNotes = Object.fromEntries(
+    Object.entries(notes)
+      .filter(([, pieces]) => Number(pieces) > 0)
+      .map(([face, pieces]) => [face, Number(pieces)]),
+  )
   const [countOpen, setCountOpen] = useState(false)
   const countPot = pots.find((pot) => pot.id === (count.account || tills[0]?.id))
   const countDiff =
@@ -174,10 +194,12 @@ export default function CashPage() {
       cashApi.closeDay({
         cash_account_id: countPot?.id ?? '',
         counted: count.counted,
+        ...(Object.keys(usedNotes).length ? { denominations: usedNotes } : {}),
         ...(countDiff !== 0 ? { reason: count.reason } : {}),
       }),
     onSuccess: () => {
       setCount({ account: '', counted: '', reason: '' })
+      setNotes({})
       setCountOpen(false)
       done()
     },
@@ -640,9 +662,35 @@ export default function CashPage() {
                   <AmountInput
                     id="count-counted"
                     value={count.counted}
-                    onChange={(digits) => setCount((p) => ({ ...p, counted: digits }))}
+                    onChange={(digits) => {
+                      setNotes({})
+                      setCount((p) => ({ ...p, counted: digits }))
+                    }}
                   />
                 </div>
+                {countPot.kind === 'cash' && (
+                  <details className="sm:col-span-2">
+                    <summary className="cursor-pointer text-xs font-medium text-slate-600">
+                      {t('Kupyuralar boʻyicha sanash')}
+                    </summary>
+                    <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                      {NOTES.map((face) => (
+                        <div key={face}>
+                          <label htmlFor={`note-${face}`} className={label}>
+                            {money(face)}
+                          </label>
+                          <input
+                            id={`note-${face}`}
+                            inputMode="numeric"
+                            value={notes[String(face)] ?? ''}
+                            onChange={(event) => setNote(String(face), event.target.value)}
+                            className={cn(field, 'text-right tabular-nums')}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
                 {count.counted !== '' && countDiff !== 0 && (
                   <div className="sm:col-span-2">
                     <p
@@ -758,6 +806,9 @@ export default function CashPage() {
       )}
       {/* Subsidiya, egaga toʻlov, kredit, soliq (Bosqich 13.2b). */}
       {canManage && <MoneyOperationsPanel />}
+
+      {/* Bank koʻchirmasi va navbat (Bosqich 13.3d). */}
+      {canManage && <BankStatementPanel />}
     </div>
   )
 }
