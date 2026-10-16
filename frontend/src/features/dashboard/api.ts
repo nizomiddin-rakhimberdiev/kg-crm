@@ -212,6 +212,74 @@ export interface NetworkView {
   eliminated_transfers: string
 }
 
+/** Reja, prognoz, koʻrsatkichlar, trend (Bosqich 13.7). */
+export interface BudgetRow {
+  kind: 'revenue' | 'other_income' | 'payroll' | 'category'
+  label: string
+  plan: string
+  actual: string
+  difference: string
+  percent: string | null
+  category_id?: string
+}
+export interface BudgetView {
+  period: string
+  has_plan: boolean
+  lines: BudgetRow[]
+  totals: Record<'income' | 'expenses' | 'result', { plan: string; actual: string }>
+}
+export interface ForecastBucket {
+  days: number
+  until: string
+  inflows: Record<string, string>
+  outflows: Record<string, string>
+  closing: string
+}
+export interface ForecastView {
+  as_of: string
+  opening: string
+  basis: {
+    collection_rate: string | null
+    recurring_monthly: string
+    payroll_net: string
+    excluded: string
+  }
+  lines: Array<{
+    date: string
+    direction: 'in' | 'out'
+    key: string
+    amount: string
+    basis: string
+  }>
+  buckets: ForecastBucket[]
+  safe_withdrawal: {
+    money: string
+    obligations_30: string
+    reserve: string
+    reserve_basis: string
+    amount: string
+    shortfall: string
+  }
+}
+export interface KpiItem {
+  id: string
+  title: string
+  definition: string
+  value: string | number | null
+  unit: '%' | 'som' | 'children' | 'months'
+}
+export interface TrendMonth {
+  period: string
+  revenue: string
+  receipts: string
+  operating_expenses: string
+  payroll: string
+  operating_profit: string
+  margin: string | null
+  collection_rate: string | null
+  money_end: string
+}
+
 export const reportsApi = {
   pack: (at: PackUnit) => api.get<Pack>('/reports/pack', unit(at)),
   packSnapshot: (at: PackUnit) =>
@@ -249,6 +317,21 @@ export const reportsApi = {
     }),
   revokeShare: (id: string) =>
     api.post<{ id: string; revoked: boolean }>(`/reports/review/share/${id}/revoke`),
+  budget: (at: PackUnit) => api.get<BudgetView>('/reports/budget', unit(at)),
+  saveBudget: (
+    at: PackUnit,
+    lines: Array<{ kind: string; category_id?: string; amount: string }>,
+  ) => api.request<BudgetView>('put', '/reports/budget', { ...unit(at), lines }),
+  copyBudget: (at: PackUnit, fromYear: number, fromMonth: number) =>
+    api.post<BudgetView>('/reports/budget/copy', {
+      ...unit(at),
+      from_year: fromYear,
+      from_month: fromMonth,
+    }),
+  forecast: (branch?: string | null) =>
+    api.get<ForecastView>('/reports/forecast', branch ? { branch } : undefined),
+  kpi: (at: PackUnit) => api.get<{ period: string; items: KpiItem[] }>('/reports/kpi', unit(at)),
+  trends: (at: PackUnit) => api.get<{ months: TrendMonth[] }>('/reports/trends', unit(at)),
   network: (year: number, month: number) =>
     api.get<NetworkView>('/reports/network', { year, month }),
   home: (date?: string) =>

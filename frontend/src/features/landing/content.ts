@@ -519,7 +519,7 @@ const uz: Copy = {
       },
       {
         title: 'Oy oʻzi yigʻiladi va yopiladi',
-        text: 'Har oy bir xil 16 boʻlimli hisobot: daromad zanjiri, tushum, qarzlar, xarajatlar, ish haqi, kassa koʻprigi, foyda-zarar va «foyda ≠ pul». Har raqamdan manba yozuvigacha bir bosish. PDF va Excel; oʻzgarmas nusxa — keyin nimadir oʻzgarsa, farqi raqamma-raqam koʻrinadi.',
+        text: 'Har oy bir xil 16 boʻlimli hisobot: daromad zanjiri, qarzlar, xarajatlar, kassa koʻprigi, foyda-zarar va «foyda ≠ pul» — har raqamdan manba yozuvigacha bir bosish. Reja va fakt, 30/60/90 kunlik pul prognozi va «qancha pul olsa boʻladi» — formulasi bilan. PDF, Excel, oʻzgarmas nusxa.',
       },
       {
         title: 'Ikki bosqichli himoya',
@@ -1087,7 +1087,7 @@ const ru: Copy = {
       },
       {
         title: 'Месяц сводится и закрывается сам',
-        text: 'Каждый месяц одинаковый отчёт из 16 разделов: цепочка дохода, поступления, долги, расходы, зарплата, мост по кассе, прибыль и «прибыль ≠ деньги». От любой цифры — один клик до исходных записей. PDF и Excel; неизменяемая копия — если что-то изменится позже, разница видна по каждой цифре.',
+        text: 'Каждый месяц одинаковый отчёт из 16 разделов: цепочка дохода, долги, расходы, мост по кассе, прибыль и «прибыль ≠ деньги» — от любой цифры один клик до записей. План и факт, прогноз денег на 30/60/90 дней и «сколько можно забрать» — с формулой. PDF, Excel, неизменяемая копия.',
       },
       {
         title: 'Двухэтапная защита',
@@ -1648,7 +1648,7 @@ const en: Copy = {
       },
       {
         title: 'The month sums and closes itself',
-        text: 'The same 16-section report every month: revenue chain, receipts, debts, expenses, payroll, the till bridge, profit and loss and “profit ≠ cash”. One click from any number to its records. PDF and Excel; an immutable copy — if anything changes later, the difference shows number by number.',
+        text: 'The same 16-section report every month: revenue chain, debts, expenses, the till bridge, profit and loss and “profit ≠ cash” — one click from any number to its records. Plan against actual, a 30/60/90-day cash forecast and “how much can I take out”, formula shown. PDF, Excel, an immutable copy.',
       },
       {
         title: 'Two-step protection',
