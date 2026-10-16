@@ -20,6 +20,13 @@ __all__ = ["ExpenseCategory", "Expense", "ExpenseStatus", "ExpenseItem"]
 
 class ExpenseCategory(BranchScopedModel):
     name = models.CharField(max_length=80)
+    # Ikki daraja (Bosqich 13.2a): "Oziq-ovqat" → "Go'sht". Uchinchi daraja
+    # yo'q — serializer ruxsat bermaydi; hisobot ikki darajada yig'adi.
+    parent = models.ForeignKey(
+        "self", on_delete=models.RESTRICT, related_name="children", null=True, blank=True
+    )
+    # Buxgalteriya hisob kodi (brif §9) — buxgalter eksporti uchun.
+    account_code = models.CharField(max_length=20, blank=True)
 
     class Meta:
         db_table = "expense_category"
@@ -97,12 +104,54 @@ class Expense(BranchScopedModel):
         blank=True,
     )
 
+    # --- Bosqich 13.2a: ikki sana va xarajat tabiati ---
+    #
+    # Tegishli oy — foyda-zarar shu oyga yozadi; pul oqimi esa pul
+    # harakati sanasiga. `NULL` — to'langan oy (eski yozuvlar o'zgartirilmaydi:
+    # selektorlar `expense_date` oyini oladi).
+    period_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    period_month = models.PositiveSmallIntegerField(null=True, blank=True)
+    # Investitsiya (ta'mir, mebel, konditsioner): operatsion foydani
+    # buzmaydi. `amortize_months` berilsa — foyda-zararga shuncha oyga
+    # teng bo'lib tushadi; berilmasa — alohida qatorda.
+    is_capex = models.BooleanField(default=False)
+    amortize_months = models.PositiveSmallIntegerField(null=True, blank=True)
+    # Nasiya: xarajat bor, pul hali chiqmagan — yetkazib beruvchiga qarz.
+    on_credit = models.BooleanField(default=False)
+    supplier = models.ForeignKey(
+        "inventory.Supplier",
+        on_delete=models.RESTRICT,
+        related_name="expenses",
+        null=True,
+        blank=True,
+    )
+    due_date = models.DateField(null=True, blank=True)
+    # Pul haqiqatan qachon chiqdi. Nasiyada — to'langanda; oddiy chiqimda —
+    # `expense_date`. Eski yozuvlarda `NULL` = `expense_date`.
+    paid_on = models.DateField(null=True, blank=True)
+
     class Meta:
         db_table = "expense"
         ordering = ["-expense_date", "-created_at"]
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(amount__gt=0), name="ck_expense_amount_positive"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(period_month__isnull=True)
+                | models.Q(period_month__gte=1, period_month__lte=12),
+                name="ck_expense_period_month",
+            ),
+            # Taqsimlash faqat investitsiyada, 1..120 oy.
+            models.CheckConstraint(
+                condition=models.Q(amortize_months__isnull=True)
+                | models.Q(is_capex=True, amortize_months__gte=1, amortize_months__lte=120),
+                name="ck_expense_amortize",
+            ),
+            # Nasiya — yetkazib beruvchisi bilan.
+            models.CheckConstraint(
+                condition=models.Q(on_credit=False) | models.Q(supplier__isnull=False),
+                name="ck_expense_credit_supplier",
             ),
         ]
         indexes = [

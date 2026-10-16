@@ -1102,8 +1102,12 @@ A storage location (a branch may have kitchen store, dry store, etc.).
 | Column | Type | Constraints | Notes |
 |--------|------|-------------|-------|
 | `name` | `VARCHAR(80)` | `NOT NULL` | e.g. "Utilities", "Repairs" |
+| `parent_id` | `UUID` | `NULL` FK → expense_category `ON DELETE RESTRICT` | Two levels only (Bosqich 13.2a): "Oziq-ovqat" → "Goʻsht"; the serializer refuses a third |
+| `account_code` | `VARCHAR(20)` | | Accounting code for the accountant's journal (13.8) |
 
 **Constraint:** `uq_expense_category_branch_name UNIQUE (branch_id, name) WHERE is_active`.
+
+**Defaults.** A branch with no categories at all gets the two-level list of the brief (Ish haqi, Oziq-ovqat, Kommunal, …, Boshqa) the first time categories are listed — `ensure_default_categories`. A branch that already has its own list is never touched.
 
 ### 16.2 `expense`
 
@@ -1117,6 +1121,10 @@ A storage location (a branch may have kitchen store, dry store, etc.).
 | `approved_by` | `UUID` | `NULL` FK → user `ON DELETE SET NULL` | |
 | `receipt_path` | `VARCHAR(255)` | `NULL` | Scanned receipt |
 | `cash_account_id` | `UUID` | `NULL` FK → cash_account `ON DELETE RESTRICT` | **Which pot the money left** (ADR-17) |
+| `period_year`, `period_month` | `SMALLINT` | `NULL`, month 1–12 | **Accrual month** (Bosqich 13.2a): the P&L books the expense here; cash flow uses the money date. Defaults to the month it was paid; `NULL` on old rows means exactly that — they are not rewritten |
+| `is_capex`, `amortize_months` | `BOOLEAN`, `SMALLINT` | `CHECK amortize only with capex, 1–120` | An investment (repair, furniture, air conditioner) does not distort operating profit: spread over N months, or shown on its own P&L line |
+| `on_credit`, `supplier_id`, `due_date` | | `CHECK on_credit ⇒ supplier` | **Purchase on credit**: the expense is recognised, no money moves until `mark-paid`, which then writes the `out` movement on `paid_on`; until then it is a payable to the supplier |
+| `paid_on` | `DATE` | `NULL` | When the money actually left. Ordinary expenses: `expense_date`; credit purchases: the payment day; `NULL` on old rows = `expense_date` |
 
 **Business rules:** `ck_expense_not_future CHECK (expense_date <= CURRENT_DATE)`; only `approved` and `paid` expenses count in P&L reports; `rejected` requires no further action.
 

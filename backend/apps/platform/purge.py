@@ -107,11 +107,12 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.inventory.StockMovement",
     "apps.inventory.Product",
     "apps.inventory.ProductCategory",
-    "apps.inventory.Supplier",
     "apps.inventory.Warehouse",
     "apps.expenses.ExpenseItem",
     "apps.expenses.Expense",
     "apps.expenses.ExpenseCategory",
+    # Yetkazib beruvchi chiqimdan KEYIN: nasiya chiqim unga `RESTRICT` (13.2a).
+    "apps.inventory.Supplier",
     # Chiqim qopga `RESTRICT` bilan bog'langan — qop chiqimdan KEYIN.
     "apps.cash.CashAccount",
     "apps.notifications.Notification",

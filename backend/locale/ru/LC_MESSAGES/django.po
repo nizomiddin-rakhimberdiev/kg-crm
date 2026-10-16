@@ -1750,3 +1750,21 @@ msgstr "Счёт не найден."
 
 msgid "Qop — naqd kassa yoki bank hisobi. Terminal, oʻtkazma, Click va Payme — toʻlov usuli: pul bank hisobiga tushadi."
 msgstr "Счёт — наличная касса или банковский счёт. Терминал, перевод, Click и Payme — способы оплаты: деньги поступают на банковский счёт."
+
+msgid "Bu nasiya allaqachon toʻlangan."
+msgstr "Эта покупка в долг уже оплачена."
+
+msgid "Nasiya xarid — kimdan olinganini tanlang."
+msgstr "Покупка в долг — выберите поставщика."
+
+msgid "Oylarga taqsimlash faqat investitsiya uchun."
+msgstr "Распределение по месяцам — только для инвестиций."
+
+msgid "Sana YYYY-MM-DD koʻrinishida boʻlsin."
+msgstr "Дата должна быть в формате ГГГГ-ММ-ДД."
+
+msgid "Toifa ikki darajali: ichki toifaning ichiga toifa qoʻshilmaydi."
+msgstr "Категории двухуровневые: внутрь подкатегории нельзя добавить категорию."
+
+msgid "Toifa oʻziga ota boʻla olmaydi."
+msgstr "Категория не может быть родителем самой себя."

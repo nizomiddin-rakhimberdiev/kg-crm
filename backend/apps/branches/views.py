@@ -28,9 +28,9 @@ class BranchViewSet(TenantViewSet):
 
     def perform_create(self, serializer: object) -> None:
         super().perform_create(serializer)
-        # Filial o'z pul qoplari bilan tug'iladi (ADR-17): naqd,
-        # terminal, bank, Payme/Click. Ularsiz birinchi to'lov qayerga
-        # tushishini tizim bilmasdi.
+        # Filial o'z pul qoplari bilan tug'iladi (ADR-17): naqd kassa va
+        # bank hisobi. Ularsiz birinchi to'lov qayerga tushishini tizim
+        # bilmasdi.
         cash.ensure_branch_accounts(branch=serializer.instance)  # type: ignore[attr-defined]
         audit.record(
             action="create",

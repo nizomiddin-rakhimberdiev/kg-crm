@@ -47,9 +47,12 @@ def create_expense_with_items(
     cash_account: Any = None,
     allow_negative: bool = False,
     created_by: Any = None,
+    **extra: Any,
 ) -> Expense:
     """
     Qatorlardan chiqim yaratadi va DARHOL tasdiqlaydi (PLAN 7.5, 7.2).
+
+    `extra` — Bosqich 13.2a maydonlari (tegishli oy, investitsiya, nasiya).
 
     Summa qatorlardan hisoblanadi, mijozdan OLINMAYDI: ekranda
     ko'rsatilgan yig'indi bilan kassadan chiqqan pul har doim bir xil
@@ -69,6 +72,7 @@ def create_expense_with_items(
         expense_date=expense_date,
         description=description[:255],
         cash_account=cash_account,
+        **extra,
     )
     for row in rows:
         row.expense = expense
@@ -208,7 +212,12 @@ def update_expense(
             row.expense = expense
         ExpenseItem.objects.bulk_create(new_rows)
 
-    if money_changed and expense.status in (ExpenseStatus.APPROVED, ExpenseStatus.PAID):
+    unpaid_credit = expense.on_credit and expense.paid_on is None
+    if (
+        money_changed
+        and not unpaid_credit
+        and expense.status in (ExpenseStatus.APPROVED, ExpenseStatus.PAID)
+    ):
         account = expense.cash_account or cash.account_for_method(
             branch=expense.branch, method="cash"
         )
@@ -265,6 +274,18 @@ def approve_expense(
     """
     _assert_pending(expense, "tasdiqlash")
 
+    if expense.on_credit:
+        # Nasiya (Bosqich 13.2a): xarajat tan olinadi, pul hali chiqmaydi —
+        # u `mark_expense_paid` da, to'langan kuni chiqadi.
+        expense.status = ExpenseStatus.APPROVED
+        expense.approved_by = approved_by
+        expense.decided_at = timezone.now()
+        expense.decision_note = note[:255]
+        expense.save(
+            update_fields=["status", "approved_by", "decided_at", "decision_note", "updated_at"]
+        )
+        return expense
+
     account = cash_account or expense.cash_account
     if account is None:
         # Qop ko'rsatilmasa naqd kassa: bog'chada odatiy hol, va
@@ -279,6 +300,7 @@ def approve_expense(
     expense.decided_at = timezone.now()
     expense.decision_note = note[:255]
     expense.cash_account = account
+    expense.paid_on = expense.expense_date
     expense.save(
         update_fields=[
             "status",
@@ -286,6 +308,7 @@ def approve_expense(
             "decided_at",
             "decision_note",
             "cash_account",
+            "paid_on",
             "updated_at",
         ]
     )
@@ -330,9 +353,13 @@ def mark_expense_paid(
     cash_account: Any = None,
     allow_negative: bool = False,
     created_by: Any = None,
+    paid_on: Any = None,
 ) -> Expense:
     """
     Chiqimni "to'langan" deb belgilaydi — BAYROQ, pul harakati emas.
+
+    Nasiya xarid bundan mustasno (Bosqich 13.2a): uning puli aynan shu
+    yerda, `paid_on` kuni (sukut — bugun) tanlangan qopdan chiqadi.
 
     Pul tasdiqlash paytida allaqachon kassadan chiqqan
     (`approve_expense`). Bu yerda uni ikkinchi marta chiqarish qoldiqni
@@ -342,6 +369,30 @@ def mark_expense_paid(
         raise BusinessRuleViolation(
             gettext("Faqat tasdiqlangan chiqimni toʻlangan deb belgilash mumkin.")
         )
+
+    if expense.on_credit:
+        if expense.paid_on is not None:
+            raise BusinessRuleViolation(gettext("Bu nasiya allaqachon toʻlangan."))
+        account = cash_account or cash.account_for_method(branch=expense.branch, method="cash")
+        if account.organization_id != expense.organization_id:
+            raise BusinessRuleViolation(gettext("Kassa hisobi boshqa tashkilotga tegishli."))
+        day = paid_on or timezone.localdate()
+        cash.post_movement(
+            account=account,
+            direction=MovementDirection.OUT,
+            amount=expense.amount,
+            source_type=MovementSource.EXPENSE,
+            source_id=expense.id,
+            description=f"{expense.category.name}: {expense.description}"[:255],
+            occurred_at=timezone.make_aware(datetime.combine(day, time(12))),
+            created_by=created_by,
+            allow_negative=allow_negative,
+        )
+        expense.status = ExpenseStatus.PAID
+        expense.cash_account = account
+        expense.paid_on = day
+        expense.save(update_fields=["status", "cash_account", "paid_on", "updated_at"])
+        return expense
 
     fields = ["status", "updated_at"]
     expense.status = ExpenseStatus.PAID
@@ -446,9 +497,15 @@ def record_bank_commission(*, payment: Any, account: Any, created_by: Any = None
     if amount <= 0:
         return None
 
+    # Sukut ro'yxatdagi "Bank xarajatlari va komissiyalar" bo'lsa — o'sha
+    # (Bosqich 13.2a); bo'lmasa o'zimizning "Bank komissiyasi".
     category = (
-        ExpenseCategory.objects.filter(branch=payment.branch, name=COMMISSION_CATEGORY)
-        .order_by("-is_active")
+        ExpenseCategory.objects.filter(
+            branch=payment.branch,
+            name__in=(COMMISSION_CATEGORY, "Bank xarajatlari va komissiyalar"),
+            is_active=True,
+        )
+        .order_by("name")
         .first()
     )
     if category is None:
@@ -484,3 +541,53 @@ def record_bank_commission(*, payment: Any, account: Any, created_by: Any = None
         allow_negative=True,
     )
     return expense
+
+
+# --- Sukut toifalar (Bosqich 13.2a, brif §3.6) ---
+
+#: Ikki darajali boshlang'ich ro'yxat. Hammasi tahrirlanadi; hisob kodlari
+#: buxgalter eksporti bosqichida (13.8) to'ldiriladi.
+DEFAULT_CATEGORIES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("Ish haqi", ("Naqd qism", "Karta qism", "Ijtimoiy soliq")),
+    (
+        "Oziq-ovqat",
+        ("Goʻsht", "Sut mahsulotlari", "Non", "Sabzavot-meva", "Quruq mahsulotlar", "Bozor"),
+    ),
+    ("Kommunal", ("Elektr", "Gaz", "Suv", "Chiqindi", "Internet")),
+    ("Ijara", ()),
+    ("Taʼmir va xoʻjalik", ()),
+    ("Oʻquv materiallari va oʻyinchoqlar", ()),
+    ("Tadbirlar va sovgʻalar", ()),
+    ("Tibbiyot va SES", ()),
+    ("Marketing", ("SMM", "Target", "Reklama")),
+    ("IT va dasturlar", ()),
+    ("Bank xarajatlari va komissiyalar", ()),
+    ("Soliqlar va yigʻimlar", ()),
+    ("Transport", ()),
+    ("Kiyim va forma", ()),
+    ("Boshqa", ()),
+)
+
+
+@transaction.atomic
+def ensure_default_categories(*, branch: Any) -> int:
+    """
+    Filialda toifa YO'Q bo'lsa — sukut ro'yxatini ochadi. Qaytaradi: nechta.
+
+    Toifasi bor filialga tegmaydi: mavjud bog'chaning o'z ro'yxati uning
+    qarori (va hisobotlari unga bog'langan). Idempotent.
+    """
+    if ExpenseCategory.objects.filter(branch=branch).exists():
+        return 0
+    created = 0
+    for name, children in DEFAULT_CATEGORIES:
+        parent = ExpenseCategory.objects.create(
+            organization=branch.organization, branch=branch, name=name
+        )
+        created += 1
+        for child in children:
+            ExpenseCategory.objects.create(
+                organization=branch.organization, branch=branch, name=child, parent=parent
+            )
+            created += 1
+    return created

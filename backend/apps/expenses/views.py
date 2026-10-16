@@ -39,6 +39,24 @@ class ExpenseCategoryViewSet(BranchScopedMixin, TenantViewSet):
     serializer_class = ExpenseCategorySerializer
     search_fields = ["name"]
 
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """
+        Toifasi umuman yo'q filialga sukut ro'yxat ochiladi (Bosqich 13.2a).
+
+        Ro'yxatdan o'tishda emas, shu yerda: mavjud bog'chalarning o'z
+        toifalari bor va ularga tegilmaydi; bo'sh filial esa birinchi
+        chiqimni kiritayotganda tayyor ro'yxatni ko'radi.
+        """
+        from apps.branches.models import Branch
+
+        user = request_user(request)
+        branches = Branch.objects.filter(is_active=True)
+        if user.branch_id:
+            branches = branches.filter(pk=user.branch_id)
+        for branch in branches:
+            services.ensure_default_categories(branch=branch)
+        return super().list(request, *args, **kwargs)
+
     def perform_create(self, serializer: Any) -> None:
         user = request_user(self.request)
         branch = resolve_branch(user, self.request.data.get("branch_id"))
@@ -93,6 +111,19 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
                 cash_account=data.get("cash_account"),
                 allow_negative=_allow_negative(self.request),
                 created_by=user,
+                **{
+                    key: data[key]
+                    for key in (
+                        "period_year",
+                        "period_month",
+                        "is_capex",
+                        "amortize_months",
+                        "on_credit",
+                        "supplier",
+                        "due_date",
+                    )
+                    if key in data
+                },
             )
         else:
             serializer.save(organization=category.organization, branch=category.branch)
@@ -233,11 +264,17 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
         expense = self.get_object()
         user = request_user(request)
         account = self._cash_account(request, user)
+        raw_day = request.data.get("paid_on")
+        try:
+            paid_on = datetime.strptime(str(raw_day), "%Y-%m-%d").date() if raw_day else None
+        except ValueError as exc:
+            raise BusinessRuleViolation(gettext("Sana YYYY-MM-DD koʻrinishida boʻlsin.")) from exc
         services.mark_expense_paid(
             expense=expense,
             cash_account=account,
             allow_negative=_allow_negative(request),
             created_by=user,
+            paid_on=paid_on,
         )
         audit.record(
             action="update",
