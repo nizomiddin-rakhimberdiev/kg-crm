@@ -23,7 +23,14 @@ from django.utils.translation import gettext
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["notify", "expense_recorded", "benefit_given", "send_digest", "recipients"]
+__all__ = [
+    "notify",
+    "notify_user",
+    "expense_recorded",
+    "benefit_given",
+    "send_digest",
+    "recipients",
+]
 
 
 def _som(value: Decimal) -> str:
@@ -61,6 +68,13 @@ def recipients(organization_id: Any) -> list[str]:
         .exclude(telegram_chat_id="")
         .values_list("telegram_chat_id", flat=True)
     )
+
+
+def notify_user(*, user: Any, text: str) -> None:
+    """Bitta xodimga (botga ulangan bo'lsa) — tranzaksiya tasdiqlangach."""
+    chat = (getattr(user, "telegram_chat_id", "") or "").strip()
+    if chat:
+        transaction.on_commit(lambda: _send(chat, text))
 
 
 def notify(*, organization_id: Any, text: str) -> None:

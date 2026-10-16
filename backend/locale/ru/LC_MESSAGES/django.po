@@ -2245,3 +2245,117 @@ msgstr "Уровень сбора {rate}%."
 
 msgid "{failing} ta tekshiruv qizil, {attention} ta Diqqat."
 msgstr "{failing} проверок красные, {attention} пунктов «Внимание»."
+
+msgid "A modelda hisobotni topshirish yoʻq — ega oʻzi tasdiqlaydi."
+msgstr "В модели A отчёт не сдают — владелец утверждает его сам."
+
+msgid "Bu modelda hisobot topshiriladi va qabul qilinadi, tasdiqlanmaydi."
+msgstr "В этой модели отчёт сдают и принимают, а не утверждают."
+
+msgid "Bu savol emas."
+msgstr "Это не вопрос."
+
+msgid "Bu savolga javob berilgan."
+msgstr "На этот вопрос уже ответили."
+
+msgid "C modelda filiallar topshiradi; konsolidatsiyani ega tasdiqlaydi."
+msgstr "В модели C сдают филиалы; консолидацию утверждает владелец."
+
+msgid "Filiallar hali qabul qilinmagan: {names}."
+msgstr "Филиалы ещё не приняты: {names}."
+
+msgid "Havola kim uchun ekanini yozing (bank, investor…)."
+msgstr "Укажите, для кого ссылка (банк, инвестор…)."
+
+msgid "Hisobot allaqachon tasdiqlangan."
+msgstr "Отчёт уже утверждён."
+
+msgid "Hisobot allaqachon topshirilgan."
+msgstr "Отчёт уже сдан."
+
+msgid "Izoh matnini yozing."
+msgstr "Напишите текст комментария."
+
+msgid "Izoh qaysi joyga ekanini koʻrsating."
+msgstr "Укажите, к чему относится комментарий."
+
+msgid "Izohsiz qolgan: {items}. Har qizil tekshiruv va Diqqatga izoh yozing."
+msgstr "Без комментария: {items}. Прокомментируйте каждую красную проверку и каждое «Внимание»."
+
+msgid "Javob"
+msgstr "Ответ"
+
+msgid "Javob matnini yozing."
+msgstr "Напишите текст ответа."
+
+msgid "Javobsiz savol bor — avval javobni kuting."
+msgstr "Есть вопрос без ответа — сначала дождитесь ответа."
+
+msgid "Qabul qilish uchun hisobot topshirilmagan."
+msgstr "Отчёт не сдан — принимать нечего."
+
+msgid "Qayta topshirildi"
+msgstr "Сдан повторно"
+
+msgid "Qaytardi"
+msgstr "Вернул(а)"
+
+msgid "Qaytarish sababini yozing."
+msgstr "Укажите причину возврата."
+
+msgid "Qaytarish uchun hisobot topshirilmagan."
+msgstr "Отчёт не сдан — возвращать нечего."
+
+msgid "Savol"
+msgstr "Вопрос"
+
+msgid "Savol bor"
+msgstr "Есть вопрос"
+
+msgid "Savol faqat topshirilgan hisobotga beriladi."
+msgstr "Вопрос можно задать только по сданному отчёту."
+
+msgid "Savol matnini yozing."
+msgstr "Напишите текст вопроса."
+
+msgid "Savol qaysi raqamga ekanini koʻrsating."
+msgstr "Укажите, к какой цифре вопрос."
+
+msgid "Siz allaqachon qabul qilgansiz."
+msgstr "Вы уже приняли отчёт."
+
+msgid "Siz bu hisobotni qabul qiluvchilar roʻyxatida emassiz."
+msgstr "Вас нет в списке принимающих этот отчёт."
+
+msgid "Tarmoq koʻrinishi butun tashkilot rahbari uchun."
+msgstr "Обзор сети доступен руководителю всей организации."
+
+msgid "Topshirdi"
+msgstr "Сдал(а)"
+
+msgid "Topshirildi"
+msgstr "Сдан"
+
+msgid "Ulashish uchun avval hisobotni topshiring yoki tasdiqlang."
+msgstr "Чтобы поделиться, сначала сдайте или утвердите отчёт."
+
+msgid "{label} · faqat oʻqish uchun · {day} · {checksum}"
+msgstr "{label} · только для чтения · {day} · {checksum}"
+
+msgid "{name}{where}: oylik moliyaviy hisobot {period} (v{version})"
+msgstr "{name}{where}: ежемесячный финансовый отчёт {period} (v{version})"
+
+msgid "↩️ Hisobot qaytarildi ({period}): {text}"
+msgstr "↩️ Отчёт возвращён ({period}): {text}"
+
+msgid "⏰ {period}{where} hisoboti muddatda topshirilmadi (muddat {deadline})."
+msgstr "⏰ Отчёт за {period}{where} не сдан в срок (срок {deadline})."
+
+msgid "✅ Hisobot qabul qilindi: {period}."
+msgstr "✅ Отчёт принят: {period}."
+
+msgid "❓ {who} savol berdi ({period}): {text}"
+msgstr "❓ {who} задал(а) вопрос ({period}): {text}"
+
+msgid "📄 Hisobot topshirildi: {period} (v{version}), {who}."
+msgstr "📄 Отчёт сдан: {period} (v{version}), {who}."

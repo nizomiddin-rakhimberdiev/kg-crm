@@ -324,6 +324,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "intelligence.send_daily_digests",
         "schedule": crontab(minute=0),
     },
+    # Hisobot topshirish muddati (Bosqich 13.6): ertalab bir marta.
+    "remind-late-reports": {
+        "task": "reports.remind_late_reports",
+        "schedule": crontab(hour=9, minute=15),
+    },
     # --- Obuna (ADR-11) ---
     #
     # Kunlik o'lchov o'tkazib yuborilsa hisob KAMAYADI va o'tmishdagi

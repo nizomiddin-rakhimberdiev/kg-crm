@@ -95,14 +95,31 @@ table.kv th { width: 45%; font-weight: normal; color: #4a574f; }
 .muted { color: #6b776f; }
 .sign { margin-top: 10mm; page-break-inside: avoid; }
 .sign td { height: 12mm; vertical-align: bottom; }
+.wm { position: fixed; top: 42%; left: -10%; width: 120%; text-align: center;
+  transform: rotate(-28deg); font-size: 34pt; color: rgba(29, 38, 33, 0.09);
+  letter-spacing: 2pt; z-index: -1; }
 """
 
 
-def to_pdf(data: dict[str, Any], *, title: str, prepared_by: str = "") -> bytes:
-    """A4 PDF — serverda, HTML→PDF (WeasyPrint)."""
+def to_pdf(
+    data: dict[str, Any],
+    *,
+    title: str,
+    prepared_by: str = "",
+    submitted_by: str = "",
+    accepted_by: str = "",
+    watermark: str = "",
+) -> bytes:
+    """
+    A4 PDF — serverda, HTML→PDF (WeasyPrint).
+
+    `watermark` — ulashish havolasi uchun (13.6): har sahifada qiya matn
+    va pastki chap burchakda; nusxa qayerdan chiqqani qog'ozda ham qoladi.
+    """
     from weasyprint import HTML
 
-    parts = [f"<h1>{escape(title)}</h1>"]
+    parts = [f"<div class='wm'>{escape(watermark)}</div>"] if watermark else []
+    parts.append(f"<h1>{escape(title)}</h1>")
     for section in data["sections"]:
         content = {k: v for k, v in section.items() if k not in ("key", "title")}
         parts.append(f"<h2>{escape(section['title'])}</h2>{_render(content)}")
@@ -110,11 +127,15 @@ def to_pdf(data: dict[str, Any], *, title: str, prepared_by: str = "") -> bytes:
     parts.append(
         "<table class='sign'><tr>"
         f"<td>{escape(gettext('Tayyorladi'))}: {escape(prepared_by)}<br>{stamp}</td>"
-        f"<td>{escape(gettext('Topshirdi'))}: ____________</td>"
-        f"<td>{escape(gettext('Qabul qildi'))}: ____________</td>"
+        f"<td>{escape(gettext('Topshirdi'))}: {escape(submitted_by) or '____________'}</td>"
+        f"<td>{escape(gettext('Qabul qildi'))}: {escape(accepted_by) or '____________'}</td>"
         "</tr></table>"
     )
-    head = f"<head><meta charset='utf-8'><style>{_CSS}</style></head>"
+    css = _CSS
+    if watermark:
+        mark = watermark.replace("\\", "").replace('"', "'")
+        css += f'@page {{ @bottom-left {{ content: "{mark}"; font-size: 8pt; color: #6b776f; }} }}'
+    head = f"<head><meta charset='utf-8'><style>{css}</style></head>"
     html = f"<html>{head}<body>{''.join(parts)}</body></html>"
     return HTML(string=html).write_pdf()
 

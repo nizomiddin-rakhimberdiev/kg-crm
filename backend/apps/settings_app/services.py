@@ -80,6 +80,14 @@ DEFAULTS: dict[str, Any] = {
     # Bosqich 13.5: "bir bola-kunga oziq-ovqat" shu toifa (va uning ichki
     # toifalari) bo'yicha hisoblanadi.
     "report.food_category": "Oziq-ovqat",
+    # Bosqich 13.6 (ADR-42): boshqaruv modeli. "A" — ega o'zi tasdiqlaydi;
+    # "B" — boshqaruvchi topshiradi, rahbar qabul qiladi; "C" — filiallar
+    # topshiradi, ega konsolidatsiyani tasdiqlaydi. Filial bo'yicha ham.
+    "governance.model": "A",
+    # Kim alohida "Qabul qildim" bosadi: "owner" yoki "owner,director".
+    "governance.acceptors": "owner",
+    # Topshirish muddati — keyingi oyning shu sanasi.
+    "governance.deadline_day": 5,
     # --- Bosqich 12.2: imtiyozlar (Oriental Kinderland qiymatlari) ---
     #
     # Aka-uka: bir oiladagi (umumiy vasiy) har bir bolaga shuncha so'm

@@ -34,7 +34,7 @@ from apps.core.tenancy import organization_context, platform_context
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["EXPORT_WINDOW_DAYS", "PURGE_ORDER", "purge_organization"]
+__all__ = ["EXPORT_WINDOW_DAYS", "PURGE_ORDER", "allow_frozen_deletes", "purge_organization"]
 
 # Bekor qilingandan keyin ma'lumot shuncha kun saqlanadi (docs/01 §4.4).
 EXPORT_WINDOW_DAYS = 30
@@ -126,6 +126,10 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.notifications.Notification",
     "apps.parent_bot.ContactIndex",
     "apps.notifications.NotificationTemplate",
+    # Jarayon nusxaga `RESTRICT` bilan bog'langan — nusxadan OLDIN (13.6).
+    "apps.reports.ReportShareLink",
+    "apps.reports.ReportEvent",
+    "apps.reports.ReportReview",
     "apps.reports.ReportSnapshot",
     "apps.reports.ReportExport",
     "apps.attendance.Holiday",
@@ -167,6 +171,19 @@ def _model(path: str) -> Any:
     return django_apps.get_model(app_label, name)
 
 
+def allow_frozen_deletes() -> None:
+    """
+    Muzlatilgan jadvallar (`report_snapshot`) o'chirishni faqat shu
+    tranzaksiya ichida qabul qiladi: tashkilotni o'chirish va nolga
+    qaytarish. Oddiy so'rov uchun `kg.purge` o'rnatilmagan — nusxa
+    o'chmaydi (Bosqich 13.6).
+    """
+    from django.db import connection
+
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT set_config('kg.purge', 'on', true)")
+
+
 @transaction.atomic
 def purge_organization(
     *, organization_id: Any, confirm_slug: str, actor: Any = None, force: bool = False
@@ -206,6 +223,7 @@ def purge_organization(
 
     deleted: dict[str, int] = {}
     with organization_context(organization.id):
+        allow_frozen_deletes()
         for path, lookup in DERIVED_PURGE.items():
             model = _model(path)
             manager = getattr(model, "all_objects", None) or model._default_manager

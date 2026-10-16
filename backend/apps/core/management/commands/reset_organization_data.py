@@ -41,7 +41,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import models, transaction
 
 from apps.core.tenancy import organization_context, platform_context
-from apps.platform.purge import DERIVED_PURGE, PURGE_ORDER, _model
+from apps.platform.purge import DERIVED_PURGE, PURGE_ORDER, _model, allow_frozen_deletes
 
 #: Tozalashda TEGILMAYDIGAN jadvallar.
 #:
@@ -111,6 +111,7 @@ class Command(BaseCommand):
 
         counts: dict[str, int] = {}
         with organization_context(organization.id), transaction.atomic():
+            allow_frozen_deletes()
             for path, lookup in DERIVED_PURGE.items():
                 if path in KEEP:
                     continue

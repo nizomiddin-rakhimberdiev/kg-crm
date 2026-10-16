@@ -43,6 +43,16 @@ def _parse_date(value: Any, fallback: date) -> date:
         ) from exc
 
 
+def _parse_uuid(value: Any) -> Any:
+    """Buzuq identifikator — "topilmadi" (404), xato emas."""
+    import uuid
+
+    try:
+        return uuid.UUID(str(value))
+    except (TypeError, ValueError, AttributeError) as exc:
+        raise Http404 from exc
+
+
 def _parse_int(value: Any, fallback: int, *, low: int, high: int) -> int:
     if value in (None, ""):
         return fallback
@@ -165,6 +175,23 @@ REPORT_SCOPE: dict[str, str] = {
     "pack": "payroll.read",
 }
 
+# Moliya markazi mavzulari (ADR-42): `payroll.read` YOKI `reports.finance`.
+# Ikkinchisi faqat jami summalarni ochadi — paketda xodim nomi bilan oylik
+# yo'q, u `payroll.read` ortidagi oylik modulida qoladi. Shu bilan ega
+# boshqaruvchiga hisobotni tayyorlashni beradi, kim qancha olishini emas.
+FINANCE_CENTER_REPORTS: frozenset[str] = frozenset({"finance", "pack"})
+
+
+def report_allowed(user: Any, report: str | None) -> bool:
+    """Foydalanuvchi shu hisobot mavzusini ko'ra oladimi."""
+    required = REPORT_SCOPE.get(report or "")
+    if required is None:
+        return True
+    if report in FINANCE_CENTER_REPORTS and has_permission_code(user, "reports.finance"):
+        return True
+    return has_permission_code(user, required)
+
+
 # View action nomi → hisobot turi (`REPORT_SCOPE` kaliti).
 _ACTION_REPORT: dict[str, str] = {
     "revenue": "revenue",
@@ -184,6 +211,17 @@ _ACTION_REPORT: dict[str, str] = {
     "pack_source": "pack",
     "pack_pdf": "pack",
     "pack_xlsx": "pack",
+    "review": "pack",
+    "review_submit": "pack",
+    "review_note": "pack",
+    "review_answer": "pack",
+    "review_question": "pack",
+    "review_accept": "pack",
+    "review_return": "pack",
+    "review_approve": "pack",
+    "review_share": "pack",
+    "review_share_revoke": "pack",
+    "network": "pack",
     "cash_flow": "finance",
     "position": "finance",
     "completeness": "monthly",
@@ -207,8 +245,7 @@ class HasReportScope(permissions.BasePermission):
             report = view.kwargs.get("pk")
         if report is None:
             return True
-        required = REPORT_SCOPE.get(report)
-        return required is None or has_permission_code(request_user(request), required)
+        return report_allowed(request_user(request), report)
 
 
 class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
@@ -226,6 +263,20 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
         "monthly_close": "approve",
         # O'zgarmas nusxa — topshirish/tasdiqlash (egasi, direktor).
         "pack_snapshot": "approve",
+        # Boshqaruv (13.6, ADR-42): paketni ko'ra olgan tayyorlaydi —
+        # topshiradi, izoh va javob yozadi; rahbar (`reports.approve`)
+        # savol beradi, qaytaradi, qabul qiladi, tasdiqlaydi va ulashadi.
+        "review": "read",
+        "review_submit": "read",
+        "review_note": "read",
+        "review_answer": "read",
+        "review_question": "approve",
+        "review_accept": "approve",
+        "review_return": "approve",
+        "review_approve": "approve",
+        "review_share": "approve",
+        "review_share_revoke": "approve",
+        "network": "read",
     }
     lookup_value_regex = "|".join(REPORT_TYPES)
     # `ScopedRateThrottle` shu nomdagi tezlikni qidiradi. U faqat
@@ -286,10 +337,20 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
     # --- Oylik hisobot paketi (Bosqich 13.5) ---
 
     def _pack_scope(self, request: Request) -> tuple[Any, int, int, Any]:
-        year, month = self._year_month(request)
-        branch = self.branch_for(
-            request, request.query_params.get("branch") or request.data.get("branch")
-        )
+        """
+        Davr va hisobot birligi. Bitta filialli bog'chada birlik — tashkilot:
+        egasi (filialsiz) va filialga bog'langan boshqaruvchi aynan bitta
+        hisobotni ko'rishi, topshirishi va qabul qilishi kerak (13.6).
+        """
+        from apps.branches.models import Branch
+
+        source = request.query_params if request.method == "GET" else request.data
+        today = timezone.localdate()
+        year = _parse_int(source.get("year"), today.year, low=2000, high=2100)
+        month = _parse_int(source.get("month"), today.month, low=1, high=12)
+        branch = self.branch_for(request, source.get("branch"))
+        if branch is not None and Branch.objects.count() == 1:
+            branch = None
         return request_user(request).organization_id, year, month, branch
 
     def _snapshots(self, organization_id: Any, year: int, month: int, branch: Any) -> Any:
@@ -339,9 +400,7 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
         if not request.data.get("year") or not request.data.get("month"):
             raise BusinessRuleViolation(gettext("Yil va oyni koʻrsating."))
         user = request_user(request)
-        year = _parse_int(request.data.get("year"), 0, low=2000, high=2100)
-        month = _parse_int(request.data.get("month"), 0, low=1, high=12)
-        branch = self.branch_for(request, request.data.get("branch"))
+        _organization_id, year, month, branch = self._pack_scope(request)
         data = pack.build(
             organization_id=user.organization_id, year=year, month=month, branch_id=branch
         )
@@ -477,6 +536,215 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
             io.BytesIO(pack_render.to_xlsx(data, raw=raw)),
             filename=f"hisobot-{year}-{month:02d}.xlsx",
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+    # --- Boshqaruv: topshirish, savol, qabul, ulashish (Bosqich 13.6) ---
+
+    def _review(self, request: Request) -> Any:
+        from apps.reports import review as flow
+
+        _organization_id, year, month, branch = self._pack_scope(request)
+        return flow.review_for(
+            organization=request_user(request).organization,
+            year=year,
+            month=month,
+            branch_id=branch,
+        )
+
+    def _review_state(self, request: Request, report: Any, code: int = 200) -> Response:
+        from apps.reports import pack
+        from apps.reports import review as flow
+
+        live = None
+        if report.snapshot_id:
+            live = pack.checksum(
+                pack.build(
+                    organization_id=report.organization_id,
+                    year=report.period_year,
+                    month=report.period_month,
+                    branch_id=report.branch_id,
+                )
+            )
+        return Response(
+            flow.state(review=report, user=request_user(request), live_checksum=live), status=code
+        )
+
+    def _audit_review(self, request: Request, report: Any, action: str, what: str) -> None:
+        from apps.audit import services as audit
+
+        audit.record(
+            action=action,
+            request=request._request,
+            actor=request_user(request),
+            entity_type="report_review",
+            entity_id=report.id,
+            changes={
+                "period": f"{report.period_year}-{report.period_month:02d}",
+                "step": what,
+                "version": report.snapshot.version if report.snapshot_id else None,
+            },
+        )
+
+    @action(detail=False, url_path="review")
+    def review(self, request: Request) -> Response:
+        """`GET /reports/review?year=&month=` — model, holat, shart, tarix, ochilishlar."""
+        return self._review_state(request, self._review(request))
+
+    @action(detail=False, methods=["post"], url_path="review/submit")
+    def review_submit(self, request: Request) -> Response:
+        from apps.reports import review as flow
+
+        report = flow.submit(review=self._review(request), user=request_user(request))
+        self._audit_review(request, report, "update", "submit")
+        return self._review_state(request, report, status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["post"], url_path="review/approve")
+    def review_approve(self, request: Request) -> Response:
+        from apps.reports import review as flow
+
+        report = flow.approve(review=self._review(request), user=request_user(request))
+        self._audit_review(request, report, "approve", "approve")
+        return self._review_state(request, report, status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["post"], url_path="review/accept")
+    def review_accept(self, request: Request) -> Response:
+        from apps.reports import review as flow
+
+        report = flow.accept(review=self._review(request), user=request_user(request))
+        self._audit_review(request, report, "approve", "accept")
+        return self._review_state(request, report, status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["post"], url_path="review/return")
+    def review_return(self, request: Request) -> Response:
+        from apps.reports import review as flow
+
+        report = flow.send_back(
+            review=self._review(request),
+            user=request_user(request),
+            text=request.data.get("text", ""),
+        )
+        self._audit_review(request, report, "reject", "return")
+        return self._review_state(request, report, status.HTTP_201_CREATED)
+
+    def _event_response(self, event: Any) -> Response:
+        return Response(
+            {"id": str(event.id), "kind": event.kind, "path": event.path},
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=False, methods=["post"], url_path="review/question")
+    def review_question(self, request: Request) -> Response:
+        from apps.reports import review as flow
+
+        event = flow.ask(
+            review=self._review(request),
+            user=request_user(request),
+            path=request.data.get("path", ""),
+            text=request.data.get("text", ""),
+        )
+        return self._event_response(event)
+
+    @action(detail=False, methods=["post"], url_path="review/answer")
+    def review_answer(self, request: Request) -> Response:
+        from apps.reports import review as flow
+        from apps.reports.models import ReportEvent
+
+        user = request_user(request)
+        question = (
+            ReportEvent.objects.select_related("review")
+            .filter(pk=_parse_uuid(request.data.get("question")))
+            .first()
+        )
+        # Filialga bog'langan xodim boshqa filial hisobotini ko'rmaydi —
+        # uning savolini ham.
+        if question is None or (
+            not user.is_org_owner
+            and user.branch_id is not None
+            and question.review.branch_id not in (None, user.branch_id)
+        ):
+            raise Http404
+        event = flow.answer(question=question, user=user, text=request.data.get("text", ""))
+        return self._event_response(event)
+
+    @action(detail=False, methods=["post"], url_path="review/note")
+    def review_note(self, request: Request) -> Response:
+        from apps.reports import review as flow
+
+        event = flow.note(
+            review=self._review(request),
+            user=request_user(request),
+            path=request.data.get("path", ""),
+            text=request.data.get("text", ""),
+        )
+        return self._event_response(event)
+
+    @action(detail=False, methods=["post"], url_path="review/share")
+    def review_share(self, request: Request) -> Response:
+        """Faqat o'qish uchun havola; token faqat shu javobda ko'rinadi."""
+        from apps.audit import services as audit
+        from apps.reports import share
+
+        link, token = share.create_link(
+            review=self._review(request),
+            user=request_user(request),
+            label=request.data.get("label", ""),
+            days=request.data.get("days"),
+        )
+        audit.record(
+            action="create",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="report_share_link",
+            entity_id=link.id,
+            changes={"label": link.label, "expires_at": link.expires_at.isoformat()},
+        )
+        return Response(
+            {
+                "id": str(link.id),
+                "url": share.url_for(token),
+                "expires_at": link.expires_at.isoformat(),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path=r"review/share/(?P<link_id>[0-9a-f-]{36})/revoke",
+    )
+    def review_share_revoke(self, request: Request, link_id: str = "") -> Response:
+        from apps.audit import services as audit
+        from apps.reports.models import ReportShareLink
+
+        link = ReportShareLink.objects.filter(pk=_parse_uuid(link_id)).first()
+        if link is None:
+            raise Http404
+        if link.revoked_at is None:
+            link.revoked_at = timezone.now()
+            link.save(update_fields=["revoked_at", "updated_at"])
+            audit.record(
+                action="update",
+                request=request._request,
+                actor=request_user(request),
+                entity_type="report_share_link",
+                entity_id=link.id,
+                changes={"revoked": True},
+            )
+        return Response({"id": str(link.id), "revoked": True})
+
+    @action(detail=False, url_path="network")
+    def network(self, request: Request) -> Response:
+        """`GET /reports/network` — filiallar yonma-yon; faqat butun tashkilotni ko'radiganga."""
+        from rest_framework.exceptions import PermissionDenied
+
+        from apps.reports import network
+
+        user = request_user(request)
+        if not user.is_org_owner and user.branch_id is not None:
+            raise PermissionDenied(gettext("Tarmoq koʻrinishi butun tashkilot rahbari uchun."))
+        year, month = self._year_month(request)
+        return Response(
+            network.network(organization_id=user.organization_id, year=year, month=month)
         )
 
     @action(detail=False, url_path="pack/pdf")
@@ -714,9 +982,7 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
     def exports(self, request: Request) -> Response:
         """Faqat foydalanuvchi ko'rishga haqli mavzudagi eksportlar."""
         allowed = [
-            report
-            for report, code in REPORT_SCOPE.items()
-            if has_permission_code(request_user(request), code)
+            report for report in REPORT_SCOPE if report_allowed(request_user(request), report)
         ]
         queryset = (
             ReportExport.objects.filter(report_type__in=allowed)
@@ -777,7 +1043,6 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
         oshkor qilmaydi.
         """
         export = self._get_export(job_id)
-        required = REPORT_SCOPE.get(export.report_type)
-        if required and not has_permission_code(request_user(request), required):
+        if not report_allowed(request_user(request), export.report_type):
             raise Http404
         return export

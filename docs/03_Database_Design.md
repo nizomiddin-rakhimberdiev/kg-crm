@@ -716,7 +716,11 @@ Organization-scoped (RLS). `branch_id`, `period_year`, `period_month`, `closed_b
 
 ### 13.3c `report_snapshot` — the monthly pack, frozen (Bosqich 13.5)
 
-Organization-scoped (RLS). `branch_id` (nullable — organisation-wide pack), `period_year`, `period_month`, `version`, `data` (the pack JSON), `checksum` (SHA-256 of its canonical form), `created_by_id`; `UNIQUE (organization, branch, period, version) NULLS NOT DISTINCT`. A snapshot is never edited: when the live pack's checksum differs from the latest version, the page says "changed" and the next snapshot becomes a new version; the diff compares numeric leaves by path. 13.6 adds the submit / accept workflow on top.
+Organization-scoped (RLS). `branch_id` (nullable — organisation-wide pack), `period_year`, `period_month`, `version`, `data` (the pack JSON), `checksum` (SHA-256 of its canonical form), `created_by_id`; `UNIQUE (organization, branch, period, version) NULLS NOT DISTINCT`. A snapshot is never edited: when the live pack's checksum differs from the latest version, the page says "changed" and the next snapshot becomes a new version; the diff compares numeric leaves by path. Since 13.6 a trigger (`kg_guard_snapshot_frozen`) refuses any `UPDATE` of `data`, `checksum`, `version`, period or branch and any `DELETE`, except inside the purge/reset transaction that sets `kg.purge`.
+
+### 13.3d `report_review`, `report_event`, `report_share_link` — governance (Bosqich 13.6, ADR-42)
+
+All organization-scoped (RLS). **`report_review`** — one row per (organization, branch, period), `UNIQUE … NULLS NOT DISTINCT`: `status` (`draft` · `submitted` · `question` · `returned` · `resubmitted` · `accepted`), `snapshot_id` (the version under review, `RESTRICT`), `submitted_by_id`, `submitted_at`, `late_notified_at`. It holds the process, never a number. **`report_event`** — append-only history: `kind` (`note` · `submit` · `question` · `answer` · `accept` · `return` · `approve`), `path` (a number path, `checks:<id>` or `attention:<rule>:<type>:<id>`), `text`, `parent_id` (an answer under its question), `snapshot_id`, `author_id`. **`report_share_link`** — `snapshot_id`, `token_hash` (SHA-256, unique; the token itself is never stored), `label`, `expires_at`, `revoked_at`, `opened_count`, `last_opened_at`, `created_by_id`.
 
 ### 13.4 `invoice_line`
 For itemization beyond the base tariff (extra meals, activities, one-off fees).

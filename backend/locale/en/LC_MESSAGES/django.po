@@ -2245,3 +2245,117 @@ msgstr "Collection rate {rate}%."
 
 msgid "{failing} ta tekshiruv qizil, {attention} ta Diqqat."
 msgstr "{failing} checks red, {attention} attention items."
+
+msgid "A modelda hisobotni topshirish yoʻq — ega oʻzi tasdiqlaydi."
+msgstr "Model A has no submission — the owner approves the report."
+
+msgid "Bu modelda hisobot topshiriladi va qabul qilinadi, tasdiqlanmaydi."
+msgstr "In this model the report is submitted and accepted, not approved."
+
+msgid "Bu savol emas."
+msgstr "This is not a question."
+
+msgid "Bu savolga javob berilgan."
+msgstr "This question has already been answered."
+
+msgid "C modelda filiallar topshiradi; konsolidatsiyani ega tasdiqlaydi."
+msgstr "In model C the branches submit; the owner approves the consolidation."
+
+msgid "Filiallar hali qabul qilinmagan: {names}."
+msgstr "Branches not yet accepted: {names}."
+
+msgid "Havola kim uchun ekanini yozing (bank, investor…)."
+msgstr "Say who the link is for (bank, investor…)."
+
+msgid "Hisobot allaqachon tasdiqlangan."
+msgstr "The report is already approved."
+
+msgid "Hisobot allaqachon topshirilgan."
+msgstr "The report has already been submitted."
+
+msgid "Izoh matnini yozing."
+msgstr "Write the note."
+
+msgid "Izoh qaysi joyga ekanini koʻrsating."
+msgstr "Say what the note refers to."
+
+msgid "Izohsiz qolgan: {items}. Har qizil tekshiruv va Diqqatga izoh yozing."
+msgstr "Left without a note: {items}. Add a note to every red check and attention item."
+
+msgid "Javob"
+msgstr "Answer"
+
+msgid "Javob matnini yozing."
+msgstr "Write the answer."
+
+msgid "Javobsiz savol bor — avval javobni kuting."
+msgstr "A question is still unanswered — wait for the answer first."
+
+msgid "Qabul qilish uchun hisobot topshirilmagan."
+msgstr "The report has not been submitted for acceptance."
+
+msgid "Qayta topshirildi"
+msgstr "Resubmitted"
+
+msgid "Qaytardi"
+msgstr "Returned"
+
+msgid "Qaytarish sababini yozing."
+msgstr "Give the reason for returning it."
+
+msgid "Qaytarish uchun hisobot topshirilmagan."
+msgstr "The report has not been submitted, so it cannot be returned."
+
+msgid "Savol"
+msgstr "Question"
+
+msgid "Savol bor"
+msgstr "Question open"
+
+msgid "Savol faqat topshirilgan hisobotga beriladi."
+msgstr "Questions can be asked only on a submitted report."
+
+msgid "Savol matnini yozing."
+msgstr "Write the question."
+
+msgid "Savol qaysi raqamga ekanini koʻrsating."
+msgstr "Say which number the question is about."
+
+msgid "Siz allaqachon qabul qilgansiz."
+msgstr "You have already accepted it."
+
+msgid "Siz bu hisobotni qabul qiluvchilar roʻyxatida emassiz."
+msgstr "You are not among the people who accept this report."
+
+msgid "Tarmoq koʻrinishi butun tashkilot rahbari uchun."
+msgstr "The network view is for leaders of the whole organization."
+
+msgid "Topshirdi"
+msgstr "Submitted"
+
+msgid "Topshirildi"
+msgstr "Submitted"
+
+msgid "Ulashish uchun avval hisobotni topshiring yoki tasdiqlang."
+msgstr "Submit or approve the report before sharing it."
+
+msgid "{label} · faqat oʻqish uchun · {day} · {checksum}"
+msgstr "{label} · read only · {day} · {checksum}"
+
+msgid "{name}{where}: oylik moliyaviy hisobot {period} (v{version})"
+msgstr "{name}{where}: monthly financial report {period} (v{version})"
+
+msgid "↩️ Hisobot qaytarildi ({period}): {text}"
+msgstr "↩️ Report returned ({period}): {text}"
+
+msgid "⏰ {period}{where} hisoboti muddatda topshirilmadi (muddat {deadline})."
+msgstr "⏰ The {period}{where} report was not submitted on time (due {deadline})."
+
+msgid "✅ Hisobot qabul qilindi: {period}."
+msgstr "✅ Report accepted: {period}."
+
+msgid "❓ {who} savol berdi ({period}): {text}"
+msgstr "❓ {who} asked a question ({period}): {text}"
+
+msgid "📄 Hisobot topshirildi: {period} (v{version}), {who}."
+msgstr "📄 Report submitted: {period} (v{version}), {who}."

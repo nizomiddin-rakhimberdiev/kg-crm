@@ -651,7 +651,14 @@ def _profit_vs_cash(pnl: dict[str, Any], flow: dict[str, Any]) -> dict[str, Any]
     leftover = sum(inflows.values(), ZERO) - sum(outflows.values(), ZERO)
     if leftover:
         steps.append(("other", gettext("Boshqa harakatlar"), leftover))
-    transfers = _d(flow["transfers"]["in"]) - _d(flow["transfers"]["out"])
+    # Filial ichidagi o'tkazma (kassa → bank) nolga teng; qolgani — boshqa
+    # filialdan kelgan yoki ketgan pul. Konsolidatsiyada u chiqarilgan.
+    transfers = (
+        _d(flow["transfers"]["in"])
+        - _d(flow["transfers"]["out"])
+        + _d(flow["transfers"]["inter_branch_in"])
+        - _d(flow["transfers"]["inter_branch_out"])
+    )
     if transfers:
         steps.append(("transfers", gettext("Oʻtkazmalar (filiallar orasida)"), transfers))
     operating_profit = _d(pnl["operating_profit"])

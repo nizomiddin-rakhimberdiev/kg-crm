@@ -210,8 +210,19 @@ def cash_flow(
     month_rows = list(
         movements.filter(
             occurred_at__gt=_end_of(start - timedelta(days=1)), occurred_at__lte=_end_of(end)
-        ).values("source_type", "source_id", "direction", "amount")
+        ).values("source_type", "source_id", "direction", "amount", "transfer_group")
     )
+    # Filiallar orasidagi o'tkazma (Bosqich 13.6, test 18): ikki oyog'i
+    # boshqa-boshqa filialda. Filial uchun bu haqiqiy pul harakati;
+    # konsolidatsiyada esa tashkilot pul topmaydi ham, yo'qotmaydi ham —
+    # chiqarib tashlanadi.
+    groups = {row["transfer_group"] for row in month_rows if row["source_type"] == "transfer"}
+    legs: dict[Any, set[Any]] = {}
+    for group, branch in CashMovement.objects.filter(
+        organization_id=organization_id, transfer_group__in=groups - {None}
+    ).values_list("transfer_group", "branch_id"):
+        legs.setdefault(group, set()).add(branch)
+    inter_branch = {group for group, branches in legs.items() if len(branches) > 1}
 
     capex_ids = set(
         Expense.objects.filter(
@@ -227,11 +238,22 @@ def cash_flow(
 
     inflows: dict[str, Decimal] = {}
     outflows: dict[str, Decimal] = {}
-    transfers = {"in": ZERO, "out": ZERO}
+    transfers = {
+        "in": ZERO,
+        "out": ZERO,
+        "inter_branch_in": ZERO,
+        "inter_branch_out": ZERO,
+        "eliminated": ZERO,
+    }
     for row in month_rows:
         source, incoming, amount = row["source_type"], row["direction"] == "in", row["amount"]
         if source == "transfer":
-            transfers["in" if incoming else "out"] += amount
+            if row["transfer_group"] not in inter_branch:
+                transfers["in" if incoming else "out"] += amount
+            elif branch_id:
+                transfers["inter_branch_in" if incoming else "inter_branch_out"] += amount
+            elif incoming:
+                transfers["eliminated"] += amount
             continue
         if source == "payment":
             key = "tuition"
@@ -259,7 +281,15 @@ def cash_flow(
 
     inflow_total = sum(inflows.values(), ZERO)
     outflow_total = sum(outflows.values(), ZERO)
-    bridged = opening + inflow_total - outflow_total + transfers["in"] - transfers["out"]
+    bridged = (
+        opening
+        + inflow_total
+        - outflow_total
+        + transfers["in"]
+        - transfers["out"]
+        + transfers["inter_branch_in"]
+        - transfers["inter_branch_out"]
+    )
     return {
         "period": f"{year}-{month:02d}",
         "opening": _money(opening),

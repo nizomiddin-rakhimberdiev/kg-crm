@@ -32,6 +32,7 @@ __all__ = [
     "send_debt_reminders",
     "recompute_balances",
     "purge_old_exports",
+    "remind_late_reports",
 ]
 
 
@@ -316,3 +317,67 @@ def purge_old_exports(days: int = 30) -> dict[str, int]:
             result["removed_files"],
         )
     return {"rows": result["removed_rows"], "files": result["removed_files"]}
+
+
+@reliable_task(name="reports.remind_late_reports")
+def remind_late_reports() -> dict[str, int]:
+    """
+    Har kuni: o'tgan oy hisoboti muddatdan (sukut — 5-sana) o'tib ham
+    topshirilmagan bo'lsa, rahbarlarga bir marta eslatma (Bosqich 13.6,
+    brif §8). Faqat B/C modelda — A'da topshiruvchi yo'q.
+
+    Bir filialli bog'chada hisobot tashkilot darajasida; ko'p filialli
+    bog'chada — har filial o'z modeli bilan.
+    """
+    from django.utils.translation import gettext
+
+    from apps.branches.models import Branch
+    from apps.intelligence import alerts
+    from apps.organizations.models import Organization
+    from apps.reports import review as flow
+    from apps.reports.models import ReviewStatus
+
+    today = timezone.localdate()
+    year, month = (today.year, today.month - 1) if today.month > 1 else (today.year - 1, 12)
+    with platform_context():
+        organizations = list(Organization.objects.filter(is_active=True))
+    totals = {"organizations": 0, "reminded": 0, "failed": 0}
+    for organization in organizations:
+        try:
+            with organization_context(organization.id):
+                branches = list(Branch.objects.filter(is_active=True).order_by("name"))
+                units = [None] if len(branches) <= 1 else branches
+                for branch in units:
+                    branch_id = branch.id if branch else None
+                    if flow.model_for(branch_id) == "A":
+                        continue
+                    if today <= flow.deadline(year, month, branch_id):
+                        continue
+                    totals["organizations"] += 1
+                    report = flow.review_for(
+                        organization=organization, year=year, month=month, branch_id=branch_id
+                    )
+                    waiting = report.status in (ReviewStatus.DRAFT, ReviewStatus.RETURNED)
+                    if not waiting or report.late_notified_at is not None:
+                        continue
+                    where = f", {branch.name}" if branch else ""
+                    alerts.notify(
+                        organization_id=organization.id,
+                        text=gettext(
+                            "⏰ {period}{where} hisoboti muddatda topshirilmadi "
+                            "(muddat {deadline})."
+                        ).format(
+                            period=f"{month:02d}.{year}",
+                            where=where,
+                            deadline=flow.deadline(year, month, branch_id).strftime("%d.%m.%Y"),
+                        ),
+                    )
+                    report.late_notified_at = timezone.now()
+                    report.save(update_fields=["late_notified_at", "updated_at"])
+                    totals["reminded"] += 1
+        except Exception:  # noqa: BLE001 — bitta tashkilot boshqalarini to'xtatmasin
+            totals["failed"] += 1
+            logger.exception(
+                "Kechikkan hisobot eslatmasi yiqildi: organization=%s", organization.id
+            )
+    return totals

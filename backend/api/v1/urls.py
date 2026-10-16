@@ -35,6 +35,7 @@ from apps.organizations.views import OrganizationLogoView, OrganizationView
 from apps.platform.views import PlatformLoginView
 from apps.platform.views_leads import PublicLeadCreateView, PublicPricingView
 from apps.platform.views_signup import SignupConfirmView, SignupRequestView
+from apps.reports.views_public import PublicReportView
 from apps.subscriptions.views_online import (
     SubscriptionClickWebhookView,
     SubscriptionPaymeWebhookView,
@@ -105,6 +106,8 @@ urlpatterns = [
         name="click-webhook",
     ),
     path("public/pay/link/<str:token>", PublicPayLinkView.as_view(), name="pay-link"),
+    # Ulashilgan oylik hisobot — faqat o'qish, muddatli (Bosqich 13.6).
+    path("public/reports/<str:token>", PublicReportView.as_view(), name="public-report"),
     path("online-payments/links", PaymentLinkCreateView.as_view(), name="payment-link-create"),
     path(
         "online-payments/credentials",

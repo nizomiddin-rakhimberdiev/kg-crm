@@ -47,9 +47,15 @@ ACTIONS: Final[tuple[str, ...]] = ("read", "create", "update", "delete", "export
 # ga qo'shish har bir modulda keraksiz ruxsat yaratardi (`billing.
 # read_all` nimani anglatadi?), shuning uchun u modul bo'yicha
 # beriladi.
+#
+# `reports.finance` — Moliya markazi: foyda-zarar, pul oqimi, holat va oylik
+# hisobot paketi, faqat JAMI summalar bilan (Bosqich 13.6, ADR-42). Xodimlar
+# kesimidagi ish haqi `payroll.read` da qoladi — boshqaruvchi hisobotni
+# tayyorlab topshiradi, lekin kim qancha olishini ko'rmaydi.
 EXTRA_ACTIONS: Final[dict[str, tuple[str, ...]]] = {
     "children": ("read_all",),
     "attendance": ("read_all",),
+    "reports": ("finance",),
 }
 
 PERMISSION_LABELS: Final[dict[str, str]] = {
@@ -114,6 +120,7 @@ _N: Final[tuple[str, ...]] = ()
 _FA: Final[tuple[str, ...]] = (*_F, "read_all")
 _WA: Final[tuple[str, ...]] = (*_W, "read_all")
 _RA: Final[tuple[str, ...]] = (*_R, "read_all")
+_FF: Final[tuple[str, ...]] = (*_F, "finance")
 
 ROLE_MATRIX: Final[dict[str, dict[str, tuple[str, ...]]]] = {
     "org_owner": {
@@ -125,7 +132,7 @@ ROLE_MATRIX: Final[dict[str, dict[str, tuple[str, ...]]]] = {
         "payroll": _F,
         "inventory": _F,
         "expenses": _F,
-        "reports": _F,
+        "reports": _FF,
         "notifications": _F,
         "settings": _F,
         "branches": _F,
@@ -142,7 +149,7 @@ ROLE_MATRIX: Final[dict[str, dict[str, tuple[str, ...]]]] = {
         "payroll": _F,
         "inventory": _F,
         "expenses": _F,
-        "reports": _F,
+        "reports": _FF,
         "notifications": _F,
         "settings": _R,
         "branches": _R,
