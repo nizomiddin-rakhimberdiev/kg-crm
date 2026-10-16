@@ -18,14 +18,24 @@ from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.audit import services as audit
 from apps.branches.selectors import resolve_branch
-from apps.cash import selectors, services
-from apps.cash.models import CashAccount, CashCount, CashHandover, MoneyOperation
+from apps.cash import selectors, services, statements
+from apps.cash.models import (
+    BankStatement,
+    BankStatementLine,
+    CashAccount,
+    CashCount,
+    CashHandover,
+    MoneyOperation,
+)
 from apps.cash.serializers import (
+    BankStatementLineSerializer,
+    BankStatementSerializer,
     CashAccountSerializer,
     CashAdjustSerializer,
     CashCountSerializer,
@@ -36,6 +46,7 @@ from apps.cash.serializers import (
     MoneyOperationSerializer,
     MoneyOperationWriteSerializer,
 )
+from apps.core.exceptions import BusinessRuleViolation
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchScopedMixin, TenantViewSet
 from apps.finance.scope import payments_own_only
@@ -44,6 +55,7 @@ __all__ = [
     "CashAccountViewSet",
     "CashCountViewSet",
     "CashHandoverViewSet",
+    "BankStatementViewSet",
     "MoneyOperationViewSet",
 ]
 
@@ -443,3 +455,148 @@ class MoneyOperationViewSet(BranchScopedMixin, TenantViewSet):
             },
         )
         return Response(MoneyOperationSerializer(operation).data, status=status.HTTP_201_CREATED)
+
+
+_LINE = r"lines/(?P<line_id>[0-9a-f-]{36})"
+
+
+class BankStatementViewSet(BranchScopedMixin, TenantViewSet):
+    """
+    `/bank-statements` — bank ko'chirmasi: ustunlarni ko'rish, yuklash,
+    avtomatik bog'lash va moslashtirilmagan qatorlar navbati (Bosqich 13.3d).
+
+    Butun bank hisobiga tegadi — "faqat o'ziniki" kassirga yopiq.
+    """
+
+    permission_module = "payments"
+    permission_action_map = {
+        "create": "update",
+        "preview": "update",
+        "lines": "read",
+        "ignore": "update",
+        "make_expense": "update",
+        "make_payment": "update",
+    }
+    model = BankStatement
+    serializer_class = BankStatementSerializer
+    http_method_names = ["get", "post", "head", "options"]
+    parser_classes = [MultiPartParser, JSONParser]
+
+    def get_base_queryset(self) -> Any:
+        _refuse_own_only(request_user(self.request))
+        return super().get_base_queryset().select_related("cash_account")
+
+    def _upload(self, request: Request) -> Any:
+        uploaded = request.FILES.get("file")
+        if uploaded is None:
+            raise BusinessRuleViolation(gettext("Fayl yuborilmagan."))
+        if uploaded.size > 10 * 1_048_576:
+            raise BusinessRuleViolation(gettext("Fayl 10 MB dan kichik boʻlishi kerak."))
+        return uploaded
+
+    @action(detail=False, methods=["post"])
+    def preview(self, request: Request) -> Response:
+        """`POST /bank-statements/preview` — sarlavhalar va namunaviy qatorlar."""
+        _refuse_own_only(request_user(request))
+        uploaded = self._upload(request)
+        return Response(statements.preview(file_bytes=uploaded.read(), file_name=uploaded.name))
+
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        import json
+
+        user = request_user(request)
+        _refuse_own_only(user)
+        uploaded = self._upload(request)
+        account = CashAccount.objects.filter(pk=request.data.get("cash_account_id")).first()
+        if account is None:
+            raise BusinessRuleViolation(gettext("Bank hisobini tanlang."))
+        try:
+            mapping = json.loads(request.data.get("mapping") or "{}")
+        except ValueError as exc:
+            raise BusinessRuleViolation(gettext("Ustunlar moslashtirilmagan.")) from exc
+        raw_closing = str(request.data.get("closing_balance") or "").replace(" ", "")
+        closing = Decimal(raw_closing.replace(",", ".")) if raw_closing else None
+        statement = statements.import_statement(
+            account=account,
+            file_bytes=uploaded.read(),
+            file_name=uploaded.name,
+            mapping={key: str(value) for key, value in mapping.items() if value},
+            closing_balance=closing,
+            uploaded_by=user,
+        )
+        audit.record(
+            action="create",
+            request=request._request,
+            actor=user,
+            entity_type="bank_statement",
+            entity_id=statement.id,
+            changes={
+                "lines": statement.line_count,
+                "matched": statement.matched_count,
+                "skipped": statement.skipped_count,
+            },
+        )
+        data = BankStatementSerializer(statement).data
+        data["matched"] = statement.matched_count
+        data["skipped"] = statement.skipped_count
+        return Response(data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["get"])
+    def lines(self, request: Request) -> Response:
+        """`GET /bank-statements/lines?status=unmatched` — navbat."""
+        _refuse_own_only(request_user(request))
+        queryset = BankStatementLine.objects.all()
+        if request.query_params.get("status"):
+            queryset = queryset.filter(status=request.query_params["status"])
+        if request.query_params.get("statement"):
+            queryset = queryset.filter(statement_id=request.query_params["statement"])
+        return Response(BankStatementLineSerializer(queryset[:500], many=True).data)
+
+    def _line(self, request: Request, line_id: str) -> BankStatementLine:
+        _refuse_own_only(request_user(request))
+        line = BankStatementLine.objects.filter(pk=line_id).first()
+        if line is None:
+            raise NotFound(gettext("Qator topilmadi."))
+        return line
+
+    def _done(self, request: Request, line: BankStatementLine, action_name: str) -> Response:
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="bank_statement_line",
+            entity_id=line.id,
+            changes={"action": action_name, "status": line.status},
+        )
+        line.refresh_from_db()
+        return Response(BankStatementLineSerializer(line).data)
+
+    @action(detail=False, methods=["post"], url_path=f"{_LINE}/ignore")
+    def ignore(self, request: Request, line_id: str = "") -> Response:
+        line = self._line(request, line_id)
+        statements.ignore_line(
+            line=line, note=str(request.data.get("note", "")), user=request_user(request)
+        )
+        return self._done(request, line, "ignore")
+
+    @action(detail=False, methods=["post"], url_path=f"{_LINE}/expense")
+    def make_expense(self, request: Request, line_id: str = "") -> Response:
+        from apps.expenses.models import ExpenseCategory
+
+        line = self._line(request, line_id)
+        category = ExpenseCategory.objects.filter(pk=request.data.get("category_id")).first()
+        if category is None:
+            raise BusinessRuleViolation(gettext("Toifani tanlang."))
+        statements.expense_from_line(line=line, category=category, user=request_user(request))
+        return self._done(request, line, "expense")
+
+    @action(detail=False, methods=["post"], url_path=f"{_LINE}/payment")
+    def make_payment(self, request: Request, line_id: str = "") -> Response:
+        from apps.children.models import Child
+
+        line = self._line(request, line_id)
+        child = Child.objects.filter(pk=request.data.get("child_id")).first()
+        if child is None:
+            raise BusinessRuleViolation(gettext("Bolani tanlang."))
+        statements.payment_from_line(line=line, child=child, user=request_user(request))
+        return self._done(request, line, "payment")

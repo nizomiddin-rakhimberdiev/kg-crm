@@ -61,6 +61,9 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.cash.CashHandover",
     "apps.cash.CashCount",
     "apps.cash.MoneyOperation",
+    # Ko'chirma qatorlari ko'chirmaga, ikkalasi qopga RESTRICT (13.3d).
+    "apps.cash.BankStatementLine",
+    "apps.cash.BankStatement",
     # Online payments (PLAN 6.1): they point at payments and invoices with
     # `RESTRICT`, so they go before both.
     "apps.online_payments.OnlineTransaction",

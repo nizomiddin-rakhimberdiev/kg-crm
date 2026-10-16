@@ -24,6 +24,9 @@ __all__ = [
     "CashHandover",
     "CashMovement",
     "HandoverStatus",
+    "BankStatement",
+    "BankStatementLine",
+    "LineStatus",
     "MoneyOperation",
     "OperationKind",
     "MovementDirection",
@@ -355,3 +358,101 @@ class MoneyOperation(BranchScopedModel):
 
     def __str__(self) -> str:
         return f"{self.kind} {self.amount}"
+
+
+class BankStatement(BranchScopedModel):
+    """
+    Yuklangan bank ko'chirmasi (Bosqich 13.3d).
+
+    Ustunlar bankdan bankka farq qiladi — `mapping` qaysi ustun nima
+    ekanini saqlaydi (keyingi yuklashda taklif qilinadi). Ko'chirmadagi
+    yakuniy qoldiq tizimdagi bilan solishtiriladi; farq — nazoratda qizil.
+    """
+
+    cash_account = models.ForeignKey(
+        "cash.CashAccount", on_delete=models.RESTRICT, related_name="statements"
+    )
+    file_name = models.CharField(max_length=255)
+    period_from = models.DateField(null=True, blank=True)
+    period_to = models.DateField(null=True, blank=True)
+    closing_balance = models.DecimalField(max_digits=16, decimal_places=2, null=True, blank=True)
+    system_balance = models.DecimalField(max_digits=16, decimal_places=2, null=True, blank=True)
+    mapping = models.JSONField(default=dict)
+    line_count = models.PositiveIntegerField(default=0)
+    matched_count = models.PositiveIntegerField(default=0)
+    skipped_count = models.PositiveIntegerField(default=0)
+    uploaded_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="bank_statements",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "bank_statement"
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return self.file_name
+
+
+class LineStatus(models.TextChoices):
+    UNMATCHED = "unmatched", gettext_lazy("Moslashtirilmagan")
+    MATCHED = "matched", gettext_lazy("Moslashtirildi")
+    IGNORED = "ignored", gettext_lazy("Eʼtiborsiz")
+
+
+class BankStatementLine(BranchScopedModel):
+    """
+    Ko'chirmaning bitta qatori — o'zgarmas fakt; faqat holati o'zgaradi.
+
+    `fingerprint` (qop bo'yicha unikal) bir ko'chirmani ikki marta
+    yuklashni zararsiz qiladi: aks holda bitta ota-ona o'tkazmasi ikki
+    to'lov bo'lib yaratilardi.
+    """
+
+    statement = models.ForeignKey(
+        "cash.BankStatement", on_delete=models.RESTRICT, related_name="lines"
+    )
+    cash_account = models.ForeignKey(
+        "cash.CashAccount", on_delete=models.RESTRICT, related_name="statement_lines"
+    )
+    line_no = models.PositiveIntegerField()
+    booked_on = models.DateField()
+    direction = models.CharField(max_length=3, choices=MovementDirection.choices)
+    amount = models.DecimalField(max_digits=16, decimal_places=2)
+    purpose = models.TextField(blank=True)
+    counterparty = models.CharField(max_length=255, blank=True)
+    reference = models.CharField(max_length=100, blank=True)
+    fingerprint = models.CharField(max_length=64)
+    status = models.CharField(
+        max_length=10, choices=LineStatus.choices, default=LineStatus.UNMATCHED
+    )
+    # Nima bilan moslashdi: `settlement`, `payment`, `payment_created`,
+    # `expense`, `operation`, `transfer`, `payroll`… va o'sha hujjatlar.
+    match_kind = models.CharField(max_length=20, blank=True)
+    matched_ids = models.JSONField(default=list)
+    note = models.CharField(max_length=255, blank=True)
+    decided_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="statement_decisions",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "bank_statement_line"
+        ordering = ["booked_on", "line_no"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["cash_account", "fingerprint"], name="uq_statement_line_fingerprint"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0), name="ck_statement_line_amount"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.booked_on} {self.direction} {self.amount}"

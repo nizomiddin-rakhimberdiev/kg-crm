@@ -25,7 +25,7 @@ from django.db.models import Case, DecimalField, Q, Sum, When
 from django.db.models.functions import Coalesce, ExtractMonth, ExtractYear
 from django.utils import timezone
 
-__all__ = ["cash_flow", "position", "profit_and_loss"]
+__all__ = ["cash_flow", "data_completeness", "position", "profit_and_loss"]
 
 ZERO = Decimal("0")
 _DEC: DecimalField[Decimal, Decimal] = DecimalField(max_digits=16, decimal_places=2)
@@ -399,4 +399,74 @@ def position(*, organization_id: Any, as_of: date, branch_id: Any = None) -> dic
             "total": _money(total_liabilities),
         },
         "net": _money(total_assets - total_liabilities),
+    }
+
+
+# --- Ma'lumot to'liqligi (Bosqich 13.3e) ---
+
+
+def data_completeness(
+    *, organization_id: Any, year: int, month: int, branch_id: Any = None
+) -> dict[str, Any]:
+    """
+    Hisobot qanchalik to'liq ma'lumotga tayanadi (brif §4).
+
+    * xarajatlarning necha foizida chek bor (bank komissiyasi — avtomatik,
+      sanalmaydi);
+    * naqd kassada pul harakatlangan kunlar va ularning nechtasi sanoq
+      bilan yopilgan;
+    * bank ko'chirmasi oy oxirigacha yuklanganmi, moslashtirilmagan qatorlar.
+    """
+    from apps.cash.models import BankStatement, BankStatementLine, CashCount, CashMovement
+    from apps.expenses.models import Expense, ExpenseStatus
+
+    start, end = _month_bounds(year, month)
+    expenses = _scoped(Expense.objects, organization_id, branch_id).filter(
+        status__in=[ExpenseStatus.APPROVED, ExpenseStatus.PAID],
+        expense_date__gte=start,
+        expense_date__lte=end,
+        payment__isnull=True,
+    )
+    total = expenses.count()
+    with_receipt = expenses.exclude(receipt="").count()
+
+    active_days = (
+        _scoped(CashMovement.objects, organization_id, branch_id)
+        .filter(
+            cash_account__kind="cash",
+            occurred_at__gt=_end_of(start - timedelta(days=1)),
+            occurred_at__lte=_end_of(end),
+        )
+        .exclude(source_type__in=["opening", "count"])
+        .dates("occurred_at", "day")
+        .count()
+    )
+    closed_days = (
+        _scoped(CashCount.objects, organization_id, branch_id)
+        .filter(cash_account__kind="cash", counted_on__gte=start, counted_on__lte=end)
+        .values("counted_on")
+        .distinct()
+        .count()
+    )
+    statements = _scoped(BankStatement.objects, organization_id, branch_id)
+    last = statements.order_by("-period_to").values_list("period_to", flat=True).first()
+    unmatched = (
+        _scoped(BankStatementLine.objects, organization_id, branch_id)
+        .filter(status="unmatched", booked_on__lte=end)
+        .count()
+    )
+    return {
+        "period": f"{year}-{month:02d}",
+        "expenses": {
+            "total": total,
+            "with_receipt": with_receipt,
+            "percent": round(with_receipt * 100 / total) if total else None,
+        },
+        "cash": {"active_days": active_days, "closed_days": closed_days},
+        "bank": {
+            # Oxirgi uch kungacha yetgan ko'chirma — oy "yuklangan".
+            "statement_uploaded": bool(last and last >= end - timedelta(days=3)),
+            "last_statement_on": last.isoformat() if last else None,
+            "unmatched_lines": unmatched,
+        },
     }

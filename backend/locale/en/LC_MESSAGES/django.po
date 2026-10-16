@@ -1840,3 +1840,66 @@ msgstr "Enter the counted total or the notes."
 
 msgid "Kupyuralar yigʻindisi {notes} — kiritilgan sanoq {counted} bilan mos emas."
 msgstr "The notes add up to {notes}, not the entered count of {counted}."
+
+msgid "Bank hisobini tanlang."
+msgstr "Choose the bank account."
+
+msgid "Bank koʻchirmasidan"
+msgstr "From the bank statement"
+
+msgid "Bolani tanlang."
+msgstr "Choose the child."
+
+msgid "Bu qator allaqachon koʻrib chiqilgan."
+msgstr "This line has already been decided."
+
+msgid "Eʼtiborsiz"
+msgstr "Ignored"
+
+msgid "Moslashtirilmagan"
+msgstr "Unmatched"
+
+msgid "Moslashtirildi"
+msgstr "Matched"
+
+msgid "Faylni oʻqib boʻlmadi — Excel (.xlsx) yoki CSV yuboring."
+msgstr "The file could not be read — send Excel (.xlsx) or CSV."
+
+msgid "Faylda ustun sarlavhalari topilmadi."
+msgstr "No column headers were found in the file."
+
+msgid "Summa oʻqilmadi: {value}."
+msgstr "Could not read the amount: {value}."
+
+msgid "Ustun topilmadi: {name}."
+msgstr "Column not found: {name}."
+
+msgid "Sana ustunini tanlang."
+msgstr "Choose the date column."
+
+msgid "Summa yoki debet/kredit ustunlarini tanlang."
+msgstr "Choose the amount column or the debit/credit columns."
+
+msgid "Koʻchirma faqat bank hisobiga yuklanadi."
+msgstr "A statement is uploaded to a bank account only."
+
+msgid "Faylda summa va sanasi bor qator topilmadi."
+msgstr "No lines with an amount and a date were found."
+
+msgid "Faqat chiqim qatoridan xarajat yaratiladi."
+msgstr "An expense is created from a debit line only."
+
+msgid "Toifa topilmadi."
+msgstr "Category not found."
+
+msgid "Faqat kirim qatoridan toʻlov yaratiladi."
+msgstr "A payment is created from a credit line only."
+
+msgid "Ustunlar moslashtirilmagan."
+msgstr "The columns are not mapped."
+
+msgid "Qator topilmadi."
+msgstr "Line not found."
+
+msgid "Toifani tanlang."
+msgstr "Choose the category."

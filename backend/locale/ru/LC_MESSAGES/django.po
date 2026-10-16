@@ -1840,3 +1840,66 @@ msgstr "Введите сумму пересчёта или купюры."
 
 msgid "Kupyuralar yigʻindisi {notes} — kiritilgan sanoq {counted} bilan mos emas."
 msgstr "Сумма купюр {notes} не совпадает с введённым пересчётом {counted}."
+
+msgid "Bank hisobini tanlang."
+msgstr "Выберите банковский счёт."
+
+msgid "Bank koʻchirmasidan"
+msgstr "Из банковской выписки"
+
+msgid "Bolani tanlang."
+msgstr "Выберите ребёнка."
+
+msgid "Bu qator allaqachon koʻrib chiqilgan."
+msgstr "Эта строка уже рассмотрена."
+
+msgid "Eʼtiborsiz"
+msgstr "Без внимания"
+
+msgid "Moslashtirilmagan"
+msgstr "Не сопоставлено"
+
+msgid "Moslashtirildi"
+msgstr "Сопоставлено"
+
+msgid "Faylni oʻqib boʻlmadi — Excel (.xlsx) yoki CSV yuboring."
+msgstr "Не удалось прочитать файл — отправьте Excel (.xlsx) или CSV."
+
+msgid "Faylda ustun sarlavhalari topilmadi."
+msgstr "В файле не найдены заголовки столбцов."
+
+msgid "Summa oʻqilmadi: {value}."
+msgstr "Не удалось прочитать сумму: {value}."
+
+msgid "Ustun topilmadi: {name}."
+msgstr "Столбец не найден: {name}."
+
+msgid "Sana ustunini tanlang."
+msgstr "Выберите столбец даты."
+
+msgid "Summa yoki debet/kredit ustunlarini tanlang."
+msgstr "Выберите столбец суммы или дебета/кредита."
+
+msgid "Koʻchirma faqat bank hisobiga yuklanadi."
+msgstr "Выписка загружается только на банковский счёт."
+
+msgid "Faylda summa va sanasi bor qator topilmadi."
+msgstr "В файле нет строк с суммой и датой."
+
+msgid "Faqat chiqim qatoridan xarajat yaratiladi."
+msgstr "Расход создаётся только из строки списания."
+
+msgid "Toifa topilmadi."
+msgstr "Категория не найдена."
+
+msgid "Faqat kirim qatoridan toʻlov yaratiladi."
+msgstr "Оплата создаётся только из строки поступления."
+
+msgid "Ustunlar moslashtirilmagan."
+msgstr "Столбцы не сопоставлены."
+
+msgid "Qator topilmadi."
+msgstr "Строка не найдена."
+
+msgid "Toifani tanlang."
+msgstr "Выберите категорию."

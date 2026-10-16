@@ -70,7 +70,7 @@ def account_balances(
     ]
 
 
-def account_balance(*, account_id: Any) -> Decimal:
+def account_balance(*, account_id: Any, up_to: Any = None) -> Decimal:
     """
     Bitta qopdagi pul — Σ kirim − Σ chiqim.
 
@@ -78,9 +78,11 @@ def account_balance(*, account_id: Any) -> Decimal:
     javob — Decimal. U chiqim yozishdan OLDIN tekshirish uchun kerak
     (ADR-29), shuning uchun u imkon qadar arzon boʻlishi kerak.
     """
-    return CashMovement.objects.filter(cash_account_id=account_id).aggregate(total=_signed_sum())[
-        "total"
-    ] or Decimal("0")
+    movements = CashMovement.objects.filter(cash_account_id=account_id)
+    if up_to is not None:
+        # Ko'chirma qoldig'i bilan solishtirish — o'sha lahzadagi qoldiq (13.3d).
+        movements = movements.filter(occurred_at__lte=up_to)
+    return movements.aggregate(total=_signed_sum())["total"] or Decimal("0")
 
 
 def total_balance(*, organization_id: Any, branch_id: Any = None) -> Decimal:

@@ -177,6 +177,7 @@ _ACTION_REPORT: dict[str, str] = {
     "pnl": "finance",
     "cash_flow": "finance",
     "position": "finance",
+    "completeness": "monthly",
 }
 
 
@@ -260,6 +261,21 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
         year, month = self._year_month(request)
         return Response(
             money.cash_flow(
+                organization_id=request_user(request).organization_id,
+                year=year,
+                month=month,
+                branch_id=self.branch_for(request, request.query_params.get("branch")),
+            )
+        )
+
+    @action(detail=False)
+    def completeness(self, request: Request) -> Response:
+        """`GET /reports/completeness?year=&month=` — ma'lumot to'liqligi (13.3e)."""
+        from apps.reports import money
+
+        year, month = self._year_month(request)
+        return Response(
+            money.data_completeness(
                 organization_id=request_user(request).organization_id,
                 year=year,
                 month=month,

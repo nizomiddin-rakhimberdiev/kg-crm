@@ -9,6 +9,8 @@ from rest_framework import serializers
 
 from apps.cash.models import (
     OPERATION_SUBTYPES,
+    BankStatement,
+    BankStatementLine,
     CashAccount,
     CashCount,
     CashHandover,
@@ -25,6 +27,8 @@ __all__ = [
     "CashHandoverSerializer",
     "CashHandoverWriteSerializer",
     "CashTransferSerializer",
+    "BankStatementLineSerializer",
+    "BankStatementSerializer",
     "MoneyOperationSerializer",
     "MoneyOperationWriteSerializer",
 ]
@@ -234,3 +238,60 @@ class MoneyOperationWriteSerializer(serializers.Serializer):
         if attrs.get("subtype", "") not in OPERATION_SUBTYPES[attrs["kind"]]:
             raise serializers.ValidationError({"subtype": gettext("Bu turda bunday aniqlik yoʻq.")})
         return attrs
+
+
+class BankStatementSerializer(serializers.ModelSerializer):
+    """Yuklangan ko'chirma — qoldiq farqi bilan (Bosqich 13.3d)."""
+
+    cash_account_name = serializers.CharField(source="cash_account.name", read_only=True)
+    balance_difference = serializers.SerializerMethodField()
+    unmatched_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BankStatement
+        fields = [
+            "id",
+            "cash_account",
+            "cash_account_name",
+            "file_name",
+            "period_from",
+            "period_to",
+            "closing_balance",
+            "system_balance",
+            "balance_difference",
+            "line_count",
+            "matched_count",
+            "skipped_count",
+            "unmatched_count",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_balance_difference(self, statement: BankStatement) -> str | None:
+        if statement.closing_balance is None or statement.system_balance is None:
+            return None
+        return f"{statement.closing_balance - statement.system_balance:.2f}"
+
+    def get_unmatched_count(self, statement: BankStatement) -> int:
+        return statement.lines.filter(status="unmatched").count()
+
+
+class BankStatementLineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BankStatementLine
+        fields = [
+            "id",
+            "statement",
+            "line_no",
+            "booked_on",
+            "direction",
+            "amount",
+            "purpose",
+            "counterparty",
+            "reference",
+            "status",
+            "match_kind",
+            "matched_ids",
+            "note",
+        ]
+        read_only_fields = fields

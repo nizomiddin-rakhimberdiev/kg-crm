@@ -17,6 +17,7 @@ from apps.attendance.views_staff import StaffAttendanceViewSet
 from apps.audit.views import AuditLogViewSet
 from apps.branches.views import BranchViewSet
 from apps.cash.views import (
+    BankStatementViewSet,
     CashAccountViewSet,
     CashCountViewSet,
     CashHandoverViewSet,
@@ -73,6 +74,7 @@ router.register("cash-accounts", CashAccountViewSet, basename="cash-account")
 router.register("cash-handovers", CashHandoverViewSet, basename="cash-handover")
 router.register("cash-counts", CashCountViewSet, basename="cash-count")
 router.register("money-operations", MoneyOperationViewSet, basename="money-operation")
+router.register("bank-statements", BankStatementViewSet, basename="bank-statement")
 router.register("attendance", AttendanceViewSet, basename="attendance")
 router.register("staff-attendance", StaffAttendanceViewSet, basename="staff-attendance")
 # Kelmagan kunlar uchun qaytarish va bayram kalendari (ADR-19).

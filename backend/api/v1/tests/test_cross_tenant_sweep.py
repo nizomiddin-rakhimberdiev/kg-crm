@@ -257,6 +257,17 @@ def _create_row(tenant: Any, basename: str) -> Any:
                 name="Direktor seyfi",
                 kind=CashAccountKind.CASH,
             )
+        if basename == "bank-statement":
+            from apps.cash import services as cash_services
+            from apps.cash.models import BankStatement, CashAccount
+
+            cash_services.ensure_branch_accounts(branch=tenant.branch)
+            return BankStatement.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                cash_account=CashAccount.objects.get(branch=tenant.branch, kind="bank"),
+                file_name="vypiska.xlsx",
+            )
         if basename == "money-operation":
             from apps.cash import services as cash_services
             from apps.cash.models import MoneyOperation
