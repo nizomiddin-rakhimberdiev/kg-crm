@@ -25,12 +25,13 @@ import {
   type CardStatus,
   type HomeCard,
 } from '@/features/dashboard/api'
+import { MonthlyPack } from '@/features/finance-center/components/MonthlyPack'
 import { paymentMethodLabel } from '@/features/payments/methods'
 import { formatDate, som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
-type Tab = 'today' | 'day' | 'control'
+type Tab = 'today' | 'day' | 'control' | 'pack'
 
 const STATUS_STYLE: Record<CardStatus, string> = {
   ok: 'border-l-emerald-500',
@@ -352,12 +353,13 @@ function ControlTab() {
 export default function FinanceCenterPage() {
   const initial = new URLSearchParams(window.location.search).get('tab')
   const [tab, setTab] = useState<Tab>(
-    initial === 'control' || initial === 'day' ? (initial as Tab) : 'today',
+    initial === 'control' || initial === 'day' || initial === 'pack' ? (initial as Tab) : 'today',
   )
   const tabs: Array<[Tab, string]> = [
     ['today', t('Bugun')],
     ['day', t('Kun')],
     ['control', t('Nazorat')],
+    ['pack', t('Oylik hisobot')],
   ]
   return (
     <div className="space-y-5">
@@ -391,6 +393,7 @@ export default function FinanceCenterPage() {
       {tab === 'today' && <TodayTab />}
       {tab === 'day' && <DayTab />}
       {tab === 'control' && <ControlTab />}
+      {tab === 'pack' && <MonthlyPack />}
       <p className="text-xs text-slate-500">{formatDate(today())}</p>
     </div>
   )

@@ -519,7 +519,7 @@ const uz: Copy = {
       },
       {
         title: 'Oy oʻzi yigʻiladi va yopiladi',
-        text: 'Toifalar, imtiyozlar, qayta hisoblar, «kassa tushumi» va «oy uchun yigʻilgan» alohida — avans ikki marta sanalmaydi. Tenglik oʻzi tekshiriladi; yopilgan oy faqat tuzatish qatori bilan oʻzgaradi. Eski «oylik toʻlov jadvali» va boshqa hisobotlar — .xlsx.',
+        text: 'Har oy bir xil 16 boʻlimli hisobot: daromad zanjiri, tushum, qarzlar, xarajatlar, ish haqi, kassa koʻprigi, foyda-zarar va «foyda ≠ pul». Har raqamdan manba yozuvigacha bir bosish. PDF va Excel; oʻzgarmas nusxa — keyin nimadir oʻzgarsa, farqi raqamma-raqam koʻrinadi.',
       },
       {
         title: 'Ikki bosqichli himoya',
@@ -1086,7 +1086,7 @@ const ru: Copy = {
       },
       {
         title: 'Месяц сводится и закрывается сам',
-        text: 'Категории, льготы, перерасчёты, «поступления в кассу» и «собрано за месяц» — отдельно, аванс не считается дважды. Равенство проверяется само; закрытый месяц меняется только строкой корректировки. Привычная «месячная таблица оплат» и другие отчёты — в .xlsx.',
+        text: 'Каждый месяц одинаковый отчёт из 16 разделов: цепочка дохода, поступления, долги, расходы, зарплата, мост по кассе, прибыль и «прибыль ≠ деньги». От любой цифры — один клик до исходных записей. PDF и Excel; неизменяемая копия — если что-то изменится позже, разница видна по каждой цифре.',
       },
       {
         title: 'Двухэтапная защита',
@@ -1646,7 +1646,7 @@ const en: Copy = {
       },
       {
         title: 'The month sums and closes itself',
-        text: 'Categories, benefits, recalculations, “cash received” and “collected for the month” kept apart, so an advance is never counted twice. The equation checks itself; a closed month changes only through a correction line. The familiar monthly payment table and every other report download as .xlsx.',
+        text: 'The same 16-section report every month: revenue chain, receipts, debts, expenses, payroll, the till bridge, profit and loss and “profit ≠ cash”. One click from any number to its records. PDF and Excel; an immutable copy — if anything changes later, the difference shows number by number.',
       },
       {
         title: 'Two-step protection',

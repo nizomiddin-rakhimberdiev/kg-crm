@@ -130,7 +130,43 @@ export interface DailyView {
   attention: AttentionItem[]
 }
 
+/** Oylik hisobot paketi (Bosqich 13.5). */
+export interface PackSection {
+  key: string
+  title: string
+  [field: string]: unknown
+}
+export interface Pack {
+  period: string
+  sections: PackSection[]
+  checksum: string
+  latest_version: number | null
+  changed_since_snapshot: boolean
+}
+
 export const reportsApi = {
+  pack: (year: number, month: number) => api.get<Pack>('/reports/pack', { year, month }),
+  packSnapshot: (year: number, month: number) =>
+    api.post<{ id: string; version: number; checksum: string }>('/reports/pack/snapshot', {
+      year,
+      month,
+    }),
+  packVersions: (year: number, month: number) =>
+    api.get<Array<{ version: number; checksum: string; created_at: string; created_by: string }>>(
+      '/reports/pack/versions',
+      { year, month },
+    ),
+  packDiff: (year: number, month: number, from: number, to?: number) =>
+    api.get<{
+      changes: Array<{
+        path: string
+        before: string | null
+        after: string | null
+        delta: string | null
+      }>
+    }>('/reports/pack/diff', { year, month, from, ...(to ? { to } : {}) }),
+  packSource: (year: number, month: number, key: string) =>
+    api.get<{ rows: Array<Record<string, string>> }>('/reports/pack/source', { year, month, key }),
   home: (date?: string) =>
     api.get<{ date: string; cards: HomeCard[]; all_clear: boolean }>(
       '/reports/home',
