@@ -851,3 +851,46 @@ class TwoFactorBackupCodesView(APIView):
                 changes={"backup_codes": len(codes)},
             )
         return Response({"backup_codes": codes})
+
+
+class TelegramLinkView(APIView):
+    """
+    `GET/POST/DELETE /auth/telegram` — o'z Telegram'ini botga ulash
+    (Bosqich 13.3c): chiqimni bot orqali kiritish va egaga xabarlar.
+
+    Faqat o'z hisobi: ID qabul qilmaydi.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        user = request_user(request)
+        return Response(
+            {
+                "linked": bool(user.telegram_chat_id),
+                "linked_at": user.telegram_linked_at.isoformat()
+                if user.telegram_linked_at
+                else None,
+            }
+        )
+
+    def post(self, request: Request) -> Response:
+        from apps.accounts import telegram
+
+        user = request_user(request)
+        return Response({"link": telegram.link_url(user)})
+
+    def delete(self, request: Request) -> Response:
+        from apps.accounts import telegram
+
+        user = request_user(request)
+        telegram.unlink(user)
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="user",
+            entity_id=user.id,
+            changes={"telegram": "unlinked"},
+        )
+        return Response({"linked": False})

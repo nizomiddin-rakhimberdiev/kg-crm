@@ -106,6 +106,12 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     # ikkinchi ko'rinishini yaratardi — xotirada `None`, bazada `''`. Aynan
     # shu nomuvofiqlikni cross-tenant sweep testi ushladi.
     photo = models.ImageField(upload_to=user_photo_path, blank=True)
+    # Xodimning Telegram'i (Bosqich 13.3c): chiqimni bot orqali kiritish va
+    # (13.4) egaga darhol xabarlar. Kod tashkilotni ichida olib yuradi —
+    # ota-ona havolasi bilan bir xil yo'l (ADR-23), oldida `s_`.
+    telegram_chat_id = models.CharField(max_length=32, blank=True, db_index=True)
+    telegram_code = models.CharField(max_length=48, blank=True)
+    telegram_linked_at = models.DateTimeField(null=True, blank=True)
 
     role = models.ForeignKey(
         "accounts.Role",

@@ -115,6 +115,7 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.inventory.Product",
     "apps.inventory.ProductCategory",
     "apps.inventory.Warehouse",
+    "apps.expenses.ExpenseDraft",
     "apps.expenses.ExpenseItem",
     "apps.expenses.Expense",
     "apps.expenses.ExpenseCategory",

@@ -221,3 +221,38 @@ class ExpenseItem(BranchScopedModel):
 
     def __str__(self) -> str:
         return f"{self.name} {self.quantity}{self.unit} × {self.unit_price}"
+
+
+class ExpenseDraft(BranchScopedModel):
+    """
+    Telegram'dan kelgan chiqim — toifa tanlanguncha (Bosqich 13.3c).
+
+    Bot holatsiz: tugma `x:<qoralama>:<raqam>` ni qaytaradi va qoralama
+    taklif qilingan toifalar ro'yxatini saqlaydi. Tugma ikki marta
+    bosilsa ham chiqim bitta — `expense` to'lgan bo'ladi.
+    """
+
+    user = models.ForeignKey(
+        "accounts.User", on_delete=models.CASCADE, related_name="expense_drafts"
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    note = models.CharField(max_length=255, blank=True)
+    photo_file_id = models.CharField(max_length=255, blank=True)
+    category_ids = models.JSONField(default=list)
+    expense = models.ForeignKey(
+        "expenses.Expense",
+        on_delete=models.SET_NULL,
+        related_name="drafts",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "expense_draft"
+        ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name="ck_expense_draft_amount")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.amount} ({self.user_id})"

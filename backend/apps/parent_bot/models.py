@@ -28,6 +28,9 @@ __all__ = ["ContactKind", "ContactIndex"]
 class ContactKind(models.TextChoices):
     PHONE = "phone", "Phone"
     CHAT = "chat", "Telegram chat"
+    # Xodimning suhbati (Bosqich 13.3c) — ota-onanikidan alohida, bot uni
+    # vasiy deb adashmasin.
+    STAFF = "staff", "Staff Telegram chat"
 
 
 class ContactIndex(TenantScopedModel):
@@ -41,7 +44,8 @@ class ContactIndex(TenantScopedModel):
                 fields=["kind", "digest", "organization"], name="uq_contact_index_entry"
             ),
             models.CheckConstraint(
-                condition=models.Q(kind__in=["phone", "chat"]), name="ck_contact_index_kind"
+                condition=models.Q(kind__in=["phone", "chat", "staff"]),
+                name="ck_contact_index_kind",
             ),
         ]
         indexes = [models.Index(fields=["kind", "digest"], name="ix_contact_index_lookup")]

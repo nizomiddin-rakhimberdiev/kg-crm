@@ -15,6 +15,7 @@ from apps.accounts.views_auth import (
     ProfilePhotoView,
     RefreshView,
     SelectOrganizationView,
+    TelegramLinkView,
     TwoFactorBackupCodesView,
     TwoFactorConfirmView,
     TwoFactorDisableView,
@@ -52,6 +53,7 @@ auth_patterns = [
     path("auth/logout", LogoutView.as_view(), name="auth-logout"),
     path("auth/me", MeView.as_view(), name="auth-me"),
     path("auth/me/photo", ProfilePhotoView.as_view(), name="auth-me-photo"),
+    path("auth/telegram", TelegramLinkView.as_view(), name="auth-telegram"),
     path("auth/password/change", PasswordChangeView.as_view(), name="auth-password-change"),
     # Parolni tiklash — standalone nusxada ham kerak (ADR-13): u
     # vendor xizmati emas, hisobning o'ziga tegishli amal.
