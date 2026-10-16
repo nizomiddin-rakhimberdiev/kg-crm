@@ -8,7 +8,10 @@ qayerdan?" degan savolni javobsiz qoldirardi.
 
 from __future__ import annotations
 
+import uuid
 from decimal import Decimal
+from pathlib import PurePosixPath
+from typing import Any
 
 from django.db import models
 from django.utils.translation import gettext_lazy
@@ -42,6 +45,12 @@ class ExpenseCategory(BranchScopedModel):
 
     def __str__(self) -> str:
         return self.name
+
+
+def expense_receipt_path(instance: Any, filename: str) -> str:
+    """`media/{organization}/receipts/{uuid}.{ext}` — nom taxmin qilinmasin."""
+    suffix = PurePosixPath(filename).suffix.lower() or ".jpg"
+    return f"{instance.organization_id}/receipts/{uuid.uuid4()}{suffix}"
 
 
 class ExpenseStatus(models.TextChoices):
@@ -129,6 +138,9 @@ class Expense(BranchScopedModel):
     # Pul haqiqatan qachon chiqdi. Nasiyada — to'langanda; oddiy chiqimda —
     # `expense_date`. Eski yozuvlarda `NULL` = `expense_date`.
     paid_on = models.DateField(null=True, blank=True)
+    # Chek rasmi yoki PDF (Bosqich 13.3a) — "ma'lumot to'liqligi" va
+    # "hujjatsiz katta xarajat" nazorati shundan o'qiydi.
+    receipt = models.FileField(upload_to=expense_receipt_path, blank=True)
 
     class Meta:
         db_table = "expense"

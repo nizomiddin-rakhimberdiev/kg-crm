@@ -1831,3 +1831,12 @@ msgstr "`payment_ids` должен быть списком."
 
 msgid "Toʻlov topilmadi."
 msgstr "Оплата не найдена."
+
+msgid "Kupyura — musbat butun son: {note}."
+msgstr "Купюра — положительное целое число: {note}."
+
+msgid "Sanoq summasini yoki kupyuralarni kiriting."
+msgstr "Введите сумму пересчёта или купюры."
+
+msgid "Kupyuralar yigʻindisi {notes} — kiritilgan sanoq {counted} bilan mos emas."
+msgstr "Сумма купюр {notes} не совпадает с введённым пересчётом {counted}."

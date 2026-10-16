@@ -370,9 +370,10 @@ class CashCountViewSet(BranchScopedMixin, TenantViewSet):
         data = payload.validated_data
         count = services.close_day(
             account=data["cash_account"],
-            counted=data["counted"],
+            counted=data.get("counted"),
             reason=data.get("reason", ""),
             created_by=user,
+            denominations=data.get("denominations"),
         )
         audit.record(
             action="create",

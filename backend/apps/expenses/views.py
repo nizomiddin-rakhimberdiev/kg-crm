@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import PurePosixPath
 from typing import Any
 
-from django.http import Http404
+from django.db.models import F, Max
+from django.http import FileResponse, Http404
 from django.utils.translation import gettext
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -39,6 +42,18 @@ class ExpenseCategoryViewSet(BranchScopedMixin, TenantViewSet):
     serializer_class = ExpenseCategorySerializer
     search_fields = ["name"]
 
+    def get_base_queryset(self) -> Any:
+        # Oxirgi ishlatilgan sana — `?ordering=recent` bilan tepada (13.3a).
+        queryset = (
+            super()
+            .get_base_queryset()
+            .select_related("parent")
+            .annotate(last_used_at=Max("expenses__created_at"))
+        )
+        if self.request.query_params.get("ordering") == "recent":
+            queryset = queryset.order_by(F("last_used_at").desc(nulls_last=True), "name")
+        return queryset
+
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """
         Toifasi umuman yo'q filialga sukut ro'yxat ochiladi (Bosqich 13.2a).
@@ -69,6 +84,8 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
         "approve": "approve",
         "reject": "approve",
         "mark_paid": "update",
+        "receipt": "update",
+        "receipt_download": "read",
         "summary": "read",
     }
     model = Expense
@@ -253,6 +270,41 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
         )
         expense.refresh_from_db()
         return Response(ExpenseSerializer(expense).data)
+
+    MAX_RECEIPT_BYTES = 10 * 1_048_576
+    RECEIPT_SUFFIXES = (".jpg", ".jpeg", ".png", ".webp", ".heic", ".pdf")
+
+    @action(detail=True, methods=["post"], parser_classes=[MultiPartParser])
+    def receipt(self, request: Request, pk: str | None = None) -> Response:
+        """`POST /expenses/{id}/receipt` — chek rasmi yoki PDF (Bosqich 13.3a)."""
+        expense = self.get_object()
+        uploaded = request.FILES.get("file")
+        if uploaded is None:
+            raise BusinessRuleViolation(gettext("Fayl yuborilmagan."))
+        if uploaded.size > self.MAX_RECEIPT_BYTES:
+            raise BusinessRuleViolation(gettext("Fayl 10 MB dan kichik boʻlishi kerak."))
+        if PurePosixPath(str(uploaded.name)).suffix.lower() not in self.RECEIPT_SUFFIXES:
+            raise BusinessRuleViolation(gettext("PDF yoki rasm (JPG, PNG, WEBP) yuboring."))
+        expense.receipt.save(uploaded.name, uploaded, save=False)
+        expense.save(update_fields=["receipt", "updated_at"])
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="expense",
+            entity_id=expense.id,
+            changes={"receipt": expense.receipt.name.rsplit("/", 1)[-1]},
+        )
+        return Response(ExpenseSerializer(expense).data)
+
+    @action(detail=True, methods=["get"], url_path="receipt/download")
+    def receipt_download(self, request: Request, pk: str | None = None) -> FileResponse:
+        """Chek shu endpoint orqali — `/media/` havolasi tenantni bilmaydi."""
+        expense = self.get_object()
+        if not expense.receipt:
+            raise Http404
+        name = expense.receipt.name.rsplit("/", 1)[-1]
+        return FileResponse(expense.receipt.open("rb"), filename=name)
 
     @action(detail=True, methods=["post"], url_path="mark-paid")
     def mark_paid(self, request: Request, pk: str | None = None) -> Response:

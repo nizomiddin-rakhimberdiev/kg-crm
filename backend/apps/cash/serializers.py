@@ -154,6 +154,7 @@ class CashCountSerializer(serializers.ModelSerializer):
             "counted",
             "difference",
             "reason",
+            "denominations",
             "created_by_name",
             "created_at",
         ]
@@ -162,8 +163,28 @@ class CashCountSerializer(serializers.ModelSerializer):
 
 class CashCountWriteSerializer(serializers.Serializer):
     cash_account_id = TenantPrimaryKeyRelatedField(model=CashAccount, source="cash_account")
-    counted = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=0)
+    counted = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=0, required=False)
     reason = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    denominations = serializers.DictField(
+        child=serializers.IntegerField(min_value=0), required=False
+    )
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        notes = attrs.get("denominations") or {}
+        for note in notes:
+            if not str(note).isdigit() or int(note) <= 0:
+                raise serializers.ValidationError(
+                    {
+                        "denominations": gettext("Kupyura — musbat butun son: {note}.").format(
+                            note=note
+                        )
+                    }
+                )
+        if not notes and attrs.get("counted") is None:
+            raise serializers.ValidationError(
+                {"counted": gettext("Sanoq summasini yoki kupyuralarni kiriting.")}
+            )
+        return attrs
 
 
 class MoneyOperationSerializer(serializers.ModelSerializer):

@@ -23,6 +23,8 @@ class ExpenseCategorySerializer(serializers.ModelSerializer):
         model=ExpenseCategory, source="parent", required=False, allow_null=True
     )
     parent_name = serializers.CharField(source="parent.name", read_only=True, default=None)
+    # Oxirgi ishlatilgan — tezkor kiritishda tepada (Bosqich 13.3a).
+    last_used_at = serializers.DateTimeField(read_only=True, default=None)
 
     class Meta:
         model = ExpenseCategory
@@ -33,9 +35,10 @@ class ExpenseCategorySerializer(serializers.ModelSerializer):
             "parent_name",
             "account_code",
             "is_active",
+            "last_used_at",
             "created_at",
         ]
-        read_only_fields = ["id", "parent_name", "created_at"]
+        read_only_fields = ["id", "parent_name", "last_used_at", "created_at"]
 
     def validate_parent_id(self, parent: ExpenseCategory | None) -> ExpenseCategory | None:
         if parent is not None and parent.parent_id is not None:
@@ -77,6 +80,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
     items = ExpenseItemSerializer(many=True, read_only=True)
     period = serializers.SerializerMethodField()
     supplier_name = serializers.CharField(source="supplier.name", read_only=True, default=None)
+    has_receipt = serializers.SerializerMethodField()
 
     class Meta:
         model = Expense
@@ -94,6 +98,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
             "supplier_name",
             "due_date",
             "paid_on",
+            "has_receipt",
             "description",
             "items",
             "status",
@@ -105,6 +110,9 @@ class ExpenseSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = fields
+
+    def get_has_receipt(self, expense: Expense) -> bool:
+        return bool(expense.receipt)
 
     def get_period(self, expense: Expense) -> str:
         """Tegishli oy — `NULL` bo'lsa to'langan oy (eski yozuvlar)."""

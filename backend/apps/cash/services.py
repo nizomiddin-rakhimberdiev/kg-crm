@@ -461,7 +461,12 @@ def reject_handover(*, handover: CashHandover, user: Any, reason: str) -> CashHa
 
 @transaction.atomic
 def close_day(
-    *, account: CashAccount, counted: Decimal, reason: str = "", created_by: Any = None
+    *,
+    account: CashAccount,
+    counted: Decimal | None = None,
+    reason: str = "",
+    created_by: Any = None,
+    denominations: dict[str, int] | None = None,
 ) -> CashCount:
     """
     Kun yopilishi: jismoniy sanoq tizimdagi qoldiq bilan solishtiriladi.
@@ -472,6 +477,20 @@ def close_day(
     """
     from apps.cash.selectors import account_balance
 
+    notes = {str(int(note)): int(count) for note, count in (denominations or {}).items() if count}
+    if notes:
+        by_notes = _money(
+            sum((Decimal(note) * count for note, count in notes.items()), Decimal("0"))
+        )
+        if counted is not None and _money(counted) != by_notes:
+            raise BusinessRuleViolation(
+                gettext(
+                    "Kupyuralar yigʻindisi {notes} — kiritilgan sanoq {counted} bilan mos emas."
+                ).format(notes=_som(by_notes), counted=_som(_money(counted)))
+            )
+        counted = by_notes
+    if counted is None:
+        raise BusinessRuleViolation(gettext("Sanoq summasini yoki kupyuralarni kiriting."))
     counted = _money(counted)
     if counted < 0:
         raise BusinessRuleViolation(gettext("Sanoq manfiy boʻlishi mumkin emas."))
@@ -499,6 +518,7 @@ def close_day(
         counted=counted,
         difference=difference,
         reason=reason,
+        denominations=notes,
         created_by=created_by,
     )
     if difference != 0:

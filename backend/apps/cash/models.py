@@ -227,6 +227,9 @@ class CashCount(BranchScopedModel):
     # counted − system_balance: manfiy — kamomad, musbat — ortiqcha.
     difference = models.DecimalField(max_digits=14, decimal_places=2)
     reason = models.CharField(max_length=255, blank=True)
+    # Kupyuralar bo'yicha sanoq (Bosqich 13.3b): {"200000": 5, ...}.
+    # Ixtiyoriy; berilsa `counted` — aynan shularning yig'indisi.
+    denominations = models.JSONField(default=dict, blank=True)
     created_by = models.ForeignKey(
         "accounts.User",
         on_delete=models.SET_NULL,

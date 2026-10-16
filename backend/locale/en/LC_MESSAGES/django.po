@@ -1831,3 +1831,12 @@ msgstr "`payment_ids` must be a list."
 
 msgid "Toʻlov topilmadi."
 msgstr "Payment not found."
+
+msgid "Kupyura — musbat butun son: {note}."
+msgstr "A note must be a positive whole number: {note}."
+
+msgid "Sanoq summasini yoki kupyuralarni kiriting."
+msgstr "Enter the counted total or the notes."
+
+msgid "Kupyuralar yigʻindisi {notes} — kiritilgan sanoq {counted} bilan mos emas."
+msgstr "The notes add up to {notes}, not the entered count of {counted}."
