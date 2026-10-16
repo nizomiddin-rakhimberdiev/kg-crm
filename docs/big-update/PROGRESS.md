@@ -2148,3 +2148,41 @@ Egasining 2026-10-16 brifi; audit va reja tasdiqlandi (PLAN Bosqich 13,
 * Topilgan: paket ruxsati notoʻgʻri lugʻatga yozilgan edi — test bilan
   tuzatildi (menejer `reports.read` bilan paketni ocholmaydi).
 
+
+### 13.6 Boshqaruv modellari A / B / C
+
+* Filial (yoki tashkilot) sozlamasi `governance.model`: **A** — ega
+  tekshiruvlardan keyin "Tasdiqladim"; **B** — boshqaruvchi topshiradi,
+  rahbar raqam yonida savol beradi, sabab bilan qaytaradi yoki qabul
+  qiladi (`governance.acceptors`: ega yoki ega + direktor, har biri
+  alohida); **C** — har filial B kabi, konsolidatsiyani ega hamma filial
+  qabul qilingandan keyin tasdiqlaydi. Raqamlar modelga bogʻliq emas
+  (test 1).
+* Topshirish sharti: har qizil tekshiruv va har "Diqqat" bandida izoh.
+  Holatlar: Qoralama → Topshirildi → Savol bor → Qaytarildi / Qayta
+  topshirildi → Qabul qilindi; "Tekshiruvdan oʻtdi" — jonli shart.
+* Topshirilgan nusxa bazada muzlatilgan (trigger; faqat purge/reset
+  oʻchira oladi). Tarix `report_event` da, oʻchmaydi; kim ochgani — audit.
+* Muddat — keyingi oyning 5-sanasi (`governance.deadline_day`); oʻtsa,
+  rahbarlarga bir marta Telegram eslatma (`reports.remind_late_reports`,
+  har kuni 09:15). Topshirish, savol, qaytarish va qabul ham xabar beradi.
+* Ulashish: faqat oʻqish uchun, 1–90 kunlik havola — muzlatilgan versiya,
+  suv belgili PDF; token bazada faqat xesh, har ochilish sanaladi.
+* Tarmoq: filiallar yonma-yon (bandlik, bir boladan, yigʻish, ish haqi
+  ulushi, marja, bola-kun oziq-ovqat, Diqqat), eng yaxshi / eng yomon
+  belgilangan. Konsolidatsiyada filiallararo oʻtkazma chiqarib tashlanadi
+  (test 18).
+* Yangi ruxsat `reports.finance` (ADR-42): Moliya markazi faqat jami
+  summalar bilan — ega uni boshqaruvchiga beradi, xodim nomi bilan
+  oylik `payroll.read` da qoladi. `payroll.read` ham ochadi, shuning
+  uchun mavjud rollar hech narsa yoʻqotmaydi; mavjud tashkilotlarda
+  rollarga hech narsa yozilmadi.
+* Ekran: Moliya markazi → "Oylik hisobot" tepasida jarayon paneli;
+  Sozlamalar → "Oylik hisobotni topshirish". Landing: "Rollar" va
+  "Filiallar" kartalari (3 tilda).
+* Qabul testlari **1, 9, 16, 17, 18** yashil (29 backend, 4 frontend).
+* Default, egasi tasdiqlaydi: model A, qabul qiluvchi — ega, muddat 5-sana.
+* Qolgani: tashqi buxgalter va tarbiyachi rollari tizim roli sifatida
+  qoʻshilmadi — ega ularni oʻzi yaratadi (koʻrish + eksport; moliyasiz).
+  Maker-checker (ixtiyoriy tasdiqlash) — keyinroq; darhol xabarlar
+  13.4 dan beri ishlaydi.
