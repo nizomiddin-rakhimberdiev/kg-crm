@@ -328,6 +328,10 @@ export const paymentsApi = {
 
   reverse: (id: string, reason: string) => api.post<Payment>(`/payments/${id}/reverse`, { reason }),
 
+  /** Avansni ota-onaga qaytarish (Bosqich 13.2b) — faqat ishlatilmagan qismi. */
+  refund: (id: string, payload: { amount: string; cash_account_id: string; reason: string }) =>
+    api.post<{ id: string; amount: string }>(`/payments/${id}/refund`, payload),
+
   /**
    * Bolaning balansi va ochiq hujjatlari — FIFO tartibida.
    *

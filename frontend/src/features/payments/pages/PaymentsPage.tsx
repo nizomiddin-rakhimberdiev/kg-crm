@@ -8,11 +8,23 @@
 
 import { useState } from 'react'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Ban, FileText, Pencil, Plus, Printer, Search, Trash2, Users, Wallet } from 'lucide-react'
+import {
+  Ban,
+  FileText,
+  Pencil,
+  Plus,
+  Printer,
+  Search,
+  Trash2,
+  Undo2,
+  Users,
+  Wallet,
+} from 'lucide-react'
 import { DateInput } from '@/components/ui/DateInput'
 import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { paymentsApi, tariffsApi, type BoardRow } from '@/features/payments/api'
 import { GenerateInvoicesDialog } from '@/features/payments/components/GenerateInvoicesDialog'
+import { RefundModal } from '@/features/payments/components/RefundModal'
 import { ReceiptModal } from '@/features/payments/components/ReceiptModal'
 import { TakePaymentModal } from '@/features/payments/components/TakePaymentModal'
 import { ALL_PAYMENT_METHODS, paymentMethodLabel } from '@/features/payments/methods'
@@ -89,6 +101,8 @@ export default function PaymentsPage() {
   // Qaytarish sababi so'raladigan to'lov.
   const [reversing, setReversing] = useState<Payment | null>(null)
   const [reverseReason, setReverseReason] = useState('')
+  // Avansni ota-onaga qaytarish (Bosqich 13.2b).
+  const [refunding, setRefunding] = useState<Payment | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   // Sahifalar `useInfiniteQuery` bilan yig'iladi — qo'lda emas.
@@ -272,6 +286,8 @@ export default function PaymentsPage() {
       </Modal>
 
       {receiptFor && <ReceiptModal paymentId={receiptFor} onClose={() => setReceiptFor(null)} />}
+
+      {refunding && <RefundModal payment={refunding} onClose={() => setRefunding(null)} />}
 
       {generating && (
         <GenerateInvoicesDialog
@@ -698,18 +714,31 @@ export default function PaymentsPage() {
                           </span>
                         ) : (
                           can('payments.update') && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setReversing(payment)
-                                setReverseReason('')
-                              }}
-                              title={t('Qaytarish')}
-                              aria-label={t('Qaytarish')}
-                              className="rounded-lg p-1.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
-                            >
-                              <Ban className="h-4 w-4" />
-                            </button>
+                            <>
+                              {!ownOnly && (
+                                <button
+                                  type="button"
+                                  onClick={() => setRefunding(payment)}
+                                  title={t('Ota-onaga pul qaytarish')}
+                                  aria-label={t('Ota-onaga pul qaytarish')}
+                                  className="mr-1 rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                                >
+                                  <Undo2 className="h-4 w-4" />
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setReversing(payment)
+                                  setReverseReason('')
+                                }}
+                                title={t('Qaytarish')}
+                                aria-label={t('Qaytarish')}
+                                className="rounded-lg p-1.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
+                              >
+                                <Ban className="h-4 w-4" />
+                              </button>
+                            </>
                           )
                         )}
                       </td>

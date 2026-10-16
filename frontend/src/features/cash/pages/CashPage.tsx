@@ -22,6 +22,8 @@ import { AlertTriangle, ArrowLeftRight, Check, HandCoins, Lock, X } from 'lucide
 import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { QueryError } from '@/components/ui/QueryError'
 import { cashApi, type CashHandover } from '@/features/cash/api'
+import { InTransitPanel } from '@/features/cash/components/InTransitPanel'
+import { MoneyOperationsPanel } from '@/features/cash/components/MoneyOperationsPanel'
 import { invalidateMoney } from '@/lib/api/invalidate'
 import { ApiError } from '@/lib/api/types'
 import { formatDate, money, som } from '@/lib/format'
@@ -302,6 +304,14 @@ export default function CashPage() {
                     >
                       {som(pot.balance)}
                     </p>
+                    {Number(pot.in_transit ?? 0) > 0 && (
+                      <p className="mt-1 text-xs text-slate-600">
+                        {t('Tushgan {arrived} · yoʻlda {transit}', {
+                          arrived: som(pot.arrived ?? pot.balance),
+                          transit: som(pot.in_transit ?? 0),
+                        })}
+                      </p>
+                    )}
                     {negative && (
                       <p className="mt-1 flex items-start gap-1.5 text-xs text-red-700">
                         <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -317,6 +327,9 @@ export default function CashPage() {
           )}
         </section>
       )}
+
+      {/* Yoʻldagi pul (Bosqich 13.2c) — boʻlsa koʻrinadi. */}
+      <InTransitPanel canSettle={canManage} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Kimning qoʻlida */}
@@ -743,6 +756,8 @@ export default function CashPage() {
           </ul>
         </section>
       )}
+      {/* Subsidiya, egaga toʻlov, kredit, soliq (Bosqich 13.2b). */}
+      {canManage && <MoneyOperationsPanel />}
     </div>
   )
 }

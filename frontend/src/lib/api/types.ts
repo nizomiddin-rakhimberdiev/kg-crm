@@ -796,6 +796,9 @@ export interface CashAccountBalance {
   kind: 'cash' | 'terminal' | 'bank' | 'ewallet'
   branch_id?: string
   balance: string
+  /** Bosqich 13.2c: bankka tushgani va hali yoʻldagisi. */
+  arrived?: string
+  in_transit?: string
 }
 
 /** Davr ichida qopga kirgan va undan chiqqan pul. */

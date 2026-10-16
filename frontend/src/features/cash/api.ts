@@ -59,6 +59,39 @@ export interface CustodyRow {
   amount: string
 }
 
+/** Bankka hali tushmagan terminal/Click/Payme puli (Bosqich 13.2c). */
+export interface InTransitRow {
+  payment_id: string
+  child: string
+  method: string
+  paid_on: string
+  amount: string
+  commission: string
+  expected_amount: string
+  expected_on: string
+  overdue: boolean
+}
+
+export type OperationKind =
+  'other_income' | 'owner_draw' | 'owner_contribution' | 'loan_in' | 'loan_repay' | 'tax_payment'
+
+/** Xarajat ham, tushum ham boʻlmagan pul harakati (Bosqich 13.2b). */
+export interface MoneyOperation {
+  id: string
+  kind: OperationKind
+  subtype: string
+  cash_account: string
+  cash_account_name: string
+  amount: string
+  occurred_on: string
+  period: string
+  counterparty: string
+  reason: string
+  tax_amount: string
+  created_by_name: string | null
+  created_at: string
+}
+
 export const cashApi = {
   accounts: () => api.list<CashAccount>('/cash-accounts', { page_size: 50 }),
   balances: () => api.get<CashAccountBalance[]>('/cash-accounts/balances'),
@@ -107,4 +140,23 @@ export const cashApi = {
   counts: () => api.list<CashCount>('/cash-counts', { page_size: 20 }),
   closeDay: (payload: { cash_account_id: string; counted: string; reason?: string }) =>
     api.post<CashCount>('/cash-counts', payload),
+
+  inTransit: () =>
+    api.get<{ items: InTransitRow[]; expected_total: string; overdue_count: number }>(
+      '/payments/in-transit',
+    ),
+  settle: (payload: { payment_ids: string[]; settled_on: string; reference?: string }) =>
+    api.post<{ count: number; expected_total: string }>('/payments/settle', payload),
+
+  operations: () => api.list<MoneyOperation>('/money-operations', { page_size: 20 }),
+  createOperation: (payload: {
+    kind: OperationKind
+    subtype?: string
+    cash_account_id: string
+    amount: string
+    occurred_on: string
+    reason: string
+    period?: string
+    counterparty?: string
+  }) => api.post<MoneyOperation>('/money-operations', payload),
 }
