@@ -2126,3 +2126,25 @@ Egasining 2026-10-16 brifi; audit va reja tasdiqlandi (PLAN Bosqich 13,
   oʻzgarish 15 %, katta xarajat xabari 5 000 000, katta imtiyoz 50 %,
   xulosa 20:00, qabul qiluvchi — egasi.
 
+### 13.5 Oylik hisobot paketi
+
+* `apps/reports/pack.py` — bitta deterministik JSON, 16 boʻlim, har oy
+  bir xil tartib; raqamlar modul selektorlaridan (ADR-41). Daromad
+  zanjiri va KPI (yigʻish, imtiyoz ulushi, bir boladan), farq omillarga
+  (bolalar soni, narx, imtiyoz, qayta hisob — yigʻindisi umumiy farqqa
+  teng), tushum matritsasi va yigʻish egri chizigʻi, qarzlar, xarajatlar
+  (oʻtgan oy, 3 oylik oʻrtacha, top-10, yetkazib beruvchilar, bir bolaga,
+  bir bola-kunga oziq-ovqat), ish haqi, qoplar koʻprigi, foyda-zarar,
+  "foyda ≠ pul" sharsharasi (aniq, "boshqa" qatorisiz), holat, soliqlar,
+  tekshiruvlar, "Diqqat", ilovalar.
+* Oʻzgarmas nusxa (`report_snapshot`, SHA-256), "oʻzgarish bor",
+  versiyalar, raqamlar darajasidagi farq; raqamdan manba yozuvlarga;
+  har ochilish auditda.
+* PDF (WeasyPrint, A4, sahifa raqami, imzo bloki) va Excel (har boʻlim
+  varaq + xom maʼlumot). Docker obraziga pango/harfbuzz/DejaVu qoʻshildi.
+* Ekran: Moliya markazi → "Oylik hisobot".
+* Qabul testlari **10, 15, 16, 19, 20** yashil (300 bola / 3 000
+  operatsiya < 3 s). Backend 1 924 test.
+* Topilgan: paket ruxsati notoʻgʻri lugʻatga yozilgan edi — test bilan
+  tuzatildi (menejer `reports.read` bilan paketni ocholmaydi).
+
