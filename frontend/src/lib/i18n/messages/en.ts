@@ -1629,5 +1629,4 @@ export const messages: Record<string, string> = {
   'Yuklash va bogʻlash': 'Upload and match',
   '{lines} qator: {matched} tasi bogʻlandi, {queue} tasi navbatda, {skipped} takror.': '{lines} lines: {matched} matched, {queue} queued, {skipped} repeats.',
   '{month} xarajati': 'Expense of {month}',
-  'Toʻlandi': 'Paid',
 }

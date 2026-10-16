@@ -85,6 +85,7 @@ UNGATED_VIEWS: dict[str, str] = {
     # Oʻz profili — pul bilan bogʻliq emas, toʻsish faqat gʻashlik.
     "MeView": "Oʻz profili.",
     "ProfilePhotoView": "Oʻz rasmi.",
+    "TelegramLinkView": "Oʻz Telegram ulanishi — xavfsizlik va xabarlar, obunaga bogʻliq emas.",
     # Vendor tekisligi (ADR-10).
     "PlatformLoginView": "Vendor tekisligi — mijoz obunasiga bogʻliq emas.",
     # Ommaviy yoʻllar: tenant hali yoʻq yoki PUL KIRIB kelyapti.
