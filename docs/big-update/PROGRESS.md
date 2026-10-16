@@ -2084,3 +2084,27 @@ Egasining 2026-10-16 brifi; audit va reja tasdiqlandi (PLAN Bosqich 13,
 * Default, buxgalter tasdiqlashi kerak: dividend soligʻi 5 %, ish haqi
   xarajati = yalpi + ijtimoiy soliq, yoʻldagi pul 1 kun.
 
+### 13.3 Kiritish qulayligi
+
+* **Tezkor chiqim** (Chiqimlar → "Tezkor chiqim"): summa, oxirgi
+  ishlatilgan toifalar tugma boʻlib, naqd/bank, chek rasmi; "Qoʻshimcha"
+  ostida sana, qaysi oy xarajati, investitsiya (+oylar), nasiya
+  (yetkazib beruvchi, muddat). Roʻyxatda nasiya/investitsiya/boshqa oy/chek
+  belgilari; nasiyani "Toʻlash".
+* **Telegram orqali chiqim**: profil → "Telegram botga ulash" (bir
+  martalik `s_` havola, ADR-23 yoʻli); botga "150 000 kartoshka" + chek
+  rasmi → toifa tugmasi → naqd kassadan chiqim, rasm biriktiriladi.
+  Topilgan nosozlik: `contact_index` dagi CHECK yangi turni jimgina rad
+  etardi (`remember` xatoni yutardi).
+* **Kun yopilishi kupyuralar boʻyicha**.
+* **Bank koʻchirmasi importi**: ustunlarni moslashtirish (sarlavhaga qarab
+  taklif), takrorni oʻtkazish, avtomatik bogʻlash (Click/Payme reestri,
+  mavjud hujjatlar ±3 kun, shartnoma raqami yoki yagona bola ismi boʻyicha
+  yangi toʻlov), navbat (eʼtiborsiz — sabab bilan, xarajat, bola toʻlovi),
+  yakuniy qoldiq farqi. ADR-39.
+* **Maʼlumot toʻliqligi**: chekli xarajat %, yopilgan kassa kunlari,
+  koʻchirma yuklanganmi, moslashtirilmagan qatorlar — oylik yigʻmada.
+* Qabul testlari **8, 9, 14** (bogʻlash qismi) yashil.
+* Hali yoʻq: bot javoblari faqat oʻzbekcha; bank namunasi kelgach
+  ustun takliflari aniqlashtiriladi.
+
