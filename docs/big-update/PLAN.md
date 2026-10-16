@@ -942,7 +942,7 @@ reminder log.
 | 13.4 ✅ (6410a9a, fbc153f) | Home (six cards), daily view, rule registry: checks + Diqqat + instant alerts + 20:00 digest | 12, 13 |
 | 13.5 ✅ (6195e0c, b946a37) | Monthly pack (16 sections) from one JSON; prev month / 3-month avg; revenue factor split; bridges; P&L ≠ cash waterfall; balance; drill-down to source rows; PDF + Excel; immutable snapshot with checksum, versions and number-level diff; report-open log | 2, 10, 15, 16, 19, 20 |
 | 13.6 ✅ (6c7a981, 9b21783) | Governance A/B/C: submit → questions → accept/return per leader, numbers read-only for the manager, deadlines, consolidation with inter-branch elimination, share links with watermark | 1, 17, 18 |
-| 13.7 | Budget vs actual, 30/60/90 forecast, safe withdrawal, KPI definitions (i), 12-month trends, annual report | 11 |
+| 13.7 ✅ (c991333, df94ac4) | Budget vs actual, 30/60/90 forecast, safe withdrawal, KPI definitions (i), 12-month trends, annual report | 11 |
 | 13.8 | Legal settings: tax presets and calendar, fiscal receipt status and coverage, employer payer + parent annual statement PDF, state support income, accountant journal export with codes | 13, 14 (statement) |
 
 Each phase: red tests first for money rules, full `ci-local.sh`, ADRs for

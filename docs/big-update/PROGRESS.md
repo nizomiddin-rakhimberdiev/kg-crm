@@ -2186,3 +2186,31 @@ Egasining 2026-10-16 brifi; audit va reja tasdiqlandi (PLAN Bosqich 13,
   qoʻshilmadi — ega ularni oʻzi yaratadi (koʻrish + eksport; moliyasiz).
   Maker-checker (ixtiyoriy tasdiqlash) — keyinroq; darhol xabarlar
   13.4 dan beri ishlaydi.
+
+### 13.7 Reja, prognoz, xavfsiz olish summasi
+
+* **Reja va fakt** (`budget_line`, RLS): daromad, boshqa daromad, ish haqi
+  va xarajat toifalari boʻyicha oylik reja; fakt `profit_and_loss` dan,
+  farq summa va % da; oʻtgan oy rejasini koʻchirish. Rejani faqat
+  `reports.update` (egasi, direktor) oʻzgartiradi.
+* **30/60/90 kunlik prognoz** — har qatori sanasi va asosi bilan:
+  joriy va kelgusi oy fakturalari × oxirgi 3 oy yigʻish darajasi;
+  toʻlanmagan oylik va soliq, kelgusi oyliklar (`forecast.pay_day`, 10) va
+  soliqlar (`forecast.tax_day`, 15) oxirgi hisob boʻyicha; nasiya muddati
+  bilan; doimiy xarajatlar oxirgi 3 oy oʻrtachasi. Eski qarzlar kirimga
+  qoʻshilmaydi (ehtiyotkor).
+* **Xavfsiz olish summasi** = kassa + bank + yoʻldagi pul − 30 kun
+  chiqimlari − zaxira (`forecast.reserve_amount`, boʻlmasa 0,5 oylik ish
+  haqi fondi). Manfiy chiqmaydi — yetishmovchilik alohida. Bosh sahifadagi
+  "Foyda" kartasida ham.
+* **Koʻrsatkichlar** brif §6 taʼriflari bilan ((i) belgisi): bandlik, bir
+  boladan, imtiyoz ulushi, yigʻish, ish haqi ulushi, bola-kun oziq-ovqat,
+  marja, zararsizlik nuqtasi, ketish, oʻrtacha qolish, bir yangi bolaga
+  marketing (`report.marketing_category`), xavfsiz olish.
+* **12 oylik trend** (grafik) va **yillik hisobot** (web, PDF, Excel).
+* Oylik paketning "Reja va prognoz" boʻlimi endi toʻla.
+* Ekran: Moliya markazi → "Reja va prognoz". Landing: oylik hisobot
+  kartasi (3 tilda).
+* Qabul testi **11** yashil (180 − 110 − 30 = 40 mln); 18 ta yangi test.
+* Default, egasi/buxgalter tasdiqlaydi: zaxira 0,5 oylik fond, oylik
+  10-sanada, soliq 15-sanada, marketing toifasi "Marketing".
