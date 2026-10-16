@@ -2108,3 +2108,21 @@ Egasining 2026-10-16 brifi; audit va reja tasdiqlandi (PLAN Bosqich 13,
 * Hali yoʻq: bot javoblari faqat oʻzbekcha; bank namunasi kelgach
   ustun takliflari aniqlashtiriladi.
 
+### 13.4 Bosh sahifa, kunlik koʻrinish, nazorat, xabarlar
+
+* **Moliya markazi** (`/finance`): *Bugun* — oltita karta (pul qayerda,
+  kim qarz, pul qayerga ketdi, foyda, hammasi joyidami, oʻsish), holat
+  rangi, (i) taʼrif, solishtirma, "Hammasi joyida" banneri; *Kun* —
+  tushum usullar boʻyicha, xarajatlar, sanoq va topshirish, yangi qarzlar,
+  kunning "Diqqat"i; *Nazorat* — tekshiruvlar va "Diqqat" oy boʻyicha.
+* **Reyestr** (`apps/intelligence/control.py`, ADR-40): 10 tekshiruv,
+  15 "Diqqat" qoidasi; chegaralar sozlamada (`control.*`).
+* **Darhol xabarlar** egaga Telegram'da (tranzaksiyadan keyin): katta
+  xarajat, katta imtiyoz, hisobdan chiqarish, storno, kassa farqi,
+  koʻchirma farqi, yopilgan oyga tuzatish. **Kunlik xulosa** — har
+  bogʻchaning oʻz soatida (sukut 20:00).
+* Qabul testi **12** yashil; 13 (fiskal chek) — 13.8 da.
+* Default, egasi/buxgalter tasdiqlaydi: hujjat chegarasi 1 000 000,
+  oʻzgarish 15 %, katta xarajat xabari 5 000 000, katta imtiyoz 50 %,
+  xulosa 20:00, qabul qiluvchi — egasi.
+
