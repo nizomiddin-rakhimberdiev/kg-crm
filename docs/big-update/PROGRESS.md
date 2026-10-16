@@ -2214,3 +2214,37 @@ Egasining 2026-10-16 brifi; audit va reja tasdiqlandi (PLAN Bosqich 13,
 * Qabul testi **11** yashil (180 − 110 − 30 = 40 mln); 18 ta yangi test.
 * Default, egasi/buxgalter tasdiqlaydi: zaxira 0,5 oylik fond, oylik
   10-sanada, soliq 15-sanada, marketing toifasi "Marketing".
+
+### 13.8 Qonunchilik sozlamalari
+
+* **Soliq rejimi presetlari** (PQ-403, umumiy, aylanma): bir bosishda JShDS
+  12 %, INPS 0,1 %, ijtimoiy soliq 12 %, dividend 5 % (aylanma — 4 %).
+  Har biri keyin oddiy sozlama; PF-19 bo'yicha 1 yoki 5 % qo'lda.
+* **Soliq taqvimi** (`tax_obligation`): oylik hisobi, dividend va aylanma
+  daromaddan o'zi; muddat keyingi oyning 15-sanasi; holat (kutilmoqda /
+  yaqin / o'tdi / to'landi); "To'lash" — qopdan `tax_payment`. Eslatma
+  3 kun oldin va muddat o'tganda bir martadan (`reports.remind_taxes`).
+* **Fiskal chek** (`payment_fiscal`): naqd va terminalda bog'cha chek
+  raqami yoki QR yozadi; Click/Payme — to'lov tizimi cheki; turi (avans /
+  sotuv / kredit) to'lov qaysi oyni yopganidan. Nazorat `fiscal.control_from`
+  dan (sukut 2026-11-01) — tekshiruv va bitta jami "Diqqat" bandi; paketda
+  qoplanganlik.
+* **Ish beruvchi to'lovchi**: kassada qo'lda (nomi, STIR) yoki bank
+  ko'chirmasidan o'zi (kontragent STIR'i yoki MChJ/AJ/... shakli).
+* **Ota-onaga yillik ma'lumotnoma** (PDF): oyma-oy to'langan, qaytarilgan va
+  JShDS imtiyozi limiti ichida (sukut 3 000 000/oy), to'lovchilar STIR bilan.
+* **Davlat ko'magi**: boshqa daromad turlari — subsidiya, pedagoglar oyligi
+  qoplanishi, kommunal kompensatsiya.
+* **Buxgalter jurnali** (Excel/CSV): hisoblashlar va oyning har pul
+  harakati Dt/Kt kodlari bilan; kassa va bank aylanmasi qoplar harakatiga
+  tiyinigacha teng. Kodlar sozlamada, toifaning o'z kodi ustun.
+* Ekranlar: To'lovlar → chek tugmasi; kassa formasi → "Ota-onaning ish
+  beruvchisi"; bola sahifasi → yillik ma'lumotnoma; Sozlamalar → soliq
+  rejimi, prognoz, soliq, fiskal, hisob kodlari; Moliya markazi → "Soliq".
+  Landing: "Soliq, chek va buxgalter" kartasi (3 tilda).
+* Qabul testlari **13, 14** yashil; 28 ta yangi test.
+* Buxgalter tasdiqlashi kerak: hamma stavkalar, ota-ona limiti 3 000 000,
+  soliq kuni 15, hisob kodlari (5010, 5110, 4010, 6310, 6710, 6410, 9030 —
+  brifdan; 6010, 9420, 0100, 9390, 8710, 8330, 6810 — taklif).
+* Qolgani: virtual kassa integratsiyasi, subsidiyani davomatdan hisoblash,
+  har oy uchun to'lov schyoti PDF.
