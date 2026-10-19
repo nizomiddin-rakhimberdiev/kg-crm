@@ -2269,3 +2269,8 @@ ko'rib chiqildi, lekin qurilmadi (PLAN, `fc63e49`).
   ("Tugʻilgan sana") tanilmasdi — tuzatildi, test bilan.
 * Landing: "Bola qo'shish va Excel'dan ko'chirish" kartasi (3 tilda).
 * 13 ta yangi test.
+* Mijoz so'rovi (2026-10-19): natija varonka ko'rinishida — eng ko'p bola
+  keltirgan manba tepada eng keng tasma, pastga qarab torayadi, har biri
+  brend ketma-ketligidagi boshqa rangda; ochilganda pastdan tepaga
+  ketma-ket chiqadi (harakatni kamaytirish sozlamasida — animatsiyasiz).
+  Javobsizlar varonkaga kirmaydi, pastda alohida qator.

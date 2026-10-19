@@ -1832,11 +1832,10 @@ export const messages: Record<string, string> = {
   'Davrda qoʻshilgan bolalar — oila bogʻcha haqida qayerdan bilgani boʻyicha.': 'Children added in the period, by where the family heard about the kindergarten.',
   'Facebook': 'Facebook',
   'Google / sayt': 'Google / website',
-  'Hozir ham bogʻchada': 'Still enrolled',
   'Instagram': 'Instagram',
-  'Manba': 'Source',
   'Qayerdan — aniqroq': 'Where exactly',
   'Tanish-bilish tavsiyasi': 'Recommended by friends',
-  'Ulush': 'Share',
   'Yonidan oʻtib qolgan': 'Walked past',
+  'hozir {n}': '{n} now',
+  'Koʻrsatilmagan: {n} bola ({share}%) — varonkaga kirmaydi.': 'Not specified: {n} children ({share}%) — not part of the funnel.',
 }

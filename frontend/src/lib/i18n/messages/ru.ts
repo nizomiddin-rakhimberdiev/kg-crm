@@ -1828,11 +1828,10 @@ export const messages: Record<string, string> = {
   'Davrda qoʻshilgan bolalar — oila bogʻcha haqida qayerdan bilgani boʻyicha.': 'Дети, добавленные за период, — по тому, откуда семья узнала о детском саде.',
   'Facebook': 'Facebook',
   'Google / sayt': 'Google / сайт',
-  'Hozir ham bogʻchada': 'Сейчас в детсаду',
   'Instagram': 'Instagram',
-  'Manba': 'Источник',
   'Qayerdan — aniqroq': 'Откуда — подробнее',
   'Tanish-bilish tavsiyasi': 'По рекомендации знакомых',
-  'Ulush': 'Доля',
   'Yonidan oʻtib qolgan': 'Проходили мимо',
+  'hozir {n}': 'сейчас {n}',
+  'Koʻrsatilmagan: {n} bola ({share}%) — varonkaga kirmaydi.': 'Не указано: {n} детей ({share}%) — в воронку не входят.',
 }
