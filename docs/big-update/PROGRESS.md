@@ -2248,3 +2248,24 @@ Egasining 2026-10-16 brifi; audit va reja tasdiqlandi (PLAN Bosqich 13,
   brifdan; 6010, 9420, 0100, 9390, 8710, 8330, 6810 — taklif).
 * Qolgani: virtual kassa integratsiyasi, subsidiyani davomatdan hisoblash,
   har oy uchun to'lov schyoti PDF.
+
+## Bosqich 14 — "Qayerdan eshitgan"
+
+Mijoz "sotuv varonkasi" so'radi; aniqlashtirilganda kerakli narsa — yangi
+bola qo'shilayotganda oila bog'cha haqida qayerdan eshitganini yozish va shu
+bo'yicha statistika. To'liq qabul varonkasi rejalashtirildi va tanqidiy
+ko'rib chiqildi, lekin qurilmadi (PLAN, `fc63e49`).
+
+* `child.heard_from` (qat'iy ro'yxat: Instagram, Telegram, Facebook,
+  Google/sayt, tanish-bilish, aka-uka shu yerda, banner/reklama, yonidan
+  o'tib, boshqa + izoh), bazada `CHECK`.
+* Yangi bola formasida majburiy; tahrirlashda, bola sahifasida ko'rinadi;
+  API va importda ixtiyoriy ("Ko'rsatilmagan"). Excel shablonida yangi
+  ustun "Qayerdan eshitgan".
+* Hisobotlar → "Bizni qayerdan eshitishgan?": davrda qo'shilgan bolalar
+  manba bo'yicha — soni, ulushi, hozir ham bog'chadami; javobsizlar
+  alohida. `reports.read` + `children.read` (pul emas).
+* Yo'l-yo'lakay topilgan nuqson: import sarlavhasidagi o'zbek "ʻ"
+  ("Tugʻilgan sana") tanilmasdi — tuzatildi, test bilan.
+* Landing: "Bola qo'shish va Excel'dan ko'chirish" kartasi (3 tilda).
+* 13 ta yangi test.

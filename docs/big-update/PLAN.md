@@ -949,7 +949,7 @@ Each phase: red tests first for money rules, full `ci-local.sh`, ADRs for
 every superseded decision, landing copy in three locales, a short report with
 the demo path and which defaults still need the accountant's confirmation.
 
-## Bosqich 14 — "Qayerdan eshitgan": where new families come from [ ] (approved 2026-10-19)
+## Bosqich 14 — "Qayerdan eshitgan": where new families come from [x] (approved 2026-10-19)
 
 Customer request of 2026-10-19, clarified the same day: the "sales funnel"
 they asked for is **not** a lead pipeline. When the admin adds a new child,
@@ -1003,4 +1003,4 @@ many of them are still active, and how many were added without an answer.
 | # | Phase | Proves |
 |---|---|---|
 | 14.1 ✅ | Plan (reviewed, then cut to the customer's actual ask) | — |
-| 14.2 | Field, API, import, report, screens, landing, docs | the report adds up; an unknown value is refused by the database; a cashier (no `reports`) and another tenant see nothing |
+| 14.2 ✅ | Field, API, import, report, screens, landing, docs | the report adds up; an unknown value is refused by the database; a cashier (no `reports`) and another tenant see nothing |
