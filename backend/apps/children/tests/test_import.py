@@ -40,6 +40,12 @@ def _run(tenant, csv_text: str, *, dry_run: bool = True):
 
 
 class TestParsing:
+    def test_a_header_with_the_uzbek_okina_is_recognised(self):
+        """ "Tugʻilgan sana" (U+02BB) — oʻzbek imlosidagi toʻgʻri yozuv."""
+        rows, errors = parse_rows("Familiya;Ism;Tugʻilgan sana\nValiyev;Ali;2021-03-14\n".encode())
+        assert not errors
+        assert rows[0]["date_of_birth"] == "2021-03-14"
+
     def test_detects_semicolon_delimiter(self):
         rows, errors = parse_rows(b"Familiya;Ism;Tug'ilgan sana\nValiyev;Ali;2021-03-14\n")
         assert not errors

@@ -2716,3 +2716,27 @@ msgstr "⚠️ {title} ({period}): {amount} сум — срок прошёл ({d
 
 msgid "🧾 {title} ({period}): {amount} soʻm, muddat {due}."
 msgstr "🧾 {title} ({period}): {amount} сум, срок {due}."
+
+msgid "Aka-ukasi yoki opa-singlisi shu yerda"
+msgstr "Здесь уже учится брат или сестра"
+
+msgid "Banner, flayer, reklama"
+msgstr "Баннер, листовка, реклама"
+
+msgid "Facebook"
+msgstr "Facebook"
+
+msgid "Google / sayt"
+msgstr "Google / сайт"
+
+msgid "Instagram"
+msgstr "Instagram"
+
+msgid "Qayerdan eshitganini tushunmadim: '{value}'. Mumkin: Instagram, Telegram, Facebook, sayt, tanish-bilish, aka-uka, banner, yonidan oʻtib, boshqa."
+msgstr "Не понял, откуда узнали: «{value}». Можно: Instagram, Telegram, Facebook, сайт, знакомые, брат/сестра, баннер, проходили мимо, другое."
+
+msgid "Tanish-bilish tavsiyasi"
+msgstr "По рекомендации знакомых"
+
+msgid "Yonidan oʻtib qolgan"
+msgstr "Проходили мимо"

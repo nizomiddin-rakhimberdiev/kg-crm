@@ -32,6 +32,23 @@ class EnrollmentStatus(models.TextChoices):
     WITHDRAWN = "withdrawn", gettext_lazy("Chiqib ketgan")
 
 
+class HeardFrom(models.TextChoices):
+    """
+    Oila bog'cha haqida qayerdan eshitgan (Bosqich 14). Ro'yxat qat'iy —
+    oylar va filiallar solishtirilsin; boshqasi `other` + izoh.
+    """
+
+    INSTAGRAM = "instagram", gettext_lazy("Instagram")
+    TELEGRAM = "telegram", gettext_lazy("Telegram")
+    FACEBOOK = "facebook", gettext_lazy("Facebook")
+    WEBSITE = "website", gettext_lazy("Google / sayt")
+    REFERRAL = "referral", gettext_lazy("Tanish-bilish tavsiyasi")
+    SIBLING = "sibling", gettext_lazy("Aka-ukasi yoki opa-singlisi shu yerda")
+    OUTDOOR = "outdoor", gettext_lazy("Banner, flayer, reklama")
+    WALK_BY = "walk_by", gettext_lazy("Yonidan oʻtib qolgan")
+    OTHER = "other", gettext_lazy("Boshqa")
+
+
 class Child(BranchScopedModel):
     first_name = models.CharField(max_length=80)
     last_name = models.CharField(max_length=80)
@@ -104,6 +121,13 @@ class Child(BranchScopedModel):
     photo_path = models.CharField(max_length=255, blank=True)
     notes = models.TextField(blank=True)
 
+    # --- Qayerdan eshitgan (Bosqich 14) ---
+    #
+    # Bola qo'shilayotganda admin belgilaydi; ega statistikani ko'radi
+    # (`/reports/sources`). Bo'sh — "Ko'rsatilmagan" (eski bolalar, import).
+    heard_from = models.CharField(max_length=20, choices=HeardFrom.choices, blank=True)
+    heard_from_note = models.CharField(max_length=120, blank=True)
+
     # --- Tibbiy ma'lumot (PLAN 2.1) ---
     #
     # Alohida maydonlar, umumiy `notes` ichida emas: allergiya oshxonaga
@@ -156,6 +180,10 @@ class Child(BranchScopedModel):
             models.CheckConstraint(
                 condition=models.Q(tariff__isnull=True) | models.Q(monthly_fee__isnull=True),
                 name="ck_child_one_price_source",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(heard_from="") | models.Q(heard_from__in=HeardFrom.values),
+                name="ck_child_heard_from",
             ),
         ]
         indexes = [

@@ -206,6 +206,8 @@ class ChildSerializer(serializers.ModelSerializer):
             "monthly_fee",
             "balance",
             "notes",
+            "heard_from",
+            "heard_from_note",
             "allergies",
             "medical_notes",
             "guardians",
@@ -270,6 +272,9 @@ class ChildWriteSerializer(serializers.ModelSerializer):
             "skip_trial",
             "opening_debt",
             "notes",
+            # Qayerdan eshitgan (Bosqich 14): API'da ixtiyoriy, ilovada majburiy.
+            "heard_from",
+            "heard_from_note",
             "allergies",
             "medical_notes",
             "branch_id",

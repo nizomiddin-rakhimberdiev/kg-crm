@@ -173,6 +173,8 @@ REPORT_SCOPE: dict[str, str] = {
     "finance": "payroll.read",
     # Oylik hisobot paketi (Bosqich 13.5): foyda, oylik jami — `payroll.read`.
     "pack": "payroll.read",
+    # Qayerdan eshitgan (Bosqich 14): pul emas, bolalar haqida fakt.
+    "sources": "children.read",
 }
 
 # Moliya markazi mavzulari (ADR-42): `payroll.read` YOKI `reports.finance`.
@@ -234,6 +236,7 @@ _ACTION_REPORT: dict[str, str] = {
     "tax_calendar": "finance",
     "tax_pay": "finance",
     "journal": "finance",
+    "sources": "sources",
     "cash_flow": "finance",
     "position": "finance",
     "completeness": "monthly",
@@ -318,6 +321,11 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
     @action(detail=False)
     def expenses(self, request: Request) -> Response:
         return Response(selectors.expense_report(**self.period_scope(request)))
+
+    @action(detail=False)
+    def sources(self, request: Request) -> Response:
+        """`GET /reports/sources?from=&to=` — oilalar bog'cha haqida qayerdan eshitgan."""
+        return Response(selectors.heard_from_report(**self.scope(request)))
 
     @action(detail=False)
     def benefits(self, request: Request) -> Response:

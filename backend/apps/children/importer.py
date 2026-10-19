@@ -58,6 +58,43 @@ COLUMNS: dict[str, tuple[str, ...]] = {
     # Bosqich 12.7: toifa — rang emas, ustun; sababi bilan.
     "benefit": ("imtiyoz", "toifa", "imtiyoz turi", "benefit", "category"),
     "benefit_reason": ("imtiyoz sababi", "sabab", "benefit_reason", "reason"),
+    # Bosqich 14: oila bog'cha haqida qayerdan eshitgan — ixtiyoriy.
+    "heard_from": ("qayerdan eshitgan", "qayerdan", "manba", "heard_from", "source"),
+}
+
+#: "Qayerdan eshitgan" ustunining so'zlari → `HeardFrom`. Bo'sh — javob yo'q.
+_HEARD_WORDS: dict[str, str] = {
+    "instagram": "instagram",
+    "insta": "instagram",
+    "инстаграм": "instagram",
+    "telegram": "telegram",
+    "tg": "telegram",
+    "телеграм": "telegram",
+    "facebook": "facebook",
+    "fb": "facebook",
+    "google": "website",
+    "sayt": "website",
+    "website": "website",
+    "internet": "website",
+    "tanish-bilish": "referral",
+    "tanish bilish": "referral",
+    "tanish": "referral",
+    "tavsiya": "referral",
+    "referral": "referral",
+    "aka-uka": "sibling",
+    "aka-ukasi": "sibling",
+    "opa-singil": "sibling",
+    "sibling": "sibling",
+    "banner": "outdoor",
+    "flayer": "outdoor",
+    "reklama": "outdoor",
+    "bilbord": "outdoor",
+    "outdoor": "outdoor",
+    "yonidan o'tib": "walk_by",
+    "o'tib ketayotib": "walk_by",
+    "walk_by": "walk_by",
+    "boshqa": "other",
+    "other": "other",
 }
 
 #: "Imtiyoz" ustunining so'zlari → `BenefitKind`. Bo'sh — imtiyoz yo'q.
@@ -184,7 +221,9 @@ class ImportReport:
 
 
 def _normalize_header(raw: str) -> str | None:
-    cleaned = raw.strip().lower().replace("ʼ", "'").replace("‘", "'")
+    # `_plain` — hamma apostrof turlari, jumladan oʻzbek "ʻ" (U+02BB): avval u
+    # almashtirilmasdi va "Tugʻilgan sana" sarlavhasi tanilmasdi (Bosqich 14).
+    cleaned = _plain(raw)
     for internal, variants in COLUMNS.items():
         if cleaned in variants:
             return internal
@@ -428,10 +467,25 @@ def _validate(row: dict[str, str], line: int) -> tuple[dict[str, Any] | None, li
             )
         )
 
+    raw_heard = row.get("heard_from", "").strip()
+    heard_from = _HEARD_WORDS.get(_plain(raw_heard), None) if raw_heard else ""
+    if heard_from is None:
+        errors.append(
+            RowError(
+                line,
+                "heard_from",
+                gettext(
+                    "Qayerdan eshitganini tushunmadim: '{value}'. Mumkin: Instagram, Telegram, "
+                    "Facebook, sayt, tanish-bilish, aka-uka, banner, yonidan oʻtib, boshqa."
+                ).format(value=raw_heard),
+            )
+        )
+
     if errors:
         return None, errors
 
     return {
+        "heard_from": heard_from or "",
         "benefit": benefit or "",
         "benefit_word": raw_benefit,
         "benefit_reason": row.get("benefit_reason", "").strip(),
@@ -592,6 +646,7 @@ def import_children(
             # birinchi oyi proporsional hisoblanmaydi (PLAN 7.8).
             is_existing_client=data["is_existing_client"],
             tariff=tariffs.get(data["tariff_name"].casefold()) if data["tariff_name"] else None,
+            heard_from=data["heard_from"],
         )
 
         # Toifa — turi va sababi bilan imtiyoz yozuvi (Bosqich 12.7). Sabab
@@ -809,6 +864,13 @@ _TEMPLATE_COLUMNS: tuple[tuple[str, str, bool], ...] = (
         False,
     ),
     ("Imtiyoz sababi", "Qisqa sabab, masalan: oshpaz farzandi", False),
+    # Bosqich 14.
+    (
+        "Qayerdan eshitgan",
+        "Instagram, Telegram, Facebook, sayt, tanish-bilish, aka-uka, banner, yonidan o'tib, "
+        "boshqa yoki bo'sh",
+        False,
+    ),
 )
 
 _TEMPLATE_EXAMPLES: tuple[tuple[str, ...], ...] = (
@@ -826,6 +888,7 @@ _TEMPLATE_EXAMPLES: tuple[tuple[str, ...], ...] = (
         "+998901112233",
         "",
         "",
+        "Instagram",
     ),
     (
         "Karimova",
@@ -841,6 +904,7 @@ _TEMPLATE_EXAMPLES: tuple[tuple[str, ...], ...] = (
         "+998939874455",
         "xodim farzandi",
         "Oshpaz farzandi",
+        "tanish-bilish",
     ),
 )
 

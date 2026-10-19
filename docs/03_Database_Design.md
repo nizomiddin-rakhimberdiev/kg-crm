@@ -447,6 +447,8 @@ Authentication identity.
 | `photo_path` | `VARCHAR(255)` | `NULL` | Private storage key |
 | `balance` | `NUMERIC(12,2)` | `NOT NULL DEFAULT 0` | **Cached** from ledger (§8.2) |
 | `notes` | `TEXT` | `NULL` | |
+| `heard_from` | `VARCHAR(20)` | `NOT NULL DEFAULT ''`, `CHECK (… IN ('', 'instagram','telegram','facebook','website','referral','sibling','outdoor','walk_by','other'))` | Bosqich 14: where the family heard about the kindergarten — required by the add-child form, optional in the API and the import; empty means not answered (old children, import) |
+| `heard_from_note` | `VARCHAR(120)` | `NOT NULL DEFAULT ''` | free detail, used with `other` |
 | `search_vector` | `TSVECTOR` | generated | Full-text search (§23) |
 
 **Business rules:**

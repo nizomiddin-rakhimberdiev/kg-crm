@@ -957,3 +957,56 @@ def benefits_report(
             {"month": month, "total": f"{value:.2f}"} for month, value in sorted(by_month.items())
         ],
     }
+
+
+def heard_from_report(
+    *, organization_id: Any, date_from: date, date_to: date, branch_id: Any = None
+) -> dict[str, Any]:
+    """
+    "Bizni qayerdan eshitdingiz?" statistikasi (Bosqich 14).
+
+    Bola davrga `enrolled_on` bo'yicha tushadi (bo'sh bo'lsa — qo'shilgan
+    kuni). Javobsizlar alohida sanaladi, taxmin qilinmaydi; qatorlar va
+    javobsizlar yig'indisi har doim jamiga teng. "Faol" — bugun ham
+    bog'chada (arxivlanmagan, chiqib ketmagan).
+    """
+    from django.db.models import Count, Q
+    from django.db.models.functions import Coalesce, TruncDate
+
+    from apps.children.models import Child, EnrollmentStatus, HeardFrom
+
+    children = Child.objects.filter(organization_id=organization_id)
+    if branch_id:
+        children = children.filter(branch_id=branch_id)
+    children = children.annotate(arrived=Coalesce("enrolled_on", TruncDate("created_at"))).filter(
+        arrived__gte=date_from, arrived__lte=date_to
+    )
+    still_here = Q(is_active=True, archived_at__isnull=True) & ~Q(
+        enrollment_status__in=[EnrollmentStatus.WITHDRAWN, EnrollmentStatus.GRADUATED]
+    )
+    counts = {
+        row["heard_from"]: row
+        for row in children.values("heard_from").annotate(
+            count=Count("id"), active=Count("id", filter=still_here)
+        )
+    }
+    total = sum(row["count"] for row in counts.values())
+    rows = [
+        {
+            "source": value,
+            "label": str(label),
+            "count": counts[value]["count"],
+            "active": counts[value]["active"],
+            "share": f"{counts[value]['count'] * 100 / total:.1f}",
+        }
+        for value, label in HeardFrom.choices
+        if value in counts
+    ]
+    rows.sort(key=lambda row: -row["count"])
+    return {
+        "from": date_from.isoformat(),
+        "to": date_to.isoformat(),
+        "rows": rows,
+        "total": total,
+        "unanswered": counts.get("", {}).get("count", 0),
+    }

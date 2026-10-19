@@ -262,7 +262,7 @@ Module: `children`. Sub-domains: children, guardians, groups, enrollment.
 ### 7.1 Children
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/children` | `children.read` | List (filters: `group`, `enrollment_status`, `tariff`; `search` by name); `?ids=a,b,c` (≤ 100) returns exactly those rows — used by the insight "Why?" panel to resolve labels live by id ([07 §6](./07_Radix_Intelligence.md)) |
+| GET | `/children` | `children.read` | List (filters: `group`, `enrollment_status`, `tariff`, `heard_from` (Bosqich 14); `search` by name); `?ids=a,b,c` (≤ 100) returns exactly those rows — used by the insight "Why?" panel to resolve labels live by id ([07 §6](./07_Radix_Intelligence.md)) |
 | POST | `/children` | `children.create` | Create child |
 | GET | `/children/{id}` | `children.read` | Detail (includes guardians, current group, balance) |
 | PATCH | `/children/{id}` | `children.update` | Update |
@@ -1143,6 +1143,7 @@ Module: `platform`. **Not part of the customer API surface** — separate auth p
 | GET/POST | `/discounts` | `payments.read` / `payments.create` | Benefits: `{child_id, kind: staff_child\|low_income\|full\|custom, reason, valid_from, valid_to?, discount_type?, value?}` (the last two for `custom` only). Reason mandatory; overlapping benefits → `422`; `PATCH`/`DELETE` → `405` |
 | POST | `/discounts/{id}/end` | `payments.update` | `{valid_to}` — ends a benefit; the row stays as history |
 | GET | `/reports/benefits?from=&to=` | `reports.read` + `payments.read` | Who gave which child how much and why — summed from invoice `benefit` lines, with `by_kind` and `by_month` |
+| GET | `/reports/sources?from=&to=` | `reports.read` + `children.read` | Bosqich 14: children added in the period (by `enrolled_on`, else the day added) by `heard_from` — `rows: [{source, label, count, share, active}]`, `total`, `unanswered`; rows plus unanswered always equal the total |
 | GET | `/reports/monthly-summary?year=&month=` | `reports.read` + `payments.read` | Bosqich 12.6: `roster`, `categories` (children and expected sum per category), `invoiced`, `recalculations` by kind, `collected_for_month` (by allocation: `before_month` / `in_month` / `after_month`, `by_method`), `cash_received` (by payment date, `advances_for_later`), `outstanding`, `aging`, `check {ok, equation}`, `closed` |
 | POST | `/reports/monthly-summary/close` | `reports.approve` + `payments.read` | `{year, month, branch_id?}` — only an ended month whose check is green, once; `422` otherwise |
 | POST | `/reports/monthly/export` | `reports.export` + `payments.read` | `{params: {year, month}}` — the old "oylik toʻlov jadvali": one row per child, payments by method with dates, certificate / application credits, arrival / departure, balance |
@@ -1191,6 +1192,6 @@ Module: `platform`. **Not part of the customer API surface** — separate auth p
 | GET · POST | `/settings/tax-presets` · `/settings/tax-presets/apply` | `settings.read` · `settings.update` | Presets `pq403` · `general` · `turnover` and their values; apply writes them as ordinary settings |
 | POST | `/payments/{id}/fiscal` | `payments.update` (own-only applies) | `{number?, qr?}` — the fiscal receipt; the payment detail returns `fiscal: {status: issued · missing · provider · not_required, kind, …}` |
 | GET | `/children/{id}/annual-statement?year=` | `children.read` + `payments.read`, not own-only | The parent's annual payment statement (PDF): paid, refunded and within the income-tax exemption limit per month, payers with TIN |
-| GET | `/children/import-template` | `children.create` | `.xlsx` template with the kindergarten's own groups and tariffs; since 12.7 also "Imtiyoz" and "Imtiyoz sababi" columns |
+| GET | `/children/import-template` | `children.create` | `.xlsx` template with the kindergarten's own groups and tariffs; since 12.7 also "Imtiyoz" and "Imtiyoz sababi" columns; since 14 "Qayerdan eshitgan" (Instagram, Telegram, Facebook, sayt, tanish-bilish, aka-uka, banner, yonidan oʻtib, boshqa — an unknown word is a row error) |
 | POST | `/children/import` | `children.create` | `multipart`: `file`, `dry_run` (default `true`), `branch_id?`, `duplicate_decision?` (`skip` · `keep`). Report: `total_rows`, `created`, `skipped_duplicates` (exact re-uploads), `errors` (row, field, message — any error writes nothing), and since 12.7 `warnings` (one family — one guardian phone — at different prices; "aka-uka" without a shared guardian) and `possible_duplicates` (names equal after transliteration — Oʻ/O', X/H, vowel drift — inside the file or against children already in the system). A real run with possible duplicates and no decision writes nothing. Phones are normalised to `+998…`, so one parent written two ways is one guardian and one family. The benefit column becomes a typed `discount` with its reason, or "Excel importidan: …" when the reason column is empty |
 

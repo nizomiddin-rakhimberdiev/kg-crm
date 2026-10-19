@@ -2716,3 +2716,27 @@ msgstr "⚠️ {title} ({period}): {amount} so‘m — overdue since {due}."
 
 msgid "🧾 {title} ({period}): {amount} soʻm, muddat {due}."
 msgstr "🧾 {title} ({period}): {amount} so‘m, due {due}."
+
+msgid "Aka-ukasi yoki opa-singlisi shu yerda"
+msgstr "A brother or sister is already here"
+
+msgid "Banner, flayer, reklama"
+msgstr "Banner, flyer, advertising"
+
+msgid "Facebook"
+msgstr "Facebook"
+
+msgid "Google / sayt"
+msgstr "Google / website"
+
+msgid "Instagram"
+msgstr "Instagram"
+
+msgid "Qayerdan eshitganini tushunmadim: '{value}'. Mumkin: Instagram, Telegram, Facebook, sayt, tanish-bilish, aka-uka, banner, yonidan oʻtib, boshqa."
+msgstr "Could not read where they heard of us: '{value}'. Allowed: Instagram, Telegram, Facebook, website, referral, sibling, banner, walked by, other."
+
+msgid "Tanish-bilish tavsiyasi"
+msgstr "Recommended by friends"
+
+msgid "Yonidan oʻtib qolgan"
+msgstr "Walked past"

@@ -69,7 +69,7 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
     # (`get_base_queryset`), ya'ni "Улугбек" ham, "Ulug'bek" ham topiladi.
     search_fields = ["first_name", "last_name", "middle_name"]
     ordering_fields = ["last_name", "date_of_birth", "created_at"]
-    filterset_fields = ["enrollment_status", "gender"]
+    filterset_fields = ["enrollment_status", "gender", "heard_from"]
 
     # Bir so'rovda nechta `id` — Radix Intelligence evidence'idagi bolalar
     # ro'yxati 50 ga cheklangan (docs/07 §6); sahifa maksimumi 100.
