@@ -949,184 +949,58 @@ Each phase: red tests first for money rules, full `ci-local.sh`, ADRs for
 every superseded decision, landing copy in three locales, a short report with
 the demo path and which defaults still need the accountant's confirmation.
 
-## Bosqich 14 — "Qabul varonkasi": the enrolment funnel [ ] (draft 2026-10-19, reviewed, awaiting approval)
+## Bosqich 14 — "Qayerdan eshitgan": where new families come from [ ] (approved 2026-10-19)
 
-Customer request of 2026-10-19: *"sotuv varonkasini ham qilib berish"* — a
-sales funnel. In a kindergarten the sale is an enrolment: a parent hears of
-the kindergarten, calls or writes, comes to look, maybe tries a day, signs
-and the child starts. Today nothing before the contract is in the system —
-the first record is the `Child`. This section is the capability contract and
-the phase plan; it was reviewed adversarially (fourteen findings, all
-folded in below) before being shown for approval.
+Customer request of 2026-10-19, clarified the same day: the "sales funnel"
+they asked for is **not** a lead pipeline. When the admin adds a new child,
+they record where the family heard about the kindergarten, and the owner
+gets statistics on it. No stages, no assignees, no intake channels — "bunaqa
+qiyin struktura kerak emas". (A full admissions funnel was planned and
+reviewed first; it is not built. If it is ever asked for, its findings are in
+the git history of this file, commit `fc63e49`.)
 
-**Name.** `platform.Lead` already exists — the vendor's own sales leads, with
-`/platform/leads`, the SaaS-only `public/leads` route and the `lead` throttle
-scope. The kindergarten's funnel is therefore a separate app,
-**`admissions`**, whose record is an **enquiry** (`Murojaat`); the screen is
-"Qabul". Nothing here touches `platform`.
+### 14.1 Capability
 
-### 14.0 Capability
+When a child is added, the admin picks one answer to "Bizni qayerdan
+eshitdingiz?" (and may add a short note). The owner sees, for any period and
+branch, how many new children came from each source, the share of each, how
+many of them are still active, and how many were added without an answer.
 
-Kindergarten staff record every enquiry the moment it arrives — by hand or
-from a public form link/QR (Instagram bio, a flyer, the website) — and move
-it through fixed stages to **enrolled** or **lost with a reason**. Every
-enquiry has an owner and a dated next action, so nothing waits unseen.
-Enrolling turns the enquiry into a child and guardian through the same rules
-as the children form. The owner sees how many enquiries came, from where,
-how many became children, how fast, and why the rest were lost.
+### 14.2 Rules
 
-### 14.1 Facts found in the code (audit, verified in review)
+1. **A fixed list, not a configurable one**, so months and branches compare:
+   `instagram`, `telegram`, `facebook`, `website` (Google / sayt),
+   `referral` (tanish-bilish tavsiyasi), `sibling` (aka-uka / opa-singil shu
+   yerda), `outdoor` (banner, flayer, reklama), `walk_by` (yonidan oʻtib
+   qolgan), `other` + note. The database refuses any other value (`CHECK`).
+2. **Required when a child is added in the app**, optional in the API and
+   the Excel import (old clients and history have no answer — they count as
+   "Koʻrsatilmagan", never guessed). It can be corrected later on the child's
+   page; the change is audited like every child edit.
+3. **It is a fact about the family's arrival, not about money**: the report
+   needs `reports.read` + `children.read`, not a finance permission.
+4. **Counting**: a child belongs to the period of `enrolled_on` (the
+   `created_at` date when that is empty); "still active" means active today.
+   The report rows always add up to the total, unanswered included.
+5. House rules: no new table (two columns on `child`, already RLS-scoped),
+   branch scoping as every children query, uz/ru/en with ʻ/ʼ, cross-tenant
+   test, landing copy, docs in the same change, a failing test first.
 
-| Fact | Where | Consequence |
-|---|---|---|
-| `EnrollmentStatus.PROSPECT` ("Nomzod") is declared and used nowhere | `children/models.py:28` | left unused; an enquiry is not a `Child` |
-| `Child` needs first and last name, `date_of_birth`, `gender` and a price source; `Guardian` needs names and phone; `enroll_child` needs a group | `children/models.py`, `children/serializers.py` | a first call gives none of that reliably → conversion is a pre-filled form that asks for the missing fields |
-| **There is no child-creation service**: the child is created in `ChildViewSet.perform_create` (branch, opening debt, audit) with the rules in the serializer (age range, tariff-or-fee) | `children/views.py:122`, `children/serializers.py` | 14.2 starts by extracting `children.services.create_child()` with a regression test; the form and the conversion both call it |
-| Subscription metering counts active children | `reports.selectors.active_children_count` | an enquiry stored as a `Child` would be billed → own table |
-| `finance.trial_days` gives the first days free from `enrolled_on` | `finance/charges.py` | an enquiry that already had a trial stage would get free days twice → conversion offers to skip the trial, on by default after a `trial` stage |
-| `delete_child` hard-deletes a mistaken child | `children/services.py:496` | `enquiry.child` is `SET_NULL`, and deleting a converted child writes an "unconverted" event and reopens the enquiry |
-| Phone normalisation and name skeleton exist | `core/phone.py`, `children/importer.py::name_skeleton` | duplicate detection reuses them |
-| Bot routing: an unlinked chat's text is dropped by design, a shared contact goes to guardian linking, there is no dialog state, and the webhook has no tenant context | `notifications/telegram_updates.py` | **no bot dialog in this bosqich**: an enquiry link opened in the bot (own code prefix `q_`) answers with the public form link of that branch |
-| Marketing cost per new child already has one formula | `reports/planning.py` (13.7) | the funnel report calls that function; no second formula, no expense tagging now |
-| RBAC catalogue syncs only at signup; new codes need a catalogue migration; system roles of existing organizations need a dry-run grant | `accounts/constants.py`, `0010_reports_finance_permission.py` | same pattern: catalogue migration + `grant_admissions_module` |
-| Public views sit outside the write-gate test; standalone installs have no `/t/<slug>` and the vendor `public/leads` is SaaS-only | `api/v1/urls.py`, `core/deployment.py` | the public enquiry route is registered in both modes; its gate behaviour is decided explicitly (below) |
+### 14.3 Contract
 
-### 14.2 Constraints (must hold)
+- `child.heard_from` (`VARCHAR(20)`, blank default, `CHECK`), `child.heard_from_note`
+  (`VARCHAR(120)`).
+- Child create/update API accepts both; the list accepts `?heard_from=`.
+- Excel import: optional column "Qayerdan eshitgan" (label or code).
+- `GET /reports/sources?from=&to=&branch=` → `{rows: [{source, label, count,
+  share, active}], total, unanswered}`.
+- Screens: the add-child form (required select + note when "Boshqa"),
+  the child's edit dialog and page, a "Qayerdan eshitgan" tab on the
+  Reports page (bars + table, period filter).
 
-1. **An enquiry is not a child and is never billed.** Tables in their own app,
-   RLS on `organization_id`, `branch_id`; no child count reads them.
-2. **Stages are fixed states; labels are translations.** `new` → `contacted`
-   → `visit_scheduled` → `visited` → `trial` → `enrolled` | `lost`, plus
-   `waitlist` (wants a place, none free — the wish is recorded, no seat is
-   held). Skipping forward is allowed; every move is an `enquiry_event` with
-   who and when.
-3. **Lost needs a reason** from an editable list (seeded lazily on first
-   read: price, distance, no place, chose another kindergarten, child too
-   young, no answer, other + text). A lost enquiry can be reopened — a new
-   event, never an edit of the old one.
-4. **Enrolled only through conversion**, which needs `admissions.update` **and
-   `children.create`** (ADR-25 — nobody creates what their role cannot),
-   calls `children.services.create_child()` + `upsert_guardian()` (+
-   `enroll_child()` when a group is chosen), links `enquiry.child`, writes the
-   `converted` event and is refused if already converted. Invoices and
-   billing start from the child exactly as today.
-5. **Duplicates are warned, never merged.** Phone normalised to `+998…`, name
-   skeleton. Matches against open enquiries are always shown; matches
-   against guardians/children only to holders of `children.read`, through
-   `children/scope.py` (ADR-21). A current family asking about a second
-   child is allowed — the enquiry is pre-filled from the guardian.
-6. **Owner and next action.** `assigned_to` and `next_action_at` +
-   `next_action`. Overdue enquiries show on the board and in one morning
-   Telegram message per assignee (staff link, 13.3) — not one per enquiry.
-   They are **not** put into the finance "Diqqat" list or the finance home
-   card, which are gated by report permissions, not `admissions.read`.
-7. **Public intake is untrusted input.** The form link carries organization
-   and branch (ADR-23 token, hash stored, revocable), has its own throttle
-   scope (`enquiry`), a honeypot field and the consent text and time. A repeat
-   submit with the same phone within 24 h becomes an event on the open
-   enquiry, not a second enquiry. The page shows only the kindergarten's name
-   and logo. It keeps accepting enquiries while the organization is
-   suspended (invariant 11 stops the customer's writes; a parent's enquiry
-   is not one, and losing it would cost the customer a family) — documented
-   in the ADR and covered by a test.
-8. **Personal data.** Enquiry phone and child name are personal data: RLS,
-   audit on create/update/convert/delete, purge and reset order, visible only
-   with `admissions.read`; branch-bound staff see their branch only. Event
-   rows hold no structured personal data; free-text notes are the staff's
-   responsibility. Retention/anonymisation is deferred (non-goal) and noted.
-9. **RBAC.** Module `admissions` (read, create, update, delete, export).
-   Seeded: owner and director full, manager create/read/update, cashier and
-   attendance manager none. Existing organizations: `manage.py
-   grant_admissions_module` (dry-run by default; the owner runs `--apply`).
-10. **House rules**: cross-tenant 404 on every endpoint, `SubscriptionWriteGate`
-    on every viewset, uz/ru/en with ʻ/ʼ, `format.ts` + `DateInput`,
-    accessibility floor, brand tokens, the public page route added outside the
-    tenant basename and to `deploy/nginx/_spa_saas.conf` (the nginx route
-    test), landing copy (rewrite one of the 12 cards), docs in the same
-    change, a failing test before each rule.
-
-### 14.3 Implementation contract
-
-**Data** (`apps/admissions`, all RLS + guards + `check_rls` + purge/reset):
-
-- `enquiry` — `branch`, `stage`, `child_first_name`, `child_last_name?`,
-  `child_birth_date?`, `child_age_months?`, `parent_name`, `phone`
-  (normalised), `phone_raw`, `source` (`phone`, `walk_in`, `instagram`,
-  `telegram`, `form`, `referral`, `signboard`, `other`) + `source_detail`,
-  `form` (FK, nullable), `desired_start?`, `desired_group?`, `assigned_to?`,
-  `next_action_at?`, `next_action`, `lost_reason?`, `lost_note`, `child`
-  (FK `SET_NULL`, set by conversion), `guardian?` (prefill source),
-  `consent_at?`, `created_by?`.
-- `enquiry_event` — append-only (no update): `kind` (`created`, `stage`,
-  `note`, `call`, `message`, `visit`, `assigned`, `converted`,
-  `unconverted`, `reopened`, `resubmitted`), `from_stage`, `to_stage`,
-  `text`, `author?`.
-- `enquiry_lost_reason` — per organization, editable, seeded lazily.
-- `enquiry_form` — per branch: `token_hash`, `label`, `source`, `campaign`,
-  `is_active`.
-
-**API**
-
-| Method | Path | Permission | Notes |
-|---|---|---|---|
-| GET/POST | `/enquiries` | admissions.read/create | filters stage, source, assigned_to, overdue, q (translit) |
-| GET/PATCH/DELETE | `/enquiries/{id}` | read/update/delete | delete audited |
-| POST | `/enquiries/{id}/move` | update | `{stage, lost_reason_id?, note?}`; `enrolled` only via convert |
-| POST | `/enquiries/{id}/events` | update | note/call/message/visit |
-| POST | `/enquiries/{id}/convert` | update + children.create | child fields + guardian + group?, `skip_trial` |
-| POST | `/enquiries/{id}/reopen` | update | lost → contacted |
-| GET | `/enquiries/duplicates?phone=&name=` | read (+ children.read for children) | |
-| GET | `/enquiries/board` | read | per-stage counts and the first 50 cards |
-| CRUD | `/enquiry-lost-reasons`, `/enquiry-forms` | admissions.update | form returns its link once |
-| GET | `/reports/funnel?from=&to=` | admissions.read | stage conversion, by source, by assignee, median days to enrol, lost reasons, cost per new child (13.7 function) |
-| GET/POST | `/public/enquiries/{token}` | none, throttled | both deployment modes |
-
-**Screens**: sidebar "Qabul" (CRM section) — board (stage columns,
-horizontal scroll on phones, move via a menu; no new drag library), list with
-filters, enquiry card (timeline, next action, convert form), quick-add modal
-with the duplicate warning, Settings → lost reasons and form links (QR),
-funnel report page, public form page `/q/:token` outside the tenant
-basename.
-
-### 14.4 Non-goals (this bosqich)
-
-Bot dialog intake (the bot only hands out the form link); Instagram/Facebook
-API (Meta app review — Instagram enquiries come through the bio link or by
-hand); outbound SMS campaigns (SMS stays off, ADR-23); expense tagging by
-source and cost per source; holding seats against group capacity; retention
-anonymisation of old lost enquiries; AI scoring (ADR-14).
-
-### 14.5 Open questions for the customer
-
-1. Are the stages right, or is there another step (for example a paid
-   adaptation week before the contract)?
-2. Who works the enquiries — the director, an admissions person, or every
-   manager?
-3. Which channels matter first: phone and walk-ins, the form link for the
-   Instagram bio and ads, or both?
-
-Defaults if no answer: the stages above, director and managers, both channels.
-
-### 14.6 Phases
+### 14.4 Phase
 
 | # | Phase | Proves |
 |---|---|---|
-| 14.1 | This audit, plan and review | — |
-| 14.2 | Core: extract `create_child()` (regression test first); `admissions` app, models, stages, events, lost reasons, duplicates, conversion, RBAC catalogue migration + `grant_admissions_module`, purge/reset, API, ADR-45 | conversion creates exactly one child through the shared service; an enquiry is never counted for billing; cross-tenant 404; manager without `children.create` cannot convert |
-| 14.3 | Intake: form links (public page `/q/:token`, QR, honeypot, throttle, consent, 24 h dedupe, suspended org accepted), bot answers an enquiry code with the form link | one submit → one `new` enquiry in the right branch; a forged token → 404; a double tap → one enquiry + one event |
-| 14.4 | Work: board, list, card, quick add with duplicate warning, next actions, the morning Telegram list per assignee | an overdue enquiry reaches its assignee once a day |
-| 14.5 | Funnel report and finish: conversion by stage/source/assignee, days to enrol, lost reasons, cost per new child (13.7), landing copy, docs, PROGRESS | stage counts reconcile with events |
-
-**Brief for every phase (self-contained prompt).** Read CLAUDE.md, this
-section 14, docs 02 §2 (ADRs), 03 §2–§6, 04 conventions, 05. TDD — a failing
-test first for every rule in 14.2; every new table with RLS, guards,
-`check_rls`, purge and reset order; every endpoint with a cross-tenant 404
-test and `SubscriptionWriteGate`; uz/ru/en for every string (catalogue tests
-on both stacks); `ruff`, `mypy`, `makemigrations --check`, the full backend
-suite (one pytest at a time), `tsc -b`, `vitest`, `eslint`; update 01 (module
-list), 03, 04, 05 and PROGRESS in the same change; ADR-45 in 14.2 (enquiry ≠
-child, fixed stages, conversion through the shared service, public intake
-during suspension, no bot dialog). Never change existing tenant data
-directly — role grants go through the dry-run command the owner runs. At the
-end of each phase report what was done, tests, the demo path and defaults to
-confirm. Deploy only when the user says so, after a verified backup.
+| 14.1 ✅ | Plan (reviewed, then cut to the customer's actual ask) | — |
+| 14.2 | Field, API, import, report, screens, landing, docs | the report adds up; an unknown value is refused by the database; a cashier (no `reports`) and another tenant see nothing |
