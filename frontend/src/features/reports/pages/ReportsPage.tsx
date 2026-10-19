@@ -61,6 +61,7 @@ import { cn, formatMoney, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { BenefitsReport } from '@/features/reports/components/BenefitsReport'
 import { MonthlySummary } from '@/features/reports/components/MonthlySummary'
+import { PeriodTable } from '@/features/reports/components/PeriodTable'
 import { SourcesReport } from '@/features/reports/components/SourcesReport'
 
 // Usul nomlari `features/payments/methods.ts` da — bu yerda o'z nusxasi
@@ -624,120 +625,20 @@ export default function ReportsPage() {
           {/* Davr jadvali — hisobotning o'zi: raqamlar qatorlarda, grafik esa
             faqat ko'z uchun. Telefonda grafik tor, jadval esa o'qiladi. */}
           {hasActivity && (
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
-                <h2 className="text-sm font-semibold text-slate-900">{t('Davr kesimi')}</h2>
-                {canPL && !payrollInChart && (
-                  <p className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <Info className="h-3.5 w-3.5 text-slate-500" />
-                    {t('Oylik maosh faqat jami qatorda')}
-                  </p>
-                )}
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[560px] text-sm">
-                  <thead className="bg-slate-50/70 text-left text-xs uppercase tracking-wider text-slate-500">
-                    <tr>
-                      <th className="px-4 py-2.5 font-medium">{t('Davr')}</th>
-                      {showRevenue && (
-                        <th className="px-4 py-2.5 text-right font-medium">{t('Tushum')}</th>
-                      )}
-                      {showExpenses && (
-                        <th className="px-4 py-2.5 text-right font-medium">{t('Chiqim')}</th>
-                      )}
-                      {payrollInChart && (
-                        <th className="px-4 py-2.5 text-right font-medium">{t('Oylik maosh')}</th>
-                      )}
-                      {canPL && (
-                        <th className="px-4 py-2.5 text-right font-medium">{t('Sof natija')}</th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {rows.map((row) => (
-                      <tr key={row.period} className="tabular-nums">
-                        <td className="whitespace-nowrap px-4 py-2 text-slate-700">{row.title}</td>
-                        {showRevenue && (
-                          <td className="px-4 py-2 text-right text-slate-700">
-                            {formatMoney(row.Tushum)}
-                          </td>
-                        )}
-                        {showExpenses && (
-                          <td className="px-4 py-2 text-right text-slate-700">
-                            {formatMoney(row.Chiqim)}
-                          </td>
-                        )}
-                        {payrollInChart && (
-                          <td className="px-4 py-2 text-right text-slate-700">
-                            {formatMoney(row['Oylik maosh'])}
-                          </td>
-                        )}
-                        {canPL && (
-                          <td
-                            className={cn(
-                              'px-4 py-2 text-right font-medium',
-                              row.net < 0 ? 'text-red-600' : 'text-slate-900',
-                            )}
-                          >
-                            {formatMoney(row.net)}
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                  {pl && (
-                    <tfoot className="border-t border-slate-200 bg-slate-50/70 font-semibold tabular-nums">
-                      <tr>
-                        <td className="px-4 py-2.5 text-slate-800">{t('Jami')}</td>
-                        <td className="px-4 py-2.5 text-right text-slate-800">
-                          {formatMoney(Number(pl.revenue))}
-                        </td>
-                        <td className="px-4 py-2.5 text-right text-slate-800">
-                          {formatMoney(Number(pl.expenses))}
-                        </td>
-                        {payrollInChart && (
-                          <td className="px-4 py-2.5 text-right text-slate-800">
-                            {formatMoney(Number(pl.payroll))}
-                          </td>
-                        )}
-                        <td
-                          className={cn(
-                            'px-4 py-2.5 text-right',
-                            Number(pl.net) < 0 ? 'text-red-600' : 'text-emerald-700',
-                          )}
-                        >
-                          {formatMoney(Number(pl.net))}
-                          {!payrollInChart && (
-                            <span className="block text-xs font-normal text-slate-500">
-                              {t('oylik {formatMoney} bilan', {
-                                formatMoney: formatMoney(Number(pl.payroll)),
-                              })}
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  )}
-                  {!canPL && (
-                    <tfoot className="border-t border-slate-200 bg-slate-50/70 font-semibold tabular-nums">
-                      <tr>
-                        <td className="px-4 py-2.5 text-slate-800">{t('Jami')}</td>
-                        {showRevenue && (
-                          <td className="px-4 py-2.5 text-right text-slate-800">
-                            {formatMoney(Number(totalRevenue ?? 0))}
-                          </td>
-                        )}
-                        {showExpenses && (
-                          <td className="px-4 py-2.5 text-right text-slate-800">
-                            {formatMoney(Number(totalExpenses ?? 0))}
-                          </td>
-                        )}
-                      </tr>
-                    </tfoot>
-                  )}
-                </table>
-              </div>
-            </section>
+            <PeriodTable
+              rows={rows}
+              groupBy={groupBy}
+              showRevenue={showRevenue}
+              showExpenses={showExpenses}
+              payrollInRows={payrollInChart}
+              showNet={canPL}
+              totals={{
+                revenue: Number((canPL ? pl?.revenue : totalRevenue) ?? 0),
+                expenses: Number((canPL ? pl?.expenses : totalExpenses) ?? 0),
+                payroll: Number(pl?.payroll ?? 0),
+                net: canPL && pl ? Number(pl.net) : null,
+              }}
+            />
           )}
         </div>
       )}

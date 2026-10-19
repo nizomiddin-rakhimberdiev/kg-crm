@@ -1834,4 +1834,7 @@ export const messages: Record<string, string> = {
   'Yonidan oʻtib qolgan': 'Проходили мимо',
   'hozir {n}': 'сейчас {n}',
   'Koʻrsatilmagan: {n} bola ({share}%) — varonkaga kirmaydi.': 'Не указано: {n} детей ({share}%) — в воронку не входят.',
+  'Harakat boʻlgan davrlar: {active} / {total}': 'Периоды с движением: {active} / {total}',
+  'Harakatsiz davrlarni ham koʻrsatish ({n})': 'Показать и периоды без движения ({n})',
+  'Harakatsiz davrlarni yashirish': 'Скрыть периоды без движения',
 }

@@ -1838,4 +1838,7 @@ export const messages: Record<string, string> = {
   'Yonidan oʻtib qolgan': 'Walked past',
   'hozir {n}': '{n} now',
   'Koʻrsatilmagan: {n} bola ({share}%) — varonkaga kirmaydi.': 'Not specified: {n} children ({share}%) — not part of the funnel.',
+  'Harakat boʻlgan davrlar: {active} / {total}': 'Periods with activity: {active} / {total}',
+  'Harakatsiz davrlarni ham koʻrsatish ({n})': 'Also show periods without activity ({n})',
+  'Harakatsiz davrlarni yashirish': 'Hide periods without activity',
 }

@@ -2274,3 +2274,12 @@ ko'rib chiqildi, lekin qurilmadi (PLAN, `fc63e49`).
   brend ketma-ketligidagi boshqa rangda; ochilganda pastdan tepaga
   ketma-ket chiqadi (harakatni kamaytirish sozlamasida — animatsiyasiz).
   Javobsizlar varonkaga kirmaydi, pastda alohida qator.
+
+### Hisobotlar — "Davr kesimi" qayta loyihalandi (2026-10-19)
+
+Mijoz: jadval UI/UX jihatdan yoqimsiz — 31 qatorning ko'pi "0 0 0". Endi
+`PeriodTable`: harakatsiz davrlar sukut bo'yicha yashirin (soni yoziladi,
+bir bosishda ochiladi), nol — xira "—", tushum/chiqim/oylik ostida ingichka
+chiziq (eng katta kun bir qarashda), sof natija ishora va rang bilan,
+kun qisqa ("13 Okt") va hafta kuni bilan, to'liq sana — sichqoncha
+ostida. Raqamlar va jami avvalgidek serverdan.
