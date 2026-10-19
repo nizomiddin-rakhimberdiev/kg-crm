@@ -61,6 +61,7 @@ import { cn, formatMoney, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { BenefitsReport } from '@/features/reports/components/BenefitsReport'
 import { MonthlySummary } from '@/features/reports/components/MonthlySummary'
+import { SourcesReport } from '@/features/reports/components/SourcesReport'
 
 // Usul nomlari `features/payments/methods.ts` da — bu yerda o'z nusxasi
 // bor edi va u eskirgan `transfer` kalitini tutardi, shuning uchun
@@ -746,6 +747,9 @@ export default function ReportsPage() {
       {canRevenue && <MonthlySummary />}
 
       {canRevenue && <BenefitsReport from={period.from} to={period.to} />}
+
+      {/* Qayerdan eshitgan (Bosqich 14) — pul emas, bolalar haqida fakt. */}
+      {can('children.read') && <SourcesReport from={period.from} to={period.to} />}
 
       {can('reports.export') && (
         <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">

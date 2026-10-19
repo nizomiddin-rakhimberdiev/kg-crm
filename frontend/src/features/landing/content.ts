@@ -482,8 +482,8 @@ const uz: Copy = {
         text: 'Oy oʻrtasida kelgan yoki ketgan bola faqat bogʻchada boʻlgan ish kunlari uchun toʻlaydi, birinchi kunlari — bepul sinov. Bir oylik ariza bilan oy 0 soʻm, joy saqlanadi. Kelmagan kunlar maʼlumotnoma yoki ariza bilan qaytariladi — davomat jadvalidan emas.',
       },
       {
-        title: 'Excelʼdan koʻchirish',
-        text: 'Shablon sizning guruhlaringiz va tariflaringiz bilan yuklanadi; qarzdorlik va imtiyoz ustunlari bor. Boxodirova va Bohodirova — bitta bolami, sizdan soʻraladi. Bir telefon — bitta oila, aka-ukalar narxi farq qilsa ogohlantiriladi.',
+        title: 'Bola qoʻshish va Excelʼdan koʻchirish',
+        text: 'Har yangi oila bogʻcha haqida qayerdan eshitgani bilan yoziladi — Instagram, tanishlar, banner — va qaysi yoʻl koʻproq bola olib kelayotgani hisobotda koʻrinadi. Excel shabloni guruh va tariflaringiz bilan; Boxodirova va Bohodirova — bitta bolami, sizdan soʻraladi.',
       },
       {
         title: 'Pul qayerda va kimning qoʻlida',
@@ -1050,8 +1050,8 @@ const ru: Copy = {
         text: 'Ребёнок, пришедший или ушедший в середине месяца, платит только за рабочие дни в саду, а первые дни — бесплатная проба. По заявлению на месяц начисляется 0, место сохраняется. Пропуски возвращаются по справке или заявлению — не по табелю.',
       },
       {
-        title: 'Перенос из Excel',
-        text: 'Шаблон скачивается с вашими группами и тарифами; есть колонки долга и льготы. Бохадирова и Боходирова — один ребёнок или два, система спросит. Один телефон — одна семья, разная цена у братьев и сестёр — предупреждение.',
+        title: 'Новый ребёнок и перенос из Excel',
+        text: 'У каждой новой семьи отмечается, откуда она узнала о садике — Instagram, знакомые, баннер, — и в отчёте видно, какой канал приводит больше детей. Шаблон Excel — с вашими группами и тарифами; Бохадирова и Боходирова — один ребёнок или два, система спросит.',
       },
       {
         title: 'Где деньги и у кого на руках',
@@ -1611,8 +1611,8 @@ const en: Copy = {
         text: 'A child who arrives or leaves mid-month pays only for the working days spent at the kindergarten, and the first days are a free trial. A one-month leave charges nothing and keeps the place. Absences are credited from a certificate or an application — never from the attendance grid.',
       },
       {
-        title: 'Import from Excel',
-        text: 'The template downloads with your own groups and tariffs, with debt and benefit columns. Boxodirova and Bohodirova — one child or two? You are asked. One phone is one family, and siblings at different prices are flagged.',
+        title: 'Adding children and importing from Excel',
+        text: 'Every new family is recorded with where it heard about you — Instagram, friends, a banner — and a report shows which channel brings the most children. The Excel template comes with your groups and tariffs; Boxodirova and Bohodirova — one child or two? You are asked.',
       },
       {
         title: 'Where the money is, and who holds it',

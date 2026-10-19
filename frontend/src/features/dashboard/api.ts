@@ -372,6 +372,15 @@ export const reportsApi = {
   /** Imtiyozlar (Bosqich 12.2): kim, kimga, qancha, nega — hisob-faktura qatorlaridan. */
   benefits: (from: string, to: string) =>
     api.get<BenefitsReport>('/reports/benefits', { from, to }),
+  /** Qayerdan eshitgan (Bosqich 14). */
+  sources: (from: string, to: string) =>
+    api.get<{
+      from: string
+      to: string
+      rows: Array<{ source: string; label: string; count: number; active: number; share: string }>
+      total: number
+      unanswered: number
+    }>('/reports/sources', { from, to }),
   /** Maʼlumot toʻliqligi (Bosqich 13.3e). */
   completeness: (year: number, month: number) =>
     api.get<{

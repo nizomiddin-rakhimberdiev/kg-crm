@@ -246,6 +246,9 @@ export interface Child {
   monthly_fee: string | null
   balance: string
   notes: string
+  /** Qayerdan eshitgan (Bosqich 14); boʻsh — koʻrsatilmagan. */
+  heard_from?: string
+  heard_from_note?: string
   /** Allergiya — oshxona va tarbiyachiga kerak (PLAN 2.1). */
   allergies: string
   medical_notes: string

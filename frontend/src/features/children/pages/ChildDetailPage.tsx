@@ -19,6 +19,7 @@ import { tariffsApi } from '@/features/payments/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type GuardianLink } from '@/lib/api/types'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { heardFromLabel } from '@/features/children/heardFrom'
 import { AnnualStatementButton } from '@/features/children/components/AnnualStatementButton'
 import { ChildBalanceCard } from '@/features/children/components/ChildBalanceCard'
 import { BenefitsPanel } from '@/features/children/components/BenefitsPanel'
@@ -262,6 +263,12 @@ export default function ChildDetailPage() {
             {child.gender === 'male' ? t('Oʻgʻil bola') : t('Qiz bola')}{' '}
             {t('· tugʻilgan {date_of_birth}', { date_of_birth: formatDate(child.date_of_birth) })}
             {child.enrolled_on && t(' · qabul {date}', { date: formatDate(child.enrolled_on) })}
+            {child.heard_from &&
+              t(' · qayerdan: {source}', {
+                source: child.heard_from_note
+                  ? `${heardFromLabel(child.heard_from)} (${child.heard_from_note})`
+                  : heardFromLabel(child.heard_from),
+              })}
           </p>
           {/* Holat SABABI ko'rinib turadi: "qachondan buyon va nega"
               degan savol har safar pul bilan birga keladi (Q5). */}

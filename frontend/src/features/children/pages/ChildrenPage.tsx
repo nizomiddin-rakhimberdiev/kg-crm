@@ -19,6 +19,7 @@ import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { clearDraft, draftKey, readDraft, writeDraft } from '@/lib/drafts'
 import { useBranchScope } from '@/app/providers/BranchProvider'
 import { DateInput } from '@/components/ui/DateInput'
+import { HEARD_FROM } from '@/features/children/heardFrom'
 import { Pagination } from '@/components/ui/primitives'
 import { childrenApi, groupsApi, type ChildInput } from '@/features/children/api'
 import { ImportWizard } from '@/features/children/components/ImportWizard'
@@ -91,6 +92,9 @@ const EMPTY_FORM: ChildInput = {
   is_existing_client: false,
   skip_trial: false,
   opening_debt: '',
+  // Bosqich 14: yangi bola qoʻshilganda tanlanmaguncha forma yuborilmaydi.
+  heard_from: '',
+  heard_from_note: '',
 }
 
 export default function ChildrenPage() {
@@ -193,6 +197,8 @@ export default function ChildrenPage() {
       // `backfill_enrollment_dates` buyrug'i hal qiladi.
       enrolled_on: child.enrolled_on ?? '',
       contract_number: child.contract_number ?? '',
+      heard_from: child.heard_from ?? '',
+      heard_from_note: child.heard_from_note ?? '',
     })
     setPrice(priceFromChild(child))
     setFormGroupId(child.current_group?.id ?? '')
@@ -713,6 +719,45 @@ export default function ChildrenPage() {
               <option value="female">{t('Qiz bola')}</option>
             </select>
           </div>
+
+          {/* Bosqich 14: oila bogʻcha haqida qayerdan eshitgan — statistika
+              uchun. Yangi bolada majburiy; eski bolada boʻsh qolishi mumkin. */}
+          <div>
+            <label htmlFor="heard_from" className="mb-1 block text-xs font-medium text-slate-600">
+              {t('Bizni qayerdan eshitgan?')}
+            </label>
+            <select
+              id="heard_from"
+              required={!editing}
+              value={form.heard_from ?? ''}
+              onChange={(e) => setForm((p) => ({ ...p, heard_from: e.target.value }))}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            >
+              <option value="">{editing ? t('Koʻrsatilmagan') : t('Tanlang')}</option>
+              {HEARD_FROM.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {form.heard_from === 'other' && (
+            <div>
+              <label
+                htmlFor="heard_from_note"
+                className="mb-1 block text-xs font-medium text-slate-600"
+              >
+                {t('Qayerdan — aniqroq')}
+              </label>
+              <input
+                id="heard_from_note"
+                maxLength={120}
+                value={form.heard_from_note ?? ''}
+                onChange={(e) => setForm((p) => ({ ...p, heard_from_note: e.target.value }))}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              />
+            </div>
+          )}
 
           {/* Guruh va tarif — AYNAN shu yerda, qo'shish paytida.
               Ilgari ular ro'yxatdan va bola kartasidan alohida

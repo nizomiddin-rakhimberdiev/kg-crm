@@ -37,6 +37,9 @@ export interface ChildInput {
   /** Eski qarz — faqat yaratishda; ledger'ga debet bo'lib tushadi. */
   opening_debt?: string
   notes?: string
+  /** Qayerdan eshitgan (Bosqich 14) — yangi bola qoʻshilganda formada majburiy. */
+  heard_from?: string
+  heard_from_note?: string
   allergies?: string
   medical_notes?: string
   branch_id?: string | null

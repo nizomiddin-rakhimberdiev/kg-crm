@@ -11,6 +11,7 @@
  */
 
 import { useState } from 'react'
+import { HEARD_FROM } from '@/features/children/heardFrom'
 import { useMutation } from '@tanstack/react-query'
 import { DateInput } from '@/components/ui/DateInput'
 import { Modal } from '@/components/ui/Modal'
@@ -37,6 +38,8 @@ export function ChildEditDialog({
     allergies: child.allergies ?? '',
     medical_notes: child.medical_notes ?? '',
     notes: child.notes ?? '',
+    heard_from: child.heard_from ?? '',
+    heard_from_note: child.heard_from_note ?? '',
   })
   const [error, setError] = useState<string | null>(null)
 
@@ -139,6 +142,38 @@ export function ChildEditDialog({
               <option value="female">{t('Qiz bola')}</option>
             </select>
           </div>
+          <div>
+            <label htmlFor="ce-heard" className={label}>
+              {t('Bizni qayerdan eshitgan?')}
+            </label>
+            <select
+              id="ce-heard"
+              value={form.heard_from}
+              onChange={(e) => setForm((p) => ({ ...p, heard_from: e.target.value }))}
+              className={field}
+            >
+              <option value="">{t('Koʻrsatilmagan')}</option>
+              {HEARD_FROM.map(([value, text]) => (
+                <option key={value} value={value}>
+                  {text}
+                </option>
+              ))}
+            </select>
+          </div>
+          {form.heard_from === 'other' && (
+            <div>
+              <label htmlFor="ce-heard-note" className={label}>
+                {t('Qayerdan — aniqroq')}
+              </label>
+              <input
+                id="ce-heard-note"
+                maxLength={120}
+                value={form.heard_from_note}
+                onChange={(e) => setForm((p) => ({ ...p, heard_from_note: e.target.value }))}
+                className={field}
+              />
+            </div>
+          )}
           <div className="sm:col-span-2">
             <label htmlFor="ce-enrolled" className={label}>
               {t('Qabul sanasi')}
