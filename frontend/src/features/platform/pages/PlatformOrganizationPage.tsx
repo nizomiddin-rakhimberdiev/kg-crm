@@ -106,15 +106,22 @@ export default function PlatformOrganizationPage() {
    * uzatiladi va mijoz ilovasi uni darhol o'chiradi. Yangi tabda
    * ochiladi: konsol ochiq qolsin, va ikki sessiya aralashmasin.
    */
+  // Oyna BOSISH paytida ochiladi, manzil javobdan keyin qo'yiladi: aks
+  // holda Safari kechikib ochilgan oynani bloklaydi.
   const enter = useMutation({
-    mutationFn: () => platform.supportSession(organizationId),
-    onSuccess: (session) => {
+    mutationFn: (_tab: Window | null) => platform.supportSession(organizationId),
+    onSuccess: (session, tab) => {
       supportHandoff.stash(session.access)
-      window.open(`${session.app_url}/support-entry`, '_blank', 'noopener')
+      const url = `${session.app_url}/support-entry`
+      if (tab && !tab.closed) tab.location.href = url
+      else window.open(url, '_blank', 'noopener')
       setError(null)
       setNotice(`${session.organization} tizimi yangi tabda ochildi (faqat o'qish).`)
     },
-    onError: fail,
+    onError: (err, tab) => {
+      tab?.close()
+      fail(err)
+    },
   })
 
   if (isLoading || !data) {
@@ -251,7 +258,7 @@ export default function PlatformOrganizationPage() {
 
           <button
             type="button"
-            onClick={() => enter.mutate()}
+            onClick={() => enter.mutate(window.open('', '_blank'))}
             disabled={enter.isPending}
             className="rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 disabled:opacity-50"
           >

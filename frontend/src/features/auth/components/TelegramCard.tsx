@@ -19,12 +19,17 @@ export function TelegramCard() {
   const queryClient = useQueryClient()
   const key = ['me', 'telegram']
   const status = useQuery({ queryKey: key, queryFn: () => api.get<Status>('/auth/telegram') })
+  // Oyna BOSISH paytida ochiladi, havola esa server javobidan keyin
+  // qo'yiladi. Avval `window.open` javobdan keyin chaqirilardi va Safari
+  // uni "foydalanuvchi bosmagan oyna" deb bloklardi — tugma ishlamasdi.
   const link = useMutation({
-    mutationFn: () => api.post<{ link: string }>('/auth/telegram'),
-    onSuccess: (data) => {
-      window.open(data.link, '_blank', 'noopener')
+    mutationFn: (_tab: Window | null) => api.post<{ link: string }>('/auth/telegram'),
+    onSuccess: (data, tab) => {
+      if (tab && !tab.closed) tab.location.href = data.link
+      else window.location.href = data.link
       void queryClient.invalidateQueries({ queryKey: key })
     },
+    onError: (_err, tab) => tab?.close(),
   })
   const unlink = useMutation({
     mutationFn: () => api.delete('/auth/telegram'),
@@ -62,7 +67,7 @@ export function TelegramCard() {
         ) : (
           <button
             type="button"
-            onClick={() => link.mutate()}
+            onClick={() => link.mutate(window.open('', '_blank'))}
             disabled={link.isPending}
             className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
           >

@@ -77,11 +77,20 @@ export function ExpenseFlags({ expense }: { expense: Expense }) {
           href={`/api/v1/expenses/${expense.id}/receipt/download`}
           onClick={async (event) => {
             event.preventDefault()
+            // Oyna BOSISH paytida ochiladi: fayl kelgandan keyin ochilgan
+            // oynani Safari bloklaydi ("Pop-up Window Blocked").
+            const tab = window.open('', '_blank')
             const { httpClient } = await import('@/lib/api/client')
-            const response = await httpClient.get(`/expenses/${expense.id}/receipt/download`, {
-              responseType: 'blob',
-            })
-            window.open(URL.createObjectURL(response.data as Blob), '_blank', 'noopener')
+            try {
+              const response = await httpClient.get(`/expenses/${expense.id}/receipt/download`, {
+                responseType: 'blob',
+              })
+              const url = URL.createObjectURL(response.data as Blob)
+              if (tab && !tab.closed) tab.location.href = url
+              else window.location.href = url
+            } catch {
+              tab?.close()
+            }
           }}
           className="inline-flex items-center gap-0.5 text-xs text-slate-600 underline-offset-2 hover:underline"
         >

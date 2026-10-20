@@ -24,6 +24,13 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    // Shriftlar HECH QACHON `data:` bo'lib CSS ichiga tushmasin: Vite 4 KB
+    // dan kichik fayllarni shunday joylaydi, CSP esa `font-src 'self'` —
+    // brauzer ularni rad etib, konsolni qizil xatolarga to'ldirardi.
+    // Qolgan fayllar uchun Vite'ning odatiy chegarasi (`undefined`).
+    assetsInlineLimit: (filePath) => (/\.(woff2?|ttf|otf|eot)$/.test(filePath) ? false : undefined),
+  },
   server: {
     port: 5173,
     // Port band bo'lsa Vite jimgina 5174/5175 ga o'tib ketmasin: backend CORS
