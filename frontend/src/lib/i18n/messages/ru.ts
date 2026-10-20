@@ -1584,7 +1584,6 @@ export const messages: Record<string, string> = {
   'Bolani tanlang': 'Выберите ребёнка',
   'Boshqa toifa': 'Другая категория',
   'Boshqa toifa…': 'Другая категория…',
-  'Botga ulansangiz, chiqimni u yerdan kiritasiz: summa va chek rasmini yuboring, toifani tugma bilan tanlang.': 'Подключившись к боту, расходы вносите прямо там: отправьте сумму и фото чека, категорию выберите кнопкой.',
   'Chek bor': 'Чек есть',
   'Chek': 'Чек',
   'Chekli xarajat: {p}%': 'Расходы с чеком: {p}%',
@@ -1837,4 +1836,5 @@ export const messages: Record<string, string> = {
   'Harakat boʻlgan davrlar: {active} / {total}': 'Периоды с движением: {active} / {total}',
   'Harakatsiz davrlarni ham koʻrsatish ({n})': 'Показать и периоды без движения ({n})',
   'Harakatsiz davrlarni yashirish': 'Скрыть периоды без движения',
+  'Botga ulansangiz, chiqimni u yerdan kiritasiz (summa va chek rasmi) va savol berasiz: «bugungi tushum», «bu oy foyda», «faol bolalar». Roʻyxat — /help.': 'Подключив бота, вы вносите расходы (сумма и фото чека) и задаёте вопросы: «выручка за сегодня», «прибыль за месяц», «активные дети». Список — /help.',
 }

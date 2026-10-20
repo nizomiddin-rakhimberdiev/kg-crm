@@ -429,7 +429,7 @@ const uz: Copy = {
         id: 'reports',
         title: 'Hisobotlar va nazorat',
         text: 'Tushum, xarajat, ish haqi, qarzdorlik — bir ekranda. Foyda-zarar tegishli oy boʻyicha, pul oqimi pul sanasi boʻyicha: iyul oyligi avgustda toʻlansa ham iyul xarajati, dividend xarajat emas, konditsioner oylarga taqsimlanadi. Terminal va Click puli bankka tushguncha «yoʻlda» koʻrinadi.',
-        caption: 'Olti savol, tekshiruvlar va «Diqqat» — bitta ekranda; egaga Telegram xabari',
+        caption: 'Olti savol, tekshiruvlar va «Diqqat» — bitta ekranda; botga «bugungi tushum» yoki «bu oy foyda» deb yozing',
       },
     ],
   },
@@ -997,7 +997,7 @@ const ru: Copy = {
         title: 'Отчёты и контроль',
         text: 'Выручка, расходы, зарплата, задолженность — на одном экране. Прибыль — по месяцу начисления, денежный поток — по дате денег: июльская зарплата, выплаченная в августе, — расход июля; дивиденд — не расход; кондиционер распределяется по месяцам. Деньги терминала и Click видны «в пути», пока не поступят в банк.',
         caption:
-          'Шесть вопросов, проверки и «Внимание» — на одном экране; владельцу — сообщение в Telegram',
+          'Шесть вопросов, проверки и «Внимание» — на одном экране; напишите боту «выручка за сегодня» или «прибыль за месяц»',
       },
     ],
   },
@@ -1558,7 +1558,7 @@ const en: Copy = {
         title: 'Reports and control',
         text: 'Revenue, expenses, payroll, debt — on one screen. Profit by the month it belongs to, cash flow by the day money moved: July salaries paid in August are a July cost, a dividend is not an expense, an air conditioner is spread over months. Terminal and Click money shows as “in transit” until it reaches the bank.',
         caption:
-          'Six questions, checks and attention items on one screen; the owner gets a Telegram message',
+          'Six questions, checks and attention items on one screen; ask the bot “today’s revenue” or “profit this month”',
       },
     ],
   },

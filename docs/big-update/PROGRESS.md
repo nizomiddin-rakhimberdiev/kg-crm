@@ -2283,3 +2283,28 @@ bir bosishda ochiladi), nol — xira "—", tushum/chiqim/oylik ostida ingichka
 chiziq (eng katta kun bir qarashda), sof natija ishora va rang bilan,
 kun qisqa ("13 Okt") va hafta kuni bilan, to'liq sana — sichqoncha
 ostida. Raqamlar va jami avvalgidek serverdan.
+
+## Rahbar uchun buyruqli bot (2026-10-20)
+
+Mijoz: boshqaruvchi botdan "bugungi tushum", "bu oydagi foyda", "shu
+oydagi chiqim", "faol bolalar soni" deb so'rasa — raqam kelsin. Egasining
+qarori: **sun'iy intellektsiz** (ADR-14 kuchda), buyruqli bot.
+
+* `apps/reports/bot.py`: savol `search_key` skeletiga aylantiriladi
+  (o'zbek lotin/kirill, rus, ingliz) va so'z ro'yxatlari bilan
+  solishtiriladi; davr so'zlari — bugun, kecha, shu hafta, shu oy, o'tgan
+  oy, shu yil. Savollar: tushum (usullar bo'yicha), chiqim (toifalar),
+  foyda (daromad, xarajat, ish haqi), faol bolalar (shu oy kelganlar),
+  qarzdorlik, qoplardagi pul; `/help` — misollar ro'yxati.
+* Raqamlar o'sha funksiyalardan: to'lov hujjatlari, `profit_and_loss`,
+  `debtor_queryset` (balans formulasi bitta joyda), `account_balances`.
+* Huquqlar web bilan bir xil: kassir foydani so'rasa — "ruxsat yo'q";
+  "faqat o'ziniki" kassir faqat o'zi qabul qilgan pulni eshitadi;
+  filialga bog'langan xodim — o'z filialini.
+* Tushunilmagan matn avvalgidek ota-ona botiga o'tadi; raqam bilan
+  boshlangan matn — chiqim kiritish (13.3), o'zgarmadi.
+* Javob tili — bog'chaning asosiy tili (`general.default_language`).
+* Test yordam matnidagi har misolni uch tilda bot o'zi tanishini
+  tekshiradi — "expenses" (x → h skeleti) shu test bilan topildi.
+* Shartnoma: mijoz so'rovi bo'yicha yangi kod yo'q — modul 9.3 dan beri
+  prod'da yoqiq (shablondan tuzish, imzolandi, chop etish).

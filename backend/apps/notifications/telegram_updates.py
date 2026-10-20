@@ -98,13 +98,14 @@ def _handle_staff(chat_id: str, text: str, caption: str, photos: list[Any]) -> s
         reply(
             chat_id,
             f"Salom, {user.full_name}! Chiqim uchun summani (va chek rasmini) yuboring: "
-            "masalan, 150 000 kartoshka.",
+            "masalan, 150 000 kartoshka. Savol ham bering: «bugungi tushum», «bu oy foyda», "
+            "«faol bolalar» — roʻyxat /help.",
         )
         return "staff_linked"
 
     body = caption if photos else text
     if not photos and not re.match(r"^\d", body):
-        return None
+        return _staff_question(chat_id, text)
     found = staff.staff_for_chat(chat_id)
     if found is None:
         return None
@@ -120,6 +121,31 @@ def _handle_staff(chat_id: str, text: str, caption: str, photos: list[Any]) -> s
         )
     reply(chat_id, answer, markup)
     return outcome
+
+
+def _staff_question(chat_id: str, text: str) -> str | None:
+    """
+    Rahbar savoli ("bugungi tushum", "bu oy foyda" …) — buyruqli bot,
+    sun'iy intellektsiz (`apps/reports/bot.py`). Savol bo'lmasa `None`:
+    matn ota-ona botiga o'tadi, xuddi avvalgidek.
+    """
+    from apps.accounts import telegram as staff
+
+    if not text or text.startswith("/start"):
+        return None
+    found = staff.staff_for_chat(chat_id)
+    if found is None:
+        return None
+    organization_id, user = found
+    from apps.core.tenancy import organization_context
+    from apps.reports import bot
+
+    with organization_context(organization_id):
+        answer = bot.answer(user=user, text=text)
+    if answer is None:
+        return None
+    reply(chat_id, answer)
+    return "staff_query"
 
 
 def _handle_callback(callback: dict[str, Any]) -> str:

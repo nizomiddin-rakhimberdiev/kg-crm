@@ -40,7 +40,7 @@ export function TelegramCard() {
       </div>
       <p className="mt-1 text-sm text-slate-600">
         {t(
-          'Botga ulansangiz, chiqimni u yerdan kiritasiz: summa va chek rasmini yuboring, toifani tugma bilan tanlang.',
+          'Botga ulansangiz, chiqimni u yerdan kiritasiz (summa va chek rasmi) va savol berasiz: «bugungi tushum», «bu oy foyda», «faol bolalar». Roʻyxat — /help.',
         )}
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-3">

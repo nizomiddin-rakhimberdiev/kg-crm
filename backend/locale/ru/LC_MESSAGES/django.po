@@ -2740,3 +2740,57 @@ msgstr "По рекомендации знакомых"
 
 msgid "Yonidan oʻtib qolgan"
 msgstr "Проходили мимо"
+
+msgid "Bu maʼlumotni koʻrishga rolingizda ruxsat yoʻq."
+msgstr "Ваша роль не даёт доступа к этим данным."
+
+msgid "Chiqim kiritish uchun summadan boshlang: 150 000 kartoshka."
+msgstr "Чтобы внести расход, начните с суммы: 150 000 картошка."
+
+msgid "Savol yozing, masalan:"
+msgstr "Напишите вопрос, например:"
+
+msgid "Siz qabul qilgan pul"
+msgstr "Деньги, принятые вами"
+
+msgid "bu oy foyda"
+msgstr "прибыль за месяц"
+
+msgid "bugun ({date})"
+msgstr "сегодня ({date})"
+
+msgid "bugungi tushum"
+msgstr "выручка за сегодня"
+
+msgid "faol bolalar"
+msgstr "активные дети"
+
+msgid "kassada qancha pul bor"
+msgstr "сколько денег в кассе"
+
+msgid "kecha ({date})"
+msgstr "вчера ({date})"
+
+msgid "kechagi tushum"
+msgstr "выручка за вчера"
+
+msgid "oʻtgan oy"
+msgstr "прошлый месяц"
+
+msgid "oʻtgan oy foyda"
+msgstr "прибыль за прошлый месяц"
+
+msgid "qarzdorlik"
+msgstr "долги"
+
+msgid "shu hafta"
+msgstr "эта неделя"
+
+msgid "shu oy"
+msgstr "этот месяц"
+
+msgid "shu oydagi chiqim"
+msgstr "расход за месяц"
+
+msgid "shu yil"
+msgstr "этот год"

@@ -2740,3 +2740,57 @@ msgstr "Recommended by friends"
 
 msgid "Yonidan oʻtib qolgan"
 msgstr "Walked past"
+
+msgid "Bu maʼlumotni koʻrishga rolingizda ruxsat yoʻq."
+msgstr "Your role does not allow access to this information."
+
+msgid "Chiqim kiritish uchun summadan boshlang: 150 000 kartoshka."
+msgstr "To enter an expense, start with the amount: 150 000 potatoes."
+
+msgid "Savol yozing, masalan:"
+msgstr "Ask a question, for example:"
+
+msgid "Siz qabul qilgan pul"
+msgstr "Money you took"
+
+msgid "bu oy foyda"
+msgstr "profit this month"
+
+msgid "bugun ({date})"
+msgstr "today ({date})"
+
+msgid "bugungi tushum"
+msgstr "today's revenue"
+
+msgid "faol bolalar"
+msgstr "active children"
+
+msgid "kassada qancha pul bor"
+msgstr "cash on hand"
+
+msgid "kecha ({date})"
+msgstr "yesterday ({date})"
+
+msgid "kechagi tushum"
+msgstr "yesterday's revenue"
+
+msgid "oʻtgan oy"
+msgstr "last month"
+
+msgid "oʻtgan oy foyda"
+msgstr "profit last month"
+
+msgid "qarzdorlik"
+msgstr "debts"
+
+msgid "shu hafta"
+msgstr "this week"
+
+msgid "shu oy"
+msgstr "this month"
+
+msgid "shu oydagi chiqim"
+msgstr "expenses this month"
+
+msgid "shu yil"
+msgstr "this year"
