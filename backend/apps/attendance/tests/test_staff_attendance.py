@@ -173,9 +173,23 @@ class TestAccess:
         client = _member(tenant_a, "cashier", "kassir@alfa.uz")
         assert client.get(DAILY, {"date": timezone.localdate().isoformat()}).status_code == 403
 
-    def test_attendance_manager_marks_staff(self, tenant_a):
+    def test_childrens_attendance_rights_do_not_open_staff_attendance(self, tenant_a):
+        """
+        Mijoz (2026-10-21): xodimlar davomati bolalar davomatiga emas, xodimlar
+        bo'limiga tegishli. Bolalar davomatini yurituvchi rol (davomat
+        menejeri, menejer) xodimlarnikini ko'rmaydi ham, belgilamaydi ham.
+        """
         ali = _employee(tenant_a, "Aliyev")
-        client = _member(tenant_a, "attendance_manager", "davomat@alfa.uz")
+        today = timezone.localdate()
+        for role in ("attendance_manager", "manager"):
+            client = _member(tenant_a, role, f"{role}@alfa.uz")
+            assert client.get(DAILY, {"date": today.isoformat()}).status_code == 403
+            assert client.get(TIMESHEET, {"month": today.strftime("%Y-%m")}).status_code == 403
+            assert _mark(client, today, (ali, "present")).status_code == 403
+
+    def test_a_payroll_holder_marks_staff(self, tenant_a):
+        ali = _employee(tenant_a, "Aliyev")
+        client = _member(tenant_a, "director", "direktor@alfa.uz")
         assert _mark(client, timezone.localdate(), (ali, "present")).status_code == 200
 
     def test_branch_bound_user_sees_and_marks_only_her_branch(self, tenant_a):
@@ -185,7 +199,7 @@ class TestAccess:
             )
         mine = _employee(tenant_a, "Meniki")
         other = _employee(tenant_a, "Begona", branch=gorkiy)
-        client = _member(tenant_a, "attendance_manager", "davomat@alfa.uz")
+        client = _member(tenant_a, "director", "direktor@alfa.uz")
         today = timezone.localdate()
 
         rows = client.get(DAILY, {"date": today.isoformat(), "branch": str(gorkiy.id)}).json()
@@ -247,7 +261,7 @@ class TestExport:
 
         with organization_context(tenant_a.organization.id):
             role = tenant_a.role("manager")
-            for code in ("reports.export", "attendance.read"):
+            for code in ("reports.export", "payroll.read"):
                 RolePermission.objects.get_or_create(
                     role=role, permission=Permission.objects.get(code=code)
                 )

@@ -144,6 +144,8 @@ PURGE_ORDER: tuple[str, ...] = (
     "apps.children.Enrollment",
     "apps.children.ChildPause",
     "apps.children.ChildGuardian",
+    # Hujjat bolaga `RESTRICT` — boladan OLDIN (2026-10-21).
+    "apps.children.ChildDocument",
     "apps.children.Child",
     # Tarif BOLADAN KEYIN: `Child.tariff` — `RESTRICT`. Avval u moliya
     # bo'limida, bolalardan oldin turardi va tarifi bor bitta bola ham
@@ -174,6 +176,24 @@ def _model(path: str) -> Any:
     module, name = path.rsplit(".", 1)
     app_label = module.split(".")[-1]
     return django_apps.get_model(app_label, name)
+
+
+def _delete_files(queryset: Any) -> None:
+    """
+    Qatorlardan OLDIN ularning fayllari: Django `queryset.delete()`
+    `FileField` blobini o'chirmaydi, va tashkilot o'chirilgandan keyin
+    diskda chek, eksport yoki bolaning shartnomasi qolib ketardi.
+    """
+    from django.db import models as dj_models
+
+    fields = [f.name for f in queryset.model._meta.fields if isinstance(f, dj_models.FileField)]
+    if not fields:
+        return
+    for row in queryset.only("pk", *fields):
+        for field in fields:
+            blob = getattr(row, field, None)
+            if blob:
+                blob.delete(save=False)
 
 
 def allow_frozen_deletes() -> None:
@@ -232,14 +252,18 @@ def purge_organization(
         for path, lookup in DERIVED_PURGE.items():
             model = _model(path)
             manager = getattr(model, "all_objects", None) or model._default_manager
-            count, _ = manager.filter(**{lookup: organization.id}).delete()
+            rows = manager.filter(**{lookup: organization.id})
+            _delete_files(rows)
+            count, _ = rows.delete()
             if count:
                 deleted[model._meta.db_table] = count
 
         for path in PURGE_ORDER:
             model = _model(path)
             manager = getattr(model, "all_objects", None) or model._default_manager
-            count, _ = manager.filter(organization_id=organization.id).delete()
+            rows = manager.filter(organization_id=organization.id)
+            _delete_files(rows)
+            count, _ = rows.delete()
             if count:
                 deleted[model._meta.db_table] = count
 

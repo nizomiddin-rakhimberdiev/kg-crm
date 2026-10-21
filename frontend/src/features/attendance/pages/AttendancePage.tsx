@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarCheck, Check, FileText, Save, X } from 'lucide-react'
 import { DateInput } from '@/components/ui/DateInput'
@@ -22,7 +22,6 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type AttendanceStatus } from '@/lib/api/types'
 import { AbsenceClaimsPanel } from '@/features/attendance/components/AbsenceClaimsPanel'
 import { HolidaysPanel } from '@/features/attendance/components/HolidaysPanel'
-import { StaffAttendancePanel } from '@/features/attendance/components/StaffAttendancePanel'
 import { Modal } from '@/components/ui/Modal'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
@@ -522,15 +521,19 @@ function ClaimsTab({ initial }: { initial?: { childId: string; date: string } })
 }
 
 /**
- * Davomat — ikki bo'lim: bolalar va xodimlar (tabel).
+ * Davomat — bolalar va qayta hisob.
  *
- * Bo'lim URL'da (`?tab=staff`) — yangilash yoki havola berish uni
- * yo'qotmaydi. Ikkalasi ham `attendance` ruxsati bilan.
+ * Bo'lim URL'da (`?tab=claims`) — yangilash yoki havola berish uni
+ * yo'qotmaydi. Xodimlar tabeli bu yerda EMAS (mijoz, 2026-10-21): u
+ * "Xodimlar" sahifasida va oylik/HR ruxsati bilan — aks holda bolalar
+ * davomatini yurituvchi har bir rol xodimlarnikini ham ko'rardi. Eski
+ * `?tab=staff` havolasi o'sha yerga yo'naltiriladi.
  */
 export default function AttendancePage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  if (searchParams.get('tab') === 'staff') return <Navigate to="/staff?tab=attendance" replace />
   const raw = searchParams.get('tab')
-  const tab = raw === 'staff' || raw === 'claims' ? raw : 'children'
+  const tab = raw === 'claims' ? raw : 'children'
   const claimChild = searchParams.get('child')
   const claimDate = searchParams.get('date')
   const initial =
@@ -545,7 +548,6 @@ export default function AttendancePage() {
         {(
           [
             ['children', t('Bolalar')],
-            ['staff', t('Xodimlar')],
             ['claims', t('Qayta hisob')],
           ] as const
         ).map(([key, label]) => (
@@ -566,9 +568,7 @@ export default function AttendancePage() {
           </button>
         ))}
       </div>
-      {tab === 'staff' ? (
-        <StaffAttendancePanel />
-      ) : tab === 'claims' ? (
+      {tab === 'claims' ? (
         <ClaimsTab initial={initial} />
       ) : (
         <ChildrenAttendance

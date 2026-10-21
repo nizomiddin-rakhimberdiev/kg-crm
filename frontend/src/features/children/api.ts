@@ -63,7 +63,46 @@ function withoutEmpty<T extends object>(payload: T): Partial<T> {
   ) as Partial<T>
 }
 
+/** Bolaga biriktirilgan fayl — imzolangan shartnoma (2026-10-21). */
+export interface ChildDocument {
+  id: string
+  kind: 'contract'
+  name: string
+  size: number
+  uploaded_by: string
+  created_at: string
+}
+
+/** Faqat shular — server ham fayl ichini tekshiradi. */
+export const DOCUMENT_SUFFIXES = ['.pdf', '.doc', '.docx']
+export const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024
+
 export const childrenApi = {
+  documents: (id: string) => api.get<ChildDocument[]>(`/children/${id}/documents`),
+  async uploadDocument(id: string, file: File) {
+    const form = new FormData()
+    form.append('file', file)
+    // Content-Type'ni brauzer boundary bilan o'zi qo'yadi.
+    const response = await httpClient.post<Envelope<ChildDocument>>(
+      `/children/${id}/documents`,
+      form,
+      { headers: { 'Content-Type': undefined } },
+    )
+    return response.data.data
+  },
+  removeDocument: (id: string, documentId: string) =>
+    api.delete(`/children/${id}/documents/${documentId}`),
+  async downloadDocument(id: string, document: ChildDocument) {
+    const response = await httpClient.get(`/children/${id}/documents/${document.id}/download`, {
+      responseType: 'blob',
+    })
+    // Yuklab olish havolasi — yangi oyna emas, shuning uchun brauzer bloklamaydi.
+    const link = window.document.createElement('a')
+    link.href = URL.createObjectURL(response.data as Blob)
+    link.download = document.name
+    link.click()
+    URL.revokeObjectURL(link.href)
+  },
   list: (params?: Record<string, unknown>) => api.list<Child>('/children', params),
   get: (id: string) => api.get<Child>(`/children/${id}`),
   create: (payload: ChildInput) => api.post<Child>('/children', withoutEmpty(payload)),

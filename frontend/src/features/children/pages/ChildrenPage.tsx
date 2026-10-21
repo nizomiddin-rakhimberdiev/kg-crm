@@ -30,6 +30,8 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { usePageState } from '@/hooks/usePageState'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Child } from '@/lib/api/types'
+import { useToast } from '@/app/providers/ToastProvider'
+import { documentProblem } from '@/features/children/documents'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { GroupOptions } from '@/features/children/components/GroupOptions'
 import { useCan } from '@/lib/rbac/useCan'
@@ -135,6 +137,9 @@ export default function ChildrenPage() {
     restored?.guardian ?? EMPTY_GUARDIAN_DRAFT,
   )
   const [showGuardianAlt, setShowGuardianAlt] = useState(restored?.showGuardianAlt ?? false)
+  // Fayl qoralamaga yozilmaydi — brauzer uni saqlab bera olmaydi.
+  const [contractFile, setContractFile] = useState<File | null>(null)
+  const { toast } = useToast()
   // Narx — tarif yoki individual summa (PricePicker).
   const [price, setPrice] = useState<PriceValue>(
     restored?.price ?? { tariffId: null, monthlyFee: null },
@@ -166,6 +171,7 @@ export default function ChildrenPage() {
     setFormGroupId('')
     setGuardian(EMPTY_GUARDIAN_DRAFT)
     setShowGuardianAlt(false)
+    setContractFile(null)
     setFieldErrors({})
     setError(null)
   }
@@ -282,8 +288,10 @@ export default function ChildrenPage() {
   }
 
   const createMutation = useMutation({
-    mutationFn: async (payload: ChildInput & { groupId: string; guardian?: GuardianDraft }) => {
-      const { groupId, guardian, ...childPayload } = payload
+    mutationFn: async (
+      payload: ChildInput & { groupId: string; guardian?: GuardianDraft; contract?: File | null },
+    ) => {
+      const { groupId, guardian, contract, ...childPayload } = payload
       const child = await childrenApi.create(childPayload)
       await enrollIfChosen(child.id, groupId)
       // Vasiy ixtiyoriy, lekin agar kiritilgan bo'lsa — DARHOL
@@ -299,6 +307,21 @@ export default function ChildrenPage() {
           relation: guardian.relation,
           is_primary: true,
         })
+      }
+      // Shartnoma fayli — ixtiyoriy (2026-10-21). Yuklanmasa ham bola
+      // saqlangan bo'ladi: xato alohida aytiladi, forma qayta yuborilmaydi
+      // (aks holda bola ikki marta yaratilardi).
+      if (contract) {
+        try {
+          await childrenApi.uploadDocument(child.id, contract)
+        } catch (err) {
+          toast(
+            t('Bola saqlandi, lekin shartnoma fayli yuklanmadi: {reason}', {
+              reason: err instanceof ApiError ? err.message : t('Xatolik yuz berdi.'),
+            }),
+            'error',
+          )
+        }
       }
       return child
     },
@@ -355,6 +378,7 @@ export default function ChildrenPage() {
         branch_id: selectedBranchId,
         groupId: formGroupId,
         guardian: guardian.phone ? guardian : undefined,
+        contract: contractFile,
       })
     }
   }
@@ -793,6 +817,36 @@ export default function ChildrenPage() {
               <p className="mt-1 text-xs text-red-600">{fieldErrors.monthly_fee}</p>
             )}
           </div>
+
+          {/* Imzolangan shartnoma fayli — IXTIYORIY (2026-10-21). */}
+          {!editing && (
+            <div className="sm:col-span-2">
+              <label
+                htmlFor="contract-file"
+                className="mb-1 block text-xs font-medium text-slate-600"
+              >
+                {t('Shartnoma fayli (ixtiyoriy) — PDF, DOC yoki DOCX')}
+              </label>
+              <input
+                id="contract-file"
+                type="file"
+                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null
+                  const problem = file ? documentProblem(file) : null
+                  setFieldErrors(({ contract: _drop, ...rest }) =>
+                    problem ? { ...rest, contract: problem } : rest,
+                  )
+                  setContractFile(problem ? null : file)
+                  if (problem) event.target.value = ''
+                }}
+                className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200"
+              />
+              {fieldErrors.contract && (
+                <p className="mt-1 text-xs text-red-600">{fieldErrors.contract}</p>
+              )}
+            </div>
+          )}
 
           {/* Vasiy — IXTIYORIY, lekin shu yerda (PLAN 2.3).
               Ilgari uni ikkinchi ekranda qo'shish kerak edi va

@@ -2794,3 +2794,39 @@ msgstr "expenses this month"
 
 msgid "shu yil"
 msgstr "this year"
+
+msgid "Obuna maʼlumoti yoʻq."
+msgstr "There is no subscription information."
+
+msgid "Savolni tushunmadim."
+msgstr "I did not understand the question."
+
+msgid "bu oy oylik maosh"
+msgstr "salary this month"
+
+msgid "bu oy qancha daromad qildik"
+msgstr "income this month"
+
+msgid "bugun nechta bola keldi"
+msgstr "attendance today"
+
+msgid "kunlik hisobot"
+msgstr "daily report"
+
+msgid "obuna summasi"
+msgstr "subscription amount"
+
+msgid "oylik hisobi hali yakunlanmagan."
+msgstr "payroll for the month is not finalised yet."
+
+msgid "xodimlar soni"
+msgstr "number of staff"
+
+msgid "Faqat PDF, DOC yoki DOCX fayl biriktiriladi."
+msgstr "Only PDF, DOC or DOCX files can be attached."
+
+msgid "Fayl ichi {suffix} emas — buzilgan yoki boshqa turdagi fayl."
+msgstr "The file is not a real {suffix} — it is damaged or of another type."
+
+msgid "Shartnoma"
+msgstr "Contract"

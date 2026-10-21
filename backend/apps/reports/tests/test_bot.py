@@ -111,7 +111,7 @@ def test_the_question_is_understood(text: str, intent: str, period: str):
     assert bot.classify(text) == (intent, period)
 
 
-@pytest.mark.parametrize("text", ["salom", "150 000 kartoshka", "", "nima gap"])
+@pytest.mark.parametrize("text", ["150 000 kartoshka", "", "1234"])
 def test_other_text_is_not_a_question(text: str):
     assert bot.classify(text) is None
 
@@ -182,7 +182,72 @@ def test_help_lists_what_can_be_asked(tenant_a: Any):
 
 
 def test_unknown_text_is_left_alone(tenant_a: Any):
-    assert _ask(tenant_a, "salom") is None
+    assert _ask(tenant_a, "1234") is None
+
+
+# --- Mijozning haqiqiy savollari (2026-10-21, skrinshot) ---
+
+
+@pytest.mark.parametrize(
+    ("text", "intent", "period"),
+    [
+        ("bu oy qancha daromad qildik?", "revenue", "month"),
+        ("bu oy qancha chiqim boʻldi", "expenses", "month"),
+        ("kunlik hisobotni ber", "summary", "today"),
+        ("kunlik hisobot qanaqa", "summary", "today"),
+        ("qarzdorliklar qancha", "debts", "today"),
+        ("obuna summasi qancha?", "subscription", "month"),
+        ("bugun nechta bola keldi", "attendance", "today"),
+        ("davomat qanaqa", "attendance", "today"),
+        ("xodimlar soni", "staff", "today"),
+        ("bu oy oylik maosh qancha", "payroll", "month"),
+        ("tushm", "revenue", "today"),
+        ("bugungi chiqm", "expenses", "today"),
+        ("umumiy holat", "summary", "today"),
+        ("kassada pul qancha", "cash", "today"),
+    ],
+)
+def test_the_customers_own_questions_are_understood(text: str, intent: str, period: str):
+    assert bot.classify(text) == (intent, period)
+
+
+def test_a_vague_question_gets_the_help(tenant_a: Any):
+    reply = _ask(tenant_a, "nima")
+    assert reply is not None
+    assert "tushum" in reply.lower()
+
+
+def test_a_greeting_is_answered_with_the_help(tenant_a: Any):
+    reply = _ask(tenant_a, "salom")
+    assert reply is not None
+    assert "tushum" in reply.lower()
+
+
+def test_the_daily_summary(tenant_a: Any):
+    _pay(tenant_a, "600000")
+    reply = _ask(tenant_a, "kunlik hisobotni ber")
+    assert reply is not None
+    assert "600 000" in reply
+    assert "Chiqim" in reply
+
+
+def test_the_subscription_amount_for_the_owner(tenant_a: Any):
+    reply = _ask(tenant_a, "obuna summasi qancha?")
+    assert reply is not None
+    assert "soʻm" in reply
+
+
+def test_a_cashier_gets_no_subscription_figure(tenant_a: Any):
+    cashier = _user(tenant_a, "cashier", "kassir@alfa.uz")
+    reply = _ask(tenant_a, "obuna summasi qancha?", cashier)
+    assert reply is not None
+    assert "ruxsat" in reply.lower()
+
+
+def test_todays_attendance(tenant_a: Any):
+    reply = _ask(tenant_a, "bugun nechta bola keldi")
+    assert reply is not None
+    assert "Keldi" in reply
 
 
 # --- Huquqlar ---
@@ -250,6 +315,61 @@ def test_every_example_in_the_help_is_understood(language: str):
 
     with translation.override(language):
         examples = [line[2:] for line in bot.help_text().splitlines() if line.startswith("• ")]
-    assert len(examples) == 8
+    assert len(examples) == 13
     for example in examples:
         assert bot.classify(example) is not None, (language, example)
+
+
+def _link_guardian_chat(tenant: Any, chat: str) -> None:
+    """Shu chat ota-ona sifatida ham ulangan (egasi test qilgan holat)."""
+    from apps.children.models import ChildGuardian, Guardian
+    from apps.children.telegram import build_code, link_from_start
+
+    with _ctx(tenant):
+        guardian = Guardian.objects.create(
+            organization=tenant.organization,
+            branch=tenant.branch,
+            first_name="Ota",
+            last_name="Ona",
+            phone="+998901112233",
+        )
+        ChildGuardian.objects.create(
+            organization=tenant.organization,
+            branch=tenant.branch,
+            child=_child(tenant, "Farzand"),
+            guardian=guardian,
+            is_primary=True,
+        )
+        guardian.telegram_code = build_code(tenant.organization.id)
+        guardian.save(update_fields=["telegram_code"])
+        code = guardian.telegram_code
+    assert link_from_start(code=code, chat_id=chat) is not None
+
+
+def test_a_staff_chat_never_gets_the_parent_menu_for_free_text(tenant_a: Any, monkeypatch: Any):
+    from apps.notifications import telegram_updates
+
+    sent: list[str] = []
+    monkeypatch.setattr(telegram_updates, "reply", lambda chat, text, *a, **k: sent.append(text))
+    _remember_staff(tenant_a, "6006")
+    _link_guardian_chat(tenant_a, "6006")
+
+    outcome = telegram_updates.handle_update(
+        {"message": {"chat": {"id": 6006}, "text": "bu nima ekan", "from": {}}}
+    )
+    assert outcome == "staff_help"
+    assert not any("tugmalardan birini" in text for text in sent)
+
+
+def test_a_parent_button_still_reaches_the_parent_bot(tenant_a: Any, monkeypatch: Any):
+    from apps.notifications import telegram_updates
+
+    sent: list[str] = []
+    monkeypatch.setattr(telegram_updates, "reply", lambda chat, text, *a, **k: sent.append(text))
+    _remember_staff(tenant_a, "7007")
+    _link_guardian_chat(tenant_a, "7007")
+
+    outcome = telegram_updates.handle_update(
+        {"message": {"chat": {"id": 7007}, "text": "💰 Balans", "from": {}}}
+    )
+    assert outcome not in ("staff_help", "staff_query")

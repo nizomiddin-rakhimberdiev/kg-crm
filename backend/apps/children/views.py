@@ -62,6 +62,12 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
         "hard_delete": "delete",
         "guardian_link": "update",
         "annual_statement": "read",
+        # Bolaning hujjatlari (2026-10-21): ko'rish — o'qish, biriktirish va
+        # o'chirish — bolani tahrirlash ruxsati.
+        "documents": "read",
+        "documents_upload": "update",
+        "document_download": "read",
+        "document_delete": "update",
     }
     model = Child
     # `search_fields` ataylab qoldirilgan: u DRF ning standart qidiruvi
@@ -151,6 +157,83 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
             entity_type="child",
             entity_id=instance.id,
         )
+
+    # --- Hujjatlar: imzolangan shartnomaning elektron nusxasi (2026-10-21) ---
+
+    @staticmethod
+    def _document_data(document: Any) -> dict[str, Any]:
+        return {
+            "id": str(document.id),
+            "kind": document.kind,
+            "name": document.name,
+            "size": document.size,
+            "uploaded_by": document.uploaded_by.full_name if document.uploaded_by else "",
+            "created_at": document.created_at.isoformat(),
+        }
+
+    @action(detail=True, methods=["get"], url_path="documents")
+    def documents(self, request: Request, pk: str | None = None) -> Response:
+        """`GET /children/{id}/documents` — biriktirilgan fayllar."""
+        child = self.get_object()
+        rows = child.documents.select_related("uploaded_by")
+        return Response([self._document_data(row) for row in rows])
+
+    @documents.mapping.post
+    def documents_upload(self, request: Request, pk: str | None = None) -> Response:
+        """`POST /children/{id}/documents` — `file`: PDF, DOC yoki DOCX, 10 MB gacha."""
+        child = self.get_object()
+        user = request_user(request)
+        document = services.attach_document(
+            child=child, uploaded=request.FILES.get("file"), user=user
+        )
+        audit.record(
+            action="create",
+            request=request._request,
+            actor=user,
+            entity_type="child_document",
+            entity_id=document.id,
+            changes={"child": str(child.id), "name": document.name, "size": document.size},
+        )
+        return Response(self._document_data(document), status=status.HTTP_201_CREATED)
+
+    def _document(self, document_id: str) -> Any:
+        child = self.get_object()
+        try:
+            key = UUID(str(document_id))
+        except ValueError as exc:
+            raise Http404 from exc
+        document = child.documents.filter(pk=key).first()
+        if document is None:
+            raise Http404
+        return document
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path=r"documents/(?P<document_id>[0-9a-f-]{36})/download",
+    )
+    def document_download(
+        self, request: Request, pk: str | None = None, document_id: str = ""
+    ) -> FileResponse:
+        """Fayl shu endpoint orqali — `/media/` havolasi tenantni bilmaydi."""
+        document = self._document(document_id)
+        return FileResponse(document.file.open("rb"), filename=document.name)
+
+    @action(detail=True, methods=["delete"], url_path=r"documents/(?P<document_id>[0-9a-f-]{36})")
+    def document_delete(
+        self, request: Request, pk: str | None = None, document_id: str = ""
+    ) -> Response:
+        document = self._document(document_id)
+        audit.record(
+            action="delete",
+            request=request._request,
+            actor=request_user(request),
+            entity_type="child_document",
+            entity_id=document.id,
+            changes={"child": str(document.child_id), "name": document.name},
+        )
+        services.remove_document(document=document)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["get"], url_path="annual-statement")
     def annual_statement(self, request: Request, pk: str | None = None) -> FileResponse:

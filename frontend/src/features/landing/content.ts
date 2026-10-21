@@ -511,7 +511,7 @@ const uz: Copy = {
       },
       {
         title: 'Shartnoma — qoʻlda emas',
-        text: 'Shablon sizniki; bolaning ismi, tarifi va vasiysi oʻzi joylashadi, raqam avtomatik — SH-2026-0007. Imzolangani qotib qoladi: tarif keyin oʻzgarsa ham, shartnomada kelishilgan summa turaveradi.',
+        text: 'Shablon sizniki; bolaning ismi, tarifi va vasiysi oʻzi joylashadi, raqam avtomatik — SH-2026-0007. Imzolangani qotib qoladi. Qogʻozda imzolanganini esa PDF yoki Word fayl qilib bolaga biriktirasiz — kerak boʻlganda bir bosishda topiladi.',
       },
       {
         title: 'Kassada yoʻq pul chiqmaydi',
@@ -1079,7 +1079,7 @@ const ru: Copy = {
       },
       {
         title: 'Договор — не вручную',
-        text: 'Шаблон ваш; имя ребёнка, тариф и опекун подставляются сами, номер автоматический — SH-2026-0007. Подписанный застывает: даже если тариф потом изменится, в договоре останется согласованная сумма.',
+        text: 'Шаблон ваш; имя ребёнка, тариф и опекун подставляются сами, номер автоматический — SH-2026-0007. Подписанный застывает. А подписанный на бумаге прикрепляете к ребёнку файлом PDF или Word — находится в один клик.',
       },
       {
         title: 'Из пустой кассы деньги не уйдут',
@@ -1640,7 +1640,7 @@ const en: Copy = {
       },
       {
         title: 'Contracts, not retyping',
-        text: 'The template is yours; the child, the tariff and the guardian fill themselves in, and the number is automatic — SH-2026-0007. A signed contract freezes: if the tariff changes next month, it still says what was agreed.',
+        text: 'The template is yours; the child, the tariff and the guardian fill themselves in, and the number is automatic — SH-2026-0007. A signed contract freezes. One signed on paper is attached to the child as a PDF or Word file — one click away when you need it.',
       },
       {
         title: 'An empty till pays nothing out',

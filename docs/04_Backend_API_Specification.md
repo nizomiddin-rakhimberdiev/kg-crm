@@ -420,10 +420,10 @@ Permission module `attendance` — whoever keeps the children's register keeps t
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/staff-attendance/daily?date=&branch=` | `attendance.read` | Every employee employed that day, `status: null` if unmarked, `on_leave` from the employee card |
-| POST | `/staff-attendance/bulk` | `attendance.create` | `{attendance_date, records: [{employee_id, status, note?}], branch_id?}` — upsert; `status ∈ present/absent/sick/leave` |
-| GET | `/staff-attendance/timesheet?month=YYYY-MM&branch=` | `attendance.read` | Employee × day grid (`days: {"1": "present", …}`), counts per status, `working_days` per employee, `unmarked` up to today, `working_dates` for the header |
-| POST | `/reports/staff-attendance/export` | `reports.export` + `attendance.read` | Excel timesheet: employee, position, branch, day 1…31 codes (K/Y/B/T — translated), totals. `params: {year, month, branch_id?}` |
+| GET | `/staff-attendance/daily?date=&branch=` | `payroll.read` (since 2026-10-21 — was `attendance.read`, which let every role that marks children's attendance see the staff register) | Every employee employed that day, `status: null` if unmarked, `on_leave` from the employee card |
+| POST | `/staff-attendance/bulk` | `payroll.create` | `{attendance_date, records: [{employee_id, status, note?}], branch_id?}` — upsert; `status ∈ present/absent/sick/leave` |
+| GET | `/staff-attendance/timesheet?month=YYYY-MM&branch=` | `payroll.read` | Employee × day grid (`days: {"1": "present", …}`), counts per status, `working_days` per employee, `unmarked` up to today, `working_dates` for the header |
+| POST | `/reports/staff-attendance/export` | `reports.export` + `payroll.read` | Excel timesheet: employee, position, branch, day 1…31 codes (K/Y/B/T — translated), totals. `params: {year, month, branch_id?}` |
 
 **Errors:** `422` future date or a day the employee was not employed; `404` an employee outside the caller's tenant **or branch** (existence is not disclosed); `402` on `bulk` when the subscription is suspended.
 
@@ -1192,6 +1192,9 @@ Module: `platform`. **Not part of the customer API surface** — separate auth p
 | GET · POST | `/settings/tax-presets` · `/settings/tax-presets/apply` | `settings.read` · `settings.update` | Presets `pq403` · `general` · `turnover` and their values; apply writes them as ordinary settings |
 | POST | `/payments/{id}/fiscal` | `payments.update` (own-only applies) | `{number?, qr?}` — the fiscal receipt; the payment detail returns `fiscal: {status: issued · missing · provider · not_required, kind, …}` |
 | GET | `/children/{id}/annual-statement?year=` | `children.read` + `payments.read`, not own-only | The parent's annual payment statement (PDF): paid, refunded and within the income-tax exemption limit per month, payers with TIN |
+| GET · POST | `/children/{id}/documents` | `children.read` · `children.update` | Signed contract as a file (2026-10-21): POST `multipart` `file` — PDF, DOC or DOCX, up to 10 MB; the extension AND the file's own signature must match (`%PDF`, `PK\x03\x04`, OLE) or `422`. GET lists `{id, kind, name, size, uploaded_by, created_at}` |
+| GET | `/children/{id}/documents/{doc_id}/download` | `children.read` | The file under its original name — through the API, never a `/media/` link; another tenant's id is `404` |
+| DELETE | `/children/{id}/documents/{doc_id}` | `children.update` | Removes the row and the stored file; audited |
 | GET | `/children/import-template` | `children.create` | `.xlsx` template with the kindergarten's own groups and tariffs; since 12.7 also "Imtiyoz" and "Imtiyoz sababi" columns; since 14 "Qayerdan eshitgan" (Instagram, Telegram, Facebook, sayt, tanish-bilish, aka-uka, banner, yonidan oʻtib, boshqa — an unknown word is a row error) |
 | POST | `/children/import` | `children.create` | `multipart`: `file`, `dry_run` (default `true`), `branch_id?`, `duplicate_decision?` (`skip` · `keep`). Report: `total_rows`, `created`, `skipped_duplicates` (exact re-uploads), `errors` (row, field, message — any error writes nothing), and since 12.7 `warnings` (one family — one guardian phone — at different prices; "aka-uka" without a shared guardian) and `possible_duplicates` (names equal after transliteration — Oʻ/O', X/H, vowel drift — inside the file or against children already in the system). A real run with possible duplicates and no decision writes nothing. Phones are normalised to `+998…`, so one parent written two ways is one guardian and one family. The benefit column becomes a typed `discount` with its reason, or "Excel importidan: …" when the reason column is empty |
 

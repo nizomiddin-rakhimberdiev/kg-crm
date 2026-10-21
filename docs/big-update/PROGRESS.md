@@ -2308,3 +2308,24 @@ qarori: **sun'iy intellektsiz** (ADR-14 kuchda), buyruqli bot.
   tekshiradi — "expenses" (x → h skeleti) shu test bilan topildi.
 * Shartnoma: mijoz so'rovi bo'yicha yangi kod yo'q — modul 9.3 dan beri
   prod'da yoqiq (shablondan tuzish, imzolandi, chop etish).
+
+## Mijoz tuzatishlari (2026-10-21)
+
+1. **Xodimlar davomati** endi "Xodimlar" sahifasida (to'rtinchi tab) va
+   oylik/HR ruxsati (`payroll.read` / `payroll.create`) bilan. Avval u
+   Davomat sahifasida bolalar davomati ruxsati bilan edi — bolalarni
+   belgilaydigan har bir rol (kassir, admin, menejer) xodimlarnikini ham
+   ko'rardi. Eski `/attendance?tab=staff` havolasi yangi joyga
+   yo'naltiriladi; Excel tabel eksporti ham `payroll.read` ga o'tdi.
+2. **Bot tushunishi**: skrinshotdagi haqiqiy savollar test bo'ldi —
+   "daromad", "kunlik hisobot", "obuna summasi", davomat, xodimlar, maosh,
+   umumiy holat; bitta harf xatosi kechiriladi ("tushm"). Xodim chatida
+   tushunilmagan matnga endi ota-ona menyusi ("Quyidagi tugmalardan birini
+   tanlang") emas, xodim yordami chiqadi; ota-ona menyusi tugmalari
+   ("💰 Balans") savoldan OLDIN tekshiriladi — aks holda "balans" kassa
+   savoli deb tushunilardi (test topdi).
+3. **Imzolangan shartnoma fayli** (`child_document`): bola qo'shishda
+   (ixtiyoriy) yoki keyin bola sahifasida PDF/DOC/DOCX, 10 MB gacha; tur
+   kengaytma va fayl ichidagi imzo bo'yicha tekshiriladi. Yo'l-yo'lakay:
+   tashkilotni butunlay o'chirish (purge) diskdagi fayllarni qoldirardi
+   (cheklar, eksportlar) — endi qatorlar bilan birga fayllar ham o'chadi.

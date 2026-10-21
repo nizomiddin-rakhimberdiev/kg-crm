@@ -458,6 +458,10 @@ Authentication identity.
 - The invoice **copies** the amount (`invoice.amount_due`, the first `invoice_line`); with an individual price `invoice.tariff_id` is `NULL` and the line reads "Individual narx — MM/YYYY". Changing the price later never rewrites issued invoices — the same rule as a tariff.
 - Soft delete only; a child with financial history is never hard-deleted.
 
+### 11.1a `child_document` — files attached to a child (2026-10-21)
+
+Branch-scoped (RLS). `child_id` (`RESTRICT`), `kind` (`contract`), `file` (`FileField`, stored as `{organization}/child-documents/{uuid}.{ext}` — the original name is kept in `name`, never used on disk), `name`, `size`, `uploaded_by_id`. The signed paper contract as PDF/DOC/DOCX, separate from the template-made `contract`. Deleting a mistaken child, the organisation purge and the reset command remove the stored file together with the row (Django's `queryset.delete()` does not).
+
 ### 11.2 `guardian`
 
 | Column | Type | Constraints | Notes |

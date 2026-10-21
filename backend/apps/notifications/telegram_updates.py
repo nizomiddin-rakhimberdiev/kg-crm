@@ -126,12 +126,20 @@ def _handle_staff(chat_id: str, text: str, caption: str, photos: list[Any]) -> s
 def _staff_question(chat_id: str, text: str) -> str | None:
     """
     Rahbar savoli ("bugungi tushum", "bu oy foyda" …) — buyruqli bot,
-    sun'iy intellektsiz (`apps/reports/bot.py`). Savol bo'lmasa `None`:
-    matn ota-ona botiga o'tadi, xuddi avvalgidek.
+    sun'iy intellektsiz (`apps/reports/bot.py`).
+
+    Xodim chatidagi har qanday matnga xodim javob oladi: savol bo'lsa —
+    raqam, bo'lmasa — nima so'rash mumkinligi. Ota-ona menyusi ("Quyidagi
+    tugmalardan birini tanlang") xodimga chiqmaydi (mijoz, 2026-10-21).
+    Yagona istisno — shu chat ota-ona sifatida ham ulangan va ota-ona
+    menyusi TUGMASI bosilgan ("💰 Balans"): u ota-ona botiga o'tadi, va bu
+    tekshiruv savoldan OLDIN turadi — aks holda "balans" kassa savoli deb
+    tushunilardi.
     """
     from apps.accounts import telegram as staff
+    from apps.parent_bot import texts as parent_texts
 
-    if not text or text.startswith("/start"):
+    if not text or text.startswith("/start") or parent_texts.action_for(text) is not None:
         return None
     found = staff.staff_for_chat(chat_id)
     if found is None:
@@ -142,10 +150,11 @@ def _staff_question(chat_id: str, text: str) -> str | None:
 
     with organization_context(organization_id):
         answer = bot.answer(user=user, text=text)
-    if answer is None:
-        return None
+        understood = bot.classify(text) is not None
+        if answer is None:
+            answer = bot.not_understood(user=user)
     reply(chat_id, answer)
-    return "staff_query"
+    return "staff_query" if understood else "staff_help"
 
 
 def _handle_callback(callback: dict[str, Any]) -> str:

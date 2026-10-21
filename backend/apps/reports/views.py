@@ -157,7 +157,8 @@ class DashboardViewSet(_ScopeMixin, viewsets.ViewSet):
 # `profit-loss` oylik maoshni o'z ichiga oladi, shuning uchun u eng qattiq
 # komponent — `payroll.read` — bilan qo'riqlanadi.
 REPORT_SCOPE: dict[str, str] = {
-    "staff-attendance": "attendance.read",
+    # Xodimlar tabeli — xodimlar bo'limi ruxsati (2026-10-21), bolalar davomati emas.
+    "staff-attendance": "payroll.read",
     "revenue": "payments.read",
     "debtors": "debtors.read",
     "expenses": "expenses.read",

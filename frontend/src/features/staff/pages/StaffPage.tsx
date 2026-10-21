@@ -1,8 +1,11 @@
 /**
- * Xodimlar — bitta sahifa, uch tab.
+ * Xodimlar — bitta sahifa, to'rt tab.
  *
  *   • Xodimlar         — HR ro'yxati (`/employees`, `payroll.read`):
  *                        oylik oladigan har bir odam.
+ *   • Davomat          — xodimlar tabeli (`/staff-attendance`,
+ *                        `payroll.read`); 2026-10-21 gacha Davomat
+ *                        sahifasida bolalar davomati ruxsati bilan edi.
  *   • Tizim hisoblari  — login bilan kiruvchilar (`/users`, `users.read`).
  *   • Rollar           — ruxsatlar matritsasi (`users.read`).
  *
@@ -17,6 +20,7 @@
  */
 
 import { useSearchParams } from 'react-router-dom'
+import { StaffAttendancePanel } from '@/features/attendance/components/StaffAttendancePanel'
 import { AccountsPanel } from '@/features/staff/components/AccountsPanel'
 import { EmployeesPanel } from '@/features/staff/components/EmployeesPanel'
 import { RolesPanel } from '@/features/staff/components/RolesPanel'
@@ -24,10 +28,12 @@ import { useCan, type PermissionCode } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
-type Tab = 'employees' | 'accounts' | 'roles'
+type Tab = 'employees' | 'attendance' | 'accounts' | 'roles'
 
 const TABS: Array<{ key: Tab; label: string; permission: PermissionCode }> = [
   { key: 'employees', label: t('Xodimlar'), permission: 'payroll.read' },
+  // Xodimlar davomati (tabel) — shu yerda, oylik/HR ruxsati bilan (2026-10-21).
+  { key: 'attendance', label: t('Davomat'), permission: 'payroll.read' },
   { key: 'accounts', label: t('Tizim hisoblari'), permission: 'users.read' },
   { key: 'roles', label: t('Rollar va ruxsatlar'), permission: 'users.read' },
 ]
@@ -81,6 +87,7 @@ export default function StaffPage() {
       )}
 
       {tab === 'employees' && <EmployeesPanel />}
+      {tab === 'attendance' && <StaffAttendancePanel />}
       {tab === 'accounts' && <AccountsPanel />}
       {tab === 'roles' && <RolesPanel />}
     </div>

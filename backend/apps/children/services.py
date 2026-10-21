@@ -513,4 +513,62 @@ def delete_child(*, child: Child, actor: Any = None) -> None:
         )
     child.guardian_links.all().delete()
     child.enrollments.all().delete()
+    for document in child.documents.all():
+        # Qator bilan birga fayl ham — Django `delete()` uni o'zi o'chirmaydi.
+        document.file.delete(save=False)
+        document.delete()
     child.delete()
+
+
+# --- Bolaning hujjatlari (imzolangan shartnoma fayli, 2026-10-21) ---
+
+#: Kengaytma → fayl boshidagi imzo. Ikkalasi mos kelishi SHART: ".pdf"
+#: deb nomlangan boshqa narsa (masalan, dastur) qabul qilinmaydi.
+DOCUMENT_SIGNATURES: dict[str, tuple[bytes, ...]] = {
+    ".pdf": (b"%PDF",),
+    ".docx": (b"PK\x03\x04",),
+    ".doc": (b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1",),
+}
+MAX_DOCUMENT_BYTES = 10 * 1024 * 1024
+
+
+@transaction.atomic
+def attach_document(*, child: Child, uploaded: Any, user: Any = None) -> Any:
+    """Bolaga PDF, DOC yoki DOCX biriktiradi — 10 MB gacha."""
+    from pathlib import PurePosixPath
+
+    from apps.children.models import ChildDocument
+
+    if uploaded is None:
+        raise BusinessRuleViolation(gettext("Fayl yuborilmagan."))
+    name = PurePosixPath(str(uploaded.name or "")).name[:255]
+    suffix = PurePosixPath(name).suffix.lower()
+    if suffix not in DOCUMENT_SIGNATURES:
+        raise BusinessRuleViolation(gettext("Faqat PDF, DOC yoki DOCX fayl biriktiriladi."))
+    if uploaded.size > MAX_DOCUMENT_BYTES:
+        raise BusinessRuleViolation(gettext("Fayl 10 MB dan kichik boʻlishi kerak."))
+    head = uploaded.read(8)
+    uploaded.seek(0)
+    if not any(head.startswith(magic) for magic in DOCUMENT_SIGNATURES[suffix]):
+        raise BusinessRuleViolation(
+            gettext("Fayl ichi {suffix} emas — buzilgan yoki boshqa turdagi fayl.").format(
+                suffix=suffix.lstrip(".").upper()
+            )
+        )
+    document = ChildDocument(
+        organization_id=child.organization_id,
+        branch_id=child.branch_id,
+        child=child,
+        name=name,
+        size=uploaded.size,
+        uploaded_by=user,
+    )
+    document.file.save(name, uploaded, save=False)
+    document.save()
+    return document
+
+
+@transaction.atomic
+def remove_document(*, document: Any) -> None:
+    document.file.delete(save=False)
+    document.delete()

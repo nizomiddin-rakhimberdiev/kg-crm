@@ -22,6 +22,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { heardFromLabel } from '@/features/children/heardFrom'
 import { AnnualStatementButton } from '@/features/children/components/AnnualStatementButton'
 import { ChildBalanceCard } from '@/features/children/components/ChildBalanceCard'
+import { ChildDocumentsCard } from '@/features/children/components/ChildDocumentsCard'
 import { BenefitsPanel } from '@/features/children/components/BenefitsPanel'
 import { PausePanel } from '@/features/children/components/PausePanel'
 import { ChildEditDialog } from '@/features/children/components/ChildEditDialog'
@@ -649,6 +650,9 @@ export default function ChildDetailPage() {
 
       {/* Contracts (PLAN 6.5) — next to the guardians they are made with. */}
       {contractsOn && <ContractsCard childId={childId} />}
+
+      {/* Imzolangan shartnoma fayli (2026-10-21) — shablondan qat'i nazar. */}
+      <ChildDocumentsCard childId={childId} />
 
       {/* Imtiyoz va oila (Bosqich 12.2) hamda "bir oylik ariza" (12.1) —
           ikkalasi ham bolaning oylik summasini belgilaydi, shuning uchun yonma-yon. */}

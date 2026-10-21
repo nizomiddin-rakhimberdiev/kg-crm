@@ -2794,3 +2794,39 @@ msgstr "расход за месяц"
 
 msgid "shu yil"
 msgstr "этот год"
+
+msgid "Obuna maʼlumoti yoʻq."
+msgstr "Данных о подписке нет."
+
+msgid "Savolni tushunmadim."
+msgstr "Не понял вопрос."
+
+msgid "bu oy oylik maosh"
+msgstr "зарплата за месяц"
+
+msgid "bu oy qancha daromad qildik"
+msgstr "сколько дохода за месяц"
+
+msgid "bugun nechta bola keldi"
+msgstr "сколько детей пришло сегодня"
+
+msgid "kunlik hisobot"
+msgstr "отчёт за сегодня"
+
+msgid "obuna summasi"
+msgstr "сумма подписки"
+
+msgid "oylik hisobi hali yakunlanmagan."
+msgstr "расчёт зарплаты ещё не завершён."
+
+msgid "xodimlar soni"
+msgstr "количество сотрудников"
+
+msgid "Faqat PDF, DOC yoki DOCX fayl biriktiriladi."
+msgstr "Можно прикрепить только PDF, DOC или DOCX."
+
+msgid "Fayl ichi {suffix} emas — buzilgan yoki boshqa turdagi fayl."
+msgstr "Содержимое файла — не {suffix}: файл повреждён или другого типа."
+
+msgid "Shartnoma"
+msgstr "Договор"

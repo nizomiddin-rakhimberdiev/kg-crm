@@ -26,13 +26,15 @@ class StaffAttendanceViewSet(viewsets.ViewSet):
     """
     `/staff-attendance/*` — kunlik jurnal, belgilash va oylik tabel.
 
-    Ruxsat — `attendance` moduli: tabelni bolalar davomatini yurituvchi
-    odam belgilaydi. Javoblarda maosh yo'q — faqat ism, lavozim va kunlar,
-    ya'ni `payroll.read` talab qilinmaydi.
+    Ruxsat — `payroll` moduli (xodimlar/HR), `attendance` EMAS. Avval
+    tabelni bolalar davomatini yurituvchi odam belgilardi, va natijada
+    bolalar davomati ruxsati bor har bir rol — kassir, admin — xodimlar
+    davomatini ham ko'rardi. Mijoz (2026-10-21): bu xodimlar bo'limining
+    ishi. Ekran ham "Xodimlar" sahifasiga ko'chdi.
     """
 
     permission_classes = [HasModulePermission, SubscriptionWriteGate]
-    permission_module = "attendance"
+    permission_module = "payroll"
     permission_action_map = {"daily": "read", "timesheet": "read", "bulk": "create"}
 
     @action(detail=False, methods=["get"])

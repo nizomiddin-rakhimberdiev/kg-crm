@@ -484,3 +484,50 @@ class Enrollment(BranchScopedModel):
 
     def __str__(self) -> str:
         return f"{self.child_id} → {self.group_id}"
+
+
+# --- Bolaning hujjatlari (mijoz so'rovi, 2026-10-21) ---
+
+
+def child_document_path(instance: Any, filename: str) -> str:
+    """`media/{organization}/child-documents/{uuid}.{ext}` — nom taxmin qilinmasin."""
+    import uuid
+    from pathlib import PurePosixPath
+
+    suffix = PurePosixPath(filename).suffix.lower()
+    return f"{instance.organization_id}/child-documents/{uuid.uuid4()}{suffix}"
+
+
+class ChildDocumentKind(models.TextChoices):
+    CONTRACT = "contract", gettext_lazy("Shartnoma")
+
+
+class ChildDocument(BranchScopedModel):
+    """
+    Bolaga biriktirilgan fayl — hozircha imzolangan shartnomaning elektron
+    nusxasi (PDF, DOC, DOCX).
+
+    Bu shablondan tuziladigan `contracts.Contract` dan ALOHIDA: u tizim
+    yozgan matn, bu esa bog'chaning o'z qog'ozi. Fayl `/media/` orqali
+    emas, tenantni biladigan endpoint orqali beriladi; asl nomi saqlanadi,
+    diskdagi nomi esa UUID.
+    """
+
+    child = models.ForeignKey(Child, on_delete=models.RESTRICT, related_name="documents")
+    kind = models.CharField(
+        max_length=20, choices=ChildDocumentKind.choices, default=ChildDocumentKind.CONTRACT
+    )
+    file = models.FileField(upload_to=child_document_path, max_length=255)
+    name = models.CharField(max_length=255)
+    size = models.PositiveIntegerField()
+    uploaded_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="+",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "child_document"
+        ordering = ["-created_at"]

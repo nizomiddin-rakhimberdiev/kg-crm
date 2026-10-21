@@ -23,35 +23,73 @@ from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any
 
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.utils import timezone, translation
 from django.utils.translation import gettext
 
 from apps.core.translit import search_key
 
-__all__ = ["answer", "classify", "help_text"]
+__all__ = ["answer", "classify", "help_text", "not_understood"]
 
 ZERO = Decimal("0")
 
-#: Savol turi → skeletdagi so'z bo'laklari. Tartib muhim: "qarzdor bolalar"
-#: — qarz, "sof foyda" — foyda.
+#: Savol turi → so'z bo'laklari (`search_key` skeletida: apostrofsiz, kirill
+#: lotinga, x → h). Bo'lak matnning istalgan joyida bo'lsa yetadi; 4 harfdan
+#: uzun so'zlarda bitta harf xatosi ham kechiriladi ("tushm" → tushum).
+#: Tartib muhim: aniq mavzular avval, "hisobot/holat" (umumiy xulosa) — oxirida.
 INTENTS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("subscription", ("obuna", "podpisk", "subscription")),
+    ("payroll", ("maosh", "ishhaqi", "zarplat", "salary")),
     ("profit", ("foyda", "pribil", "profit")),
-    ("expenses", ("chiqim", "harajat", "rashod", "ehpens", "spent")),  # x → h (search_key)
-    ("revenue", ("tushum", "tushgan", "kirim", "viruchk", "vyruchk", "postuplen", "revenue")),
+    ("expenses", ("chiqim", "harajat", "rashod", "ehpens", "sarf", "spent")),  # x → h
+    (
+        "revenue",
+        (
+            "tushum",
+            "tushgan",
+            "kirim",
+            "daromad",
+            "viruchk",
+            "vyruchk",
+            "postuplen",
+            "dohod",
+            "revenue",
+            "income",
+        ),
+    ),
     ("debts", ("qarz", "dolg", "debt")),
-    ("cash", ("kass", "balans", "cash")),
-    ("children", ("bola", "deti", "detey", "child", "kids")),
+    ("attendance", ("davomat", "keldi", "kelmadi", "kelgan", "poseshch", "prishl", "attendance")),
+    ("staff", ("hodim", "sotrudnik", "tarbiyachi", "employee", "staff")),
+    ("cash", ("kass", "balans", "qoldiq", "cash")),
+    ("children", ("bola", "deti", "detey", "rebenok", "rebyonok", "child", "kids")),
+    (
+        "summary",
+        (
+            "hisobot",
+            "hulosa",
+            "otchet",
+            "otchot",
+            "svodk",
+            "itog",
+            "umumiy",
+            "holat",
+            "ahvol",
+            "vaziyat",
+            "report",
+            "summary",
+        ),
+    ),
 )
 
-#: Davr → so'z bo'laklari. Tartib muhim: "segodnya" ichida "god" bor.
+#: Davr → so'z bo'laklari. Tartib muhim: "segodnya" ichida "god" bor, shuning
+#: uchun "bugun" yildan oldin. "Oy" — faqat so'z boshida ("bu oy", "oydagi").
 PERIODS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("today", ("bugun", "segodn", "today")),
+    ("today", ("bugun", "kunlik", "segodn", "today", "daily")),
     ("yesterday", ("kecha", "vcher", "yesterday")),
     ("last_month", ("otganoy", "utganoy", "otkanoy", "proshl", "lastmonth")),
     ("week", ("hafta", "nedel", "week")),
     ("year", ("yil", "god", "year")),
-    ("month", ("oy", "mesya", "month")),
+    ("month", ("mesya", "month")),
 )
 
 DEFAULT_PERIOD = {
@@ -61,9 +99,51 @@ DEFAULT_PERIOD = {
     "children": "today",
     "debts": "today",
     "cash": "today",
+    "subscription": "month",
+    "payroll": "month",
+    "attendance": "today",
+    "staff": "today",
+    "summary": "today",
 }
 
-HELP_WORDS = ("help", "menu", "yordam", "menyu", "pomosh", "spravk")
+#: Umumiy so'z yoki salom — yordam ro'yxati bilan javob.
+HELP_WORDS = (
+    "help",
+    "menu",
+    "yordam",
+    "menyu",
+    "pomosh",
+    "spravk",
+    "nima",
+    "salom",
+    "assalom",
+    "privet",
+    "zdravst",
+    "hello",
+    "qanday",
+    "qanaqa",
+)
+
+
+def _tokens(text: str) -> list[str]:
+    import re
+
+    return [key for key in (search_key(part) for part in re.split(r"[\s,.!?;:]+", text)) if key]
+
+
+def _close(token: str, word: str) -> bool:
+    """Bitta harf xatosi: "tushm" ~ "tushum", "chiqm" ~ "chiqim"."""
+    from difflib import SequenceMatcher
+
+    if len(token) < 4 or len(word) < 4:
+        return False
+    return SequenceMatcher(None, token[: len(word) + 1], word).ratio() >= 0.83
+
+
+def _mentions(key: str, tokens: list[str], words: tuple[str, ...]) -> bool:
+    return any(word in key for word in words) or any(
+        _close(token, word) for token in tokens for word in words
+    )
 
 
 def classify(text: str) -> tuple[str, str] | None:
@@ -71,14 +151,14 @@ def classify(text: str) -> tuple[str, str] | None:
     key = search_key(text or "")
     if not key or key[0].isdigit():
         return None  # "150 000 kartoshka" — chiqim kiritish
-    intent = next((name for name, words in INTENTS if any(w in key for w in words)), None)
+    tokens = _tokens(text)
+    intent = next((name for name, words in INTENTS if _mentions(key, tokens, words)), None)
     if intent is None:
         return None
-    period = next(
-        (name for name, words in PERIODS if any(w in key for w in words)),
-        DEFAULT_PERIOD[intent],
-    )
-    return intent, period
+    period = next((name for name, words in PERIODS if any(word in key for word in words)), None)
+    if period is None and any(token.startswith("oy") for token in tokens):
+        period = "month"
+    return intent, period or DEFAULT_PERIOD[intent]
 
 
 def _som(value: Any) -> str:
@@ -145,6 +225,19 @@ def _revenue(user: Any, period: str) -> str:
     lines = [f"💰 {title} — {label}{_where(user)}: {_som(total)} {gettext('soʻm')}"]
     labels = dict(PaymentMethod.choices)
     lines += [f"• {labels.get(row['method'], row['method'])}: {_som(row['total'])}" for row in rows]
+    if period in ("month", "last_month") and not own:
+        # "Qancha daromad qildik?" — oy uchun hisoblangan summa ham (fakturalar).
+        from apps.finance.models import Invoice, InvoiceStatus
+
+        invoices = Invoice.objects.filter(
+            organization_id=user.organization_id,
+            period_year=start.year,
+            period_month=start.month,
+        ).exclude(status=InvoiceStatus.CANCELLED)
+        if user.branch_id:
+            invoices = invoices.filter(branch_id=user.branch_id)
+        charged = invoices.aggregate(total=Sum("amount_due"))["total"] or ZERO
+        lines.append(f"• {gettext('Oy uchun hisoblangan (fakturalar)')}: {_som(charged)}")
     return "\n".join(lines)
 
 
@@ -263,6 +356,143 @@ def _cash(user: Any, period: str) -> str:
     return "\n".join(lines)
 
 
+def _attendance(user: Any, period: str) -> str:
+    from apps.attendance.models import AttendanceRecord, AttendanceStatus
+    from apps.reports.selectors import active_children_count
+
+    if not _allowed(user, "attendance.read"):
+        return _denied()
+    day, _end, label = _range("yesterday" if period == "yesterday" else "today")
+    records = AttendanceRecord.objects.filter(
+        organization_id=user.organization_id, attendance_date=day
+    )
+    if user.branch_id:
+        records = records.filter(branch_id=user.branch_id)
+    counts = dict(records.values_list("status").annotate(n=Count("id")).values_list("status", "n"))
+    active = active_children_count(organization_id=user.organization_id, branch_id=user.branch_id)
+    marked = sum(counts.values())
+    labels = dict(AttendanceStatus.choices)
+    lines = [f"🗓 {gettext('Davomat')} — {label}{_where(user)}"]
+    lines += [
+        f"• {labels[status]}: {counts.get(status, 0)}"
+        for status in (AttendanceStatus.PRESENT, AttendanceStatus.ABSENT, AttendanceStatus.EXCUSED)
+    ]
+    lines.append(f"• {gettext('Belgilanmagan')}: {max(active - marked, 0)}")
+    return "\n".join(lines)
+
+
+def _staff(user: Any, period: str) -> str:
+    from apps.hr.models import Employee, EmploymentStatus
+
+    if not _allowed(user, "payroll.read"):
+        return _denied()
+    employees = Employee.objects.filter(organization_id=user.organization_id)
+    if user.branch_id:
+        employees = employees.filter(branch_id=user.branch_id)
+    counts = dict(
+        employees.values_list("employment_status")
+        .annotate(n=Count("id"))
+        .values_list("employment_status", "n")
+    )
+    return "\n".join(
+        [
+            f"👥 {gettext('Xodimlar')}{_where(user)}: "
+            f"{counts.get(EmploymentStatus.ACTIVE, 0) + counts.get(EmploymentStatus.ON_LEAVE, 0)}",
+            f"• {gettext('Ishlayapti')}: {counts.get(EmploymentStatus.ACTIVE, 0)}",
+            f"• {gettext('Taʼtilda')}: {counts.get(EmploymentStatus.ON_LEAVE, 0)}",
+        ]
+    )
+
+
+def _payroll(user: Any, period: str) -> str:
+    from apps.payroll.models import PayrollItem, PayrollPayout, PayrollStatus
+
+    if not _allowed(user, "payroll.read"):
+        return _denied()
+    today = timezone.localdate()
+    if period == "last_month":
+        end = today.replace(day=1) - timedelta(days=1)
+        year, month, label = end.year, end.month, gettext("oʻtgan oy")
+    else:
+        year, month, label = today.year, today.month, gettext("shu oy")
+    items = PayrollItem.objects.filter(
+        organization_id=user.organization_id,
+        payroll_run__period_year=year,
+        payroll_run__period_month=month,
+        payroll_run__status__in=[PayrollStatus.FINALIZED, PayrollStatus.PAID],
+    )
+    payouts = PayrollPayout.objects.filter(
+        organization_id=user.organization_id,
+        payroll_run__period_year=year,
+        payroll_run__period_month=month,
+    )
+    if user.branch_id:
+        items = items.filter(branch_id=user.branch_id)
+        payouts = payouts.filter(branch_id=user.branch_id)
+    totals = items.aggregate(gross=Sum("gross"), net=Sum("net"))
+    if totals["gross"] is None:
+        return f"💼 {gettext('Ish haqi')} — {label}: " + gettext("oylik hisobi hali yakunlanmagan.")
+    paid = payouts.aggregate(total=Sum("amount"))["total"] or ZERO
+    net = totals["net"] or ZERO
+    return "\n".join(
+        [
+            f"💼 {gettext('Ish haqi')} — {label}{_where(user)}: "
+            f"{_som(totals['gross'])} {gettext('soʻm')}",
+            f"• {gettext('Qoʻlga beriladi')}: {_som(net)}",
+            f"• {gettext('Toʻlangan')}: {_som(paid)}",
+            f"• {gettext('Qoldi')}: {_som(max(net - paid, ZERO))}",
+        ]
+    )
+
+
+def _subscription(user: Any, period: str) -> str:
+    from apps.subscriptions import services as billing
+    from apps.subscriptions.models import Subscription, SubscriptionStatus
+
+    if not _allowed(user, "billing.read"):
+        return _denied()
+    subscription = (
+        Subscription.objects.filter(organization_id=user.organization_id)
+        .select_related("plan")
+        .order_by("-created_at")
+        .first()
+    )
+    if subscription is None:
+        return gettext("Obuna maʼlumoti yoʻq.")
+    usage = billing.projected_usage(subscription=subscription)
+    status = dict(SubscriptionStatus.choices).get(subscription.status, subscription.status)
+    lines = [
+        f"🧾 {gettext('Obuna')}: {status}",
+        f"• {gettext('Shu oy taxminiy summa')}: {_som(usage['projected']['total_amount'])} "
+        f"{gettext('soʻm')}",
+        f"• {gettext('Bolalar (hisobga)')}: {usage['peak_children']}",
+    ]
+    if subscription.status == SubscriptionStatus.TRIALING and subscription.trial_ends_at:
+        lines.append(
+            f"• {gettext('Sinov davri tugaydi')}: "
+            f"{timezone.localtime(subscription.trial_ends_at).strftime('%d.%m.%Y')}"
+        )
+    else:
+        lines.append(
+            f"• {gettext('Joriy davr')}: {subscription.current_period_start.strftime('%d.%m.%Y')}"
+            f" — {subscription.current_period_end.strftime('%d.%m.%Y')}"
+        )
+    return "\n".join(lines)
+
+
+def _summary(user: Any, period: str) -> str:
+    """Kunlik (yoki davr) xulosa — foydalanuvchi ko'ra oladigan bo'limlar."""
+    blocks = []
+    for name in ("revenue", "expenses", "cash", "debts", "attendance"):
+        text = _HANDLERS[name](user, period if name in ("revenue", "expenses") else "today")
+        if text != _denied():
+            blocks.append(text)
+    if not blocks:
+        return _denied()
+    _start, _end, label = _range(period)
+    return f"📊 {gettext('Xulosa')} — {label}\n\n" + "\n\n".join(blocks)
+
+
 _HANDLERS = {
     "revenue": _revenue,
     "expenses": _expenses,
@@ -270,6 +500,11 @@ _HANDLERS = {
     "children": _children,
     "debts": _debts,
     "cash": _cash,
+    "attendance": _attendance,
+    "staff": _staff,
+    "payroll": _payroll,
+    "subscription": _subscription,
+    "summary": _summary,
 }
 
 
@@ -277,14 +512,19 @@ def help_text() -> str:
     return "\n".join(
         [
             gettext("Savol yozing, masalan:"),
+            "• " + gettext("kunlik hisobot"),
             "• " + gettext("bugungi tushum"),
-            "• " + gettext("kechagi tushum"),
+            "• " + gettext("bu oy qancha daromad qildik"),
             "• " + gettext("bu oy foyda"),
             "• " + gettext("oʻtgan oy foyda"),
             "• " + gettext("shu oydagi chiqim"),
             "• " + gettext("faol bolalar"),
+            "• " + gettext("bugun nechta bola keldi"),
             "• " + gettext("qarzdorlik"),
             "• " + gettext("kassada qancha pul bor"),
+            "• " + gettext("bu oy oylik maosh"),
+            "• " + gettext("xodimlar soni"),
+            "• " + gettext("obuna summasi"),
             gettext("Chiqim kiritish uchun summadan boshlang: 150 000 kartoshka."),
         ]
     )
@@ -297,14 +537,21 @@ def _language(user: Any) -> str:
     return language if language in ("uz", "ru", "en") else "uz"
 
 
+def not_understood(*, user: Any) -> str:
+    """Xodim chatida tushunilmagan matn — nima so'rash mumkinligi bilan."""
+    with translation.override(_language(user)):
+        return "🤔 " + gettext("Savolni tushunmadim.") + "\n\n" + help_text()
+
+
 def answer(*, user: Any, text: str) -> str | None:
     """Tashkilot kontekstida chaqiriladi. Savol bo'lmasa — `None`."""
     key = search_key(text or "")
     with translation.override(_language(user)):
-        if key and any(word in key for word in HELP_WORDS):
-            return help_text()
         found = classify(text)
-        if found is None:
-            return None
-        intent, period = found
-        return _HANDLERS[intent](user, period)
+        if found is not None:
+            intent, period = found
+            return _HANDLERS[intent](user, period)
+        # Savol emas, lekin umumiy so'z yoki salom — nima so'rash mumkinligini aytamiz.
+        if key and not key[0].isdigit() and any(word in key for word in HELP_WORDS):
+            return help_text()
+        return None
