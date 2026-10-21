@@ -877,7 +877,7 @@ msgstr "Аванс: {employee}"
 msgid "Bank hisobi"
 msgstr "Банковский счёт"
 
-msgid "Bir qopdan oʻziga oʻtkazib boʻlmaydi."
+msgid "Bir hisobdan oʻziga oʻtkazib boʻlmaydi."
 msgstr "Нельзя перевести со счёта на него же."
 
 msgid "Boshlangʻich qoldiq"
@@ -901,10 +901,10 @@ msgstr "Перевод"
 msgid "Payme / Click"
 msgstr "Payme / Click"
 
-msgid "Qoplar boshqa tashkilotga tegishli."
+msgid "Hisoblar boshqa tashkilotga tegishli."
 msgstr "Счета принадлежат другой организации."
 
-msgid "Qoplar orasida oʻtkazma"
+msgid "Hisoblar orasida oʻtkazma"
 msgstr "Перевод между счетами"
 
 msgid "Summa musbat boʻlishi kerak."
@@ -925,7 +925,7 @@ msgstr "платёж возвращён"
 msgid "Kamida bitta toʻlov qatori kerak."
 msgstr "Нужна хотя бы одна строка платежа."
 
-msgid "qop oʻzgartirildi"
+msgid "hisob oʻzgartirildi"
 msgstr "счёт изменён"
 
 msgid "Kassa hisobi topilmadi."
@@ -1445,7 +1445,7 @@ msgstr "Сумма не может быть нулевой."
 msgid ""
 "«{account}» da {balance} soʻm bor, {amount} soʻm chiqmoqda — {short} soʻm "
 "yetishmaydi. Kassaga tushmagan pul boʻlsa, avval oʻsha tushumni yozing yoki "
-"boshqa qopni tanlang."
+"boshqa hisobni tanlang."
 msgstr ""
 "На «{account}» есть {balance} сум, а списывается {amount} сум — не хватает "
 "{short} сум. Если в кассу поступали деньги, сначала внесите этот приход или "
@@ -1610,7 +1610,7 @@ msgstr "Самый старый долг — {period}. Чтобы выбрать
 msgid "{month} oyligi yopilgan — undan ushlab boʻlmaydi. Keyingi oy sanasi bilan kiriting yoki boshqa usulni tanlang."
 msgstr "Зарплата за {month} закрыта — удержать из неё нельзя. Укажите дату следующего месяца или выберите другой способ."
 
-msgid "Bu qop uchun bugungi kun allaqachon yopilgan."
+msgid "Bu hisob uchun bugungi kun allaqachon yopilgan."
 msgstr "Для этого счёта сегодняшний день уже закрыт."
 
 msgid "Bu topshiriq allaqachon koʻrib chiqilgan."
@@ -1742,13 +1742,13 @@ msgstr "Найдено возможных дублей: {n} — выберите
 msgid "“Aka-uka” deb belgilangan, lekin umumiy vasiy topilmadi — chegirma qoʻllanmaydi. Ikkala bolaga bir xil telefon yozing."
 msgstr "Отмечено «братья-сёстры», но общий опекун не найден — скидка не применится. Укажите обоим детям один телефон."
 
-msgid "Bu qop bunday toʻlovlarni qabul qilmaydi."
+msgid "Bu hisob bunday toʻlovlarni qabul qilmaydi."
 msgstr "Этот счёт не принимает такие оплаты."
 
-msgid "Qop topilmadi."
+msgid "Hisob topilmadi."
 msgstr "Счёт не найден."
 
-msgid "Qop — naqd kassa yoki bank hisobi. Terminal, oʻtkazma, Click va Payme — toʻlov usuli: pul bank hisobiga tushadi."
+msgid "Hisob — naqd kassa yoki bank hisobi. Terminal, oʻtkazma, Click va Payme — toʻlov usuli: pul bank hisobiga tushadi."
 msgstr "Счёт — наличная касса или банковский счёт. Терминал, перевод, Click и Payme — способы оплаты: деньги поступают на банковский счёт."
 
 msgid "Bu nasiya allaqachon toʻlangan."
@@ -1811,7 +1811,7 @@ msgstr "Возвращено родителю: {reason}"
 msgid "Bu toʻlovdan ota-onaga pul qaytarilgan — uni bekor qilib boʻlmaydi."
 msgstr "Из этой оплаты деньги уже возвращены родителю — её нельзя отменить."
 
-msgid "Pul qaysi qopdan qaytarilishini tanlang."
+msgid "Pul qaysi hisobdan qaytarilishini tanlang."
 msgstr "Выберите, с какого счёта вернуть деньги."
 
 msgid "Summa raqam boʻlishi kerak."
@@ -2078,7 +2078,7 @@ msgstr "Месяц закрыт"
 msgid "Qarz hisobdan chiqarildi"
 msgstr "Долг списан"
 
-msgid "Qoplar koʻprigi"
+msgid "Hisoblar mosligi"
 msgstr "Мост по счетам"
 
 msgid "Takrorlangan xarajat"
@@ -2666,7 +2666,7 @@ msgstr "Месяц"
 msgid "Oylik {period}"
 msgstr "Зарплата {period}"
 
-msgid "Pul qaysi qopdan toʻlanishini tanlang."
+msgid "Pul qaysi hisobdan toʻlanishini tanlang."
 msgstr "Выберите, из какой кассы платить."
 
 msgid "Qaytarilgan toʻlovga chek yozilmaydi."
@@ -2830,3 +2830,6 @@ msgstr "Содержимое файла — не {suffix}: файл повреж
 
 msgid "Shartnoma"
 msgstr "Договор"
+
+msgid "Hisoblangan {charged}, imtiyoz {benefits}, qayta hisob {recalculated} → yigʻilgan {collected} + qarz {outstanding}"
+msgstr "Начислено {charged}, льготы {benefits}, перерасчёт {recalculated} → собрано {collected} + долг {outstanding}"

@@ -568,6 +568,17 @@ def month_board_summary(
     with_invoice = invoices.values("child").distinct().count()
     debtors = invoices.filter(amount_paid__lt=F("amount_due")).values("child").distinct().count()
 
+    # Fakturasiz bolaning SABABI (audit, 2026-10-21). Ekran ilgari
+    # sababni taxmin qilardi — "tarifi yo'q bo'lishi mumkin" — va
+    # bolalarda individual narx bo'lganda bu noto'g'ri maslahat edi.
+    # Narx manbai ikkita (`child_monthly_price`): tarif yoki
+    # `monthly_fee`; ikkisi ham bo'lmasa fakturani chiqarib bo'lmaydi.
+    without_price = (
+        children_queryset.exclude(pk__in=invoices.values("child"))
+        .filter(monthly_fee__isnull=True, tariff__isnull=True)
+        .count()
+    )
+
     return {
         "period_year": period_year,
         "period_month": period_month,
@@ -577,6 +588,7 @@ def month_board_summary(
         "children": children,
         "with_invoice": with_invoice,
         "without_invoice": children - with_invoice,
+        "without_price": without_price,
         "debtors": debtors,
     }
 
@@ -896,6 +908,17 @@ def monthly_summary(
         "allocations_match_paid": allocation_ok,
         "equation": f"{charged:.2f} + ({benefits:.2f}) + ({recalculated:.2f}) = "
         f"{collected:.2f} + {outstanding:.2f}",
+        # Tenglikning qismlari ALOHIDA: ekran undan odam o'qiydigan
+        # gap yasaydi. Ilgari faqat `equation` bor edi va ekranda xom
+        # formula turardi — "5100000.00 + (0.00) + (-1159000.00)"
+        # (audit, 2026-10-21).
+        "parts": {
+            "charged": f"{charged:.2f}",
+            "benefits": f"{benefits:.2f}",
+            "recalculated": f"{recalculated:.2f}",
+            "collected": f"{collected:.2f}",
+            "outstanding": f"{outstanding:.2f}",
+        },
     }
 
     closed = None

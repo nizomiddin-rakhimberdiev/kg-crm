@@ -395,7 +395,12 @@ export interface Payment {
   child: string
   child_name: string
   invoice: string | null
+  /** Kassir QO'LDA tanlagan hujjat — odatda bo'sh (ADR-20 dan keyin pul FIFO ketadi). */
   invoice_number: string | null
+  /** Pul HAQIQATAN yopgan hisob-fakturalar — jurnal shuni ko'rsatadi. */
+  settled_invoices: string[]
+  /** Hech qaysi hujjatga tegishli bo'lmagan qism — avans. */
+  advance_amount: string
   amount: string
   /** `online` — 2026-10-15 gacha yozilgan eski birlashgan Payme / Click. */
   method: 'cash' | 'terminal' | 'bank_transfer' | 'click' | 'payme' | 'payroll' | 'online'

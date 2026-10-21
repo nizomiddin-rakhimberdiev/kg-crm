@@ -232,6 +232,8 @@ export interface BoardSummary {
   children: number
   with_invoice: number
   without_invoice: number
+  /** Shulardan nechtasining narxi (tarif yoki individual) aniqlanmagan. */
+  without_price: number
   debtors: number
 }
 

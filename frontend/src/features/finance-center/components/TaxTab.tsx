@@ -20,6 +20,7 @@ import { formatDate, periodLabel, som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { MonthInput } from '@/components/ui/MonthInput'
 
 const card = 'rounded-2xl border border-slate-200 bg-white p-4'
 
@@ -83,7 +84,7 @@ function Calendar() {
           {can('reports.approve') && pots.length > 0 && (
             <div>
               <label htmlFor="tax-pot" className="mb-1 block text-xs font-medium text-slate-600">
-                {t('Qaysi qopdan')}
+                {t('Qaysi hisobdan')}
               </label>
               <select
                 id="tax-pot"
@@ -192,18 +193,7 @@ function Journal() {
         {t('Har pul harakati va hisoblash Dt/Kt hisob kodlari bilan. Kodlar — Sozlamalarda.')}
       </p>
       <div className="mt-2 flex flex-wrap items-end gap-2">
-        <div>
-          <label htmlFor="journal-month" className="mb-1 block text-xs font-medium text-slate-600">
-            {t('Oy')}
-          </label>
-          <input
-            id="journal-month"
-            type="month"
-            value={period}
-            onChange={(event) => event.target.value && setPeriod(event.target.value)}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
-          />
-        </div>
+        <MonthInput id="journal-month" label={t('Oy')} value={period} onChange={setPeriod} />
         {(['xlsx', 'csv'] as const).map((file) => (
           <button
             key={file}

@@ -13,7 +13,9 @@ import { t } from '@/lib/i18n'
 
 export function AnnualStatementButton({ childId }: { childId: string }) {
   const current = new Date(today()).getFullYear()
-  const [year, setYear] = useState(current - 1)
+  // Joriy yil — sukut (audit, 2026-10-21). Ilgari o'tgan yil turardi va
+  // 2026 yilda so'rangan ma'lumotnoma jimgina 2025 uchun chiqardi.
+  const [year, setYear] = useState(current)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

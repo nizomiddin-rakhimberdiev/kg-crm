@@ -25,6 +25,7 @@ import { formatDate, som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { MonthInput } from '@/components/ui/MonthInput'
 
 const HIDDEN = new Set(['key', 'title', 'id', 'source', 'link', 'subject', 'at', 'user_id'])
 const NUMERIC = /^-?\d+(\.\d+)?$/
@@ -331,18 +332,7 @@ export function MonthlyPack() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <label htmlFor="pack-month" className="mb-1 block text-xs font-medium text-slate-600">
-            {t('Oy')}
-          </label>
-          <input
-            id="pack-month"
-            type="month"
-            value={period}
-            onChange={(event) => event.target.value && setPeriod(event.target.value)}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
-          />
-        </div>
+        <MonthInput id="pack-month" label={t('Oy')} value={period} onChange={setPeriod} />
         <div className="flex flex-wrap gap-2">
           <button
             type="button"

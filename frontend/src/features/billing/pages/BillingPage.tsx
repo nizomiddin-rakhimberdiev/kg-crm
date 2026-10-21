@@ -272,6 +272,19 @@ export default function BillingPage() {
               'hisoblanadi — yaʼni sinov kunlari shu oyning ichiga kiradi. Sinov yoqmasa, hech qanday toʻlov olinmaydi.',
             )}
           </p>
+          {/* Qoida MISOL bilan (audit, 2026-10-21): "sinov boshlangan
+              kundan" degan jumla toʻgʻri, lekin uni oʻqigan odam
+              birinchi hisob qaysi kunlarni qamrashini oʻzi
+              hisoblashi kerak edi. Sanalar HAQIQIY — shu obunaning
+              oʻzidan. */}
+          {subscription?.trial_started_at && (
+            <p className="mt-1 text-sm text-slate-500">
+              {t('Masalan: {from} da boshladingiz → birinchi hisob {from} – {to} uchun.', {
+                from: day(subscription.trial_started_at),
+                to: day(subscription.current_period_end),
+              })}
+            </p>
+          )}
 
           <div className="mt-4 grid gap-2 sm:grid-cols-3">
             {TERMS.map((option) => (

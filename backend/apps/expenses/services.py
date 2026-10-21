@@ -408,7 +408,7 @@ def mark_expense_paid(
             cash.reverse_movements_for(
                 source_type=MovementSource.EXPENSE,
                 source_id=expense.id,
-                description=gettext("qop oʻzgartirildi"),
+                description=gettext("hisob oʻzgartirildi"),
                 created_by=created_by,
             )
             cash.post_movement(

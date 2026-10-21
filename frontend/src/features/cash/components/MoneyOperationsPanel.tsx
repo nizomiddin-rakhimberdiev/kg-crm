@@ -16,6 +16,7 @@ import { ApiError } from '@/lib/api/types'
 import { formatDate, money, som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+import { MonthInput } from '@/components/ui/MonthInput'
 
 const field =
   'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500'
@@ -222,18 +223,12 @@ export function MoneyOperationsPanel() {
             />
           </div>
           {form.kind === 'other_income' && (
-            <div>
-              <label htmlFor="op-period" className={label}>
-                {t('Qaysi oy uchun')}
-              </label>
-              <input
-                id="op-period"
-                type="month"
-                value={form.period}
-                onChange={(event) => setForm((p) => ({ ...p, period: event.target.value }))}
-                className={field}
-              />
-            </div>
+            <MonthInput
+              id="op-period"
+              label={t('Qaysi oy uchun')}
+              value={form.period}
+              onChange={(value) => setForm((p) => ({ ...p, period: value }))}
+            />
           )}
           <div className="sm:col-span-2">
             <label htmlFor="op-reason" className={label}>

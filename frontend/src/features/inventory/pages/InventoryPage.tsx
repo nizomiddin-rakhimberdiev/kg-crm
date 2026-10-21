@@ -16,7 +16,7 @@ import { invalidateMoney } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Product } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
-import { quantity } from '@/lib/format'
+import { quantity, unitLabel } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { QueryError } from '@/components/ui/QueryError'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -212,9 +212,10 @@ export default function InventoryPage() {
                   onChange={(e) => setProductForm((p) => ({ ...p, unit: e.target.value }))}
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
                 >
+                  {/* Kod bazada qoladi, ekranda esa nomi (audit, 2026-10-21). */}
                   {UNITS.map((u) => (
                     <option key={u} value={u}>
-                      {u}
+                      {unitLabel(u)}
                     </option>
                   ))}
                 </select>

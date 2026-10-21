@@ -185,7 +185,7 @@ def post_movement(
                 gettext(
                     "«{account}» da {balance} soʻm bor, {amount} soʻm chiqmoqda — "
                     "{short} soʻm yetishmaydi. Kassaga tushmagan pul boʻlsa, avval "
-                    "oʻsha tushumni yozing yoki boshqa qopni tanlang."
+                    "oʻsha tushumni yozing yoki boshqa hisobni tanlang."
                 ).format(
                     account=account.name,
                     balance=_som(balance),
@@ -290,13 +290,13 @@ def transfer(
     kiradi. JAMI o'zgarmaydi — o'tkazma pul topmaydi va yo'qotmaydi.
     """
     if source.pk == target.pk:
-        raise BusinessRuleViolation(gettext("Bir qopdan oʻziga oʻtkazib boʻlmaydi."))
+        raise BusinessRuleViolation(gettext("Bir hisobdan oʻziga oʻtkazib boʻlmaydi."))
     if source.organization_id != target.organization_id:
-        raise BusinessRuleViolation(gettext("Qoplar boshqa tashkilotga tegishli."))
+        raise BusinessRuleViolation(gettext("Hisoblar boshqa tashkilotga tegishli."))
 
     group = uuid.uuid4()
     when = occurred_at or timezone.now()
-    text = description or gettext("Qoplar orasida oʻtkazma")
+    text = description or gettext("Hisoblar orasida oʻtkazma")
     out = post_movement(
         account=source,
         direction=MovementDirection.OUT,
@@ -408,7 +408,7 @@ def hand_over(
     # topshiradi — naqdni qo'lda, terminal/Click/o'tkazmani hisobot bilan.
     pot = account or cash_pot(branch=branch or from_user.branch)
     if pot.organization_id != from_user.organization_id or pot.kind not in ("cash", "bank"):
-        raise BusinessRuleViolation(gettext("Qop topilmadi."))
+        raise BusinessRuleViolation(gettext("Hisob topilmadi."))
     held = custody_of(user=from_user, account=pot)
     if amount > held:
         raise BusinessRuleViolation(
@@ -496,7 +496,7 @@ def close_day(
         raise BusinessRuleViolation(gettext("Sanoq manfiy boʻlishi mumkin emas."))
     today = timezone.localdate()
     if CashCount.objects.filter(cash_account=account, counted_on=today).exists():
-        raise BusinessRuleViolation(gettext("Bu qop uchun bugungi kun allaqachon yopilgan."))
+        raise BusinessRuleViolation(gettext("Bu hisob uchun bugungi kun allaqachon yopilgan."))
 
     system = _money(account_balance(account_id=account.id))
     difference = counted - system

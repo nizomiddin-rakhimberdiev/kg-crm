@@ -164,6 +164,23 @@ describe('a11y', () => {
     expect(offenders).toEqual([])
   })
 
+  it('native `input[type=month]` ishlatilmaydi', () => {
+    /*
+     * Native oy maydoni oy nomini BRAUZER lokali bo'yicha chiqaradi:
+     * butun interfeys o'zbekcha turganda tanlagichda "October 2026"
+     * yozilardi (audit, 2026-10-21). Javob `DateInput` bilan bir xil —
+     * `components/ui/MonthInput`.
+     */
+    const offenders: string[] = []
+    for (const file of files) {
+      if (file.endsWith('MonthInput.tsx')) continue
+      if (/type=["']month["']/.test(readFileSync(file, 'utf8'))) {
+        offenders.push(file.replace(SRC, ''))
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
   it('koʻrinadigan fokus butun ilovada belgilangan', () => {
     const css = readFileSync(join(SRC, 'index.css'), 'utf8')
     // `:focus` emas, `:focus-visible`: sichqoncha bosganda halqa

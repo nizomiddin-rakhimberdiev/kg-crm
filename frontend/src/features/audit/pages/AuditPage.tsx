@@ -11,140 +11,12 @@ import { useQuery } from '@tanstack/react-query'
 import { ScrollText, ShieldCheck } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { auditApi } from '@/features/dashboard/api'
+import { ACTION_LABELS, ENTITY_LABELS, FIELD_LABELS, fieldValue } from '@/features/audit/labels'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { formatDateTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { env } from '@/config/env'
 import { t } from '@/lib/i18n'
-
-const ACTION: Record<string, [string, string]> = {
-  login: [t('Kirish'), 'bg-slate-100 text-slate-600'],
-  login_failed: [t('Kirish urinishi'), 'bg-amber-50 text-amber-700'],
-  // Xavfsizlik hodisalari (PLAN 5.2, 5.3, 5.5). Ular jadvalda XOM
-  // nom bilan chiqib turardi: `ACTION` da yo'q qiymat shunchaki
-  // o'zini ko'rsatadi, va o'qiyotgan odam uchun `login_blocked`
-  // hech narsa demaydi.
-  login_blocked: [t('Kirish bloklandi'), 'bg-red-50 text-red-700'],
-  password_reset_requested: [t('Parol tiklash soʻraldi'), 'bg-amber-50 text-amber-700'],
-  password_reset: [t('Parol tiklandi'), 'bg-amber-50 text-amber-700'],
-  invite_accepted: [t('Taklif qabul qilindi'), 'bg-emerald-50 text-emerald-700'],
-  two_factor_enabled: [t('2FA yoqildi'), 'bg-emerald-50 text-emerald-700'],
-  two_factor_disabled: [t('2FA oʻchirildi'), 'bg-red-50 text-red-700'],
-  two_factor_backup_used: [t('Zaxira kodi ishlatildi'), 'bg-amber-50 text-amber-700'],
-  two_factor_codes_renewed: [t('Zaxira kodlari yangilandi'), 'bg-amber-50 text-amber-700'],
-  logout: [t('Chiqish'), 'bg-slate-100 text-slate-600'],
-  signup: [t('Roʻyxatdan oʻtish'), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
-  password_change: [t('Parol oʻzgardi'), 'bg-amber-50 text-amber-700'],
-  create: [t('Yaratildi'), 'bg-emerald-50 text-emerald-700'],
-  update: [t('Yangilandi'), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
-  delete: [t('Oʻchirildi'), 'bg-red-50 text-red-700'],
-}
-
-const ENTITY: Record<string, string> = {
-  child: t('Bola'),
-  enrollment: t('Guruhga biriktirish'),
-  group: t('Guruh'),
-  guardian: t('Vasiy'),
-  employee: t('Xodim'),
-  product: t('Mahsulot'),
-  tariff: t('Tarif'),
-  cash_account: t('Kassa'),
-  absence_claim: t('Kelmagan kun daʼvosi'),
-  notification: t('Bildirishnoma'),
-  notification_template: t('Xabar shabloni'),
-  subscription: t('Obuna'),
-  support_grant: t('Qoʻllab-quvvatlash ruxsati'),
-  child_import: t('Bolalar importi'),
-  payment: t('Toʻlov'),
-  invoice: t('Hisob-faktura'),
-  invoice_run: t('Hisob-faktura generatsiyasi'),
-  discount: t('Chegirma'),
-  expense: t('Chiqim'),
-  stock_movement: t('Stok harakati'),
-  system_setting: t('Sozlama'),
-  user: t('Foydalanuvchi'),
-  role: t('Rol'),
-  branch: t('Filial'),
-  organization: t('Tashkilot'),
-  payroll_run: t('Oylik hisoblash'),
-}
-
-/**
- * Oʻzgargan maydonning nomi — odam tilida (PLAN 4.4).
- *
- * Auditda bu ustun `status: "archived", reason: "…"` koʻrinishida
- * edi: inglizcha kalit va JSON. Jurnalni mudira oʻqiydi, va u
- * maydon nomlarini bilishi kerak emas.
- */
-const FIELD: Record<string, string> = {
-  status: t('Holat'),
-  reason: t('Sabab'),
-  amount: t('Summa'),
-  name: t('Nomi'),
-  from: t('Nimadan'),
-  to: t('Nimaga'),
-  before: t('Oldin'),
-  after: t('Keyin'),
-  child: t('Bola'),
-  group: t('Guruh'),
-  guardian: t('Vasiy'),
-  employee: t('Xodim'),
-  product: t('Mahsulot'),
-  tariff: t('Tarif'),
-  invoice: t('Hisob-faktura'),
-  payment: t('Toʻlov'),
-  cash_account: t('Kassa'),
-  role: t('Rol'),
-  method: t('Usul'),
-  direction: t('Yoʻnalish'),
-  movement_type: t('Harakat turi'),
-  fields: t('Maydonlar'),
-  permissions: t('Ruxsatlar'),
-  archived: t('Arxivlangan'),
-  reactivated: t('Qayta faollashtirilgan'),
-  reversed: t('Qaytarilgan'),
-  revoked: t('Bekor qilingan'),
-  suspended: t('Toʻxtatilgan'),
-  forced: t('Majburan'),
-  days: t('Kunlar'),
-  until: t('Qachongacha'),
-  expires_at: t('Amal qilish muddati'),
-  total_net: t('Sof summa'),
-  payouts: t('Toʻlovlar soni'),
-  created: t('Yaratildi'),
-  skipped: t('Oʻtkazib yuborildi'),
-  recalculated: t('Qayta hisoblandi'),
-  email: t('Email'),
-  slug: t('Manzil nomi'),
-  severity: t('Jiddiylik'),
-  kind: t('Turi'),
-  type: t('Turi'),
-  telegram: t('Telegram'),
-  self_profile: t('Oʻz profili'),
-  sessions_closed: t('Yopilgan sessiyalar'),
-  password_reset: t('Parol tiklandi'),
-  invite_accepted: t('Taklif qabul qilindi'),
-  backup_codes: t('Zaxira kodlari'),
-  remaining: t('Qolgani'),
-  factor: t('Omil'),
-  trial_extended_days: t('Sinov uzaytirildi (kun)'),
-  n: t('Soni'),
-  batch: t('Partiya'),
-  credit: t('Kredit'),
-  movement: t('Harakat'),
-  id: t('Identifikator'),
-  key: t('Kalit'),
-  reopened_from: t('Qaytib ochildi'),
-}
-
-/** JSON emas, odam oʻqiydigan qiymat. */
-function fieldValue(value: unknown): string {
-  if (value === null || value === undefined) return '—'
-  if (typeof value === 'boolean') return value ? t('ha') : t('yoʻq')
-  if (Array.isArray(value)) return value.map((item) => fieldValue(item)).join(', ')
-  if (typeof value === 'object') return JSON.stringify(value)
-  return String(value)
-}
 
 const FILTERS: Array<[string, string]> = [
   ['', t('Hammasi')],
@@ -267,7 +139,7 @@ export default function AuditPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {rows.map((row) => {
-                const [label, tone] = ACTION[row.action] ?? [
+                const [label, tone] = ACTION_LABELS[row.action] ?? [
                   row.action,
                   'bg-slate-100 text-slate-600',
                 ]
@@ -287,7 +159,7 @@ export default function AuditPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-600">
-                      <p>{ENTITY[row.entity_type] ?? row.entity_type ?? '—'}</p>
+                      <p>{ENTITY_LABELS[row.entity_type] ?? row.entity_type ?? '—'}</p>
                       {/* UUID emas, NOM (PLAN 4.4): "kim nima qildi?"
                           degan savolga javob shu ustunda boʻlishi
                           kerak, qidirishga yuboradigan havola emas. */}
@@ -300,7 +172,7 @@ export default function AuditPage() {
                         ? '—'
                         : changes
                             .map(([key, value]) => {
-                              const label = FIELD[key] ?? key
+                              const label = FIELD_LABELS[key] ?? key
                               const named = row.changes_labels?.[key]
                               return `${label}: ${named ?? fieldValue(value)}`
                             })

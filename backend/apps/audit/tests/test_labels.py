@@ -71,6 +71,68 @@ class TestLabels:
         assert row["changes_labels"]["child"] == child.full_name
         assert row["changes_labels"]["group"] == "Quyosh"
 
+    def test_a_transfer_names_both_pots(self, tenant_a):
+        """
+        Qopdan qopga o'tkazma `from`/`to` kalitlari bilan yoziladi va
+        ular UUID bo'lib qolardi: jurnalda "c28a8dc0-… → 617524bc-…"
+        turardi (audit, 2026-10-21). Kalit nomi turni aytmaydi, lekin
+        YOZUV TURI aytadi — `cash_transfer` ning `from`/`to` si
+        doimo kassa hisobi.
+        """
+        from apps.cash.models import CashAccount
+
+        with organization_context(tenant_a.organization.id):
+            source = CashAccount.objects.create(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                name="Sayyor kassa",
+                kind="cash",
+            )
+            target = CashAccount.objects.create(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                name="Ikkinchi bank hisobi",
+                kind="bank",
+            )
+            audit.record(
+                action="create",
+                organization=tenant_a.organization,
+                actor=tenant_a.owner,
+                entity_type="cash_transfer",
+                entity_id=source.id,
+                changes={"from": str(source.id), "to": str(target.id), "amount": "500000.00"},
+            )
+        row = tenant_a.client().get(reverse("v1:audit-log-list")).json()["data"][0]
+        assert row["changes_labels"]["from"] == str(source)
+        assert row["changes_labels"]["to"] == str(target)
+
+    def test_an_id_suffixed_key_is_named_too(self, tenant_a, child):
+        """
+        `employee_id`, `product_id` — kalit `_id` bilan tugaydi va
+        oldidagi so'z turni aytadi. Ilgari ular ham UUID bo'lib
+        qolardi.
+        """
+        from apps.hr.models import Employee
+
+        with organization_context(tenant_a.organization.id):
+            employee = Employee.objects.create(
+                organization=tenant_a.organization,
+                branch=tenant_a.branch,
+                first_name="Dilnoza",
+                last_name="Yoʻldosheva",
+                hire_date=date(2026, 1, 10),
+            )
+            audit.record(
+                action="update",
+                organization=tenant_a.organization,
+                actor=tenant_a.owner,
+                entity_type="employee_advance",
+                entity_id=employee.id,
+                changes={"employee_id": str(employee.id), "amount": "250000.00"},
+            )
+        row = tenant_a.client().get(reverse("v1:audit-log-list")).json()["data"][0]
+        assert row["changes_labels"]["employee_id"] == str(employee)
+
     def test_a_deleted_row_leaves_the_entry_in_place(self, tenant_a, child):
         """Nom topilmasa yozuv YO'QOLMAYDI — u faqat nomsiz qoladi."""
         with organization_context(tenant_a.organization.id):

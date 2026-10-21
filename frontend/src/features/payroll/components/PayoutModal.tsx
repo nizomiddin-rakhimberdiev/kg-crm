@@ -122,7 +122,7 @@ export function PayoutModal({
                     </p>
                   </div>
                   <label className="sm:w-56">
-                    <span className="sr-only">{t('Qaysi qopdan')}</span>
+                    <span className="sr-only">{t('Qaysi hisobdan')}</span>
                     <select
                       value={row.cash_account_id}
                       onChange={(event) =>
@@ -177,7 +177,7 @@ export function PayoutModal({
               <div className="mt-3 rounded-xl border border-orik-300 bg-orik-50 px-3 py-2.5">
                 <p className="flex items-start gap-2 text-sm font-medium text-orik-900">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                  {t('Qopda pul yetmaydi — qoldiq manfiyga tushadi.')}
+                  {t('Hisobda pul yetmaydi — qoldiq manfiyga tushadi.')}
                 </p>
                 <p className="mt-1 text-xs text-orik-900">
                   {t(

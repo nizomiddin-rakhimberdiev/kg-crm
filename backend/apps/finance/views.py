@@ -8,7 +8,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.http import Http404
 from django.utils import timezone
 from django.utils.translation import gettext
@@ -25,7 +25,14 @@ from apps.core.permissions import HasModulePermission
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchScopedMixin, TenantReadOnlyViewSet, TenantViewSet
 from apps.finance import balance, selectors, services
-from apps.finance.models import ChildLedgerEntry, Discount, Invoice, Payment, TariffPlan
+from apps.finance.models import (
+    ChildLedgerEntry,
+    Discount,
+    Invoice,
+    Payment,
+    PaymentAllocation,
+    TariffPlan,
+)
 from apps.finance.scope import payments_own_only, restrict_payments
 from apps.finance.serializers import (
     DiscountSerializer,
@@ -406,7 +413,18 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
         # Ro'yxat, bitta to'lov, kvitansiya va qaytarish — hammasi shu
         # yerdan o'tadi, ya'ni boshqa kassirning to'lovi `404` beradi
         # (`403` emas: u mavjudligini ham bilmasligi kerak).
-        return restrict_payments(super().get_base_queryset(), request_user(self.request))
+        queryset = restrict_payments(super().get_base_queryset(), request_user(self.request))
+        # Jurnal qatori pul qaysi hujjatni yopganini ko'rsatadi
+        # (`settled_invoices`), ya'ni taqsimotlar kerak. `Prefetch` bitta
+        # qo'shimcha so'rov — usiz 25 qator 25 so'rov bo'lardi.
+        return queryset.prefetch_related(
+            Prefetch(
+                "allocations",
+                queryset=PaymentAllocation.objects.filter(released_at__isnull=True).select_related(
+                    "invoice"
+                ),
+            )
+        )
 
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         serializer = PaymentWriteSerializer(data=request.data)
@@ -662,7 +680,7 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
         payment = self.get_object()
         account = CashAccount.objects.filter(pk=request.data.get("cash_account_id")).first()
         if account is None:
-            raise BusinessRuleViolation(gettext("Pul qaysi qopdan qaytarilishini tanlang."))
+            raise BusinessRuleViolation(gettext("Pul qaysi hisobdan qaytarilishini tanlang."))
         try:
             amount = Decimal(str(request.data.get("amount", "")))
         except ArithmeticError as exc:

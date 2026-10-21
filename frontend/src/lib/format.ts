@@ -20,7 +20,7 @@
  * backendda `Decimal` bilan bajariladi (CLAUDE.md, invariant 3).
  */
 
-import { locale } from '@/lib/i18n'
+import { locale, t } from '@/lib/i18n'
 
 /** Bo'linmaydigan bo'shliq — raqam qatorning oxirida bo'linib ketmasin. */
 const NBSP = ' '
@@ -84,21 +84,61 @@ export function signed(value: string | number | null | undefined): string {
   return prefix + number(parsed)
 }
 
-/** Katta sonning qisqa shakli grafik o'qlari uchun: `485.2M`. */
-export function compact(value: string | number | null | undefined): string {
+/**
+ * Grafik o'qi uchun qisqa pul: `1.2 mln`, `200 ming`, `1.5 mlrd`.
+ *
+ * Uchta nusxa bor edi va ularning bittasi YOLG'ON gapirardi: bosh
+ * sahifa o'qi summani millionga bo'lib yumaloqlardi, ya'ni 200 000
+ * so'm "0 mln" deb turardi (audit, 2026-10-21). O'q grafikdagi
+ * balandlikni o'qiydigan yagona narsa — u kattalikni yashirmasligi
+ * kerak, shuning uchun birlik summaning O'ZIGA qarab tanlanadi.
+ *
+ * Birliklar tarjima qilinadi (`mln` / `млн` / `M`), chunki o'qni
+ * mijozning buxgalteri ham, inglizcha interfeysdagi odam ham o'qiydi.
+ */
+export function axisMoney(value: string | number | null | undefined): string {
   const parsed = toNumber(value)
   if (parsed === null) return '—'
-  if (Math.abs(parsed) >= 1_000_000) return `${(parsed / 1_000_000).toFixed(1)}M`
-  if (Math.abs(parsed) >= 1_000) return `${(parsed / 1_000).toFixed(1)}K`
+  const abs = Math.abs(parsed)
+  const sign = parsed < 0 ? '−' : ''
+  // Kasr qism faqat KERAK bo'lsa: "2 mln", lekin "1.2 mln".
+  const short = (divisor: number) => {
+    const scaled = abs / divisor
+    return Number.isInteger(scaled) ? String(scaled) : scaled.toFixed(1)
+  }
+  if (abs >= 1_000_000_000) return `${sign}${short(1_000_000_000)}${NBSP}${t('mlrd')}`
+  if (abs >= 1_000_000) return `${sign}${short(1_000_000)}${NBSP}${t('mln')}`
+  if (abs >= 1_000) return `${sign}${short(1_000)}${NBSP}${t('ming')}`
   return number(parsed)
+}
+
+/**
+ * Birlik kodining nomi: `pcs` → `dona`, `pack` → `quti`.
+ *
+ * Omborda birlik KOD bo'lib saqlanadi (`product.unit`), va u ekranda
+ * ham kod bo'lib chiqardi: "12 pcs" — ayni paytda Chiqimlarda o'sha
+ * narsa "dona" deb yozilardi (audit, 2026-10-21). Ro'yxatda yo'q
+ * qiymat o'zgarmaydi: bog'cha o'z birligini erkin yozishi mumkin va
+ * uni "tarjima qilish" uning so'zini buzardi.
+ */
+const UNIT_NAMES: Record<string, string> = {
+  // `t()` ataylab shu yerda, chaqiruvda emas: `t(oʻzgaruvchi)` ni
+  // lugʻat chiqaruvchisi koʻrmaydi (05 §17) va kalit tarjimasiz qolardi.
+  pcs: t('dona'),
+  pack: t('quti'),
+}
+
+export function unitLabel(unit: string | null | undefined): string {
+  if (!unit) return ''
+  return UNIT_NAMES[unit] ?? unit
 }
 
 /**
  * Miqdor + birlik: `12 dona`, `3.5 kg`.
  *
- * Birlik backenddan keladi (`product.unit`) va u ERKIN matn: bog'cha
- * "dona" ham, "qop" ham yozishi mumkin. Shuning uchun u tarjima
- * qilinmaydi — faqat bo'linmaydigan bo'shliq bilan qo'shiladi, ya'ni
+ * Birlik backenddan keladi (`product.unit`): ro'yxatdagi kod nomga
+ * aylanadi (`unitLabel`), erkin matn esa o'zgarmaydi — faqat
+ * bo'linmaydigan bo'shliq bilan qo'shiladi, ya'ni
  * "12" va "dona" qatorlar orasida ajralib qolmaydi.
  */
 export function quantity(value: string | number | null | undefined, unit?: string | null): string {
@@ -111,7 +151,7 @@ export function quantity(value: string | number | null | undefined, unit?: strin
       String(Math.abs(parsed)).slice(String(Math.trunc(Math.abs(parsed))).length)
   const sign = parsed < 0 ? '−' : ''
   const text = Number.isInteger(parsed) ? whole : sign + whole
-  return unit ? `${text}${NBSP}${unit}` : text
+  return unit ? `${text}${NBSP}${unitLabel(unit)}` : text
 }
 
 /** Foiz: `92.0 %`. */
@@ -208,6 +248,14 @@ export function monthLabel(year: number, month: number): string {
   const name = names[month - 1]
   if (!name) return `${year}-${String(month).padStart(2, '0')}`
   return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${year}`
+}
+
+/** Yolgʻiz turgan oy nomi: «Oktabr» / «Октябрь» / «October». */
+export function monthName(month: number): string {
+  const names = locale === 'ru' ? STANDALONE_RU : MONTHS_BY_LOCALE[locale]
+  const name = names[month - 1]
+  if (!name) return String(month)
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)}`
 }
 
 /** «2026-09» koʻrinishidagi davrni oʻqiladigan yorliqqa aylantiradi. */

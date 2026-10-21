@@ -64,7 +64,7 @@ def _expenses(organization_id: Any, branch_id: Any, start: date, end: date) -> A
 
 CHECK_TITLES = {
     "revenue_equation": gettext_lazy("Daromad tengligi"),
-    "cash_bridge": gettext_lazy("Qoplar koʻprigi"),
+    "cash_bridge": gettext_lazy("Hisoblar mosligi"),
     "negative_balance": gettext_lazy("Manfiy qoldiq yoʻq"),
     "transit_on_time": gettext_lazy("Yoʻldagi pul oʻz vaqtida tushgan"),
     "no_future_dates": gettext_lazy("Kelajak sanali yozuv yoʻq"),
@@ -104,11 +104,24 @@ def checks(
     summary = monthly_summary(
         organization_id=organization_id, year=year, month=month, branch_id=branch_id
     )
+    # Izoh — odam tilida, xom formula emas (audit, 2026-10-21). Ekranda
+    # "5100000.00 + (0.00) + (-1159000.00)" turardi va bu tekshiruvning
+    # butun ma'nosini — "raqamlar bir-biriga mos" — yashirardi.
+    parts = summary["check"]["parts"]
     rows.append(
         _check(
             "revenue_equation",
             summary["check"]["ok"],
-            summary["check"]["equation"],
+            gettext(
+                "Hisoblangan {charged}, imtiyoz {benefits}, qayta hisob {recalculated} → "
+                "yigʻilgan {collected} + qarz {outstanding}"
+            ).format(
+                charged=_som(Decimal(parts["charged"])),
+                benefits=_som(Decimal(parts["benefits"])),
+                recalculated=_som(Decimal(parts["recalculated"])),
+                collected=_som(Decimal(parts["collected"])),
+                outstanding=_som(Decimal(parts["outstanding"])),
+            ),
             "/reports",
         )
     )

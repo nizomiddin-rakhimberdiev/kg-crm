@@ -463,7 +463,7 @@ Module: `finance` (Payments module UI). The **ledger** is the source of truth ([
 ### 9.3 Payments
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/payments` | `payments.read` | List (filters: `child`, `invoice`, `method`, `paid_at` range) |
+| GET | `/payments` | `payments.read` | List (filters: `child`, `invoice`, `method`, `paid_at` range). Every row carries **`settled_invoices`** (the numbers the money actually closed, from the active allocations) and **`advance_amount`** (what stayed unallocated). `invoice_number` is only filled when the cashier picked a document by hand, so a journal reading it showed a settled invoice as "— avans —" (audit, 2026-10-21) |
 | POST | `/payments` | `payments.create` | Record a payment (optionally linked to invoice). Bosqich 12.4: `method` ∈ `cash · terminal · bank_transfer · click · payme · payroll` (`online` is legacy, `400`); `payer_id?` (a guardian of the child, else `422`); `employee_id` (required for `payroll`); `paid_at` in the future → `422`, older than `finance.backdate_days` → `422` unless `backdate_reason`; `invoice_id` other than the oldest open one → `422` unless `allocation_reason`. `POST /payments/batch` takes the same `paid_at`, `payer_id`, `backdate_reason`, `allocation_reason`, and `employee_id` per line. Bosqich 13.8: `payer_kind` (`guardian` · `employer` · `other`) with `payer_org` and `payer_tin` (nine digits) on both |
 | GET | `/payments/{id}` | `payments.read` | Detail, with `allocations` — which months the money settled |
 | POST | `/payments/{id}/reverse` | `payments.update` | Reverse a payment (creates counter-entry; never deletes) |
@@ -583,7 +583,7 @@ An advance belongs to a run by the **month of `paid_on`**, not by a foreign key,
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/payments/board` | `payments.read` | One row per **child** for a month, with that month's invoice joined on. Params: `period_year`, `period_month` (default: today), `search`, `status`, `branch`, standard pagination |
-| GET | `/payments/board-summary` | `payments.read` | The month's totals **across every child**, independent of the page |
+| GET | `/payments/board-summary` | `payments.read` | The month's totals **across every child**, independent of the page. `without_invoice` is paired with **`without_price`** — how many of those children have no price source at all (neither a tariff nor `monthly_fee`), so the screen states the reason instead of guessing it: the old banner said "the tariff may be missing" to kindergartens whose children had individual prices (audit, 2026-10-21) |
 
 Row: `{child_id, child_name, group_name, invoice_id, invoice_number, charged, paid, outstanding, state, balance}` where `state` is `unpaid | partial | paid | no_invoice` and `balance` is the child's ledger balance (**negative = an advance already on account**, which the cashier must see before taking more money). `status` filters on `debtor | paid | no_invoice`.
 
@@ -987,6 +987,8 @@ Module: `audit`. **Read-only** (insert-only at DB level). Org Owner + Director.
 | GET | `/audit-logs/platform-access` | `audit.read` | **Vendor access to this organization** — every support grant and platform read ([02 §20.3](./02_Software_Architecture.md)) |
 
 > The last endpoint exists so vendor access is *visible to the customer*, not merely logged for the vendor. A tenant can always see when we looked at their data.
+
+**No raw value reaches the screen.** Each row carries `entity_label` and `changes_labels` — names resolved from the UUIDs in one query per model (`apps/audit/labels.py`). A `changes` key does not always name its own type: a pot-to-pot transfer is written as `from`/`to`, so the journal read `c28a8dc0-… → 617524bc-…` (audit, 2026-10-21). `entity_for_key()` resolves a key three ways, in order: the key *is* an entity type (`child`), the pair (`entity_type`, key) is listed in `KEY_ENTITY` (`cash_transfer` + `from` → `cash_account`), or the key ends in `_id` over a known type (`employee_id` → `employee`). Anything else stays a UUID, which is not an error — the entry is still there. On the frontend, `features/audit/labels.ts` holds the labels and `features/audit/__tests__/labels.test.ts` compares them against **this backend's sources**: a new action or `entity_type` without a label used to print itself, which is how `view` ended up in a column beside `Yangilandi`.
 
 ---
 

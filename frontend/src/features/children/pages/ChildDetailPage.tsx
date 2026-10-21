@@ -32,6 +32,7 @@ import { TelegramLinkButton } from '@/features/children/components/TelegramLinkB
 import { GuardianEditDialog } from '@/features/children/components/GuardianEditDialog'
 import { ContractsCard } from '@/features/contracts/components/ContractsCard'
 import { useFeature } from '@/lib/features'
+import { ageOutsideGroup } from '@/features/children/ageFit'
 import { GroupOptions } from '@/features/children/components/GroupOptions'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate, formatUZS } from '@/lib/utils'
@@ -189,17 +190,38 @@ export default function ChildDetailPage() {
   const primaryGuardian =
     child?.guardians.find((link) => link.is_primary)?.guardian ?? child?.guardians[0]?.guardian
 
+  const pendingGroupRow = groupsQuery.data?.items.find((group) => group.id === pendingGroup)
+  const pendingAge = pendingGroupRow
+    ? ageOutsideGroup(pendingGroupRow, child?.date_of_birth ?? '')
+    : null
+  const groupAgeNote = !pendingAge
+    ? ''
+    : pendingAge.min !== null && pendingAge.max !== null
+      ? t('Bola {age} yoshda, guruh esa {min}–{max} yosh uchun.', { ...pendingAge })
+      : pendingAge.max !== null
+        ? t('Bola {age} yoshda, guruh esa {max} yoshgacha.', { ...pendingAge })
+        : t('Bola {age} yoshda, guruh esa {min} yoshdan.', { ...pendingAge })
+
   return (
     <div className="space-y-6">
       {/* Guruh va tarif TASDIQ bilan o'zgaradi (PLAN 1.4, Q4). */}
       <ConfirmDialog
         open={pendingGroup !== null}
         title={t('Guruhni oʻzgartirish')}
-        body={t('{name}: {from} guruhidan {to} guruhiga', {
-          name: child.full_name,
-          from: child.current_group?.name ?? t('guruhsiz'),
-          to: groupsQuery.data?.items.find((g) => g.id === pendingGroup)?.name ?? t('guruhsiz'),
-        })}
+        body={
+          /* Yosh oraligʻi mos kelmasa — tasdiq matnida aytiladi, lekin
+             BLOKLAMAYDI (audit, 2026-10-21). */
+          [
+            t('{name}: {from} guruhidan {to} guruhiga', {
+              name: child.full_name,
+              from: child.current_group?.name ?? t('guruhsiz'),
+              to: groupsQuery.data?.items.find((g) => g.id === pendingGroup)?.name ?? t('guruhsiz'),
+            }),
+            groupAgeNote,
+          ]
+            .filter(Boolean)
+            .join(' ')
+        }
         busy={enroll.isPending}
         onCancel={() => setPendingGroup(null)}
         onConfirm={() => {

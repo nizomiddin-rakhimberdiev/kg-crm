@@ -188,6 +188,34 @@ def test_the_summary_reports_children_without_an_invoice(tenant_a: Any):
     assert summary["without_invoice"] == 1
 
 
+def test_the_summary_separates_a_missing_price_from_a_missing_invoice(tenant_a: Any):
+    """
+    Ogohlantirish sababni TAXMIN qilmasin (audit, 2026-10-21).
+
+    Ekranda "3 ta bolaga faktura chiqarilmagan — tarifi yoʻq boʻlishi
+    mumkin" turardi, aslida esa bolalarda individual narx bor edi va
+    faktura shunchaki chiqarilmagan edi. Noto'g'ri maslahat vaqt
+    yo'qotadi, shuning uchun sabab SANАB beriladi: narxi aniqlanmagani
+    alohida.
+    """
+    with organization_context(tenant_a.organization.id):
+        tariff = _tariff(tenant_a)
+        _child(tenant_a, "Tarifli", last="Aaa", tariff=tariff)
+        priced = _child(tenant_a, "Individual", last="Bbb")
+        priced.monthly_fee = Decimal("900000.00")
+        priced.save(update_fields=["monthly_fee"])
+        _child(tenant_a, "Narxsiz", last="Ccc")
+
+        summary = selectors.month_board_summary(
+            organization_id=tenant_a.organization.id, period_year=2026, period_month=9
+        )
+
+    assert summary["without_invoice"] == 3
+    # Faqat bittasining narxi yo'q — qolgan ikkitasiga faktura
+    # chiqarish yetarli.
+    assert summary["without_price"] == 1
+
+
 def test_a_cancelled_invoice_leaves_the_child_without_one(tenant_a: Any):
     with organization_context(tenant_a.organization.id):
         tariff = _tariff(tenant_a)

@@ -14,7 +14,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   CURRENCY,
-  compact,
+  axisMoney,
   formatDate,
   formatDateTime,
   isoDate,
@@ -23,6 +23,7 @@ import {
   parseLocalDate,
   percent,
   quantity,
+  unitLabel,
   signed,
   som,
   toLocalDate,
@@ -79,15 +80,55 @@ describe('money va signed', () => {
   })
 })
 
-describe('compact', () => {
-  it('grafik o‘qlari uchun qisqartiradi', () => {
-    expect(compact(485200000)).toBe('485.2M')
-    expect(compact(1500)).toBe('1.5K')
-    expect(compact(999)).toBe('999')
+describe('axisMoney', () => {
+  /*
+   * Auditda bosh sahifa grafigining o'qida 200 000 so'm "0 mln" deb
+   * turardi: tickFormatter millionga bo'lib yumaloqlardi. O'q raqamni
+   * YASHIRMASLIGI kerak — u grafikdagi balandlikni o'qiydigan yagona
+   * narsa.
+   */
+  it('kattalikni YASHIRMAYDI', () => {
+    expect(axisMoney(200000)).toBe(`200${NBSP}ming`)
+    expect(axisMoney(1200000)).toBe(`1.2${NBSP}mln`)
+    expect(axisMoney(485200000)).toBe(`485.2${NBSP}mln`)
+    expect(axisMoney(1500000000)).toBe(`1.5${NBSP}mlrd`)
+  })
+
+  it('butun son kasrsiz koʻrsatiladi', () => {
+    expect(axisMoney(2000000)).toBe(`2${NBSP}mln`)
+    expect(axisMoney(0)).toBe('0')
+    expect(axisMoney(999)).toBe('999')
+  })
+
+  it('manfiy qiymat ishorasini saqlaydi', () => {
+    expect(axisMoney(-1500000)).toBe(`−1.5${NBSP}mln`)
+  })
+})
+
+describe('unitLabel', () => {
+  /*
+   * Auditda ombordagi birliklar inglizcha edi: "pcs", "pack" — ayni
+   * paytda Chiqimlarda "dona" va "quti". Kod bazada qoladi, ekranda
+   * esa odam o'qiydigan nom turadi.
+   */
+  it('kod emas, nom koʻrsatiladi', () => {
+    expect(unitLabel('pcs')).toBe('dona')
+    expect(unitLabel('pack')).toBe('quti')
+    expect(unitLabel('kg')).toBe('kg')
+  })
+
+  it('erkin matnni oʻzgartirmaydi', () => {
+    expect(unitLabel('bogʻlam')).toBe('bogʻlam')
+    expect(unitLabel('')).toBe('')
   })
 })
 
 describe('quantity', () => {
+  it('birlik kodi nomga aylanadi', () => {
+    expect(quantity(12, 'pcs')).toBe(`12${NBSP}dona`)
+    expect(quantity(2, 'pack')).toBe(`2${NBSP}quti`)
+  })
+
   it("birlik qo'shiladi va raqamdan ajralmaydi", () => {
     expect(quantity(12, 'dona')).toBe(`12${NBSP}dona`)
     expect(quantity(1200, 'kg')).toBe(`1${NBSP}200${NBSP}kg`)

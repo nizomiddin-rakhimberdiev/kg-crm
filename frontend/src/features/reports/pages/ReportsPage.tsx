@@ -56,7 +56,7 @@ import { useCan, type PermissionCode } from '@/lib/rbac/useCan'
 import { Modal } from '@/components/ui/Modal'
 import { BRAND, CHART, CHART_SEQUENCE } from '@/lib/brand'
 import { QueryError } from '@/components/ui/QueryError'
-import { formatDateTime } from '@/lib/format'
+import { axisMoney, formatDateTime } from '@/lib/format'
 import { cn, formatMoney, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { BenefitsReport } from '@/features/reports/components/BenefitsReport'
@@ -99,16 +99,6 @@ const EXPORT_STATUS: Record<string, [string, string]> = {
   running: [t('Tayyorlanmoqda'), 'border border-ildiz-300 bg-ildiz-50 text-ildiz-800'],
   ready: [t('Tayyor'), 'bg-emerald-50 text-emerald-700'],
   failed: [t('Xato'), 'bg-red-50 text-red-700'],
-}
-
-/** Grafik o'qi uchun qisqa pul: 1 200 000 → "1.2 mln". */
-const compactUZS = (value: number) => {
-  const abs = Math.abs(value)
-  if (abs >= 1_000_000_000) return t('{v} mlrd', { v: (value / 1_000_000_000).toFixed(1) })
-  if (abs >= 1_000_000)
-    return t('{v} mln', { v: (value / 1_000_000).toFixed(abs >= 10_000_000 ? 0 : 1) })
-  if (abs >= 1_000) return t('{v} ming', { v: Math.round(value / 1_000) })
-  return String(value)
 }
 
 export default function ReportsPage() {
@@ -380,7 +370,7 @@ export default function ReportsPage() {
           <Modal open={cashOpen} onClose={() => setCashOpen(false)} className="max-w-lg">
             <div className="p-6">
               <div className="pr-10">
-                <h2 className="text-lg font-bold text-slate-900">{t('Pul qaysi qoplarda')}</h2>
+                <h2 className="text-lg font-bold text-slate-900">{t('Pul qaysi hisoblarda')}</h2>
                 <p className="mt-1 text-sm text-slate-500">
                   {bucketTitle(period.from, 'day')} — {bucketTitle(period.to, 'day')}
                 </p>
@@ -428,7 +418,7 @@ export default function ReportsPage() {
                 {!canPL
                   ? t('Tushum va tasdiqlangan chiqimlar, davr boʻyicha')
                   : payrollInChart
-                    ? t('Chiqim ustuni: xarajat + oylik maosh (ustma-ust)')
+                    ? t('Chiqim ustuni: chiqimlar + oylik maosh (ustma-ust)')
                     : t(
                         'Kun/hafta kesimida oylik maosh ustunlarga kirmaydi — u jami koʻrsatkichda',
                       )}
@@ -463,7 +453,7 @@ export default function ReportsPage() {
                         fontSize={12}
                         tick={{ fill: CHART.label }}
                         width={56}
-                        tickFormatter={(v: number) => compactUZS(v)}
+                        tickFormatter={(v: number) => axisMoney(v)}
                       />
                       <Tooltip
                         formatter={(v: number) => formatUZS(v)}
@@ -645,7 +635,7 @@ export default function ReportsPage() {
 
       {/* Imtiyozlar (Bosqich 12.2) — o'sha davr bo'yicha. */}
       {/* Oylik yigʻma va oyni yopish (Bosqich 12.6). */}
-      {canRevenue && <MonthlySummary />}
+      {canRevenue && <MonthlySummary month={period.from.slice(0, 7)} />}
 
       {canRevenue && <BenefitsReport from={period.from} to={period.to} />}
 

@@ -2335,3 +2335,122 @@ qarori: **sun'iy intellektsiz** (ADR-14 kuchda), buyruqli bot.
    talab qilardi. Endi asosiy — "Shartnoma" (imzolangan fayl); "Shablondan
    tuzilgan shartnomalar" faqat shablon yoki shunday shartnoma bo'lsa
    ko'rinadi, talab matni olib tashlandi.
+
+## Mustaqil audit bo'yicha tuzatishlar (2026-10-21)
+
+Manba: `radix-analiz.pdf` — test akkauntda o'tkazilgan to'liq audit.
+Tartib auditning o'zidagi navbat bo'yicha ("birinchi mijozni yo'qotish
+xavfi"), moliyaviy yadroga tegmaydi: audit hamma hisob-kitobni to'g'ri
+deb topdi, xato **ko'rinishda** edi.
+
+### 1-to'plam — uchta "ko'rinadigan yolg'on" (audit 1–3, 7-xato)
+
+1. **To'lovlar jurnali avansni yolg'on ko'rsatardi.** Ustun
+   `payment.invoice` ni o'qiydi, lekin ADR-20 dan keyin asosiy yo'l —
+   FIFO taqsimot: kassir hujjatni tanlamasa ham pul eng eski qarzni
+   yopadi va `invoice` ustuni bo'sh qoladi. Bola kartasida "MAIN-…-0004
+   to'langan" turardi, jurnalda esa o'sha to'lov "— avans —".
+   Endi `GET /payments` har qatorda `settled_invoices` (pul HAQIQATAN
+   yopgan fakturalar) va `advance_amount` (taqsimlanmagan qism)
+   qaytaradi; qator ularni ko'rsatadi, qaytarilgan to'lovda ikkisi ham
+   bo'sh. Taqsimotlar `Prefetch` bilan — 25 qator uchun bitta so'rov.
+2. **Ombor ro'yxati yangilanmasdi.** `invalidateMoney` dagi domen nomi
+   `inventory` edi, haqiqiy kalitlar esa `products`, `warehouses`,
+   `movements` — hech narsa mos kelmasdi va `invalidateQueries`
+   jimgina hech narsa qilmasdi. Foydalanuvchi "saqlanmadi" deb qayta
+   bosardi. Test endi domen ro'yxatini emas, `queryKeys` dan olingan
+   HAQIQIY kalitlarni tekshiradi — u yo'l-yo'lakay `tariffs` ni ham
+   topdi (tarif o'zgarsa bolaga chiqadigan summa o'zgaradi).
+3. **Oylik yig'ma boshqa oyni ko'rsatardi.** Karta davrni o'zi tanlardi
+   ("oldingi oy, odatda aynan u yopiladi"), sahifa tanlagichi esa joriy
+   oyda turardi: ekranda ikkita davr, biri yozilmagan. Endi karta
+   sahifadagi oyni oladi (`month` prop) va u o'zgarsa ergashadi; o'z
+   tanlagichi oyni yopish uchun qoladi.
+4. **Grafik o'qi "0 mln" da qotib qolgan edi** — 200 000 so'm uchun
+   million birligi. Uchta nusxa bor edi (`compact`, `compactUZS`,
+   dashboarddagi inline), biri yolg'on gapirardi. Endi bittasi:
+   `format.ts::axisMoney` — birlik summaning o'ziga qarab tanlanadi
+   (`200 ming`, `1.2 mln`, `1.5 mlrd`).
+
+### 2-to'plam — til va xom qiymatlar (audit 4-navbat, 5-xato)
+
+5. **Oy tanlagichi inglizcha edi** ("October 2026"): native
+   `input[type=month]` oy nomini brauzer lokalida chiqaradi. Yangi
+   `components/ui/MonthInput` (`DateInput` bilan bir xil sabab) — oy
+   nomi `monthName()` dan, yil raqam bilan; to'qqizta joy ko'chirildi va
+   `a11y.test.ts` native oy maydonini endi taqiqlaydi.
+6. **"Please select an item in the list"** — brauzerning o'z xabari.
+   `lib/forms/validity.ts` yuklanishda bitta hujjat darajasidagi
+   `invalid` tinglovchisini o'rnatadi va xabarni o'zimiz yozamiz
+   (yuzdan ortiq `required` uchun bitta joy). Majburiy maydon endi
+   `components/ui/FieldLabel` bilan BELGILANADI ham — "Bizni qayerdan
+   eshitgan?" majburiy edi, lekin buni aytadigan narsa yo'q edi.
+7. **Audit jurnalida xom qiymat.** Backend `view`, `approve`, `reject`
+   yozadi, frontend yorliqlari esa yo'q edi — jadvalda bir ustunda
+   "view" va "Yangilandi" turardi. Yorliqlar `features/audit/labels.ts`
+   ga chiqarildi va test ularni BACKEND manbasi bilan solishtiradi:
+   55 ta `entity_type` ning har biri va har bir amal yorliqli.
+   `from`/`to` kalitlari UUID bo'lib qolardi (qopdan qopga o'tkazma) —
+   `labels.entity_for_key()` endi uchta qoida bilan hal qiladi.
+
+### 3-to'plam — bitta atama, bitta so'z (ADR-45)
+
+8. **"Qop" → "Hisob"** har bir ko'rinadigan matnda, ikki stackda ham:
+   "Qaysi hisobdan", "Pul qaysi hisoblarda", "Hisoblar orasida
+   o'tkazma", va `cash_bridge` tekshiruvi "Qoplar ko'prigi" dan
+   **"Hisoblar mosligi"** ga o'tdi. Metafora bizning edi, tilning
+   emas — buxgalter uni o'qib hech narsa tushunmasdi. `.po` msgid'lari
+   ham ko'chirildi; `cash_movement.source_type` yorligʻi uchun bo'sh
+   migratsiya (`cash/0009`).
+9. **Birlik kod bo'lib ko'rinmaydi**: `unitLabel()` (`format.ts`) —
+   `pcs` → `dona`, `pack` → `quti`; erkin matn o'zgarmaydi. `quantity()`
+   endi shu funksiyadan o'tadi, ya'ni ombor, oshxona va hisobotlar
+   bir xil so'zni ko'rsatadi.
+10. **Yorliqlardagi ikki so'z bittaga keltirildi**: sarlavha, ustun va
+    jami uchun **Chiqim** (jumla ichidagi "xarajat" qoladi — "bank
+    xarajati" boshqa narsa) va **Oylik maosh** ("Ish haqi" faqat
+    hujjatda). "To'lov" va "Tushum" ATAYLAB ikkisi: biri hujjat,
+    ikkinchisi davr yig'indisi — lug'at buni yozib qo'ydi
+    ([05 §17.3](../05_Frontend_Architecture.md)).
+11. **Sozlama kaliti ekranga chiqmaydi.** Soliq preseti paneli
+    `payroll.income_tax_rate` ro'yxatini xom ko'rsatardi. Yorliqlar
+    `features/settings/settingsMeta.ts` ga chiqarildi (ikkala ekran
+    shundan o'qiydi), **to'qqizta nomsiz kalitga** nom berildi, va
+    `settingsMeta.test.ts` ro'yxatni backend `DEFAULTS` i bilan
+    solishtiradi. O'lchov birligi endi maydon YONIDA (`unit`), yorliq
+    qavsi ichida emas.
+12. **"Foizlar har xil formatda" — auditning xatosi, bizning emas**:
+    `payroll.pension_rate = 0.1` ulush emas, INPS ning haqiqiy
+    stavkasi (0,1 %), va kod ikkalasini ham `/100` qiladi. Ma'lumot
+    to'g'ri, ko'rinish esa chalg'itardi — shuning uchun birlik maydon
+    yoniga chiqdi va izoh stavkani ochiq aytadi. **Ma'lumotga
+    tegilmadi.**
+
+### 4-to'plam — noto'g'ri maslahat va jim qolgan tekshiruvlar
+
+13. **"Tarifi yo'q bo'lishi mumkin" taxmini olib tashlandi.** Banner
+    sababni taxmin qilardi va bolalarda individual narx bo'lganda
+    noto'g'ri yo'l ko'rsatardi. `month_board_summary` endi
+    **`without_price`** ni ham qaytaradi (narx manbai yo'q bolalar),
+    va ekran aniq gapiradi: "{n} tasining narxi aniqlanmagan" yoki
+    "hammasining narxi bor — tugma ularni chiqaradi".
+14. **Dublikat tekshiruvi SERVERDAN qidiradi va sanasiz ham ishlaydi.**
+    Ilgari u ekranda turgan 25 qatorga qarardi (uchinchi sahifadagi bir
+    xil bola ko'rinmasdi) va tug'ilgan sanani TALAB qilardi — aynan
+    shu sabab bazada bir xil bolalar paydo bo'lgan. Endi ism bo'yicha
+    `q` so'rovi ketadi va qaror qoidasi `children/duplicates.ts` da:
+    sana ikkalasida bor va boshqa bo'lsa — boshqa bola; sana yetishsa —
+    ogohlantirish yo'qolmaydi, ohangi yumshaydi.
+15. **Guruhning yosh oralig'i endi gapiradi** (`children/ageFit.ts`):
+    bola qo'shishda maydon ostida, guruhni o'zgartirishda tasdiq
+    matnida. **Bloklamaydi** — aka-ukani bir guruhda qoldirish kabi
+    istisnolar bog'chada ko'p.
+16. **Yillik ma'lumotnoma joriy yilda turadi** (oldingi yil emas).
+17. **Qarzdorlar bo'sh ro'yxati — yaxshi xabar**: "Qarzdor yo'q —
+    hamma to'lagan", ogohlantirish belgisi emas.
+18. **Nazorat tabidagi xom formula** (`5100000.00 + (0.00) + …`) odam
+    tiliga o'girildi: `monthly_summary` endi `check.parts` ni ham
+    qaytaradi va ikkala ekran undan gap yasaydi.
+19. **Saytdagi va'da amaliyotga keltirildi**: "qoldiqdan ortiq chiqim
+    rad etiladi" → "to'xtatiladi; o'tkazish uchun ogohlantirishni
+    o'qib belgini qo'yish kerak" (ADR-29 bilan bir xil), uch tilda.

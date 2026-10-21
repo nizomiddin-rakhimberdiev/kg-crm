@@ -542,7 +542,7 @@ export default function CashPage() {
                 </p>
                 <div>
                   <label htmlFor="move-from" className={label}>
-                    {t('Qaysi qopdan')}
+                    {t('Qaysi hisobdan')}
                   </label>
                   <select
                     id="move-from"
@@ -561,7 +561,7 @@ export default function CashPage() {
                 </div>
                 <div>
                   <label htmlFor="move-to" className={label}>
-                    {t('Qaysi qopga')}
+                    {t('Qaysi hisobga')}
                   </label>
                   <select
                     id="move-to"
@@ -633,7 +633,7 @@ export default function CashPage() {
                 {tills.length > 1 && (
                   <div className="sm:col-span-2">
                     <label htmlFor="count-pot" className={label}>
-                      {t('Qop')}
+                      {t('Hisob')}
                     </label>
                     <select
                       id="count-pot"

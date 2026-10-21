@@ -32,7 +32,18 @@ const MONEY_DOMAINS = [
   'ledger',
   'expenses',
   'payroll',
+  // Ombor kalitlari `queryKeys` da `inventory` ostida EMAS — ular
+  // alohida: `products`, `warehouses`, `movements`. Ilgari bu yerda
+  // faqat `inventory` turardi, ya'ni mahsulot qo'shilgandan keyin
+  // ro'yxat yangilanmasdi va foydalanuvchi ikkinchi marta bosardi
+  // (audit, 2026-10-21). `inventory` ham qoladi: chiqim formasidagi
+  // yetkazib beruvchilar ro'yxati shu prefiks bilan keladi.
   'inventory',
+  'products',
+  'warehouses',
+  'movements',
+  // Tarif o'zgarsa bolaga chiqadigan summa o'zgaradi.
+  'tariffs',
 ] as const
 
 /** Davomat o'zgarganda — qayta hisob hisob-fakturaga tushadi (ADR-19). */

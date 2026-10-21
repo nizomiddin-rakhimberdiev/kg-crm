@@ -253,7 +253,7 @@ def build(*, organization_id: Any, year: int, month: int, branch_id: Any = None)
             add(
                 day,
                 "",
-                move.description or gettext("Qoplar orasida oʻtkazma"),
+                move.description or gettext("Hisoblar orasida oʻtkazma"),
                 pot(legs["in"]),
                 pot(legs["out"]),
                 move.amount,

@@ -32,6 +32,7 @@ import { paymentMethodLabel } from '@/features/payments/methods'
 import { formatDate, som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+import { MonthInput } from '@/components/ui/MonthInput'
 
 type Tab = 'today' | 'day' | 'control' | 'pack' | 'plan' | 'tax'
 
@@ -223,7 +224,7 @@ function DayTab() {
           </section>
           <section className="rounded-2xl border border-slate-200 bg-white p-4">
             <h2 className="flex justify-between text-sm font-semibold text-slate-900">
-              {t('Xarajatlar')}
+              {t('Chiqimlar')}
               <span className="tabular-nums">{som(data.expenses.total)}</span>
             </h2>
             <ul className="mt-2 divide-y divide-slate-100 text-sm">
@@ -301,18 +302,7 @@ function ControlTab() {
   })
   return (
     <div className="space-y-4">
-      <div className="max-w-[12rem]">
-        <label htmlFor="control-month" className="mb-1 block text-xs font-medium text-slate-600">
-          {t('Oy')}
-        </label>
-        <input
-          id="control-month"
-          type="month"
-          value={period}
-          onChange={(event) => event.target.value && setPeriod(event.target.value)}
-          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
-        />
-      </div>
+      <MonthInput id="control-month" label={t('Oy')} value={period} onChange={setPeriod} />
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-2xl border border-slate-200 bg-white p-4">
           <h2 className="text-sm font-semibold text-slate-900">{t('Tekshiruvlar')}</h2>

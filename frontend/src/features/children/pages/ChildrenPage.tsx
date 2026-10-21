@@ -26,6 +26,8 @@ import { ImportWizard } from '@/features/children/components/ImportWizard'
 import { PricePicker } from '@/features/children/components/PricePicker'
 import { priceFromChild, priceToPayload, type PriceValue } from '@/features/children/price'
 import { tariffsApi } from '@/features/payments/api'
+import { ageOutsideGroup } from '@/features/children/ageFit'
+import { findDuplicate } from '@/features/children/duplicates'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { usePageState } from '@/hooks/usePageState'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -35,9 +37,10 @@ import { documentProblem } from '@/features/children/documents'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { GroupOptions } from '@/features/children/components/GroupOptions'
 import { useCan } from '@/lib/rbac/useCan'
-import { today } from '@/lib/format'
+import { formatDate, today } from '@/lib/format'
 import { avatarTone, cn, initials } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { FieldLabel } from '@/components/ui/FieldLabel'
 
 const STATUS_LABELS: Record<string, string> = {
   prospect: t('Nomzod'),
@@ -234,22 +237,42 @@ export default function ChildrenPage() {
     placeholderData: keepPreviousData,
   })
 
-  // Ro'yxatdagi bolalar ichidan bir xil ism+sana qidiriladi.
-  // Server tekshiruvi emas: u BLOKLAMAYDI, faqat ogohlantiradi.
-  const duplicate =
-    !editing && form.first_name && form.last_name && form.date_of_birth
-      ? (childrenQuery.data?.items ?? []).find(
-          (row) =>
-            row.first_name.toLowerCase() === form.first_name.toLowerCase() &&
-            row.last_name.toLowerCase() === form.last_name.toLowerCase() &&
-            row.date_of_birth === form.date_of_birth,
-        )
-      : undefined
+  // Bir xil bola SERVERDAN qidiriladi (audit, 2026-10-21).
+  //
+  // Ilgari taqqoslash ekranda turgan sahifaga qarardi, ya'ni uchinchi
+  // sahifadagi bir xil bola ko'rinmasdi; va tug'ilgan sana TALAB
+  // qilinardi, ya'ni sanasiz kiritilgan bola hech qachon
+  // ogohlantirish bermasdi. Endi ism bo'yicha so'rov ketadi (`q` —
+  // kirill/lotin farqini bilmaydigan kalit) va qaror qoidasi
+  // `duplicates.ts` da.
+  const nameForLookup = `${form.last_name ?? ''} ${form.first_name ?? ''}`.trim()
+  const debouncedName = useDebouncedValue(nameForLookup)
+  const lookupEnabled = !editing && Boolean(form.first_name?.trim() && form.last_name?.trim())
+  const duplicateQuery = useQuery({
+    queryKey: queryKeys.children(organizationId, { duplicateOf: debouncedName }),
+    queryFn: () => childrenApi.list({ q: debouncedName, page_size: 25 }),
+    enabled: lookupEnabled && debouncedName.length > 2,
+    staleTime: 30_000,
+  })
+  const duplicate = lookupEnabled
+    ? findDuplicate(duplicateQuery.data?.items ?? [], {
+        first_name: form.first_name ?? '',
+        last_name: form.last_name ?? '',
+        date_of_birth: form.date_of_birth ?? '',
+      })
+    : null
 
   const groupsQuery = useQuery({
     queryKey: queryKeys.groups(organizationId),
     queryFn: groupsApi.list,
   })
+
+  // Tanlangan guruhning yosh oraligʻi — faqat ogohlantirish uchun.
+  const ageMismatch = (() => {
+    const group = (groupsQuery.data?.items ?? []).find((row) => row.id === formGroupId)
+    if (!group) return null
+    return ageOutsideGroup(group, form.date_of_birth ?? '')
+  })()
 
   // Tarif bolani qo'shayotganda darhol biriktiriladi: tarifsiz bolaga
   // hisob-faktura chiqarib bo'lmaydi (docs/03 §13.3), ya'ni uni keyinroq
@@ -421,9 +444,15 @@ export default function ChildrenPage() {
         <span className="block truncate font-medium text-slate-800 transition-colors group-hover/name:text-brand-700">
           {child.last_name} {child.first_name}
         </span>
-        {child.middle_name && (
-          <span className="block truncate text-xs text-slate-500">{child.middle_name}</span>
-        )}
+        {/* Bir xil ismli bolalarni AJRATADIGAN qator (audit,
+            2026-10-21): otasining ismi, tugʻilgan sana va shartnoma
+            raqami. Ilgari faqat otasining ismi turardi va u koʻpincha
+            boʻsh. */}
+        <span className="block truncate text-xs text-slate-500">
+          {[child.middle_name, formatDate(child.date_of_birth), child.contract_number]
+            .filter(Boolean)
+            .join(' · ')}
+        </span>
       </span>
     </Link>
   )
@@ -573,9 +602,9 @@ export default function ChildrenPage() {
             ] as const
           ).map(([key, label, type]) => (
             <div key={key}>
-              <label htmlFor={key} className="mb-1 block text-xs font-medium text-slate-600">
+              <FieldLabel htmlFor={key} required={key !== 'middle_name'}>
                 {label}
-              </label>
+              </FieldLabel>
               {/* Sana — `DateInput` (05 §17.1), native `type=date` EMAS.
                   Brauzerning oʻz maydoni amerikacha tartibni
                   (`mm/dd/yyyy`) koʻrsatadi va bogʻcha xodimi uni
@@ -713,9 +742,9 @@ export default function ChildrenPage() {
           </div>
 
           <div>
-            <label htmlFor="enrolled_on" className="mb-1 block text-xs font-medium text-slate-600">
+            <FieldLabel htmlFor="enrolled_on" required={!editing}>
               {t('Qabul sanasi')}
-            </label>
+            </FieldLabel>
             <DateInput
               id="enrolled_on"
               required={!editing}
@@ -747,9 +776,9 @@ export default function ChildrenPage() {
           {/* Bosqich 14: oila bogʻcha haqida qayerdan eshitgan — statistika
               uchun. Yangi bolada majburiy; eski bolada boʻsh qolishi mumkin. */}
           <div>
-            <label htmlFor="heard_from" className="mb-1 block text-xs font-medium text-slate-600">
+            <FieldLabel htmlFor="heard_from" required={!editing}>
               {t('Bizni qayerdan eshitgan?')}
-            </label>
+            </FieldLabel>
             <select
               id="heard_from"
               required={!editing}
@@ -800,6 +829,18 @@ export default function ChildrenPage() {
             >
               <GroupOptions groups={groupsQuery.data?.items ?? []} />
             </select>
+            {/* Yosh oraligʻi BLOKLAMAYDI, ogohlantiradi (audit,
+                2026-10-21): bogʻchada aka-ukani bir guruhda qoldirish
+                yoki joy yoʻqligi kabi istisnolar koʻp. */}
+            {ageMismatch && (
+              <p className="mt-1 text-xs text-orik-700">
+                {ageMismatch.min !== null && ageMismatch.max !== null
+                  ? t('Bola {age} yoshda, guruh esa {min}–{max} yosh uchun.', { ...ageMismatch })
+                  : ageMismatch.max !== null
+                    ? t('Bola {age} yoshda, guruh esa {max} yoshgacha.', { ...ageMismatch })
+                    : t('Bola {age} yoshda, guruh esa {min} yoshdan.', { ...ageMismatch })}
+              </p>
+            )}
           </div>
 
           <div>
@@ -912,12 +953,20 @@ export default function ChildrenPage() {
 
           {/* Dublikat ogohlantirishi (PLAN 2.3) — to'sib qo'ymaydi:
               egizaklarda ism va tug'ilgan sana haqiqatan bir xil
-              bo'lishi mumkin. */}
+              bo'lishi mumkin. Sana noma'lum bo'lsa ogohlantirish
+              yo'qolmaydi, faqat ohangi yumshaydi (audit, 2026-10-21). */}
           {duplicate && (
             <p className="rounded-lg bg-orik-50 px-3 py-2 text-sm text-orik-800 sm:col-span-2">
-              {t('Shunday ism va tugʻilgan sanali bola allaqachon bor: {name}', {
-                name: duplicate.full_name,
-              })}
+              {duplicate.certainty === 'same_birth_date'
+                ? t('Shunday ism va tugʻilgan sanali bola allaqachon bor: {name}', {
+                    name: duplicate.child.full_name,
+                  })
+                : t(
+                    'Shunday ismli bola allaqachon bor: {name} — tugʻilgan sanasi koʻrsatilmagan.',
+                    {
+                      name: duplicate.child.full_name,
+                    },
+                  )}
             </p>
           )}
 

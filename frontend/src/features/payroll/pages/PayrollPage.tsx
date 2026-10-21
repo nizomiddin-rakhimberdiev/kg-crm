@@ -384,7 +384,7 @@ export default function PayrollPage() {
                     htmlFor="adv-account"
                     className="mb-1 block text-xs font-medium text-slate-600"
                   >
-                    {t('Qaysi qopdan')}
+                    {t('Qaysi hisobdan')}
                   </label>
                   <select
                     id="adv-account"

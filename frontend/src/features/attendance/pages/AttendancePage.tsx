@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarCheck, Check, FileText, Save, X } from 'lucide-react'
+import { CalendarCheck, Check, ChevronRight, FileText, Save, X } from 'lucide-react'
 import { DateInput } from '@/components/ui/DateInput'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { attendanceApi } from '@/features/attendance/api'
@@ -131,6 +131,15 @@ function ChildrenAttendance({
   // har bir bosishda qayta aylanardi. Massivni ham memo'lab qo'yamiz —
   // shunda u `data` o'zgarmaguncha o'sha-o'sha bo'lib qoladi.
   const rows = useMemo(() => registerQuery.data?.rows ?? [], [registerQuery.data])
+
+  // Roʻyxatdagi KEYINGI guruh (oxirgisidan keyin — birinchisi).
+  const nextGroup = (() => {
+    const groups = groupsQuery.data?.items ?? []
+    if (groups.length < 2) return null
+    const index = groups.findIndex((group) => group.id === groupId)
+    if (index < 0) return null
+    return groups[(index + 1) % groups.length]
+  })()
 
   const counts = useMemo(() => {
     const result = { present: 0, excused: 0, absent: 0, unmarked: 0 }
@@ -348,8 +357,22 @@ function ChildrenAttendance({
       )}
 
       {saved && !dirty && (
-        <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          {t('Saqlandi.')}
+        /* Saqlagandan keyin KEYINGI GURUH (audit, 2026-10-21):
+           tarbiyachi bir nechta guruhni ketma-ket belgilaydi va har
+           safar tanlagichga qaytib, qaysi birida qolganini oʻzi
+           eslashi kerak edi. */
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          <span>{t('Saqlandi.')}</span>
+          {nextGroup && (
+            <button
+              type="button"
+              onClick={() => switchGuarded(() => setGroupId(nextGroup.id))}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-sm font-medium text-emerald-800 hover:bg-emerald-50"
+            >
+              {t('Keyingi guruh: {name}', { name: nextGroup.name })}
+              <ChevronRight className="h-4 w-4" aria-hidden />
+            </button>
+          )}
         </div>
       )}
 

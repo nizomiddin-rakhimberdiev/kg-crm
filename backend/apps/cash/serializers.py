@@ -63,7 +63,7 @@ class CashAccountSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {
                     "kind": gettext(
-                        "Qop — naqd kassa yoki bank hisobi. Terminal, oʻtkazma, Click va Payme — "
+                        "Hisob — naqd kassa yoki bank hisobi. Terminal, oʻtkazma, Click va Payme — "
                         "toʻlov usuli: pul bank hisobiga tushadi."
                     )
                 }
@@ -71,7 +71,7 @@ class CashAccountSerializer(serializers.ModelSerializer):
         method = attrs.get("handles_method", getattr(self.instance, "handles_method", ""))
         if method not in self._METHOD_FOR_KIND[kind]:
             raise serializers.ValidationError(
-                {"handles_method": gettext("Bu qop bunday toʻlovlarni qabul qilmaydi.")}
+                {"handles_method": gettext("Bu hisob bunday toʻlovlarni qabul qilmaydi.")}
             )
         return attrs
 

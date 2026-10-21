@@ -29,17 +29,18 @@ import { expensesApi } from '@/features/expenses/api'
 import { httpClient } from '@/lib/api/client'
 import { ApiError } from '@/lib/api/types'
 import { BRAND, CHART } from '@/lib/brand'
-import { compact, formatDate, periodLabel, som, today } from '@/lib/format'
+import { axisMoney, formatDate, periodLabel, som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { MonthInput } from '@/components/ui/MonthInput'
 
 const FLOW_LABELS: Record<string, string> = {
   tuition: t('Ota-ona toʻlovlari'),
   payroll: t('Ish haqi'),
   taxes: t('Soliqlar'),
   suppliers: t('Nasiya (yetkazib beruvchilar)'),
-  expenses: t('Doimiy xarajatlar'),
+  expenses: t('Doimiy chiqimlar'),
 }
 
 const card = 'rounded-2xl border border-slate-200 bg-white p-4'
@@ -347,7 +348,7 @@ function Budget({ at }: { at: PackUnit }) {
                   {
                     {
                       income: t('Jami daromad'),
-                      expenses: t('Jami xarajat'),
+                      expenses: t('Jami chiqim'),
                       result: t('Natija'),
                     }[totalKey]
                   }
@@ -371,7 +372,7 @@ function Budget({ at }: { at: PackUnit }) {
               htmlFor="budget-category"
               className="mb-1 block text-xs font-medium text-slate-600"
             >
-              {t('Xarajat toifasini qoʻshish')}
+              {t('Chiqim toifasini qoʻshish')}
             </label>
             <select
               id="budget-category"
@@ -506,7 +507,7 @@ function Trends({ at }: { at: PackUnit }) {
               fontSize={12}
               tick={{ fill: CHART.label }}
               width={56}
-              tickFormatter={(value: number) => compact(value)}
+              tickFormatter={(value: number) => axisMoney(value)}
             />
             <Tooltip
               formatter={(value: number) => som(value)}
@@ -595,18 +596,7 @@ export function PlanTab() {
   return (
     <div className="space-y-4">
       <SafeWithdrawal branch={selectedBranchId} />
-      <div>
-        <label htmlFor="plan-month" className="mb-1 block text-xs font-medium text-slate-600">
-          {t('Oy')}
-        </label>
-        <input
-          id="plan-month"
-          type="month"
-          value={period}
-          onChange={(event) => event.target.value && setPeriod(event.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
-        />
-      </div>
+      <MonthInput id="plan-month" label={t('Oy')} value={period} onChange={setPeriod} />
       <Budget at={at} />
       <Kpis at={at} />
       <Trends at={at} />

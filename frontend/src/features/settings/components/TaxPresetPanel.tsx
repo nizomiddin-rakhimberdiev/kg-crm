@@ -10,8 +10,22 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { settingsApi } from '@/features/notifications/api'
+import { SETTING_META } from '@/features/settings/settingsMeta'
 import { ApiError } from '@/lib/api/types'
 import { t } from '@/lib/i18n'
+
+/**
+ * Preset qiymati — tanlovli sozlamada KOD emas, nomi.
+ *
+ * `tax.regime: "pq403"` ekranda "pq403" boʻlib turardi; roʻyxatdagi
+ * nomi `SETTING_META` da allaqachon bor.
+ */
+function presetValue(key: string, value: unknown): string {
+  const options = SETTING_META[key]?.options
+  const text = String(value)
+  const named = options?.find(([code]) => code === text)?.[1]
+  return named ?? text
+}
 
 export function TaxPresetPanel({ editable }: { editable: boolean }) {
   const organizationId = useOrganizationId()
@@ -73,11 +87,14 @@ export function TaxPresetPanel({ editable }: { editable: boolean }) {
           )}
         </div>
         {preset && (
+          /* Kalit EMAS, nomi (ADR-45): auditda bu roʻyxat
+             `payroll.income_tax_rate` boʻlib turardi. Kalitning oʻzi
+             `title` da qoladi — qoʻllab-quvvatlash uchun. */
           <ul className="grid gap-x-4 gap-y-0.5 text-xs text-slate-600 sm:grid-cols-2">
             {Object.entries(preset.values).map(([key, item]) => (
               <li key={key} className="flex justify-between gap-2">
-                <span className="font-mono">{key}</span>
-                <span className="tabular-nums">{String(item)}</span>
+                <span title={key}>{SETTING_META[key]?.label ?? key}</span>
+                <span className="tabular-nums">{presetValue(key, item)}</span>
               </li>
             ))}
           </ul>

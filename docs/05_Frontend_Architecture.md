@@ -474,10 +474,14 @@ The CRM shell is trilingual ([02 ADR-16](./02_Software_Architecture.md)). The me
 | Dates | `dd.mm.yyyy` in **all three** languages. |
 | Missing value | An em dash, never `0` — in a report "0" and "no data" are different facts, and mixing them shows up in the worst place. |
 | Money type | Display only. Arithmetic stays on the backend in `Decimal` ([CLAUDE.md invariant 3](../CLAUDE.md)). |
+| Chart axes | `axisMoney()` — `200 ming`, `1.2 mln`, `1.5 mlrd`, unit chosen from the figure itself. Three private copies existed and one of them lied: the dashboard axis divided by a million and rounded, so 200 000 so'm read `0 mln` on every tick (audit, 2026-10-21). |
+
+> **Why a dedicated `MonthInput`.** Same reason, one step up: a native `input[type=month]` prints the month name in the *browser's* locale, so a fully Uzbek screen showed `October 2026` in its one picker (audit, 2026-10-21). `components/ui/MonthInput` is two `<select>`s — month name from `monthName()`, year as a number — which keeps keyboard and screen-reader support free while the words stay ours. The contract is `yyyy-mm`, and `a11y.test.ts` fails the build on a native `type="month"` anywhere else.
 
 > **Why a dedicated `DateInput`.** A native `input[type=date]` renders the date in the *browser's* locale: one member of staff sees `02.10.2026`, another `10/02/2026` — and the second reads October 2nd as February 10th. On a financial document that is not a cheap mistake: an overdue invoice looks like one that is not due yet. So the display is ours and the calendar stays native (rewriting it breaks keyboard and screen-reader support, and the browser does it well). An impossible date (`31.02.2026`) is refused rather than silently rolled forward, which is what `new Date()` does.
 
 ---
+
 
 ## 17.2 Accessibility floor (PLAN 4.8)
 
@@ -490,7 +494,26 @@ These four are guarded by `src/__tests__/a11y.test.ts`, because none of them bre
 | **A `placeholder` is not a label** | It disappears as soon as someone types, so a filled-in form stops saying what its fields are. Fields therefore have a `<label>` or an `aria-label`. |
 | **Visible focus** | `outline-none` appears in ~99 places and removes the browser's focus ring; a `focus:border-…` colour change is not enough for someone working by keyboard. A global `:focus-visible` ring (not `:focus` — no ring on mouse clicks) answers "where am I now?" in an eight-field form. |
 
+**Validation messages are ours, not the browser's.** A missing `required` select used to report `Please select an item in the list` — English, in the browser's own font, outside the product (audit, 2026-10-21). `lib/forms/validity.ts` installs one document-level `invalid` listener at boot (`main.tsx`) and writes the message itself. It is one place on purpose: the app has over a hundred `required` attributes, and an `onInvalid` on each would be a hundred copies and a hundred-and-first form that forgets. Native validation itself stays — it moves focus to the first bad field, scrolls to it and announces it, which hand-written checks rarely get right. A required field is also *marked*: `components/ui/FieldLabel` with `required` draws the asterisk, `aria-hidden` because the field's own `required` is what a screen reader reads.
+
 The payment modal is keyboard-operable end to end: **Enter** accepts, **Esc** closes. A cashier works at the keyboard all day, and reaching for the mouse costs a few seconds on every payment, hundreds of times a day. Every other button inside it is `type="button"` — otherwise picking a payment method would submit the payment.
+
+---
+
+## 17.3 Glossary — one word per concept (ADR-45)
+
+The audit of 2026-10-21 found the same thing called different names on different screens, and internal keys shown as labels. Both make a finished product look half-built, and they cost nothing to fix except the discipline of keeping a list.
+
+| Concept | The word | Not | Why |
+|---------|----------|-----|-----|
+| `cash_account` | **Hisob** ("Qaysi hisobdan", "Pul qaysi hisoblarda") | "Qop" | The pot metaphor is ours, not the language's. An accountant reading "Qoplar koʻprigi" learns nothing; the same check is now "Hisoblar mosligi". |
+| Money out | **Chiqim** as the *name* of the thing — section, column, total, category | "Xarajat" as a label | The module, the ledger and the nav already said *chiqim*, so the stray *Xarajatlar* heading beside them was the one to go. *Xarajat* stays as the ordinary noun inside a sentence ("bank xarajati", "taxminiy xarajat"), where *chiqim* would be wrong Uzbek. |
+| Pay | **Oylik maosh** | "Ish haqi" | *Oylik maosh* is already the word in the nav, the dashboard and every report; *ish haqi* is the legal register and belongs in generated documents, not in a column heading. |
+| Money received | **Toʻlov** = one received payment document · **Tushum** = money that came in over a period | — | These are **not** synonyms, and merging them would break the one distinction the monthly summary exists to make ("cash received" vs "collected for the month"). |
+| Unit of stock | **dona · quti** (`unitLabel()`) | `pcs`, `pack` | The code stays in the database; the screen shows the word. Free text a kindergarten typed itself is left exactly as typed. |
+| A setting | Its label and its unit (`%`) | `payroll.income_tax_rate`, `tax.regime` | A key is a developer's handle. It may appear in a tooltip for support, never as the field's name. |
+
+Adding UI text means adding it to all three catalogs (§17) — and picking the word from this table rather than inventing a synonym.
 
 ---
 

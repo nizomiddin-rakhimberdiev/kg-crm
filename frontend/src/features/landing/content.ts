@@ -515,11 +515,11 @@ const uz: Copy = {
       },
       {
         title: 'Kassada yoʻq pul chiqmaydi',
-        text: 'Qoldiqdan ortiq chiqim rad etiladi — qaysi hisob, qancha bor, qancha yetmaydi. Har bir chiqim qator-qator: «Bozorlik — 600 000» emas, «Kartoshka, 50 kg × 3 000».',
+        text: 'Qoldiqdan ortiq chiqim toʻxtatiladi — qaysi hisob, qancha bor, qancha yetmaydi. Oʻtkazish uchun ogohlantirishni oʻqib, belgini qoʻyishingiz kerak: pul allaqachon chiqib ketgan boʻlsa, yozuv yozilsin. Har bir chiqim qator-qator: «Bozorlik — 600 000» emas, «Kartoshka, 50 kg × 3 000».',
       },
       {
         title: 'Oy oʻzi yigʻiladi va yopiladi',
-        text: 'Har oy bir xil 16 boʻlimli hisobot: daromad zanjiri, qarzlar, xarajatlar, kassa koʻprigi, foyda-zarar va «foyda ≠ pul» — har raqamdan manba yozuvigacha bir bosish. Reja va fakt, 30/60/90 kunlik pul prognozi va «qancha pul olsa boʻladi» — formulasi bilan. PDF, Excel, oʻzgarmas nusxa.',
+        text: 'Har oy bir xil 16 boʻlimli hisobot: daromad zanjiri, qarzlar, chiqimlar, hisoblar mosligi, foyda-zarar va «foyda ≠ pul» — har raqamdan manba yozuvigacha bir bosish. Reja va fakt, 30/60/90 kunlik pul prognozi va «qancha pul olsa boʻladi» — formulasi bilan. PDF, Excel, oʻzgarmas nusxa.',
       },
       {
         title: 'Ikki bosqichli himoya',
@@ -602,7 +602,7 @@ const uz: Copy = {
       { id: 'salaries', label: 'Ish haqi', value: 31_500_000, tone: 'out' },
       { id: 'balance', label: 'Balans', value: 24_150_000, tone: 'in' },
     ],
-    equation: 'Toʻlovlar − Xarajatlar − Ish haqi = Balans',
+    equation: 'Toʻlovlar − Chiqimlar − Oylik maosh = Balans',
   },
   pricing: {
     eyebrow: 'Narxlar',
@@ -1083,11 +1083,11 @@ const ru: Copy = {
       },
       {
         title: 'Из пустой кассы деньги не уйдут',
-        text: 'Расход больше остатка отклоняется — с названием счёта, остатком и суммой нехватки. Каждый расход построчно: не «рынок — 600 000», а «картошка, 50 кг × 3 000».',
+        text: 'Расход больше остатка останавливается — с названием счёта, остатком и суммой нехватки. Чтобы провести его, нужно прочитать предупреждение и поставить отметку: если деньги уже ушли, запись должна существовать. Каждый расход построчно: не «рынок — 600 000», а «картошка, 50 кг × 3 000».',
       },
       {
         title: 'Месяц сводится и закрывается сам',
-        text: 'Каждый месяц одинаковый отчёт из 16 разделов: цепочка дохода, долги, расходы, мост по кассе, прибыль и «прибыль ≠ деньги» — от любой цифры один клик до записей. План и факт, прогноз денег на 30/60/90 дней и «сколько можно забрать» — с формулой. PDF, Excel, неизменяемая копия.',
+        text: 'Каждый месяц одинаковый отчёт из 16 разделов: цепочка дохода, долги, расходы, сверка счетов, прибыль и «прибыль ≠ деньги» — от любой цифры один клик до записей. План и факт, прогноз денег на 30/60/90 дней и «сколько можно забрать» — с формулой. PDF, Excel, неизменяемая копия.',
       },
       {
         title: 'Двухэтапная защита',
@@ -1644,11 +1644,11 @@ const en: Copy = {
       },
       {
         title: 'An empty till pays nothing out',
-        text: 'A payment larger than the balance is refused, naming the account, what it holds and what is short. Every expense is itemised: not “market — 600 000” but “potatoes, 50 kg × 3 000”.',
+        text: 'A payment larger than the balance is stopped, naming the account, what it holds and what is short. Letting it through takes a tick-box after reading the warning: if the money has already left, the record has to exist. Every expense is itemised: not “market — 600 000” but “potatoes, 50 kg × 3 000”.',
       },
       {
         title: 'The month sums and closes itself',
-        text: 'The same 16-section report every month: revenue chain, debts, expenses, the till bridge, profit and loss and “profit ≠ cash” — one click from any number to its records. Plan against actual, a 30/60/90-day cash forecast and “how much can I take out”, formula shown. PDF, Excel, an immutable copy.',
+        text: 'The same 16-section report every month: revenue chain, debts, expenses, account reconciliation, profit and loss and “profit ≠ cash” — one click from any number to its records. Plan against actual, a 30/60/90-day cash forecast and “how much can I take out”, formula shown. PDF, Excel, an immutable copy.',
       },
       {
         title: 'Two-step protection',

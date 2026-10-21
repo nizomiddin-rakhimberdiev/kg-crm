@@ -29,7 +29,7 @@ from typing import Any
 
 from django.apps import apps as django_apps
 
-__all__ = ["ENTITY_MODELS", "resolve_labels", "label_map_for"]
+__all__ = ["ENTITY_MODELS", "KEY_ENTITY", "entity_for_key", "resolve_labels", "label_map_for"]
 
 #: `entity_type` / `changes` kaliti → (app, model). Nom `str(obj)` dan
 #: olinadi: har bir modelning `__str__` i allaqachon "odam o'qiydigan
@@ -53,6 +53,39 @@ ENTITY_MODELS: dict[str, tuple[str, str]] = {
     "branch": ("branches", "Branch"),
     "organization": ("organizations", "Organization"),
 }
+
+
+#: (`entity_type`, `changes` kaliti) → nom olinadigan tur.
+#:
+#: Ba'zi kalitlar turni O'ZI aytmaydi: qopdan qopga o'tkazma `from` va
+#: `to` deb yoziladi, va jurnalda "c28a8dc0-… → 617524bc-…" turardi
+#: (audit, 2026-10-21). Kalit aytmaganini YOZUV TURI aytadi:
+#: `cash_transfer` ning `from`/`to` si doimo kassa hisobi.
+KEY_ENTITY: dict[tuple[str, str], str] = {
+    ("cash_transfer", "from"): "cash_account",
+    ("cash_transfer", "to"): "cash_account",
+    ("cash_handover", "to"): "user",
+    ("cash_count", "cash_account"): "cash_account",
+}
+
+
+def entity_for_key(entity_type: str, key: str) -> str | None:
+    """
+    `changes` kaliti qaysi turning nomini talab qiladi.
+
+    Uch qoida, shu tartibda: kalitning o'zi tur nomi (`child`),
+    yozuv turi bilan birga ma'no beradigan kalit (`KEY_ENTITY`), yoki
+    `_id` qo'shimchasi (`employee_id` → `employee`). Qolgani UUID
+    bo'lib qoladi — bu xato emas, yozuv baribir o'z joyida.
+    """
+    if key in ENTITY_MODELS:
+        return key
+    hinted = KEY_ENTITY.get((entity_type, key))
+    if hinted is not None:
+        return hinted
+    if key.endswith("_id") and key[:-3] in ENTITY_MODELS:
+        return key[:-3]
+    return None
 
 
 def _is_uuid(value: Any) -> bool:
@@ -94,7 +127,10 @@ def resolve_labels(entries: list[Any]) -> dict[str, dict[str, str]]:
             wanted.setdefault(entity, set()).add(str(entity_id))
 
         for key, value in (getattr(entry, "changes", None) or {}).items():
-            if key in ENTITY_MODELS and _is_uuid(value):
-                wanted.setdefault(key, set()).add(str(value))
+            if not _is_uuid(value):
+                continue
+            target = entity_for_key(entity, key)
+            if target is not None:
+                wanted.setdefault(target, set()).add(str(value))
 
     return {entity: label_map_for(entity, ids) for entity, ids in wanted.items()}

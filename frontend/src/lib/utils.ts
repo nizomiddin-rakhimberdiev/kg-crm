@@ -27,12 +27,7 @@ export {
   today,
 } from '@/lib/format'
 
-export {
-  compact as formatCompact,
-  money as formatMoney,
-  signed as formatSigned,
-  som as formatUZS,
-} from '@/lib/format'
+export { money as formatMoney, signed as formatSigned, som as formatUZS } from '@/lib/format'
 
 /** Bosh harflar: "Abdullayev Diyor" → "AD". */
 export function initials(name: string): string {

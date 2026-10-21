@@ -211,6 +211,12 @@ class LedgerEntrySerializer(serializers.Serializer):
 class PaymentSerializer(serializers.ModelSerializer):
     child_name = serializers.CharField(source="child.full_name", read_only=True)
     invoice_number = serializers.CharField(source="invoice.number", read_only=True, default=None)
+    # Pul HAQIQATAN qaysi hujjatni yopgani (audit, 2026-10-21). `invoice`
+    # ustuni faqat kassir hujjatni QO'LDA tanlaganda to'ladi; ADR-20 dan
+    # keyin asosiy yo'l — FIFO taqsimot, ya'ni bu ustun odatda bo'sh.
+    # Jurnal uni o'qiganda to'langan fakturani "— avans —" deb ko'rsatardi.
+    settled_invoices = serializers.SerializerMethodField()
+    advance_amount = serializers.SerializerMethodField()
     is_reversed = serializers.BooleanField(read_only=True)
     employee_name = serializers.CharField(source="employee.full_name", read_only=True, default=None)
     received_by_name = serializers.CharField(
@@ -225,6 +231,8 @@ class PaymentSerializer(serializers.ModelSerializer):
             "child_name",
             "invoice",
             "invoice_number",
+            "settled_invoices",
+            "advance_amount",
             "amount",
             "method",
             "reference",
@@ -245,6 +253,30 @@ class PaymentSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = fields
+
+    def _settled(self, payment: Payment) -> list[Any]:
+        """
+        Faol taqsimotlar — bo'shatilganlari (qaytarilgan to'lov, bekor
+        qilingan faktura) hisobga olinmaydi.
+
+        `payment.allocations.all()` ataylab: ro'yxat `Prefetch` bilan
+        keladi, ya'ni har qator uchun alohida so'rov ketmaydi.
+        """
+        return [row for row in payment.allocations.all() if row.released_at is None]
+
+    def get_settled_invoices(self, payment: Payment) -> list[str]:
+        rows = sorted(
+            self._settled(payment),
+            key=lambda row: (row.invoice.period_year, row.invoice.period_month),
+        )
+        return [row.invoice.number for row in rows]
+
+    def get_advance_amount(self, payment: Payment) -> str:
+        """Hech qaysi hujjatga tegishli bo'lmagan qism — bu AVANS."""
+        if payment.is_reversed:
+            return "0.00"
+        rest = payment.amount - sum((row.amount for row in self._settled(payment)), Decimal("0.00"))
+        return f"{max(rest, Decimal('0.00')):.2f}"
 
 
 class PaymentDetailSerializer(PaymentSerializer):

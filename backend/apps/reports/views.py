@@ -1009,7 +1009,7 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
             pk=_parse_uuid(request.data.get("cash_account_id"))
         ).first()
         if account is None:
-            raise BusinessRuleViolation(gettext("Pul qaysi qopdan toʻlanishini tanlang."))
+            raise BusinessRuleViolation(gettext("Pul qaysi hisobdan toʻlanishini tanlang."))
         user = request_user(request)
         paid_on = request.data.get("paid_on")
         obligation = taxes.pay(

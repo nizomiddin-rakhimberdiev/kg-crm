@@ -94,7 +94,7 @@ class MovementSource(models.TextChoices):
     EXPENSE = "expense", gettext_lazy("Chiqim")
     PAYROLL = "payroll", gettext_lazy("Oylik maosh")
     ADVANCE = "advance", gettext_lazy("Avans")
-    TRANSFER = "transfer", gettext_lazy("Qoplar orasida oʻtkazma")
+    TRANSFER = "transfer", gettext_lazy("Hisoblar orasida oʻtkazma")
     OPENING = "opening", gettext_lazy("Boshlangʻich qoldiq")
     MANUAL = "manual", gettext_lazy("Qoʻlda tuzatish")
     # Kun yopilishidagi sanoq farqi — kamomad yoki ortiqcha, SABABI bilan

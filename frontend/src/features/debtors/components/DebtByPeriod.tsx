@@ -22,6 +22,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { formatDate, monthLabel, som } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+import { MonthInput } from '@/components/ui/MonthInput'
 
 /** Toʻlov usullari — odam tilida (hisobotda kod turishi yaramaydi). */
 const METHOD: Record<string, string> = {
@@ -74,30 +75,20 @@ export function DebtByPeriod() {
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
-        <div>
-          <label htmlFor="dp-from" className="mb-1 block text-xs font-medium text-slate-600">
-            {t('Davr boshi')}
-          </label>
-          <input
-            id="dp-from"
-            type="month"
-            value={range.from}
-            onChange={(e) => setRange((prev) => ({ ...prev, from: e.target.value }))}
-            className="h-11 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-brand-500"
-          />
-        </div>
-        <div>
-          <label htmlFor="dp-to" className="mb-1 block text-xs font-medium text-slate-600">
-            {t('Davr oxiri')}
-          </label>
-          <input
-            id="dp-to"
-            type="month"
-            value={range.to}
-            onChange={(e) => setRange((prev) => ({ ...prev, to: e.target.value }))}
-            className="h-11 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-brand-500"
-          />
-        </div>
+        <MonthInput
+          id="dp-from"
+          label={t('Davr boshi')}
+          value={range.from}
+          max={range.to}
+          onChange={(value) => setRange((prev) => ({ ...prev, from: value }))}
+        />
+        <MonthInput
+          id="dp-to"
+          label={t('Davr oxiri')}
+          value={range.to}
+          min={range.from}
+          onChange={(value) => setRange((prev) => ({ ...prev, to: value }))}
+        />
         <div>
           <label htmlFor="dp-group" className="mb-1 block text-xs font-medium text-slate-600">
             {t('Guruh')}

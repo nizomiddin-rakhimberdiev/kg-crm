@@ -21,6 +21,7 @@ import { ApiError } from '@/lib/api/types'
 import { money, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+import { MonthInput } from '@/components/ui/MonthInput'
 
 const field =
   'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500'
@@ -243,18 +244,12 @@ export function QuickExpenseModal({ onClose }: { onClose: () => void }) {
               </label>
               <DateInput id="qe-date" value={date} onChange={(iso) => setDate(iso || today())} />
             </div>
-            <div>
-              <label htmlFor="qe-period" className={label}>
-                {t('Qaysi oy xarajati')}
-              </label>
-              <input
-                id="qe-period"
-                type="month"
-                value={period}
-                onChange={(event) => setPeriod(event.target.value || thisMonth())}
-                className={field}
-              />
-            </div>
+            <MonthInput
+              id="qe-period"
+              label={t('Qaysi oy xarajati')}
+              value={period}
+              onChange={(value) => setPeriod(value || thisMonth())}
+            />
             <label className="flex items-center gap-2 text-sm sm:col-span-2">
               <input type="checkbox" checked={capex} onChange={(e) => setCapex(e.target.checked)} />
               {t('Investitsiya (taʼmir, mebel, texnika) — oylik foydani buzmaydi')}
@@ -324,7 +319,7 @@ export function QuickExpenseModal({ onClose }: { onClose: () => void }) {
                 checked={allowNegative}
                 onChange={(e) => setAllowNegative(e.target.checked)}
               />
-              {t('Qopda yetmasa ham yozilsin — ogohlantirishni oʻqidim')}
+              {t('Hisobda pul yetmasa ham yozilsin — ogohlantirishni oʻqidim')}
             </label>
           </div>
         )}

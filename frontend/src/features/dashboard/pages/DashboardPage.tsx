@@ -23,6 +23,7 @@ import { useCan } from '@/lib/rbac/useCan'
 import { groupAccounts } from '@/features/dashboard/cashGroups'
 import { paymentMethodLabel } from '@/features/payments/methods'
 import { BRAND, CHART } from '@/lib/brand'
+import { axisMoney } from '@/lib/format'
 import { cn, formatDateLong, formatDateTime, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 
@@ -453,7 +454,7 @@ export default function DashboardPage() {
                     axisLine={false}
                     fontSize={12}
                     tick={{ fill: CHART.label }}
-                    tickFormatter={(v: number) => t('{v} mln', { v: Math.round(v / 1_000_000) })}
+                    tickFormatter={(v: number) => axisMoney(v)}
                   />
                   <Tooltip
                     formatter={(v: number) => formatUZS(v)}

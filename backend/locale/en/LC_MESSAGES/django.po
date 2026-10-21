@@ -876,7 +876,7 @@ msgstr "Advance: {employee}"
 msgid "Bank hisobi"
 msgstr "Bank account"
 
-msgid "Bir qopdan oʻziga oʻtkazib boʻlmaydi."
+msgid "Bir hisobdan oʻziga oʻtkazib boʻlmaydi."
 msgstr "An account cannot be transferred to itself."
 
 msgid "Boshlangʻich qoldiq"
@@ -900,10 +900,10 @@ msgstr "Bank transfer"
 msgid "Payme / Click"
 msgstr "Payme / Click"
 
-msgid "Qoplar boshqa tashkilotga tegishli."
+msgid "Hisoblar boshqa tashkilotga tegishli."
 msgstr "Those accounts belong to another organization."
 
-msgid "Qoplar orasida oʻtkazma"
+msgid "Hisoblar orasida oʻtkazma"
 msgstr "Transfer between accounts"
 
 msgid "Summa musbat boʻlishi kerak."
@@ -924,7 +924,7 @@ msgstr "payment reversed"
 msgid "Kamida bitta toʻlov qatori kerak."
 msgstr "At least one payment line is required."
 
-msgid "qop oʻzgartirildi"
+msgid "hisob oʻzgartirildi"
 msgstr "account changed"
 
 msgid "Kassa hisobi topilmadi."
@@ -1445,7 +1445,7 @@ msgstr "The amount cannot be zero."
 msgid ""
 "«{account}» da {balance} soʻm bor, {amount} soʻm chiqmoqda — {short} soʻm "
 "yetishmaydi. Kassaga tushmagan pul boʻlsa, avval oʻsha tushumni yozing yoki "
-"boshqa qopni tanlang."
+"boshqa hisobni tanlang."
 msgstr ""
 "«{account}» holds {balance} UZS and {amount} UZS is going out — {short} UZS "
 "short. If money came in that was never recorded, enter that income first, or "
@@ -1610,7 +1610,7 @@ msgstr "The oldest debt is {period}. Write a reason to choose another month."
 msgid "{month} oyligi yopilgan — undan ushlab boʻlmaydi. Keyingi oy sanasi bilan kiriting yoki boshqa usulni tanlang."
 msgstr "Payroll for {month} is closed — nothing can be deducted from it. Use a date in the next month or choose another method."
 
-msgid "Bu qop uchun bugungi kun allaqachon yopilgan."
+msgid "Bu hisob uchun bugungi kun allaqachon yopilgan."
 msgstr "Today is already closed for this pot."
 
 msgid "Bu topshiriq allaqachon koʻrib chiqilgan."
@@ -1742,13 +1742,13 @@ msgstr "{n} possible duplicates — choose to skip them or add them anyway."
 msgid "“Aka-uka” deb belgilangan, lekin umumiy vasiy topilmadi — chegirma qoʻllanmaydi. Ikkala bolaga bir xil telefon yozing."
 msgstr "Marked “siblings”, but no shared guardian was found — the discount will not apply. Give both children the same phone."
 
-msgid "Bu qop bunday toʻlovlarni qabul qilmaydi."
+msgid "Bu hisob bunday toʻlovlarni qabul qilmaydi."
 msgstr "This pot does not take such payments."
 
-msgid "Qop topilmadi."
+msgid "Hisob topilmadi."
 msgstr "Pot not found."
 
-msgid "Qop — naqd kassa yoki bank hisobi. Terminal, oʻtkazma, Click va Payme — toʻlov usuli: pul bank hisobiga tushadi."
+msgid "Hisob — naqd kassa yoki bank hisobi. Terminal, oʻtkazma, Click va Payme — toʻlov usuli: pul bank hisobiga tushadi."
 msgstr "A pot is the cash till or the bank account. Terminal, transfer, Click and Payme are payment methods: the money lands in the bank account."
 
 msgid "Bu nasiya allaqachon toʻlangan."
@@ -1811,7 +1811,7 @@ msgstr "Returned to the parent: {reason}"
 msgid "Bu toʻlovdan ota-onaga pul qaytarilgan — uni bekor qilib boʻlmaydi."
 msgstr "Money from this payment was returned to the parent — it cannot be reversed."
 
-msgid "Pul qaysi qopdan qaytarilishini tanlang."
+msgid "Pul qaysi hisobdan qaytarilishini tanlang."
 msgstr "Choose which pot the money is returned from."
 
 msgid "Summa raqam boʻlishi kerak."
@@ -2078,7 +2078,7 @@ msgstr "Month closed"
 msgid "Qarz hisobdan chiqarildi"
 msgstr "Debt written off"
 
-msgid "Qoplar koʻprigi"
+msgid "Hisoblar mosligi"
 msgstr "Pot bridge"
 
 msgid "Takrorlangan xarajat"
@@ -2666,7 +2666,7 @@ msgstr "Month"
 msgid "Oylik {period}"
 msgstr "Payroll {period}"
 
-msgid "Pul qaysi qopdan toʻlanishini tanlang."
+msgid "Pul qaysi hisobdan toʻlanishini tanlang."
 msgstr "Choose which pot to pay from."
 
 msgid "Qaytarilgan toʻlovga chek yozilmaydi."
@@ -2830,3 +2830,6 @@ msgstr "The file is not a real {suffix} — it is damaged or of another type."
 
 msgid "Shartnoma"
 msgstr "Contract"
+
+msgid "Hisoblangan {charged}, imtiyoz {benefits}, qayta hisob {recalculated} → yigʻilgan {collected} + qarz {outstanding}"
+msgstr "Charged {charged}, benefits {benefits}, recalculation {recalculated} → collected {collected} + debt {outstanding}"

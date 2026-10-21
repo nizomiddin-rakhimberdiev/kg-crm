@@ -466,12 +466,23 @@ export default function PaymentsPage() {
             </div>
           )}
 
+          {/* Sabab TAXMIN qilinmaydi (audit, 2026-10-21): ilgari bu
+              qator "tarifi yoʻq boʻlishi mumkin" deb yozardi va
+              bolalarda individual narx boʻlganda vaqt yoʻqotardi.
+              Narxi aniqlanmaganlar backendda sanaladi. */}
           {(summary?.without_invoice ?? 0) > 0 && (
             <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              {t(
-                '{v} ta bolaga bu oy uchun hisob-faktura chiqarilmagan — tarifi yoʻq boʻlishi mumkin.',
-                { v: summary?.without_invoice },
-              )}
+              {t('{v} ta bolaga bu oy uchun hisob-faktura chiqarilmagan.', {
+                v: summary?.without_invoice,
+              })}{' '}
+              {(summary?.without_price ?? 0) > 0
+                ? t(
+                    'Shulardan {n} tasining narxi aniqlanmagan — tarif yoki individual narx kerak.',
+                    {
+                      n: summary?.without_price,
+                    },
+                  )
+                : t('Hammasining narxi bor — «Hisob-faktura chiqarish» ularni chiqaradi.')}
             </p>
           )}
 
@@ -684,8 +695,29 @@ export default function PaymentsPage() {
                     >
                       <td className="px-4 py-3">{formatDate(payment.paid_at)}</td>
                       <td className="px-4 py-3 font-medium text-slate-800">{payment.child_name}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-slate-500">
-                        {payment.invoice_number ?? t('— avans —')}
+                      {/* Pul QAYSI hujjatni yopgani — `invoice` ustuni emas:
+                          u faqat kassir hujjatni qo'lda tanlaganda to'ladi,
+                          va shu sabab to'langan faktura jurnalda "avans"
+                          bo'lib ko'rinardi (audit, 2026-10-21). */}
+                      <td className="px-4 py-3 text-xs text-slate-500">
+                        {payment.settled_invoices.length > 0 && (
+                          <span className="font-mono text-slate-700">
+                            {payment.settled_invoices.join(', ')}
+                          </span>
+                        )}
+                        {Number(payment.advance_amount) > 0 &&
+                          (payment.settled_invoices.length > 0 ? (
+                            <span className="ml-1.5 whitespace-nowrap">
+                              {t('+ avans {money}', {
+                                money: formatMoney(Number(payment.advance_amount)),
+                              })}
+                            </span>
+                          ) : (
+                            t('— avans —')
+                          ))}
+                        {payment.settled_invoices.length === 0 &&
+                          Number(payment.advance_amount) === 0 &&
+                          '—'}
                       </td>
                       <td className="px-4 py-3">{paymentMethodLabel(payment.method)}</td>
                       <td

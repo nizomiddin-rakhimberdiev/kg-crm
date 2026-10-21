@@ -89,7 +89,7 @@ export function CashAdjustModal({ onClose }: { onClose: () => void }) {
         <div className="mt-4 grid gap-3">
           <div>
             <label htmlFor="adj-account" className="mb-1 block text-xs font-medium text-slate-600">
-              {t('Qaysi qop')} <span className="text-red-500">*</span>
+              {t('Qaysi hisob')} <span className="text-red-500">*</span>
             </label>
             <select
               id="adj-account"

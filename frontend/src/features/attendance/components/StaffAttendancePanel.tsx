@@ -23,6 +23,7 @@ import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { DateInput } from '@/components/ui/DateInput'
 import { t } from '@/lib/i18n'
+import { MonthInput } from '@/components/ui/MonthInput'
 
 const STATUSES: Array<{
   value: StaffAttendanceStatus
@@ -342,21 +343,16 @@ function Timesheet() {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-end gap-3">
-        <label className="text-xs font-medium text-slate-600">
-          {t('Oy')}
-          <input
-            type="month"
-            max={localISO().slice(0, 7)}
-            value={month}
-            onChange={(e) => {
-              if (e.target.value) {
-                setMonth(e.target.value)
-                setExportId(null)
-              }
-            }}
-            className="mt-1 block rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
-          />
-        </label>
+        <MonthInput
+          id="timesheet-month"
+          label={t('Oy')}
+          max={localISO().slice(0, 7)}
+          value={month}
+          onChange={(value) => {
+            setMonth(value)
+            setExportId(null)
+          }}
+        />
         {/* Eksport — hisobot eksporti ruxsati bilan (davomatni ko'rish
             ruxsati ham kerak; backend ikkalasini tekshiradi). */}
         {can('reports.export') && (

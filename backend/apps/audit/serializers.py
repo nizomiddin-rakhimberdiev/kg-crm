@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
+from apps.audit import labels as audit_labels
 from apps.audit.models import AuditLog
 
 __all__ = ["AuditLogSerializer"]
@@ -59,8 +60,14 @@ class AuditLogSerializer(serializers.ModelSerializer):
         labels = self._labels()
         out: dict[str, str] = {}
         for key, value in (obj.changes or {}).items():
-            if key in labels and isinstance(value, str):
-                name = labels[key].get(value)
-                if name:
-                    out[key] = name
+            if not isinstance(value, str):
+                continue
+            # Kalit turni o'zi aytmasligi mumkin (`from`, `employee_id`) —
+            # qoidalar `labels.entity_for_key()` da (audit, 2026-10-21).
+            target = audit_labels.entity_for_key(obj.entity_type, key)
+            if target is None:
+                continue
+            name = labels.get(target, {}).get(value)
+            if name:
+                out[key] = name
         return out

@@ -19,7 +19,7 @@ import { kitchenApi, type Dish, type Meal } from '@/features/kitchen/api'
 import { invalidateMoney } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError } from '@/lib/api/types'
-import { quantity, som, today as todayIso } from '@/lib/format'
+import { quantity, som, today as todayIso, unitLabel } from '@/lib/format'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -247,7 +247,7 @@ function DishesSection() {
                   onChange={(event) => update({ quantity: event.target.value.replace(',', '.') })}
                   className={cn(field, 'w-24 text-right')}
                 />
-                <span className="w-8 text-xs text-slate-500">{unit}</span>
+                <span className="w-10 text-xs text-slate-500">{unitLabel(unit)}</span>
                 <button
                   type="button"
                   aria-label={t('Oʻchirish')}

@@ -63,7 +63,16 @@ export interface MonthlySummary {
     ok: boolean
     lines_match_invoices: boolean
     allocations_match_paid: boolean
+    /** Xom formula — faqat qo'llab-quvvatlash uchun, ekranga chiqmaydi. */
     equation: string
+    /** Tenglikning qismlari — ekran shundan gap yasaydi (ADR-45). */
+    parts: {
+      charged: string
+      benefits: string
+      recalculated: string
+      collected: string
+      outstanding: string
+    }
   }
   closed: { closed_at: string; closed_by: string } | null
 }

@@ -14,7 +14,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  AlertTriangle,
   BellRing,
   CheckCircle2,
   ChevronRight,
@@ -485,9 +484,19 @@ export default function DebtorsPage() {
               </p>
             )}
             {debtorsQuery.data && rows.length === 0 && (
+              /* Boʻsh roʻyxat — YAXSHI xabar, holat emas (audit,
+                 2026-10-21). "Qarzdorlar yoʻq." faqat faktni aytardi;
+                 shu filtrda qarzdor yoʻqligi aslida ishning joyida
+                 ekanini bildiradi, va ogohlantirish belgisi buni
+                 teskari oʻqitardi. */
               <div className="px-4 py-12 text-center">
-                <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-tosh-200" />
-                <p className="text-sm text-tosh-500">{t('Qarzdorlar yoʻq.')}</p>
+                <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-nihol-300" />
+                <p className="text-sm font-medium text-tosh-700">
+                  {t('Qarzdor yoʻq — hamma toʻlagan.')}
+                </p>
+                <p className="mt-1 text-sm text-tosh-500">
+                  {t('Roʻyxat shu filtr boʻyicha boʻsh. Hisob-fakturalar “Toʻlovlar” boʻlimida.')}
+                </p>
               </div>
             )}
 

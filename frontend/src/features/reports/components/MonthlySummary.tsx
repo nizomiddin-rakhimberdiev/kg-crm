@@ -9,7 +9,7 @@
  * yashil/qizil boʻlib koʻrinadi; qizil oy yopilmaydi.
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Download, Lock, XCircle } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
@@ -21,13 +21,7 @@ import { formatDate, som } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
-
-/** Oldingi oy — odatda aynan u yopiladi. */
-function previousMonth(): string {
-  const now = new Date()
-  const date = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-}
+import { MonthInput } from '@/components/ui/MonthInput'
 
 function Amount({ value, strong = false }: { value: string; strong?: boolean }) {
   return (
@@ -39,11 +33,28 @@ function Amount({ value, strong = false }: { value: string; strong?: boolean }) 
   )
 }
 
-export function MonthlySummary() {
+/**
+ * `month` — SAHIFADA tanlangan davr (`yyyy-mm`).
+ *
+ * Ilgari karta davrni o'zi tanlardi — "oldingi oy, odatda aynan u
+ * yopiladi" degan mantiq bilan. Ekranda esa ikkita davr turardi:
+ * sahifaning tanlagichi "oktabr" deb, karta esa jimgina sentabrni
+ * ko'rsatib. Mudira kartadagi raqamni oktabrning raqami deb o'qiydi va
+ * bu — ko'rinadigan yolg'on (audit, 2026-10-21). Kartaning o'z
+ * tanlagichi QOLADI: oyni yopish uchun oldingi oyga qaytish kerak
+ * bo'ladi, lekin boshlang'ich holat sahifa bilan bitta.
+ */
+export function MonthlySummary({ month: pageMonth }: { month: string }) {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
   const { can } = useCan()
-  const [period, setPeriod] = useState(previousMonth)
+  const [period, setPeriod] = useState(pageMonth)
+
+  // Sahifa davri o'zgarishi — foydalanuvchining ATAYLAB qilgan ishi,
+  // ya'ni karta unga ergashadi.
+  useEffect(() => {
+    setPeriod(pageMonth)
+  }, [pageMonth])
   const [year, month] = period.split('-').map(Number)
   const key = ['org', organizationId, 'reports', 'monthly-summary', period]
   const summary = useQuery({
@@ -81,21 +92,7 @@ export function MonthlySummary() {
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
-          <div>
-            <label
-              htmlFor="summary-month"
-              className="mb-1 block text-xs font-medium text-slate-600"
-            >
-              {t('Oy')}
-            </label>
-            <input
-              id="summary-month"
-              type="month"
-              value={period}
-              onChange={(event) => event.target.value && setPeriod(event.target.value)}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
-            />
-          </div>
+          <MonthInput id="summary-month" label={t('Oy')} value={period} onChange={setPeriod} />
           {can('reports.export') && (
             <button
               type="button"
@@ -166,13 +163,29 @@ export function MonthlySummary() {
               )
             )}
           </div>
-          {!data.check.ok && <p className="num text-xs text-red-700">{data.check.equation}</p>}
+          {/* Xom formula EMAS (ADR-45): auditda bu qator
+              "5100000.00 + (0.00) + (-1159000.00)" boʻlib turardi va
+              tekshiruvning maʼnosini yashirardi. */}
+          {!data.check.ok && (
+            <p className="text-xs text-red-700">
+              {t(
+                'Hisoblangan {charged}, imtiyoz {benefits}, qayta hisob {recalculated} → yigʻilgan {collected} + qarz {outstanding}',
+                {
+                  charged: som(data.check.parts.charged),
+                  benefits: som(data.check.parts.benefits),
+                  recalculated: som(data.check.parts.recalculated),
+                  collected: som(data.check.parts.collected),
+                  outstanding: som(data.check.parts.outstanding),
+                },
+              )}
+            </p>
+          )}
           {full && (
             <ul className="flex flex-wrap gap-2 text-xs">
               <li className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">
                 {full.expenses.percent === null
-                  ? t('Xarajat yoʻq')
-                  : t('Chekli xarajat: {p}%', { p: full.expenses.percent })}
+                  ? t('Chiqim yoʻq')
+                  : t('Chekli chiqim: {p}%', { p: full.expenses.percent })}
               </li>
               <li className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">
                 {t('Kassa yopilgan kunlar: {closed} / {active}', {
