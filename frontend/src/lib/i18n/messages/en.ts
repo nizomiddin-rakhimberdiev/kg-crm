@@ -1186,8 +1186,6 @@ export const messages: Record<string, string> = {
   'Toʻlov tekshirilmoqda — hisob holati bir necha soniyada yangilanadi.':
     'Checking the payment — the invoice status will update in a few seconds.',
   // Contracts (PLAN 6.5)
-  'Avval Sozlamalarda shartnoma shablonini yarating.':
-    'Create a contract template in Settings first.',
   'Bekor qilingan: {date}': 'Terminated: {date}',
   'Bekor qilish sababi': 'Reason for termination',
   Imzolandi: 'Signed',
@@ -1201,10 +1199,8 @@ export const messages: Record<string, string> = {
   'Shablon hali yoʻq.': 'No templates yet.',
   'Shablonni oʻchirasizmi? Tuzilgan shartnomalar qoladi.':
     'Delete the template? Contracts already made stay.',
-  'Shartnoma hali tuzilmagan.': 'No contract yet.',
   'Shartnoma shablonlari': 'Contract templates',
   'Shartnoma tuzish': 'Make a contract',
-  Shartnomalar: 'Contracts',
   'versiya {v}': 'version {v}',
   'Yangi shablon': 'New template',
   // Kitchen (PLAN 6.6)
@@ -1850,7 +1846,9 @@ export const messages: Record<string, string> = {
   'Fayl biriktirish': 'Attach a file',
   'Faylni oʻchirasizmi?': 'Delete the file?',
   'Imzolangan shartnomaning elektron nusxasi — PDF, DOC yoki DOCX, 10 MB gacha.': 'Electronic copy of the signed contract — PDF, DOC or DOCX, up to 10 MB.',
-  'Shartnoma fayli': 'Contract file',
   'Shartnoma fayli (ixtiyoriy) — PDF, DOC yoki DOCX': 'Contract file (optional) — PDF, DOC or DOCX',
   'Shartnoma faylini tanlash': 'Choose the contract file',
+  'Shablondan shartnoma hali tuzilmagan.': 'No contract has been made from a template yet.',
+  'Shablondan tuzilgan shartnomalar': 'Contracts made from a template',
+  'Shartnoma': 'Contract',
 }

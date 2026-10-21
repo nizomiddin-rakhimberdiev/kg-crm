@@ -70,7 +70,7 @@ export function ChildDocumentsCard({ childId }: { childId: string }) {
     <section className="rounded-2xl border border-slate-200 bg-white p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">{t('Shartnoma fayli')}</h2>
+          <h2 className="text-sm font-semibold text-slate-900">{t('Shartnoma')}</h2>
           <p className="mt-0.5 text-xs text-slate-500">
             {t('Imzolangan shartnomaning elektron nusxasi — PDF, DOC yoki DOCX, 10 MB gacha.')}
           </p>

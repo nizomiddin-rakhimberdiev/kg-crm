@@ -1181,8 +1181,6 @@ export const messages: Record<string, string> = {
   'Toʻlov tekshirilmoqda — hisob holati bir necha soniyada yangilanadi.':
     'Проверяем оплату — статус счёта обновится через несколько секунд.',
   // Contracts (PLAN 6.5)
-  'Avval Sozlamalarda shartnoma shablonini yarating.':
-    'Сначала создайте шаблон договора в настройках.',
   'Bekor qilingan: {date}': 'Расторгнут: {date}',
   'Bekor qilish sababi': 'Причина расторжения',
   Imzolandi: 'Подписан',
@@ -1196,10 +1194,8 @@ export const messages: Record<string, string> = {
   'Shablon hali yoʻq.': 'Шаблонов пока нет.',
   'Shablonni oʻchirasizmi? Tuzilgan shartnomalar qoladi.':
     'Удалить шаблон? Составленные договоры останутся.',
-  'Shartnoma hali tuzilmagan.': 'Договор ещё не составлен.',
   'Shartnoma shablonlari': 'Шаблоны договоров',
   'Shartnoma tuzish': 'Составить договор',
-  Shartnomalar: 'Договоры',
   'versiya {v}': 'версия {v}',
   'Yangi shablon': 'Новый шаблон',
   // Kitchen (PLAN 6.6)
@@ -1846,7 +1842,9 @@ export const messages: Record<string, string> = {
   'Fayl biriktirish': 'Прикрепить файл',
   'Faylni oʻchirasizmi?': 'Удалить файл?',
   'Imzolangan shartnomaning elektron nusxasi — PDF, DOC yoki DOCX, 10 MB gacha.': 'Электронная копия подписанного договора — PDF, DOC или DOCX, до 10 МБ.',
-  'Shartnoma fayli': 'Файл договора',
   'Shartnoma fayli (ixtiyoriy) — PDF, DOC yoki DOCX': 'Файл договора (необязательно) — PDF, DOC или DOCX',
   'Shartnoma faylini tanlash': 'Выбрать файл договора',
+  'Shablondan shartnoma hali tuzilmagan.': 'Договор по шаблону ещё не составлен.',
+  'Shablondan tuzilgan shartnomalar': 'Договоры по шаблону',
+  'Shartnoma': 'Договор',
 }

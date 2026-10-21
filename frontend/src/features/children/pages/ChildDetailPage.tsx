@@ -648,11 +648,10 @@ export default function ChildDetailPage() {
         )}
       </div>
 
-      {/* Contracts (PLAN 6.5) — next to the guardians they are made with. */}
-      {contractsOn && <ContractsCard childId={childId} />}
-
-      {/* Imzolangan shartnoma fayli (2026-10-21) — shablondan qat'i nazar. */}
+      {/* Shartnoma: asosiy yo'l — imzolangan faylni biriktirish (2026-10-21).
+          Shablondan tuzish (PLAN 6.5) faqat shablon bo'lsa, ostida ko'rinadi. */}
       <ChildDocumentsCard childId={childId} />
+      {contractsOn && <ContractsCard childId={childId} />}
 
       {/* Imtiyoz va oila (Bosqich 12.2) hamda "bir oylik ariza" (12.1) —
           ikkalasi ham bolaning oylik summasini belgilaydi, shuning uchun yonma-yon. */}

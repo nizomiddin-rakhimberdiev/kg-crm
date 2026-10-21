@@ -2329,3 +2329,9 @@ qarori: **sun'iy intellektsiz** (ADR-14 kuchda), buyruqli bot.
    kengaytma va fayl ichidagi imzo bo'yicha tekshiriladi. Yo'l-yo'lakay:
    tashkilotni butunlay o'chirish (purge) diskdagi fayllarni qoldirardi
    (cheklar, eksportlar) — endi qatorlar bilan birga fayllar ham o'chadi.
+4. **Bitta "Shartnoma"** (mijoz e'tirozi, o'sha kuni): fayl kartasi qo'shilgach
+   bola sahifasida ikkita shartnoma kartasi turdi va shablon kartasi
+   "Avval Sozlamalarda shablon yarating" deb mijoz tanlamagan yo'lni
+   talab qilardi. Endi asosiy — "Shartnoma" (imzolangan fayl); "Shablondan
+   tuzilgan shartnomalar" faqat shablon yoki shunday shartnoma bo'lsa
+   ko'rinadi, talab matni olib tashlandi.

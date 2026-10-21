@@ -62,15 +62,28 @@ export function ContractsCard({ childId }: { childId: string }) {
   const templates = templatesQuery.data ?? []
   const contracts = contractsQuery.data ?? []
 
+  // Asosiy yo'l — imzolangan faylni biriktirish (ChildDocumentsCard,
+  // mijoz 2026-10-21). Shablon yo'li faqat haqiqatan ishlatilganda
+  // ko'rinadi: shablon ham, shablondan tuzilgan shartnoma ham bo'lmasa —
+  // karta yo'q. Avval bu yerda "Avval Sozlamalarda shablon yarating"
+  // turardi va fayl kartasi yonida ikkinchi, chalkash "shartnoma" bo'lardi.
+  const templatesKnown = !can('children.create') || templatesQuery.isSuccess
+  if (contractsQuery.isSuccess && templatesKnown && contracts.length === 0 && !templates.length) {
+    return null
+  }
+  if (contractsQuery.isPending) return null
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4">
       <div className="mb-3 flex items-center gap-2">
         <FileSignature className="h-4 w-4 text-slate-500" />
-        <h2 className="text-sm font-semibold text-slate-900">{t('Shartnomalar')}</h2>
+        <h2 className="text-sm font-semibold text-slate-900">
+          {t('Shablondan tuzilgan shartnomalar')}
+        </h2>
       </div>
 
-      {contracts.length === 0 && !contractsQuery.isPending && (
-        <p className="text-sm text-slate-500">{t('Shartnoma hali tuzilmagan.')}</p>
+      {contracts.length === 0 && (
+        <p className="text-sm text-slate-500">{t('Shablondan shartnoma hali tuzilmagan.')}</p>
       )}
       <ul className="divide-y divide-slate-100">
         {contracts.map((contract) => {
@@ -99,11 +112,7 @@ export function ContractsCard({ childId }: { childId: string }) {
 
       {can('children.create') && (
         <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-slate-100 pt-3">
-          {templates.length === 0 ? (
-            <p className="text-xs text-slate-500">
-              {t('Avval Sozlamalarda shartnoma shablonini yarating.')}
-            </p>
-          ) : (
+          {templates.length === 0 ? null : (
             <>
               <div className="min-w-0 flex-1">
                 <label
