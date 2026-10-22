@@ -373,8 +373,6 @@ export default function ChildDetailPage() {
         </div>
       )}
 
-      {can('payments.read') && <AnnualStatementButton childId={childId} />}
-
       <div className="grid gap-4 lg:grid-cols-3">
         <ChildBalanceCard childId={childId} />
         {/* Vasiylar */}
@@ -685,6 +683,12 @@ export default function ChildDetailPage() {
       {/* Hisob-fakturalar, to'lovlar va tarix — mudiraning savollari
           endi bitta kartada, boshqa ekranga o'tmasdan (PLAN 2.1). */}
       <ChildTabs childId={childId} />
+
+      {/* Yillik maʼlumotnoma — toʻlovlar tarixi YONIDA (audit,
+          2026-10-21: "asosiy ish tepada, qarz pastda"). U yiliga bir
+          marta kerak boʻladi va balans kartasini pastga surib
+          turardi. */}
+      {can('payments.read') && <AnnualStatementButton childId={childId} />}
 
       {editing && (
         <ChildEditDialog child={child} onClose={() => setEditing(false)} onDone={invalidate} />
