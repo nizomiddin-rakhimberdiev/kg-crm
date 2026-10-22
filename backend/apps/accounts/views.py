@@ -21,6 +21,7 @@ from apps.accounts.serializers import (
     UserWriteSerializer,
 )
 from apps.audit import services as audit
+from apps.core.permissions import has_permission_code
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchScopedMixin, TenantReadOnlyViewSet, TenantViewSet
 
@@ -173,7 +174,11 @@ class UserViewSet(BranchScopedMixin, TenantViewSet):
 
 class RoleViewSet(TenantViewSet):
     permission_module = "users"
-    permission_action_map = {"permissions": "read", "set_permissions": "update"}
+    permission_action_map = {
+        "permissions": "read",
+        "set_permissions": "update",
+        "templates": "read",
+    }
     model = Role
     serializer_class = RoleSerializer
     search_fields = ["name", "code"]
@@ -190,6 +195,53 @@ class RoleViewSet(TenantViewSet):
             raise BusinessRuleViolation(gettext("Tizim rolini oʻchirib boʻlmaydi."))
         instance.is_active = False
         instance.save(update_fields=["is_active"])
+
+    @action(detail=False, methods=["get"], url_path="templates")
+    def templates(self, request: Request) -> Response:
+        """
+        Tayyor rol shablonlari (audit, 2026-10-21).
+
+        Rollar ekranida 15 modul × 6 amal ≈ 100 belgi bor va yangi rol
+        uchun ularni qo'lda bosish — amalda qilinmaydigan ish. Tizim
+        rollarining shakli allaqachon kodda (`ROLE_MATRIX`), ya'ni
+        shablon yangi ma'lumot emas: u o'sha matritsani ochib beradi.
+        Egasining roli shablon EMAS — uni tarqatib bo'lmaydi.
+
+        **ADR-25 shu yerda ham**: javob chaqiruvchining o'z ruxsatlari
+        bilan kesishtiriladi va tushib qolganlari `dropped` da
+        AYTILADI. Jim qisqartirish eng yomoni bo'lardi: menejer
+        shablonni bosib, keyin saqlashda tushunarsiz xato olardi.
+        """
+        from apps.accounts.constants import OWN_PAYMENTS_ROLES, ROLE_MATRIX, SYSTEM_ROLES
+
+        user = request_user(request)
+        catalog = set(Permission.objects.values_list("code", flat=True))
+        own = (
+            catalog
+            if user.is_org_owner
+            else {code for code in catalog if has_permission_code(user, code)}
+        )
+
+        rows = []
+        for code, modules in ROLE_MATRIX.items():
+            if code == OWNER_ROLE_CODE:
+                continue
+            wanted = {
+                f"{module}.{action}"
+                for module, actions in modules.items()
+                for action in actions
+                if f"{module}.{action}" in catalog
+            }
+            rows.append(
+                {
+                    "code": code,
+                    "title": str(SYSTEM_ROLES.get(code, code)),
+                    "permissions": sorted(wanted & own),
+                    "dropped": sorted(wanted - own),
+                    "payments_own_only": code in OWN_PAYMENTS_ROLES,
+                }
+            )
+        return Response(rows)
 
     @action(detail=True, methods=["get", "put"], url_path="permissions")
     def permissions(self, request: Request, pk: str | None = None) -> Response:

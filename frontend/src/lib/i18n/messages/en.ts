@@ -998,7 +998,6 @@ export const messages: Record<string, string> = {
   'Qaytib ochildi': 'Reopened from',
   ha: 'yes',
   yoʻq: 'no',
-  Tizim: 'System',
   Logotip: 'Logo',
   'Logotipni olib tashlash': 'Remove the logo',
   'Logotipni yuklab boʻlmadi.': 'The logo could not be uploaded.',
@@ -1080,8 +1079,6 @@ export const messages: Record<string, string> = {
   // --- ADR-25: rol delegatsiyasi, ruxsatga mos hisobotlar ---
   'Bu rolni oʻzgartira olmaysiz: u sizning rolingiz, tashkilot egasi roli yoki sizdan kengroq huquqli rol.':
     'You cannot change this role: it is your own role, the owner role, or a role with broader permissions than yours.',
-  'Moliyaviy hisobotlarni koʻrish uchun toʻlovlar yoki chiqimlar boʻlimiga ruxsat kerak. Pastdagi eksportdan foydalanishingiz mumkin.':
-    'Viewing financial reports requires access to payments or expenses. You can use the export below.',
   'Oylik maosh va sof natija bu koʻrinishda yoʻq — ular «Oylik» boʻlimiga ruxsati bor xodimga koʻrinadi.':
     'Payroll and net result are not shown here — they are visible to staff with access to the Payroll section.',
   'qabul qilingan pul': 'money received',
@@ -1911,4 +1908,25 @@ export const messages: Record<string, string> = {
   'Xodim maoshidan ushlanadi. INPS stavkasi 0,1 % — 0 boʻlsa ushlanmaydi.': 'Withheld from the employee\'s pay. The INPS rate is 0.1 %; 0 means no withholding.',
   'Keyingi guruh: {name}': 'Next group: {name}',
   'Masalan: {from} da boshladingiz → birinchi hisob {from} – {to} uchun.': 'For example: you started on {from} → the first invoice covers {from} – {to}.',
+  'Jamoa': 'Team',
+  'Pul': 'Money',
+  'Sozlash': 'Setup',
+  'Tahlil': 'Analysis',
+  'Shablonlar': 'Templates',
+  'Qarzi bor har bir oilaga bitta xabar. Yuborishdan oldin nechta xabar ketishi koʻrsatiladi.': 'One message per family in debt. Before sending, it shows how many will go out.',
+  'Soliq ushlanmadi: Sozlamalarda stavkalar 0 qilib qoʻyilgan.': 'No tax withheld: the rates are set to 0 in Settings.',
+  'Tayyor fayllar': 'Ready files',
+  'Moliyaviy hisobotlarni koʻrish uchun toʻlovlar yoki chiqimlar boʻlimiga ruxsat kerak. Yuqoridagi eksportdan foydalanishingiz mumkin.': 'Viewing the financial reports needs access to payments or expenses. You can use the export above.',
+  'Tayyor shablon — belgilar qoʻyiladi, saqlashni oʻzingiz bosasiz': 'A ready template — it ticks the boxes; you press Save yourself',
+  '{n} ta ruxsat sizda ham yoʻq — ular qoʻyilmaydi.': '{n} permissions you do not hold either — those are left out.',
+  '({n} tasi yoʻq)': '({n} missing)',
+  'Uch qadamda ishga tushadi': 'Up and running in three steps',
+  'Tartib muhim: tarifsiz bolaga hisob-faktura chiqmaydi.': 'The order matters: without a tariff no invoice is issued for a child.',
+  'Tarif yarating': 'Create a tariff',
+  'Oyiga qancha — bittadan koʻp boʻlishi mumkin (toʻliq kun, yarim kun).': 'How much per month — there can be more than one (full day, half day).',
+  'Bola qoʻshing': 'Add a child',
+  'Guruh va tarif aynan shu formada tanlanadi — keyin qaytish kerak boʻlmaydi.': 'The group and the tariff are chosen in this same form — no coming back.',
+  'Hisob-faktura chiqaring': 'Issue the invoices',
+  'Bitta tugma butun bogʻcha uchun shu oyning hisob-fakturalarini yozadi.': 'One button issues this month\'s invoices for the whole kindergarten.',
+  'Boshlash': 'Start',
 }

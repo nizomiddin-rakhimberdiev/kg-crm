@@ -24,15 +24,25 @@ import { env } from '@/config/env'
 import { t } from '@/lib/i18n'
 
 /**
- * Menyu boʻlimi (PLAN 4.5).
+ * Menyu boʻlimi (PLAN 4.5, ADR-45).
  *
- * Oʻn uchta punkt bitta roʻyxatda turganda ular orasida maʼnoviy
- * bogʻlanish koʻrinmaydi: "Qarzdorlar" bilan "Ombor" yonma-yon
- * turardi. Boʻlimlar mudiraga kun tartibini beradi — bolalar,
- * moliya, xodimlar — va yangi punkt qoʻshilganda uning joyi oʻz-oʻzidan
- * aniq boʻladi.
+ * Boʻlimlar MODUL boʻyicha emas — **ochilish chastotasi va rol**
+ * boʻyicha. Mustaqil auditda (2026-10-21) shu yozildi: kassir kuniga
+ * 20 marta toʻlov qabul qiladi, lekin "Toʻlovlar" menyuning
+ * oʻrtasida, "Moliya" guruhi ichida turardi; tarbiyachi faqat davomat
+ * uchun kiradi, lekin oldin "Bolalar" guruhini ochishi kerak edi.
+ *
+ * Shuning uchun tartib: kundalik ish yuqorida (**Bugun**), keyin
+ * roʻyxatlar (**Bolalar**), pul (**Pul**), jamoa (**Jamoa**), oyda bir
+ * marta ochiladigan tahlil (**Tahlil**), va eng pastda bir marta
+ * sozlanadigani (**Sozlash**) — ilgari "Obuna" va "Audit" uzun
+ * roʻyxatning ichida koʻzdan qolardi.
+ *
+ * Menyuning UZUNLIGI rolga qarab oʻzidan qisqaradi: har bir punkt
+ * ruxsat bilan bogʻlangan, ya'ni tarbiyachida faqat "Bugun" va
+ * "Bolalar" qoladi.
  */
-export type NavSection = 'main' | 'children' | 'finance' | 'staff' | 'inventory' | 'system'
+export type NavSection = 'today' | 'children' | 'money' | 'team' | 'analysis' | 'setup'
 
 export interface NavItem {
   label: string
@@ -66,9 +76,23 @@ const allNavItems: NavItem[] = [
   {
     label: t('Dashboard'),
     to: '/dashboard',
-    section: 'main',
+    section: 'today',
     icon: LayoutDashboard,
     permission: 'dashboard.read',
+  },
+  {
+    label: t('Davomat'),
+    to: '/attendance',
+    section: 'today',
+    icon: CalendarCheck,
+    permission: 'attendance.read',
+  },
+  {
+    label: t('Toʻlovlar'),
+    to: '/payments',
+    section: 'today',
+    icon: CreditCard,
+    permission: 'payments.read',
   },
   {
     label: t('Bolalar'),
@@ -84,74 +108,60 @@ const allNavItems: NavItem[] = [
     icon: Users2,
     permission: 'children.read',
   },
-  // Moliya markazi (Bosqich 13.4): bugun, kun, nazorat, oylik hisobot.
-  // `reports.finance` — faqat jami summalar (ADR-42), shuning uchun ega
-  // uni boshqaruvchiga bera oladi; `payroll.read` ham ochadi.
-  {
-    label: t('Moliya markazi'),
-    to: '/finance',
-    section: 'finance',
-    icon: Gauge,
-    permission: ['reports.finance', 'payroll.read'],
-    requires: 'reports.read',
-  },
-  {
-    label: t('Toʻlovlar'),
-    to: '/payments',
-    section: 'finance',
-    icon: CreditCard,
-    permission: 'payments.read',
-  },
-  {
-    label: t('Qarzdorlar'),
-    to: '/debtors',
-    section: 'finance',
-    icon: AlertTriangle,
-    permission: 'debtors.read',
-  },
   // Kassa (Bosqich 12.5): qoplar, kimning qoʻlida qancha, topshirish,
   // oʻtkazma va kunni yopish. Kassir ham koʻradi — faqat oʻzinikini.
   {
     label: t('Kassa'),
     to: '/cash',
-    section: 'finance',
+    section: 'money',
     icon: Vault,
     permission: 'payments.read',
   },
   {
-    label: t('Davomat'),
-    to: '/attendance',
-    section: 'children',
-    icon: CalendarCheck,
-    permission: 'attendance.read',
+    label: t('Chiqimlar'),
+    to: '/expenses',
+    section: 'money',
+    icon: Receipt,
+    permission: 'expenses.read',
+  },
+  {
+    label: t('Qarzdorlar'),
+    to: '/debtors',
+    section: 'money',
+    icon: AlertTriangle,
+    permission: 'debtors.read',
+  },
+  {
+    label: t('Ombor'),
+    to: '/inventory',
+    section: 'money',
+    icon: Package,
+    permission: 'inventory.read',
   },
   {
     label: t('Xodimlar'),
     to: '/staff',
-    section: 'staff',
+    section: 'team',
     icon: UserCog,
     permission: ['payroll.read', 'users.read'],
   },
   {
     label: t('Oylik maosh'),
     to: '/payroll',
-    section: 'staff',
+    section: 'team',
     icon: Wallet,
     permission: 'payroll.read',
   },
+  // Moliya markazi (Bosqich 13.4): bugun, kun, nazorat, oylik hisobot.
+  // `reports.finance` — faqat jami summalar (ADR-42), shuning uchun ega
+  // uni boshqaruvchiga bera oladi; `payroll.read` ham ochadi.
   {
-    label: t('Ombor'),
-    to: '/inventory',
-    section: 'inventory',
-    icon: Package,
-    permission: 'inventory.read',
-  },
-  {
-    label: t('Chiqimlar'),
-    to: '/expenses',
-    section: 'finance',
-    icon: Receipt,
-    permission: 'expenses.read',
+    label: t('Moliya markazi'),
+    to: '/finance',
+    section: 'analysis',
+    icon: Gauge,
+    permission: ['reports.finance', 'payroll.read'],
+    requires: 'reports.read',
   },
   // Hisobotlar sahifasi MOLIYAVIY (tushum, chiqim, oylik maosh, foyda-zarar),
   // shuning uchun `reports.read` ning o'zi yetarli emas: Davomat menejerida
@@ -160,7 +170,7 @@ const allNavItems: NavItem[] = [
   {
     label: t('Hisobotlar'),
     to: '/reports',
-    section: 'finance',
+    section: 'analysis',
     icon: BarChart3,
     permission: ['payments.read', 'expenses.read', 'payroll.read'],
     requires: 'reports.read',
@@ -168,35 +178,35 @@ const allNavItems: NavItem[] = [
   {
     label: t('Bildirishnomalar'),
     to: '/notifications',
-    section: 'system',
+    section: 'setup',
     icon: BellRing,
     permission: 'notifications.read',
   },
   {
     label: t('Filiallar'),
     to: '/branches',
-    section: 'system',
+    section: 'setup',
     icon: Building2,
     permission: 'branches.read',
   },
   {
     label: t('Obuna'),
     to: '/billing',
-    section: 'system',
+    section: 'setup',
     icon: CreditCardIcon,
     permission: 'billing.read',
   },
   {
     label: t('Audit jurnali'),
     to: '/audit',
-    section: 'system',
+    section: 'setup',
     icon: ScrollText,
     permission: 'audit.read',
   },
   {
     label: t('Sozlamalar'),
     to: '/settings',
-    section: 'system',
+    section: 'setup',
     icon: Settings,
     permission: 'settings.read',
   },
@@ -215,26 +225,23 @@ export const navItems: NavItem[] = env.isStandalone
   ? allNavItems.filter((item) => !SAAS_ONLY_ROUTES.has(item.to))
   : allNavItems
 
-/**
- * Boʻlim sarlavhalari. `main` — sarlavhasiz: bitta punkt uchun
- * sarlavha shovqin.
- */
+/** Boʻlim sarlavhalari — oltitasi ham nomli (ADR-45). */
 export const SECTION_LABEL: Record<NavSection, string> = {
-  main: '',
+  today: t('Bugun'),
   children: t('Bolalar'),
-  finance: t('Moliya'),
-  staff: t('Xodimlar'),
-  inventory: t('Ombor'),
-  system: t('Tizim'),
+  money: t('Pul'),
+  team: t('Jamoa'),
+  analysis: t('Tahlil'),
+  setup: t('Sozlash'),
 }
 
 export const SECTION_ORDER: NavSection[] = [
-  'main',
+  'today',
   'children',
-  'finance',
-  'staff',
-  'inventory',
-  'system',
+  'money',
+  'team',
+  'analysis',
+  'setup',
 ]
 
 /**

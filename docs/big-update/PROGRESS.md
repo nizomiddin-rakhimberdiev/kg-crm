@@ -2454,3 +2454,108 @@ deb topdi, xato **ko'rinishda** edi.
 19. **Saytdagi va'da amaliyotga keltirildi**: "qoldiqdan ortiq chiqim
     rad etiladi" → "to'xtatiladi; o'tkazish uchun ogohlantirishni
     o'qib belgini qo'yish kerak" (ADR-29 bilan bir xil), uch tilda.
+
+### 5-to'plam — navigatsiya va ekran tartibi (audit 5–7-navbat)
+
+20. **Menyu modul bo'yicha emas, ish bo'yicha guruhlandi** (ADR-45):
+    **Bugun** (Boshqaruv paneli · Davomat · To'lovlar) → **Bolalar**
+    (Bolalar · Guruhlar) → **Pul** (Kassa · Chiqimlar · Qarzdorlar ·
+    Ombor) → **Jamoa** (Xodimlar · Oylik maosh) → **Tahlil** (Moliya
+    markazi · Hisobotlar) → **Sozlash** (Bildirishnomalar · Filiallar ·
+    Obuna · Audit · Sozlamalar). Kassir kuniga 20 marta to'lov qabul
+    qiladi — endi u menyuning eng tepasida; "Ombor" yolg'iz guruhda
+    turmaydi; "Obuna" va "Audit" uzun ro'yxatning ichida ko'zdan
+    qolmaydi. Menyuning uzunligi rolga qarab o'zidan qisqaradi (har
+    punkt ruxsat bilan bog'langan), test esa har bir guruhning
+    TARKIBINI qo'riqlaydi.
+21. **Bildirishnomalar uchta tabga bo'lindi**: Tarix (sukut — sahifa
+    avvalo jurnal) · Yuborish · Shablonlar. Test rejimi bayrog'i har
+    bir tabda qoladi.
+22. **Chiqim toifalari guruhlangan** (`<optgroup>`, `categoryGroups.ts`):
+    yigirmatadan ortiq nom yassi ro'yxatda izlanardi, holbuki ular
+    bazada allaqachon ikki darajali. Uchta tanlagich — tezkor chiqim,
+    tahrirlash va sahifadagi forma — bir xil guruhlashni oladi.
+    Tushunarsiz sukut nomlar ham o'zgardi: "Naqd qism" → "Naqd berilgan
+    oylik", "Karta qism" → "Bankka o'tkazilgan oylik", "Target" →
+    "Maqsadli reklama (target)". **Mavjud tenantlar uchun —
+    `rename_default_categories` buyrug'i, sukut bo'yicha dry-run**: u
+    faqat eski sukut nomni hali saqlab turgan qatorni o'zgartiradi,
+    bog'cha o'zi qayta nomlaganiga tegmaydi.
+23. **Rollar uchun tayyor shablon** (`GET /roles/templates`): 15 modul ×
+    6 amal ≈ 100 belgini qo'lda bosish amalda qilinmaydigan ish edi.
+    Shablon `ROLE_MATRIX` ning o'zi, egasining roli bundan mustasno —
+    uni tarqatib bo'lmaydi. **ADR-25 shu yerda ham**: ro'yxat
+    chaqiruvchining o'z ruxsatlari bilan kesishtiriladi va tushib
+    qolganlari `dropped` da AYTILADI. Tugma faqat belgilarni qo'yadi;
+    saqlashni odam o'zi bosadi. Modullar endi **sidebar tartibida**
+    (ilgari alifbo bo'yicha).
+24. **Ekran tartibi**: Hisobotlardagi eksport tugmalari sarlavha yoniga
+    chiqdi (pastda, grafiklar ortida ko'rinmasdi; tayyor fayllar
+    ro'yxati pastda qoldi); Kassadagi bank ko'chirmasi qoldiqlar
+    yoniga ko'chdi (ikki ming piksel ostida edi).
+25. **"Radix AI · Kunlik brifing" sarlavhasi endi yolg'on gapirmaydi**:
+    signal bo'lmaganda "Bugun ochiq signal yo'q" deb yoziladi — ilgari
+    sarlavha ostida shunchaki davomat kartasi turardi.
+26. **Nol soliq sababi bilan**: oylik varaqasida "0" turardi va nega
+    ushlanmagani ko'rinmasdi. Endi: "Sozlamalarda stavkalar 0 qilib
+    qo'yilgan". Qaysi imtiyoz ekanini tizim AYTMAYDI — buni buxgalter
+    tasdiqlaydi.
+
+### Ataylab keyinga qoldirilgani
+
+* **"Moliya markazi" va "Hisobotlar" birlashtirilishi** (audit 5-navbat,
+  1-band). Ikkalasi ham tablarga ega katta sahifa; birlashtirish o'n
+  birta tabli bitta ekran yasaydi va bu avvalgisidan yaxshi emas.
+  Ikkisi hozir bitta **"Tahlil"** guruhida turadi, ya'ni "qaysi birini
+  ochaman?" savoli kamaydi. Haqiqiy birlashtirish alohida ish sifatida
+  rejalashtiriladi.
+* **"Qarzdorlar" To'lovlar ichiga tab bo'lib ko'chishi** — xuddi shu
+  sabab: mijoz har kuni ishlatadigan ikki ekranni birlashtirish
+  ehtiyotkorlik talab qiladi. Hozir ikkisi "Pul" guruhida yonma-yon.
+* **Onboarding sehrgari va "Namunani yuklash"** (audit 6-navbat) —
+  keyingi to'plam.
+
+### 6-to'plam — birinchi kun (audit 6-navbat)
+
+27. **Bo'sh bog'cha uchun zanjir** (`dashboard/gettingStarted.ts` +
+    `GettingStarted` kartasi): nollar o'z joyida qoladi, lekin
+    ularning ustida "Tarif yarating → Bola qo'shing → Hisob-faktura
+    chiqaring" turadi, bajarilgani chizilib o'tiladi va keyingi qadam
+    o'z tugmasini ko'rsatadi. Tartib **majburiy** va u bir joyda
+    yozilgan: tarifsiz bolaga faktura chiqmaydi, va auditor buni
+    faqat urinib ko'rgandan keyin bilgan. Zanjir tugagach karta o'zi
+    yo'qoladi; uni faqat bajara oladigan rol ko'radi
+    (`payments.create` + `children.create`), chunki tarbiyachiga
+    "tarif yarating" degan maslahat bajarib bo'lmaydigan ish.
+
+### "Namunani yuklash" — ataylab QILINMADI
+
+Audit sinov akkauntiga "Namunani yuklash / tozalash" tugmasini
+taklif qildi. Mijozning HAQIQIY tashkilotiga demo ma'lumot yozadigan
+tugma qo'yilmaydi: bu allaqachon bir marta sodir bo'lgan va birinchi
+mijozning bazasida seed ma'lumoti uning haqiqiy ishi bilan aralashib
+qolgan — uni ajratish qo'lda ish bo'ldi. Tugma bu xatoni bir
+bosishga arzon qilardi.
+
+O'rniga: namunani ko'rish uchun **`/private` demo stend** bor (to'liq
+ma'lumot bilan, mijozning bazasidan tashqarida), va yangi bog'cha o'z
+akkauntida zanjirni ko'radi (27-band). `seed_demo` buyrug'i
+o'z joyida qoladi — u stend va test uchun.
+
+### 7-to'plam — huquqiy sahifalar (audit 1-navbat)
+
+28. **To'ldirilmagan `{{…}}` belgisi ekranga chiqmaydi.** Avval u
+    ataylab qolardi — "chala hujjat chala ko'rinsin" degan qaror
+    bilan. Audit buning narxini o'lchadi: saytga kirgan direktor
+    `{{STIR}}` ni ko'rib "tizim hali tayyor emas" degan xulosaga
+    keladi, ya'ni ogohlantirish **mijozga** ketardi, bizga emas.
+    Endi: belgi qolgan GAP butunlay tushib qoladi (xatboshidan hech
+    narsa qolmasa — xatboshi ham), va chala ekanini
+    **`scripts/deploy.sh`** bizga aytadi (`VITE_LEGAL_*` va
+    `VITE_SERVER_LOCATION` bo'sh bo'lsa — sariq ogohlantirish,
+    deploy to'xtamaydi).
+
+    **Qiymatlarning o'zi hali kiritilmagan** — ular egasining
+    rekvizitlari: yuridik nom, STIR, manzil va serverlar joylashuvi.
+    Joylashuv `docs/01 §10` dagi ishga tushirish shartining bir
+    qismi, shuning uchun uni taxmin qilib yozib qo'yish mumkin emas.

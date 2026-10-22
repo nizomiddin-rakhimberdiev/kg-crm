@@ -246,7 +246,29 @@ export default function ReportsPage() {
             {t('Kassa usuli: daromad — qabul qilingan pul, yozilgan hisob-faktura emas.')}
           </p>
         </div>
-        <PeriodPicker value={period} onChange={setPeriod} className="lg:items-end" />
+        <div className="flex flex-col gap-3 lg:items-end">
+          <PeriodPicker value={period} onChange={setPeriod} className="lg:items-end" />
+          {/* Eksport — SARLAVHA yonida (audit, 2026-10-21): tugmalar
+              sahifaning eng pastida, grafiklar ortida turardi va
+              mijoz ularni koʻrmasdi. Tayyor fayllar roʻyxati esa
+              pastda qoladi — u bir marta bosilgandan keyin kerak. */}
+          {can('reports.export') && (
+            <div className="flex flex-wrap gap-2 lg:justify-end">
+              {EXPORTABLE.filter(([type]) => can(REPORT_SCOPE[type])).map(([type, label]) => (
+                <button
+                  key={type}
+                  type="button"
+                  disabled={requestExport.isPending}
+                  onClick={() => requestExport.mutate(type)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  <FileDown className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {(error || loadError) && (
@@ -281,7 +303,7 @@ export default function ReportsPage() {
       {!showRevenue && !showExpenses && (
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-12 text-center text-sm text-slate-500">
           {t(
-            'Moliyaviy hisobotlarni koʻrish uchun toʻlovlar yoki chiqimlar boʻlimiga ruxsat kerak. Pastdagi eksportdan foydalanishingiz mumkin.',
+            'Moliyaviy hisobotlarni koʻrish uchun toʻlovlar yoki chiqimlar boʻlimiga ruxsat kerak. Yuqoridagi eksportdan foydalanishingiz mumkin.',
           )}
         </div>
       )}
@@ -644,27 +666,12 @@ export default function ReportsPage() {
 
       {can('reports.export') && (
         <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-          <h2 className="text-sm font-semibold text-slate-900">{t('Eksport')}</h2>
+          <h2 className="text-sm font-semibold text-slate-900">{t('Tayyor fayllar')}</h2>
           <p className="mt-0.5 text-xs text-slate-500">
             {t(
               'Excel fayli (.xlsx) — har bir yozuv alohida qator boʻlib tushadi. Tanlangan davr bilan, fayl fonda tayyorlanadi.',
             )}
           </p>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            {EXPORTABLE.filter(([type]) => can(REPORT_SCOPE[type])).map(([type, label]) => (
-              <button
-                key={type}
-                type="button"
-                disabled={requestExport.isPending}
-                onClick={() => requestExport.mutate(type)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-              >
-                <FileDown className="h-4 w-4" />
-                {label}
-              </button>
-            ))}
-          </div>
 
           {(exportsQuery.data ?? []).length > 0 && (
             <ul className="mt-4 divide-y divide-slate-100 border-t border-slate-100">

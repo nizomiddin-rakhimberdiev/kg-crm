@@ -33,6 +33,7 @@ import { QueryError } from '@/components/ui/QueryError'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { formatDate, quantity, som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
+import { groupCategories } from '@/features/expenses/categoryGroups'
 
 const money = som
 
@@ -284,10 +285,14 @@ export default function ExpensesPage() {
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
                 >
                   <option value="">{t('Tanlang…')}</option>
-                  {categoriesQuery.data?.items.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
+                  {groupCategories(categoriesQuery.data?.items ?? []).map((group) => (
+                    <optgroup key={group.label || 'flat'} label={group.label || t('Boshqa')}>
+                      {group.items.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               </div>

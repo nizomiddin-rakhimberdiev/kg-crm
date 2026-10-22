@@ -237,6 +237,7 @@ Module: `users` (backed by `accounts`). Managed by **Org Owner** (Director read-
 | GET | `/roles/{id}/permissions` | `users.read` | Role's permissions |
 | PUT | `/roles/{id}/permissions` | `users.update` | Replace role's permission set |
 | GET | `/permissions` | `users.read` | List all permissions (reference) |
+| GET | `/roles/templates` | `users.read` | **Ready role templates** — `ROLE_MATRIX` opened up as `{code, title, permissions, dropped, payments_own_only}`, the owner's own role excluded because it cannot be handed out. The permission list is intersected with the caller's own (ADR-25) and whatever was removed is named in `dropped`, so a narrow role sees what it cannot grant instead of meeting a refusal at save time. The screen ticks the boxes; the person presses Save (audit, 2026-10-21: 15 modules × 6 actions is not a list anyone fills by hand) |
 
 **`POST /users` — request**
 ```json

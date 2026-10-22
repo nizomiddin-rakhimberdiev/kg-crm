@@ -84,6 +84,15 @@ export function BriefingSection() {
         <p className="text-sm text-slate-500">{copy.noOpenInsights}</p>
       )}
 
+      {/* Sarlavha vaʼda qilgan narsa yoʻq boʻlsa — buni AYTAMIZ
+          (audit, 2026-10-21): auditda "Radix AI · Kunlik brifing"
+          sarlavhasi ostida oddiy davomat kartasi turdi va vaʼda
+          qilingan tahlil koʻrinmadi. Signal yoʻqligi — yaxshi xabar,
+          lekin u yozilmasa, sarlavha yolgʻon gapiradi. */}
+      {data && data.insights.length === 0 && hasChecks && (
+        <p className="text-sm text-slate-500">{copy.noOpenInsights}</p>
+      )}
+
       {data && (data.insights.length > 0 || hasChecks) && (
         // Signallar chapda, jonli tekshiruvlar o'ngda — ikkalasi bo'lsa
         // ikki ustun; biri bo'lmasa qolgani butun kenglikni oladi.

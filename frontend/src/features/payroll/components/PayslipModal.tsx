@@ -65,6 +65,16 @@ export function PayslipModal({ item, onClose }: { item: PayrollItem | null; onCl
               <Row label={t('Pensiya badali')} value={item.tax_pension} negative />
               <Row label={t('Oʻtkaziladi')} value={item.official_net} strong />
             </div>
+            {/* Nol soliq — SABABI bilan (audit, 2026-10-21): varaqada
+                "0" turardi va uni oʻqigan xodim ham, mudira ham nega
+                ushlanmaganini bilmasdi. Sabab har doim bitta: stavka
+                sozlamada nol. Qaysi imtiyoz ekanini TIZIM AYTMAYDI —
+                buni buxgalter tasdiqlaydi. */}
+            {Number(item.tax_income) === 0 && Number(item.tax_pension) === 0 && (
+              <p className="mt-2 text-xs text-slate-500">
+                {t('Soliq ushlanmadi: Sozlamalarda stavkalar 0 qilib qoʻyilgan.')}
+              </p>
+            )}
           </section>
         )}
 

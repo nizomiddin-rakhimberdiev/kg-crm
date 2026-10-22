@@ -37,12 +37,36 @@ describe('huquqiy matn', () => {
     }
   })
 
-  it('aloqa maʼlumotlari doim toʻldiriladi, boʻsh rekvizit esa belgi boʻlib qoladi', () => {
-    const filled = fillLegal('{{EMAIL}} · {{TELEGRAM}} · STIR {{STIR}}')
+  it('aloqa maʼlumotlari doim toʻldiriladi', () => {
+    const filled = fillLegal('{{EMAIL}} · {{TELEGRAM}}')
     expect(filled).toContain(CONTACT.email)
     expect(filled).toContain(`@${CONTACT.telegram}`)
-    // `.env` da yoʻq — chala hujjat chala koʻrinadi, jimgina yoʻqolmaydi.
-    expect(filled).toContain('{{STIR}}')
+  })
+
+  /*
+   * Avval boʻsh rekvizit EKRANDA belgi boʻlib qolardi — "chala hujjat
+   * chala koʻrinsin" degan qaror bilan. Mustaqil audit (2026-10-21)
+   * buning narxini oʻlchadi: saytga kirgan direktor "{{STIR}}" ni
+   * koʻrib "tizim hali tayyor emas" degan xulosaga keladi, ya'ni
+   * ogohlantirish MIJOZGA ketardi, bizga emas.
+   *
+   * Endi toʻldirilmagan belgi bor GAP butunlay tushib qoladi, va
+   * chala ekanini deploy skripti BIZGA aytadi.
+   */
+  it('toʻldirilmagan belgi ekranga chiqmaydi — gap tushib qoladi', () => {
+    const filled = fillLegal('Operator: {{YURIDIK_NOM}}, STIR {{STIR}}. Aloqa: {{EMAIL}}.')
+    expect(filled).not.toContain('{{')
+    expect(filled).not.toContain('Operator:')
+    expect(filled).toContain(CONTACT.email)
+  })
+
+  it('xatboshi butunlay belgidan iborat boʻlsa — xatboshi ham qolmaydi', () => {
+    const filled = fillLegal('Maʼlumot {{SERVER_JOYLASHUVI}} saqlanadi.\nUlanish HTTPS orqali.')
+    expect(filled).toBe('Ulanish HTTPS orqali.')
+  })
+
+  it('toʻldirilgan belgi gapni saqlaydi', () => {
+    expect(fillLegal('Aloqa: {{TELEGRAM}}. Rahmat.')).toBe(`Aloqa: @${CONTACT.telegram}. Rahmat.`)
   })
 
   it('siyosat ikkala tomon rolini aytadi: bogʻcha — egasi, Radix — ishlov beruvchi', () => {

@@ -353,6 +353,14 @@ export default function CashPage() {
       {/* Yoʻldagi pul (Bosqich 13.2c) — boʻlsa koʻrinadi. */}
       <InTransitPanel canSettle={canManage} />
 
+      {/* Bank koʻchirmasi (Bosqich 13.3d) — qoldiqlardan KEYIN, lekin
+          kunni yopish va tarixdan OLDIN (audit, 2026-10-21): u
+          sahifaning eng pastida, ikki ming piksel ostida turardi va
+          mijoz yuklash joyini topa olmadi. Ko'chirma bank qoldigʻini
+          haqiqat bilan solishtiradi, ya'ni uning joyi qoldiq
+          yonida. */}
+      {canManage && <BankStatementPanel />}
+
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Kimning qoʻlida */}
         <section className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -806,9 +814,6 @@ export default function CashPage() {
       )}
       {/* Subsidiya, egaga toʻlov, kredit, soliq (Bosqich 13.2b). */}
       {canManage && <MoneyOperationsPanel />}
-
-      {/* Bank koʻchirmasi va navbat (Bosqich 13.3d). */}
-      {canManage && <BankStatementPanel />}
     </div>
   )
 }

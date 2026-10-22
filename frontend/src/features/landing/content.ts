@@ -503,7 +503,7 @@ const uz: Copy = {
       },
       {
         title: 'Rollar va ruxsatlar',
-        text: 'Kim nimani koʻrishini egasi belgilaydi. Kassir faqat oʻzi qabul qilgan pulni koʻradi. Boshqaruvchi oylik hisobotni topshiradi — kim qancha maosh olishini koʻrmasdan; rahbar raqam yonida savol beradi, qaytaradi yoki qabul qiladi. Bankka — faqat oʻqish uchun, muddatli havola.',
+        text: 'Kim nimani koʻrishini egasi belgilaydi. Tayyor shablon bir bosishda: Direktor, Menejer, Kassir, Davomat menejeri — keyin istalgan belgini oʻzgartirasiz. Kassir faqat oʻzi qabul qilgan pulni koʻradi. Boshqaruvchi oylik hisobotni topshiradi — kim qancha maosh olishini koʻrmasdan; rahbar raqam yonida savol beradi, qaytaradi yoki qabul qiladi. Bankka — faqat oʻqish uchun, muddatli havola.',
       },
       {
         title: 'Filiallar',
@@ -1071,7 +1071,7 @@ const ru: Copy = {
       },
       {
         title: 'Роли и права',
-        text: 'Владелец решает, кто что видит. Кассир видит только принятые им деньги. Управляющий сдаёт месячный отчёт — не видя, кто сколько получает; руководитель задаёт вопрос у цифры, возвращает или принимает. Банку — ссылка только для чтения и со сроком.',
+        text: 'Владелец решает, кто что видит. Готовый шаблон в одно нажатие: Директор, Менеджер, Кассир, Менеджер посещаемости — потом меняете любую отметку. Кассир видит только принятые им деньги. Управляющий сдаёт месячный отчёт — не видя, кто сколько получает; руководитель задаёт вопрос у цифры, возвращает или принимает. Банку — ссылка только для чтения и со сроком.',
       },
       {
         title: 'Филиалы',
@@ -1632,7 +1632,7 @@ const en: Copy = {
       },
       {
         title: 'Roles and permissions',
-        text: 'The owner decides who sees what. A cashier sees only the money they took. A manager submits the monthly report without seeing who earns what; a leader asks at a number, returns it or accepts it. For the bank — a read-only link that expires.',
+        text: 'The owner decides who sees what. A ready template is one click away — Director, Manager, Cashier, Attendance manager — and every tick stays editable. A cashier sees only the money they took. A manager submits the monthly report without seeing who earns what; a leader asks at a number, returns it or accepts it. For the bank — a read-only link that expires.',
       },
       {
         title: 'Branches',

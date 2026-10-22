@@ -8,6 +8,7 @@
 
 import { useState } from 'react'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import {
   Ban,
   FileText,
@@ -76,7 +77,19 @@ export default function PaymentsPage() {
   const ownOnly = useAuth().user?.payments_own_only ?? false
 
   const now = new Date()
-  const [tab, setTab] = useState<'board' | 'payments' | 'tariffs'>('board')
+  // Tab URL'da (`?tab=`): boshqa ekrandan "Tarif yarating" havolasi
+  // AYNAN tariflar tabini ochishi kerak, va yangilangan sahifa o'sha
+  // joyda qolishi kerak (audit, 2026-10-21 — zanjir havolasi).
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedTab = searchParams.get('tab')
+  const tab: 'board' | 'payments' | 'tariffs' =
+    requestedTab === 'payments' || requestedTab === 'tariffs' ? requestedTab : 'board'
+  const setTab = (next: 'board' | 'payments' | 'tariffs') => {
+    const params = new URLSearchParams(searchParams)
+    if (next === 'board') params.delete('tab')
+    else params.set('tab', next)
+    setSearchParams(params, { replace: true })
+  }
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [tariffForm, setTariffForm] = useState({ name: '', amount: '' })

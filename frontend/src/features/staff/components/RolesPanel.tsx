@@ -27,6 +27,31 @@ const toCode = (name: string) =>
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '')
 
+/**
+ * Modullar SIDEBAR tartibida (ADR-45).
+ *
+ * Ruxsat katalogi alifbo boʻyicha kelmaydi, lekin ekranda u shunday
+ * ko'rinardi. Menyu bilan bir xil tartib "qaysi belgi nimani ochadi?"
+ * degan savolni butunlay yopadi.
+ */
+const MODULE_ORDER: string[] = [
+  'dashboard',
+  'attendance',
+  'payments',
+  'children',
+  'debtors',
+  'expenses',
+  'inventory',
+  'payroll',
+  'users',
+  'reports',
+  'notifications',
+  'branches',
+  'billing',
+  'audit',
+  'settings',
+]
+
 const ACTION_LABELS: Record<string, string> = {
   read: t('Koʻrish'),
   create: t('Yaratish'),
@@ -90,8 +115,27 @@ export function RolesPanel() {
       list.push(permission)
       byModule.set(permission.module, list)
     }
-    return [...byModule.entries()].sort(([a], [b]) => a.localeCompare(b))
+    // Tartib SIDEBAR bilan bir xil (audit, 2026-10-21): ilgari
+    // modullar alifbo boʻyicha turardi ("audit" birinchi, "children"
+    // beshinchi) va yuzga yaqin belgi orasidan kerakligini topish
+    // uchun koʻz butun roʻyxatni kezib chiqardi.
+    const rank = (module: string) => {
+      const index = MODULE_ORDER.indexOf(module)
+      return index < 0 ? MODULE_ORDER.length : index
+    }
+    return [...byModule.entries()].sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b))
   }, [permissionsQuery.data])
+
+  // Tayyor shablonlar (audit, 2026-10-21): 15 modul × 6 amal ≈ 100
+  // belgi — qoʻlda bosish amalda qilinmaydi. Shablon faqat
+  // BELGILARNI qoʻyadi; saqlashni odam oʻzi bosadi, ya'ni koʻrib
+  // chiqish imkoni qoladi.
+  const templatesQuery = useQuery({
+    queryKey: [...queryKeys.roles(organizationId), 'templates'],
+    queryFn: rolesApi.templates,
+    enabled: can('users.update'),
+    staleTime: 300_000,
+  })
 
   const ownOnlyMutation = useMutation({
     mutationFn: (value: boolean) => rolesApi.setOwnPaymentsOnly(selectedRole!.id, value),
@@ -324,6 +368,47 @@ export function RolesPanel() {
             {saved && !dirty && (
               <div className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
                 {t('Saqlandi.')}
+              </div>
+            )}
+
+            {/* Tayyor shablonlar — belgilarni QOʻYADI, saqlamaydi
+                (audit, 2026-10-21). Tizim rolining oʻzini shablon
+                bilan toʻldirish maʼnosiz, shuning uchun faqat oʻz
+                rollari uchun. */}
+            {editable && !selectedRole?.is_system && (templatesQuery.data?.length ?? 0) > 0 && (
+              <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs font-medium text-slate-600">
+                  {t('Tayyor shablon — belgilar qoʻyiladi, saqlashni oʻzingiz bosasiz')}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {(templatesQuery.data ?? []).map((template) => (
+                    <button
+                      key={template.code}
+                      type="button"
+                      onClick={() => setDraft(new Set(template.permissions))}
+                      title={
+                        template.dropped.length > 0
+                          ? t('{n} ta ruxsat sizda ham yoʻq — ular qoʻyilmaydi.', {
+                              n: template.dropped.length,
+                            })
+                          : undefined
+                      }
+                      aria-label={
+                        template.dropped.length > 0
+                          ? `${template.title} — ${t('{n} ta ruxsat sizda ham yoʻq — ular qoʻyilmaydi.', { n: template.dropped.length })}`
+                          : template.title
+                      }
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-brand-300 hover:text-brand-700"
+                    >
+                      {template.title}
+                      {template.dropped.length > 0 && (
+                        <span className="ml-1 text-xs text-slate-400">
+                          {t('({n} tasi yoʻq)', { n: template.dropped.length })}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 

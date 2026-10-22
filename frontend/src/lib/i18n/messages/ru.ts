@@ -997,7 +997,6 @@ export const messages: Record<string, string> = {
   'Qaytib ochildi': 'Открыт заново',
   ha: 'да',
   yoʻq: 'нет',
-  Tizim: 'Система',
   Logotip: 'Логотип',
   'Logotipni olib tashlash': 'Удалить логотип',
   'Logotipni yuklab boʻlmadi.': 'Не удалось загрузить логотип.',
@@ -1078,8 +1077,6 @@ export const messages: Record<string, string> = {
   // --- ADR-25: rol delegatsiyasi, ruxsatga mos hisobotlar ---
   'Bu rolni oʻzgartira olmaysiz: u sizning rolingiz, tashkilot egasi roli yoki sizdan kengroq huquqli rol.':
     'Вы не можете изменить эту роль: это ваша роль, роль владельца организации или роль с более широкими правами, чем у вас.',
-  'Moliyaviy hisobotlarni koʻrish uchun toʻlovlar yoki chiqimlar boʻlimiga ruxsat kerak. Pastdagi eksportdan foydalanishingiz mumkin.':
-    'Для просмотра финансовых отчётов нужен доступ к разделу платежей или расходов. Вы можете воспользоваться экспортом ниже.',
   'Oylik maosh va sof natija bu koʻrinishda yoʻq — ular «Oylik» boʻlimiga ruxsati bor xodimga koʻrinadi.':
     'Зарплата и чистый результат здесь не показаны — их видит сотрудник с доступом к разделу «Зарплата».',
   'qabul qilingan pul': 'полученные деньги',
@@ -1907,4 +1904,25 @@ export const messages: Record<string, string> = {
   'Xodim maoshidan ushlanadi. INPS stavkasi 0,1 % — 0 boʻlsa ushlanmaydi.': 'Удерживается из зарплаты сотрудника. Ставка ИНПС — 0,1 %; 0 означает «не удерживать».',
   'Keyingi guruh: {name}': 'Следующая группа: {name}',
   'Masalan: {from} da boshladingiz → birinchi hisob {from} – {to} uchun.': 'Например: вы начали {from} → первый счёт за период {from} – {to}.',
+  'Jamoa': 'Команда',
+  'Pul': 'Деньги',
+  'Sozlash': 'Настройка',
+  'Tahlil': 'Аналитика',
+  'Shablonlar': 'Шаблоны',
+  'Qarzi bor har bir oilaga bitta xabar. Yuborishdan oldin nechta xabar ketishi koʻrsatiladi.': 'По одному сообщению каждой семье с долгом. Перед отправкой показывается, сколько сообщений уйдёт.',
+  'Soliq ushlanmadi: Sozlamalarda stavkalar 0 qilib qoʻyilgan.': 'Налоги не удержаны: в настройках ставки выставлены в 0.',
+  'Tayyor fayllar': 'Готовые файлы',
+  'Moliyaviy hisobotlarni koʻrish uchun toʻlovlar yoki chiqimlar boʻlimiga ruxsat kerak. Yuqoridagi eksportdan foydalanishingiz mumkin.': 'Для просмотра финансовых отчётов нужен доступ к оплатам или расходам. Можно воспользоваться экспортом выше.',
+  'Tayyor shablon — belgilar qoʻyiladi, saqlashni oʻzingiz bosasiz': 'Готовый шаблон — отметки расставляются, сохранить нужно самому',
+  '{n} ta ruxsat sizda ham yoʻq — ular qoʻyilmaydi.': '{n} разрешений нет и у вас — они не будут отмечены.',
+  '({n} tasi yoʻq)': '(нет {n})',
+  'Uch qadamda ishga tushadi': 'Запускается в три шага',
+  'Tartib muhim: tarifsiz bolaga hisob-faktura chiqmaydi.': 'Порядок важен: без тарифа счёт ребёнку не выставится.',
+  'Tarif yarating': 'Создайте тариф',
+  'Oyiga qancha — bittadan koʻp boʻlishi mumkin (toʻliq kun, yarim kun).': 'Сколько в месяц — тарифов может быть несколько (полный день, полдня).',
+  'Bola qoʻshing': 'Добавьте ребёнка',
+  'Guruh va tarif aynan shu formada tanlanadi — keyin qaytish kerak boʻlmaydi.': 'Группа и тариф выбираются в этой же форме — возвращаться не придётся.',
+  'Hisob-faktura chiqaring': 'Выставьте счета',
+  'Bitta tugma butun bogʻcha uchun shu oyning hisob-fakturalarini yozadi.': 'Одна кнопка выставляет счета за этот месяц всему садику.',
+  'Boshlash': 'Начать',
 }

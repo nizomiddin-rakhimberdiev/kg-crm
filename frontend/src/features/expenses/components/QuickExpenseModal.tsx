@@ -22,6 +22,7 @@ import { money, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { MonthInput } from '@/components/ui/MonthInput'
+import { groupCategories } from '@/features/expenses/categoryGroups'
 
 const field =
   'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500'
@@ -161,11 +162,16 @@ export function QuickExpenseModal({ onClose }: { onClose: () => void }) {
               className={cn(field, 'mt-2')}
             >
               <option value="">{t('Boshqa toifa…')}</option>
-              {all.slice(CHIPS).map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.parent_name ? `${category.parent_name} · ` : ''}
-                  {category.name}
-                </option>
+              {/* Ota-toifa boʻyicha guruhlangan (audit, 2026-10-21):
+                  yigirmatadan ortiq nom yassi roʻyxatda izlanardi. */}
+              {groupCategories(all.slice(CHIPS)).map((group) => (
+                <optgroup key={group.label || 'flat'} label={group.label || t('Boshqa')}>
+                  {group.items.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           )}

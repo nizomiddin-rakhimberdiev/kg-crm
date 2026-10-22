@@ -8,6 +8,7 @@
 
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import { BellRing, RefreshCw, Send } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { notificationsApi, templatesApi } from '@/features/notifications/api'
@@ -37,10 +38,13 @@ const STATUS: Record<string, [string, string]> = {
 
 const when = (value: string | null) => (value ? formatDateTime(value) : '—')
 
+type Tab = 'history' | 'send' | 'templates'
+
 export default function NotificationsPage() {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
   const { can } = useCan()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const [status, setStatus] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -48,6 +52,27 @@ export default function NotificationsPage() {
   // yuborishi mumkin va uni qaytarib bo'lmaydi.
   const [confirming, setConfirming] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+
+  // Uchta tab (audit, 2026-10-21): ilgari shablonlar, statistika va
+  // jurnal bitta uzun sahifada turardi va "SMS kelmadi" degan savol
+  // bilan kelgan odam jurnalga yetib borish uchun pastga surardi.
+  //
+  // Tartib ATAYLAB jurnaldan boshlanadi: bu sahifa avvalo jurnal
+  // (yuqoridagi izoh), auditning taklif qilgan tartibi esa yuborishni
+  // oldinga qoʻyardi.
+  const tabs: Array<{ key: Tab; label: string }> = [
+    { key: 'history', label: t('Tarix') },
+    ...(can('notifications.create') ? [{ key: 'send' as Tab, label: t('Yuborish') }] : []),
+    ...(can('notifications.update') ? [{ key: 'templates' as Tab, label: t('Shablonlar') }] : []),
+  ]
+  const requested = searchParams.get('tab') as Tab | null
+  const tab: Tab = tabs.find((item) => item.key === requested)?.key ?? 'history'
+  const selectTab = (next: Tab) => {
+    const params = new URLSearchParams(searchParams)
+    if (next === 'history') params.delete('tab')
+    else params.set('tab', next)
+    setSearchParams(params, { replace: true })
+  }
 
   const params = status ? { status } : undefined
   const logQuery = useQuery({
@@ -112,23 +137,56 @@ export default function NotificationsPage() {
             {t('Yuborilgan har bir xabar shu yerda qoladi — holati va sababi bilan.')}
           </p>
         </div>
-        {can('notifications.create') && (
-          <button
-            type="button"
-            onClick={() => setConfirming(true)}
-            disabled={remind.isPending}
-            className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
-          >
-            <BellRing className="h-4 w-4" />
-            {t('Qarzdorlarga eslatma')}
-          </button>
-        )}
       </div>
 
       {/* Test rejimi — jurnal "Yuborildi" deb yolg'on gapirmasligi
-          uchun eng tepada (PLAN 3.2). */}
+          uchun eng tepada va HAR BIR tabda (PLAN 3.2). */}
       <TestModeBanner />
-      {statusQuery.data && <SmsUsageCard status={statusQuery.data} />}
+
+      {tabs.length > 1 && (
+        <div className="-mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0">
+          <div className="flex min-w-max gap-1 border-b border-slate-200">
+            {tabs.map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => selectTab(key)}
+                className={cn(
+                  '-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition sm:px-4',
+                  tab === key
+                    ? 'border-brand-600 text-brand-700'
+                    : 'border-transparent text-slate-500 hover:text-slate-800',
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab === 'send' && (
+        <div className="space-y-4">
+          {statusQuery.data && <SmsUsageCard status={statusQuery.data} />}
+          <section className="rounded-2xl border border-slate-200 bg-white p-4">
+            <h2 className="text-sm font-semibold text-slate-900">{t('Qarzdorlarga eslatma')}</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              {t(
+                'Qarzi bor har bir oilaga bitta xabar. Yuborishdan oldin nechta xabar ketishi koʻrsatiladi.',
+              )}
+            </p>
+            <button
+              type="button"
+              onClick={() => setConfirming(true)}
+              disabled={remind.isPending}
+              className="mt-3 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+            >
+              <BellRing className="h-4 w-4" />
+              {remind.isPending ? t('Yuborilmoqda…') : t('Qarzdorlarga eslatma')}
+            </button>
+          </section>
+        </div>
+      )}
 
       {error && (
         <div role="alert" className="rounded-lg bg-orik-50 px-3 py-2 text-sm text-orik-900">
@@ -139,109 +197,115 @@ export default function NotificationsPage() {
         <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
       )}
 
-      {can('notifications.update') && templatesQuery.data && (
+      {tab === 'templates' && templatesQuery.data && (
         <TemplateEditor templates={templatesQuery.data.items} />
       )}
 
-      <div className="flex items-center gap-2">
-        {[
-          ['', t('Hammasi')],
-          ['sent', t('Yuborilgan')],
-          ['failed', t('Xato')],
-          ['queued', t('Navbatda')],
-        ].map(([key, label]) => (
-          <button
-            key={key || 'all'}
-            type="button"
-            onClick={() => setStatus(key)}
-            className={cn(
-              'rounded-lg px-3 py-1.5 text-sm font-medium',
-              status === key
-                ? 'bg-slate-900 text-white'
-                : 'bg-white text-slate-600 hover:bg-slate-50',
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {tab === 'history' && (
+        <>
+          <div className="flex items-center gap-2">
+            {[
+              ['', t('Hammasi')],
+              ['sent', t('Yuborilgan')],
+              ['failed', t('Xato')],
+              ['queued', t('Navbatda')],
+            ].map(([key, label]) => (
+              <button
+                key={key || 'all'}
+                type="button"
+                onClick={() => setStatus(key)}
+                className={cn(
+                  'rounded-lg px-3 py-1.5 text-sm font-medium',
+                  status === key
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-white text-slate-600 hover:bg-slate-50',
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[560px] text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="px-4 py-3">{t('Qabul qiluvchi')}</th>
-                <th className="px-4 py-3">{t('Matn')}</th>
-                <th className="px-4 py-3">{t('Holat')}</th>
-                <th className="px-4 py-3">{t('Yuborilgan')}</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {rows.map((row) => {
-                const [label, tone] = STATUS[row.status] ?? [
-                  row.status,
-                  'bg-slate-100 text-slate-600',
-                ]
-                return (
-                  <tr key={row.id} className="align-top">
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-slate-900">{row.guardian_name ?? '—'}</p>
-                      <p className="text-xs text-slate-500">{row.recipient_address}</p>
-                    </td>
-                    <td className="max-w-md px-4 py-3 text-slate-600">
-                      {row.rendered_body}
-                      {row.error && <p className="mt-1 text-xs text-red-600">{row.error}</p>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}>
-                        {label}
-                      </span>
-                      {row.retry_count > 0 && (
-                        <p className="mt-1 text-xs text-slate-500">
-                          {t('{retry_count} urinish', { retry_count: row.retry_count })}
-                        </p>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-slate-500">
-                      {when(row.sent_at)}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {row.status === 'failed' && can('notifications.create') && (
-                        <button
-                          type="button"
-                          onClick={() => retry.mutate(row.id)}
-                          disabled={retry.isPending}
-                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                        >
-                          <RefreshCw className="h-3 w-3" />
-                          {t('Qayta')}
-                        </button>
-                      )}
-                    </td>
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px] text-sm">
+                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">{t('Qabul qiluvchi')}</th>
+                    <th className="px-4 py-3">{t('Matn')}</th>
+                    <th className="px-4 py-3">{t('Holat')}</th>
+                    <th className="px-4 py-3">{t('Yuborilgan')}</th>
+                    <th className="px-4 py-3" />
                   </tr>
-                )
-              })}
-              {logQuery.isError && (
-                <tr>
-                  <td colSpan={5} className="p-0">
-                    <QueryError error={logQuery.error} onRetry={() => logQuery.refetch()} />
-                  </td>
-                </tr>
-              )}
-              {rows.length === 0 && !logQuery.isError && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
-                    <Send className="mx-auto mb-2 h-6 w-6" />
-                    {t('Hozircha xabar yuborilmagan.')}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {rows.map((row) => {
+                    const [label, tone] = STATUS[row.status] ?? [
+                      row.status,
+                      'bg-slate-100 text-slate-600',
+                    ]
+                    return (
+                      <tr key={row.id} className="align-top">
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-slate-900">{row.guardian_name ?? '—'}</p>
+                          <p className="text-xs text-slate-500">{row.recipient_address}</p>
+                        </td>
+                        <td className="max-w-md px-4 py-3 text-slate-600">
+                          {row.rendered_body}
+                          {row.error && <p className="mt-1 text-xs text-red-600">{row.error}</p>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={cn('rounded-full px-2 py-0.5 text-xs font-medium', tone)}
+                          >
+                            {label}
+                          </span>
+                          {row.retry_count > 0 && (
+                            <p className="mt-1 text-xs text-slate-500">
+                              {t('{retry_count} urinish', { retry_count: row.retry_count })}
+                            </p>
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-slate-500">
+                          {when(row.sent_at)}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {row.status === 'failed' && can('notifications.create') && (
+                            <button
+                              type="button"
+                              onClick={() => retry.mutate(row.id)}
+                              disabled={retry.isPending}
+                              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                            >
+                              <RefreshCw className="h-3 w-3" />
+                              {t('Qayta')}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  {logQuery.isError && (
+                    <tr>
+                      <td colSpan={5} className="p-0">
+                        <QueryError error={logQuery.error} onRetry={() => logQuery.refetch()} />
+                      </td>
+                    </tr>
+                  )}
+                  {rows.length === 0 && !logQuery.isError && (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
+                        <Send className="mx-auto mb-2 h-6 w-6" />
+                        {t('Hozircha xabar yuborilmagan.')}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

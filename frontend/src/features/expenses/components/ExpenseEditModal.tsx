@@ -26,6 +26,7 @@ import { invalidateMoney } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Expense } from '@/lib/api/types'
 import { t } from '@/lib/i18n'
+import { groupCategories } from '@/features/expenses/categoryGroups'
 
 export function ExpenseEditModal({ expense, onClose }: { expense: Expense; onClose: () => void }) {
   const organizationId = useOrganizationId()
@@ -111,10 +112,14 @@ export function ExpenseEditModal({ expense, onClose }: { expense: Expense; onClo
               onChange={(e) => setForm((p) => ({ ...p, category_id: e.target.value }))}
               className={field}
             >
-              {categories.data?.items.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
+              {groupCategories(categories.data?.items ?? []).map((group) => (
+                <optgroup key={group.label || 'flat'} label={group.label || t('Boshqa')}>
+                  {group.items.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>

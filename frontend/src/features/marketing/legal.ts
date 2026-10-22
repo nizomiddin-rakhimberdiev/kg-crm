@@ -46,7 +46,20 @@ export interface LegalCopy {
  */
 export const POLICY_VERSION = '2026-10-03'
 
-/** `{{…}}` belgilarini toʻldiradi; qiymat yoʻq boʻlsa belgini qoldiradi. */
+/**
+ * `{{…}}` belgilarini toʻldiradi; **toʻldirilmagani bor gap tushib
+ * qoladi**.
+ *
+ * Avval belgi EKRANDA qolardi — "chala hujjat chala koʻrinsin" degan
+ * qaror bilan. Mustaqil audit (2026-10-21) buning narxini oʻlchadi:
+ * saytga kirgan direktor "{{STIR}}" ni koʻrib "tizim hali tayyor
+ * emas" degan xulosaga keladi. Ya'ni ogohlantirish MIJOZGA ketardi,
+ * bizga emas. Chala ekanini endi `scripts/deploy.sh` bizga aytadi.
+ *
+ * Gap tushib qolishi — yashirish emas: operatorning nomi yoki
+ * serverlar joylashuvi haqida **noma'lum** gapni yozib qoʻyish undan
+ * ham yomon (docs/01 §10 — joylashuv ishga tushirish shartlaridan).
+ */
 export function fillLegal(text: string): string {
   const values: Record<string, string> = {
     YURIDIK_NOM: env.legalEntityName,
@@ -57,7 +70,22 @@ export function fillLegal(text: string): string {
     TELEGRAM: `@${CONTACT.telegram}`,
     TELEFON: CONTACT.phones.map(formatPhone).join(', '),
   }
-  return text.replace(/\{\{([A-Z_]+)\}\}/g, (token, key: string) => values[key] || token)
+  const filled = text.replace(/\{\{([A-Z_]+)\}\}/g, (token, key: string) => values[key] || token)
+  if (!filled.includes('{{')) return filled
+
+  // Xatboshi — `\n`; gap — nuqta, undov yoki soʻroqdan keyin boʻshliq.
+  // Belgi qolgan gap chiqarib tashlanadi; xatboshidan hech narsa
+  // qolmasa, xatboshi ham qolmaydi.
+  return filled
+    .split('\n')
+    .map((paragraph) =>
+      (paragraph.match(/[^.!?]*[.!?]+\s*|[^.!?]+$/g) ?? [paragraph])
+        .filter((sentence) => !sentence.includes('{{'))
+        .join('')
+        .trim(),
+    )
+    .filter(Boolean)
+    .join('\n')
 }
 
 const OPERATOR_UZ =

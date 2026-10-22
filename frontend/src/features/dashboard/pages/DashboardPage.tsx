@@ -15,6 +15,7 @@ import { Link } from 'react-router-dom'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { CashAdjustModal } from '@/features/cash/components/CashAdjustModal'
 import { dashboardApi } from '@/features/dashboard/api'
+import { GettingStarted } from '@/features/dashboard/components/GettingStarted'
 import { BriefingSection } from '@/features/intelligence/components/BriefingSection'
 import { navItems } from '@/config/navigation'
 import { queryKeys } from '@/lib/api/queryKeys'
@@ -367,6 +368,12 @@ export default function DashboardPage() {
         </h1>
         <p className="mt-1 text-sm text-slate-500">{data ? formatDateLong(data.date) : '—'}</p>
       </div>
+
+      {/* Boʻsh bogʻcha uchun zanjir (audit, 2026-10-21) — brifingdan
+          ham OLDIN: yangi mijoz uchun "nimadan boshlayman?" savoli
+          "nimaga eʼtibor beraman?" dan muhimroq. Zanjir tugagach
+          karta oʻzi yoʻqoladi. */}
+      <GettingStarted activeChildren={data?.active_children} />
 
       {/* Radix AI — kunlik brifing (docs/07 §11): KPI'lardan OLDIN, chunki
           "nimaga e'tibor berish kerak" umumiy raqamlardan muhimroq. */}

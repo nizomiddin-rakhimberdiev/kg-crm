@@ -82,6 +82,14 @@ export const staffApi = {
   roles: () => api.list<Role>('/roles'),
 }
 
+export interface RoleTemplate {
+  code: string
+  title: string
+  permissions: string[]
+  dropped: string[]
+  payments_own_only: boolean
+}
+
 export const rolesApi = {
   list: () => api.list<Role>('/roles'),
   create: (payload: { name: string; code: string; description?: string }) =>
@@ -92,6 +100,13 @@ export const rolesApi = {
   setOwnPaymentsOnly: (id: string, value: boolean) =>
     api.patch<Role>(`/roles/${id}`, { payments_own_only: value }),
   permissions: () => api.get<Permission[]>('/permissions'),
+  /**
+   * Tayyor rol shablonlari (audit, 2026-10-21).
+   *
+   * Javob chaqiruvchining oʻz ruxsatlari bilan kesishtirilgan
+   * (ADR-25), tushib qolganlari `dropped` da.
+   */
+  templates: () => api.get<RoleTemplate[]>('/roles/templates'),
   setPermissions: (roleId: string, codes: string[]) =>
     api.request<{ permissions: string[] }>('put', `/roles/${roleId}/permissions`, {
       permissions: codes,

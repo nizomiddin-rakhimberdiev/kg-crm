@@ -515,6 +515,8 @@ The audit of 2026-10-21 found the same thing called different names on different
 
 Adding UI text means adding it to all three catalogs (§17) — and picking the word from this table rather than inventing a synonym.
 
+**The sidebar is grouped by how often a page is opened, not by module** (`config/navigation.ts`): **Bugun** (dashboard, attendance, payments) → **Bolalar** → **Pul** (cash, expenses, debtors, inventory) → **Jamoa** → **Tahlil** (finance centre, reports) → **Sozlash**. The audit measured the cost of the old grouping: a cashier takes twenty payments a day and "Toʻlovlar" sat in the middle of the list, inside a "Moliya" group; a teacher who only marks attendance had to open "Bolalar" first. `config/__tests__/navigation.test.ts` guards each group's contents, because a new item lands in the wrong group as easily as in none. The *length* of the menu shortens by itself — every item carries its permission — so a teacher sees two groups. The role editor lists modules in this same order.
+
 ---
 
 ## 18. Brand System (Radix Brendbuk 1.1)

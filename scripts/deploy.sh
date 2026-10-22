@@ -25,7 +25,8 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 COMPOSE="docker compose -f compose.prod.yaml"
-GREEN=$'\033[32m'; RED=$'\033[31m'; BOLD=$'\033[1m'; DIM=$'\033[2m'; OFF=$'\033[0m'
+GREEN=$'\033[32m'; RED=$'\033[31m'; YELLOW=$'\033[33m'
+BOLD=$'\033[1m'; DIM=$'\033[2m'; OFF=$'\033[0m'
 
 step() { printf '\n%s▸ %s%s\n' "$BOLD" "$1" "$OFF"; }
 fail() { printf '%s✗ %s%s\n' "$RED" "$1" "$OFF"; exit 1; }
@@ -51,6 +52,23 @@ done
 
 [ "$OWNER_DB_PASSWORD" != "$APP_DB_PASSWORD" ] || fail "Ega va ilova parollari bir xil bo'lmasligi kerak"
 ok "sozlama to'liq"
+
+# Huquqiy rekvizitlar — deploy'ni TO'XTATMAYDI, lekin jim ham qolmaydi.
+#
+# Ular bo'sh bo'lsa, maxfiylik siyosati va foydalanish shartlaridan
+# operatorning nomi, STIR'i, manzili va serverlar joylashuvi haqidagi
+# GAPLAR TUSHIB QOLADI (`fillLegal`). Tashrif buyuruvchi "{{STIR}}"
+# ko'rmaydi — lekin hujjat ham to'liq bo'lmaydi, va buni faqat shu
+# qator aytadi (mustaqil audit, 2026-10-21).
+missing_legal=""
+for var in VITE_LEGAL_ENTITY_NAME VITE_LEGAL_TIN VITE_LEGAL_ADDRESS VITE_SERVER_LOCATION; do
+    [ -n "${!var:-}" ] || missing_legal="$missing_legal $var"
+done
+if [ -n "$missing_legal" ]; then
+    printf '  %s! huquqiy rekvizitlar to'"'"'ldirilmagan:%s%s\n' "$YELLOW" "$missing_legal" "$OFF"
+    printf '    %sMaxfiylik siyosatidan tegishli gaplar tushib qoladi (docs/01 §10).%s\n' \
+        "$YELLOW" "$OFF"
+fi
 
 # --- 2. Tasvirlar ---
 step "Tasvirlar yig'ilmoqda"

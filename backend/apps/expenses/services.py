@@ -551,7 +551,11 @@ def record_bank_commission(*, payment: Any, account: Any, created_by: Any = None
 #: Ikki darajali boshlang'ich ro'yxat. Hammasi tahrirlanadi; hisob kodlari
 #: buxgalter eksporti bosqichida (13.8) to'ldiriladi.
 DEFAULT_CATEGORIES: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("Ish haqi", ("Naqd qism", "Karta qism", "Ijtimoiy soliq")),
+    # Nomlar MUDIRANING tilida (ADR-45). Ilgari "Naqd qism" va "Karta
+    # qism" deb yozilgan edi va auditda "nimani anglatishi noma'lum"
+    # deb belgilandi: ular oylikning qaysi qismi qanday to'langanini
+    # bildiradi, lekin buni faqat yozgan odam biladi.
+    ("Ish haqi", ("Naqd berilgan oylik", "Bankka oʻtkazilgan oylik", "Ijtimoiy soliq")),
     (
         "Oziq-ovqat",
         ("Goʻsht", "Sut mahsulotlari", "Non", "Sabzavot-meva", "Quruq mahsulotlar", "Bozor"),
@@ -562,7 +566,7 @@ DEFAULT_CATEGORIES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("Oʻquv materiallari va oʻyinchoqlar", ()),
     ("Tadbirlar va sovgʻalar", ()),
     ("Tibbiyot va SES", ()),
-    ("Marketing", ("SMM", "Target", "Reklama")),
+    ("Marketing", ("SMM", "Maqsadli reklama (target)", "Reklama")),
     ("IT va dasturlar", ()),
     ("Bank xarajatlari va komissiyalar", ()),
     ("Soliqlar va yigʻimlar", ()),
