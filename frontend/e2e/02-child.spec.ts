@@ -25,6 +25,11 @@ test('bola qoʻshiladi, roʻyxatda koʻrinadi va arxivlanadi', async ({ page }) 
   await page.locator('#first_name, [name="first_name"]').first().fill('Sinov')
   // Tugʻilgan sana — `DateInput`, dd.mm.yyyy (05 §17.1).
   await page.getByLabel(/tugʻilgan sana/i).fill('12.01.2021')
+  // "Bizni qayerdan eshitgan?" — yangi bolada MAJBURIY (Bosqich 14).
+  // Usiz forma yuborilmaydi, va aynan shu sabab bu test 2026-10-19
+  // dan beri jimgina yiqilib yotgan edi: oʻsha kuni maydon
+  // majburiy boʻldi, lekin brauzerdagi E2E ishga tushirilmadi.
+  await page.getByLabel(/qayerdan eshitgan/i).selectOption('instagram')
 
   await page.getByRole('button', { name: /^saqlash$/i }).click()
 

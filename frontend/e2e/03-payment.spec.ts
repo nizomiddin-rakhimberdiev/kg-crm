@@ -88,6 +88,10 @@ test('eski /debtors havolasi tabga yoʻnaltiradi', async ({ page }) => {
   await signIn(page)
   // Radix Intelligence yozuvlarida bu havola BAZADA turadi
   // (`rules.py`: `/debtors?overdue_days=15`), ya'ni u ishlashi shart.
-  await page.goto('/debtors?overdue_days=15')
-  await expect(page).toHaveURL(/\/payments\?tab=debtors&overdue_days=15/)
+  // Nisbiy yoʻl MAJBURIY: boshida `/` boʻlsa, Playwright uni
+  // baseURL'ning YOʻLINI almashtirib yuboradi va soʻrov `/private`
+  // stendi oʻrniga mijoz stendiga ketadi (`playwright.config.ts`
+  // dagi izoh — aynan shu tuzoq).
+  await page.goto('debtors?overdue_days=15')
+  await expect(page).toHaveURL(/payments\?tab=debtors&overdue_days=15/)
 })

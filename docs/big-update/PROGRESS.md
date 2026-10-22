@@ -2622,3 +2622,24 @@ Audit "«Hammasiga eslatma» tugmasi hech qanday tasdiqsiz turibdi"
 dedi. Tekshirildi: tasdiq oynasi bor va u nechta SMS ketishini,
 telefoni yo'qlarni, bugun allaqachon eslatma olganlarni va taxminiy
 xarajatni ko'rsatadi (`ReminderConfirmDialog`). O'zgartirilmadi.
+
+### Brauzerdagi E2E jimgina yiqilib yotgan edi
+
+`npm run e2e` ishga tushirilganda ikkita narsa chiqdi:
+
+* **`02-child` 2026-10-19 dan beri yiqilib yotgan.** O'sha kuni
+  "Bizni qayerdan eshitgan?" maydoni yangi bolada majburiy bo'ldi
+  (Bosqich 14), forma esa native validatsiya bilan ishlaydi — ya'ni
+  test saqlash tugmasini bosardi va hech narsa bo'lmasdi. Testdan
+  keyin hech kim brauzerdagi E2E ni ishga tushirmagan. Endi test
+  maydonni to'ldiradi.
+* **`/debtors` testi noto'g'ri stendga urinardi**: `page.goto('/debtors')`
+  boshida `/` bo'lgani uchun baseURL'ning YO'LINI almashtiradi va
+  so'rov `/private` o'rniga mijoz stendiga ketadi (bu tuzoq
+  `playwright.config.ts` da yozib qo'yilgan edi). Nisbiy yo'lga
+  o'tkazildi.
+
+Shundan keyin **butun to'plam yashil**: 16 ta test o'tdi (4 tasi
+standalone stendda o'tkazib yuborildi), desktop va 375px da, deploy
+qilingan stendga qarshi — Qarzdorlar tab'i va eski havolaning
+yo'naltirishi ham shu yerda tekshirildi.
