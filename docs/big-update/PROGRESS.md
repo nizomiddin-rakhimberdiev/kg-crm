@@ -2606,6 +2606,15 @@ o'z joyida qoladi — u stend va test uchun.
 
     To'lovlar tab'i endi URL'da (`?tab=`) — havola bilan aynan kerakli
     tabni ochish mumkin, va yangilangan sahifa o'sha joyda qoladi.
+    Ro'yxat **kerak bo'lganda** yuklanadi (`lazy`): u alohida sahifa
+    bo'lganda ham shunday edi, va kuniga yigirma marta ochiladigan
+    To'lovlar sahifasi 24 KB ortiq kod bilan kelmasligi kerak.
+
+    **`payments.read` ruxsati yo'q, `debtors.read` esa bor rol**
+    bo'lishi mumkin (egasi qo'lda yasagan "qarz yig'uvchi"). Unday
+    odamni `/payments` ga yuborish ekranini butunlay olib qo'yardi —
+    shuning uchun `/debtors` ularga ro'yxatni O'SHA JOYDA chizadi
+    (test buni qo'riqlaydi).
 
 ### Auditning bir bandi — tasdiqlanmadi
 
