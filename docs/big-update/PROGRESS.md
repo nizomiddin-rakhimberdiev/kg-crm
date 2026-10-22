@@ -2559,3 +2559,25 @@ o'z joyida qoladi — u stend va test uchun.
     rekvizitlari: yuridik nom, STIR, manzil va serverlar joylashuvi.
     Joylashuv `docs/01 §10` dagi ishga tushirish shartining bir
     qismi, shuning uchun uni taxmin qilib yozib qo'yish mumkin emas.
+29. **Shartlardagi qarama-qarshilik tuzatildi**: saytdagi narxlar
+    bloki `/signup` ga yuboradi, shartlarda esa "hisobni Radix jamoasi
+    ochadi" deb yozilgan edi. O'zini o'zi ro'yxatdan o'tkazish ADR-28
+    (PLAN 6.7) dan beri ishlaydi: egasi ro'yxatdan o'tadi, pochta
+    orqali tasdiqlaydi, parolni o'zi qo'yadi va 15 kunlik sinov shu
+    kundan boshlanadi. 72 soatlik taklif havolasi — XODIMLAR hisoblari
+    uchun. `POLICY_VERSION` matn bilan birga yangilandi (rozilik shu
+    versiyaga yoziladi).
+
+### Egasidan kerak bo'lgan narsalar (kod bilan hal bo'lmaydi)
+
+* **`VITE_LEGAL_ENTITY_NAME`, `VITE_LEGAL_TIN`, `VITE_LEGAL_ADDRESS`,
+  `VITE_SERVER_LOCATION`** — prod `.env` ga. Ularsiz maxfiylik
+  siyosatidan operator va serverlar joylashuvi haqidagi gaplar tushib
+  qoladi. Serverlar joylashuvi [01 §10](../01_Project_Vision.md) dagi
+  ishga tushirish shartining bir qismi.
+* **Korporativ pochta** (`info@radix-crm.uz`) — audit shaxsiy Gmail
+  o'rniga shuni tavsiya qildi. `config/contact.ts` dagi manzil bir
+  qatorda o'zgaradi, lekin pochta QUTISI mavjud bo'lishi kerak:
+  ishlamaydigan manzilni saytga qo'yish Gmail'dan ham yomon.
+* **Ijtimoiy isbot** — birinchi 3–5 mijoz keysi. `testimonials.items`
+  bo'sh ekan blok umuman chizilmaydi (to'qima iqtibos yozilmaydi).
