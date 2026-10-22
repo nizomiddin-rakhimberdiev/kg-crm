@@ -6,7 +6,7 @@
  * yangisi chiqariladi.
  */
 
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import {
@@ -25,7 +25,6 @@ import {
 import { DateInput } from '@/components/ui/DateInput'
 import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { paymentsApi, tariffsApi, type BoardRow } from '@/features/payments/api'
-import DebtorsPage from '@/features/debtors/pages/DebtorsPage'
 import { GenerateInvoicesDialog } from '@/features/payments/components/GenerateInvoicesDialog'
 import { FiscalModal } from '@/features/payments/components/FiscalModal'
 import { RefundModal } from '@/features/payments/components/RefundModal'
@@ -70,6 +69,16 @@ const BOARD_STATE: Record<BoardRow['state'], [string, string]> = {
 }
 
 type PaymentsTab = 'board' | 'payments' | 'tariffs' | 'debtors'
+
+/**
+ * Qarzdorlar roʻyxati — KERAK BOʻLGANDA yuklanadi.
+ *
+ * U alohida sahifa boʻlganda ham shunday edi (router'dagi `lazy`), va
+ * tab boʻlib koʻchgandan keyin ham shunday qolishi kerak: aks holda
+ * kuniga yigirma marta ochiladigan Toʻlovlar sahifasi 24 KB ortiq
+ * kod bilan kelardi — kassirning telefonida bu bepul emas.
+ */
+const DebtorsPanel = lazy(() => import('@/features/debtors/pages/DebtorsPage'))
 
 export default function PaymentsPage() {
   const organizationId = useOrganizationId()
@@ -830,7 +839,13 @@ export default function PaymentsPage() {
       )}
 
       {/* Qarzdorlar roʻyxati — oʻsha komponent, oʻz sarlavhasisiz. */}
-      {tab === 'debtors' && <DebtorsPage embedded />}
+      {tab === 'debtors' && (
+        <Suspense
+          fallback={<p className="py-10 text-center text-sm text-slate-500">{t('Yuklanmoqda…')}</p>}
+        >
+          <DebtorsPanel embedded />
+        </Suspense>
+      )}
 
       {tab === 'tariffs' && (
         <>
