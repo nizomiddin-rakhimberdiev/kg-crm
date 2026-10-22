@@ -151,7 +151,14 @@ function StatementDrawer({ childId, onClose }: { childId: string; onClose: () =>
   )
 }
 
-export default function DebtorsPage() {
+/**
+ * `embedded` — Toʻlovlar sahifasining tab'i sifatida chizilgan (audit,
+ * 2026-10-21: "Qarzdorlar — Toʻlovlarning filtri, alohida sahifa
+ * emas"). Faqat KOʻRINISH farqi: oʻz sarlavhasi chizilmaydi, chunki
+ * sahifaning sarlavhasi allaqachon bor. Mantiq bir xil qoladi — ikki
+ * nusxa yozilmaydi.
+ */
+export default function DebtorsPage({ embedded = false }: { embedded?: boolean } = {}) {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
   const { can } = useCan()
@@ -261,7 +268,13 @@ export default function DebtorsPage() {
           <button
             type="button"
             className="ml-auto min-h-11 font-medium underline-offset-2 hover:underline"
-            onClick={() => setSearchParams({})}
+            onClick={() => {
+              // `tab` saqlanadi: aks holda tugma foydalanuvchini
+              // Toʻlovlar doskasiga qaytarib yuborardi (audit, 2026-10-21).
+              const next = new URLSearchParams(searchParams)
+              next.delete('overdue_days')
+              setSearchParams(next, { replace: true })
+            }}
           >
             {aiCopy.showAll}
           </button>
@@ -270,10 +283,14 @@ export default function DebtorsPage() {
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-tosh-900">{t('Qarzdorlar')}</h1>
-          <p className="mt-1 text-sm text-tosh-500">
-            {t('Qarz barcha hisob-faktura va toʻlovlardan avtomatik hisoblanadi.')}
-          </p>
+          {!embedded && (
+            <>
+              <h1 className="text-2xl font-bold tracking-tight text-tosh-900">{t('Qarzdorlar')}</h1>
+              <p className="mt-1 text-sm text-tosh-500">
+                {t('Qarz barcha hisob-faktura va toʻlovlardan avtomatik hisoblanadi.')}
+              </p>
+            </>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button

@@ -2,7 +2,6 @@ import {
   LayoutDashboard,
   Users,
   CreditCard,
-  AlertTriangle,
   CalendarCheck,
   UserCog,
   Wallet,
@@ -123,13 +122,6 @@ const allNavItems: NavItem[] = [
     section: 'money',
     icon: Receipt,
     permission: 'expenses.read',
-  },
-  {
-    label: t('Qarzdorlar'),
-    to: '/debtors',
-    section: 'money',
-    icon: AlertTriangle,
-    permission: 'debtors.read',
   },
   {
     label: t('Ombor'),

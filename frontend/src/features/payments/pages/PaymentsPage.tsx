@@ -25,6 +25,7 @@ import {
 import { DateInput } from '@/components/ui/DateInput'
 import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { paymentsApi, tariffsApi, type BoardRow } from '@/features/payments/api'
+import DebtorsPage from '@/features/debtors/pages/DebtorsPage'
 import { GenerateInvoicesDialog } from '@/features/payments/components/GenerateInvoicesDialog'
 import { FiscalModal } from '@/features/payments/components/FiscalModal'
 import { RefundModal } from '@/features/payments/components/RefundModal'
@@ -68,6 +69,8 @@ const BOARD_STATE: Record<BoardRow['state'], [string, string]> = {
   no_invoice: [t('Fakturasiz'), 'bg-slate-100 text-slate-600'],
 }
 
+type PaymentsTab = 'board' | 'payments' | 'tariffs' | 'debtors'
+
 export default function PaymentsPage() {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
@@ -82,9 +85,11 @@ export default function PaymentsPage() {
   // joyda qolishi kerak (audit, 2026-10-21 — zanjir havolasi).
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedTab = searchParams.get('tab')
-  const tab: 'board' | 'payments' | 'tariffs' =
-    requestedTab === 'payments' || requestedTab === 'tariffs' ? requestedTab : 'board'
-  const setTab = (next: 'board' | 'payments' | 'tariffs') => {
+  const tab: PaymentsTab =
+    requestedTab === 'payments' || requestedTab === 'tariffs' || requestedTab === 'debtors'
+      ? requestedTab
+      : 'board'
+  const setTab = (next: PaymentsTab) => {
     const params = new URLSearchParams(searchParams)
     if (next === 'board') params.delete('tab')
     else params.set('tab', next)
@@ -332,6 +337,10 @@ export default function PaymentsPage() {
           [
             ['board', t('Toʻlov qabul qilish')],
             ['payments', ownOnly ? t('Mening toʻlovlarim') : t('Jurnal')],
+            // Qarzdorlar — Toʻlovlarning FILTRI (audit, 2026-10-21):
+            // bir xil maʼlumot ikki sahifada koʻrinardi va ular
+            // orasida sakrab yurish kerak edi.
+            ...(can('debtors.read') ? ([['debtors', t('Qarzdorlar')]] as const) : []),
             ['tariffs', t('Tariflar')],
           ] as const
         ).map(([key, label]) => (
@@ -819,6 +828,9 @@ export default function PaymentsPage() {
           </div>
         </>
       )}
+
+      {/* Qarzdorlar roʻyxati — oʻsha komponent, oʻz sarlavhasisiz. */}
+      {tab === 'debtors' && <DebtorsPage embedded />}
 
       {tab === 'tariffs' && (
         <>

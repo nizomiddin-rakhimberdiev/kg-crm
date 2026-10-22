@@ -46,10 +46,19 @@ describe('navigatsiya boʻlimlari', () => {
     expect(inSection('children')).toEqual(['/children', '/groups'])
   })
 
-  it('«Pul» — kassa, chiqim, ombor, qarzdorlik', () => {
+  it('«Pul» — kassa, chiqim, ombor', () => {
     // Ombor ALOHIDA boʻlimda turardi: bitta punkt uchun sarlavha
     // menyuni uzaytirib, foyda bermasdi. Ombor — chiqimning davomi.
-    expect(inSection('money')).toEqual(['/cash', '/expenses', '/debtors', '/inventory'])
+    //
+    // "Qarzdorlar" bu yerda YOʻQ: u Toʻlovlarning tab'i (audit,
+    // 2026-10-21 — "bir xil maʼlumot ikki joyda koʻrinadi va ular
+    // orasida sakrab yurish kerak"). `/debtors` havolasi ishlaydi,
+    // lekin menyuda alohida punkt emas.
+    expect(inSection('money')).toEqual(['/cash', '/expenses', '/inventory'])
+  })
+
+  it('«Qarzdorlar» menyuda alohida punkt emas', () => {
+    expect(navItems.map((item) => item.to)).not.toContain('/debtors')
   })
 
   it('«Jamoa» — xodim va oylik maosh', () => {

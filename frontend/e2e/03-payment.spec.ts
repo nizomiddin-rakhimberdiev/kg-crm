@@ -68,15 +68,26 @@ test('toʻlov qabul qilinadi va qaytariladi', async ({ page }) => {
 
 test('qarzdorlar roʻyxati ochiladi va summa koʻrinadi', async ({ page }) => {
   await signIn(page)
-  await openSection(page, /^qarzdorlar$/i)
+  // Qarzdorlar — Toʻlovlar ichidagi tab (audit, 2026-10-21). Alohida
+  // menyu punkti yoʻq; eski `/debtors` havolasi shu tabga
+  // yoʻnaltiradi.
+  await openSection(page, /^toʻlovlar$/i)
+  await page.getByRole('button', { name: /^qarzdorlar$/i }).click()
 
-  await expect(page.getByRole('heading', { name: /qarzdor/i })).toBeVisible()
   // Roʻyxat ham, "qarzdor yoʻq" ham toʻgʻri javob — sahifa qotmasin.
   //
   // `visible: true` MAJBURIY: jadval telefonda `hidden sm:block` bilan
   // yashiringan, lekin DOM'da turadi — `.first()` aynan oʻshani
   // tanlab, "element bor, lekin koʻrinmaydi" deb yiqilardi.
   const anyAmount = firstVisible(page.getByText(/soʻm/))
-  const emptyState = firstVisible(page.getByText(/qarzdorlar yoʻq/i))
+  const emptyState = firstVisible(page.getByText(/qarzdor yoʻq/i))
   await expect(anyAmount.or(emptyState)).toBeVisible()
+})
+
+test('eski /debtors havolasi tabga yoʻnaltiradi', async ({ page }) => {
+  await signIn(page)
+  // Radix Intelligence yozuvlarida bu havola BAZADA turadi
+  // (`rules.py`: `/debtors?overdue_days=15`), ya'ni u ishlashi shart.
+  await page.goto('/debtors?overdue_days=15')
+  await expect(page).toHaveURL(/\/payments\?tab=debtors&overdue_days=15/)
 })

@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react'
+import { DebtorsRedirect } from './features/debtors/pages/DebtorsRedirect'
 import { createBrowserRouter, Navigate, Outlet, type RouteObject } from 'react-router-dom'
 import { PlatformAuthProvider } from './features/platform/PlatformAuthProvider'
 import { PlatformLayout } from './features/platform/components/PlatformLayout'
@@ -76,7 +77,6 @@ const ChildrenPage = lazy(() => import('./features/children/pages/ChildrenPage')
 const GroupsPage = lazy(() => import('./features/children/pages/GroupsPage'))
 const ChildDetailPage = lazy(() => import('./features/children/pages/ChildDetailPage'))
 const PaymentsPage = lazy(() => import('./features/payments/pages/PaymentsPage'))
-const DebtorsPage = lazy(() => import('./features/debtors/pages/DebtorsPage'))
 const AttendancePage = lazy(() => import('./features/attendance/pages/AttendancePage'))
 const StaffPage = lazy(() => import('./features/staff/pages/StaffPage'))
 const PayrollPage = lazy(() => import('./features/payroll/pages/PayrollPage'))
@@ -274,8 +274,12 @@ export const routes: RouteObject[] = [
             children: [{ path: 'payments', element: <PaymentsPage /> }],
           },
           {
+            // Qarzdorlar endi Toʻlovlarning tab'i (audit, 2026-10-21).
+            // Eski havola ISHLAYDI va soʻrov satrini saqlaydi: Radix
+            // Intelligence yozuvlarida `/debtors?overdue_days=15`
+            // ko'rinishidagi havolalar BAZADA turadi (`rules.py`).
             element: <PermissionRoute permission="debtors.read" />,
-            children: [{ path: 'debtors', element: <DebtorsPage /> }],
+            children: [{ path: 'debtors', element: <DebtorsRedirect /> }],
           },
           {
             element: <PermissionRoute permission="attendance.read" />,

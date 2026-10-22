@@ -50,7 +50,7 @@ const STATUS_DOT: Record<CardStatus, string> = {
 
 const CARD_LINK: Record<HomeCard['key'], string> = {
   money: '/cash',
-  debts: '/debtors',
+  debts: '/payments?tab=debtors',
   spending: '/expenses',
   profit: '/reports',
   checks: '/finance?tab=control',

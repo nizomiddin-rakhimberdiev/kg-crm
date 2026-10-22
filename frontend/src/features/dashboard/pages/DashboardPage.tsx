@@ -420,7 +420,7 @@ export default function DashboardPage() {
               hint={t('{v} nafar bola boʻyicha', { v: data?.debtor_count ?? 0 })}
               icon={AlertTriangle}
               tone="bg-orik-100 text-orik-700"
-              to="/debtors"
+              to="/payments?tab=debtors"
             />
           </>
         )}

@@ -2581,3 +2581,35 @@ o'z joyida qoladi — u stend va test uchun.
   ishlamaydigan manzilni saytga qo'yish Gmail'dan ham yomon.
 * **Ijtimoiy isbot** — birinchi 3–5 mijoz keysi. `testimonials.items`
   bo'sh ekan blok umuman chizilmaydi (to'qima iqtibos yozilmaydi).
+
+### 8-to'plam — Qarzdorlar To'lovlar ichiga ko'chdi (egasining qarori, 2026-10-22)
+
+30. **"Qarzdorlar" alohida sahifa emas — To'lovlarning tab'i** (audit
+    5-navbat, 2-band). Bir xil ma'lumot ikki sahifada ko'rinardi va
+    ular orasida sakrab yurish kerak edi. Endi: To'lovlar sahifasida
+    "Toʻlov qabul qilish · Jurnal · **Qarzdorlar** · Tariflar"
+    tablari; tab `debtors.read` bilan ko'rinadi.
+
+    **Hech bir havola buzilmadi.** `/debtors` manzili tirik va
+    **so'rov satrini saqlab** `/payments?tab=debtors` ga yo'naltiradi
+    — Radix Intelligence yozuvlarining `deep_link` ustunida
+    `/debtors?overdue_days=15` ko'rinishidagi havolalar BAZADA turadi
+    (`intelligence/rules.py`), ya'ni ularni migratsiya qilish kerak
+    emas. Dashboard kartasi va Moliya markazi kartasi yangi manzilga
+    o'tdi; menyudan punkt olib tashlandi (test buni qo'riqlaydi).
+
+    Ro'yxatning o'zi **o'sha komponent** (`DebtorsPage embedded`) —
+    ikkinchi nusxa yozilmadi; `embedded` faqat o'z sarlavhasini
+    yashiradi. AI bannerining "hammasini ko'rsatish" tugmasi endi
+    `tab` ni YO'QOTMAYDI (ilgari `setSearchParams({})` butun satrni
+    tozalardi va foydalanuvchini doskaga qaytarardi).
+
+    To'lovlar tab'i endi URL'da (`?tab=`) — havola bilan aynan kerakli
+    tabni ochish mumkin, va yangilangan sahifa o'sha joyda qoladi.
+
+### Auditning bir bandi — tasdiqlanmadi
+
+Audit "«Hammasiga eslatma» tugmasi hech qanday tasdiqsiz turibdi"
+dedi. Tekshirildi: tasdiq oynasi bor va u nechta SMS ketishini,
+telefoni yo'qlarni, bugun allaqachon eslatma olganlarni va taxminiy
+xarajatni ko'rsatadi (`ReminderConfirmDialog`). O'zgartirilmadi.
