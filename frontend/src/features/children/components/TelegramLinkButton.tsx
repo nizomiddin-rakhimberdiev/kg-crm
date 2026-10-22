@@ -129,7 +129,9 @@ export function TelegramLinkButton({ guardianId, linked, onChange }: Props) {
       {url && (
         <div className="space-y-1 rounded-lg bg-tosh-50 p-2">
           <p className="text-xs text-tosh-600">
-            {t('Shu havolani ota-onaga yuboring — u botni ochib, xabarlarga ulanadi.')}
+            {t(
+              'Shu havolani ota-onaga yuboring — u botni ochib, xabarlarga ulanadi. Botni ochish — roziligi: manzilni biz bera olmaymiz, u faqat ota-ona oʻzi boshlaganda paydo boʻladi.',
+            )}
           </p>
           <div className="flex items-center gap-1.5">
             <code className="min-w-0 flex-1 truncate rounded bg-white px-2 py-1 text-xs text-tosh-700">

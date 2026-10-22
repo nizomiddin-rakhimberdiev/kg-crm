@@ -891,8 +891,6 @@ export const messages: Record<string, string> = {
   'Oʻchirilsa hech qanday xabar yuborilmaydi — na Telegram, na SMS.':
     'When off, nothing is sent — neither Telegram nor SMS.',
   SMS: 'SMS',
-  'Shu havolani ota-onaga yuboring — u botni ochib, xabarlarga ulanadi.':
-    'Send this link to the parent — they open the bot and get connected.',
   'Telegram bepul; SMS har xabar uchun pul turadi va shlyuz shartnomasini talab qiladi.':
     'Telegram is free; SMS costs money per message and needs a gateway contract.',
   'Telegram bot sozlanmagan — administratorga murojaat qiling.':
@@ -1929,4 +1927,5 @@ export const messages: Record<string, string> = {
   'Hisob-faktura chiqaring': 'Issue the invoices',
   'Bitta tugma butun bogʻcha uchun shu oyning hisob-fakturalarini yozadi.': 'One button issues this month\'s invoices for the whole kindergarten.',
   'Boshlash': 'Start',
+  'Shu havolani ota-onaga yuboring — u botni ochib, xabarlarga ulanadi. Botni ochish — roziligi: manzilni biz bera olmaymiz, u faqat ota-ona oʻzi boshlaganda paydo boʻladi.': 'Send this link to the parent — opening the bot connects them to the messages. Opening it is the consent: we cannot issue the address, it exists only once the parent starts the bot themselves.',
 }
