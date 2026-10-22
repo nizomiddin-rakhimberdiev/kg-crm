@@ -44,7 +44,7 @@ export interface LegalCopy {
  * versiya ham oʻzgaradi, aks holda kim qaysi matnga rozi boʻlgani
  * aniqlanmaydi.
  */
-export const POLICY_VERSION = '2026-10-03'
+export const POLICY_VERSION = '2026-10-22'
 
 /**
  * `{{…}}` belgilarini toʻldiradi; **toʻldirilmagani bor gap tushib
@@ -155,7 +155,7 @@ export const legal: Record<Locale, LegalCopy> = {
       },
       {
         title: '2. Hisob ochish',
-        text: 'Bogʻcha hisobini Radix jamoasi kelishuvdan keyin ochadi. Bogʻcha egasi elektron pochtasiga 72 soat amal qiladigan taklif havolasi keladi va parolni oʻzi oʻrnatadi — Radix parolni bilmaydi. Xodimlarning hisoblari va ularning huquqlari uchun bogʻcha javobgar.',
+        text: 'Bogʻcha hisobini egasining oʻzi saytdan ochadi: elektron pochtaga tasdiqlash havolasi keladi, parolni egasi oʻrnatadi — Radix parolni bilmaydi. Shundan keyin 15 kunlik sinov boshlanadi. Xodimlarning hisoblarini bogʻcha oʻzi yaratadi — ularga 72 soat amal qiladigan taklif havolasi boradi; hisoblar va ularning huquqlari uchun bogʻcha javobgar.',
       },
       {
         title: '3. Obuna va toʻlov',
@@ -258,7 +258,7 @@ export const legal: Record<Locale, LegalCopy> = {
       },
       {
         title: '2. Открытие учётной записи',
-        text: 'Учётную запись сада открывает команда Radix после договорённости. Владелец сада получает на e-mail ссылку-приглашение, действующую 72 часа, и сам задаёт пароль — Radix его не знает. За учётные записи сотрудников и их права отвечает сад.',
+        text: 'Учётную запись сада владелец открывает сам на сайте: на e-mail приходит ссылка подтверждения, пароль задаёт владелец — Radix его не знает. После этого начинается 15-дневный пробный период. Учётные записи сотрудников сад создаёт сам — им уходит приглашение, действующее 72 часа; за эти учётные записи и их права отвечает сад.',
       },
       {
         title: '3. Подписка и оплата',
@@ -361,7 +361,7 @@ export const legal: Record<Locale, LegalCopy> = {
       },
       {
         title: '2. Opening an account',
-        text: 'The Radix team opens a kindergarten’s account after an agreement. The owner receives an invitation link by e-mail, valid for 72 hours, and sets the password themselves — Radix never knows it. The kindergarten is responsible for its staff accounts and their permissions.',
+        text: 'The owner opens the kindergarten’s account themselves on the site: a confirmation link arrives by e-mail and the owner sets the password — Radix never knows it. The 15-day trial starts from there. Staff accounts are created by the kindergarten and receive an invitation link valid for 72 hours; the kindergarten is responsible for those accounts and their permissions.',
       },
       {
         title: '3. Subscription and payment',
