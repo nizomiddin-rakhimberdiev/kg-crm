@@ -11,6 +11,7 @@
  * soʻraladi: tarif va bola bor boʻlsa, qolgani bitta soʻrov.
  */
 
+import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, Check } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -69,22 +70,28 @@ export function GettingStarted({ activeChildren }: { activeChildren: number | un
     staleTime: 300_000,
   })
 
-  if (!allowed || tariffs.isPending) return null
-  // Uchinchi qadam javobi kelmaguncha zanjir koʻrsatilmaydi: "faktura
-  // chiqaring" degan maslahat allaqachon chiqarilgan bogʻchada yolgʻon.
-  if (hasTariff && hasChildren && summary.isPending) return null
-
   const hasInvoice = (summary.data?.with_invoice ?? 0) > 0
-  const step = nextStep({ hasTariff, hasChildren, hasInvoice })
-  if (step === null) {
+  const complete = hasTariff && hasChildren && hasInvoice
+
+  // Yozish RENDER ichida emas, effektda: render toza boʻlishi kerak
+  // (strict rejimda u ikki marta bajariladi).
+  useEffect(() => {
+    if (!allowed || !complete) return
     try {
       localStorage.setItem(doneKey(organizationId), '1')
     } catch {
       // Shaxsiy oyna yoki bloklangan saqlash — karta baribir
       // koʻrinmaydi, faqat keyingi safar yana hisoblanadi.
     }
-    return null
-  }
+  }, [allowed, complete, organizationId])
+
+  if (!allowed || tariffs.isPending) return null
+  // Uchinchi qadam javobi kelmaguncha zanjir koʻrsatilmaydi: "faktura
+  // chiqaring" degan maslahat allaqachon chiqarilgan bogʻchada yolgʻon.
+  if (hasTariff && hasChildren && summary.isPending) return null
+
+  const step = nextStep({ hasTariff, hasChildren, hasInvoice })
+  if (step === null) return null
 
   const done: Record<string, boolean> = {
     tariff: hasTariff,
