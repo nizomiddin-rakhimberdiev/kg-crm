@@ -302,7 +302,15 @@ function ChildrenAttendance({
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                   {label}
                 </p>
-                <p className={cn('num mt-1 text-3xl font-bold tabular-nums sm:text-4xl', tone)}>
+                {/* Nol RANGSIZ: qizil "0" muammo bordek koʻrinadi,
+                    aslida esa hech narsa boʻlmagan. Rang faqat
+                    raqam bor boʻlganda maʼno tashiydi. */}
+                <p
+                  className={cn(
+                    'num mt-1 text-3xl font-bold tabular-nums sm:text-4xl',
+                    value > 0 ? tone : 'text-tosh-300',
+                  )}
+                >
                   {value}
                 </p>
               </div>
