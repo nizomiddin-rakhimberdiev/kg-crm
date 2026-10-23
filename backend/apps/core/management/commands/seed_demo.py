@@ -8,13 +8,32 @@ tizim holatiga aynan o'xshaydi. To'g'ridan-to'g'ri yozilgan demo esa
 "chiroyli, lekin mumkin bo'lmagan" holat yaratardi — va aynan shunday
 holatda qilingan demo keyin ishlab chiqarishda takrorlanmasdi.
 
+**Bog'cha OCHILGAN kun** — oynaning boshi (`--months`). Undan oldin
+na bola yoziladi, na xodim ishga olinadi: "olti oylik bog'cha"da ikki
+yil oldin kelgan bola birinchi qarashdayoq yolg'on ko'rinadi. Shu
+kuni ega boshlang'ich pul kiritadi (`owner_contribution`) — usiz
+birinchi oyning oyligi va kommunali tushumdan oldin to'lanib, kassa
+manfiyga ketardi (ADR-29).
+
+Bog'chaning KATTALIGI hamma narsani belgilaydi: shtat guruhlar soniga
+qarab o'sadi, kommunal va ombor xaridi bolalar soniga ko'paytiriladi.
+Qat'iy raqamlar kichik bog'chada oylik fondini tushumdan katta qilib,
+demo o'zini o'zi inkor qilardi.
+
+Natija ichki ziddiyatsizligini `close_month` tekshiradi: oy faqat
+tenglik "yashil" bo'lsa yopiladi, ya'ni yopilgan oylar soni —
+raqamlar bir-biriga mos kelganining dalili.
+
 Ishlatish::
 
     python manage.py seed_demo --email ranizomiddin@gmail.com
-    python manage.py seed_demo --email ... --reset   # avval tozalaydi
+    python manage.py seed_demo --slug analiz --children 120 --months 6
+    python manage.py seed_demo --slug ... --reset   # avval tozalaydi
 
-⚠️ Bu buyruq ishlab chiqarishda ishlatilmasligi kerak. `--reset`
-tashkilotning BARCHA operatsion ma'lumotini o'chiradi.
+⚠️ Mijozning HAQIQIY tashkilotiga ishlatilmaydi — bu bir marta sodir
+bo'lgan va demo ma'lumoti mijozning ishi bilan aralashib qolgan.
+Nishonni doim `--slug` bilan ANIQ ko'rsating; `--reset` tashkilotning
+BARCHA operatsion ma'lumotini o'chiradi.
 """
 
 from __future__ import annotations
@@ -93,14 +112,21 @@ Q_ISMLAR = [
 ONA_ISMLAR = ["Nodira", "Dilfuza", "Zulfiya", "Gulnora", "Mavluda", "Shahnoza", "Nasiba"]
 OTA_ISMLAR = ["Rustam", "Bahodir", "Farrux", "Ulug'bek", "Sanjar", "Alisher", "Nodir"]
 
+# Guruh: nomi, yosh oralig'i, sig'imi.
+#
+# Jami sig'im bolalar sonidan KATTA bo'lishi kerak: bog'cha 100 %
+# to'lgan holatda ishlamaydi — bitta bola chiqib ketsa joy ochiladi,
+# navbat esa doim bor. Sig'im aniq bolalar soniga teng bo'lsa, har bir
+# guruh kartasi "to'lgan" bo'lib qolardi va bo'sh joy ko'rsatkichi
+# hech qachon ko'rinmasdi.
 GURUHLAR = [
-    ("Chaqaloq", 2, 3, 16),
-    ("Quyoshcha", 3, 4, 18),
-    ("Kamalak", 3, 4, 18),
-    ("Yulduzcha", 4, 5, 18),
-    ("Gulchehra", 4, 5, 16),
-    ("Bilimdon", 5, 6, 18),
-    ("Maktabgacha", 6, 7, 16),
+    ("Chaqaloq", 2, 3, 18),
+    ("Quyoshcha", 3, 4, 22),
+    ("Kamalak", 3, 4, 22),
+    ("Yulduzcha", 4, 5, 22),
+    ("Gulchehra", 4, 5, 20),
+    ("Bilimdon", 5, 6, 22),
+    ("Maktabgacha", 6, 7, 18),
 ]
 
 TARIFLAR = [
@@ -129,13 +155,40 @@ MAHSULOTLAR = [
     ("A4 qog'oz", "Kanselyariya", "pack", Decimal("10"), Decimal("55000")),
 ]
 
+# Chiqim: toifa, izoh, 64 bolalik bog'cha uchun summa, qaysi hisobdan.
+#
+# To'lov usuli O'YLANGAN: kommunal va internet bankdan o'tkaziladi
+# (shartnoma bo'yicha, hisob-raqamga), tozalash vositasi va mayda
+# ta'mir esa naqd. Hammasini naqd qilish kassani bo'shatib yuborardi
+# va "naqd kassa −2 mln" degan mumkin bo'lmagan holat chiqardi.
 CHIQIMLAR = [
-    ("Kommunal", "Elektr energiyasi", Decimal("2400000")),
-    ("Kommunal", "Suv va kanalizatsiya", Decimal("650000")),
-    ("Kommunal", "Gaz", Decimal("1100000")),
-    ("Xo'jalik", "Tozalash vositalari", Decimal("480000")),
-    ("Ta'mirlash", "Oshxona jihozi ta'miri", Decimal("1750000")),
-    ("Boshqa", "Internet va aloqa", Decimal("390000")),
+    ("Kommunal", "Elektr energiyasi", Decimal("2400000"), "bank"),
+    ("Kommunal", "Suv va kanalizatsiya", Decimal("650000"), "bank"),
+    ("Kommunal", "Gaz", Decimal("1100000"), "bank"),
+    ("Xo'jalik", "Tozalash vositalari", Decimal("480000"), "cash"),
+    ("Ta'mirlash", "Oshxona jihozi ta'miri", Decimal("1750000"), "cash"),
+    ("Boshqa", "Internet va aloqa", Decimal("390000"), "bank"),
+]
+
+#: `CHIQIMLAR` va `LAVOZIMLAR` shuncha bolalik bog'cha uchun yozilgan.
+BAZAVIY_BOLALAR = 64
+
+
+# Oila bog'chani qayerdan eshitgan (Bosqich 14).
+#
+# Taqsimot O'YLANGAN: Toshkentdagi bog'cha uchun eng ko'p manba —
+# Instagram va tanish tavsiyasi, keyin "yonidan o'tib ketayotib ko'rdim".
+# Teng taqsimlangan tasodif "har bir kanal bir xil ishlaydi" degan
+# yolg'on manzara berardi va marketing hisoboti ma'nosiz bo'lardi.
+QAYERDAN = [
+    ("instagram", 30),
+    ("referral", 24),
+    ("walk_by", 15),
+    ("sibling", 10),
+    ("telegram", 8),
+    ("outdoor", 6),
+    ("website", 4),
+    ("other", 3),
 ]
 
 
@@ -277,15 +330,29 @@ class Command(BaseCommand):
         branch = self._branch(organization)
         owner = self._owner(organization)
 
+        # Bog'cha OCHILGAN kun — oynaning boshi. Hamma narsa shunga
+        # bog'lanadi: undan oldin yozilgan bola ham, ishga olingan
+        # xodim ham bo'lishi mumkin emas, aks holda "6 oylik bog'cha"
+        # degan manzara birinchi qarashdayoq buziladi.
+        opening = _month_start(timezone.localdate(), months - 1)
+
         groups = self._groups(organization, branch)
         tariffs = self._tariffs(organization, branch)
-        children = self._children(organization, branch, groups, tariffs, child_count)
+        self._opening_capital(branch, owner, opening, child_count)
+        children = self._children(organization, branch, groups, tariffs, child_count, opening)
+        employees = self._staff(organization, branch, opening, child_count)
+        self._benefits(children, employees, owner, opening)
         self._finance(children, months, owner)
+        self._claims(children, owner, months)
         self._attendance(organization, branch, groups, owner, months)
-        employees = self._staff(organization, branch)
+        self._staff_attendance(branch, owner, months)
         self._payroll(organization, branch, owner, months, employees)
-        self._inventory(organization, branch)
-        self._expenses(organization, branch, owner, months)
+        self._inventory(organization, branch, owner, child_count)
+        self._expenses(organization, branch, owner, months, child_count)
+        self._deposit_cash(branch, owner, months)
+        self._owner_draws(branch, owner, months)
+        self._close_months(branch, owner, months)
+        self._cash_day(branch, owner)
         self._notifications(organization)
 
         self._summary(organization)
@@ -336,7 +403,13 @@ class Command(BaseCommand):
         return created
 
     def _children(
-        self, organization: Any, branch: Any, groups: list[Any], tariffs: list[Any], count: int
+        self,
+        organization: Any,
+        branch: Any,
+        groups: list[Any],
+        tariffs: list[Any],
+        count: int,
+        opening: date,
     ) -> list[Any]:
         from apps.children.models import Child, Guardian
         from apps.children.services import attach_guardian, enroll_child
@@ -362,6 +435,20 @@ class Command(BaseCommand):
             age_years = random.randint(2, 6)
             birth = today - timedelta(days=age_years * 365 + random.randint(0, 300))
 
+            # Qabul sanasi OCHILISH kunidan keyin.
+            #
+            # Ilgari u 30–700 kun orqaga tasodifiy qo'yilardi va olti
+            # oylik bog'chada ikki yil oldin yozilgan bola chiqardi.
+            # Haqiqiy manzara boshqacha: ko'pchilik ochilishda keladi,
+            # qolgani oylar davomida qo'shiladi — va aynan shu
+            # taqsimot birinchi oy proratsiyasini ham ko'rsatadi.
+            if random.random() < 0.62:
+                enrolled = opening + timedelta(days=random.randint(0, 6))
+            else:
+                span = max((today - opening).days - 10, 1)
+                enrolled = opening + timedelta(days=random.randint(7, span))
+
+            source, note = self._heard_from()
             child = Child.objects.create(
                 organization=organization,
                 branch=branch,
@@ -371,7 +458,13 @@ class Command(BaseCommand):
                 gender="male" if is_boy else "female",
                 # Tarif taqsimoti realistik: ko'pchilik to'liq kunda.
                 tariff=random.choices(tariffs, weights=[70, 22, 8])[0],
-                enrolled_on=today - timedelta(days=random.randint(30, 700)),
+                enrolled_on=enrolled,
+                # Qayerdan eshitgan (Bosqich 14) — yangi bolada bu maydon
+                # majburiy, ya'ni ishlab turgan bog'chada u to'la bo'ladi.
+                heard_from=source,
+                heard_from_note=note,
+                # Shartnoma raqami: bog'chalar uni qo'lda, ketma-ket yuritadi.
+                contract_number=f"SH-{enrolled.year}-{index + 1:04d}",
             )
 
             guardian = Guardian.objects.create(
@@ -391,8 +484,18 @@ class Command(BaseCommand):
                 is_primary=True,
             )
 
-            # Guruhga yoshiga qarab — sig'im to'lgan bo'lsa keyingisiga.
-            for group in sorted(groups, key=lambda g: abs((g.age_min or 4) - age_years)):
+            # Guruhga YOSHIGA qarab, teng taqsimlab.
+            #
+            # Ilgari faqat yosh yaqinligi hisobga olinardi va sikl
+            # birinchi mos guruhni oxirigacha to'ldirib, keyingisiga
+            # o'tardi. Natijada bir xil yoshdagi ikki guruhdan biri
+            # 22/22, ikkinchisi 5/20 bo'lib qolardi — bog'cha bolalarni
+            # bunday taqsimlamaydi. Endi mos guruhlar ichidan eng
+            # BO'SHI tanlanadi.
+            for group in sorted(
+                groups,
+                key=lambda g: (abs((g.age_min or 4) - age_years), -capacity_left[g.id]),
+            ):
                 if capacity_left[group.id] > 0:
                     enroll_child(child=child, group=group)
                     capacity_left[group.id] -= 1
@@ -409,6 +512,375 @@ class Command(BaseCommand):
 
         self.stdout.write(f"  bolalar: {len(children)} (vasiylari bilan)")
         return children
+
+    @staticmethod
+    def _heard_from() -> tuple[str, str]:
+        """Manba va — faqat «boshqa» uchun — aniqlashtiruvchi izoh."""
+        codes = [code for code, _ in QAYERDAN]
+        weights = [weight for _, weight in QAYERDAN]
+        code = random.choices(codes, weights=weights)[0]
+        if code != "other":
+            return code, ""
+        return code, random.choice(
+            ["Poliklinika doskasida", "Mahalla yig'ilishida", "Ish joyidagi e'londan"]
+        )
+
+    def _opening_capital(self, branch: Any, owner: Any, opening: date, child_count: int) -> None:
+        """
+        Egasining boshlang'ich kiritmasi — bog'cha ochilgan kuni.
+
+        Usiz demo mumkin bo'lmagan holatga tushardi: birinchi oyning
+        oyligi va kommunali tushumdan OLDIN to'lanadi, ya'ni kassa
+        manfiyga ketardi va `ADR-29` (qopda yo'q pul chiqmaydi) ni
+        buzardi. Haqiqiy bog'cha ham aynan shunday boshlanadi — ega
+        ishga tushirish uchun pul qo'yadi, va bu pul "boshqa daromad"
+        emas, `owner_contribution` hujjati.
+
+        Summa O'YLANGAN: ikki oylik oylik fondi va kommunal uchun
+        yetadigan zaxira — ko'proq qo'yish kassani sun'iy "boy"
+        qilardi, kamrog'i esa birinchi oyni o'tkaza olmasdi.
+        """
+        from apps.cash.services import account_for_method, record_operation
+
+        bank = account_for_method(branch=branch, method="bank_transfer")
+        till = account_for_method(branch=branch, method="cash")
+        scale = max(Decimal("0.35"), Decimal(child_count) / Decimal(BAZAVIY_BOLALAR))
+        for account, amount, note in (
+            (bank, Decimal("45000000") * scale, "Ishga tushirish uchun — bank hisobiga"),
+            (till, Decimal("6000000") * scale, "Kassaga aylanma pul"),
+        ):
+            try:
+                record_operation(
+                    kind="owner_contribution",
+                    account=account,
+                    amount=amount.quantize(Decimal("1")),
+                    occurred_on=opening,
+                    reason=note,
+                    created_by=owner,
+                )
+            except Exception as exc:
+                logger.warning("Boshlang'ich kiritma yozilmadi: %s", exc)
+        self.stdout.write("  egadan boshlang'ich kiritma: 2 ta hujjat")
+
+    def _benefits(
+        self, children: list[Any], employees: list[Any], owner: Any, opening: date
+    ) -> None:
+        """
+        Imtiyozlar — bir nechta oilada, SABABI bilan.
+
+        Aka-uka chegirmasi avtomatik (umumiy vasiy bo'yicha), shuning
+        uchun bu yerda faqat QO'LDA beriladiganlari: xodim farzandi va
+        kam ta'minlangan oila. Ularsiz "Imtiyozlar" hisoboti bo'm-bo'sh
+        turardi, holbuki har bir bog'chada bunday bolalar bor.
+
+        Qiymat yozuvda EMAS, sozlamada (`benefits.*`) — shuning uchun
+        `value` nol: tur o'zi qancha ekanini aytadi (Bosqich 12.2).
+        """
+        from apps.finance.models import BenefitKind, Discount, DiscountType
+
+        if not children:
+            return
+        count = max(2, len(children) * 6 // 100)
+        chosen = random.sample(children, min(count, len(children)))
+        created = 0
+        for position, child in enumerate(chosen):
+            staff_child = position < max(1, len(chosen) // 2) and employees
+            kind = BenefitKind.STAFF_CHILD if staff_child else BenefitKind.LOW_INCOME
+            reason = (
+                f"{random.choice(employees).full_name} — bog'cha xodimi"
+                if staff_child
+                else "Mahalla ma'lumotnomasi asosida"
+            )
+            Discount.objects.create(
+                organization=child.organization,
+                branch=child.branch,
+                child=child,
+                kind=kind,
+                discount_type=DiscountType.PERCENT,
+                value=Decimal("0"),
+                reason=reason,
+                valid_from=max(opening, child.enrolled_on or opening),
+                created_by=owner,
+            )
+            created += 1
+        self.stdout.write(f"  imtiyozlar: {created}")
+
+    def _claims(self, children: list[Any], owner: Any, months: int) -> None:
+        """
+        Kelmagan kunlar uchun qayta hisob — TASDIQLANGAN da'volar.
+
+        Pul faqat hujjatdan harakatlanadi (ADR-19): davomat jadvalidagi
+        "kelmadi" o'z-o'zidan hech narsani qaytarmaydi. Shuning uchun
+        demoda ham da'vo yoziladi va tasdiqlanadi — "Qayta hisob" tabi
+        aynan shu oqimni ko'rsatishi kerak.
+
+        Oraliqlar o'tgan oylarda: yopilgan oyning fakturasi qayta
+        hisoblanadi va bu hisobotda ko'rinadi.
+        """
+        from apps.attendance.services_absence import approve_claim, create_claim
+
+        if not children or months < 2:
+            return
+        today = timezone.localdate()
+        made = 0
+        for child in random.sample(children, min(6, len(children))):
+            back = random.randint(1, months - 1)
+            period = _month_start(today, back)
+            start = period + timedelta(days=random.randint(3, 12))
+            # Dam olish kunidan boshlanmasin — ish kuni sanaladi.
+            while start.weekday() >= 5:
+                start += timedelta(days=1)
+            end = start + timedelta(days=random.randint(2, 6))
+            medical = random.random() < 0.7
+            try:
+                claim = create_claim(
+                    child=child,
+                    kind="medical" if medical else "parental",
+                    date_from=start,
+                    date_to=end,
+                    document_no=f"M-{random.randint(1000, 9999)}" if medical else "",
+                    note="Shifokor maʼlumotnomasi" if medical else "Ota-ona arizasi",
+                    created_by=owner,
+                )
+                approve_claim(claim=claim, approved_by=owner, note="Hujjat tekshirildi")
+                made += 1
+            except Exception as exc:
+                logger.warning("Daʼvo yozilmadi (%s): %s", child.full_name, exc)
+                continue
+        self.stdout.write(f"  qayta hisob daʼvolari: {made}")
+
+    def _staff_attendance(self, branch: Any, owner: Any, months: int) -> None:
+        """
+        Xodimlar tabeli — bolalar davomati bilan BIR XIL oynada.
+
+        Usiz "Xodimlar → Davomat" tabi olti oylik bog'chada bo'm-bo'sh
+        turardi, oylik esa to'liq ish kuni bo'yicha hisoblanardi — ya'ni
+        ikki ekran bir-biriga zid ma'lumot ko'rsatardi.
+        """
+        from apps.attendance.services_staff import mark_bulk as mark_staff
+        from apps.hr.models import Employee
+
+        today = timezone.localdate()
+        staff = list(Employee.objects.filter(branch=branch, is_active=True))
+        if not staff:
+            return
+
+        cursor = _month_start(today, months - 1)
+        marked = 0
+        while cursor <= today:
+            if cursor.weekday() < 5:
+                rows = []
+                for employee in staff:
+                    if employee.hire_date and employee.hire_date > cursor:
+                        continue
+                    roll = random.random()
+                    if roll < 0.93:
+                        status = "present"
+                    elif roll < 0.97:
+                        status = "sick"
+                    else:
+                        status = "leave"
+                    rows.append({"employee_id": employee.id, "status": status, "note": ""})
+                if rows:
+                    try:
+                        mark_staff(
+                            organization=branch.organization,
+                            branch_id=branch.id,
+                            attendance_date=cursor,
+                            records=rows,
+                            recorded_by=owner,
+                        )
+                        marked += len(rows)
+                    except Exception as exc:
+                        logger.warning("Xodim davomati yozilmadi (%s): %s", cursor, exc)
+            cursor += timedelta(days=1)
+        self.stdout.write(f"  xodimlar tabeli: {marked} yozuv")
+
+    def _deposit_cash(self, branch: Any, owner: Any, months: int) -> None:
+        """
+        Naqd pulni bankka topshirish — har oy, aylanma puldan tashqarisi.
+
+        Usiz kassada bir yarim yuz million naqd yigʻilib qolardi: tushumning
+        qariyb yarmi naqd keladi, kassadan esa faqat mayda chiqim va
+        oylikning naqd qismi chiqadi. Haqiqiy bogʻcha pulni bankka
+        topshiradi va kassada faqat kunlik aylanma qoldiradi — bu ham
+        xavfsizlik, ham hisob masalasi.
+        """
+        from django.db.models import Sum
+
+        from apps.cash.models import CashMovement, MovementDirection
+        from apps.cash.selectors import account_balance
+        from apps.cash.services import account_for_method, transfer
+
+        today = timezone.localdate()
+        bank = account_for_method(branch=branch, method="bank_transfer")
+        till = account_for_method(branch=branch, method="cash")
+        # Kassada qoladigan aylanma — bir kunlik mayda chiqim uchun.
+        float_amount = Decimal("4000000")
+
+        made = 0
+        for back in range(months - 1, -1, -1):
+            period = _month_start(today, back)
+            # Oyning oxirgi kuni; joriy oyda — bugun.
+            day = min(_month_start(today, back - 1) - timedelta(days=1), today) if back else today
+            # Shu OYDA kassaga tushgan va undan chiqqan pul.
+            #
+            # Umumiy qoldiqdan emas: aks holda butun olti oylik naqd
+            # bitta kunda topshirilgandek ko'rinardi va kassa jurnali
+            # bitta ulkan qatordan iborat bo'lib qolardi.
+            month_end = _month_start(today, back - 1) if back else today + timedelta(days=1)
+            flow = CashMovement.objects.filter(
+                cash_account=till, occurred_at__date__gte=period, occurred_at__date__lt=month_end
+            )
+            came_in = flow.filter(direction=MovementDirection.IN).aggregate(total=Sum("amount"))[
+                "total"
+            ] or Decimal("0")
+            went_out = flow.filter(direction=MovementDirection.OUT).aggregate(total=Sum("amount"))[
+                "total"
+            ] or Decimal("0")
+            surplus = came_in - went_out - float_amount
+            # Qolgan haqiqiy qoldiqdan ko'p topshirib bo'lmaydi (ADR-29).
+            amount = min(surplus, account_balance(account_id=till.id) - float_amount)
+            if amount <= 0:
+                continue
+            # Topshiriladigan summa yumaloq: bankka "aniq 7 431 500" emas.
+            amount = (amount / Decimal("100000")).to_integral_value(
+                rounding="ROUND_FLOOR"
+            ) * Decimal("100000")
+            if amount <= 0:
+                continue
+            try:
+                transfer(
+                    source=till,
+                    target=bank,
+                    amount=amount,
+                    description="Naqd tushum bankka topshirildi",
+                    occurred_at=timezone.make_aware(datetime.combine(day, time(hour=17))),
+                    created_by=owner,
+                )
+                made += 1
+            except Exception as exc:
+                logger.warning("Inkassatsiya yozilmadi (%s): %s", period, exc)
+                continue
+        self.stdout.write(f"  bankka topshirish: {made} marta")
+
+    def _owner_draws(self, branch: Any, owner: Any, months: int) -> None:
+        """
+        Ega har oy foydadan oladi — dividend sifatida, solig'i bilan.
+
+        Usiz bank hisobida olti oyda 190 million yigʻilib qolardi:
+        bogʻcha daromad qiladi, lekin egasi hech narsa olmaydi. Bunday
+        bogʻcha yoʻq, va "qancha pul olsa boʻladi" ekrani ham maʼnosiz
+        boʻlib qolardi — unda taqqoslaydigan tarix yoʻq.
+
+        Summa O'YLANGAN: oy yopilgandan keyin, bankdagi qoldiqning
+        taxminan uchdan biri, lekin zaxira (ikki oylik oylik fondi)
+        tegilmaydi. Joriy oydan OLINMAYDI — u hali yigʻilmoqda.
+        """
+        from apps.cash.selectors import account_balance
+        from apps.cash.services import account_for_method, record_operation
+
+        today = timezone.localdate()
+        bank = account_for_method(branch=branch, method="bank_transfer")
+        reserve = Decimal("40000000")
+        made = 0
+        for back in range(months - 1, 0, -1):
+            period = _month_start(today, back)
+            day = _month_start(today, back - 1) - timedelta(days=1)
+            spare = account_balance(account_id=bank.id) - reserve
+            if spare <= 0:
+                continue
+            amount = (spare / Decimal("3") / Decimal("1000000")).to_integral_value(
+                rounding="ROUND_FLOOR"
+            ) * Decimal("1000000")
+            if amount <= 0:
+                continue
+            try:
+                record_operation(
+                    kind="owner_draw",
+                    subtype="dividend",
+                    account=bank,
+                    amount=amount,
+                    occurred_on=day,
+                    reason=f"{period.year}-{period.month:02d} oyi foydasidan",
+                    created_by=owner,
+                )
+                made += 1
+            except Exception as exc:
+                logger.warning("Egaga toʻlov yozilmadi (%s): %s", period, exc)
+                continue
+        self.stdout.write(f"  egaga toʻlov: {made} marta")
+
+    def _close_months(self, branch: Any, owner: Any, months: int) -> None:
+        """
+        Tugagan oylarni yopadi — ishlab turgan bog'chada shunday bo'ladi.
+
+        Yopish faqat tenglik "yashil" bo'lsa o'tadi, ya'ni bu seed
+        ma'lumotining O'ZINI tekshiradi: raqamlar bir-biriga mos
+        kelmasa, oy yopilmaydi va buni ogohlantirish aytadi.
+        """
+        from apps.finance.services import close_month
+
+        today = timezone.localdate()
+        closed = 0
+        for back in range(months - 1, 0, -1):
+            period = _month_start(today, back)
+            try:
+                close_month(branch=branch, year=period.year, month=period.month, closed_by=owner)
+                closed += 1
+            except Exception as exc:
+                logger.warning("Oy yopilmadi (%s): %s", period, exc)
+                continue
+        self.stdout.write(f"  yopilgan oylar: {closed}")
+
+    def _cash_day(self, branch: Any, owner: Any) -> None:
+        """
+        Bugungi kunni yopish — kupyuralar bo'yicha sanoq bilan.
+
+        `close_day` ataylab faqat BUGUNGI kunni yopadi, shuning uchun
+        tarixiy sanoqlar yozilmaydi: ularni model darajasida yozish
+        servis qatlamini chetlab o'tish bo'lardi. Bitta haqiqiy sanoq
+        esa "Nazorat" tekshiruvini jonlantiradi va kupyura jadvali
+        qanday ko'rinishini ko'rsatadi.
+        """
+        from apps.cash.selectors import account_balance
+        from apps.cash.services import cash_pot, close_day
+
+        try:
+            pot = cash_pot(branch=branch)
+        except Exception as exc:
+            logger.warning("Naqd kassa topilmadi: %s", exc)
+            return
+
+        balance = account_balance(account_id=pot.id)
+        if balance <= 0:
+            self.stdout.write("  kassa sanogʻi: kassa boʻsh, oʻtkazib yuborildi")
+            return
+
+        # Kupyuralarga ajratamiz — qoldiq tangagacha emas, eng yirikdan.
+        left = int(balance)
+        notes: dict[str, int] = {}
+        for note in (200000, 100000, 50000, 20000, 10000, 5000, 1000):
+            if left < note:
+                continue
+            count = left // note
+            notes[str(note)] = count
+            left -= note * count
+        if left:
+            # Qolgani kupyuraga bo'linmadi — sanoqni summa bilan yopamiz.
+            notes = {}
+
+        try:
+            close_day(
+                account=pot,
+                counted=balance if not notes else None,
+                denominations=notes or None,
+                reason="Kun yakuni",
+                created_by=owner,
+            )
+            self.stdout.write(f"  kassa sanogʻi: {balance:,.0f} soʻm")
+        except Exception as exc:
+            logger.warning("Kun yopilmadi: %s", exc)
 
     def _finance(self, children: list[Any], months: int, owner: Any) -> None:
         """
@@ -470,7 +942,16 @@ class Command(BaseCommand):
                 else:
                     roll = random.random()
                     # Eski oylar deyarli yopilgan; joriy oy hali yig'ilmoqda.
-                    full_chance = 0.96 if not is_current else 0.70
+                    #
+                    # Joriy oyda ehtimol OY KUNIGA bog'liq: oyning 5-kuni
+                    # kam oila to'lagan bo'ladi, 25-kuni esa deyarli
+                    # hammasi. Qat'iy 70 % demo qachon ishga tushirilishiga
+                    # qarab goh juda yaxshi, goh juda yomon manzara berardi.
+                    if is_current:
+                        progress = min(1.0, today.day / 25)
+                        full_chance = 0.25 + 0.65 * progress
+                    else:
+                        full_chance = 0.96
                     if roll < full_chance:
                         share = Decimal("1")
                     elif roll < full_chance + 0.08:
@@ -583,9 +1064,33 @@ class Command(BaseCommand):
 
         self.stdout.write(f"  davomat yozuvlari: {marked}")
 
-    def _staff(self, organization: Any, branch: Any) -> list[Any]:
+    @staticmethod
+    def _headcount(title: str, child_count: int) -> int:
+        """
+        Lavozim bo'yicha shtat — guruhlar soniga bog'langan.
+
+        Bir guruhga bir tarbiyachi, har ikki guruhga bir yordamchi.
+        Oshpaz va farrosh — har 40 bolaga bittadan. Hamshira 25
+        boladan, metodist esa 40 boladan boshlab paydo bo'ladi:
+        kichik bog'chada bunday shtat birligi bo'lmaydi.
+        """
+        groups = max(1, -(-child_count // 18))  # 18 — guruhning o'rtacha sig'imi
+        if title == "Tarbiyachi":
+            return groups
+        if "yordamchisi" in title:
+            return max(1, groups // 2)
+        if title in ("Oshpaz", "Farrosh"):
+            return max(1, child_count // 40)
+        if title == "Hamshira":
+            return 1 if child_count >= 25 else 0
+        if title == "Metodist":
+            return 1 if child_count >= 40 else 0
+        return 1
+
+    def _staff(self, organization: Any, branch: Any, opening: date, child_count: int) -> list[Any]:
         from apps.hr.models import Employee, Position
 
+        today = timezone.localdate()
         employees = []
         for title, department, salary in LAVOZIMLAR:
             position, _ = Position.objects.get_or_create(
@@ -594,8 +1099,16 @@ class Command(BaseCommand):
                 title=title,
                 defaults={"department": department},
             )
-            # Tarbiyachilar bir nechta, qolganlari bittadan.
-            headcount = 4 if title == "Tarbiyachi" else (2 if "yordamchisi" in title else 1)
+            # Jamoa BOLALAR SONIGA qarab.
+            #
+            # Ilgari u qat'iy edi: 12 bolalik bog'chada ham 4 tarbiyachi,
+            # metodist va hamshira. Natijada oylik fondi tushumdan katta
+            # chiqib, "bankda pul yetmaydi" deb oylik hisoblanmasdi —
+            # ya'ni demo o'zini o'zi inkor qilardi. Haqiqiy bog'chada
+            # shtat guruhlar soniga qarab o'sadi.
+            headcount = self._headcount(title, child_count)
+            if headcount == 0:
+                continue
             for _ in range(headcount):
                 employees.append(
                     Employee.objects.create(
@@ -605,7 +1118,19 @@ class Command(BaseCommand):
                         last_name=random.choice(FAMILIYALAR),
                         phone=f"+9989{random.randint(0, 9)}{random.randint(1000000, 9999999)}",
                         position=position,
-                        hire_date=timezone.localdate() - timedelta(days=random.randint(120, 1500)),
+                        # Ishga olingan kun ham OCHILISHDAN keyin: ilgari u
+                        # 120–1500 kun orqaga ketardi va olti oylik
+                        # bog'chada to'rt yil ishlagan xodim chiqardi.
+                        # Jamoaning ko'pi ochilishda yig'iladi, bir-ikkitasi
+                        # keyin qo'shiladi.
+                        hire_date=(
+                            opening + timedelta(days=random.randint(0, 3))
+                            if random.random() < 0.8
+                            else opening
+                            + timedelta(
+                                days=random.randint(20, max(21, (today - opening).days - 5))
+                            )
+                        ),
                         base_salary=salary + Decimal(random.randint(-2, 4) * 100000),
                     )
                 )
@@ -671,9 +1196,19 @@ class Command(BaseCommand):
 
         self.stdout.write(f"  oylik hisoblash: {runs} ta yopilgan + 1 qoralama")
 
-    def _inventory(self, organization: Any, branch: Any) -> None:
+    def _inventory(self, organization: Any, branch: Any, owner: Any, child_count: int) -> None:
+        from apps.cash.services import account_for_method
         from apps.inventory.models import Product, ProductCategory, Supplier, Warehouse
         from apps.inventory.services import record_movement
+
+        # Xarid ham bog'chaning KATTALIGIGA bog'liq: 12 bolaga 200 ta
+        # tuxum olinmaydi. Ilgari miqdor qat'iy edi va kichik bog'chada
+        # bitta xarid butun kassani bo'shatib yuborardi.
+        scale = max(Decimal("0.35"), Decimal(child_count) / Decimal(BAZAVIY_BOLALAR))
+        accounts = {
+            "bank": account_for_method(branch=branch, method="bank_transfer"),
+            "cash": account_for_method(branch=branch, method="cash"),
+        }
 
         warehouse, _ = Warehouse.objects.get_or_create(
             organization=organization, branch=branch, name="Asosiy ombor"
@@ -698,7 +1233,13 @@ class Command(BaseCommand):
             )
 
             # Kirim, keyin bir necha chiqim — qoldiq tabiiy shakllanadi.
-            incoming = min_stock * Decimal(random.randint(3, 6))
+            incoming = (min_stock * Decimal(random.randint(3, 6)) * scale).quantize(
+                Decimal("0.001")
+            )
+            if incoming <= 0:
+                continue
+            purchased_on = timezone.now() - timedelta(days=random.randint(20, 40))
+            self._top_up(accounts, "cash", incoming * price, purchased_on.date(), owner)
             record_movement(
                 product=product,
                 warehouse=warehouse,
@@ -706,7 +1247,7 @@ class Command(BaseCommand):
                 quantity=incoming,
                 supplier=supplier,
                 unit_cost=price,
-                occurred_at=timezone.now() - timedelta(days=random.randint(20, 40)),
+                occurred_at=purchased_on,
                 reference=f"NAK-{random.randint(1000, 9999)}",
             )
             movements += 1
@@ -730,19 +1271,34 @@ class Command(BaseCommand):
 
         self.stdout.write(f"  ombor harakatlari: {movements}")
 
-    def _expenses(self, organization: Any, branch: Any, owner: Any, months: int) -> None:
+    def _expenses(
+        self, organization: Any, branch: Any, owner: Any, months: int, child_count: int
+    ) -> None:
+        from apps.cash.services import account_for_method
         from apps.expenses.models import Expense, ExpenseCategory
         from apps.expenses.services import approve_expense, mark_expense_paid
 
         today = timezone.localdate()
+        # Chiqim bog'chaning KATTALIGIGA bog'liq: 12 bolalik bog'cha
+        # 64 bolalikcha elektr ishlatmaydi. Pastki chegara bor —
+        # bino baribir isitiladi va yoritiladi.
+        scale = max(Decimal("0.35"), Decimal(child_count) / Decimal(BAZAVIY_BOLALAR))
+        accounts = {
+            "bank": account_for_method(branch=branch, method="bank_transfer"),
+            "cash": account_for_method(branch=branch, method="cash"),
+        }
         created = 0
         for back in range(months):
             period = _month_start(today, back)
-            for category_name, description, base in CHIQIMLAR:
+            for category_name, description, base, source in CHIQIMLAR:
                 category, _ = ExpenseCategory.objects.get_or_create(
                     organization=organization, branch=branch, name=category_name
                 )
-                amount = base + Decimal(random.randint(-15, 20) * 10000)
+                amount = (base * scale).quantize(Decimal("1")) + Decimal(
+                    random.randint(-15, 20) * 10000
+                )
+                if amount <= 0:
+                    continue
                 expense = Expense.objects.create(
                     organization=organization,
                     branch=branch,
@@ -756,11 +1312,52 @@ class Command(BaseCommand):
                 # oqimini ekranda ko'rsatish uchun.
                 if back == 0 and category_name == "Ta'mirlash":
                     continue
-                approve_expense(expense=expense, approved_by=owner, note="Byudjetda bor")
+                # Naqd chiqim uchun kassada pul yetmasa — avval bankdan
+                # yechiladi. Bog'cha ham shunday qiladi: ADR-29 "qopda
+                # yo'q pul chiqmaydi" deydi, ya'ni yechish HODISA bo'lib
+                # yozilishi kerak, chiqim esa o'z vaqtida qolishi.
+                self._top_up(accounts, source, expense.amount, expense.expense_date, owner)
+                approve_expense(
+                    expense=expense,
+                    approved_by=owner,
+                    note="Byudjetda bor",
+                    cash_account=accounts[source],
+                )
                 if back > 0:
                     mark_expense_paid(expense=expense)
 
         self.stdout.write(f"  chiqimlar: {created}")
+
+    @staticmethod
+    def _top_up(
+        accounts: dict[str, Any], source: str, need: Decimal, day: date, owner: Any
+    ) -> None:
+        """Kassada pul yetmasa — bankdan yechib qo'yadi, yumaloq summada."""
+        from apps.cash.selectors import account_balance
+        from apps.cash.services import transfer
+
+        if source != "cash":
+            return
+        account = accounts["cash"]
+        balance = account_balance(account_id=account.id)
+        if balance >= need:
+            return
+        # Yumaloq summa: bog'chada ham "aniq 84 500" yechilmaydi.
+        short = need - balance
+        amount = (short / Decimal("500000")).to_integral_value(rounding="ROUND_CEILING") * Decimal(
+            "500000"
+        )
+        try:
+            transfer(
+                source=accounts["bank"],
+                target=account,
+                amount=amount,
+                description="Kassaga naqd yechildi",
+                occurred_at=timezone.make_aware(datetime.combine(day, time(hour=10))),
+                created_by=owner,
+            )
+        except Exception as exc:
+            logger.warning("Kassaga yechib boʻlmadi: %s", exc)
 
     def _notifications(self, organization: Any) -> None:
         """

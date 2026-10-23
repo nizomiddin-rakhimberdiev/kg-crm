@@ -40,7 +40,7 @@ from __future__ import annotations
 
 import os
 import random
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -246,7 +246,13 @@ class Command(SeedDemo):
         return groups
 
     def _children(
-        self, organization: Any, branch: Any, groups: list[Any], tariffs: list[Any], count: int
+        self,
+        organization: Any,
+        branch: Any,
+        groups: list[Any],
+        tariffs: list[Any],
+        count: int,
+        opening: date,
     ) -> list[Any]:
         """Har guruhga 15 bola; to'liq ism (F.I.Sh.) takrorlanmaydi."""
         from apps.children.models import Child, Guardian
@@ -284,6 +290,10 @@ class Command(SeedDemo):
                 tariff=random.choices(tariffs, weights=[70, 22, 8])[0],
                 # 6 oylik tarix bo'lishi uchun hammasi oynadan OLDIN.
                 enrolled_on=_month_start(today, MONTHS) - timedelta(days=index),
+                # Namoyish bog'chasida ham maydonlar to'la bo'lsin:
+                # bo'sh "qayerdan eshitgan" demo ekranda ko'rinadi.
+                heard_from=self._heard_from()[0],
+                contract_number=f"SH-{today.year}-{index + 1:04d}",
             )
             mother = random.random() < 0.7
             guardian = Guardian.objects.create(
@@ -377,7 +387,7 @@ class Command(SeedDemo):
         # Davomat 3 oy (brief) — moliya 6 oy bo'lsa ham.
         super()._attendance(organization, branch, groups, owner, ATTENDANCE_MONTHS)
 
-    def _staff(self, organization: Any, branch: Any) -> list[Any]:
+    def _staff(self, organization: Any, branch: Any, opening: date, child_count: int) -> list[Any]:
         from apps.hr.models import Employee, Position
 
         employees = []
@@ -408,7 +418,9 @@ class Command(SeedDemo):
         self.stdout.write(f"  xodimlar: {len(employees)}")
         return employees
 
-    def _expenses(self, organization: Any, branch: Any, owner: Any, months: int) -> None:
+    def _expenses(
+        self, organization: Any, branch: Any, owner: Any, months: int, child_count: int
+    ) -> None:
         from apps.expenses.models import Expense, ExpenseCategory
         from apps.expenses.services import approve_expense, mark_expense_paid
 
