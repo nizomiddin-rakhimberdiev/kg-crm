@@ -261,67 +261,34 @@ class Command(BaseCommand):
 
     def _reset(self, organization: Any) -> None:
         """
-        Operatsion ma'lumotni o'chiradi — tashkilot, foydalanuvchi va
-        obunani QOLDIRADI.
+        Operatsion ma'lumotni o'chiradi — nishon va tartib
+        `reset_organization_data` dagi BIR XIL ro'yxatdan olinadi
+        (`RESET_ORDER` = `PURGE_ORDER` minus `KEEP`), ya'ni tashkilot,
+        egasi, filial, obuna, qoplar va sozlamalar qoladi.
 
-        Tartib `purge.py` dagi bilan bir xil mantiqda: bolalardan otaga.
+        Avval bu yerda o'z qisqa ro'yxati bor edi va u asta orqada
+        qoldi: `payment_allocation` unga hech qachon qo'shilmadi, va
+        jonli bazada bitta taqsimot butun tozalashni `RestrictedError`
+        bilan yiqitdi. Ikkita ro'yxat yuritilsa, ulardan biri doim
+        eskiradi — shuning uchun endi bittasi bor.
         """
-        from apps.attendance.models import AttendanceRecord
-        from apps.children.models import Child, ChildGuardian, Enrollment, Group, Guardian
-        from apps.expenses.models import Expense, ExpenseCategory
-        from apps.finance.models import (
-            ChildLedgerEntry,
-            Discount,
-            Invoice,
-            InvoiceLine,
-            Payment,
-            TariffPlan,
-        )
-        from apps.hr.models import Employee, Position
-        from apps.inventory.models import (
-            Product,
-            ProductCategory,
-            StockMovement,
-            Supplier,
-            Warehouse,
-        )
-        from apps.notifications.models import Notification
-        from apps.payroll.models import PayrollItem, PayrollRun
+        from apps.platform.purge import DERIVED_PURGE, _model, allow_frozen_deletes
 
-        # Tartib QAT'IY: `Child.tariff` `RESTRICT`, ya'ni bolalarni
-        # tariflardan OLDIN o'chirish kerak. Xuddi shunday, bildirishnoma
-        # vasiyga, davomat bolaga ishora qiladi. Bu tartib
-        # `platform/purge.py` dagi bilan bir xil mantiqda: chekkadan
-        # markazga.
-        InvoiceLine.objects.filter(invoice__organization_id=organization.id).delete()
-        for model in (
-            Payment,
-            ChildLedgerEntry,
-            Invoice,
-            Discount,
-            AttendanceRecord,
-            Enrollment,
-            ChildGuardian,
-            Notification,
-            Child,
-            Guardian,
-            Group,
-            TariffPlan,
-            PayrollItem,
-            PayrollRun,
-            Employee,
-            Position,
-            StockMovement,
-            Product,
-            ProductCategory,
-            Supplier,
-            Warehouse,
-            Expense,
-            ExpenseCategory,
-        ):
-            manager = getattr(model, "all_objects", None) or model._default_manager
-            manager.all().delete()
+        from .reset_organization_data import KEEP, RESET_ORDER
+
+        allow_frozen_deletes()
+        for path, lookup in DERIVED_PURGE.items():
+            if path in KEEP:
+                continue
+            self._wipe(_model(path), **{lookup: organization.id})
+        for path in RESET_ORDER:
+            self._wipe(_model(path), organization_id=organization.id)
         self.stdout.write(self.style.WARNING("  eski ma'lumot o'chirildi"))
+
+    @staticmethod
+    def _wipe(model: Any, **lookup: Any) -> None:
+        manager = getattr(model, "all_objects", None) or model._default_manager
+        manager.filter(**lookup).delete()
 
     # --- To'ldirish ---
 

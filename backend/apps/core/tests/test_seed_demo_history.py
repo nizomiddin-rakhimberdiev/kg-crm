@@ -147,3 +147,42 @@ def test_the_cash_balance_is_never_negative(seeded: Any):
         rows = account_balances(organization_id=seeded.organization.id)
         negative = [row for row in rows if float(row["balance"]) < 0]
     assert negative == []
+
+
+def test_reset_clears_a_full_history_and_keeps_the_tenant(seeded: Any):
+    """
+    `--reset` toʻliq tarixni ham tozalashi kerak — ADR-20 taqsimoti,
+    qaytarish, oy yopilishi, kassa sanogʻi bilan birga.
+
+    Avval `_reset` oʻzining qisqa roʻyxatini yuritardi va u asta-sekin
+    orqada qoldi: `payment_allocation` roʻyxatda yoʻq edi, va jonli
+    bazada bitta taqsimot butun tozalashni `RestrictedError` bilan
+    yiqitdi. Endi tartib `purge.py` dagi YAGONA roʻyxatdan olinadi,
+    shuning uchun yangi jadval oʻz-oʻzidan qamrab olinadi.
+    """
+    from apps.accounts.models import User
+    from apps.branches.models import Branch
+    from apps.children.models import Child
+    from apps.finance.models import PaymentAllocation
+
+    organization = seeded.organization
+    with organization_context(organization.id):
+        assert PaymentAllocation.objects.exists(), "demo taqsimotsiz — test maʼnosiz"
+
+    call_command(
+        "seed_demo",
+        "--slug",
+        organization.slug,
+        "--children",
+        "1",
+        "--months",
+        "1",
+        "--reset",
+        stdout=StringIO(),
+    )
+
+    with organization_context(organization.id):
+        # Tashkilot, egasi va filial QOLADI — tozalash faqat operatsion.
+        assert Branch.objects.filter(organization_id=organization.id).exists()
+        assert User.objects.filter(organization_id=organization.id).exists()
+        assert Child.objects.count() == 1
