@@ -1,49 +1,107 @@
 /**
  * Tanlagich (mijoz eʼtirozi, 2026-10-23).
  *
- * Ilovadagi 86 ta `<select>` har biri oʻz klassi bilan yozilgan edi:
- * balandligi har xil, fokus halqasi baʼzisida bor baʼzisida yoʻq,
- * strelkasi esa brauzerniki — ya'ni Chrome'da bir xil, Safari'da
- * boshqacha. Mijoz buni "umuman standart xolatda emas" deb yozdi.
+ * Birinchi urinishda native `<select>` qoldirilgan edi — yopiq holati
+ * chiroyli, lekin OCHILGANDA brauzer oʻzining tizim roʻyxatini
+ * chizadi: macOS'da u qora, maydon USTIGA tushadigan menyu. Mijoz
+ * aynan shuni koʻrsatdi: "pastdan dropdown koʻrinishida chiroyli
+ * formada chiqishi kk emasmidi?".
  *
- * Yechim **native `<select>` ning oʻzi**, faqat kiyimi bizniki
- * (`appearance-none` + oʻz strelkamiz). Sabab `DateInput` dagi bilan
- * bir xil: klaviatura, harf bilan qidirish, skrinrider va telefondagi
- * tizim tanlagichi — bularning hammasi native elementdan BEPUL
- * keladi, qayta yozilgan ro'yxat esa ularning har birini yoʻqotadi.
+ * Shuning uchun roʻyxatni oʻzimiz chizamiz. Lekin native elementdan
+ * keladigan narsalar YOʻQOLMASLIGI kerak, va shu testlar aynan
+ * ularni qoʻriqlaydi: klaviatura, harf bilan qidirish, `optgroup`,
+ * oʻchirilgan variant, forma qiymati va `required` tekshiruvi.
  */
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { Building2 } from 'lucide-react'
 import { describe, expect, it, vi } from 'vitest'
 import { Select } from '../ui/Select'
 
-describe('Select', () => {
-  it('native `select` boʻlib qoladi — roli ham, qiymati ham', () => {
-    render(
-      <Select aria-label="Guruh" value="b" onChange={vi.fn()}>
-        <option value="a">Birinchi</option>
-        <option value="b">Ikkinchi</option>
-      </Select>,
-    )
-    const field = screen.getByRole('combobox', { name: 'Guruh' }) as HTMLSelectElement
-    expect(field.tagName).toBe('SELECT')
-    expect(field.value).toBe('b')
+/**
+ * Qiymat hodisa ichida OʻQILADI, keyin emas: boshqariladigan
+ * `<select>` da React oʻz qiymatini qayta tiklaydi, ya'ni keyin
+ * oʻqilgan `event.target.value` eski qiymatni koʻrsatadi. Chaqiruvchi
+ * kod ham aynan shunday yozilgan: `onChange={(e) => setX(e.target.value)}`.
+ */
+function three(extra: Record<string, unknown> = {}) {
+  const seen: string[] = []
+  const onChange = vi.fn((event: { target: HTMLSelectElement }) => seen.push(event.target.value))
+  render(
+    <Select aria-label="Guruh" value="b" onChange={onChange} {...extra}>
+      <option value="a">Birinchi</option>
+      <option value="b">Ikkinchi</option>
+      <option value="c">Uchinchi</option>
+    </Select>,
+  )
+  return { onChange, seen, trigger: screen.getByRole('combobox', { name: 'Guruh' }) }
+}
+
+describe('Select — yopiq holat', () => {
+  it('tanlangan variantning NOMINI koʻrsatadi', () => {
+    const { trigger } = three()
+    expect(trigger).toHaveTextContent('Ikkinchi')
   })
 
-  it('tanlov chaqiruvchiga uzatiladi', () => {
-    const onChange = vi.fn()
-    render(
-      <Select aria-label="Guruh" value="a" onChange={onChange}>
-        <option value="a">Birinchi</option>
-        <option value="b">Ikkinchi</option>
-      </Select>,
-    )
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'b' } })
-    expect(onChange).toHaveBeenCalled()
+  it('roʻyxat yopiq boʻlsa — hech qanday listbox yoʻq', () => {
+    three()
+    expect(screen.queryByRole('listbox')).toBeNull()
   })
 
-  it('guruhlangan roʻyxat (`optgroup`) ishlaydi', () => {
+  it('formaga qiymat native maydon orqali boradi', () => {
+    three({ name: 'group' })
+    const native = document.querySelector('select[name="group"]') as HTMLSelectElement
+    expect(native).toBeTruthy()
+    expect(native.value).toBe('b')
+  })
+
+  it('`required` native maydonda qoladi — forma yuborilmaydi', () => {
+    render(
+      <form aria-label="forma">
+        <Select aria-label="Guruh" name="group" required defaultValue="">
+          <option value="">— tanlanmagan —</option>
+          <option value="a">Birinchi</option>
+        </Select>
+      </form>,
+    )
+    const form = screen.getByRole('form') as HTMLFormElement
+    expect(form.checkValidity()).toBe(false)
+  })
+})
+
+describe('Select — ochilgan roʻyxat', () => {
+  it('bosilganda pastda roʻyxat chiqadi', () => {
+    const { trigger } = three()
+    fireEvent.click(trigger)
+    const list = screen.getByRole('listbox')
+    expect(within(list).getAllByRole('option')).toHaveLength(3)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('variant bosilganda `e.target.value` bilan xabar beradi', () => {
+    const { trigger, seen } = three()
+    fireEvent.click(trigger)
+    fireEvent.click(screen.getByRole('option', { name: 'Uchinchi' }))
+    expect(seen).toEqual(['c'])
+  })
+
+  it('tanlanganida roʻyxat yopiladi', () => {
+    const { trigger } = three()
+    fireEvent.click(trigger)
+    fireEvent.click(screen.getByRole('option', { name: 'Birinchi' }))
+    expect(screen.queryByRole('listbox')).toBeNull()
+  })
+
+  it('tanlangan variant belgilanadi', () => {
+    const { trigger } = three()
+    fireEvent.click(trigger)
+    expect(screen.getByRole('option', { name: 'Ikkinchi' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+  })
+
+  it('guruh sarlavhasi tanlab boʻlmaydigan boʻlib qoladi', () => {
     render(
       <Select aria-label="Toifa" defaultValue="meat">
         <optgroup label="Oziq-ovqat">
@@ -51,36 +109,71 @@ describe('Select', () => {
         </optgroup>
       </Select>,
     )
+    fireEvent.click(screen.getByRole('combobox'))
     expect(screen.getByRole('group', { name: 'Oziq-ovqat' })).toBeTruthy()
+    expect(screen.getAllByRole('option')).toHaveLength(1)
   })
 
-  it('strelka sichqonchani ushlab qolmaydi', () => {
-    const { container } = render(
-      <Select aria-label="Guruh">
-        <option value="a">Birinchi</option>
-      </Select>,
-    )
-    const chevron = container.querySelector('svg')
-    expect(chevron?.getAttribute('aria-hidden')).toBe('true')
-    expect(chevron?.parentElement?.className).toContain('pointer-events-none')
-  })
-
-  it('oʻchirilgan maydon oʻqilishi mumkin, lekin tanlanmaydi', () => {
+  it('oʻchirilgan variant tanlanmaydi', () => {
+    const onChange = vi.fn()
     render(
-      <Select aria-label="Guruh" disabled>
-        <option value="a">Birinchi</option>
+      <Select aria-label="Oy" value="1" onChange={onChange}>
+        <option value="1">Yanvar</option>
+        <option value="2" disabled>
+          Fevral
+        </option>
       </Select>,
     )
-    expect((screen.getByRole('combobox') as HTMLSelectElement).disabled).toBe(true)
+    fireEvent.click(screen.getByRole('combobox'))
+    fireEvent.click(screen.getByRole('option', { name: 'Fevral' }))
+    expect(onChange).not.toHaveBeenCalled()
+  })
+})
+
+describe('Select — klaviatura', () => {
+  it('pastga strelka roʻyxatni ochadi', () => {
+    const { trigger } = three()
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' })
+    expect(screen.getByRole('listbox')).toBeTruthy()
   })
 
+  it('strelka bilan yurib, Enter bilan tanlanadi', () => {
+    const { trigger, seen } = three()
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' })
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' }) // b → c
+    fireEvent.keyDown(trigger, { key: 'Enter' })
+    expect(seen).toEqual(['c'])
+  })
+
+  it('Escape yopadi va tanlovni oʻzgartirmaydi', () => {
+    const { trigger, onChange } = three()
+    fireEvent.click(trigger)
+    fireEvent.keyDown(trigger, { key: 'Escape' })
+    expect(screen.queryByRole('listbox')).toBeNull()
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('harf bilan qidirish — native elementdagidek', () => {
+    const { trigger, seen } = three()
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' })
+    fireEvent.keyDown(trigger, { key: 'u' }) // "Uchinchi"
+    fireEvent.keyDown(trigger, { key: 'Enter' })
+    expect(seen).toEqual(['c'])
+  })
+
+  it('Home va End chekkalarga olib boradi', () => {
+    const { trigger, seen } = three()
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' })
+    fireEvent.keyDown(trigger, { key: 'End' })
+    fireEvent.keyDown(trigger, { key: 'Enter' })
+    expect(seen).toEqual(['c'])
+  })
+})
+
+describe('Select — koʻrinish', () => {
   it('yonidagi matn maydoni bilan bir xil balandlik', () => {
-    render(
-      <Select aria-label="Guruh">
-        <option value="a">Birinchi</option>
-      </Select>,
-    )
-    expect(screen.getByRole('combobox').className).toContain('h-10')
+    const { trigger } = three()
+    expect(trigger.className).toContain('h-10')
   })
 
   it('zich qator uchun kichik oʻlcham', () => {
@@ -91,16 +184,26 @@ describe('Select', () => {
     )
     expect(screen.getByRole('combobox').className).toContain('h-9')
   })
-})
 
-describe('Select kengligi', () => {
-  it('sukut boʻyicha oʻrash butun kenglikni oladi', () => {
-    const { container } = render(
-      <Select aria-label="Guruh">
+  it('chap belgi qoʻyilganda matn uning ostiga kirmaydi', () => {
+    render(
+      <Select aria-label="Filial" icon={Building2}>
         <option value="a">Birinchi</option>
       </Select>,
     )
-    expect(container.firstElementChild?.className).toContain('w-full')
+    expect(screen.getByRole('combobox').className).toContain('pl-9')
+  })
+
+  it('oʻchirilgan maydon ochilmaydi', () => {
+    render(
+      <Select aria-label="Guruh" disabled>
+        <option value="a">Birinchi</option>
+      </Select>,
+    )
+    const trigger = screen.getByRole('combobox')
+    expect(trigger).toBeDisabled()
+    fireEvent.click(trigger)
+    expect(screen.queryByRole('listbox')).toBeNull()
   })
 
   it('chaqiruvchining kengligi ustun turadi', () => {
@@ -112,28 +215,5 @@ describe('Select kengligi', () => {
     const cls = container.firstElementChild?.className ?? ''
     expect(cls).toContain('w-28')
     expect(cls).not.toContain('w-full')
-  })
-})
-
-describe('Select belgisi', () => {
-  it('chap belgi qoʻyilganda matn uning ostiga kirmaydi', () => {
-    const { container } = render(
-      <Select aria-label="Filial" icon={Building2}>
-        <option value="a">Birinchi</option>
-      </Select>,
-    )
-    expect(screen.getByRole('combobox').className).toContain('pl-9')
-    // Ikkita belgi: chapdagi bino va oʻngdagi strelka.
-    expect(container.querySelectorAll('svg')).toHaveLength(2)
-  })
-
-  it('belgisiz holatda faqat strelka qoladi', () => {
-    const { container } = render(
-      <Select aria-label="Filial">
-        <option value="a">Birinchi</option>
-      </Select>,
-    )
-    expect(screen.getByRole('combobox').className).toContain('pl-3')
-    expect(container.querySelectorAll('svg')).toHaveLength(1)
   })
 })

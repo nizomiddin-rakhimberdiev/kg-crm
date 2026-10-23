@@ -39,8 +39,8 @@ describe('MonthlySummary', () => {
   it('sahifada tanlangan oyni soʻraydi', async () => {
     show('2026-10')
     await waitFor(() => expect(reportsApi.monthlySummary).toHaveBeenCalledWith(2026, 10))
-    expect((screen.getByLabelText('Oy') as HTMLSelectElement).value).toBe('10')
-    expect((screen.getByLabelText('Yil') as HTMLSelectElement).value).toBe('2026')
+    expect(screen.getByRole('combobox', { name: 'Oy' })).toHaveTextContent('Oktabr')
+    expect(screen.getByRole('combobox', { name: 'Yil' })).toHaveTextContent('2026')
   })
 
   it('sahifa davri oʻzgarsa karta ham oʻzgaradi', async () => {

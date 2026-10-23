@@ -1,13 +1,17 @@
 /**
  * Oy maydoni (audit, 2026-10-21).
  *
- * Native `input[type=month]` oy nomini **brauzer lokali** bo'yicha
- * chiqaradi: butun interfeys o'zbekcha turganda tanlagichda
+ * Native `input[type=month]` oy nomini **brauzer lokali** boʻyicha
+ * chiqaradi: butun interfeys oʻzbekcha turganda tanlagichda
  * "October 2026" yozilardi. `DateInput` da bu savol allaqachon hal
- * qilingan (Q12) — oy uchun ham o'sha javob: ko'rinish bizda.
+ * qilingan (Q12) — oy uchun ham oʻsha javob: koʻrinish bizda.
+ *
+ * 2026-10-23 dan beri tanlagichning roʻyxati ham bizniki
+ * (`ui/Select`), shuning uchun test endi koʻrinadigan matn va
+ * ochilgan roʻyxat bilan ishlaydi — DOM `value` bilan emas.
  */
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { MonthInput } from '../ui/MonthInput'
 
@@ -15,42 +19,49 @@ const show = (value = '2026-10', onChange = vi.fn()) => {
   render(<MonthInput value={value} onChange={onChange} label="Oy" />)
   return {
     onChange,
-    month: screen.getByLabelText('Oy') as HTMLSelectElement,
-    year: screen.getByLabelText('Yil') as HTMLSelectElement,
+    month: screen.getByRole('combobox', { name: 'Oy' }),
+    year: screen.getByRole('combobox', { name: 'Yil' }),
   }
 }
 
 describe('MonthInput', () => {
   it('oyni oʻzbekcha nomi bilan koʻrsatadi', () => {
     const { month, year } = show()
-    expect(month.value).toBe('10')
-    expect(year.value).toBe('2026')
-    expect(screen.getByRole('option', { name: 'Oktabr' })).toBeTruthy()
-    expect(screen.queryByRole('option', { name: 'October' })).toBeNull()
+    expect(month).toHaveTextContent('Oktabr')
+    expect(year).toHaveTextContent('2026')
   })
 
   it('oy tanlanganda yyyy-mm qaytaradi', () => {
     const { month, onChange } = show()
-    fireEvent.change(month, { target: { value: '3' } })
+    fireEvent.click(month)
+    fireEvent.click(screen.getByRole('option', { name: 'Mart' }))
     expect(onChange).toHaveBeenCalledWith('2026-03')
   })
 
   it('yil tanlanganda oy saqlanadi', () => {
     const { year, onChange } = show()
-    fireEvent.change(year, { target: { value: '2025' } })
+    fireEvent.click(year)
+    fireEvent.click(screen.getByRole('option', { name: '2025' }))
     expect(onChange).toHaveBeenCalledWith('2025-10')
   })
 
   it('min va max oraligʻidan tashqari yil taklif qilinmaydi', () => {
     render(<MonthInput value="2026-10" onChange={vi.fn()} label="Oy" min="2026-01" max="2026-12" />)
-    const years = screen.getByLabelText('Yil') as HTMLSelectElement
-    expect([...years.options].map((option) => option.value)).toEqual(['2026'])
+    fireEvent.click(screen.getByRole('combobox', { name: 'Yil' }))
+    const list = screen.getByRole('listbox')
+    expect(
+      within(list)
+        .getAllByRole('option')
+        .map((item) => item.textContent),
+    ).toEqual(['2026'])
   })
 
   it('chegaradan tashqaridagi oy tanlanmaydi', () => {
     render(<MonthInput value="2026-10" onChange={vi.fn()} label="Oy" max="2026-10" />)
-    const months = screen.getByLabelText('Oy') as HTMLSelectElement
-    const disabled = [...months.options].filter((option) => option.disabled)
-    expect(disabled.map((option) => option.value)).toEqual(['11', '12'])
+    fireEvent.click(screen.getByRole('combobox', { name: 'Oy' }))
+    for (const name of ['Noyabr', 'Dekabr']) {
+      expect(screen.getByRole('option', { name })).toHaveAttribute('aria-disabled', 'true')
+    }
+    expect(screen.getByRole('option', { name: 'Sentabr' })).not.toHaveAttribute('aria-disabled')
   })
 })
