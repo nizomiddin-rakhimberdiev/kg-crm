@@ -181,6 +181,26 @@ describe('a11y', () => {
     expect(offenders).toEqual([])
   })
 
+  it('xom `<select>` ishlatilmaydi', () => {
+    /*
+     * 86 ta tanlagich har biri oʻz klassi bilan yozilgan edi:
+     * balandligi har xil, fokus halqasi baʼzisida yoʻq, strelkasi
+     * esa brauzerniki — Chrome'da bir xil, Safari'da boshqacha.
+     * Mijoz buni "umuman standart xolatda emas" deb yozdi
+     * (2026-10-23). `components/ui/Select` — kiyimi bizniki, ichi
+     * native: klaviatura, harf bilan qidirish, `optgroup` va
+     * telefondagi tizim tanlagichi joyida qoladi.
+     */
+    const offenders: string[] = []
+    for (const file of files) {
+      if (file.endsWith('ui/Select.tsx')) continue
+      if (/<select[\s>]/.test(readFileSync(file, 'utf8'))) {
+        offenders.push(file.replace(SRC, ''))
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
   it('koʻrinadigan fokus butun ilovada belgilangan', () => {
     const css = readFileSync(join(SRC, 'index.css'), 'utf8')
     // `:focus` emas, `:focus-visible`: sichqoncha bosganda halqa

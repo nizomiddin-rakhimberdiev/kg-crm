@@ -14,6 +14,7 @@ import { Modal } from '@/components/ui/Modal'
 import { childrenApi } from '@/features/children/api'
 import { ApiError, type Child } from '@/lib/api/types'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 const STATUSES: Array<[Child['enrollment_status'], string]> = [
   ['active', t('Faol')],
@@ -73,7 +74,7 @@ export function ChildStatusDialog({
             <label htmlFor="cs-status" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Holat')} <span className="text-red-500">*</span>
             </label>
-            <select
+            <Select
               id="cs-status"
               value={form.enrollment_status}
               onChange={(e) =>
@@ -82,14 +83,14 @@ export function ChildStatusDialog({
                   enrollment_status: e.target.value as Child['enrollment_status'],
                 }))
               }
-              className={field}
+              className="mt-1"
             >
               {STATUSES.map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div>

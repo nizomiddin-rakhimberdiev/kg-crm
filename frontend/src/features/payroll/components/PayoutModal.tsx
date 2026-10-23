@@ -24,6 +24,7 @@ import { payrollApi, type PayoutLine, type PlannedPayout } from '@/features/payr
 import { money } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+import { Select } from '@/components/ui/Select'
 
 const PART_LABEL: Record<string, string> = {
   official: t('rasmiy'),
@@ -123,7 +124,7 @@ export function PayoutModal({
                   </div>
                   <label className="sm:w-56">
                     <span className="sr-only">{t('Qaysi hisobdan')}</span>
-                    <select
+                    <Select
                       value={row.cash_account_id}
                       onChange={(event) =>
                         setRows((prev) =>
@@ -132,14 +133,14 @@ export function PayoutModal({
                           ),
                         )
                       }
-                      className="w-full rounded-lg border border-slate-200 px-2.5 text-sm outline-none focus:border-brand-500"
+                      className="w-full"
                     >
                       {accounts.data?.items.map((account) => (
                         <option key={account.id} value={account.id}>
                           {account.name}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </label>
                 </li>
               ))}

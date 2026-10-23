@@ -42,6 +42,7 @@ import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { money, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 interface Tender {
   key: string
@@ -431,11 +432,11 @@ export function TakePaymentModal({
             <label htmlFor="take-payer" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Toʻlovchi')}
             </label>
-            <select
+            <Select
               id="take-payer"
               value={employerPays ? EMPLOYER : payer}
               onChange={(event) => setPayerId(event.target.value)}
-              className={field}
+              className="mt-1"
             >
               <option value="">{t('Koʻrsatilmagan')}</option>
               {guardians.map((guardian) => (
@@ -444,7 +445,7 @@ export function TakePaymentModal({
                 </option>
               ))}
               <option value={EMPLOYER}>{t('Ota-onaning ish beruvchisi')}</option>
-            </select>
+            </Select>
           </div>
         </div>
         {employerPays && (
@@ -584,11 +585,11 @@ export function TakePaymentModal({
                   >
                     {t('Kimning oyligidan?')}
                   </label>
-                  <select
+                  <Select
                     id="take-employee"
                     value={employeeId}
                     onChange={(event) => setEmployeeId(event.target.value)}
-                    className={field}
+                    className="mt-1"
                   >
                     <option value="">{t('Xodimni tanlang')}</option>
                     {employees.map((employee) => (
@@ -596,7 +597,7 @@ export function TakePaymentModal({
                         {employee.full_name}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <button
                   type="button"

@@ -1375,7 +1375,6 @@ export const messages: Record<string, string> = {
     "Only on a document: a doctor's certificate or a parent's application. The credit comes off the invoice as soon as it is added — no separate approval.",
   'Hujjat bilan qayta hisob': 'Credit with a document',
   'Qayta hisob': 'Absence credits',
-  '{done} / {total} belgilandi': '{done} of {total} marked',
   'Bir oylik ariza': 'One-month leave',
   'Hisoblangan summa shu qadamgacha yaxlitlanadi: 1 161 905 → 1 162 000. Kunlik stavka emas, natija.':
     'The computed amount is rounded to this step: 1 161 905 → 1 162 000. The result is rounded, not the day rate.',
@@ -1928,4 +1927,14 @@ export const messages: Record<string, string> = {
   'Bitta tugma butun bogʻcha uchun shu oyning hisob-fakturalarini yozadi.': 'One button issues this month\'s invoices for the whole kindergarten.',
   'Boshlash': 'Start',
   'Shu havolani ota-onaga yuboring — u botni ochib, xabarlarga ulanadi. Botni ochish — roziligi: manzilni biz bera olmaymiz, u faqat ota-ona oʻzi boshlaganda paydo boʻladi.': 'Send this link to the parent — opening the bot connects them to the messages. Opening it is the consent: we cannot issue the address, it exists only once the parent starts the bot themselves.',
+  'Guruh qoʻshish': 'Add a group',
+  'Yangi guruh': 'New group',
+  'Har bir guruhning sigʻimi, yosh oraligʻi va tarbiyachisi bor.': 'Every group has a capacity, an age range and a teacher.',
+  'Masalan: Kichik guruh': 'For example: Junior group',
+  'Nechta bola sigʻadi. Boʻsh — cheklov yoʻq.': 'How many children fit. Empty means no limit.',
+  'Mos kelmasa — ogohlantirish, taqiq emas.': 'A mismatch warns; it does not block.',
+  'Guruh — bolalarni taqsimlash va davomat belgilash uchun. Bittadan boshlang.': 'A group is how children are split up and attendance is marked. Start with one.',
+  '{group}: {done} / {total} belgilandi': '{group}: {done} / {total} marked',
+  'Belgilanmagan': 'Unmarked',
+  '{date} · butun bogʻcha boʻyicha {n} ta bola': '{date} · {n} children across the whole kindergarten',
 }

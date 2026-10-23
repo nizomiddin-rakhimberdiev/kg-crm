@@ -16,6 +16,7 @@ import { invalidateMoney } from '@/lib/api/invalidate'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 const MONTHS = [
   t('Yanvar'),
@@ -110,18 +111,18 @@ export function PausePanel({ childId }: { childId: string }) {
             <label htmlFor="pause-month" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Oy')}
             </label>
-            <select
+            <Select
               id="pause-month"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+              className="w-full"
             >
               {options.map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <div>
             <label htmlFor="pause-reason" className="mb-1 block text-xs font-medium text-slate-600">

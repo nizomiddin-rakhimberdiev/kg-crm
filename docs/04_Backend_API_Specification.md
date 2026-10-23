@@ -366,6 +366,7 @@ Module: `attendance`.
 | PATCH | `/attendance/{id}` | `attendance.update` | Correct a same-day record |
 | GET | `/attendance/daily` | `attendance.read` | Register for a group on a date (`?group=&date=`) |
 | GET | `/attendance/summary` | `attendance.read` | Monthly summary per child (`?group=&month=`) |
+| GET | `/attendance/day-summary` | `attendance.read` | **The whole day across every group**: totals plus a row per group (`total`, `marked`, `present`, `absent`, `excused`, `unmarked`). "Everyone" means the caller's own scope — a group teacher counts only their groups (ADR-21). `unmarked` is its own number, never folded into `absent` (ADR-19). Two queries regardless of how many groups there are |
 
 **`POST /attendance/bulk` — request**
 ```json

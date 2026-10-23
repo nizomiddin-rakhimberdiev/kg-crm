@@ -15,6 +15,7 @@ import { ApiError, type Expense } from '@/lib/api/types'
 import { formatDate } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { useCan } from '@/lib/rbac/useCan'
+import { Select } from '@/components/ui/Select'
 
 const chip = 'rounded-full px-2 py-0.5 text-xs font-medium'
 
@@ -109,18 +110,17 @@ export function ExpenseFlags({ expense }: { expense: Expense }) {
       )}
       {paying && (
         <span className="flex items-center gap-1.5">
-          <select
+          <Select
             aria-label={t('Qaysi puldan')}
             value={pot}
             onChange={(event) => setPotId(event.target.value)}
-            className="rounded-md border border-slate-200 px-2 py-1 text-xs"
           >
             {pots.map((row) => (
               <option key={row.id} value={row.id}>
                 {row.name}
               </option>
             ))}
-          </select>
+          </Select>
           <button
             type="button"
             disabled={!pot || pay.isPending}

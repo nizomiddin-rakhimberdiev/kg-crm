@@ -17,6 +17,7 @@ import { invalidateMoney } from '@/lib/api/invalidate'
 import { ApiError, type Payment } from '@/lib/api/types'
 import { money } from '@/lib/format'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 const field =
   'mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500'
@@ -82,18 +83,18 @@ export function RefundModal({ payment, onClose }: { payment: Payment; onClose: (
         <label htmlFor="refund-pot" className="mt-3 block text-xs font-medium text-slate-600">
           {t('Qaysi puldan')}
         </label>
-        <select
+        <Select
           id="refund-pot"
           value={pot}
           onChange={(event) => setPotId(event.target.value)}
-          className={field}
+          className="mt-1"
         >
           {pots.map((row) => (
             <option key={row.id} value={row.id}>
               {row.name}
             </option>
           ))}
-        </select>
+        </Select>
         <label htmlFor="refund-reason" className="mt-3 block text-xs font-medium text-slate-600">
           {t('Sabab (majburiy)')}
         </label>

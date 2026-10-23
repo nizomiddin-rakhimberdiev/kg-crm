@@ -17,8 +17,15 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Group } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { avatarTone, cn, initials } from '@/lib/utils'
+import { FieldLabel } from '@/components/ui/FieldLabel'
+import { Modal } from '@/components/ui/Modal'
 import { QueryError } from '@/components/ui/QueryError'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
+
+/** Modal ichidagi matn maydoni — `Select` bilan bir xil balandlik. */
+const input =
+  'h-10 w-full rounded-lg border border-tosh-200 px-3 text-sm outline-none transition-colors focus:border-nihol-500 focus:ring-2 focus:ring-nihol-500/20'
 
 export default function GroupsPage() {
   const organizationId = useOrganizationId()
@@ -30,6 +37,11 @@ export default function GroupsPage() {
   // `null` — yangi guruh, obyekt — mavjudi tahrirlanyapti. Tahrir AYNI
   // formada ochiladi: guruh kartochkasi kichik, alohida modal ortiqcha.
   const [editing, setEditing] = useState<Group | null>(null)
+  // Forma MODALDA (mijoz eʼtirozi, 2026-10-23): ilgari u sahifaning
+  // tepasida, kartalar ustida doim ochiq turardi — besh maydonli
+  // qator, nomsiz "Qoʻshish" tugmasi bilan. Guruh yiliga bir-ikki
+  // marta qoʻshiladi, ya'ni u joyni doimiy egallab turishi notoʻgʻri.
+  const [formOpen, setFormOpen] = useState(false)
   const [openGroup, setOpenGroup] = useState<{ id: string; name: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -48,12 +60,22 @@ export default function GroupsPage() {
   })
 
   const closeForm = () => {
+    setFormOpen(false)
     setEditing(null)
     setForm(EMPTY)
     setError(null)
   }
 
+  const openCreate = () => {
+    setEditing(null)
+    setForm(EMPTY)
+    setError(null)
+    setFormOpen(true)
+  }
+
   const openEdit = (group: Group) => {
+    setError(null)
+    setFormOpen(true)
     setEditing(group)
     setForm({
       name: group.name,
@@ -110,137 +132,164 @@ export default function GroupsPage() {
         />
       )}
 
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Guruhlar')}</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {editing
-            ? t('{name} — tahrirlash', { name: editing.name })
-            : t('Sigʻim boʻsh qoldirilsa — cheklovsiz.')}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('Guruhlar')}</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {t('Har bir guruhning sigʻimi, yosh oraligʻi va tarbiyachisi bor.')}
+          </p>
+        </div>
+        {can('children.create') && (
+          <button
+            type="button"
+            onClick={openCreate}
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-nihol-600 px-4 text-sm font-semibold text-white transition hover:bg-nihol-700"
+          >
+            <Plus className="h-4 w-4" aria-hidden />
+            {t('Guruh qoʻshish')}
+          </button>
+        )}
       </div>
 
-      {error && (
+      {/* Xato modal YOPIQ boʻlganda bu yerda koʻrinadi (masalan
+          oʻchirishdagi 422); modal ochiq boʻlsa — uning ichida. */}
+      {error && !formOpen && (
         <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
         </div>
       )}
 
       {can('children.create') && (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            if (editing) updateMutation.mutate({ id: editing.id, ...payload() })
-            else createMutation.mutate(payload())
-          }}
-          className="flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4"
-        >
-          <div className="min-w-[200px] flex-1">
-            <label htmlFor="group-name" className="mb-1 block text-xs font-medium text-slate-600">
-              {t('Guruh nomi')}
-            </label>
-            <input
-              id="group-name"
-              required
-              value={form.name}
-              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-            />
-          </div>
-          <div className="w-28">
-            <label
-              htmlFor="group-capacity"
-              className="mb-1 block text-xs font-medium text-slate-600"
-            >
-              {t('Sigʻim')}
-            </label>
-            <input
-              id="group-capacity"
-              type="number"
-              min={0}
-              placeholder={t('cheksiz')}
-              value={form.capacity}
-              onChange={(e) => setForm((p) => ({ ...p, capacity: e.target.value }))}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-            />
-          </div>
-          {/* Yosh oralig'i bazada boshidan bor edi, formada esa yo'q edi.
-              U guruhni tanlashda yo'l ko'rsatadi: "3-4 yosh" degan guruhga
-              6 yoshli bolani qo'yish xato ekanini odam darhol ko'radi. */}
-          <div className="w-40">
-            <label
-              htmlFor="group-age-min"
-              className="mb-1 block text-xs font-medium text-slate-600"
-            >
-              {t('Yosh oraligʻi')}
-            </label>
-            <div className="flex items-center gap-1">
-              <input
-                id="group-age-min"
-                type="number"
-                min={0}
-                max={18}
-                placeholder={t('dan')}
-                value={form.age_min}
-                onChange={(e) => setForm((p) => ({ ...p, age_min: e.target.value }))}
-                className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-              />
-              <span className="text-slate-500">–</span>
-              <input
-                id="group-age-max"
-                type="number"
-                min={0}
-                max={18}
-                placeholder={t('gacha')}
-                value={form.age_max}
-                onChange={(e) => setForm((p) => ({ ...p, age_max: e.target.value }))}
-                className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-              />
-            </div>
-          </div>
-          <div>
-            <label
-              htmlFor="group-teacher"
-              className="mb-1 block text-xs font-medium text-slate-600"
-            >
-              {t('Tarbiyachi')}
-            </label>
-            <select
-              id="group-teacher"
-              value={form.teacher_id}
-              onChange={(e) => setForm((p) => ({ ...p, teacher_id: e.target.value }))}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-            >
-              <option value="">{t('— biriktirilmagan —')}</option>
-              {(employeesQuery.data?.items ?? []).map((employee) => (
-                <option key={employee.id} value={employee.id}>
-                  {employee.full_name}
-                  {employee.position_title ? ` — ${employee.position_title}` : ''}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-slate-500">
-              {t('Tizim hisobi bogʻlangan tarbiyachi faqat shu guruhni koʻradi.')}
-            </p>
-          </div>
-
-          <button
-            type="submit"
-            disabled={createMutation.isPending || updateMutation.isPending}
-            className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
+        <Modal open={formOpen} onClose={closeForm} className="max-w-xl">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              if (editing) updateMutation.mutate({ id: editing.id, ...payload() })
+              else createMutation.mutate(payload())
+            }}
+            className="p-5 sm:p-6"
           >
-            {editing ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-            {editing ? t('Saqlash') : t('Qoʻshish')}
-          </button>
-          {editing && (
-            <button
-              type="button"
-              onClick={closeForm}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
-            >
-              {t('Bekor qilish')}
-            </button>
-          )}
-        </form>
+            <h2 className="pr-10 text-lg font-bold text-slate-900">
+              {editing ? t('{name} — tahrirlash', { name: editing.name }) : t('Yangi guruh')}
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {t('Sigʻim boʻsh qoldirilsa — cheklovsiz.')}
+            </p>
+
+            {error && (
+              <div
+                role="alert"
+                className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
+              >
+                {error}
+              </div>
+            )}
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <FieldLabel htmlFor="group-name" required>
+                  {t('Guruh nomi')}
+                </FieldLabel>
+                <input
+                  id="group-name"
+                  required
+                  autoFocus
+                  value={form.name}
+                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                  placeholder={t('Masalan: Kichik guruh')}
+                  className={input}
+                />
+              </div>
+
+              <div>
+                <FieldLabel htmlFor="group-capacity">{t('Sigʻim')}</FieldLabel>
+                <input
+                  id="group-capacity"
+                  type="number"
+                  min={0}
+                  placeholder={t('cheksiz')}
+                  value={form.capacity}
+                  onChange={(e) => setForm((p) => ({ ...p, capacity: e.target.value }))}
+                  className={input}
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  {t('Nechta bola sigʻadi. Boʻsh — cheklov yoʻq.')}
+                </p>
+              </div>
+
+              {/* Yosh oralig'i bazada boshidan bor edi, formada esa yo'q edi.
+                  U guruhni tanlashda yo'l ko'rsatadi: "3-4 yosh" degan guruhga
+                  6 yoshli bolani qo'yish xato ekanini odam darhol ko'radi. */}
+              <div>
+                <FieldLabel htmlFor="group-age-min">{t('Yosh oraligʻi')}</FieldLabel>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="group-age-min"
+                    type="number"
+                    min={0}
+                    max={18}
+                    placeholder={t('dan')}
+                    value={form.age_min}
+                    onChange={(e) => setForm((p) => ({ ...p, age_min: e.target.value }))}
+                    className={input}
+                  />
+                  <span className="text-slate-400">–</span>
+                  <input
+                    id="group-age-max"
+                    type="number"
+                    min={0}
+                    max={18}
+                    placeholder={t('gacha')}
+                    value={form.age_max}
+                    onChange={(e) => setForm((p) => ({ ...p, age_max: e.target.value }))}
+                    className={input}
+                  />
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  {t('Mos kelmasa — ogohlantirish, taqiq emas.')}
+                </p>
+              </div>
+
+              <div className="sm:col-span-2">
+                <FieldLabel htmlFor="group-teacher">{t('Tarbiyachi')}</FieldLabel>
+                <Select
+                  id="group-teacher"
+                  value={form.teacher_id}
+                  onChange={(e) => setForm((p) => ({ ...p, teacher_id: e.target.value }))}
+                >
+                  <option value="">{t('— biriktirilmagan —')}</option>
+                  {(employeesQuery.data?.items ?? []).map((employee) => (
+                    <option key={employee.id} value={employee.id}>
+                      {employee.full_name}
+                      {employee.position_title ? ` — ${employee.position_title}` : ''}
+                    </option>
+                  ))}
+                </Select>
+                <p className="mt-1 text-xs text-slate-500">
+                  {t('Tizim hisobi bogʻlangan tarbiyachi faqat shu guruhni koʻradi.')}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-2">
+              <button
+                type="submit"
+                disabled={createMutation.isPending || updateMutation.isPending}
+                className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-nihol-600 px-4 text-sm font-semibold text-white transition hover:bg-nihol-700 disabled:opacity-60 sm:flex-none"
+              >
+                {editing ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                {editing ? t('Saqlash') : t('Qoʻshish')}
+              </button>
+              <button
+                type="button"
+                onClick={closeForm}
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-200 px-4 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              >
+                {t('Bekor qilish')}
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {groupsQuery.isPending && (
@@ -256,9 +305,23 @@ export default function GroupsPage() {
       )}
 
       {groupsQuery.data?.items.length === 0 && (
+        /* Boʻsh ekran KEYINGI QADAMNI aytadi (PLAN 4.7). */
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-12 text-center">
           <Users2 className="mx-auto mb-3 h-10 w-10 text-slate-200" />
-          <p className="text-sm text-slate-500">{t('Hozircha guruh yoʻq.')}</p>
+          <p className="text-sm font-medium text-slate-700">{t('Hozircha guruh yoʻq.')}</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+            {t('Guruh — bolalarni taqsimlash va davomat belgilash uchun. Bittadan boshlang.')}
+          </p>
+          {can('children.create') && (
+            <button
+              type="button"
+              onClick={openCreate}
+              className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-nihol-600 px-4 text-sm font-semibold text-white transition hover:bg-nihol-700"
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+              {t('Guruh qoʻshish')}
+            </button>
+          )}
         </div>
       )}
 

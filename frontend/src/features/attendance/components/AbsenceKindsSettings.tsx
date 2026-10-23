@@ -16,6 +16,7 @@ import { absenceKindsApi, type AbsenceKind } from '@/features/attendance/api'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 const MODES: Array<[AbsenceKind['refund_mode'], string]> = [
   ['full_rate', t('Toʻliq kunlik stavka')],
@@ -112,21 +113,20 @@ export function AbsenceKindsSettings() {
                   />
                 </td>
                 <td className="py-2 pr-2">
-                  <select
+                  <Select
                     aria-label={t('Qaytarish')}
                     value={row.refund_mode}
                     disabled={!editable}
                     onChange={(e) =>
                       patch(row.id, { refund_mode: e.target.value as AbsenceKind['refund_mode'] })
                     }
-                    className={cell}
                   >
                     {MODES.map(([value, label]) => (
                       <option key={value} value={value}>
                         {label}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </td>
                 <td className="py-2 pr-2">
                   <input

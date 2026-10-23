@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils'
 import { QueryError } from '@/components/ui/QueryError'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 const UNITS = ['kg', 'g', 'l', 'ml', 'pcs', 'pack'] as const
 const MOVEMENT_LABELS: Record<string, string> = {
@@ -206,11 +207,11 @@ export default function InventoryPage() {
                 <label htmlFor="punit" className="mb-1 block text-xs font-medium text-slate-600">
                   {t('Birlik')}
                 </label>
-                <select
+                <Select
                   id="punit"
                   value={productForm.unit}
                   onChange={(e) => setProductForm((p) => ({ ...p, unit: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                  className="w-full"
                 >
                   {/* Kod bazada qoladi, ekranda esa nomi (audit, 2026-10-21). */}
                   {UNITS.map((u) => (
@@ -218,7 +219,7 @@ export default function InventoryPage() {
                       {unitLabel(u)}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="w-32">
                 <label htmlFor="pmin" className="mb-1 block text-xs font-medium text-slate-600">
@@ -334,20 +335,20 @@ export default function InventoryPage() {
                     >
                       {t('Turi')}
                     </label>
-                    <select
+                    <Select
                       id="mtype"
                       value={moveForm.movement_type}
                       onChange={(e) =>
                         setMoveForm((p) => ({ ...p, movement_type: e.target.value }))
                       }
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                      className="w-full"
                     >
                       {(['purchase', 'consumption', 'waste'] as const).map((t) => (
                         <option key={t} value={t}>
                           {MOVEMENT_LABELS[t]}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                   <div className="w-32">
                     <label htmlFor="mqty" className="mb-1 block text-xs font-medium text-slate-600">

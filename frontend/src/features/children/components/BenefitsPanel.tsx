@@ -22,6 +22,7 @@ import { ApiError } from '@/lib/api/types'
 import { formatDate, today } from '@/lib/format'
 import { useCan } from '@/lib/rbac/useCan'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 const BENEFIT_LABEL: Record<BenefitKind, string> = {
   sibling: t('Aka-uka'),
@@ -167,7 +168,7 @@ export function BenefitsPanel({ childId }: { childId: string }) {
             <label htmlFor="benefit-kind" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Turi')}
             </label>
-            <select
+            <Select
               id="benefit-kind"
               value={form.kind}
               onChange={(e) =>
@@ -176,14 +177,14 @@ export function BenefitsPanel({ childId }: { childId: string }) {
                   kind: e.target.value as Exclude<BenefitKind, 'sibling'>,
                 }))
               }
-              className={field}
+              className="mt-1"
             >
               {(['staff_child', 'low_income', 'full', 'custom'] as const).map((kind) => (
                 <option key={kind} value={kind}>
                   {BENEFIT_LABEL[kind]}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <div>
             <label htmlFor="benefit-from" className="mb-1 block text-xs font-medium text-slate-600">
@@ -205,17 +206,17 @@ export function BenefitsPanel({ childId }: { childId: string }) {
                 >
                   {t('Chegirma turi')}
                 </label>
-                <select
+                <Select
                   id="benefit-type"
                   value={form.discount_type}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, discount_type: e.target.value as 'percent' | 'fixed' }))
                   }
-                  className={field}
+                  className="mt-1"
                 >
                   <option value="percent">{t('Foiz')}</option>
                   <option value="fixed">{t('Belgilangan summa')}</option>
-                </select>
+                </Select>
               </div>
               <div>
                 <label

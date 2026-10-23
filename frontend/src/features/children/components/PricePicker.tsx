@@ -14,6 +14,7 @@
 import { cn, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { digitsOnly, type PriceValue } from '../price'
+import { Select } from '@/components/ui/Select'
 
 interface TariffOption {
   id: string
@@ -104,13 +105,13 @@ export function PricePicker({
         </div>
       ) : (
         <div>
-          <select
+          <Select
             id={`${idPrefix}-tariff`}
             aria-label={t('Tarif')}
             disabled={disabled}
             value={value.tariffId ?? ''}
             onChange={(e) => onChange({ tariffId: e.target.value || null, monthlyFee: null })}
-            className={field}
+            className="mt-1"
           >
             <option value="">{t('— tarifsiz —')}</option>
             {tariffs.map((tariff) => (
@@ -118,7 +119,7 @@ export function PricePicker({
                 {tariff.name} — {formatUZS(Number(tariff.amount))}
               </option>
             ))}
-          </select>
+          </Select>
           {!value.tariffId && (
             <p className="mt-1 text-xs text-amber-700">
               {tariffs.length === 0

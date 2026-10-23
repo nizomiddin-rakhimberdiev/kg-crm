@@ -25,6 +25,7 @@ import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 const STATUS: Record<ContractStatus, [string, string]> = {
   draft: [t('Qoralama'), 'bg-slate-100 text-slate-600'],
@@ -121,11 +122,11 @@ export function ContractsCard({ childId }: { childId: string }) {
                 >
                   {t('Shablon')}
                 </label>
-                <select
+                <Select
                   id="contract-template"
                   value={templateId}
                   onChange={(event) => setTemplateId(event.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                  className="w-full"
                 >
                   <option value="">{t('Tanlang')}</option>
                   {templates.map((template) => (
@@ -133,7 +134,7 @@ export function ContractsCard({ childId }: { childId: string }) {
                       {template.name}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
               <button
                 type="button"

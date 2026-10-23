@@ -34,6 +34,7 @@ import { EmptyRow } from '@/components/ui/EmptyState'
 import { formatDate, quantity, som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { groupCategories } from '@/features/expenses/categoryGroups'
+import { Select } from '@/components/ui/Select'
 
 const money = som
 
@@ -277,12 +278,12 @@ export default function ExpensesPage() {
                 <label htmlFor="ecat" className="mb-1 block text-xs font-medium text-slate-600">
                   {t('Kategoriya')}
                 </label>
-                <select
+                <Select
                   id="ecat"
                   required
                   value={form.category_id}
                   onChange={(e) => setForm((p) => ({ ...p, category_id: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                  className="w-full"
                 >
                   <option value="">{t('Tanlang…')}</option>
                   {groupCategories(categoriesQuery.data?.items ?? []).map((group) => (
@@ -294,7 +295,7 @@ export default function ExpensesPage() {
                       ))}
                     </optgroup>
                   ))}
-                </select>
+                </Select>
               </div>
               <div>
                 <label htmlFor="edate" className="mb-1 block text-xs font-medium text-slate-600">

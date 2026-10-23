@@ -31,6 +31,7 @@ import { formatDate, money, som } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { Select } from '@/components/ui/Select'
 
 const field =
   'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500'
@@ -424,12 +425,12 @@ export default function CashPage() {
                 <label htmlFor="hand-to" className={label}>
                   {t('Kimga')}
                 </label>
-                <select
+                <Select
                   id="hand-to"
                   required
                   value={hand.to_user_id}
                   onChange={(event) => setHand((p) => ({ ...p, to_user_id: event.target.value }))}
-                  className={field}
+                  className="mt-1"
                 >
                   <option value="">{t('Masʼul shaxsni tanlang')}</option>
                   {(receivers.data ?? []).map((person) => (
@@ -437,13 +438,13 @@ export default function CashPage() {
                       {person.full_name}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div>
                 <label htmlFor="hand-pot" className={label}>
                   {t('Qaysi pul')}
                 </label>
-                <select
+                <Select
                   id="hand-pot"
                   value={
                     hand.cash_account_id || handPots.find((pot) => pot.kind === 'cash')?.id || ''
@@ -451,14 +452,14 @@ export default function CashPage() {
                   onChange={(event) =>
                     setHand((p) => ({ ...p, cash_account_id: event.target.value }))
                   }
-                  className={field}
+                  className="mt-1"
                 >
                   {handPots.map((pot) => (
                     <option key={pot.id} value={pot.id}>
                       {pot.name}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div>
                 <label htmlFor="hand-amount" className={label}>
@@ -552,12 +553,12 @@ export default function CashPage() {
                   <label htmlFor="move-from" className={label}>
                     {t('Qaysi hisobdan')}
                   </label>
-                  <select
+                  <Select
                     id="move-from"
                     required
                     value={move.from}
                     onChange={(event) => setMove((p) => ({ ...p, from: event.target.value }))}
-                    className={field}
+                    className="mt-1"
                   >
                     <option value="">{t('Tanlang')}</option>
                     {pots.map((pot) => (
@@ -565,18 +566,18 @@ export default function CashPage() {
                         {pot.name} · {som(pot.balance)}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <div>
                   <label htmlFor="move-to" className={label}>
                     {t('Qaysi hisobga')}
                   </label>
-                  <select
+                  <Select
                     id="move-to"
                     required
                     value={move.to}
                     onChange={(event) => setMove((p) => ({ ...p, to: event.target.value }))}
-                    className={field}
+                    className="mt-1"
                   >
                     <option value="">{t('Tanlang')}</option>
                     {pots
@@ -586,7 +587,7 @@ export default function CashPage() {
                           {pot.name}
                         </option>
                       ))}
-                  </select>
+                  </Select>
                 </div>
                 <div>
                   <label htmlFor="move-amount" className={label}>
@@ -643,18 +644,18 @@ export default function CashPage() {
                     <label htmlFor="count-pot" className={label}>
                       {t('Hisob')}
                     </label>
-                    <select
+                    <Select
                       id="count-pot"
                       value={countPot.id}
                       onChange={(event) => setCount((p) => ({ ...p, account: event.target.value }))}
-                      className={field}
+                      className="mt-1"
                     >
                       {tills.map((pot) => (
                         <option key={pot.id} value={pot.id}>
                           {pot.name}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </div>
                 )}
                 <div>

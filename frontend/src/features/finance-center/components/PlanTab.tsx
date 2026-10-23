@@ -34,6 +34,7 @@ import { t } from '@/lib/i18n'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { MonthInput } from '@/components/ui/MonthInput'
+import { Select } from '@/components/ui/Select'
 
 const FLOW_LABELS: Record<string, string> = {
   tuition: t('Ota-ona toʻlovlari'),
@@ -44,9 +45,6 @@ const FLOW_LABELS: Record<string, string> = {
 }
 
 const card = 'rounded-2xl border border-slate-200 bg-white p-4'
-const inputClass =
-  'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500'
-
 function SafeWithdrawal({ branch }: { branch: string | null }) {
   const organizationId = useOrganizationId()
   const query = useQuery({
@@ -374,11 +372,10 @@ function Budget({ at }: { at: PackUnit }) {
             >
               {t('Chiqim toifasini qoʻshish')}
             </label>
-            <select
+            <Select
               id="budget-category"
               value={adding}
               onChange={(event) => setAdding(event.target.value)}
-              className={inputClass}
             >
               <option value="">—</option>
               {(categories.data?.items ?? [])
@@ -388,7 +385,7 @@ function Budget({ at }: { at: PackUnit }) {
                     {item.name}
                   </option>
                 ))}
-            </select>
+            </Select>
           </div>
           <button
             type="button"

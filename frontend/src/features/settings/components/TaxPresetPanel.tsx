@@ -13,6 +13,7 @@ import { settingsApi } from '@/features/notifications/api'
 import { SETTING_META } from '@/features/settings/settingsMeta'
 import { ApiError } from '@/lib/api/types'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 /**
  * Preset qiymati — tanlovli sozlamada KOD emas, nomi.
@@ -61,19 +62,19 @@ export function TaxPresetPanel({ editable }: { editable: boolean }) {
             <label htmlFor="tax-preset" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Rejim')}
             </label>
-            <select
+            <Select
               id="tax-preset"
               value={value}
               disabled={!editable}
               onChange={(event) => setChosen(event.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 disabled:bg-slate-50"
+              className="w-full"
             >
               {data.presets.map((row) => (
                 <option key={row.id} value={row.id}>
                   {row.title}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           {editable && (
             <button

@@ -16,6 +16,7 @@ import type { ExpenseItemInput } from '@/features/expenses/api'
 import { som } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 /** Bog'cha amalda ishlatadigan o'lchovlar. */
 export const UNITS = ['kg', 'dona', 'l', 'quti', 'bogʻlam'] as const
@@ -81,18 +82,18 @@ export function ExpenseItemsEditor({
             onChange={(e) => patch(index, { quantity: e.target.value.replace(/[^\d.,]/g, '') })}
             className={cn(field, 'text-right')}
           />
-          <select
+          <Select
             aria-label={t('Oʻlchov')}
             value={item.unit}
             onChange={(e) => patch(index, { unit: e.target.value })}
-            className={field}
+            className="mt-1"
           >
             {UNITS.map((unit) => (
               <option key={unit} value={unit}>
                 {unit}
               </option>
             ))}
-          </select>
+          </Select>
           <input
             aria-label={t('Birlik narxi')}
             inputMode="decimal"

@@ -16,6 +16,7 @@ import { contractTemplatesApi, type ContractTemplate } from '@/features/contract
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 type Draft = Pick<ContractTemplate, 'name' | 'language' | 'body'> & { id?: string }
 
@@ -175,18 +176,17 @@ export function ContractTemplatesSettings() {
               <label htmlFor="tpl-lang" className="mb-1 block text-xs font-medium text-slate-600">
                 {t('Til')}
               </label>
-              <select
+              <Select
                 id="tpl-lang"
                 value={draft.language}
                 onChange={(event) =>
                   setDraft({ ...draft, language: event.target.value as Draft['language'] })
                 }
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
               >
                 <option value="uz">{t('Oʻzbekcha')}</option>
                 <option value="ru">{t('Ruscha')}</option>
                 <option value="en">{t('Inglizcha')}</option>
-              </select>
+              </Select>
             </div>
           </div>
 

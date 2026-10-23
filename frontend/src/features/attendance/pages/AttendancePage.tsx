@@ -24,10 +24,12 @@ import { AbsenceClaimsPanel } from '@/features/attendance/components/AbsenceClai
 import { HolidaysPanel } from '@/features/attendance/components/HolidaysPanel'
 import { Modal } from '@/components/ui/Modal'
 import { useCan } from '@/lib/rbac/useCan'
+import { formatDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/app/providers/ToastProvider'
 import { QueryError } from '@/components/ui/QueryError'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 const STATUS_BUTTONS: Array<{
   value: AttendanceStatus
@@ -103,6 +105,14 @@ function ChildrenAttendance({
     }
   }, [registerQuery.data])
 
+  // Kun boʻyicha BUTUN bogʻcha (mijoz soʻrovi, 2026-10-23): ekranning
+  // tepasidagi katta koʻrsatkich. Guruhniki — pastda, kichkina.
+  const daySummary = useQuery({
+    queryKey: ['org', organizationId, 'attendance', 'day-summary', date],
+    queryFn: () => attendanceApi.daySummary(date),
+    enabled: Boolean(date),
+  })
+
   const saveMutation = useMutation({
     mutationFn: () =>
       attendanceApi.markBulk(
@@ -120,6 +130,9 @@ function ChildrenAttendance({
       setError(null)
       void queryClient.invalidateQueries({
         queryKey: queryKeys.attendanceDaily(organizationId, groupId, date),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: ['org', organizationId, 'attendance', 'day-summary', date],
       })
       invalidateAttendance(queryClient, organizationId)
     },
@@ -257,6 +270,47 @@ function ChildrenAttendance({
         </div>
       )}
 
+      {/* Kunning KATTA koʻrsatkichi — butun bogʻcha boʻyicha (mijoz
+          soʻrovi, 2026-10-23). Ilgari "Keldi / Sababli / Kelmagan"
+          faqat tanlangan guruh boʻyicha va pastda, kichkina yozuvda
+          turardi; mudiraning birinchi savoli esa kengroq: "bugun
+          nechta bola keldi?".
+
+          "Belgilanmagan" ATAYLAB alohida ustun: u "kelmagan" EMAS
+          (ADR-19), va aynan shu farq ekranni ishonchli qiladi. */}
+      {(daySummary.data?.total ?? 0) > 0 && (
+        <div>
+          <p className="mb-2 text-sm text-slate-500">
+            {t('{date} · butun bogʻcha boʻyicha {n} ta bola', {
+              date: formatDate(date),
+              n: daySummary.data?.total ?? 0,
+            })}
+          </p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {(
+              [
+                [t('Keldi'), daySummary.data?.present ?? 0, 'text-nihol-700'],
+                [t('Sababli'), daySummary.data?.excused ?? 0, 'text-ildiz-700'],
+                [t('Kelmagan'), daySummary.data?.absent ?? 0, 'text-red-700'],
+                [t('Belgilanmagan'), daySummary.data?.unmarked ?? 0, 'text-tosh-500'],
+              ] as const
+            ).map(([label, value, tone]) => (
+              <div
+                key={label}
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 sm:px-5 sm:py-4"
+              >
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  {label}
+                </p>
+                <p className={cn('num mt-1 text-3xl font-bold tabular-nums sm:text-4xl', tone)}>
+                  {value}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Asboblar paneli — bitta kartada (2026-10-14): guruh, sana va
           amallar bir qatorda, ostida esa belgilash jarayoni. Ilgari
           ular uch xil blok edi va sahifa "bardak" ko'rinardi. */}
@@ -265,21 +319,21 @@ function ChildrenAttendance({
           <label htmlFor="group" className="mb-1 block text-xs font-medium text-slate-600">
             {t('Guruh')}
           </label>
-          <select
+          <Select
             id="group"
             value={groupId}
             onChange={(e) => {
               const next = e.target.value
               switchGuarded(() => setGroupId(next))
             }}
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
+            className="w-full"
           >
             {groupsQuery.data?.items.map((group) => (
               <option key={group.id} value={group.id}>
                 {group.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
           <label htmlFor="date" className="mb-1 block text-xs font-medium text-slate-600">
@@ -320,13 +374,17 @@ function ChildrenAttendance({
         )}
       </div>
 
-      {/* Jarayon — to'rtta katta plitka o'rniga bitta chiziq: asosiy
-          savol "hammasi belgilandimi?", qolgani uning izohi. */}
+      {/* Guruh koʻrsatkichi — KICHKINA: katta raqamlar tepada, bu
+          yerda esa faqat "shu guruhda qancha qoldi" (2026-10-23). */}
       {rows.length > 0 && (
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <p className="text-sm font-semibold text-slate-900">
-              {t('{done} / {total} belgilandi', { done: marked, total: rows.length })}
+              {t('{group}: {done} / {total} belgilandi', {
+                group: registerQuery.data?.group.name ?? '',
+                done: marked,
+                total: rows.length,
+              })}
             </p>
             <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
               <span className="text-emerald-700">

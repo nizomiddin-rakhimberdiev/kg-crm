@@ -18,6 +18,7 @@ import { formatDate, formatDateTime } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
+import { Select } from '@/components/ui/Select'
 
 const STATUS: Record<ReviewState['status'], { label: string; tone: string }> = {
   draft: { label: t('Qoralama'), tone: 'bg-slate-100 text-slate-700' },
@@ -302,11 +303,10 @@ export function ReviewPanel({ at }: { at: PackUnit }) {
           <label htmlFor="question-path" className="mb-1 block text-xs font-medium text-slate-600">
             {t('Qaysi raqam haqida')}
           </label>
-          <select
+          <Select
             id="question-path"
             value={questionPath}
             onChange={(event) => setQuestionPath(event.target.value)}
-            className={inputClass}
           >
             {[
               ['summary', t('Xulosa')],
@@ -322,7 +322,7 @@ export function ReviewPanel({ at }: { at: PackUnit }) {
                 {label}
               </option>
             ))}
-          </select>
+          </Select>
           <InlineText
             id="question-text"
             label={t('Savol')}

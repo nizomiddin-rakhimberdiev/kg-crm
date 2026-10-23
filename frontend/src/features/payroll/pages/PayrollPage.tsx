@@ -40,6 +40,7 @@ import { cashApi } from '@/features/cash/api'
 import { PayoutModal } from '@/features/payroll/components/PayoutModal'
 import { money, monthLabel } from '@/lib/format'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 const STATUS = {
   draft: [t('Qoralama'), 'bg-slate-100 text-slate-600'],
@@ -329,14 +330,14 @@ export default function PayrollPage() {
                   >
                     {t('Xodim')}
                   </label>
-                  <select
+                  <Select
                     id="adv-emp"
                     required
                     value={advanceForm.employee_id}
                     onChange={(e) =>
                       setAdvanceForm((prev) => ({ ...prev, employee_id: e.target.value }))
                     }
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                    className="w-full"
                   >
                     <option value="">{t('Tanlang…')}</option>
                     {employeesQuery.data?.items.map((employee) => (
@@ -344,7 +345,7 @@ export default function PayrollPage() {
                         {employee.full_name}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <div>
                   <label
@@ -386,13 +387,13 @@ export default function PayrollPage() {
                   >
                     {t('Qaysi hisobdan')}
                   </label>
-                  <select
+                  <Select
                     id="adv-account"
                     value={advanceForm.cash_account_id}
                     onChange={(e) =>
                       setAdvanceForm((prev) => ({ ...prev, cash_account_id: e.target.value }))
                     }
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                    className="w-full"
                   >
                     <option value="">{t('Naqd kassa')}</option>
                     {cashAccounts.data?.items.map((account) => (
@@ -400,7 +401,7 @@ export default function PayrollPage() {
                         {account.name}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <div>
                   <label

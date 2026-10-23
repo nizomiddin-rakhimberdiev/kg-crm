@@ -25,6 +25,7 @@ import { ApiError, type SettingValue } from '@/lib/api/types'
 import { useFeature } from '@/lib/features'
 import { useCan } from '@/lib/rbac/useCan'
 import { APP_LOCALES, t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 const GROUPS: Array<[string, string]> = [
   ['general', t('Umumiy')],
@@ -91,52 +92,51 @@ export default function SettingsPage() {
     // qiymat ("telegramm") jimgina SMS'ga qaytarardi.
     if (key === 'notifications.default_channel') {
       return (
-        <select
+        <Select
           value={String(value ?? 'telegram')}
           disabled={!editable}
           onChange={(event) => save.mutate({ key, value: event.target.value })}
-          className="rounded-lg border border-tosh-200 px-2.5 py-1.5 text-sm outline-none focus:border-nihol-500 disabled:bg-tosh-50"
         >
           <option value="telegram">{t('Telegram')}</option>
           <option value="sms">{t('SMS')}</option>
-        </select>
+        </Select>
       )
     }
 
     if (key === 'general.default_language') {
       return (
-        <select
+        <Select
           value={String(value ?? 'uz')}
           disabled={!editable}
           aria-label={META[key]?.label ?? key}
           onChange={(e) => save.mutate({ key, value: e.target.value })}
-          className="w-44 rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500 disabled:bg-slate-50"
+          className="w-44"
         >
           {APP_LOCALES.map((locale) => (
             <option key={locale.code} value={locale.code}>
               {locale.label}
             </option>
           ))}
-        </select>
+        </Select>
       )
     }
 
     const meta = META[key]
     if (meta?.options) {
       return (
-        <select
+        <Select
           value={String(value ?? '')}
           disabled={!editable}
           aria-label={meta.label}
           onChange={(e) => save.mutate({ key, value: e.target.value })}
-          className="w-60 rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500 disabled:bg-slate-50"
+          className="w-60"
         >
           {meta.options.map(([option, label]) => (
             <option key={option} value={option}>
               {label}
             </option>
           ))}
-        </select>
+        </Select>
       )
     }
 

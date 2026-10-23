@@ -2643,3 +2643,48 @@ Shundan keyin **butun to'plam yashil**: 16 ta test o'tdi (4 tasi
 standalone stendda o'tkazib yuborildi), desktop va 375px da, deploy
 qilingan stendga qarshi — Qarzdorlar tab'i va eski havolaning
 yo'naltirishi ham shu yerda tekshirildi.
+
+## Interfeys tartibi (mijoz e'tirozi, 2026-10-23)
+
+Mijoz uchta narsani ko'rsatdi: guruh qo'shish formasi, loyihadagi
+barcha tanlagichlar, va davomat ekranidagi ko'rsatkichlar.
+
+31. **Tanlagich — bitta komponent** (`components/ui/Select`). Ilovada
+    86 ta `<select>` bor edi va har biri o'z klassi bilan yozilgan:
+    biri `px-3 py-2`, boshqasi `px-2 py-1`, uchinchisi `h-11`; fokus
+    halqasi ba'zisida bor, ba'zisida yo'q; strelka esa brauzerniki —
+    Chrome'da bir xil, Safari'da boshqacha. Mijozning so'zi: "umuman
+    standart xolatda emas, oddiy bo'lib qolgan hammasi".
+
+    Yechim — **native `<select>` ning o'zi, kiyimi bizniki**:
+    `appearance-none`, o'z strelkamiz, bitta balandlik (44px; zich
+    jadval qatori uchun `size="sm"`), bitta fokus halqasi, `tone`
+    (platforma konsoli uchun) va `invalid`. Element native qoladi —
+    klaviatura, harf bilan qidirish, `optgroup`, skrinrider va
+    telefondagi tizim tanlagichi shundan bepul keladi (`DateInput`
+    dagi bilan bir xil sabab). `primitives.tsx` dagi ishlatilmagan
+    "custom dropdown" o'chirildi. `a11y.test.ts` endi xom `<select>`
+    ni taqiqlaydi.
+
+32. **Guruh qo'shish — modalda.** Ilgari besh maydonli forma sahifa
+    tepasida, kartalar ustida DOIM ochiq turardi. Guruh yiliga
+    bir-ikki marta qo'shiladi, ya'ni u joyni doimiy egallashi
+    noto'g'ri. Endi: sarlavha yonida "Guruh qo'shish" tugmasi, forma
+    esa modalda — nomi to'liq kenglikda, sig'im va yosh oralig'i
+    yonma-yon, har birining ostida bir qatorli izoh. Tahrirlash ham
+    o'sha modalda. Bo'sh ro'yxat endi keyingi qadamni aytadi.
+
+33. **Davomat ko'rsatkichlari tepaga chiqdi va kattalashdi.** "Keldi /
+    Sababli / Kelmagan" faqat TANLANGAN guruh bo'yicha va pastda,
+    kichkina yozuvda turardi. Mudiraning birinchi savoli esa kengroq:
+    "bugun nechta bola keldi?". Endi tepada to'rtta katta plitka —
+    butun bog'cha bo'yicha; guruhniki pastda, bitta qatorda
+    ("1-guruh: 2 / 2 belgilandi").
+
+    **"Belgilanmagan" — alohida ustun**: u "kelmagan" EMAS (ADR-19),
+    va aynan shu farq ekranni ishonchli qiladi.
+
+    Raqamlar yangi `GET /attendance/day-summary` dan keladi: ikkita
+    so'rov, guruhlar soni qancha bo'lishidan qat'i nazar.
+    **"Hammasi" — foydalanuvchining o'z ko'lami** (ADR-21): guruhga
+    biriktirilgan tarbiyachi faqat o'z guruhlarini sanaydi.

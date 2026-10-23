@@ -42,6 +42,7 @@ import { Modal } from '@/components/ui/Modal'
 import { som } from '@/lib/format'
 import { QueryError } from '@/components/ui/QueryError'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 const money = som
 
@@ -396,18 +397,13 @@ export default function PaymentsPage() {
               <label htmlFor="month" className="mb-1 block text-xs font-medium text-slate-600">
                 {t('Oy')}
               </label>
-              <select
-                id="month"
-                value={month}
-                onChange={(e) => setMonth(Number(e.target.value))}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
-              >
+              <Select id="month" value={month} onChange={(e) => setMonth(Number(e.target.value))}>
                 {MONTHS.map((label, index) => (
                   <option key={label} value={index + 1}>
                     {label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             <div className="min-w-[14rem] flex-1">
@@ -670,11 +666,10 @@ export default function PaymentsPage() {
               >
                 {t('Toʻlov usuli')}
               </label>
-              <select
+              <Select
                 id="journal-method"
                 value={journal.method}
                 onChange={(e) => setJournal((p) => ({ ...p, method: e.target.value }))}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
               >
                 <option value="">{t('Hammasi')}</option>
                 {ALL_PAYMENT_METHODS.map((value) => (
@@ -682,7 +677,7 @@ export default function PaymentsPage() {
                     {paymentMethodLabel(value)}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             {/* Yig'indi — filtr bilan birga o'zgaradi. */}

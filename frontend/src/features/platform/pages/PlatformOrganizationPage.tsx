@@ -18,6 +18,7 @@ import { supportHandoff } from '@/lib/auth/supportSession'
 import { usePlatformAuth } from '../PlatformAuthProvider'
 import { STATUS_LABEL } from './PlatformOrganizationsPage'
 import { INVOICE_STATUS, PAYMENT_TERM, PLAN, USAGE_METHOD, label } from '../labels'
+import { Select } from '@/components/ui/Select'
 
 const day = (iso: string | null) => formatDate(iso)
 
@@ -380,17 +381,13 @@ export default function PlatformOrganizationPage() {
             </p>
             <label className="block text-xs text-slate-400">
               Toʻlov davri
-              <select
-                value={term}
-                onChange={(e) => setTerm(e.target.value)}
-                className={`${field} mt-1`}
-              >
+              <Select value={term} onChange={(e) => setTerm(e.target.value)} className="mt-1">
                 {Object.entries(PAYMENT_TERM).map(([value, text]) => (
                   <option key={value} value={value}>
                     {text}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label className="block text-xs text-slate-400">
               Sabab (mijoz koʻradi)
@@ -419,17 +416,17 @@ export default function PlatformOrganizationPage() {
             </p>
             <label className="block text-xs text-slate-400">
               Reja
-              <select
+              <Select
                 value={planCode}
                 onChange={(e) => setPlanCode(e.target.value)}
-                className={`${field} mt-1`}
+                className="mt-1"
               >
                 {[...new Set((plans ?? []).map((plan) => plan.code))].map((code) => (
                   <option key={code} value={code}>
                     {label(PLAN, code)}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label className="block text-xs text-slate-400">
               Sabab (mijoz koʻradi)

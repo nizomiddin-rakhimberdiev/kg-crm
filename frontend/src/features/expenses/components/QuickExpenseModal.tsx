@@ -23,6 +23,7 @@ import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { MonthInput } from '@/components/ui/MonthInput'
 import { groupCategories } from '@/features/expenses/categoryGroups'
+import { Select } from '@/components/ui/Select'
 
 const field =
   'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500'
@@ -155,11 +156,11 @@ export function QuickExpenseModal({ onClose }: { onClose: () => void }) {
             ))}
           </div>
           {all.length > CHIPS && (
-            <select
+            <Select
               aria-label={t('Boshqa toifa')}
               value={chips.some((c) => c.id === categoryId) ? '' : categoryId}
               onChange={(event) => setCategoryId(event.target.value)}
-              className={cn(field, 'mt-2')}
+              className="mt-2"
             >
               <option value="">{t('Boshqa toifa…')}</option>
               {/* Ota-toifa boʻyicha guruhlangan (audit, 2026-10-21):
@@ -173,7 +174,7 @@ export function QuickExpenseModal({ onClose }: { onClose: () => void }) {
                   ))}
                 </optgroup>
               ))}
-            </select>
+            </Select>
           )}
         </fieldset>
 
@@ -288,11 +289,11 @@ export function QuickExpenseModal({ onClose }: { onClose: () => void }) {
                   <label htmlFor="qe-supplier" className={label}>
                     {t('Kimdan olindi')}
                   </label>
-                  <select
+                  <Select
                     id="qe-supplier"
                     value={supplierId}
                     onChange={(event) => setSupplierId(event.target.value)}
-                    className={field}
+                    className="mt-1"
                   >
                     <option value="">{t('Tanlang')}</option>
                     {(suppliers.data?.items ?? []).map((supplier) => (
@@ -300,7 +301,7 @@ export function QuickExpenseModal({ onClose }: { onClose: () => void }) {
                         {supplier.name}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <div>
                   <label htmlFor="qe-due" className={label}>

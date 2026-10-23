@@ -64,6 +64,7 @@ class AttendanceViewSet(BranchScopedMixin, TenantViewSet):
         "bulk": "create",
         "daily": "read",
         "summary": "read",
+        "day_summary": "read",
     }
     model = AttendanceRecord
     select_related_fields = ("child", "group")
@@ -129,6 +130,19 @@ class AttendanceViewSet(BranchScopedMixin, TenantViewSet):
                 "rows": services.daily_register(group=group, attendance_date=target),
             }
         )
+
+    @action(detail=False, methods=["get"], url_path="day-summary")
+    def day_summary(self, request: Request) -> Response:
+        """
+        `GET /attendance/day-summary?date=` — kun boʻyicha BUTUN bogʻcha.
+
+        Ekranning tepasidagi katta koʻrsatkich shu yerdan keladi
+        (mijoz soʻrovi, 2026-10-23): "bugun nechta bola keldi?" degan
+        savol bitta guruhdan kengroq. Tarbiyachining "hammasi" — oʻz
+        guruhlari (ADR-21).
+        """
+        target = _parse_date(request.query_params.get("date"), "date")
+        return Response(services.day_summary(user=request_user(request), attendance_date=target))
 
     @action(detail=False, methods=["get"])
     def summary(self, request: Request) -> Response:

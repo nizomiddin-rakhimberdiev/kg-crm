@@ -21,6 +21,7 @@ import { t } from '@/lib/i18n'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { MonthInput } from '@/components/ui/MonthInput'
+import { Select } from '@/components/ui/Select'
 
 const card = 'rounded-2xl border border-slate-200 bg-white p-4'
 
@@ -86,18 +87,13 @@ function Calendar() {
               <label htmlFor="tax-pot" className="mb-1 block text-xs font-medium text-slate-600">
                 {t('Qaysi hisobdan')}
               </label>
-              <select
-                id="tax-pot"
-                value={pot}
-                onChange={(event) => setPotId(event.target.value)}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
-              >
+              <Select id="tax-pot" value={pot} onChange={(event) => setPotId(event.target.value)}>
                 {pots.map((row) => (
                   <option key={row.id} value={row.id}>
                     {row.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           )}
         </div>

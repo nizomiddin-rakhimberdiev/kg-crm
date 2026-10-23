@@ -13,6 +13,7 @@
 import type { Pot } from '@/features/expenses/pots'
 import { som } from '@/lib/format'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 export function PotSelect({
   id,
@@ -26,12 +27,12 @@ export function PotSelect({
   onChange: (value: string) => void
 }) {
   return (
-    <select
+    <Select
       id={id}
       required
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+      className="w-full"
     >
       <option value="" disabled>
         {t('Tanlang…')}
@@ -41,7 +42,7 @@ export function PotSelect({
           {pot.balance === null ? pot.name : `${pot.name} — ${som(pot.balance)}`}
         </option>
       ))}
-    </select>
+    </Select>
   )
 }
 

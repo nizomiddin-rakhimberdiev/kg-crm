@@ -18,6 +18,7 @@ import { Modal } from '@/components/ui/Modal'
 import { childrenApi } from '@/features/children/api'
 import { ApiError, type Child } from '@/lib/api/types'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 export function ChildEditDialog({
   child,
@@ -130,27 +131,27 @@ export function ChildEditDialog({
             <label htmlFor="ce-gender" className={label}>
               {t('Jinsi')} {required}
             </label>
-            <select
+            <Select
               id="ce-gender"
               value={form.gender}
               onChange={(e) =>
                 setForm((p) => ({ ...p, gender: e.target.value as Child['gender'] }))
               }
-              className={field}
+              className="mt-1"
             >
               <option value="male">{t('Oʻgʻil bola')}</option>
               <option value="female">{t('Qiz bola')}</option>
-            </select>
+            </Select>
           </div>
           <div>
             <label htmlFor="ce-heard" className={label}>
               {t('Bizni qayerdan eshitgan?')}
             </label>
-            <select
+            <Select
               id="ce-heard"
               value={form.heard_from}
               onChange={(e) => setForm((p) => ({ ...p, heard_from: e.target.value }))}
-              className={field}
+              className="mt-1"
             >
               <option value="">{t('Koʻrsatilmagan')}</option>
               {HEARD_FROM.map(([value, text]) => (
@@ -158,7 +159,7 @@ export function ChildEditDialog({
                   {text}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           {form.heard_from === 'other' && (
             <div>

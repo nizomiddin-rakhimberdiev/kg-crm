@@ -107,6 +107,92 @@ def mark_bulk(
     return saved
 
 
+def day_summary(*, user: Any, attendance_date: date) -> dict[str, Any]:
+    """
+    Bir kunning BUTUN bog'cha bo'yicha yig'masi (mijoz so'rovi, 2026-10-23).
+
+    Davomat ekranida "Keldi / Sababli / Kelmagan" faqat tanlangan
+    guruhning pastida, kichkina yozuvda turardi. Mudiraning birinchi
+    savoli esa boshqa: "bugun nechta bola keldi?" — ya'ni butun
+    bog'cha bo'yicha, va u ekranning TEPASIDA bo'lishi kerak.
+
+    **"Hammasi" — foydalanuvchining o'z ko'lami** (ADR-21): guruhga
+    biriktirilgan tarbiyachi faqat o'z guruhlarini ko'radi, ya'ni
+    uning "hammasi" — o'sha guruhlar. Shuning uchun guruhlar ro'yxati
+    `restrict_groups` dan o'tadi.
+
+    **Belgilanmagan — "kelmagan" EMAS** (ADR-19): ikkisi boshqa narsa,
+    va aynan shu farq ekranni ishonchli qiladi.
+    """
+    from apps.children.scope import restrict_groups
+
+    groups = list(restrict_groups(Group.objects.all(), user).order_by("name"))
+    if not groups:
+        return {
+            "date": attendance_date.isoformat(),
+            "total": 0,
+            "marked": 0,
+            "present": 0,
+            "absent": 0,
+            "excused": 0,
+            "unmarked": 0,
+            "groups": [],
+        }
+
+    # Bolalar soni — guruh bo'yicha, BITTA so'rovda.
+    roster: dict[Any, int] = dict(
+        Child.objects.filter(
+            enrollments__group__in=groups,
+            enrollments__status=EnrollmentState.ACTIVE,
+            enrollments__end_date__isnull=True,
+            is_active=True,
+        )
+        .values_list("enrollments__group_id")
+        .annotate(total=Count("id", distinct=True))
+    )
+
+    # Belgilangan yozuvlar — guruh va holat bo'yicha, yana bitta so'rov.
+    counts: dict[tuple[Any, str], int] = {
+        (row["group_id"], row["status"]): row["n"]
+        for row in AttendanceRecord.objects.filter(
+            group__in=groups, attendance_date=attendance_date
+        )
+        .values("group_id", "status")
+        .annotate(n=Count("id"))
+    }
+
+    rows: list[dict[str, Any]] = []
+    for group in groups:
+        total = roster.get(group.id, 0)
+        present = counts.get((group.id, AttendanceStatus.PRESENT), 0)
+        absent = counts.get((group.id, AttendanceStatus.ABSENT), 0)
+        excused = counts.get((group.id, AttendanceStatus.EXCUSED), 0)
+        marked = present + absent + excused
+        rows.append(
+            {
+                "id": str(group.id),
+                "name": group.name,
+                "total": total,
+                "marked": marked,
+                "present": present,
+                "absent": absent,
+                "excused": excused,
+                "unmarked": max(total - marked, 0),
+            }
+        )
+
+    return {
+        "date": attendance_date.isoformat(),
+        "total": sum(row["total"] for row in rows),
+        "marked": sum(row["marked"] for row in rows),
+        "present": sum(row["present"] for row in rows),
+        "absent": sum(row["absent"] for row in rows),
+        "excused": sum(row["excused"] for row in rows),
+        "unmarked": sum(row["unmarked"] for row in rows),
+        "groups": rows,
+    }
+
+
 def daily_register(*, group: Group, attendance_date: date) -> list[dict[str, Any]]:
     """
     Guruhning bir kunlik jurnali.

@@ -41,6 +41,7 @@ import { cn } from '@/lib/utils'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { som } from '@/lib/format'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 const money = som
 
@@ -418,11 +419,11 @@ export default function DebtorsPage({ embedded = false }: { embedded?: boolean }
               <label htmlFor="debtor-group" className="block text-xs font-medium text-tosh-500">
                 {t('Guruh')}
               </label>
-              <select
+              <Select
                 id="debtor-group"
                 value={groupId}
                 onChange={(event) => setGroupId(event.target.value)}
-                className="mt-1 w-full rounded-lg border border-tosh-200 px-2.5 py-2 text-sm outline-none focus:border-nihol-500"
+                className="mt-1 w-full"
               >
                 <option value="">{t('Barcha guruhlar')}</option>
                 {(groupsQuery.data?.items ?? []).map((group) => (
@@ -430,7 +431,7 @@ export default function DebtorsPage({ embedded = false }: { embedded?: boolean }
                     {group.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             <div className="min-w-[140px]">
@@ -451,16 +452,16 @@ export default function DebtorsPage({ embedded = false }: { embedded?: boolean }
               <label htmlFor="debtor-order" className="block text-xs font-medium text-tosh-500">
                 {t('Saralash')}
               </label>
-              <select
+              <Select
                 id="debtor-order"
                 value={orderBy}
                 onChange={(event) => setOrderBy(event.target.value as typeof orderBy)}
-                className="mt-1 w-full rounded-lg border border-tosh-200 px-2.5 py-2 text-sm outline-none focus:border-nihol-500"
+                className="mt-1 w-full"
               >
                 <option value="debt">{t('Qarz boʻyicha')}</option>
                 <option value="days">{t('Kechikish boʻyicha')}</option>
                 <option value="name">{t('Ism boʻyicha')}</option>
-              </select>
+              </Select>
             </div>
 
             <label

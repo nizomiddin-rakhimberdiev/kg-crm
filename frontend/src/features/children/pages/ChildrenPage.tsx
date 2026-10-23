@@ -41,6 +41,7 @@ import { formatDate, today } from '@/lib/format'
 import { avatarTone, cn, initials } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { FieldLabel } from '@/components/ui/FieldLabel'
+import { Select } from '@/components/ui/Select'
 
 const STATUS_LABELS: Record<string, string> = {
   prospect: t('Nomzod'),
@@ -425,7 +426,7 @@ export default function ChildrenPage() {
   // Jadval va kartochka bir xil hujayralarni ishlatadi — ikki qobiq,
   // bitta mazmun: tugma yoki holat o'zgarsa, ikkalasi birga o'zgaradi.
   // Bular KOMPONENT emas, render-funksiya: sahifa ichida yangi komponent
-  // tipi yaratilsa React uni har renderda qayta o'rnatadi va `<select>`
+  // tipi yaratilsa React uni har renderda qayta o'rnatadi va `<Select>`
   // fokusi yo'qoladi.
   const renderName = (child: Child) => (
     <Link
@@ -476,14 +477,15 @@ export default function ChildrenPage() {
 
   const renderGroup = (child: Child) =>
     can('children.update') ? (
-      <select
+      <Select
         aria-label={t('Guruh')}
         value={child.current_group?.id ?? ''}
         onChange={(e) => e.target.value && setPendingGroup({ child, groupId: e.target.value })}
-        className="max-w-[180px] rounded-lg border border-slate-200 px-2 py-1 text-xs outline-none focus:border-brand-500"
+        size="sm"
+        className="max-w-[180px]"
       >
         <GroupOptions groups={groupsQuery.data?.items ?? []} currentId={child.current_group?.id} />
-      </select>
+      </Select>
     ) : (
       <span className="text-sm text-slate-600">{child.current_group?.name ?? '—'}</span>
     )
@@ -760,17 +762,17 @@ export default function ChildrenPage() {
             <label htmlFor="gender" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Jinsi')}
             </label>
-            <select
+            <Select
               id="gender"
               value={form.gender}
               onChange={(e) =>
                 setForm((p) => ({ ...p, gender: e.target.value as 'male' | 'female' }))
               }
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className="w-full"
             >
               <option value="male">{t('Oʻgʻil bola')}</option>
               <option value="female">{t('Qiz bola')}</option>
-            </select>
+            </Select>
           </div>
 
           {/* Bosqich 14: oila bogʻcha haqida qayerdan eshitgan — statistika
@@ -779,12 +781,12 @@ export default function ChildrenPage() {
             <FieldLabel htmlFor="heard_from" required={!editing}>
               {t('Bizni qayerdan eshitgan?')}
             </FieldLabel>
-            <select
+            <Select
               id="heard_from"
               required={!editing}
               value={form.heard_from ?? ''}
               onChange={(e) => setForm((p) => ({ ...p, heard_from: e.target.value }))}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className="w-full"
             >
               <option value="">{editing ? t('Koʻrsatilmagan') : t('Tanlang')}</option>
               {HEARD_FROM.map(([value, label]) => (
@@ -792,7 +794,7 @@ export default function ChildrenPage() {
                   {label}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           {form.heard_from === 'other' && (
             <div>
@@ -821,14 +823,14 @@ export default function ChildrenPage() {
             <label htmlFor="form-group" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Guruh')}
             </label>
-            <select
+            <Select
               id="form-group"
               value={formGroupId}
               onChange={(e) => setFormGroupId(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className="w-full"
             >
               <GroupOptions groups={groupsQuery.data?.items ?? []} />
-            </select>
+            </Select>
             {/* Yosh oraligʻi BLOKLAMAYDI, ogohlantiradi (audit,
                 2026-10-21): bogʻchada aka-ukani bir guruhda qoldirish
                 yoki joy yoʻqligi kabi istisnolar koʻp. */}
@@ -937,16 +939,15 @@ export default function ChildrenPage() {
                     {t('+ Ikkinchi raqam')}
                   </button>
                 )}
-                <select
+                <Select
                   aria-label={t('Kim boʻladi')}
                   value={guardian.relation}
                   onChange={(e) => setGuardian((p) => ({ ...p, relation: e.target.value }))}
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
                 >
                   <option value="mother">{t('Onasi')}</option>
                   <option value="father">{t('Otasi')}</option>
                   <option value="other">{t('Boshqa')}</option>
-                </select>
+                </Select>
               </div>
             </div>
           )}
@@ -1001,11 +1002,10 @@ export default function ChildrenPage() {
             className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
           />
         </div>
-        <select
+        <Select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           aria-label={t('Holat')}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
         >
           <option value="">{t('Barcha holatlar')}</option>
           {Object.entries(STATUS_LABELS).map(([value, label]) => (
@@ -1013,7 +1013,7 @@ export default function ChildrenPage() {
               {label}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">

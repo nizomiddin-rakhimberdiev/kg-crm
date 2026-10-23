@@ -17,9 +17,41 @@ export interface BulkRow {
   reason?: string
 }
 
+export interface DaySummaryGroup {
+  id: string
+  name: string
+  total: number
+  marked: number
+  present: number
+  absent: number
+  excused: number
+  unmarked: number
+}
+
+export interface DaySummary {
+  date: string
+  total: number
+  marked: number
+  present: number
+  absent: number
+  excused: number
+  /** Belgilanmagan — "kelmagan" EMAS (ADR-19). */
+  unmarked: number
+  groups: DaySummaryGroup[]
+}
+
 export const attendanceApi = {
   daily: (groupId: string, date: string) =>
     api.get<DailyRegister>('/attendance/daily', { group: groupId, date }),
+
+  /**
+   * Kun boʻyicha BUTUN bogʻcha (mijoz soʻrovi, 2026-10-23).
+   *
+   * Tanlangan guruh emas: "bugun nechta bola keldi?" degan savol
+   * bitta guruhdan kengroq. Tarbiyachining "hammasi" — oʻz guruhlari
+   * (ADR-21), buni backend hisoblaydi.
+   */
+  daySummary: (date: string) => api.get<DaySummary>('/attendance/day-summary', { date }),
 
   summary: (month: string, groupId?: string | null) =>
     api.get<{ month: string; rows: AttendanceSummaryRow[] }>('/attendance/summary', {

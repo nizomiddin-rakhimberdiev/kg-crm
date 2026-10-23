@@ -8,7 +8,7 @@
  * ko'rinish bizda bo'lsin.
  *
  * Ikkita tanlagich, bitta `<label>`: oy nomi bilan, yil raqam bilan.
- * Klaviatura va skrinrider native `<select>` dan tekin keladi — oyni
+ * Klaviatura va skrinrider native `<Select>` dan tekin keladi — oyni
  * qaytadan yozilgan kalendar bu kafolatni yo'qotardi.
  *
  * **Shartnoma `value`/`onChange` da `yyyy-mm`** — API va baza shu
@@ -18,6 +18,7 @@
 import { monthName } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+import { Select } from '@/components/ui/Select'
 
 interface Props {
   /** `yyyy-mm`. */
@@ -72,13 +73,6 @@ export function MonthInput({
   }
 
   const monthId = id ?? 'month-input'
-  const select = cn(
-    'rounded-lg border px-3 py-2 text-sm outline-none',
-    tone === 'dark'
-      ? 'border-slate-700 bg-slate-800 text-slate-100 focus:border-nihol-500'
-      : 'border-tosh-200 bg-white focus:border-nihol-500',
-    disabled && (tone === 'dark' ? 'opacity-50' : 'bg-tosh-50 text-tosh-500'),
-  )
 
   return (
     <div className={cn('flex items-end gap-2', className)}>
@@ -92,33 +86,33 @@ export function MonthInput({
         >
           {label}
         </label>
-        <select
+        <Select
           id={monthId}
+          tone={tone}
           value={String(month)}
           disabled={disabled}
           onChange={(event) => onChange(`${year}-${event.target.value.padStart(2, '0')}`)}
-          className={select}
         >
           {MONTHS.map((candidate) => (
             <option key={candidate} value={String(candidate)} disabled={outside(year, candidate)}>
               {monthName(candidate)}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
-      <select
+      <Select
         aria-label={t('Yil')}
+        tone={tone}
         value={String(year)}
         disabled={disabled}
         onChange={(event) => onChange(`${event.target.value}-${String(month).padStart(2, '0')}`)}
-        className={select}
       >
         {years.map((candidate) => (
           <option key={candidate} value={String(candidate)}>
             {candidate}
           </option>
         ))}
-      </select>
+      </Select>
     </div>
   )
 }

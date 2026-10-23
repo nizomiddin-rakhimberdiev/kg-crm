@@ -10,6 +10,7 @@ import { FileDown } from 'lucide-react'
 import { httpClient } from '@/lib/api/client'
 import { today } from '@/lib/format'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 export function AnnualStatementButton({ childId }: { childId: string }) {
   const current = new Date(today()).getFullYear()
@@ -45,18 +46,17 @@ export function AnnualStatementButton({ childId }: { childId: string }) {
         <label htmlFor="statement-year" className="mb-1 block text-xs font-medium text-slate-600">
           {t('Yillik maʼlumotnoma')}
         </label>
-        <select
+        <Select
           id="statement-year"
           value={year}
           onChange={(event) => setYear(Number(event.target.value))}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
         >
           {[current, current - 1, current - 2].map((value) => (
             <option key={value} value={value}>
               {value}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
       <button
         type="button"

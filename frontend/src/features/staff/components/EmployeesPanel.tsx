@@ -36,6 +36,7 @@ import { ApiError, type Employee } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { avatarTone, cn, formatDate, formatMoney, initials } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 const STATUS: Record<Employee['employment_status'], [string, string]> = {
   active: [t('Ishlayapti'), 'bg-emerald-50 text-emerald-700'],
@@ -441,17 +442,16 @@ export function EmployeesPanel() {
             className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
           />
         </div>
-        <select
+        <Select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
           aria-label={t('Holat')}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
         >
           <option value="active">{t('Ishlayotganlar')}</option>
           <option value="on_leave">{t('Taʼtildagilar')}</option>
           <option value="terminated">{t('Boʻshaganlar')}</option>
           <option value="">{t('Barchasi')}</option>
-        </select>
+        </Select>
         {can('payroll.create') && (
           <button
             type="button"
@@ -626,12 +626,12 @@ export function EmployeesPanel() {
                   {t('Filial')}
                   {branchRequired && <span className="text-red-500"> *</span>}
                 </label>
-                <select
+                <Select
+                  invalid={Boolean(fieldErrors.branch_id)}
                   id="emp-branch"
                   required={branchRequired}
                   value={branchId}
                   onChange={(e) => setBranchId(e.target.value)}
-                  className={inputClass(Boolean(fieldErrors.branch_id))}
                 >
                   <option value="">{branchRequired ? t('Tanlang…') : branches[0]?.name}</option>
                   {branches.map((branch) => (
@@ -639,7 +639,7 @@ export function EmployeesPanel() {
                       {branch.name}
                     </option>
                   ))}
-                </select>
+                </Select>
                 {fieldErrors.branch_id && (
                   <p className="mt-1 text-xs text-red-600">{fieldErrors.branch_id}</p>
                 )}
@@ -653,11 +653,11 @@ export function EmployeesPanel() {
               >
                 {t('Lavozim')}
               </label>
-              <select
+              <Select
+                invalid={Boolean(fieldErrors.position_id)}
                 id="emp-position"
                 value={form.position_id ?? ''}
                 onChange={(e) => setForm((prev) => ({ ...prev, position_id: e.target.value }))}
-                className={inputClass(Boolean(fieldErrors.position_id))}
               >
                 <option value="">{t('— tanlanmagan —')}</option>
                 {positionsQuery.data?.items.map((position) => (
@@ -666,7 +666,7 @@ export function EmployeesPanel() {
                     {position.department ? ` · ${position.department}` : ''}
                   </option>
                 ))}
-              </select>
+              </Select>
               {fieldErrors.position_id && (
                 <p className="mt-1 text-xs text-red-600">{fieldErrors.position_id}</p>
               )}
@@ -900,7 +900,8 @@ export function EmployeesPanel() {
                   >
                     {t('Holat')}
                   </label>
-                  <select
+                  <Select
+                    invalid={Boolean(fieldErrors.employment_status)}
                     id="emp-status"
                     value={form.employment_status}
                     onChange={(e) =>
@@ -909,14 +910,13 @@ export function EmployeesPanel() {
                         employment_status: e.target.value as Employee['employment_status'],
                       }))
                     }
-                    className={inputClass(Boolean(fieldErrors.employment_status))}
                   >
                     {(Object.keys(STATUS) as Employee['employment_status'][]).map((status) => (
                       <option key={status} value={status}>
                         {STATUS[status][0]}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 {form.employment_status === 'terminated' && (
                   <div>

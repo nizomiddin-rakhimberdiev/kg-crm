@@ -19,6 +19,7 @@ import { ApiError } from '@/lib/api/types'
 import { formatDate, money, som } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+import { Select } from '@/components/ui/Select'
 
 const field =
   'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500'
@@ -130,11 +131,11 @@ function QueueRow({ line, onDone }: { line: StatementLine; onDone: () => void })
             />
           )}
           {mode === 'expense' && (
-            <select
+            <Select
               aria-label={t('Toifa')}
               value={value}
               onChange={(event) => setValue(event.target.value)}
-              className={cn(field, 'flex-1')}
+              className="flex-1"
             >
               <option value="">{t('Toifani tanlang')}</option>
               {(categories.data?.items ?? []).map((category) => (
@@ -143,7 +144,7 @@ function QueueRow({ line, onDone }: { line: StatementLine; onDone: () => void })
                   {category.name}
                 </option>
               ))}
-            </select>
+            </Select>
           )}
           {mode === 'payment' && (
             <span className="flex flex-1 flex-col gap-1.5">
@@ -154,11 +155,11 @@ function QueueRow({ line, onDone }: { line: StatementLine; onDone: () => void })
                 onChange={(event) => setSearch(event.target.value)}
                 className={field}
               />
-              <select
+              <Select
                 aria-label={t('Bola')}
                 value={value}
                 onChange={(event) => setValue(event.target.value)}
-                className={field}
+                className="mt-1"
               >
                 <option value="">{t('Bolani tanlang')}</option>
                 {(children.data?.items ?? []).map((child) => (
@@ -166,7 +167,7 @@ function QueueRow({ line, onDone }: { line: StatementLine; onDone: () => void })
                     {child.full_name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </span>
           )}
           <button
@@ -311,18 +312,18 @@ export function BankStatementPanel() {
               <label htmlFor="st-bank" className={label}>
                 {t('Bank hisobi')}
               </label>
-              <select
+              <Select
                 id="st-bank"
                 value={bank}
                 onChange={(event) => setBankId(event.target.value)}
-                className={field}
+                className="mt-1"
               >
                 {banks.map((row) => (
                   <option key={row.id} value={row.id}>
                     {row.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           )}
           {FIELDS.map((item) => (
@@ -330,13 +331,13 @@ export function BankStatementPanel() {
               <label htmlFor={`st-${item.key}`} className={label}>
                 {item.label}
               </label>
-              <select
+              <Select
                 id={`st-${item.key}`}
                 value={mapping[item.key] ?? ''}
                 onChange={(event) =>
                   setMapping((prev) => ({ ...prev, [item.key]: event.target.value || undefined }))
                 }
-                className={field}
+                className="mt-1"
               >
                 <option value="">—</option>
                 {headers.map((header) => (
@@ -344,7 +345,7 @@ export function BankStatementPanel() {
                     {header}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           ))}
           <div>

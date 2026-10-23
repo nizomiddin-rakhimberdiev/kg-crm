@@ -1372,7 +1372,6 @@ export const messages: Record<string, string> = {
     'Только по документу: справка врача или заявление родителей. Сумма вычитается из счёта сразу при добавлении — отдельное подтверждение не нужно.',
   'Hujjat bilan qayta hisob': 'Перерасчёт по документу',
   'Qayta hisob': 'Перерасчёт',
-  '{done} / {total} belgilandi': 'Отмечено {done} из {total}',
   'Bir oylik ariza': 'Заявление на месяц',
   'Hisoblangan summa shu qadamgacha yaxlitlanadi: 1 161 905 → 1 162 000. Kunlik stavka emas, natija.':
     'Начисленная сумма округляется до этого шага: 1 161 905 → 1 162 000. Округляется результат, а не дневная ставка.',
@@ -1924,4 +1923,14 @@ export const messages: Record<string, string> = {
   'Bitta tugma butun bogʻcha uchun shu oyning hisob-fakturalarini yozadi.': 'Одна кнопка выставляет счета за этот месяц всему садику.',
   'Boshlash': 'Начать',
   'Shu havolani ota-onaga yuboring — u botni ochib, xabarlarga ulanadi. Botni ochish — roziligi: manzilni biz bera olmaymiz, u faqat ota-ona oʻzi boshlaganda paydo boʻladi.': 'Отправьте эту ссылку родителю — он откроет бота и подключится к сообщениям. Открытие бота и есть согласие: адрес мы выдать не можем, он появляется только когда родитель начнёт сам.',
+  'Guruh qoʻshish': 'Добавить группу',
+  'Yangi guruh': 'Новая группа',
+  'Har bir guruhning sigʻimi, yosh oraligʻi va tarbiyachisi bor.': 'У каждой группы есть вместимость, возрастной диапазон и воспитатель.',
+  'Masalan: Kichik guruh': 'Например: Младшая группа',
+  'Nechta bola sigʻadi. Boʻsh — cheklov yoʻq.': 'Сколько детей помещается. Пусто — без ограничения.',
+  'Mos kelmasa — ogohlantirish, taqiq emas.': 'Если не совпадает — предупреждение, а не запрет.',
+  'Guruh — bolalarni taqsimlash va davomat belgilash uchun. Bittadan boshlang.': 'Группа нужна, чтобы распределять детей и отмечать посещаемость. Начните с одной.',
+  '{group}: {done} / {total} belgilandi': '{group}: отмечено {done} / {total}',
+  'Belgilanmagan': 'Не отмечено',
+  '{date} · butun bogʻcha boʻyicha {n} ta bola': '{date} · по всему садику {n} детей',
 }

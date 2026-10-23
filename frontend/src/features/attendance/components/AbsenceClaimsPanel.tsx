@@ -31,6 +31,7 @@ import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate } from '@/lib/utils'
 import { money } from '@/lib/format'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 // Yaxlitlanadi: kun narxi bo'linishdan chiqadi va "340 909,1 so'm"
 // degan yarim tiyin ekranda ma'nosiz — ilovadagi qolgan pul
@@ -180,12 +181,11 @@ export function AbsenceClaimsPanel({
             <label htmlFor="ac-child" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Bola')}
             </label>
-            <select
+            <Select
               id="ac-child"
               required
               value={form.child_id}
               onChange={(e) => setForm((p) => ({ ...p, child_id: e.target.value }))}
-              className={fieldClass}
             >
               <option value="">{t('Tanlang…')}</option>
               {childrenQuery.data?.items.map((child) => (
@@ -193,25 +193,24 @@ export function AbsenceClaimsPanel({
                   {child.full_name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div>
             <label htmlFor="ac-kind" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Hujjat')}
             </label>
-            <select
+            <Select
               id="ac-kind"
               value={form.kind}
               onChange={(e) => setForm((p) => ({ ...p, kind: e.target.value }))}
-              className={fieldClass}
             >
               {(kindsQuery.data ?? []).map((kind) => (
                 <option key={kind.code} value={kind.code}>
                   {kind.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div>

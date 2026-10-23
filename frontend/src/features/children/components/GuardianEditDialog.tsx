@@ -26,6 +26,7 @@ import { RELATIONS } from '@/features/children/relations'
 import { ApiError, type GuardianLink } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 const LANGUAGES: Array<[string, string]> = [
   ['', t('Bogʻcha tili (sukut)')],
@@ -170,18 +171,18 @@ export function GuardianEditDialog({
           <label htmlFor="g-relation" className="mb-1 block text-xs font-medium text-slate-600">
             {t('Bolaga kim boʻladi')}
           </label>
-          <select
+          <Select
             id="g-relation"
             value={relation.relation}
             onChange={(e) => setRelation((p) => ({ ...p, relation: e.target.value }))}
-            className={field}
+            className="mt-1"
           >
             {RELATIONS.map(([code, label]) => (
               <option key={code} value={code}>
                 {label}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {showAlt ? (
@@ -229,18 +230,18 @@ export function GuardianEditDialog({
             <label htmlFor="g-lang" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Xabar tili')}
             </label>
-            <select
+            <Select
               id="g-lang"
               value={form.language}
               onChange={(e) => setForm((p) => ({ ...p, language: e.target.value }))}
-              className={field}
+              className="mt-1"
             >
               {LANGUAGES.map(([code, label]) => (
                 <option key={code} value={code}>
                   {label}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
 

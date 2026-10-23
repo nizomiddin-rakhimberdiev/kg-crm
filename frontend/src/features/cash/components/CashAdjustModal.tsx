@@ -22,6 +22,7 @@ import { cashApi } from '@/features/cash/api'
 import { ApiError } from '@/lib/api/types'
 import { money, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 export function CashAdjustModal({ onClose }: { onClose: () => void }) {
   const organizationId = useOrganizationId()
@@ -91,12 +92,12 @@ export function CashAdjustModal({ onClose }: { onClose: () => void }) {
             <label htmlFor="adj-account" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Qaysi hisob')} <span className="text-red-500">*</span>
             </label>
-            <select
+            <Select
               id="adj-account"
               required
               value={form.account}
               onChange={(event) => setForm((prev) => ({ ...prev, account: event.target.value }))}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+              className="w-full"
             >
               <option value="">{t('Tanlang…')}</option>
               {accounts.data?.items.map((account) => (
@@ -104,7 +105,7 @@ export function CashAdjustModal({ onClose }: { onClose: () => void }) {
                   {account.name}
                 </option>
               ))}
-            </select>
+            </Select>
             {current && (
               <p className="num mt-1 text-xs text-slate-500">
                 {t('Hozirgi qoldiq: {money} soʻm', { money: money(current.balance) })}

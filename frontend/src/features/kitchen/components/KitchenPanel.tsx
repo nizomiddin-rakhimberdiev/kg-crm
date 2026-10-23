@@ -23,6 +23,7 @@ import { quantity, som, today as todayIso, unitLabel } from '@/lib/format'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 const MEALS: Array<[Meal, string]> = [
   ['breakfast', t('Nonushta')],
@@ -227,11 +228,11 @@ function DishesSection() {
               })
             return (
               <div key={index} className="flex items-center gap-2">
-                <select
+                <Select
                   aria-label={t('Mahsulot')}
                   value={row.product_id}
                   onChange={(event) => update({ product_id: event.target.value })}
-                  className={cn(field, 'min-w-0 flex-1')}
+                  className="min-w-0 flex-1"
                 >
                   <option value="">{t('Mahsulot')}</option>
                   {products.map((product) => (
@@ -239,7 +240,7 @@ function DishesSection() {
                       {product.name}
                     </option>
                   ))}
-                </select>
+                </Select>
                 <input
                   aria-label={t('Miqdor')}
                   inputMode="decimal"
@@ -427,22 +428,22 @@ function MenuDaySection() {
             <label htmlFor="menu-store" className="mb-1 block text-xs text-slate-600">
               {t('Qaysi ombordan')}
             </label>
-            <select
+            <Select
               id="menu-store"
               value={warehouseId || menu?.warehouse || ''}
               onChange={(event) => setWarehouseId(event.target.value)}
-              className={field}
+              className="mt-1"
             >
               {(warehousesQuery.data?.items ?? []).map((warehouse) => (
                 <option key={warehouse.id} value={warehouse.id}>
                   {warehouse.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           {items.map((row, index) => (
             <div key={index} className="flex items-center gap-2">
-              <select
+              <Select
                 aria-label={t('Ovqatlanish')}
                 value={row.meal}
                 onChange={(event) =>
@@ -452,15 +453,15 @@ function MenuDaySection() {
                     ),
                   )
                 }
-                className={field}
+                className="mt-1"
               >
                 {MEALS.map(([code, label]) => (
                   <option key={code} value={code}>
                     {label}
                   </option>
                 ))}
-              </select>
-              <select
+              </Select>
+              <Select
                 aria-label={t('Taom')}
                 value={row.dish_id}
                 onChange={(event) =>
@@ -468,7 +469,7 @@ function MenuDaySection() {
                     items.map((r, i) => (i === index ? { ...r, dish_id: event.target.value } : r)),
                   )
                 }
-                className={cn(field, 'min-w-0 flex-1')}
+                className="min-w-0 flex-1"
               >
                 <option value="">{t('Taom')}</option>
                 {(dishesQuery.data?.items ?? []).map((dish) => (
@@ -476,7 +477,7 @@ function MenuDaySection() {
                     {dish.name}
                   </option>
                 ))}
-              </select>
+              </Select>
               <button
                 type="button"
                 aria-label={t('Oʻchirish')}

@@ -6,7 +6,7 @@
  * degan noto'g'ri taassurot qoldirardi.
  */
 
-import { Building2, ChevronDown } from 'lucide-react'
+import { Building2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { useBranchScope } from '@/app/providers/BranchProvider'
@@ -14,6 +14,7 @@ import { branchesApi } from '@/features/branches/api'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 interface BranchSwitcherProps {
   /**
@@ -60,26 +61,15 @@ export function BranchSwitcher({ variant = 'topbar' }: BranchSwitcherProps) {
         inDrawer ? 'block border-b border-slate-100 px-3 py-3 sm:hidden' : 'hidden sm:block',
       )}
     >
-      <Building2
-        className={cn(
-          'pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500',
-          inDrawer ? 'left-6' : 'left-3',
-        )}
-      />
-      <ChevronDown
-        className={cn(
-          'pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500',
-          inDrawer ? 'right-5' : 'right-2.5',
-        )}
-      />
-      <select
+      {/* Belgi va strelka — `Select` ning oʻzida (2026-10-23): ilgari
+          ular bu yerda qoʻlda joylashtirilgan edi va yangi
+          komponentning strelkasi bilan ikkitaga aylangan boʻlardi. */}
+      <Select
+        icon={Building2}
         aria-label={t('Filial')}
         value={selectedBranchId ?? ''}
         onChange={(event) => setSelectedBranchId(event.target.value || null)}
-        className={cn(
-          'appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-8 text-sm text-slate-700 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100',
-          inDrawer && 'w-full',
-        )}
+        className={inDrawer ? 'w-full' : 'w-auto'}
       >
         <option value="">{t('Barcha filiallar')}</option>
         {branchesQuery.data?.items.map((branch) => (
@@ -87,7 +77,7 @@ export function BranchSwitcher({ variant = 'topbar' }: BranchSwitcherProps) {
             {branch.name}
           </option>
         ))}
-      </select>
+      </Select>
     </div>
   )
 }

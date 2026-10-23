@@ -23,6 +23,7 @@ import { ApiError, type StaffUser } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { avatarTone, cn, formatDateTime, initials } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { Select } from '@/components/ui/Select'
 
 const EMPTY_FORM: StaffInput = {
   full_name: '',
@@ -508,12 +509,12 @@ export function AccountsPanel() {
               <label htmlFor="acc-role" className="mb-1 block text-xs font-medium text-slate-600">
                 {t('Rol')}
               </label>
-              <select
+              <Select
+                invalid={Boolean(fieldErrors.role_id)}
                 id="acc-role"
                 required
                 value={form.role_id}
                 onChange={(e) => setForm((p) => ({ ...p, role_id: e.target.value }))}
-                className={inputClass(Boolean(fieldErrors.role_id))}
               >
                 <option value="">{t('Tanlang…')}</option>
                 {/* Faqat bera oladigan rollar (ADR-25); tahrirlanayotgan
@@ -525,7 +526,7 @@ export function AccountsPanel() {
                       {role.name}
                     </option>
                   ))}
-              </select>
+              </Select>
               {fieldErrors.role_id && (
                 <p className="mt-1 text-xs text-red-600">{fieldErrors.role_id}</p>
               )}
@@ -546,11 +547,11 @@ export function AccountsPanel() {
               >
                 {t('Xodim')}
               </label>
-              <select
+              <Select
+                invalid={Boolean(fieldErrors.employee_id)}
                 id="acc-employee"
                 value={form.employee_id ?? ''}
                 onChange={(e) => setForm((p) => ({ ...p, employee_id: e.target.value }))}
-                className={inputClass(Boolean(fieldErrors.employee_id))}
               >
                 <option value="">{t('— bogʻlanmagan —')}</option>
                 {(employeesQuery.data?.items ?? [])
@@ -561,7 +562,7 @@ export function AccountsPanel() {
                       {employee.position_title ? ` — ${employee.position_title}` : ''}
                     </option>
                   ))}
-              </select>
+              </Select>
               <p className="mt-1 text-xs text-slate-500">
                 {t('Tarbiyachi oʻz guruhini koʻrishi uchun hisob xodimga bogʻlanishi kerak.')}
               </p>
@@ -574,12 +575,12 @@ export function AccountsPanel() {
               <label htmlFor="acc-branch" className="mb-1 block text-xs font-medium text-slate-600">
                 {t('Filial')} {branchRequired && <span className="text-red-500">*</span>}
               </label>
-              <select
+              <Select
+                invalid={Boolean(fieldErrors.branch_id)}
                 id="acc-branch"
                 required={branchRequired}
                 value={form.branch_id ?? ''}
                 onChange={(e) => setForm((p) => ({ ...p, branch_id: e.target.value }))}
-                className={inputClass(Boolean(fieldErrors.branch_id))}
               >
                 {/* Egasi bo'lmagan xodim faqat o'z filialini ko'radi. */}
                 {(isOwner || !branchRequired) && (
@@ -592,7 +593,7 @@ export function AccountsPanel() {
                     {branch.name}
                   </option>
                 ))}
-              </select>
+              </Select>
               {fieldErrors.branch_id && (
                 <p className="mt-1 text-xs text-red-600">{fieldErrors.branch_id}</p>
               )}

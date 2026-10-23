@@ -27,6 +27,7 @@ import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Expense } from '@/lib/api/types'
 import { t } from '@/lib/i18n'
 import { groupCategories } from '@/features/expenses/categoryGroups'
+import { Select } from '@/components/ui/Select'
 
 export function ExpenseEditModal({ expense, onClose }: { expense: Expense; onClose: () => void }) {
   const organizationId = useOrganizationId()
@@ -105,12 +106,12 @@ export function ExpenseEditModal({ expense, onClose }: { expense: Expense; onClo
             <label htmlFor="xcat" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Kategoriya')}
             </label>
-            <select
+            <Select
               id="xcat"
               required
               value={form.category_id}
               onChange={(e) => setForm((p) => ({ ...p, category_id: e.target.value }))}
-              className={field}
+              className="mt-1"
             >
               {groupCategories(categories.data?.items ?? []).map((group) => (
                 <optgroup key={group.label || 'flat'} label={group.label || t('Boshqa')}>
@@ -121,7 +122,7 @@ export function ExpenseEditModal({ expense, onClose }: { expense: Expense; onClo
                   ))}
                 </optgroup>
               ))}
-            </select>
+            </Select>
           </div>
           <div>
             <label htmlFor="xdate" className="mb-1 block text-xs font-medium text-slate-600">

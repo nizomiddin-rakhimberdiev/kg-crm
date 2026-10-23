@@ -17,6 +17,7 @@ import { formatDate, money, som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { MonthInput } from '@/components/ui/MonthInput'
+import { Select } from '@/components/ui/Select'
 
 const field =
   'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500'
@@ -143,39 +144,39 @@ export function MoneyOperationsPanel() {
             <label htmlFor="op-kind" className={label}>
               {t('Turi')}
             </label>
-            <select
+            <Select
               id="op-kind"
               value={form.kind}
               onChange={(event) => {
                 const kind = event.target.value as OperationKind
                 setForm((p) => ({ ...p, kind, subtype: SUBTYPES[kind]?.[0]?.[0] ?? '' }))
               }}
-              className={field}
+              className="mt-1"
             >
               {KINDS.map((row) => (
                 <option key={row.kind} value={row.kind}>
                   {row.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           {subtypes.length > 0 && (
             <div>
               <label htmlFor="op-subtype" className={label}>
                 {t('Aniqroq')}
               </label>
-              <select
+              <Select
                 id="op-subtype"
                 value={form.subtype}
                 onChange={(event) => setForm((p) => ({ ...p, subtype: event.target.value }))}
-                className={field}
+                className="mt-1"
               >
                 {subtypes.map(([value, text]) => (
                   <option key={value} value={value}>
                     {text}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           )}
           <div>
@@ -199,18 +200,18 @@ export function MoneyOperationsPanel() {
                 ? t('Qayerga tushdi')
                 : t('Qaysi puldan')}
             </label>
-            <select
+            <Select
               id="op-pot"
               value={pot}
               onChange={(event) => setForm((p) => ({ ...p, pot: event.target.value }))}
-              className={field}
+              className="mt-1"
             >
               {pots.map((row) => (
                 <option key={row.id} value={row.id}>
                   {row.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <div>
             <label htmlFor="op-date" className={label}>

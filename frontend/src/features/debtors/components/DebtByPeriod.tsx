@@ -23,6 +23,7 @@ import { formatDate, monthLabel, som } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { MonthInput } from '@/components/ui/MonthInput'
+import { Select } from '@/components/ui/Select'
 
 /** Toʻlov usullari — odam tilida (hisobotda kod turishi yaramaydi). */
 const METHOD: Record<string, string> = {
@@ -93,19 +94,14 @@ export function DebtByPeriod() {
           <label htmlFor="dp-group" className="mb-1 block text-xs font-medium text-slate-600">
             {t('Guruh')}
           </label>
-          <select
-            id="dp-group"
-            value={groupId}
-            onChange={(e) => setGroupId(e.target.value)}
-            className="h-11 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-brand-500"
-          >
+          <Select id="dp-group" value={groupId} onChange={(e) => setGroupId(e.target.value)}>
             <option value="">{t('Hammasi')}</option>
             {(groupsQuery.data?.items ?? []).map((group) => (
               <option key={group.id} value={group.id}>
                 {group.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <label className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 text-sm text-slate-700">
           <input

@@ -38,6 +38,7 @@ import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { RELATIONS, relationLabel } from '@/features/children/relations'
+import { Select } from '@/components/ui/Select'
 
 const STATUS_LABEL: Record<string, string> = {
   prospect: t('Nomzod'),
@@ -529,28 +530,27 @@ export default function ChildDetailPage() {
               )}
 
               <div className="flex items-center gap-2">
-                <select
+                <Select
                   aria-label={t('Kim boʻladi')}
                   value={guardianForm.relation}
                   onChange={(e) => setGuardianForm((p) => ({ ...p, relation: e.target.value }))}
-                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                  className="flex-1"
                 >
                   {RELATIONS.map(([code, label]) => (
                     <option key={code} value={code}>
                       {label}
                     </option>
                   ))}
-                </select>
-                <select
+                </Select>
+                <Select
                   aria-label={t('Xabar tili')}
                   value={guardianForm.language}
                   onChange={(e) => setGuardianForm((p) => ({ ...p, language: e.target.value }))}
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
                 >
                   <option value="">{t('Xabar tili: bogʻcha tili')}</option>
                   <option value="uz">{t('Oʻzbekcha')}</option>
                   <option value="ru">{t('Ruscha')}</option>
-                </select>
+                </Select>
                 <label className="flex items-center gap-1.5 text-sm text-slate-600">
                   <input
                     type="checkbox"
@@ -586,17 +586,17 @@ export default function ChildDetailPage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-slate-900">{t('Guruh')}</h2>
         {can('children.update') ? (
-          <select
+          <Select
             aria-label={t('Guruh')}
             value={child.current_group?.id ?? ''}
             onChange={(e) => e.target.value && setPendingGroup(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            className="w-full"
           >
             <GroupOptions
               groups={groupsQuery.data?.items ?? []}
               currentId={child.current_group?.id}
             />
-          </select>
+          </Select>
         ) : (
           <p className="text-sm text-slate-600">{child.current_group?.name ?? '—'}</p>
         )}

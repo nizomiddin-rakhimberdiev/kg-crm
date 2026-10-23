@@ -1,16 +1,9 @@
 import * as React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
-import {
-  ArrowUpRight,
-  Check,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  type LucideIcon,
-} from 'lucide-react'
+import { ArrowUpRight, ChevronLeft, ChevronRight, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Modal } from './Modal'
+import { Select } from './Select'
 import { t } from '@/lib/i18n'
 
 /* ------------------------------------------------------------------ Card */
@@ -475,18 +468,19 @@ export function Pagination({
 
       <div className="ml-auto flex items-center gap-2">
         {onPageSizeChange && (
-          <select
+          <Select
+            size="sm"
             aria-label={t('Sahifadagi qatorlar')}
             value={pageSize}
             onChange={(event) => onPageSizeChange(Number(event.target.value))}
-            className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-600 outline-none focus:border-brand-500"
+            className="w-28"
           >
             {pageSizeOptions.map((size) => (
               <option key={size} value={size}>
                 {t('{size} tadan', { size })}
               </option>
             ))}
-          </select>
+          </Select>
         )}
 
         {totalPages > 1 && (
@@ -541,124 +535,6 @@ export function Pagination({
             </button>
           </nav>
         )}
-      </div>
-    </div>
-  )
-}
-
-/* --------------------------------------------------------------- Select */
-
-export interface SelectOption {
-  label: string
-  value: string
-}
-
-interface SelectProps {
-  label?: string
-  options: SelectOption[]
-  value?: string
-  defaultValue?: string
-  onChange?: (value: string) => void
-  placeholder?: string
-  className?: string
-}
-
-/** Custom, animated dropdown (replaces the native <select>) — styled to match
- *  the rest of the UI, keyboard/mouse friendly, closes on outside click. */
-export function Select({
-  label,
-  options,
-  value,
-  defaultValue,
-  onChange,
-  placeholder = t('Tanlang'),
-  className,
-}: SelectProps) {
-  const [open, setOpen] = React.useState(false)
-  const [internal, setInternal] = React.useState<string | undefined>(
-    defaultValue ?? options[0]?.value,
-  )
-  const ref = React.useRef<HTMLDivElement>(null)
-  const selectedValue = value ?? internal
-  const selected = options.find((o) => o.value === selectedValue)
-
-  React.useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  const pick = (v: string) => {
-    setInternal(v)
-    onChange?.(v)
-    setOpen(false)
-  }
-
-  return (
-    <div className="flex flex-col gap-1.5" ref={ref}>
-      {label && (
-        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          {label}
-        </label>
-      )}
-      <div className={cn('relative', className)}>
-        <button
-          type="button"
-          data-sound="open"
-          onClick={() => setOpen((o) => !o)}
-          className={cn(
-            'flex w-full items-center justify-between gap-2 rounded-lg border bg-white px-3 py-2 text-sm transition-colors',
-            open
-              ? 'border-brand-400 ring-2 ring-brand-500/20'
-              : 'border-slate-200 hover:border-slate-300',
-          )}
-        >
-          <span className={selected ? 'text-slate-700' : 'text-slate-500'}>
-            {selected?.label ?? placeholder}
-          </span>
-          <ChevronDown
-            className={cn(
-              'w-4 h-4 shrink-0 text-slate-500 transition-transform',
-              open && 'rotate-180',
-            )}
-          />
-        </button>
-
-        <AnimatePresence>
-          {open && (
-            <motion.ul
-              initial={{ opacity: 0, y: -6, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -6, scale: 0.98 }}
-              transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="absolute z-30 mt-1.5 w-full overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl"
-            >
-              {options.map((o) => {
-                const active = o.value === selectedValue
-                return (
-                  <li key={o.value}>
-                    <button
-                      type="button"
-                      data-sound="toggle"
-                      onClick={() => pick(o.value)}
-                      className={cn(
-                        'flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors',
-                        active
-                          ? 'bg-brand-50 font-medium text-brand-700'
-                          : 'text-slate-600 hover:bg-slate-50',
-                      )}
-                    >
-                      {o.label}
-                      {active && <Check className="w-4 h-4 text-brand-600" />}
-                    </button>
-                  </li>
-                )
-              })}
-            </motion.ul>
-          )}
-        </AnimatePresence>
       </div>
     </div>
   )
