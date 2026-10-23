@@ -2688,3 +2688,26 @@ barcha tanlagichlar, va davomat ekranidagi ko'rsatkichlar.
     so'rov, guruhlar soni qancha bo'lishidan qat'i nazar.
     **"Hammasi" — foydalanuvchining o'z ko'lami** (ADR-21): guruhga
     biriktirilgan tarbiyachi faqat o'z guruhlarini sanaydi.
+
+34. **Tanlagichning ro'yxati ham bizniki** (mijozning ikkinchi
+    e'tirozi, 2026-10-23). Birinchi urinishda native `<select>`
+    qoldirilgan edi: yopiq holati chiroyli, lekin OCHILGANDA brauzer
+    o'z tizim menyusini chizadi — macOS'da qora, maydon USTIGA
+    tushadigan ro'yxat. Uni CSS bilan o'zgartirib bo'lmaydi.
+
+    Endi ro'yxat ham komponentning o'zida. Native elementdan tekin
+    kelgan hamma narsa qo'lda qaytarildi: klaviatura (↑ ↓ Home End
+    Enter Esc), harf bilan qidirish (bir soniyalik oyna bilan),
+    `optgroup`, `disabled`, `combobox`/`listbox`/`option` rollari va
+    **forma qiymati bilan `required`** — ostidagi ko'rinmaydigan,
+    lekin FOKUSLANADIGAN native maydon orqali (usiz "Bu maydonni
+    to'ldiring" har bir majburiy tanlagichda ishlamay qolardi).
+
+    Panel **portalda**, tugmaning haqiqiy koordinatasi bo'yicha:
+    modal ham, jadval ham `overflow` bilan kesadi. Pastda joy
+    yetmasa tepaga ochiladi, sahifa aylanganda ergashadi va
+    tanlangan qatorga surilgan holda ochiladi.
+
+    Chaqiruvchilar uchun shartnoma o'zgarmadi — o'sha `<option>` lar
+    va o'sha `event.target.value`, ya'ni 86 ta joy ikkinchi marta
+    ko'chirilmadi.
