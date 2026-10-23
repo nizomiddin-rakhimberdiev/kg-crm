@@ -170,6 +170,29 @@ describe('Select — klaviatura', () => {
   })
 })
 
+describe('Select — ochilganda tanlangani koʻrinadi', () => {
+  /*
+   * Panel faqat oʻrni hisoblangandan keyin chiziladi, ya'ni ochilish
+   * paytida u hali DOM'da yoʻq. Shu sababli surish effekti `rect` ga
+   * ham bogʻlangan — aks holda oktabr tanlangan boʻlsa ham roʻyxat
+   * "Yanvar" dan ochilardi (brauzerda shunday boʻlgan edi).
+   */
+  it("faol qator belgilanadi, ya'ni unga surish mumkin", () => {
+    render(
+      <Select aria-label="Oy" value="10">
+        {Array.from({ length: 12 }, (_, index) => (
+          <option key={index + 1} value={String(index + 1)}>
+            {`Oy ${index + 1}`}
+          </option>
+        ))}
+      </Select>,
+    )
+    fireEvent.click(screen.getByRole('combobox'))
+    const active = document.querySelector('[data-active="true"]')
+    expect(active?.textContent).toContain('Oy 10')
+  })
+})
+
 describe('Select — koʻrinish', () => {
   it('yonidagi matn maydoni bilan bir xil balandlik', () => {
     const { trigger } = three()

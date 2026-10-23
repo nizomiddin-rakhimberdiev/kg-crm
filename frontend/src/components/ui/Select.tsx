@@ -185,7 +185,11 @@ export function Select({
     if (row instanceof HTMLElement && typeof row.scrollIntoView === 'function') {
       row.scrollIntoView({ block: 'nearest' })
     }
-  }, [open, active, listId])
+    // `rect` ATAYLAB bogʻliqlikda: panel faqat oʻrni hisoblangandan
+    // keyin chiziladi, ya'ni ochilish paytida u hali DOM'da yoʻq.
+    // Usiz roʻyxat har safar tepadan ochilardi — oktabr tanlangan
+    // boʻlsa ham "Yanvar" dan.
+  }, [open, active, listId, rect])
 
   useEffect(() => {
     if (!open) return
