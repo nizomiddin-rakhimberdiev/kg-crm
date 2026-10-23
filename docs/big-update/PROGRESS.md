@@ -2711,3 +2711,39 @@ barcha tanlagichlar, va davomat ekranidagi ko'rsatkichlar.
     Chaqiruvchilar uchun shartnoma o'zgarmadi — o'sha `<option>` lar
     va o'sha `event.target.value`, ya'ni 86 ta joy ikkinchi marta
     ko'chirilmadi.
+
+35. **Demo olti oyni YASHAB chiqadi** (mijoz so'rovi, 2026-10-23:
+    "taxminiy narsalar yozma, aniq, toza ma'lumot"). Oldingi seed
+    dashboardda to'g'ri ko'rinardi, lekin o'qib ko'rsangiz yiqilardi:
+    bog'cha mavjud bo'lmagan paytda yozilgan bola, hech qachon pul
+    ko'rmagan bank hisobidan tasdiqlangan oylik, qaysi qopdan
+    to'langani ko'rsatilmagan chiqim.
+
+    Endi hammasi BITTA sanaga — bog'cha ochilgan kunga — bog'langan,
+    va o'sha kuni ega boshlang'ich kiritma qiladi: birinchi oyning
+    oyligi va kommunali tushumdan OLDIN to'lanadi, ya'ni usiz ADR-29
+    (qopda yo'q pul chiqmaydi) haqli ravishda rad etardi.
+
+    Qolgani KATTALIKDAN kelib chiqadi: shtat guruhlar soniga qarab,
+    kommunal va ombor xaridi bolalar soniga qarab o'sadi, naqd chiqim
+    kassani bo'shatib yuborsa bankdan to'ldiriladi. Qat'iy raqamlar
+    kichik bog'chada oylik fondini tushumdan katta qilib qo'yardi.
+
+    Oylar ichida: oyna bo'ylab yozilish (`heard_from` va shartnoma
+    raqami bilan), aka-uka va xodim imtiyozlari, tasdiqlangan qayta
+    hisob da'volari, xodimlar tabeli, yopilgan oylik hisoblashlar,
+    bankka topshirish, egaga to'lov, yopilgan oylar va kassa sanog'i.
+
+    **O'lchov — `close_month`**: oy faqat tenglik yashil bo'lsa
+    yopiladi, ya'ni beshta yopilgan oy raqamlar bir-biriga mos
+    kelganining dalili. `test_seed_demo_history.py` shuni, ochilish
+    chegarasini va manfiy qop yo'qligini tekshiradi.
+
+    Tozalash ham tuzatildi: `--reset` o'z qisqa jadval ro'yxatini
+    yuritardi va `payment_allocation` unga hech qachon qo'shilmadi —
+    jonli bazada bitta taqsimot butun tozalashni yiqitdi. Endi
+    ro'yxat `reset_organization_data` bilan bitta.
+
+    `analiz` stendi shu bilan to'ldirildi: 120 bola, 7 guruh, 18
+    xodim, 720 faktura / 560 to'lov, 15 120 davomat yozuvi, 5 yopilgan
+    oy — va oltita oyning hammasida tenglik yashil.
