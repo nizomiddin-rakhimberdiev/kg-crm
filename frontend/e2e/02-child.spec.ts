@@ -7,7 +7,7 @@
  */
 
 import { expect, test } from '@playwright/test'
-import { openSection, signIn, stamp } from './fixtures'
+import { chooseOption, openSection, signIn, stamp } from './fixtures'
 
 test('bola qoʻshiladi, roʻyxatda koʻrinadi va arxivlanadi', async ({ page }) => {
   const surname = stamp()
@@ -29,7 +29,7 @@ test('bola qoʻshiladi, roʻyxatda koʻrinadi va arxivlanadi', async ({ page }) 
   // Usiz forma yuborilmaydi, va aynan shu sabab bu test 2026-10-19
   // dan beri jimgina yiqilib yotgan edi: oʻsha kuni maydon
   // majburiy boʻldi, lekin brauzerdagi E2E ishga tushirilmadi.
-  await page.getByLabel(/qayerdan eshitgan/i).selectOption('instagram')
+  await chooseOption(page, /qayerdan eshitgan/i, /instagram/i)
 
   await page.getByRole('button', { name: /^saqlash$/i }).click()
 

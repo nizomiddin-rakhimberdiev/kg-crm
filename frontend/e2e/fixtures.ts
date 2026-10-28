@@ -55,3 +55,28 @@ export async function openSection(page: Page, name: RegExp): Promise<void> {
  * uchun u endi yordamchi funksiya.
  */
 export const firstVisible = (locator: Locator): Locator => locator.filter({ visible: true }).first()
+
+/**
+ * Tanlagichdan variant tanlash.
+ *
+ * `selectOption()` bu yerda ISHLAMAYDI va bu kutilgan hol: 2026-10-23
+ * dan beri tanlagich oʻzimizniki (mijoz eʼtirozi — brauzerning tizim
+ * menyusi maydon ustiga tushardi). Yorliq endi `combobox` tugmasini
+ * koʻrsatadi, native maydon esa yashirin va faqat forma qiymati uchun
+ * turadi — ya'ni "element is not a <select>".
+ *
+ * Shuning uchun odam qanday tanlasa, test ham shunday tanlaydi:
+ * tugmani bosadi va roʻyxatdagi qatorni bosadi.
+ */
+export async function chooseOption(
+  page: Page,
+  label: RegExp,
+  option: RegExp,
+  /** Bir xil nomli tanlagich ikkita boʻlsa — oynaning ichidagisi. */
+  scope?: Locator,
+): Promise<void> {
+  await (scope ?? page).getByRole('combobox', { name: label }).click()
+  // Roʻyxat PORTALDA chiziladi, yaʼni oynaning ichida emas — uni har
+  // doim sahifadan qidiramiz.
+  await page.getByRole('listbox').getByRole('option', { name: option }).first().click()
+}
