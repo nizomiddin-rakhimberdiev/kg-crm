@@ -33,14 +33,11 @@
  */
 
 import {
-  Children,
-  isValidElement,
   useEffect,
   useId,
   useLayoutEffect,
   useRef,
   useState,
-  type ReactNode,
   type SelectHTMLAttributes,
 } from 'react'
 import { createPortal } from 'react-dom'
@@ -69,40 +66,53 @@ type Item =
   | { kind: 'option'; value: string; label: string; disabled: boolean }
   | { kind: 'group'; label: string }
 
-/** `<option>` / `<optgroup>` bolalarini oddiy roʻyxatga aylantiradi. */
-function flatten(children: ReactNode, out: Item[] = []): Item[] {
-  Children.forEach(children, (child) => {
-    if (!isValidElement(child)) return
-    const props = child.props as {
-      value?: string | number
-      label?: string
-      disabled?: boolean
-      children?: ReactNode
+/**
+ * Roʻyxat NATIVE maydonning DOM'idan oʻqiladi, React bolalaridan emas.
+ *
+ * Avval bolalar oʻqilardi va u faqat toʻgʻridan-toʻgʻri yozilgan
+ * `<option>` ni tanirdi. `<GroupOptions/>` kabi KOMPONENT esa oʻsha
+ * paytda hali chizilmagan element — ichidagi variantlarni faqat React
+ * chizgandan keyin bilish mumkin. Natijada mijozda guruh roʻyxati
+ * boʻsh chiqdi (`/t/orientaltest`, 2026-10-28), yashirin maydonda esa
+ * variantlar bor edi: forma ishladi, koʻz esa hech narsa koʻrmadi.
+ *
+ * DOM'dan oʻqish bu savolni butunlay yopadi: brauzer nimani variant
+ * deb hisoblasa — biz ham oʻshani koʻrsatamiz, qaysi komponent uni
+ * qaytarganidan qatʼi nazar.
+ */
+function readItems(element: HTMLSelectElement): Item[] {
+  const out: Item[] = []
+  const add = (option: HTMLOptionElement) =>
+    out.push({
+      kind: 'option',
+      value: option.value,
+      label: (option.textContent ?? '').trim(),
+      disabled: option.disabled,
+    })
+  for (const node of Array.from(element.children)) {
+    if (node instanceof HTMLOptGroupElement) {
+      out.push({ kind: 'group', label: node.label })
+      for (const child of Array.from(node.children)) {
+        if (child instanceof HTMLOptionElement) add(child)
+      }
+      continue
     }
-    if (child.type === 'optgroup') {
-      out.push({ kind: 'group', label: String(props.label ?? '') })
-      flatten(props.children, out)
-      return
-    }
-    if (child.type === 'option') {
-      out.push({
-        kind: 'option',
-        value: String(props.value ?? ''),
-        label: textOf(props.children),
-        disabled: Boolean(props.disabled),
-      })
-    }
-  })
+    if (node instanceof HTMLOptionElement) add(node)
+  }
   return out
 }
 
-/** `<option>` ichidagi matn — massiv va ichma-ich elementlar bilan ham. */
-function textOf(node: ReactNode): string {
-  if (node === null || node === undefined || typeof node === 'boolean') return ''
-  if (typeof node === 'string' || typeof node === 'number') return String(node)
-  if (Array.isArray(node)) return node.map(textOf).join('')
-  if (isValidElement(node)) return textOf((node.props as { children?: ReactNode }).children)
-  return ''
+/** Ikki roʻyxat aynan birmi — qayta chizishni toʻxtatish uchun. */
+function sameItems(a: Item[], b: Item[]): boolean {
+  if (a.length !== b.length) return false
+  return a.every((item, index) => {
+    const other = b[index]
+    if (item.kind !== other.kind) return false
+    if (item.kind === 'group' || other.kind === 'group') return item.label === other.label
+    return (
+      item.value === other.value && item.label === other.label && item.disabled === other.disabled
+    )
+  })
 }
 
 /**
@@ -130,18 +140,30 @@ export function Select({
   id,
   ...props
 }: SelectProps) {
-  const items = flatten(children)
+  const native = useRef<HTMLSelectElement>(null)
+  const [items, setItems] = useState<Item[]>([])
   const options = items.filter(
     (item): item is Extract<Item, { kind: 'option' }> => item.kind === 'option',
   )
 
-  const native = useRef<HTMLSelectElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
   const listId = useId()
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
   const [rect, setRect] = useState<{ top: number; left: number; width: number } | null>(null)
   const search = useRef({ text: '', at: 0 })
+
+  // Har chizishdan keyin roʻyxatni native maydondan qayta oʻqiymiz:
+  // variantlar sorov natijasi bilan kelishi mumkin, va ular kelganda
+  // React bizga xabar bermaydi — DOM esa allaqachon yangi.
+  // `sameItems` toʻxtatgichi: holat faqat haqiqatan oʻzgarganda
+  // yangilanadi, aks holda bu cheksiz qayta chizish boʻlardi.
+  useLayoutEffect(() => {
+    const element = native.current
+    if (!element) return
+    const next = readItems(element)
+    setItems((previous) => (sameItems(previous, next) ? previous : next))
+  })
 
   // Boshqarilmaydigan holat ham ishlashi kerak (`defaultValue`): o'shanda
   // haqiqat native maydonda, biz esa uni o'qiymiz.

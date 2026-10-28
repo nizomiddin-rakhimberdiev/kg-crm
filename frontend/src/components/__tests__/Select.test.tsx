@@ -240,3 +240,52 @@ describe('Select — koʻrinish', () => {
     expect(cls).not.toContain('w-full')
   })
 })
+
+describe('Select — variantlar komponentdan kelganda', () => {
+  /**
+   * Mijozda guruh roʻyxati BOʻSH chiqdi (`/t/orientaltest`, 2026-10-28):
+   * "guruh bor, lekin bola qoʻshayotganda chiqmadi".
+   *
+   * Sabab — roʻyxat React bolalarini oʻqirdi va faqat toʻgʻridan-toʻgʻri
+   * yozilgan `<option>` ni tanirdi. `<GroupOptions/>` kabi KOMPONENT esa
+   * oʻsha paytda hali element: uning ichidagi variantlarni faqat React
+   * chizgandan keyin, DOM biladi. Yashirin native maydonda ular bor edi —
+   * ya'ni forma ishlardi, roʻyxat esa boʻsh koʻrinardi.
+   */
+  function Variants() {
+    return (
+      <>
+        <option value="">— guruhsiz —</option>
+        <option value="g1">Quyoshcha</option>
+        <option value="g2" disabled>
+          Yulduzcha — toʻlgan
+        </option>
+      </>
+    )
+  }
+
+  it('komponent qaytargan variantlarni roʻyxatda koʻrsatadi', () => {
+    render(
+      <Select aria-label="Guruh" value="" onChange={() => {}}>
+        <Variants />
+      </Select>,
+    )
+    fireEvent.click(screen.getByRole('combobox', { name: 'Guruh' }))
+    const list = screen.getByRole('listbox')
+    expect(within(list).getAllByRole('option')).toHaveLength(3)
+    expect(within(list).getByText('Quyoshcha')).toBeTruthy()
+  })
+
+  it('komponent ichidagi oʻchirilgan variant oʻchirilgan qoladi', () => {
+    const onChange = vi.fn()
+    render(
+      <Select aria-label="Guruh" value="" onChange={onChange}>
+        <Variants />
+      </Select>,
+    )
+    fireEvent.click(screen.getByRole('combobox', { name: 'Guruh' }))
+    const list = screen.getByRole('listbox')
+    fireEvent.click(within(list).getByText('Yulduzcha — toʻlgan'))
+    expect(onChange).not.toHaveBeenCalled()
+  })
+})
