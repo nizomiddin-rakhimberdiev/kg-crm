@@ -1,9 +1,10 @@
-import { Bell, LogOut, Menu, Search, Volume2, VolumeX } from 'lucide-react'
+import { Bell, LogOut, Menu, Volume2, VolumeX } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Avatar } from '@/components/ui/Avatar'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { useSound } from '@/app/providers/SoundProvider'
 import { BranchSwitcher } from './BranchSwitcher'
+import { GlobalSearch } from './GlobalSearch'
 import { LanguageSwitch } from './LanguageSwitch'
 import { t } from '@/lib/i18n'
 
@@ -28,16 +29,10 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         <Menu className="h-5 w-5" />
       </button>
 
-      {/* Search — planshetdan boshlab; telefonda joy yo'q. */}
-      <div className="relative hidden max-w-md flex-1 md:block">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-        <input
-          type="text"
-          placeholder={t('Ism yoki ID boʻyicha qidiruv...')}
-          aria-label={t('Ism yoki ID boʻyicha qidiruv...')}
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-        />
-      </div>
+      {/* Qidiruv — planshetdan boshlab; telefonda joy yoʻq.
+          2026-10-28 gacha bu maydon shunchaki bezak edi: yozilgan
+          matn hech qayerga ketmasdi. */}
+      <GlobalSearch className="hidden max-w-md flex-1 md:block" />
 
       <div className="ml-auto flex items-center gap-1 sm:gap-2 lg:gap-3">
         <BranchSwitcher />

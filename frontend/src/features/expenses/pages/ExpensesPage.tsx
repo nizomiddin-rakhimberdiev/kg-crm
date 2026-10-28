@@ -270,6 +270,12 @@ export default function ExpensesPage() {
         </div>
       )}
 
+      {/* Qarzga berilgan pul — CHIQIM emas, shuning uchun oʻz paneli
+          (mijoz soʻrovi, 2026-10-28): pul ketdi, lekin yoʻqolmadi.
+          Oʻrni qoldiqlar YONIDA: u ham pul holati haqida, va forma
+          bilan toifalar ostida qolsa, uni hech kim koʻrmasdi. */}
+      {can('expenses.read') && <LoansPanel />}
+
       {error && (
         <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
@@ -478,10 +484,6 @@ export default function ExpensesPage() {
           </div>
         </>
       )}
-
-      {/* Qarzga berilgan pul — CHIQIM emas, shuning uchun oʻz paneli
-          (mijoz soʻrovi, 2026-10-28): pul ketdi, lekin yoʻqolmadi. */}
-      {can('expenses.read') && <LoansPanel />}
 
       <div className="mb-3 flex flex-col gap-2 sm:flex-row">
         <Select
