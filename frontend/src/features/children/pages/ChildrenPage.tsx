@@ -1009,10 +1009,14 @@ export default function ChildrenPage() {
             className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
           />
         </div>
+        {/* Tanlagich endi sukut boʻyicha `w-full`: eni berilmasa, u
+            qatorni toʻliq egallab, qidiruv maydonini pastga surib
+            yuboradi. */}
         <Select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           aria-label={t('Holat')}
+          className="sm:max-w-[14rem]"
         >
           <option value="">{t('Barcha holatlar')}</option>
           {STATUS_ORDER.map((value) => (
