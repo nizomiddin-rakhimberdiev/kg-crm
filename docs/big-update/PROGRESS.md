@@ -2747,3 +2747,54 @@ barcha tanlagichlar, va davomat ekranidagi ko'rsatkichlar.
     `analiz` stendi shu bilan to'ldirildi: 120 bola, 7 guruh, 18
     xodim, 720 faktura / 560 to'lov, 15 120 davomat yozuvi, 5 yopilgan
     oy — va oltita oyning hammasida tenglik yashil.
+
+36. **Mijoz bilan noldan sinov — oʻn bir eʼtiroz** (2026-10-28).
+    Mijoz tizimni boshidan ishlatib koʻrdi va roʻyxat berdi. Ularning
+    bittasi mening regressiyam edi, qolgani esa mahsulotning
+    kamchiliklari.
+
+    **Guruh roʻyxati boʻsh chiqdi** (`/t/orientaltest`). Sabab —
+    23-oktabrdagi yangi tanlagich: u faqat toʻgʻridan-toʻgʻri yozilgan
+    `<option>` larni tanirdi, `<GroupOptions/>` kabi komponentni esa
+    yoʻq. Yashirin native maydonda variantlar bor edi, ya'ni forma
+    ishlardi va test ham oʻtardi — koʻz esa hech narsa koʻrmasdi. Endi
+    roʻyxat DOM'dan oʻqiladi: brauzer nimani variant deb hisoblasa,
+    biz ham oʻshani koʻrsatamiz.
+
+    **Bolaning yoʻli** (ADR-46): yangi → sinovda (3 kun) → faol →
+    ketgan → qaytib kelgan. Sinovda pul hisoblanmaydi va muddati
+    tugaganda roʻyxat "Sinov tugadi" deb aytadi — unutilgan belgi pul
+    yoʻqotadi. Ketish sababi mijozning oʻz roʻyxatidan (11 ta), chunki
+    "bu oy nega oltita bola ketdi?" degan savolga oltita har xil jumla
+    javob bermaydi.
+
+    **Qidiruv** ism, shartnoma raqami yoki ID boʻyicha — bolalarda,
+    toʻlovlarda va qarzdorlarda bitta taʼrifdan (`children/search.py`).
+
+    **Komissiya** tushum yonida, kichik qizil yozuvda: raqam bor edi,
+    lekin boshqa ekranda turardi.
+
+    **Chiqimlar** toifa va holat boʻyicha filtrlanadi (server buni
+    allaqachon qabul qilardi, ekranda tugma yoʻq edi).
+
+    **Toʻlovlar jurnali hammaga ochildi** (ADR-47) — 14-oktabrdagi
+    ADR-30 ning teskarisi, va buni oʻsha bogʻchaning oʻzi soʻradi:
+    smena almashganda "kecha kim qancha oldi?" har safar egadan
+    oʻtardi. Koʻrish ochiq, AMAL esa yopiq: begona toʻlovni qaytarish,
+    tuzatish yoki fiskal qilish mumkin emas.
+
+    **Usulni oʻsha kuni tuzatish** (ADR-47): naqdni terminalga,
+    terminalni Paymega. Pul boshqa hisobga koʻchadi, eski komissiya
+    bekor qilinadi, yangisi yoziladi — hammasi bitta tranzaksiyada.
+    Summa tuzatilmaydi: notoʻgʻri summa — boshqa hodisa.
+
+    **Qarzga berilgan pul** (ADR-48): chiqim emas — pul ketdi, lekin
+    yoʻqolmadi. Kassadan chiqadi, foyda-zararga kirmaydi, qaytganda
+    oʻzi qaytadi. Hujjat — oʻsha `money_operation`, yangi jadval emas.
+
+    **Oylik qaysi hisobdan berilgani** endi oylik varaqasida ham,
+    roʻyxatda ham koʻrinadi; avans roʻyxati ham hisobini aytadi.
+
+    **Bot har rolga oʻziga yarasha gapiradi** (ADR-49): yordam roʻyxati
+    ruxsatdan quriladi, ya'ni bot javob bermaydigan savolni taklif
+    qilmaydi.

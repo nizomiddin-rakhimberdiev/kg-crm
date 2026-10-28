@@ -437,8 +437,13 @@ export default function PayrollPage() {
                     <span className="block truncate text-sm font-medium text-slate-800">
                       {advance.employee_name}
                     </span>
+                    {/* Pul QAYSI hisobdan chiqqani (mijoz soʻrovi,
+                        2026-10-28): forma buni soʻrardi, roʻyxat esa
+                        aytmasdi — ya'ni javob yozilgan, lekin
+                        koʻrinmaydigan joyda edi. */}
                     <span className="text-xs text-slate-500">
                       {formatDate(advance.paid_on)}
+                      {` · ${advance.cash_account_name ?? t('Naqd kassa')}`}
                       {advance.note ? ` · ${advance.note}` : ''}
                     </span>
                   </span>
@@ -654,6 +659,17 @@ export default function PayrollPage() {
                   {Number(item.deduction) > 0 &&
                     t(' · ushlab qolish −{ded}', { ded: money(item.deduction) })}
                 </p>
+                {/* Oylik QAYSI hisobdan berilgani (mijoz soʻrovi,
+                    2026-10-28): javob yozilgan edi, lekin faqat toʻlov
+                    oynasida koʻrinardi va yopilgandan keyin yoʻqolardi. */}
+                {(item.payouts ?? []).length > 0 && (
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {t('Berildi:')}{' '}
+                    {(item.payouts ?? [])
+                      .map((row) => `${row.cash_account_name} ${money(row.amount)}`)
+                      .join(' · ')}
+                  </p>
+                )}
                 {run.is_editable && can('payroll.update') && (
                   <div className="mt-2 grid grid-cols-2 gap-2">
                     {(['bonus', 'deduction'] as const).map((field) => (
@@ -719,6 +735,13 @@ export default function PayrollPage() {
                           </span>
                         )}
                       </button>
+                      {(item.payouts ?? []).length > 0 && (
+                        <span className="block text-xs text-slate-500">
+                          {(item.payouts ?? [])
+                            .map((row) => `${row.cash_account_name} ${money(row.amount)}`)
+                            .join(' · ')}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-2 text-right text-slate-600 tabular-nums">
                       {money(item.base_amount)}

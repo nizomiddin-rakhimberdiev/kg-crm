@@ -229,6 +229,7 @@ export default function ReportsPage() {
     name: paymentMethodLabel(row.method),
     value: Number(row.total),
     count: row.count,
+    commission: Number(row.commission ?? 0),
     color: PAYMENT_METHOD_COLORS[row.method] ?? PIE_FALLBACK[index % PIE_FALLBACK.length],
     share: methodTotal > 0 ? (Number(row.total) / methodTotal) * 100 : 0,
   }))
@@ -624,6 +625,15 @@ export default function ReportsPage() {
                                 v: entry.count,
                               })}
                             </span>
+                            {/* Bank ushlab qolgan ulush (mijoz soʻrovi,
+                                2026-10-28): tushum yonida turmasa,
+                                "qancha keldi?" savoliga javob yarim
+                                qolardi. */}
+                            {entry.commission > 0 && (
+                              <span className="block text-xs leading-4 tabular-nums text-red-600">
+                                {t('komissiya −{money}', { money: formatUZS(entry.commission) })}
+                              </span>
+                            )}
                           </span>
                         </li>
                       ))}

@@ -1,11 +1,22 @@
 """
-"Faqat o'zi qabul qilgan to'lovlar" doirasi (mijoz so'rovi, 2026-10-14; ADR-30).
+"Faqat o'zi qabul qilgan to'lovlar" doirasi (ADR-30, 2026-10-14;
+2026-10-28 da TORAYTIRILDI).
 
 `children/scope.py` bilan bir xil fikr: modul × amal RBAC'i "to'lovlarni
 o'qiy oladimi?" degan savolga javob beradi, bu modul esa "QAYSI
-to'lovlarni?" degan ikkinchi savolga. Kassirga to'lov doskasi kerak —
-demak `payments.read` qoladi; lekin boshqa kassirlar qabul qilgan pul va
-oyning umumiy tushumi unga tegishli emas.
+to'lovlarni?" degan ikkinchi savolga.
+
+**Nima o'zgardi.** Dastlab bayroq jurnalni ham yopardi: kassir boshqa
+kassirning to'lovini umuman ko'rmasdi. Bog'cha buni amalda sinab
+ko'rib fikrini o'zgartirdi — smena almashganda "kecha kim qancha
+oldi?" degan savol har kuni beriladi, va u har safar egadan o'tishi
+kerak edi. Endi **ko'rish hammaga ochiq**, bayroq esa quyidagilarni
+ushlab turadi:
+
+  * oyning umumiy tushumi (doska yig'indisi) — ko'rsatilmaydi;
+  * kassirning kunlik hisoboti va yo'ldagi puli — faqat o'ziniki;
+  * BOSHQA odamning to'lovini qaytarish, tuzatish yoki fiskal
+    qilish — mumkin emas (`PaymentViewSet._assert_mine`).
 
 Cheklov rolning ANIQ bayrog'idan keladi (`Role.payments_own_only`),
 ruxsat yo'qligidan emas (14-invariant). Bayroq qo'yilmagan har qanday
@@ -17,9 +28,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from django.db.models import QuerySet
-
-__all__ = ["payments_own_only", "restrict_payments"]
+__all__ = ["payments_own_only"]
 
 
 def payments_own_only(user: Any) -> bool:
@@ -28,10 +37,3 @@ def payments_own_only(user: Any) -> bool:
         return False
     role = getattr(user, "role", None)
     return bool(role is not None and role.payments_own_only)
-
-
-def restrict_payments(queryset: QuerySet[Any], user: Any) -> QuerySet[Any]:
-    """Cheklangan foydalanuvchi uchun — faqat `received_by = o'zi`."""
-    if payments_own_only(user):
-        return queryset.filter(received_by_id=user.id)
-    return queryset

@@ -2833,3 +2833,87 @@ msgstr "Contract"
 
 msgid "Hisoblangan {charged}, imtiyoz {benefits}, qayta hisob {recalculated} → yigʻilgan {collected} + qarz {outstanding}"
 msgstr "Charged {charged}, benefits {benefits}, recalculation {recalculated} → collected {collected} + debt {outstanding}"
+
+msgid "Sinovda"
+msgstr "On trial"
+
+msgid "Qaytib kelgan"
+msgstr "Returned"
+
+msgid "Ketgan"
+msgstr "Left"
+
+msgid "Bunday sabab roʻyxatda yoʻq."
+msgstr "That reason is not on the list."
+
+msgid "Boshqa joyga koʻchish"
+msgstr "Moved away"
+
+msgid "Davlat bogʻchasidan joy chiqdi"
+msgstr "A place opened at a state kindergarten"
+
+msgid "Moliyaviy sharoit oʻzgardi"
+msgstr "Their finances changed"
+
+msgid "Oilaviy sharoit"
+msgstr "Family circumstances"
+
+msgid "Tibbiy koʻrsatma"
+msgstr "Medical reasons"
+
+msgid "Inklyuziv taʼlim ehtiyoji"
+msgstr "Needs inclusive education"
+
+msgid "Kadrlar almashuvi"
+msgstr "Staff changed"
+
+msgid "Guruhda bola koʻp"
+msgstr "The group is too crowded"
+
+msgid "Bola moslasha olmadi"
+msgstr "The child did not settle in"
+
+msgid "Tarbiyachilar bilan kelishmovchilik"
+msgstr "Disagreement with the teachers"
+
+msgid "Boshqa sabab"
+msgstr "Another reason"
+
+msgid "Bu toʻlovdan ota-onaga pul qaytarilgan — usulni oʻzgartirib boʻlmaydi."
+msgstr "Money from this payment was refunded to the parent — the method cannot be changed."
+
+msgid "Bu toʻlovni siz qabul qilmagansiz."
+msgstr "You did not take this payment."
+
+msgid "Nomaʼlum toʻlov usuli."
+msgstr "Unknown payment method."
+
+msgid "Oylikdan ushlangan toʻlovning usulini bu yerda oʻzgartirib boʻlmaydi."
+msgstr "A payment withheld from salary cannot have its method changed here."
+
+msgid "Qaytarilgan toʻlovni tuzatib boʻlmaydi."
+msgstr "A reversed payment cannot be corrected."
+
+msgid "Toʻlov usulini faqat qabul qilingan KUNI tuzatish mumkin."
+msgstr "The payment method can only be corrected on the DAY the payment was taken."
+
+msgid "toʻlov usuli tuzatildi"
+msgstr "the payment method was corrected"
+
+msgid "Bu hujjat qarz emas."
+msgstr "This document is not a loan."
+
+msgid "Pul kimga berilganini yozing."
+msgstr "Write down who the money went to."
+
+msgid "Qarz qaytdi"
+msgstr "The loan came back"
+
+msgid "Qarz qaytdi: {person}"
+msgstr "Loan returned: {person}"
+
+msgid "Qarzdan koʻp qaytarib boʻlmaydi — qolgani {amount} soʻm."
+msgstr "More than the loan cannot come back — {amount} UZS is still out."
+
+msgid "Qarzga berildi"
+msgstr "Lent out"

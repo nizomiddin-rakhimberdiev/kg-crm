@@ -21,6 +21,7 @@ from apps.cash.views import (
     CashAccountViewSet,
     CashCountViewSet,
     CashHandoverViewSet,
+    LoanViewSet,
     MoneyOperationViewSet,
 )
 from apps.children.views import ChildViewSet, GroupViewSet, GuardianViewSet
@@ -74,6 +75,9 @@ router.register("cash-accounts", CashAccountViewSet, basename="cash-account")
 router.register("cash-handovers", CashHandoverViewSet, basename="cash-handover")
 router.register("cash-counts", CashCountViewSet, basename="cash-count")
 router.register("money-operations", MoneyOperationViewSet, basename="money-operation")
+# Qarzga berilgan pul (mijoz soʻrovi, 2026-10-28) — hujjat `money_operation`,
+# lekin ekranda u alohida roʻyxat: "kimda qancha qoldi?".
+router.register("loans", LoanViewSet, basename="loan")
 router.register("bank-statements", BankStatementViewSet, basename="bank-statement")
 router.register("attendance", AttendanceViewSet, basename="attendance")
 router.register("staff-attendance", StaffAttendanceViewSet, basename="staff-attendance")

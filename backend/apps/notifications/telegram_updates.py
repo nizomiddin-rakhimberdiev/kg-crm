@@ -95,12 +95,16 @@ def _handle_staff(chat_id: str, text: str, caption: str, photos: list[Any]) -> s
         if user is None:
             reply(chat_id, UNKNOWN_CODE["uz"])
             return "unknown_code"
-        reply(
-            chat_id,
-            f"Salom, {user.full_name}! Chiqim uchun summani (va chek rasmini) yuboring: "
-            "masalan, 150 000 kartoshka. Savol ham bering: «bugungi tushum», «bu oy foyda», "
-            "«faol bolalar» — roʻyxat /help.",
-        )
+        # Salomlashuv ham ROLGA qarab (mijoz soʻrovi, 2026-10-28):
+        # ilgari u hammaga "chiqim yuboring, foydani soʻrang" derdi —
+        # kassirda esa ikkalasi ham ruxsat etilmagan edi, ya'ni bot
+        # birinchi xabaridayoq bajarib boʻlmaydigan ish taklif qilardi.
+        from apps.core.tenancy import organization_context as _ctx
+        from apps.reports import bot as staff_bot
+
+        with _ctx(user.organization_id):
+            guide = staff_bot.help_text(user=user)
+        reply(chat_id, f"Salom, {user.full_name}!\n\n{guide}")
         return "staff_linked"
 
     body = caption if photos else text

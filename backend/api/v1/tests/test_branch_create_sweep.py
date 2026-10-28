@@ -38,6 +38,7 @@ CUSTOM_CREATE = {
     "cash-handover": "hand_over() takes the branch from the cash pot (Bosqich 12.5)",
     "cash-count": "close_day() takes the branch from the cash pot (Bosqich 12.5)",
     "money-operation": "record_operation() takes the branch from the pot (Bosqich 13.2b)",
+    "loan": "lend_money() takes the branch from the pot (ADR-48)",
     "bank-statement": "import_statement() takes the branch from the bank pot (Bosqich 13.3d)",
 }
 

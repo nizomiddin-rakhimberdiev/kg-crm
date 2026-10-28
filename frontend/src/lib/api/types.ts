@@ -236,8 +236,15 @@ export interface Child {
   date_of_birth: string
   age_years: number
   gender: 'male' | 'female'
-  enrollment_status: 'prospect' | 'active' | 'paused' | 'graduated' | 'withdrawn'
+  enrollment_status:
+    'prospect' | 'trial' | 'active' | 'returned' | 'paused' | 'graduated' | 'withdrawn'
   enrolled_on: string | null
+  /** Ketish sababi roʻyxatdan — kodi va oʻqiladigan nomi. */
+  status_reason_code?: string
+  status_reason_label?: string
+  /** Sinov shu kunda tugaydi; `trial_is_over` — tugagani. */
+  trial_until?: string | null
+  trial_is_over?: boolean
   /** Qogʻozdagi shartnoma raqami (PLAN 9.3). */
   contract_number: string
   tariff: string | null
@@ -413,6 +420,8 @@ export interface Payment {
   payer_tin?: string
   employee: string | null
   employee_name: string | null
+  /** Pulni kim qabul qilgan — ID va ismi (mijoz soʻrovi, 2026-10-28). */
+  received_by?: string | null
   received_by_name: string | null
   backdate_reason: string
   allocation_reason: string
@@ -549,7 +558,8 @@ export interface PayrollItem {
   cash_net: string
   gross: string
   net: string
-  note: string
+  note: string /** Oylik qaysi hisobdan berilgani (ADR-29) — yopilgan hisoblashda ham. */
+  payouts?: Array<{ part: string; amount: string; paid_on: string; cash_account_name: string }>
 }
 
 /** Oylikdan haqiqatan chiqqan pul (docs/03 §14.4a). */
@@ -826,7 +836,13 @@ export interface DashboardKpis {
     accounts: CashAccountBalance[]
   }
   /** Shu oyda qaysi yo'l bilan qancha pul kelgani (PLAN 7.3). */
-  income_by_method?: Array<{ method: string; total: string; count: number }>
+  income_by_method?: Array<{
+    method: string
+    total: string
+    count: number
+    /** Bank ushlab qolgan ulush — shu usul boʻyicha (Bosqich 12.5). */
+    commission?: string
+  }>
 }
 
 /** Bitta pul qopi va undagi qoldiq (docs/03 §13a). */
@@ -897,7 +913,7 @@ export interface RevenueReport {
   payment_count: number
   /** Uzluksiz davrlar: `period` — davr boshi (ISO sana), bo'sh davr ham bor. */
   by_period: Array<{ period: string; total: string; count: number }>
-  by_method: Array<{ method: string; total: string; count: number }>
+  by_method: Array<{ method: string; total: string; count: number; commission?: string }>
 }
 
 export interface ExpenseReport {
@@ -1134,6 +1150,9 @@ export interface EmployeeAdvance {
   employee_name: string
   amount: string
   paid_on: string
+  /** Pul qaysi hisobdan chiqqani (ADR-29); eski qatorlarda boʻsh — naqd kassa. */
+  cash_account?: string | null
+  cash_account_name?: string | null
   note: string
   created_at: string
 }

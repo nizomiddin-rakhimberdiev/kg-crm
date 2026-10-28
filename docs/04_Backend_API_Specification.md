@@ -328,11 +328,11 @@ Module: `children`. Sub-domains: children, guardians, groups, enrollment.
 
 | Method & path | Purpose |
 |---|---|
-| `POST /children/{id}/change-status` | Status with **date and reason**, both mandatory (Q5). After that date the child is not billed; the month they left still is — they were there for part of it, and refunding is a separate decision. |
+| `POST /children/{id}/change-status` | Status with **date and reason**, both mandatory (Q5), plus `status_reason_code` from `WithdrawReason` when the status is `withdrawn` (ADR-46). After that date the child is not billed; the month they left still is — they were there for part of it, and refunding is a separate decision. `trial` is not billed at all and sets `trial_until` (3 days); `returned` bills exactly like `active`. |
 | `POST /children/{id}/archive` · `/restore` | Archive, not delete. `DELETE /children/{id}` does the same thing. |
 | `POST /children/{id}/hard-delete` | The only hard delete, and deliberately narrow: no financial records **and** created within 24 hours (Q6). The audit row outlives the child. |
 | `PATCH` · `DELETE /children/{id}/guardians/{link_id}` | Fix the relation, move "primary", or unlink. The guardian themselves is never deleted — they may be another child's guardian too. Only one link may be primary and the database enforces it, so the old one is cleared before the new one is saved. |
-| `GET /children?q=` | Search by the normalised key: apostrophes and alphabet stop mattering (Q11). |
+| `GET /children?q=` | Search by the normalised key — apostrophes and alphabet stop mattering (Q11) — **or by contract number or id** (customer request, 2026-10-28). One definition, `apps/children/search.py`, shared by the children list, the payment board (`?search=`) and the debtors list (`?q=`): a cashier holding the paper contract should not get three different answers on three screens. |
 
 Phone numbers are normalised to `+998XXXXXXXXX` on every write — guardian, employee, user, branch, lead. Existing bad numbers are reported, never rewritten: `python manage.py report_bad_phones [--tenant]`.
 
@@ -469,6 +469,7 @@ Module: `finance` (Payments module UI). The **ledger** is the source of truth ([
 | POST | `/payments` | `payments.create` | Record a payment (optionally linked to invoice). Bosqich 12.4: `method` ∈ `cash · terminal · bank_transfer · click · payme · payroll` (`online` is legacy, `400`); `payer_id?` (a guardian of the child, else `422`); `employee_id` (required for `payroll`); `paid_at` in the future → `422`, older than `finance.backdate_days` → `422` unless `backdate_reason`; `invoice_id` other than the oldest open one → `422` unless `allocation_reason`. `POST /payments/batch` takes the same `paid_at`, `payer_id`, `backdate_reason`, `allocation_reason`, and `employee_id` per line. Bosqich 13.8: `payer_kind` (`guardian` · `employer` · `other`) with `payer_org` and `payer_tin` (nine digits) on both |
 | GET | `/payments/{id}` | `payments.read` | Detail, with `allocations` — which months the money settled |
 | POST | `/payments/{id}/reverse` | `payments.update` | Reverse a payment (creates counter-entry; never deletes) |
+| POST | `/payments/{id}/correct-method` | `payments.update` | `{method, reason}` — correct the **method** on the day it was taken (ADR-47). The money moves pots, the old commission is countered and marked rejected, a new one is written. The amount is never editable; a wrong amount is a reversal. `422` after the day, after a reversal or refund, or for payroll withholding; `403` if someone else took it and the caller's role is `payments_own_only` |
 | GET | `/payments/{id}/receipt` | `payments.read` | Receipt PDF |
 | GET | `/payments/daily-summary` | `payments.read` | Cashier daily totals (`?date=`) by method |
 
@@ -618,7 +619,7 @@ Module: `debtors` — **derived view over the finance ledger** ([03 §13.7](./03
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/debtors` | `debtors.read` | List children with outstanding balance (filters: `overdue=true`, `group_id`, `min_amount`, `min_days`; `order_by=debt\|days\|name`) |
+| GET | `/debtors` | `debtors.read` | List children with outstanding balance (filters: `overdue=true`, `group_id`, `min_amount`, `min_days`, `q=` name/contract/id; `order_by=debt\|days\|name`) |
 | GET | `/debtors/{childId}` | `debtors.read` | Debtor detail + ledger statement |
 
 > **Reminders are sent through `notifications`, not through `debtors`** ([§15](#15-notifications)). An earlier draft of this document put `POST /debtors/{childId}/remind` and `/debtors/remind-all` here; the implementation has one path instead — `POST /notifications/remind-debtors`, optionally narrowed by `child_ids` — because the preview, the daily cap, the sending window and the delivery log all live in one place. Two entry points would have meant two sets of rules.
@@ -790,7 +791,7 @@ The cache key therefore includes the **set of blocks**, plus a per-organization 
 
 **`cash` — how the balance is derived.** Over the whole history, not a period: the question is "how much do we have right now", which no single screen answered before.
 
-- `income` — payments that were **not reversed**.
+- `income` — payments that were **not reversed**. Each `by_method` row also carries `commission` — what the bank kept on those payments (ADR-47), so "how much came in by terminal" and "how much the bank took" are one line, not two screens.
 - `expenses` — expenses in status `approved` or `paid` (the same rule as `/reports/expenses`, so the two screens agree).
 - `payroll` — for finalized/paid runs, `total_gross − total_deductions`; **plus** advances from periods that have no finalized run yet. Gross-minus-deductions is used rather than net because an advance is money already handed over and is subtracted from net — counting the advance again would overstate the spend.
 
@@ -1154,6 +1155,8 @@ Module: `platform`. **Not part of the customer API surface** — separate auth p
 | POST | `/debtors/write-off` | `debtors.**approve**` | `{invoice_id, amount, reason}` — the only way to forgive debt: a minus line on the invoice with the reason, a ledger credit and an `invoice_write_off` record. Amount ≤ what is still owed |
 | GET | `/ledger/balance?child=` | `payments.read` | Adds `months`: each open invoice's period and outstanding amount |
 | GET/POST | `/money-operations` | `payments.read` / `payments.update`, not own-only | Bosqich 13.2b: `{kind, subtype?, cash_account_id, amount, occurred_on, reason, period?, counterparty?, allow_negative?}` — other income, owner draw (dividend accrues its tax), owner contribution, loan in/repay, tax payment. Immutable |
+| GET/POST | `/loans` | `expenses.read` / `expenses.create`, not own-only | Money the kindergarten **lent out** (ADR-48): `{person, amount, reason, cash_account_id, occurred_on, allow_negative?}`. The same `money_operation` document with `kind=loan_out`; the row carries `outstanding` and its `returns`. Not an expense — it never reaches profit and loss |
+| POST | `/loans/{id}/return` | `expenses.update` | `{amount, occurred_on, note?, cash_account_id?}` — the money comes back (default: the pot it left from) and is linked to that loan. More than `outstanding` is `422` |
 | POST | `/payments/{id}/refund` | `payments.update`, not own-only | `{amount, cash_account_id, reason}` — returns the unused advance of that payment to the parent; more than unused → `422` |
 | GET | `/payments/in-transit` | `payments.read` (own-only: own payments) | Bosqich 13.2c: terminal/Click/Payme money not yet in the bank — `amount`, `commission`, `expected_amount`, `expected_on`, `overdue`; `expected_total`, `overdue_count` |
 | POST | `/payments/settle` | `payments.update`, not own-only | `{payment_ids, settled_on, reference?}` — the bank received them; each payment settles once (`422`) |

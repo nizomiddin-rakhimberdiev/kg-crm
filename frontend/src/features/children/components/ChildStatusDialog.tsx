@@ -15,13 +15,7 @@ import { childrenApi } from '@/features/children/api'
 import { ApiError, type Child } from '@/lib/api/types'
 import { t } from '@/lib/i18n'
 import { Select } from '@/components/ui/Select'
-
-const STATUSES: Array<[Child['enrollment_status'], string]> = [
-  ['active', t('Faol')],
-  ['paused', t('Toʻxtatilgan')],
-  ['withdrawn', t('Chiqib ketgan')],
-  ['graduated', t('Bitirgan')],
-]
+import { STATUS_LABELS, STATUS_ORDER, WITHDRAW_REASONS } from '@/features/children/status'
 
 export function ChildStatusDialog({
   child,
@@ -36,7 +30,13 @@ export function ChildStatusDialog({
     enrollment_status: child.enrollment_status,
     status_changed_on: new Date().toISOString().slice(0, 10),
     status_reason: '',
+    status_reason_code: '',
   })
+
+  // Sabab roʻyxati faqat KETISHDA soʻraladi: "faol" yoki "sinovda"
+  // uchun "nega ketdi?" degan savolning maʼnosi yoʻq.
+  const leaving = form.enrollment_status === 'withdrawn'
+  const trial = form.enrollment_status === 'trial'
   const [error, setError] = useState<string | null>(null)
 
   const save = useMutation({
@@ -85,9 +85,9 @@ export function ChildStatusDialog({
               }
               className="mt-1"
             >
-              {STATUSES.map(([value, label]) => (
+              {STATUS_ORDER.map((value) => (
                 <option key={value} value={value}>
-                  {label}
+                  {STATUS_LABELS[value]}
                 </option>
               ))}
             </Select>
@@ -105,19 +105,53 @@ export function ChildStatusDialog({
               onChange={(iso) => setForm((p) => ({ ...p, status_changed_on: iso }))}
             />
             <p className="mt-1 text-xs text-slate-500">
-              {t('Shu sanadan keyin hisob-faktura yozilmaydi.')}
+              {trial
+                ? t('Sinov shu kundan 3 kun davom etadi; bu kunlar uchun pul hisoblanmaydi.')
+                : t('Shu sanadan keyin hisob-faktura yozilmaydi.')}
             </p>
           </div>
 
+          {leaving && (
+            <div>
+              <label
+                htmlFor="cs-reason-code"
+                className="mb-1 block text-xs font-medium text-slate-600"
+              >
+                {t('Nega ketdi')} <span className="text-red-500">*</span>
+              </label>
+              <Select
+                id="cs-reason-code"
+                required
+                value={form.status_reason_code}
+                onChange={(e) => setForm((p) => ({ ...p, status_reason_code: e.target.value }))}
+                className="mt-1"
+              >
+                <option value="">{t('— tanlang —')}</option>
+                {WITHDRAW_REASONS.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </Select>
+              <p className="mt-1 text-xs text-slate-500">
+                {t('Roʻyxat oylar boʻyicha solishtiriladi — shuning uchun u qatʼiy.')}
+              </p>
+            </div>
+          )}
+
           <div>
             <label htmlFor="cs-reason" className="mb-1 block text-xs font-medium text-slate-600">
-              {t('Sabab')} <span className="text-red-500">*</span>
+              {leaving ? t('Izoh') : t('Sabab')} <span className="text-red-500">*</span>
             </label>
             <input
               id="cs-reason"
               required
               maxLength={255}
-              placeholder={t('Masalan: oila boshqa shaharga koʻchdi')}
+              placeholder={
+                leaving
+                  ? t('Masalan: oila Samarqandga koʻchdi')
+                  : t('Masalan: ota-ona bilan kelishildi')
+              }
               value={form.status_reason}
               onChange={(e) => setForm((p) => ({ ...p, status_reason: e.target.value }))}
               className={field}

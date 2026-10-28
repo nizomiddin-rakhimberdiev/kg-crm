@@ -251,6 +251,15 @@ function CashPanel({
                 <span className="block text-xs text-slate-500">
                   {t('{n} ta toʻlov', { n: row.count })}
                 </span>
+                {/* Bank ushlab qolgan ulush — pul kelgan joyda koʻrinadi
+                    (mijoz soʻrovi, 2026-10-28). Ilgari u faqat
+                    Chiqimlar roʻyxatida turardi, ya'ni "terminaldan
+                    shuncha keldi" degan qator haqiqatning yarmi edi. */}
+                {Number(row.commission ?? 0) > 0 && (
+                  <span className="num block text-xs text-red-600">
+                    {t('komissiya −{money}', { money: formatUZS(Number(row.commission)) })}
+                  </span>
+                )}
               </li>
             ))}
           </ul>

@@ -32,6 +32,7 @@ from apps.cash.models import (
     CashCount,
     CashHandover,
     MoneyOperation,
+    OperationKind,
 )
 from apps.cash.serializers import (
     BankStatementLineSerializer,
@@ -43,6 +44,9 @@ from apps.cash.serializers import (
     CashHandoverSerializer,
     CashHandoverWriteSerializer,
     CashTransferSerializer,
+    LoanReturnSerializer,
+    LoanSerializer,
+    LoanWriteSerializer,
     MoneyOperationSerializer,
     MoneyOperationWriteSerializer,
 )
@@ -455,6 +459,91 @@ class MoneyOperationViewSet(BranchScopedMixin, TenantViewSet):
             },
         )
         return Response(MoneyOperationSerializer(operation).data, status=status.HTTP_201_CREATED)
+
+
+class LoanViewSet(BranchScopedMixin, TenantViewSet):
+    """
+    `/loans` — qarzga berilgan pul (mijoz soʻrovi, 2026-10-28).
+
+    Mijozning soʻzi: *"summadan ayrilaversin, lekin xisob kitobga ham
+    tushaversin, u qarz pullar boʻlishi mumkin, uni qaytarish
+    imkoniyati ham boʻlishi kerak qaytsa yana umumiy summaga tushib
+    qolaversin"*.
+
+    Hujjat `money_operation` ning oʻzi (13.2b) — yangi jadval emas:
+    pul harakati, qop va ADR-29 tekshiruvi allaqachon oʻsha yerda, va
+    ikkinchi nusxasi ertami-kechmi ulardan ajralib ketardi.
+    """
+
+    permission_module = "expenses"
+    permission_action_map = {"create": "create", "return_money": "update"}
+    model = MoneyOperation
+    serializer_class = LoanSerializer
+    http_method_names = ["get", "post", "head", "options"]
+
+    def get_base_queryset(self) -> Any:
+        _refuse_own_only(request_user(self.request))
+        return (
+            super()
+            .get_base_queryset()
+            .filter(kind=OperationKind.LOAN_OUT)
+            .select_related("cash_account", "created_by")
+            .prefetch_related("returns__cash_account")
+        )
+
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        user = request_user(request)
+        _refuse_own_only(user)
+        payload = LoanWriteSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        data = payload.validated_data
+        loan = services.lend_money(
+            account=data["cash_account"],
+            amount=data["amount"],
+            occurred_on=data["occurred_on"],
+            person=data["person"],
+            reason=data["reason"],
+            created_by=user,
+            allow_negative=data.get("allow_negative", False),
+        )
+        audit.record(
+            action="create",
+            request=request._request,
+            actor=user,
+            entity_type="money_operation",
+            entity_id=loan.id,
+            changes={"kind": loan.kind, "amount": str(loan.amount), "person": loan.counterparty},
+        )
+        return Response(LoanSerializer(loan).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"], url_path="return", url_name="return")
+    def return_money(self, request: Request, pk: str | None = None) -> Response:
+        """`POST /loans/{id}/return` — qaytgan pul oʻsha qarzga bogʻlanadi."""
+        loan = self.get_object()
+        user = request_user(request)
+        payload = LoanReturnSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        data = payload.validated_data
+        operation = services.return_loan(
+            loan=loan,
+            # Qaytmasa — oʻsha qopga: pul koʻpincha qayerdan chiqqan
+            # boʻlsa, oʻsha yerga qaytadi.
+            account=data.get("cash_account") or loan.cash_account,
+            amount=data["amount"],
+            occurred_on=data["occurred_on"],
+            note=data.get("note", ""),
+            created_by=user,
+        )
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="money_operation",
+            entity_id=loan.id,
+            changes={"returned": str(operation.amount), "loan": str(loan.id)},
+        )
+        loan.refresh_from_db()
+        return Response(LoanSerializer(loan).data)
 
 
 _LINE = r"lines/(?P<line_id>[0-9a-f-]{36})"

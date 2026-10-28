@@ -35,6 +35,7 @@ import { formatDate, quantity, som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { groupCategories } from '@/features/expenses/categoryGroups'
 import { Select } from '@/components/ui/Select'
+import { LoansPanel } from '@/features/expenses/components/LoansPanel'
 
 const money = som
 
@@ -114,9 +115,20 @@ export default function ExpensesPage() {
   const [newCategory, setNewCategory] = useState('')
   const [error, setError] = useState<string | null>(null)
 
+  // Toifa va holat boʻyicha filtr (mijoz soʻrovi, 2026-10-28). Server
+  // ikkalasini ham allaqachon qabul qilardi — ekranda esa tugma yoʻq
+  // edi, ya'ni "shu oyda kommunalga qancha ketdi?" degan savolga
+  // javob faqat koʻz bilan sanab topilardi.
+  const [categoryFilter, setCategoryFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const listParams = {
+    ...(categoryFilter ? { category: categoryFilter } : {}),
+    ...(statusFilter ? { status: statusFilter } : {}),
+  }
+
   const expensesQuery = useQuery({
-    queryKey: queryKeys.expenses(organizationId),
-    queryFn: () => expensesApi.list(),
+    queryKey: queryKeys.expenses(organizationId, listParams),
+    queryFn: () => expensesApi.list(listParams),
   })
   const categoriesQuery = useQuery({
     queryKey: queryKeys.expenseCategories(organizationId),
@@ -466,6 +478,51 @@ export default function ExpensesPage() {
           </div>
         </>
       )}
+
+      {/* Qarzga berilgan pul — CHIQIM emas, shuning uchun oʻz paneli
+          (mijoz soʻrovi, 2026-10-28): pul ketdi, lekin yoʻqolmadi. */}
+      {can('expenses.read') && <LoansPanel />}
+
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row">
+        <Select
+          value={categoryFilter}
+          onChange={(event) => setCategoryFilter(event.target.value)}
+          aria-label={t('Toifa')}
+          className="sm:max-w-xs"
+        >
+          <option value="">{t('Barcha toifalar')}</option>
+          {(categoriesQuery.data?.items ?? []).map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </Select>
+        <Select
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+          aria-label={t('Holat')}
+          className="sm:max-w-xs"
+        >
+          <option value="">{t('Barcha holatlar')}</option>
+          {Object.entries(STATUS).map(([value, [label]]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </Select>
+        {(categoryFilter || statusFilter) && (
+          <button
+            type="button"
+            onClick={() => {
+              setCategoryFilter('')
+              setStatusFilter('')
+            }}
+            className="self-start rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+          >
+            {t('Filtrni tozalash')}
+          </button>
+        )}
+      </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         {expensesQuery.isError && (

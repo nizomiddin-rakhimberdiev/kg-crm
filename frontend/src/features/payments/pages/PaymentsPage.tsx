@@ -26,6 +26,7 @@ import { DateInput } from '@/components/ui/DateInput'
 import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
 import { paymentsApi, tariffsApi, type BoardRow } from '@/features/payments/api'
 import { GenerateInvoicesDialog } from '@/features/payments/components/GenerateInvoicesDialog'
+import { CorrectMethodModal } from '@/features/payments/components/CorrectMethodModal'
 import { FiscalModal } from '@/features/payments/components/FiscalModal'
 import { RefundModal } from '@/features/payments/components/RefundModal'
 import { ReceiptModal } from '@/features/payments/components/ReceiptModal'
@@ -87,7 +88,13 @@ export default function PaymentsPage() {
   const { can } = useCan()
   // Kassir faqat o'zi qabul qilgan pulni ko'radi (ADR-30) — jurnal shuni
   // ochiq aytadi, aks holda "Jami" butun bog'chaning tushumiga o'xshardi.
-  const ownOnly = useAuth().user?.payments_own_only ?? false
+  // Jurnal HAMMAGA ochiq (mijoz soʻrovi, 2026-10-28). Bayroq endi
+  // faqat amalni ushlab turadi: boshqa kassirning pulini qaytarish —
+  // oʻsha odamning ishi, va oyning umumiy tushumi doskada
+  // koʻrsatilmaydi.
+  const authUser = useAuth().user
+  const ownOnly = authUser?.payments_own_only ?? false
+  const userId = authUser?.id ?? ''
 
   const now = new Date()
   // Tab URL'da (`?tab=`): boshqa ekrandan "Tarif yarating" havolasi
@@ -121,12 +128,15 @@ export default function PaymentsPage() {
 
   // Jurnal filtri (PLAN 1.8). Sukut — shu oy: kassir odatda "bugun va
   // kecha nima bo'ldi" degan savol bilan keladi.
+  const today = new Date().toISOString().slice(0, 10)
   const monthStart = `${year}-${String(month).padStart(2, '0')}-01`
   const monthEnd = new Date(year, month, 0).toISOString().slice(0, 10)
   const [journal, setJournal] = useState({
     paid_from: monthStart,
     paid_to: monthEnd,
     method: '',
+    /** "Faqat mening toʻlovlarim" — TANLOV (mijoz soʻrovi, 2026-10-28). */
+    mine: false,
   })
   // Qaytarish sababi so'raladigan to'lov.
   const [reversing, setReversing] = useState<Payment | null>(null)
@@ -134,6 +144,8 @@ export default function PaymentsPage() {
   // Avansni ota-onaga qaytarish (Bosqich 13.2b).
   const [refunding, setRefunding] = useState<Payment | null>(null)
   const [fiscalFor, setFiscalFor] = useState<Payment | null>(null)
+  /** Usuli tuzatilayotgan toʻlov — faqat oʻsha kuni (2026-10-28). */
+  const [correcting, setCorrecting] = useState<Payment | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   // Sahifalar `useInfiniteQuery` bilan yig'iladi — qo'lda emas.
@@ -181,6 +193,7 @@ export default function PaymentsPage() {
     paid_at__date__gte: journal.paid_from,
     paid_at__date__lte: journal.paid_to,
     ...(journal.method ? { method: journal.method } : {}),
+    ...(journal.mine && userId ? { received_by: userId } : {}),
   }
   const paymentsQuery = useQuery({
     queryKey: queryKeys.payments(organizationId, journalParams),
@@ -196,6 +209,7 @@ export default function PaymentsPage() {
         paid_from: journal.paid_from,
         paid_to: journal.paid_to,
         ...(journal.method ? { method: journal.method } : {}),
+        ...(journal.mine && userId ? { received_by: userId } : {}),
       }),
     enabled: tab === 'payments',
   })
@@ -321,6 +335,14 @@ export default function PaymentsPage() {
       {refunding && <RefundModal payment={refunding} onClose={() => setRefunding(null)} />}
       {fiscalFor && <FiscalModal payment={fiscalFor} onClose={() => setFiscalFor(null)} />}
 
+      {correcting && (
+        <CorrectMethodModal
+          payment={correcting}
+          onClose={() => setCorrecting(null)}
+          onDone={() => invalidateMoney(queryClient, organizationId)}
+        />
+      )}
+
       {generating && (
         <GenerateInvoicesDialog
           year={year}
@@ -346,7 +368,7 @@ export default function PaymentsPage() {
         {(
           [
             ['board', t('Toʻlov qabul qilish')],
-            ['payments', ownOnly ? t('Mening toʻlovlarim') : t('Jurnal')],
+            ['payments', t('Jurnal')],
             // Qarzdorlar — Toʻlovlarning FILTRI (audit, 2026-10-21):
             // bir xil maʼlumot ikki sahifada koʻrinardi va ular
             // orasida sakrab yurish kerak edi.
@@ -419,7 +441,7 @@ export default function PaymentsPage() {
                   id="board-search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder={t('Ism yoki familiya…')}
+                  placeholder={t('Ism, shartnoma raqami yoki ID…')}
                   className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
                 />
               </div>
@@ -680,10 +702,22 @@ export default function PaymentsPage() {
               </Select>
             </div>
 
+            {/* "Faqat meniki" — endi katakcha, chunki jurnalning oʻzi
+                hamma uchun ochiq (mijoz soʻrovi, 2026-10-28). */}
+            <label className="flex items-center gap-2 pb-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={journal.mine}
+                onChange={(event) => setJournal((p) => ({ ...p, mine: event.target.checked }))}
+                className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+              />
+              {t('Faqat mening toʻlovlarim')}
+            </label>
+
             {/* Yig'indi — filtr bilan birga o'zgaradi. */}
             <div className="ml-auto text-right">
               <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                {ownOnly ? t('Siz qabul qilgansiz') : t('Jami qabul qilingan')}
+                {journal.mine ? t('Siz qabul qilgansiz') : t('Jami qabul qilingan')}
               </p>
               <p className="num text-xl font-bold text-slate-900">
                 {journalSummary.data
@@ -709,6 +743,7 @@ export default function PaymentsPage() {
                     <th className="px-4 py-3">{t('Bola')}</th>
                     <th className="px-4 py-3">{t('Hisob-faktura')}</th>
                     <th className="px-4 py-3">{t('Toʻlov usuli')}</th>
+                    <th className="px-4 py-3">{t('Kim qabul qildi')}</th>
                     <th className="px-4 py-3 text-right">{t('Summa')}</th>
                     <th className="px-4 py-3" />
                   </tr>
@@ -746,6 +781,11 @@ export default function PaymentsPage() {
                           '—'}
                       </td>
                       <td className="px-4 py-3">{paymentMethodLabel(payment.method)}</td>
+                      {/* Kim qabul qilgani — mijoz soʻrovi (2026-10-28):
+                          smena almashganda birinchi beriladigan savol. */}
+                      <td className="px-4 py-3 text-slate-600">
+                        {payment.received_by_name ?? '—'}
+                      </td>
                       <td
                         className={cn(
                           'px-4 py-3 text-right font-semibold',
@@ -790,7 +830,29 @@ export default function PaymentsPage() {
                                   <ReceiptText className="h-4 w-4" />
                                 </button>
                               )}
-                              {!ownOnly && (
+                              {/* Usulni tuzatish — faqat OʻSHA KUNI va
+                                  faqat pulni qabul qilgan odam (mijoz
+                                  soʻrovi, 2026-10-28). Keyingi kuni
+                                  kassa sanogʻi qilingan va pul bankka
+                                  topshirilgan boʻladi. */}
+                              {!payment.is_reversed &&
+                                payment.paid_at.slice(0, 10) === today &&
+                                (!ownOnly || payment.received_by === userId) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setCorrecting(payment)}
+                                    title={t('Toʻlov usulini tuzatish')}
+                                    aria-label={t('Toʻlov usulini tuzatish')}
+                                    className="mr-1 rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </button>
+                                )}
+                              {/* Boshqa odamning pulini qaytarish —
+                                  oʻsha odamning ishi (2026-10-28):
+                                  server ham shuni aytadi, ekran esa
+                                  tugmani koʻrsatmaydi. */}
+                              {(!ownOnly || payment.received_by === userId) && (
                                 <button
                                   type="button"
                                   onClick={() => setRefunding(payment)}
@@ -801,18 +863,20 @@ export default function PaymentsPage() {
                                   <Undo2 className="h-4 w-4" />
                                 </button>
                               )}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setReversing(payment)
-                                  setReverseReason('')
-                                }}
-                                title={t('Qaytarish')}
-                                aria-label={t('Qaytarish')}
-                                className="rounded-lg p-1.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
-                              >
-                                <Ban className="h-4 w-4" />
-                              </button>
+                              {(!ownOnly || payment.received_by === userId) && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setReversing(payment)
+                                    setReverseReason('')
+                                  }}
+                                  title={t('Qaytarish')}
+                                  aria-label={t('Qaytarish')}
+                                  className="rounded-lg p-1.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
+                                >
+                                  <Ban className="h-4 w-4" />
+                                </button>
+                              )}
                             </>
                           )
                         )}
@@ -821,7 +885,7 @@ export default function PaymentsPage() {
                   ))}
                   {paymentsQuery.data?.items.length === 0 && (
                     <EmptyRow
-                      colSpan={6}
+                      colSpan={7}
                       icon={Wallet}
                       title={t('Hozircha toʻlov qabul qilinmagan.')}
                     />

@@ -208,6 +208,19 @@ def revenue_report(
         .order_by("-total")
     )
 
+    # Bank ushlab qolgan ulush — AYNAN shu toʻlovlarniki (mijoz soʻrovi,
+    # 2026-10-28). Komissiya alohida chiqim boʻlib yoziladi (Bosqich
+    # 12.5), ya'ni raqam bor edi, lekin boshqa ekranda: "terminaldan 10
+    # mln keldi" degan qator haqiqatning yarmini aytardi.
+    from apps.expenses.models import Expense, ExpenseStatus
+
+    commissions = dict(
+        Expense.objects.filter(payment__in=queryset.values("id"))
+        .exclude(status=ExpenseStatus.REJECTED)
+        .values_list("payment__method")
+        .annotate(total=Coalesce(Sum("amount"), ZERO))
+    )
+
     return {
         "basis": BASIS,
         "date_from": date_from.isoformat(),
@@ -224,7 +237,12 @@ def revenue_report(
             for bucket in buckets
         ],
         "by_method": [
-            {"method": row["method"], "total": _money(row["total"]), "count": row["count"]}
+            {
+                "method": row["method"],
+                "total": _money(row["total"]),
+                "count": row["count"],
+                "commission": _money(commissions.get(row["method"]) or Decimal("0")),
+            }
             for row in by_method
         ],
     }
@@ -852,8 +870,26 @@ def payment_journal_summary(
         received_by=received_by,
     )
     live = queryset.filter(reversed_at__isnull=True)
+
+    # Bank ushlab qolgan ulush — AYNAN shu toʻlovlarniki (mijoz soʻrovi,
+    # 2026-10-28). Komissiya alohida chiqim boʻlib yoziladi (Bosqich
+    # 12.5), ya'ni raqam bor edi, lekin boshqa ekranda: "terminaldan 10
+    # mln keldi" degan qator haqiqatning yarmini aytardi.
+    from apps.expenses.models import Expense
+
+    commissions = dict(
+        Expense.objects.filter(payment__in=live.values("id"))
+        .exclude(status="rejected")
+        .values_list("payment__method")
+        .annotate(total=Coalesce(Sum("amount"), ZERO))
+    )
     by_method = [
-        {"method": row["method"], "total": _money(row["total"]), "count": row["count"]}
+        {
+            "method": row["method"],
+            "total": _money(row["total"]),
+            "count": row["count"],
+            "commission": _money(commissions.get(row["method"]) or Decimal("0")),
+        }
         for row in live.values("method")
         .annotate(total=Coalesce(Sum("amount"), ZERO), count=Count("id"))
         .order_by("-total")

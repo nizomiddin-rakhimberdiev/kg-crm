@@ -558,6 +558,86 @@ def _dividend_tax(amount: Decimal, branch: Any) -> Decimal:
     return (amount * percent / Decimal("100")).quantize(Decimal("1"))
 
 
+def lend_money(
+    *,
+    account: CashAccount,
+    amount: Decimal,
+    occurred_on: Any,
+    person: str,
+    reason: str,
+    created_by: Any = None,
+    allow_negative: bool = False,
+) -> MoneyOperation:
+    """
+    Qarzga pul beradi — CHIQIM emas (mijoz soʻrovi, 2026-10-28).
+
+    Mijozning soʻzi: *"summadan ayrilaversin, lekin xisob kitobga ham
+    tushaversin, u qarz pullar boʻlishi mumkin, uni qaytarish
+    imkoniyati ham boʻlishi kerak"*.
+
+    Shuning uchun u foyda-zararga tushmaydi: bogʻcha bu puldan
+    kambagʻal boʻlgani yoʻq, pul kimdadir turibdi. Kassadan esa
+    chiqadi, chunki pul haqiqatan qoʻldan ketdi — va ADR-29 bu yerda
+    ham ishlaydi: qopda yoʻq pulni qarzga ham berib boʻlmaydi.
+
+    "Kimga" MAJBURIY: egasiz qarz keyin hech kimdan soʻralmaydi.
+    """
+    if not (person or "").strip():
+        raise BusinessRuleViolation(gettext("Pul kimga berilganini yozing."))
+    return record_operation(
+        kind=OperationKind.LOAN_OUT,
+        account=account,
+        amount=amount,
+        occurred_on=occurred_on,
+        reason=reason,
+        counterparty=person,
+        created_by=created_by,
+        allow_negative=allow_negative,
+    )
+
+
+@transaction.atomic
+def return_loan(
+    *,
+    loan: MoneyOperation,
+    account: CashAccount,
+    amount: Decimal,
+    occurred_on: Any,
+    note: str = "",
+    created_by: Any = None,
+) -> MoneyOperation:
+    """
+    Qarz qaytdi — pul yana kassaga tushadi.
+
+    Qaytish ASL hujjatga bogʻlanadi (`settles`), aks holda "kimda
+    qancha qoldi?" degan savolga javob boʻlmasdi: pul shunchaki
+    kassaga tushib, qaysi qarzniki ekani esda qolmasdi.
+
+    Qarzdan KOʻPROQ qaytarib boʻlmaydi: ortiqcha pul — boshqa hodisa
+    (sovgʻa, boshqa daromad), va uni qarz deb yozish keyin qarzlar
+    roʻyxatini manfiyga tushirardi.
+    """
+    if loan.kind != OperationKind.LOAN_OUT:
+        raise BusinessRuleViolation(gettext("Bu hujjat qarz emas."))
+    amount = _money(amount)
+    if amount > loan.outstanding:
+        raise BusinessRuleViolation(
+            gettext("Qarzdan koʻp qaytarib boʻlmaydi — qolgani {amount} soʻm.").format(
+                amount=f"{loan.outstanding:,.0f}".replace(",", " ")
+            )
+        )
+    return record_operation(
+        kind=OperationKind.LOAN_RETURN,
+        account=account,
+        amount=amount,
+        occurred_on=occurred_on,
+        reason=note.strip() or gettext("Qarz qaytdi: {person}").format(person=loan.counterparty),
+        counterparty=loan.counterparty,
+        created_by=created_by,
+        settles=loan,
+    )
+
+
 @transaction.atomic
 def record_operation(
     *,
@@ -571,6 +651,7 @@ def record_operation(
     counterparty: str = "",
     created_by: Any = None,
     allow_negative: bool = False,
+    settles: MoneyOperation | None = None,
 ) -> MoneyOperation:
     """
     Hujjat + pul harakati, bitta tranzaksiyada (invariant 12).
@@ -612,6 +693,9 @@ def record_operation(
         counterparty=counterparty.strip()[:120],
         reason=reason[:255],
         tax_amount=tax,
+        # Qaysi qarzni yopyapti — hujjat bilan BIRGA yoziladi: baza
+        # cheklovi `loan_return` ni bogʻlanishsiz qabul qilmaydi.
+        settles=settles,
         created_by=created_by,
     )
     post_movement(

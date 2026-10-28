@@ -1729,6 +1729,104 @@ def record_payment_batch(
 
 
 @transaction.atomic
+def correct_payment_method(
+    *, payment: Payment, method: str, reason: str = "", created_by: Any = None
+) -> Payment:
+    """
+    Toʻlov usulini OʻSHA KUN ichida tuzatadi (mijoz soʻrovi, 2026-10-28).
+
+    Eng koʻp uchraydigan xato: kassir shoshib "naqd" ni bosadi, pul esa
+    terminaldan tushadi. Ilgari yagona yoʻl butun toʻlovni bekor qilib
+    qaytadan yozish edi — ota-onadagi kvitansiya raqami oʻzgarardi va
+    jurnalda bitta pul ikki marta koʻrinardi.
+
+    **Summa bu yerda oʻzgarmaydi.** Notoʻgʻri summa — boshqa hodisa, u
+    qaytarish bilan tuzatiladi. Oʻzgaradigan narsa — pul QAYSI qopda
+    yotgani va bank ushlab qolgan ulush.
+
+    **Nega faqat shu kun.** Kassa kuni yopilgandan keyin sanoq
+    qilingan, pul bankka topshirilgan va hisobot oʻqilgan boʻladi —
+    oʻsha paytda qopni orqaga oʻzgartirish ikkita qogʻozni bir-biriga
+    zid qilib qoʻyadi. Shu kun ichida esa hech narsa hali
+    qotmagan.
+
+    Ledger (bolaning krediti) va taqsimot TEGILMAYDI: pul miqdori
+    ham, u yopgan hujjat ham oʻzgarmadi.
+    """
+    from apps.expenses.models import Expense, ExpenseStatus
+
+    if payment.is_reversed:
+        raise BusinessRuleViolation(gettext("Qaytarilgan toʻlovni tuzatib boʻlmaydi."))
+    if Refund.objects.filter(payment=payment).exists():
+        raise BusinessRuleViolation(
+            gettext("Bu toʻlovdan ota-onaga pul qaytarilgan — usulni oʻzgartirib boʻlmaydi.")
+        )
+    if method not in PaymentMethod.values:
+        raise BusinessRuleViolation(gettext("Nomaʼlum toʻlov usuli."))
+    if PaymentMethod.PAYROLL in (method, payment.method):
+        # Oylikdan ushlash — boshqa mexanizm: pul qopga umuman
+        # tushmaydi, xodimning oyligidan kamayadi.
+        raise BusinessRuleViolation(
+            gettext("Oylikdan ushlangan toʻlovning usulini bu yerda oʻzgartirib boʻlmaydi.")
+        )
+    if method == payment.method:
+        return payment
+    if timezone.localtime(payment.paid_at).date() != timezone.localdate():
+        raise BusinessRuleViolation(
+            gettext("Toʻlov usulini faqat qabul qilingan KUNI tuzatish mumkin.")
+        )
+
+    note = reason.strip() or gettext("toʻlov usuli tuzatildi")
+
+    # 1. Eski iz — qarshi yozuv bilan nolga (D3: oʻchirish yoʻq).
+    cash.reverse_movements_for(
+        source_type=MovementSource.PAYMENT,
+        source_id=payment.id,
+        description=note,
+        created_by=created_by,
+    )
+    # 2. Eski usulning komissiyasi ham — u boʻlmagan hodisaga aylandi.
+    for expense in Expense.objects.filter(payment=payment).exclude(status=ExpenseStatus.REJECTED):
+        cash.reverse_movements_for(
+            source_type=MovementSource.EXPENSE,
+            source_id=expense.id,
+            description=note,
+            created_by=created_by,
+        )
+        expense.status = ExpenseStatus.REJECTED
+        expense.decided_at = timezone.now()
+        expense.description = f"{expense.description} — {note}"[:255]
+        expense.save(update_fields=["status", "decided_at", "description", "updated_at"])
+
+    old_method = payment.method
+    payment.method = method
+    payment.save(update_fields=["method", "updated_at"])
+
+    # 3. Pul yangi qopga tushadi, komissiya esa yangisiga qarab yoziladi.
+    pot = cash.account_for_method(branch=payment.branch, method=method)
+    cash.post_movement(
+        account=pot,
+        direction=MovementDirection.IN,
+        amount=payment.amount,
+        source_type=MovementSource.PAYMENT,
+        source_id=payment.id,
+        description=f"{payment.child.full_name} — {note}"[:255],
+        occurred_at=payment.paid_at,
+        created_by=created_by,
+    )
+    from apps.expenses.services import record_bank_commission
+
+    record_bank_commission(payment=payment, account=pot)
+
+    import logging
+
+    logging.getLogger(__name__).info(
+        "Toʻlov usuli tuzatildi: %s → %s (%s)", old_method, method, payment.id
+    )
+    return payment
+
+
+@transaction.atomic
 def reverse_payment(*, payment: Payment, reason: str = "", created_by: Any = None) -> Payment:
     """
     To'lovni qaytaradi — QARSHI yozuv bilan, o'chirish bilan emas (D3).

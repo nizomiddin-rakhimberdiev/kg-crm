@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any
 
 from django.utils.translation import gettext
@@ -29,6 +30,9 @@ __all__ = [
     "CashTransferSerializer",
     "BankStatementLineSerializer",
     "BankStatementSerializer",
+    "LoanReturnSerializer",
+    "LoanSerializer",
+    "LoanWriteSerializer",
     "MoneyOperationSerializer",
     "MoneyOperationWriteSerializer",
 ]
@@ -295,3 +299,71 @@ class BankStatementLineSerializer(serializers.ModelSerializer):
             "note",
         ]
         read_only_fields = fields
+
+
+class LoanSerializer(serializers.ModelSerializer):
+    """
+    Qarzga berilgan pul (mijoz soʻrovi, 2026-10-28).
+
+    Ekranda "kimga" deb koʻrinadi, bazada esa `counterparty` — hujjat
+    bitta, nomi har joyda bir xil boʻlishi kerak (ADR-45).
+    """
+
+    person = serializers.CharField(source="counterparty", read_only=True)
+    cash_account_name = serializers.CharField(source="cash_account.name", read_only=True)
+    created_by_name = serializers.CharField(
+        source="created_by.full_name", read_only=True, default=None
+    )
+    outstanding = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    returns = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MoneyOperation
+        fields = [
+            "id",
+            "person",
+            "amount",
+            "outstanding",
+            "reason",
+            "cash_account",
+            "cash_account_name",
+            "occurred_on",
+            "returns",
+            "created_by_name",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_returns(self, obj: MoneyOperation) -> list[dict[str, Any]]:
+        return [
+            {
+                "id": str(row.id),
+                "amount": str(row.amount),
+                "occurred_on": row.occurred_on.isoformat(),
+                "cash_account_name": row.cash_account.name,
+                "reason": row.reason,
+            }
+            for row in obj.returns.all()
+        ]
+
+
+class LoanWriteSerializer(serializers.Serializer):
+    """Qarz berish — kimga, qancha, nima uchun, qaysi hisobdan, qachon."""
+
+    person = serializers.CharField(max_length=120)
+    amount = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=Decimal("0.01"))
+    reason = serializers.CharField(max_length=255)
+    cash_account_id = TenantPrimaryKeyRelatedField(model=CashAccount, source="cash_account")
+    occurred_on = serializers.DateField()
+    allow_negative = serializers.BooleanField(required=False, default=False)
+
+
+class LoanReturnSerializer(serializers.Serializer):
+    """Qarz qaytdi — qancha, qaysi hisobga, qachon."""
+
+    amount = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=Decimal("0.01"))
+    cash_account_id = TenantPrimaryKeyRelatedField(
+        model=CashAccount, source="cash_account", required=False, allow_null=True
+    )
+    occurred_on = serializers.DateField()
+    note = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")

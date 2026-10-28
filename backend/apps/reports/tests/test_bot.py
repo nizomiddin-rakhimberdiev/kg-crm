@@ -314,6 +314,8 @@ def test_every_example_in_the_help_is_understood(language: str):
     from django.utils import translation
 
     with translation.override(language):
+        # Foydalanuvchisiz — toʻliq roʻyxat; rol boʻyicha filtr
+        # `test_bot_roles.py` da tekshiriladi (2026-10-28).
         examples = [line[2:] for line in bot.help_text().splitlines() if line.startswith("• ")]
     assert len(examples) == 13
     for example in examples:

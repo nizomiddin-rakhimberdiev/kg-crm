@@ -20,6 +20,7 @@ from apps.branches.selectors import resolve_branch
 from apps.children import importer, scope, services
 from apps.children.importer import import_children
 from apps.children.models import Child, Enrollment, Group, Guardian
+from apps.children.search import child_search
 from apps.children.serializers import (
     AddGuardianSerializer,
     ChildGuardianSerializer,
@@ -31,7 +32,6 @@ from apps.children.serializers import (
     GroupSerializer,
     GuardianSerializer,
 )
-from apps.core import translit
 from apps.core.exceptions import BusinessRuleViolation
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchCreateMixin, BranchScopedMixin, TenantViewSet
@@ -113,7 +113,7 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
         # so'rov "Ulug'bek" ni ham topadi.
         term = self.request.query_params.get("q")
         if term:
-            queryset = queryset.filter(search_key__contains=translit.search_key(term))
+            queryset = queryset.filter(child_search(term))
 
         # Qator darajasidagi doira (PLAN 2.6): guruhga biriktirilgan
         # tarbiyachi faqat o'z guruhining bolalarini ko'radi. Boshqa
@@ -285,6 +285,7 @@ class ChildViewSet(BranchScopedMixin, TenantViewSet):
             status=data["enrollment_status"],
             on_date=data["status_changed_on"],
             reason=data["status_reason"],
+            reason_code=data.get("status_reason_code", ""),
             actor=request_user(request),
         )
         audit.record(

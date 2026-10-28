@@ -33,7 +33,7 @@ from apps.finance.models import (
     PaymentAllocation,
     TariffPlan,
 )
-from apps.finance.scope import payments_own_only, restrict_payments
+from apps.finance.scope import payments_own_only
 from apps.finance.serializers import (
     DiscountSerializer,
     GenerateInvoicesSerializer,
@@ -379,6 +379,7 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
     permission_module = "payments"
     permission_action_map = {
         "reverse": "update",
+        "correct_method": "update",
         "refund": "update",
         "in_transit": "read",
         "settle": "update",
@@ -409,11 +410,35 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
         # Bitta to'lov — pul qaysi oylarga ketgani bilan (Bosqich 12.4).
         return PaymentDetailSerializer if self.action == "retrieve" else PaymentSerializer
 
+    def _assert_mine(self, payment: Any) -> None:
+        """
+        Cheklangan rol boshqa kassirning toʻlovini OʻZGARTIRA olmaydi.
+
+        Koʻrish 2026-10-28 da hammaga ochildi, amal esa yoʻq: pulni
+        qabul qilgan odam uni qaytarishi yoki tuzatishi mumkin, boshqasi
+        esa faqat koʻradi. Javob `403`, `404` emas — qator mavjudligi
+        allaqachon roʻyxatda koʻrinib turibdi, ya'ni uni yashirish
+        hech narsani himoya qilmaydi, faqat chalkashtiradi.
+        """
+        from rest_framework.exceptions import PermissionDenied
+
+        user = request_user(self.request)
+        if payments_own_only(user) and payment.received_by_id != user.id:
+            raise PermissionDenied(gettext("Bu toʻlovni siz qabul qilmagansiz."))
+
     def get_base_queryset(self) -> Any:
-        # Ro'yxat, bitta to'lov, kvitansiya va qaytarish — hammasi shu
-        # yerdan o'tadi, ya'ni boshqa kassirning to'lovi `404` beradi
-        # (`403` emas: u mavjudligini ham bilmasligi kerak).
-        queryset = restrict_payments(super().get_base_queryset(), request_user(self.request))
+        # Jurnal HAMMAGA ochiq (mijoz soʻrovi, 2026-10-28): "kim qachon
+        # qancha toʻlov qabul qilgani hamma rolda koʻrinishi kerak".
+        #
+        # Bu ADR-30 ni almashtiradi — u yerda kassir faqat oʻz
+        # toʻlovlarini koʻrardi, va bogʻcha buni amalda sinab koʻrib
+        # fikrini oʻzgartirdi: smena almashganda kecha kim qancha
+        # olganini koʻrish kerak, aks holda har savol egadan oʻtadi.
+        #
+        # Koʻrish ochildi, AMAL esa ochilmadi: boshqa kassirning
+        # toʻlovini qaytarish yoki tuzatish — hamon oʻsha odamning ishi
+        # (`_assert_mine`).
+        queryset = super().get_base_queryset()
         # Jurnal qatori pul qaysi hujjatni yopganini ko'rsatadi
         # (`settled_invoices`), ya'ni taqsimotlar kerak. `Prefetch` bitta
         # qo'shimcha so'rov — usiz 25 qator 25 so'rov bo'lardi.
@@ -738,6 +763,7 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
     def reverse(self, request: Request, pk: str | None = None) -> Response:
         """To'lovni qaytaradi — qarshi ledger yozuvi bilan."""
         payment = self.get_object()
+        self._assert_mine(payment)
         user = request_user(request)
         services.reverse_payment(
             payment=payment, reason=request.data.get("reason", ""), created_by=user
@@ -749,6 +775,39 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
             entity_type="payment",
             entity_id=payment.id,
             changes={"reversed": True, "reason": request.data.get("reason", "")},
+        )
+        payment.refresh_from_db()
+        return Response(PaymentSerializer(payment).data)
+
+    @action(detail=True, methods=["post"], url_path="correct-method")
+    def correct_method(self, request: Request, pk: str | None = None) -> Response:
+        """
+        `POST /payments/{id}/correct-method {method, reason}` — usulni
+        OʻSHA KUNI tuzatadi (mijoz soʻrovi, 2026-10-28).
+
+        Summa bu yerda oʻzgarmaydi: notoʻgʻri summa — boshqa hodisa, u
+        qaytarish bilan tuzatiladi.
+        """
+        payment = self.get_object()
+        self._assert_mine(payment)
+        user = request_user(request)
+        before = payment.method
+        services.correct_payment_method(
+            payment=payment,
+            method=request.data.get("method", ""),
+            reason=request.data.get("reason", ""),
+            created_by=user,
+        )
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="payment",
+            entity_id=payment.id,
+            changes={
+                "method": {"before": before, "after": payment.method},
+                "reason": request.data.get("reason", ""),
+            },
         )
         payment.refresh_from_db()
         return Response(PaymentSerializer(payment).data)
@@ -777,9 +836,10 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
             branch_id=self._branch_scope(request, user),
             method=params.get("method") or "",
             child_id=params.get("child") or None,
-            # Cheklangan foydalanuvchi boshqa kassirni so'rab doirani
-            # kengaytira olmaydi — filtr uning o'ziga qotiriladi.
-            received_by=(user.id if payments_own_only(user) else params.get("received_by") or None),
+            # "Faqat mening toʻlovlarim" endi TANLOV, majburiyat emas
+            # (mijoz soʻrovi, 2026-10-28): ekrandagi katakcha shu
+            # parametrni yuboradi.
+            received_by=params.get("received_by") or None,
         )
         return Response(summary)
 
@@ -901,6 +961,7 @@ class DebtorViewSet(viewsets.ViewSet):
             min_days=parse_int(params.get("min_days"), field=gettext("Kunlar")),
             group_id=parse_uuid(params.get("group_id")),
             order_by=order_by,
+            search=(params.get("q") or "").strip(),
         )
         total = sum(D(row["balance"]) for row in rows)
         return Response({"count": len(rows), "total_debt": str(total), "results": rows})

@@ -35,6 +35,7 @@ from apps.children.models import (
     EnrollmentState,
     EnrollmentStatus,
 )
+from apps.children.search import child_search
 from apps.finance import balance
 from apps.finance.models import Invoice, InvoiceStatus
 
@@ -61,6 +62,7 @@ def debtor_queryset(
     overdue_only: bool = False,
     min_days: int | None = None,
     group_id: Any = None,
+    search: str = "",
 ) -> Any:
     """
     Balansi musbat bolalar — bitta so'rovda.
@@ -77,6 +79,10 @@ def debtor_queryset(
     queryset = balance.with_balance(Child.objects.filter(is_active=True)).filter(
         ledger_balance__gt=Decimal("0")
     )
+    # Ism, shartnoma raqami yoki ID (mijoz soʻrovi, 2026-10-28) — bitta
+    # taʼrif, `children/search.py`.
+    if search:
+        queryset = queryset.filter(child_search(search))
 
     if min_amount is not None:
         queryset = queryset.filter(ledger_balance__gte=min_amount)
@@ -108,6 +114,7 @@ def debtor_rows(
     min_days: int | None = None,
     group_id: Any = None,
     order_by: str = "debt",
+    search: str = "",
 ) -> list[dict[str, Any]]:
     """Qarzdorlar ro'yxati — API javobiga tayyor shaklda (docs/04 §10)."""
     from apps.notifications.selectors import last_reminders
@@ -118,6 +125,7 @@ def debtor_rows(
             overdue_only=overdue_only,
             min_days=min_days,
             group_id=group_id,
+            search=search,
         ).prefetch_related("guardian_links__guardian", "enrollments__group")
     )
 
@@ -486,9 +494,10 @@ def month_board_queryset(
     )
 
     if search:
-        # Ism va familiya bo'yicha — kassir bolaning ismini yozadi,
-        # hisob-faktura raqamini emas.
-        queryset = queryset.filter(Q(first_name__icontains=search) | Q(last_name__icontains=search))
+        # Ism, shartnoma raqami yoki ID — taʼrif `children/search.py` da
+        # (mijoz soʻrovi, 2026-10-28). Kassir qoʻlida qogʻoz shartnoma
+        # turganda ism boʻyicha qidirish yetmaydi.
+        queryset = queryset.filter(child_search(search))
 
     if status == "debtor":
         queryset = queryset.filter(outstanding__gt=0)

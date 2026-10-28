@@ -1,15 +1,23 @@
 """
-Kassir faqat oʻzi qabul qilgan pulni koʻradi (mijoz soʻrovi, 2026-10-14).
+Kassirning doirasi — ADR-30, 2026-10-28 da TORAYTIRILGAN (ADR-47).
 
-Mijozning soʻzi: *"kassir hammasini koʻrib turishi bu xato, unga
-faqatgina oʻzi qabul qilgan pullarning hisob-kitobi koʻrinsin — qachon
-qancha summa qabul qilgani; chiqimlar, umumiy tushum, oylik maosh va
-sof natija koʻrinishi kerak emas"*.
+Mijozning birinchi soʻzi (2026-10-14): *"kassir hammasini koʻrib
+turishi bu xato, unga faqatgina oʻzi qabul qilgan pullarning
+hisob-kitobi koʻrinsin"*. Ikki hafta ishlatgandan keyin oʻsha
+bogʻchaning oʻzi fikrini oʻzgartirdi (2026-10-28): *"Hamma toʻlovlar
+hammaga koʻrinishi kerak, kim qachon qancha toʻlov qabul qilib olgani,
+hamma rolda"* — smena almashganda bu savol har kuni beriladi va har
+safar egadan oʻtardi.
 
-Cheklov rolning ANIQ bayrogʻidan kelib chiqadi (`payments_own_only`),
-ruxsat yoʻqligidan emas — 14-invariant. Shuning uchun bayroq qoʻyilmagan
-har qanday rol, jumladan oʻzi yasalgan rollar, avvalgidek hammasini
-koʻradi.
+Shuning uchun bu fayl endi IKKI narsani qoʻriqlaydi:
+
+* **koʻrish ochiq** — jurnal, bitta toʻlov va kvitansiya hamma uchun;
+* **amal yopiq** — boshqa kassirning pulini qaytarish, tuzatish yoki
+  fiskal qilish mumkin emas, oyning umumiy tushumi doskada
+  koʻrsatilmaydi, kunlik hisobot va yoʻldagi pul esa shaxsiy.
+
+Cheklov hamon rolning ANIQ bayrogʻidan keladi (`payments_own_only`),
+ruxsat yoʻqligidan emas — 14-invariant.
 """
 
 from __future__ import annotations
@@ -123,31 +131,47 @@ def test_the_cashier_role_no_longer_reads_reports_expenses_or_dashboard(tenant_a
 # --- Jurnal ---
 
 
-def test_a_cashier_sees_only_their_own_payments(tenant_a: Any, desk: dict[str, Any]):
+def test_a_cashier_sees_every_payment(tenant_a: Any, desk: dict[str, Any]):
+    """Jurnal 2026-10-28 dan hammaga ochiq (ADR-47)."""
     response = _client(tenant_a, desk["cashier"]).get(reverse("v1:payment-list"))
     assert response.status_code == 200
-    assert [r["id"] for r in _rows(response)] == [str(desk["mine"].id)]
+    assert {r["id"] for r in _rows(response)} == {str(desk["mine"].id), str(desk["theirs"].id)}
+    # Kim qabul qilgani ham koʻrinadi — mijoz aynan shuni soʻradi.
+    assert all(row["received_by_name"] for row in _rows(response))
 
 
-def test_asking_for_another_cashier_does_not_widen_the_view(tenant_a: Any, desk: dict[str, Any]):
+def test_asking_for_one_cashier_narrows_the_view(tenant_a: Any, desk: dict[str, Any]):
+    """ "Faqat mening toʻlovlarim" endi TANLOV — ekrandagi katakcha."""
     response = _client(tenant_a, desk["cashier"]).get(
         reverse("v1:payment-list"), {"received_by": str(desk["other"].id)}
     )
     assert response.status_code == 200
-    assert _rows(response) == []
+    assert [r["id"] for r in _rows(response)] == [str(desk["theirs"].id)]
 
 
-def test_another_cashiers_payment_is_404_not_403(tenant_a: Any, desk: dict[str, Any]):
+def test_another_cashiers_payment_can_be_opened_but_not_touched(
+    tenant_a: Any, desk: dict[str, Any]
+):
     client = _client(tenant_a, desk["cashier"])
     for name in ("v1:payment-detail", "v1:payment-receipt"):
-        response = client.get(reverse(name, args=[desk["theirs"].id]))
-        assert response.status_code == 404, name
+        assert client.get(reverse(name, args=[desk["theirs"].id])).status_code == 200, name
+
+    # Amal — oʻsha pulni qabul qilgan odamniki.
+    refused = client.post(
+        reverse("v1:payment-reverse", args=[desk["theirs"].id]), {"reason": "Xato"}, format="json"
+    )
+    assert refused.status_code == 403
 
 
-def test_the_journal_total_is_their_own(tenant_a: Any, desk: dict[str, Any]):
-    response = _client(tenant_a, desk["cashier"]).get(reverse("v1:payment-journal-summary"))
-    assert response.status_code == 200
-    assert Decimal(_data(response)["total"]) == Decimal("300000")
+def test_the_journal_total_follows_the_filter(tenant_a: Any, desk: dict[str, Any]):
+    client = _client(tenant_a, desk["cashier"])
+    everything = client.get(reverse("v1:payment-journal-summary"))
+    assert Decimal(_data(everything)["total"]) == Decimal("1000000")
+
+    mine = client.get(
+        reverse("v1:payment-journal-summary"), {"received_by": str(desk["cashier"].id)}
+    )
+    assert Decimal(_data(mine)["total"]) == Decimal("300000")
 
 
 def test_the_daily_summary_is_their_own(tenant_a: Any, desk: dict[str, Any]):

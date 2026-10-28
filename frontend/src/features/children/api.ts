@@ -116,7 +116,13 @@ export const childrenApi = {
   /** Holat — sana va sabab MAJBURIY (Q5). */
   changeStatus: (
     childId: string,
-    payload: { enrollment_status: string; status_changed_on: string; status_reason: string },
+    payload: {
+      enrollment_status: string
+      status_changed_on: string
+      status_reason: string
+      /** Ketish sababi roʻyxatdan — faqat "ketgan" holatida. */
+      status_reason_code?: string
+    },
   ) => api.post<Child>(`/children/${childId}/change-status`, payload),
 
   archive: (childId: string, reason?: string) =>

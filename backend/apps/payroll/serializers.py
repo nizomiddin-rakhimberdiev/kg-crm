@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Any
 
 from rest_framework import serializers
 
@@ -23,6 +24,26 @@ __all__ = [
 
 class PayrollItemSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source="employee.full_name", read_only=True)
+    payouts = serializers.SerializerMethodField()
+
+    def get_payouts(self, obj: Any) -> list[dict[str, Any]]:
+        """
+        Oylik QAYSI hisobdan berilgani (mijoz soʻrovi, 2026-10-28).
+
+        Mijoz: *"Oylik qaysi puldan toʻlanyapti? bu haligacha ochiq
+        savol boʻlib qolmoqda"*. Javob yozilgan edi —
+        `payroll_payout.cash_account` — lekin faqat toʻlov oynasida
+        koʻrinardi va yopilgandan keyin yoʻqolardi.
+        """
+        return [
+            {
+                "part": row.part,
+                "amount": str(row.amount),
+                "paid_on": row.paid_on.isoformat(),
+                "cash_account_name": row.cash_account.name,
+            }
+            for row in obj.payouts.all()
+        ]
 
     class Meta:
         model = PayrollItem
@@ -43,6 +64,7 @@ class PayrollItemSerializer(serializers.ModelSerializer):
             "gross",
             "net",
             "note",
+            "payouts",
         ]
         # `gross`/`net` hisoblanadi, mijozdan qabul qilinmaydi — aks holda
         # ular satr qiymatlariga mos kelmay qolishi mumkin edi.

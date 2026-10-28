@@ -398,13 +398,13 @@ const uz: Copy = {
       {
         id: 'children',
         title: 'Bolalar va guruhlar',
-        text: 'Har bir bola — profil, guruh, vasiy va tarif bilan. Guruhlar boʻyicha filtr, tez qidiruv, bir zumda ochiladigan karta.',
+        text: 'Har bir bola — profil, guruh, vasiy va tarif bilan. Yangi, sinovda, faol, ketgan, qaytib kelgan — bolaning yoʻli koʻrinib turadi, ketish sababi esa roʻyxatdan tanlanadi. Ism, shartnoma raqami yoki ID boʻyicha qidiruv.',
         caption: 'Bolalar roʻyxati → guruh filtri → profil',
       },
       {
         id: 'payments',
         title: 'Toʻlovlar va qarzdorlik',
-        text: 'Hisob-faktura, toʻlov, qoldiq. Qarzdorlar roʻyxati pul harakatlari jurnalidan hisoblanadi — u hech qachon haqiqatdan ajralmaydi.',
+        text: 'Hisob-faktura, toʻlov, qoldiq. Jurnalda kim qachon qancha qabul qilgani koʻrinadi, oʻsha kuni esa usulni tuzatsa boʻladi — naqdni terminalga, terminalni Paymega. Qarzdorlar roʻyxati pul harakatlari jurnalidan hisoblanadi.',
         caption: 'Toʻlangan → kutilmoqda → qarz',
       },
       {
@@ -422,14 +422,15 @@ const uz: Copy = {
       {
         id: 'inventory',
         title: 'Ombor va xarajatlar',
-        text: 'Kirim, chiqim, qoldiq. Xarajat 20 soniyada — summa, toifa, chek rasmi; xodim uni Telegram botga yuborib ham kiritadi. Nasiya xarid va investitsiya alohida. Bank koʻchirmasini yuklang — toʻlovlar, Click/Payme tushumlari va xarajatlar oʻzi bogʻlanadi.',
+        text: 'Kirim, chiqim, qoldiq. Xarajat 20 soniyada — summa, toifa, chek rasmi; xodim uni Telegram botga yuborib ham kiritadi. Qarzga berilgan pul alohida turadi: u chiqim emas, qaytishi kutilmoqda — qaytganda kassaga oʻzi qoʻshiladi. Bank koʻchirmasini yuklang — toʻlovlar va xarajatlar oʻzi bogʻlanadi.',
         caption: 'Qoldiq kamayadi → xarajat paydo boʻladi',
       },
       {
         id: 'reports',
         title: 'Hisobotlar va nazorat',
         text: 'Tushum, xarajat, ish haqi, qarzdorlik — bir ekranda. Foyda-zarar tegishli oy boʻyicha, pul oqimi pul sanasi boʻyicha: iyul oyligi avgustda toʻlansa ham iyul xarajati, dividend xarajat emas, konditsioner oylarga taqsimlanadi. Terminal va Click puli bankka tushguncha «yoʻlda» koʻrinadi.',
-        caption: 'Olti savol, tekshiruvlar va «Diqqat» — bitta ekranda; botga «bugungi tushum» yoki «bu oy foyda» deb yozing',
+        caption:
+          'Olti savol, tekshiruvlar va «Diqqat» — bitta ekranda; botga «bugungi tushum» yoki «bu oy foyda» deb yozing',
       },
     ],
   },
@@ -965,13 +966,13 @@ const ru: Copy = {
       {
         id: 'children',
         title: 'Дети и группы',
-        text: 'Каждый ребёнок — с профилем, группой, опекуном и тарифом. Фильтр по группам, быстрый поиск, карточка открывается мгновенно.',
+        text: 'Каждый ребёнок — с профилем, группой, опекуном и тарифом. Новый, на пробном, активный, ушёл, вернулся — путь ребёнка виден, а причина ухода выбирается из списка. Поиск по имени, номеру договора или ID.',
         caption: 'Список детей → фильтр по группе → профиль',
       },
       {
         id: 'payments',
         title: 'Оплаты и задолженность',
-        text: 'Счёт, оплата, остаток. Список должников считается из журнала операций — он никогда не расходится с реальностью.',
+        text: 'Счёт, оплата, остаток. В журнале видно, кто когда сколько принял, а в тот же день способ можно исправить — наличные на терминал, терминал на Payme. Список должников считается из журнала операций.',
         caption: 'Оплачено → ожидает → долг',
       },
       {
@@ -989,7 +990,7 @@ const ru: Copy = {
       {
         id: 'inventory',
         title: 'Склад и расходы',
-        text: 'Приход, расход, остаток. Расход за 20 секунд — сумма, категория, фото чека; сотрудник может отправить его и в Telegram-бот. Покупки в долг и инвестиции — отдельно. Загрузите банковскую выписку — оплаты, поступления Click/Payme и расходы сопоставятся сами.',
+        text: 'Приход, расход, остаток. Расход за 20 секунд — сумма, категория, фото чека; сотрудник может отправить его и в Telegram-бот. Деньги, выданные в долг, стоят отдельно: это не расход, их ждут обратно — и при возврате они сами возвращаются в кассу. Загрузите банковскую выписку — оплаты и расходы сопоставятся сами.',
         caption: 'Остаток уменьшается → появляется расход',
       },
       {
@@ -1526,13 +1527,13 @@ const en: Copy = {
       {
         id: 'children',
         title: 'Children and groups',
-        text: 'Every child has a profile, a group, a guardian and a plan. Filter by group, search instantly, open a card in one click.',
+        text: 'Every child has a profile, a group, a guardian and a plan. New, on trial, active, left, returned — the path is visible, and the reason for leaving comes from a fixed list. Search by name, contract number or id.',
         caption: 'Children list → group filter → profile',
       },
       {
         id: 'payments',
         title: 'Payments and debt',
-        text: 'Invoices, payments, balance. The debtors list is computed from the ledger — it never drifts from the truth.',
+        text: 'Invoices, payments, balance. The journal shows who took how much and when, and the method can be corrected the same day — cash to terminal, terminal to Payme. The debtors list is computed from the ledger.',
         caption: 'Paid → pending → overdue',
       },
       {
@@ -1550,7 +1551,7 @@ const en: Copy = {
       {
         id: 'inventory',
         title: 'Inventory and expenses',
-        text: 'Receipts, issues, stock on hand. An expense in 20 seconds — amount, category, receipt photo; staff can also send it to the Telegram bot. Credit purchases and investments kept apart. Upload the bank statement and payments, Click/Payme receipts and expenses match themselves.',
+        text: 'Receipts, issues, stock on hand. An expense in 20 seconds — amount, category, receipt photo; staff can also send it to the Telegram bot. Money lent out stands apart: it is not a cost, it is expected back — and when it returns it goes straight back into the till. Upload the bank statement and payments and expenses match themselves.',
         caption: 'Stock goes down → an expense appears',
       },
       {

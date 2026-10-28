@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Download,
   Phone,
+  Search,
   SlidersHorizontal,
   Sparkles,
 } from 'lucide-react'
@@ -171,6 +172,10 @@ export default function DebtorsPage({ embedded = false }: { embedded?: boolean }
   const [overdueOnlyChoice, setOverdueOnly] = useState(false)
   const overdueOnly = overdueOnlyChoice || aiDays !== null
 
+  // Qidiruv filtrlar ichida EMAS, ustida: "falonchining qarzi qancha?"
+  // degan savol kunda oʻn marta beriladi, filtrlar esa telefonda
+  // yigʻilgan turadi (mijoz soʻrovi, 2026-10-28).
+  const [search, setSearch] = useState('')
   const [minDays, setMinDays] = useState<number | null>(null)
   const [groupId, setGroupId] = useState('')
   const [minAmount, setMinAmount] = useState('')
@@ -197,8 +202,9 @@ export default function DebtorsPage({ embedded = false }: { embedded?: boolean }
     if (minDays !== null) next.min_days = String(minDays)
     if (groupId) next.group_id = groupId
     if (minAmount.trim()) next.min_amount = minAmount.trim()
+    if (search.trim()) next.q = search.trim()
     return next
-  }, [overdueOnly, minDays, groupId, minAmount, orderBy])
+  }, [overdueOnly, minDays, groupId, minAmount, orderBy, search])
 
   const debtorsQuery = useQuery({
     queryKey: queryKeys.debtors(organizationId, params),
@@ -370,6 +376,18 @@ export default function DebtorsPage({ embedded = false }: { embedded?: boolean }
             kadrini egallardi — ya'ni sahifa ochilganda qarzdorlar
             o'rniga filtr formasi ko'rinardi.
           */}
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-tosh-500" />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t('Ism, shartnoma raqami yoki ID…')}
+              aria-label={t('Ism, shartnoma raqami yoki ID…')}
+              className="w-full rounded-xl border border-tosh-200 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-nihol-500 focus:ring-2 focus:ring-nihol-500/20 sm:max-w-sm"
+            />
+          </div>
+
           <button
             type="button"
             onClick={() => setFiltersOpen((open) => !open)}

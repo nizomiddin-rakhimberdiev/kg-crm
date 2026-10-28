@@ -61,7 +61,14 @@ class PayrollRunViewSet(BranchScopedMixin, TenantViewSet):
     filterset_fields = ["status", "period_year", "period_month"]
 
     def get_base_queryset(self) -> Any:
-        return super().get_base_queryset().prefetch_related("items__employee")
+        # `items__payouts__cash_account` — "oylik qaysi hisobdan
+        # berildi?" degan savol har qatorda beriladi, ya'ni usiz
+        # ellik xodimli roʻyxat ellik soʻrov boʻlardi.
+        return (
+            super()
+            .get_base_queryset()
+            .prefetch_related("items__employee", "items__payouts__cash_account")
+        )
 
     def partial_update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """

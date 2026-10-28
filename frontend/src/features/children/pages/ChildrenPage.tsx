@@ -42,14 +42,7 @@ import { avatarTone, cn, initials } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { FieldLabel } from '@/components/ui/FieldLabel'
 import { Select } from '@/components/ui/Select'
-
-const STATUS_LABELS: Record<string, string> = {
-  prospect: t('Nomzod'),
-  active: t('Faol'),
-  paused: t('Toʻxtatilgan'),
-  graduated: t('Bitirgan'),
-  withdrawn: t('Chiqib ketgan'),
-}
+import { STATUS_LABELS, STATUS_ORDER } from '@/features/children/status'
 
 interface GuardianDraft {
   last_name: string
@@ -458,22 +451,36 @@ export default function ChildrenPage() {
     </Link>
   )
 
-  const renderStatus = (status: Child['enrollment_status']) => (
-    <span
-      className={cn(
-        'inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
-        status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600',
-      )}
-    >
+  /**
+   * Tugagan sinov ALOHIDA koʻrinadi (mijoz soʻrovi, 2026-10-28):
+   * unutilgan belgi pul yoʻqotadi — sinovdagi bolaga hisob-faktura
+   * yozilmaydi, ya'ni "sinovda" boʻlib qolgan bola oylab bepul qatnaydi.
+   */
+  const renderStatus = (child: Child) => {
+    const status = child.enrollment_status
+    const enrolled = status === 'active' || status === 'returned'
+    const expired = status === 'trial' && child.trial_is_over
+    return (
       <span
         className={cn(
-          'h-1.5 w-1.5 rounded-full',
-          status === 'active' ? 'bg-emerald-500' : 'bg-slate-400',
+          'inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
+          expired
+            ? 'bg-orik-50 text-orik-700'
+            : enrolled
+              ? 'bg-emerald-50 text-emerald-700'
+              : 'bg-slate-100 text-slate-600',
         )}
-      />
-      {STATUS_LABELS[status] ?? status}
-    </span>
-  )
+      >
+        <span
+          className={cn(
+            'h-1.5 w-1.5 rounded-full',
+            expired ? 'bg-orik-500' : enrolled ? 'bg-emerald-500' : 'bg-slate-400',
+          )}
+        />
+        {expired ? t('Sinov tugadi') : (STATUS_LABELS[status] ?? status)}
+      </span>
+    )
+  }
 
   const renderGroup = (child: Child) =>
     can('children.update') ? (
@@ -997,8 +1004,8 @@ export default function ChildrenPage() {
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('Ism yoki familiya boʻyicha…')}
-            aria-label={t('Ism yoki familiya boʻyicha…')}
+            placeholder={t('Ism, shartnoma raqami yoki ID…')}
+            aria-label={t('Ism, shartnoma raqami yoki ID…')}
             className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
           />
         </div>
@@ -1008,9 +1015,9 @@ export default function ChildrenPage() {
           aria-label={t('Holat')}
         >
           <option value="">{t('Barcha holatlar')}</option>
-          {Object.entries(STATUS_LABELS).map(([value, label]) => (
+          {STATUS_ORDER.map((value) => (
             <option key={value} value={value}>
-              {label}
+              {STATUS_LABELS[value]}
             </option>
           ))}
         </Select>
@@ -1090,7 +1097,7 @@ export default function ChildrenPage() {
                             <span className="text-slate-300">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3">{renderStatus(child.enrollment_status)}</td>
+                        <td className="px-4 py-3">{renderStatus(child)}</td>
                         <td className="px-4 py-3">{renderActions(child)}</td>
                       </tr>
                     )
@@ -1108,7 +1115,7 @@ export default function ChildrenPage() {
                   <li key={child.id} className="space-y-3 px-4 py-3">
                     <div className="flex items-start justify-between gap-3">
                       {renderName(child)}
-                      {renderStatus(child.enrollment_status)}
+                      {renderStatus(child)}
                     </div>
                     <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-500">
                       <p>

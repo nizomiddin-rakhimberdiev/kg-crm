@@ -34,27 +34,12 @@ import { ContractsCard } from '@/features/contracts/components/ContractsCard'
 import { useFeature } from '@/lib/features'
 import { ageOutsideGroup } from '@/features/children/ageFit'
 import { GroupOptions } from '@/features/children/components/GroupOptions'
+import { STATUS_LABELS, STATUS_TONE } from '@/features/children/status'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { RELATIONS, relationLabel } from '@/features/children/relations'
 import { Select } from '@/components/ui/Select'
-
-const STATUS_LABEL: Record<string, string> = {
-  prospect: t('Nomzod'),
-  active: t('Faol'),
-  paused: t('Toʻxtatilgan'),
-  graduated: t('Bitirgan'),
-  withdrawn: t('Chiqib ketgan'),
-}
-
-const STATUS_TONE: Record<string, string> = {
-  active: 'bg-nihol-50 text-nihol-700',
-  prospect: 'bg-ildiz-50 text-ildiz-700',
-  paused: 'bg-orik-50 text-orik-700',
-  graduated: 'bg-tosh-100 text-tosh-600',
-  withdrawn: 'bg-tosh-100 text-tosh-600',
-}
 
 const EMPTY_GUARDIAN = {
   last_name: '',
@@ -274,7 +259,7 @@ export default function ChildDetailPage() {
                 STATUS_TONE[child.enrollment_status] ?? 'bg-tosh-100 text-tosh-600',
               )}
             >
-              {STATUS_LABEL[child.enrollment_status] ?? child.enrollment_status}
+              {STATUS_LABELS[child.enrollment_status] ?? child.enrollment_status}
             </span>
             {child.archived_at && (
               <span className="rounded-full bg-tosh-100 px-2.5 py-0.5 text-xs font-medium text-tosh-600">

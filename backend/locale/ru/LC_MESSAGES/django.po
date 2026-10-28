@@ -2833,3 +2833,87 @@ msgstr "Договор"
 
 msgid "Hisoblangan {charged}, imtiyoz {benefits}, qayta hisob {recalculated} → yigʻilgan {collected} + qarz {outstanding}"
 msgstr "Начислено {charged}, льготы {benefits}, перерасчёт {recalculated} → собрано {collected} + долг {outstanding}"
+
+msgid "Sinovda"
+msgstr "На пробном"
+
+msgid "Qaytib kelgan"
+msgstr "Вернулся"
+
+msgid "Ketgan"
+msgstr "Ушёл"
+
+msgid "Bunday sabab roʻyxatda yoʻq."
+msgstr "Такой причины нет в списке."
+
+msgid "Boshqa joyga koʻchish"
+msgstr "Переезд в другое место"
+
+msgid "Davlat bogʻchasidan joy chiqdi"
+msgstr "Появилось место в государственном саду"
+
+msgid "Moliyaviy sharoit oʻzgardi"
+msgstr "Изменилось финансовое положение"
+
+msgid "Oilaviy sharoit"
+msgstr "Семейные обстоятельства"
+
+msgid "Tibbiy koʻrsatma"
+msgstr "Медицинские показания"
+
+msgid "Inklyuziv taʼlim ehtiyoji"
+msgstr "Потребность в инклюзивном образовании"
+
+msgid "Kadrlar almashuvi"
+msgstr "Смена персонала"
+
+msgid "Guruhda bola koʻp"
+msgstr "В группе много детей"
+
+msgid "Bola moslasha olmadi"
+msgstr "Ребёнок не адаптировался"
+
+msgid "Tarbiyachilar bilan kelishmovchilik"
+msgstr "Разногласия с воспитателями"
+
+msgid "Boshqa sabab"
+msgstr "Другая причина"
+
+msgid "Bu toʻlovdan ota-onaga pul qaytarilgan — usulni oʻzgartirib boʻlmaydi."
+msgstr "По этому платежу родителю возвращены деньги — способ изменить нельзя."
+
+msgid "Bu toʻlovni siz qabul qilmagansiz."
+msgstr "Этот платёж принимали не вы."
+
+msgid "Nomaʼlum toʻlov usuli."
+msgstr "Неизвестный способ оплаты."
+
+msgid "Oylikdan ushlangan toʻlovning usulini bu yerda oʻzgartirib boʻlmaydi."
+msgstr "Способ платежа, удержанного из зарплаты, здесь изменить нельзя."
+
+msgid "Qaytarilgan toʻlovni tuzatib boʻlmaydi."
+msgstr "Отменённый платёж исправить нельзя."
+
+msgid "Toʻlov usulini faqat qabul qilingan KUNI tuzatish mumkin."
+msgstr "Способ оплаты можно исправить только в ДЕНЬ приёма платежа."
+
+msgid "toʻlov usuli tuzatildi"
+msgstr "способ оплаты исправлен"
+
+msgid "Bu hujjat qarz emas."
+msgstr "Этот документ — не долг."
+
+msgid "Pul kimga berilganini yozing."
+msgstr "Укажите, кому выданы деньги."
+
+msgid "Qarz qaytdi"
+msgstr "Долг вернули"
+
+msgid "Qarz qaytdi: {person}"
+msgstr "Долг вернули: {person}"
+
+msgid "Qarzdan koʻp qaytarib boʻlmaydi — qolgani {amount} soʻm."
+msgstr "Нельзя вернуть больше долга — осталось {amount} сум."
+
+msgid "Qarzga berildi"
+msgstr "Выдано в долг"

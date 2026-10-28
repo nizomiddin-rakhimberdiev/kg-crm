@@ -20,6 +20,7 @@ from apps.children.models import (
     EnrollmentStatus,
     Group,
     Guardian,
+    WithdrawReason,
 )
 from apps.core.exceptions import BusinessRuleViolation
 
@@ -216,6 +217,28 @@ CLOSED_STATUSES = (
     EnrollmentStatus.WITHDRAWN,
 )
 
+#: Bogʻchada hisoblangan bola — "faol bolalar" shu ikkitasi.
+#: "Qaytib kelgan" roʻyxatda alohida koʻrinadi, pul tomonidan esa
+#: faoldan farq qilmaydi (mijoz soʻrovi, 2026-10-28).
+ENROLLED_STATUSES = (EnrollmentStatus.ACTIVE, EnrollmentStatus.RETURNED)
+
+#: Sinov necha kun davom etadi. Mijoz "probni 3 kunlikda" dedi.
+TRIAL_DAYS = 3
+
+
+def trial_is_over(child: Child) -> bool:
+    """
+    Sinov muddati tugaganmi?
+
+    Ekranga kerak: tugagan sinov hech kimga xabar bermasa, bola
+    "sinovda" boʻlib oylab turib qoladi — va shu oylarda unga
+    hisob-faktura yozilmaydi. Ya'ni unutilgan belgi pul yoʻqotadi.
+    """
+    if child.enrollment_status != EnrollmentStatus.TRIAL or child.trial_until is None:
+        return False
+    return timezone.localdate() > child.trial_until
+
+
 # --- Oila (Bosqich 12.2) ---
 
 
@@ -372,6 +395,7 @@ def change_status(
     on_date: date,
     reason: str,
     actor: Any = None,
+    reason_code: str = "",
 ) -> Child:
     """
     Bolaning holatini SANA va SABAB bilan o'zgartiradi (Q5).
@@ -387,6 +411,8 @@ def change_status(
     """
     if status not in EnrollmentStatus.values:
         raise BusinessRuleViolation(gettext("Nomaʼlum holat."))
+    if reason_code and reason_code not in WithdrawReason.values:
+        raise BusinessRuleViolation(gettext("Bunday sabab roʻyxatda yoʻq."))
     if not reason.strip():
         raise BusinessRuleViolation(gettext("Holatni oʻzgartirish uchun sabab yozing."))
     if on_date > timezone.localdate():
@@ -395,8 +421,23 @@ def change_status(
     child.enrollment_status = status
     child.status_changed_on = on_date
     child.status_reason = reason.strip()[:255]
+    # Sabab kodi faqat KETISHGA tegishli: "faol" bolada qolib ketgan
+    # kod keyin hisobotda ketgan bola kabi sanalardi.
+    child.status_reason_code = reason_code if status == EnrollmentStatus.WITHDRAWN else ""
+    # Sinov tugash kuni shu yerda belgilanadi; boshqa holatda tozalanadi,
+    # aks holda faol bolada eski sinov sanasi qolib ketardi.
+    child.trial_until = (
+        on_date + timedelta(days=TRIAL_DAYS) if status == EnrollmentStatus.TRIAL else None
+    )
     child.save(
-        update_fields=["enrollment_status", "status_changed_on", "status_reason", "updated_at"]
+        update_fields=[
+            "enrollment_status",
+            "status_changed_on",
+            "status_reason",
+            "status_reason_code",
+            "trial_until",
+            "updated_at",
+        ]
     )
 
     # Guruhdan ham chiqariladi: "chiqib ketgan" bola davomat
@@ -424,6 +465,11 @@ def is_billable_for(child: Child, *, period_year: int, period_month: int) -> boo
     yoziladi: u oyning bir qismida bog'chada bo'lgan, va pulni
     qaytarish — alohida qaror (Q5).
     """
+    # Sinovdagi bola hali bogʻchaning mijozi emas: uch kun kelib
+    # koʻrgan bolaga oylik chiqarish bogʻchani ham, ota-onani ham
+    # ishontirmaydi (mijoz soʻrovi, 2026-10-28).
+    if child.enrollment_status == EnrollmentStatus.TRIAL:
+        return False
     if child.enrollment_status not in CLOSED_STATUSES:
         return True
     if child.status_changed_on is None:

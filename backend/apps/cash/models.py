@@ -12,6 +12,8 @@ emas. Xato qarshi yozuv bilan tuzatiladi, `UPDATE` bilan emas (D3).
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from django.db import models
 from django.utils.translation import gettext_lazy
 
@@ -277,6 +279,11 @@ class OperationKind(models.TextChoices):
     OWNER_CONTRIBUTION = "owner_contribution", gettext_lazy("Egadan kiritma")
     LOAN_IN = "loan_in", gettext_lazy("Kredit olindi")
     LOAN_REPAY = "loan_repay", gettext_lazy("Kredit qaytarildi")
+    # Bogʻcha BERGAN qarz (mijoz soʻrovi, 2026-10-28) — "kredit
+    # olindi" ning teskarisi. Bu chiqim emas: pul ketdi, lekin
+    # yoʻqolmadi — u kimdadir turibdi va qaytishi kutilmoqda.
+    LOAN_OUT = "loan_out", gettext_lazy("Qarzga berildi")
+    LOAN_RETURN = "loan_return", gettext_lazy("Qarz qaytdi")
     TAX_PAYMENT = "tax_payment", gettext_lazy("Soliq toʻlovi")
 
 
@@ -287,6 +294,8 @@ OPERATION_DIRECTION: dict[str, str] = {
     OperationKind.OWNER_CONTRIBUTION: "in",
     OperationKind.LOAN_IN: "in",
     OperationKind.LOAN_REPAY: "out",
+    OperationKind.LOAN_OUT: "out",
+    OperationKind.LOAN_RETURN: "in",
     OperationKind.TAX_PAYMENT: "out",
 }
 
@@ -306,6 +315,8 @@ OPERATION_SUBTYPES: dict[str, tuple[str, ...]] = {
     OperationKind.OWNER_CONTRIBUTION: ("",),
     OperationKind.LOAN_IN: ("",),
     OperationKind.LOAN_REPAY: ("",),
+    OperationKind.LOAN_OUT: ("",),
+    OperationKind.LOAN_RETURN: ("",),
     OperationKind.TAX_PAYMENT: (
         "dividend_tax",
         "social_tax",
@@ -345,6 +356,22 @@ class MoneyOperation(BranchScopedModel):
     reason = models.CharField(max_length=255)
     # Dividend soliqi — majburiyat (to'languncha).
     tax_amount = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    # Qaysi qarzni yopyapti (mijoz soʻrovi, 2026-10-28). Faqat
+    # `loan_return` da toʻladi: usiz "kimda qancha qoldi?" degan savolga
+    # javob boʻlmasdi — qaytgan pul shunchaki kassaga tushib, qaysi
+    # qarzniki ekani esda qolmasdi.
+    #
+    # `CASCADE`, `RESTRICT` emas: hujjat hech qachon QOʻLDA
+    # oʻchirilmaydi (xato — teskari operatsiya), oʻchirish esa faqat
+    # tashkilotni tozalashda boʻladi — va oʻshanda qarz bilan uning
+    # qaytishi bitta soʻrovda ketadi.
+    settles = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        related_name="returns",
+        null=True,
+        blank=True,
+    )
     created_by = models.ForeignKey(
         "accounts.User",
         on_delete=models.SET_NULL,
@@ -370,7 +397,23 @@ class MoneyOperation(BranchScopedModel):
             models.CheckConstraint(
                 condition=~models.Q(reason=""), name="ck_money_operation_reason"
             ),
+            # Qaytish ASL hujjatga bogʻlanadi, boshqa turlar esa yoʻq:
+            # "egadan kiritma" nimanidir yopa olmaydi, va bogʻlanish
+            # boʻsh qolsa qarz hech qachon yopilmas edi.
+            models.CheckConstraint(
+                condition=models.Q(kind="loan_return", settles__isnull=False)
+                | (~models.Q(kind="loan_return") & models.Q(settles__isnull=True)),
+                name="ck_money_operation_settles",
+            ),
         ]
+
+    @property
+    def outstanding(self) -> Decimal:
+        """Qarzdan qancha qaytmagani — qaytishlar ayirilgan holda."""
+        if self.kind != OperationKind.LOAN_OUT:
+            return Decimal("0.00")
+        returned = self.returns.aggregate(total=models.Sum("amount"))["total"] or Decimal("0")
+        return (self.amount - returned).quantize(Decimal("0.01"))
 
     def __str__(self) -> str:
         return f"{self.kind} {self.amount}"

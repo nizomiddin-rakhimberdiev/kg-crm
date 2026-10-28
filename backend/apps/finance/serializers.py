@@ -244,6 +244,7 @@ class PaymentSerializer(serializers.ModelSerializer):
             "payer_tin",
             "employee",
             "employee_name",
+            "received_by",
             "received_by_name",
             "backdate_reason",
             "allocation_reason",

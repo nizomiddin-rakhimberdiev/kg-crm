@@ -594,6 +594,7 @@ def _money_rules(organization_id: Any, branch_id: Any, start: date, end: date) -
 def _children_rules(organization_id: Any, branch_id: Any, start: date, end: date) -> list[dict]:
     from apps.attendance.models import AttendanceRecord
     from apps.children.models import Child, EnrollmentStatus
+    from apps.children.services import ENROLLED_STATUSES
     from apps.finance.models import Discount, Invoice, InvoiceStatus
 
     items: list[dict[str, Any]] = []
@@ -642,7 +643,7 @@ def _children_rules(organization_id: Any, branch_id: Any, start: date, end: date
 
     active = (
         _scoped(Child.objects, organization_id, branch_id)
-        .filter(is_active=True, enrollment_status=EnrollmentStatus.ACTIVE)
+        .filter(is_active=True, enrollment_status__in=ENROLLED_STATUSES)
         .filter(Q(enrolled_on__isnull=True) | Q(enrolled_on__lt=start))
     )
     for child in active.exclude(pk__in=present_days).only("id", "first_name", "last_name")[:50]:

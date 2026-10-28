@@ -43,6 +43,7 @@ def _card(key: str, title: str, value: Any, status: str, note: str, **extra: Any
 def home(*, organization_id: Any, day: date, branch_id: Any = None) -> dict[str, Any]:
     from apps.cash.selectors import custody
     from apps.children.models import Child, EnrollmentStatus, Group
+    from apps.children.services import ENROLLED_STATUSES
     from apps.expenses.models import Expense, ExpenseStatus
     from apps.finance.models import Payment
     from apps.intelligence import control
@@ -203,7 +204,7 @@ def home(*, organization_id: Any, day: date, branch_id: Any = None) -> dict[str,
 
     # 6. Bog'cha o'syaptimi?
     children = _scoped(Child.objects, organization_id, branch_id).filter(is_active=True)
-    active = children.filter(enrollment_status=EnrollmentStatus.ACTIVE).count()
+    active = children.filter(enrollment_status__in=ENROLLED_STATUSES).count()
     capacity = (
         _scoped(Group.objects, organization_id, branch_id)
         .filter(is_active=True)

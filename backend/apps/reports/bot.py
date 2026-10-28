@@ -508,26 +508,83 @@ _HANDLERS = {
 }
 
 
-def help_text() -> str:
-    return "\n".join(
-        [
-            gettext("Savol yozing, masalan:"),
-            "• " + gettext("kunlik hisobot"),
-            "• " + gettext("bugungi tushum"),
-            "• " + gettext("bu oy qancha daromad qildik"),
-            "• " + gettext("bu oy foyda"),
-            "• " + gettext("oʻtgan oy foyda"),
-            "• " + gettext("shu oydagi chiqim"),
-            "• " + gettext("faol bolalar"),
-            "• " + gettext("bugun nechta bola keldi"),
-            "• " + gettext("qarzdorlik"),
-            "• " + gettext("kassada qancha pul bor"),
-            "• " + gettext("bu oy oylik maosh"),
-            "• " + gettext("xodimlar soni"),
-            "• " + gettext("obuna summasi"),
-            gettext("Chiqim kiritish uchun summadan boshlang: 150 000 kartoshka."),
-        ]
-    )
+#: Savol → kerakli ruxsat kodlari.
+#:
+#: Tekshiruv handlerning OʻZIDA ham bor (javob har doim serverda
+#: hal qilinadi), lekin roʻyxat shu yerda ochiq turadi: yordam matni
+#: ham undan quriladi, aks holda bot odamni oʻzi javob bermaydigan
+#: savolga yoʻllardi (mijoz soʻrovi, 2026-10-28).
+INTENT_PERMISSIONS: dict[str, tuple[str, ...]] = {
+    "revenue": ("payments.read",),
+    "expenses": ("expenses.read",),
+    "profit": ("reports.read",),
+    "children": ("children.read",),
+    "debts": ("debtors.read",),
+    "cash": ("payments.read",),
+    "attendance": ("attendance.read",),
+    "staff": ("payroll.read",),
+    "payroll": ("payroll.read",),
+    "subscription": ("billing.read",),
+}
+
+#: Taklif qilinadigan savollar — har biri oʻz mavzusi bilan.
+#: Tartib ekranda koʻrinadigan tartib: kundalik ish avval.
+HELP_EXAMPLES: tuple[tuple[str, str], ...] = (
+    ("summary", "kunlik hisobot"),
+    ("revenue", "bugungi tushum"),
+    ("revenue", "bu oy qancha daromad qildik"),
+    ("profit", "bu oy foyda"),
+    ("profit", "oʻtgan oy foyda"),
+    ("expenses", "shu oydagi chiqim"),
+    ("children", "faol bolalar"),
+    ("attendance", "bugun nechta bola keldi"),
+    ("debts", "qarzdorlik"),
+    ("cash", "kassada qancha pul bor"),
+    ("payroll", "bu oy oylik maosh"),
+    ("staff", "xodimlar soni"),
+    ("subscription", "obuna summasi"),
+)
+
+
+def can_ask(user: Any, intent: str) -> bool:
+    """Shu rol shu savolga javob ola oladimi?"""
+    from apps.finance.scope import payments_own_only
+
+    if intent == "summary":
+        # Xulosa — boshqa javoblarning yigʻindisi: birortasi ochiq
+        # boʻlsa, xulosa ham bir nima aytadi.
+        return any(can_ask(user, name) for name in INTENT_PERMISSIONS)
+    codes = INTENT_PERMISSIONS.get(intent)
+    if codes is None or not _allowed(user, *codes):
+        return False
+    if intent == "profit":
+        from apps.reports.views import report_allowed
+
+        return bool(report_allowed(user, "finance"))
+    if intent == "cash":
+        # Kassa qoldigʻi — butun bogʻchaning puli, "faqat oʻziniki"
+        # kassirniki emas (ADR-30).
+        return not payments_own_only(user)
+    return True
+
+
+def help_text(*, user: Any = None) -> str:
+    """
+    Nima soʻrash mumkinligi — SHU rol uchun (mijoz soʻrovi, 2026-10-28).
+
+    Ilgari roʻyxat hamma uchun bir xil edi va kassirga "bu oy foyda"
+    ni taklif qilardi — bosgandan keyin esa "ruxsat yoʻq" deb javob
+    berardi. Bot odamni javob bermaydigan savolga yoʻllamasligi kerak.
+    """
+    lines = [gettext("Savol yozing, masalan:")]
+    lines += [
+        "• " + gettext(example)
+        for intent, example in HELP_EXAMPLES
+        if user is None or can_ask(user, intent)
+    ]
+    if user is None or _allowed(user, "expenses.create"):
+        lines.append(gettext("Chiqim kiritish uchun summadan boshlang: 150 000 kartoshka."))
+    return "\n".join(lines)
 
 
 def _language(user: Any) -> str:
@@ -540,7 +597,7 @@ def _language(user: Any) -> str:
 def not_understood(*, user: Any) -> str:
     """Xodim chatida tushunilmagan matn — nima so'rash mumkinligi bilan."""
     with translation.override(_language(user)):
-        return "🤔 " + gettext("Savolni tushunmadim.") + "\n\n" + help_text()
+        return "🤔 " + gettext("Savolni tushunmadim.") + "\n\n" + help_text(user=user)
 
 
 def answer(*, user: Any, text: str) -> str | None:
@@ -553,5 +610,5 @@ def answer(*, user: Any, text: str) -> str | None:
             return _HANDLERS[intent](user, period)
         # Savol emas, lekin umumiy so'z yoki salom — nima so'rash mumkinligini aytamiz.
         if key and not key[0].isdigit() and any(word in key for word in HELP_WORDS):
-            return help_text()
+            return help_text(user=user)
         return None

@@ -25,11 +25,54 @@ class Gender(models.TextChoices):
 
 
 class EnrollmentStatus(models.TextChoices):
-    PROSPECT = "prospect", gettext_lazy("Nomzod")
+    """
+    Bolaning bogʻchadagi yoʻli (mijoz soʻrovi, 2026-10-28).
+
+    Mijoz uni shunday aytdi: **yangi → sinov → faol**, keyin **ketdi**
+    va baʼzan **qaytib keldi**. Uchtasi yangi emas, ikkitasi yangi, va
+    ikkalasi ham pulga tegadi: sinovdagi bolaga hisob-faktura
+    yozilmaydi, qaytib kelgan bolaga esa yana yoziladi.
+
+    "Qaytib keldi" ALOHIDA holat, "faol" emas: bogʻcha uchun bu boshqa
+    hikoya — ketgan oila qaytdi, va buni roʻyxatda koʻrish kerak.
+    Pul tomonidan esa u faoldan farq qilmaydi (`ENROLLED_STATUSES`).
+    """
+
+    PROSPECT = "prospect", gettext_lazy("Yangi")
+    TRIAL = "trial", gettext_lazy("Sinovda")
     ACTIVE = "active", gettext_lazy("Faol")
+    RETURNED = "returned", gettext_lazy("Qaytib kelgan")
     PAUSED = "paused", gettext_lazy("Toʻxtatilgan")
     GRADUATED = "graduated", gettext_lazy("Bitirgan")
-    WITHDRAWN = "withdrawn", gettext_lazy("Chiqib ketgan")
+    WITHDRAWN = "withdrawn", gettext_lazy("Ketgan")
+
+
+class WithdrawReason(models.TextChoices):
+    """
+    Nega ketdi — roʻyxat QATʼIY (mijoz soʻrovi, 2026-10-28).
+
+    Avval sabab erkin matn edi, va erkin matn savolga javob bermaydi:
+    "bu oy nega oltita bola ketdi?" degan savolga oltita har xil
+    jumla qoladi. Roʻyxat esa oylar va filiallar boʻyicha solishtiriladi
+    — tarbiyachi bilan kelishmovchilik tufayli ketgan uchta oila
+    boshqaruv qarorini talab qiladi, boshqa shaharga koʻchgan uchtasi
+    esa yoʻq.
+
+    Izoh yonida qoladi (`status_reason`): roʻyxat nimani
+    oʻlchashni biladi, tafsilotni esa odam yozadi.
+    """
+
+    RELOCATION = "relocation", gettext_lazy("Boshqa joyga koʻchish")
+    STATE_KINDERGARTEN = "state_kindergarten", gettext_lazy("Davlat bogʻchasidan joy chiqdi")
+    FINANCES = "finances", gettext_lazy("Moliyaviy sharoit oʻzgardi")
+    FAMILY = "family", gettext_lazy("Oilaviy sharoit")
+    MEDICAL = "medical", gettext_lazy("Tibbiy koʻrsatma")
+    INCLUSIVE = "inclusive", gettext_lazy("Inklyuziv taʼlim ehtiyoji")
+    STAFF_CHANGE = "staff_change", gettext_lazy("Kadrlar almashuvi")
+    GROUP_SIZE = "group_size", gettext_lazy("Guruhda bola koʻp")
+    ADAPTATION = "adaptation", gettext_lazy("Bola moslasha olmadi")
+    TEACHER_CONFLICT = "teacher_conflict", gettext_lazy("Tarbiyachilar bilan kelishmovchilik")
+    OTHER = "other", gettext_lazy("Boshqa sabab")
 
 
 class HeardFrom(models.TextChoices):
@@ -150,6 +193,16 @@ class Child(BranchScopedModel):
     # o'sha sanadan keyin hisob-faktura yozilmasligi kerak.
     status_changed_on = models.DateField(null=True, blank=True)
     status_reason = models.CharField(max_length=255, blank=True)
+
+    # Ketish sababi roʻyxatdan (mijoz soʻrovi, 2026-10-28). Izoh
+    # `status_reason` da qoladi: roʻyxat oʻlchov uchun, izoh odam uchun.
+    status_reason_code = models.CharField(max_length=32, choices=WithdrawReason.choices, blank=True)
+
+    # Sinov muddati shu kunda tugaydi. Saqlanadi, hisoblanmaydi: sinov
+    # boshlangan sana keyin oʻzgarishi mumkin, tugash kuni esa oʻsha
+    # paytdagi kelishuv — uni keyin qayta hisoblash boshqa vaʼda
+    # boʻlardi.
+    trial_until = models.DateField(null=True, blank=True)
 
     # --- Arxiv (Q6) ---
     #

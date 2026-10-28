@@ -199,7 +199,7 @@ export interface JournalSummary {
   count: number
   total: string
   reversed_count: number
-  by_method: Array<{ method: string; total: string; count: number }>
+  by_method: Array<{ method: string; total: string; count: number; commission?: string }>
 }
 
 /** Kvitansiya (`GET /payments/{id}/receipt`, PLAN 1.7). */
@@ -340,6 +340,14 @@ export const paymentsApi = {
     api.post<PaymentFiscal>(`/payments/${id}/fiscal`, payload),
 
   reverse: (id: string, reason: string) => api.post<Payment>(`/payments/${id}/reverse`, { reason }),
+
+  /**
+   * Usulni OʻSHA KUNI tuzatish (mijoz soʻrovi, 2026-10-28): kassir
+   * shoshib "naqd" ni bosadi, pul esa terminaldan tushadi. Summa bu
+   * yerda oʻzgarmaydi — notoʻgʻri summa qaytarish bilan tuzatiladi.
+   */
+  correctMethod: (id: string, payload: { method: string; reason: string }) =>
+    api.post<Payment>(`/payments/${id}/correct-method`, payload),
 
   /** Avansni ota-onaga qaytarish (Bosqich 13.2b) — faqat ishlatilmagan qismi. */
   refund: (id: string, payload: { amount: string; cash_account_id: string; reason: string }) =>

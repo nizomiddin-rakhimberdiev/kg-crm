@@ -268,6 +268,24 @@ def _create_row(tenant: Any, basename: str) -> Any:
                 cash_account=CashAccount.objects.get(branch=tenant.branch, kind="bank"),
                 file_name="vypiska.xlsx",
             )
+        if basename == "loan":
+            # Qarzga berilgan pul — oʻsha `money_operation` hujjati,
+            # faqat boshqa turi (ADR-48).
+            from apps.cash import services as cash_services
+            from apps.cash.models import MoneyOperation
+
+            return MoneyOperation.objects.create(
+                organization=tenant.organization,
+                branch=tenant.branch,
+                kind="loan_out",
+                cash_account=cash_services.cash_pot(branch=tenant.branch),
+                amount=Decimal("1000"),
+                occurred_on=date(2026, 9, 30),
+                period_year=2026,
+                period_month=9,
+                counterparty="Feruza",
+                reason="Sinov",
+            )
         if basename == "money-operation":
             from apps.cash import services as cash_services
             from apps.cash.models import MoneyOperation

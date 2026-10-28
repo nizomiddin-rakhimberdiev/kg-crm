@@ -17,6 +17,7 @@ from apps.children.models import (
     EnrollmentStatus,
     Group,
     Guardian,
+    WithdrawReason,
 )
 from apps.core.fields import TenantPrimaryKeyRelatedField
 from apps.core.serializer_fields import PhoneField
@@ -214,11 +215,27 @@ class ChildSerializer(serializers.ModelSerializer):
             "current_group",
             "status_changed_on",
             "status_reason",
+            "status_reason_code",
+            "status_reason_label",
+            "trial_until",
+            "trial_is_over",
             "archived_at",
             "is_active",
             "created_at",
         ]
         read_only_fields = fields
+
+    status_reason_label = serializers.SerializerMethodField()
+    trial_is_over = serializers.SerializerMethodField()
+
+    def get_status_reason_label(self, obj: Child) -> str:
+        """Ketish sababining OʻQILADIGAN nomi — ekran kod koʻrmaydi (ADR-45)."""
+        return obj.get_status_reason_code_display() if obj.status_reason_code else ""
+
+    def get_trial_is_over(self, obj: Child) -> bool:
+        from apps.children.services import trial_is_over
+
+        return trial_is_over(obj)
 
     def get_current_group(self, obj: Child) -> dict[str, Any] | None:
         # `prefetch_related` bilan kelgan ro'yxatdan o'qiymiz — bu yerda
@@ -351,3 +368,9 @@ class ChildStatusSerializer(serializers.Serializer):
     enrollment_status = serializers.ChoiceField(choices=EnrollmentStatus.choices)
     status_changed_on = serializers.DateField()
     status_reason = serializers.CharField(max_length=255, trim_whitespace=True)
+    # Sabab KODI faqat ketishda maʼnoli; ekran uni oʻsha paytda
+    # majburiy qiladi, API esa ixtiyoriy qoldiradi — eski chaqiruv
+    # (import, migratsiya) sinmasin.
+    status_reason_code = serializers.ChoiceField(
+        choices=WithdrawReason.choices, required=False, allow_blank=True, default=""
+    )
