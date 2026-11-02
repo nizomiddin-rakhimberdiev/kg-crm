@@ -470,6 +470,20 @@ def is_billable_for(child: Child, *, period_year: int, period_month: int) -> boo
     # ishontirmaydi (mijoz soʻrovi, 2026-10-28).
     if child.enrollment_status == EnrollmentStatus.TRIAL:
         return False
+
+    # Bola KELMAGAN oyga hujjat yozilmaydi (audit, 2026-10-30).
+    #
+    # Ilgari bu yerda faqat holat va uning sanasi koʻrilardi, qabul
+    # sanasi esa yoʻq edi: oktabrda kelgan bolaga may–sentabr uchun
+    # ham faktura yozilib, ustiga −100% chegirma qoʻyilardi. Summa 0
+    # boʻlgani uchun kassaga tegmasdi, lekin hisobotdagi yalpi baza
+    # ham, "qayta hisob" ham sunʼiy oshardi — bogʻcha oʻz tarixini
+    # notoʻgʻri koʻrardi.
+    if child.enrolled_on is not None and (period_year, period_month) < (
+        child.enrolled_on.year,
+        child.enrolled_on.month,
+    ):
+        return False
     if child.enrollment_status not in CLOSED_STATUSES:
         return True
     if child.status_changed_on is None:

@@ -14,6 +14,7 @@
  */
 
 import { useState } from 'react'
+import { today } from '@/lib/format'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { HandCoins, Plus, Undo2 } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
@@ -27,8 +28,6 @@ import { invalidateMoney } from '@/lib/api/invalidate'
 import { ApiError } from '@/lib/api/types'
 import { formatDate, formatMoney } from '@/lib/utils'
 import { t } from '@/lib/i18n'
-
-const today = () => new Date().toISOString().slice(0, 10)
 
 export function LoansPanel() {
   const organizationId = useOrganizationId()

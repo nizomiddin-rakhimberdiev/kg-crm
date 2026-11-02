@@ -224,13 +224,19 @@ class CashAccountViewSet(BranchScopedMixin, TenantViewSet):
         `GET /cash-accounts/custody` — kimning qo'lida qancha naqd pul
         (Bosqich 12.5). "Faqat o'ziniki" foydalanuvchi faqat o'zini ko'radi.
         """
+        from apps.core.params import parse_date
+
         user = request_user(request)
         branch = request.query_params.get("branch") or None
+        # Tanlangan sanadagi holat (audit, 2026-10-30): jadval hisob
+        # qoldiqlari bilan solishtiriladigan boʻlishi kerak, ular esa
+        # har doim bir sanaga tegishli.
         return Response(
             selectors.custody(
                 organization_id=user.organization_id,
                 branch_id=branch if user.is_org_owner else user.branch_id,
                 user_id=user.pk if payments_own_only(user) else None,
+                as_of=parse_date(request.query_params.get("as_of"), field="Sana"),
             )
         )
 

@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.utils.translation import gettext
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -765,6 +765,17 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
         payment = self.get_object()
         self._assert_mine(payment)
         user = request_user(request)
+        # Sabab MAJBURIY (audit, 2026-10-30) va u shu yerda
+        # tekshiriladi — forma xatosi `400` boʻlishi kerak, biznes
+        # qoidasi buzilishi emas. Servis ham oʻzini tekshiradi.
+        if len(str(request.data.get("reason", "")).strip()) < services.REVERSAL_REASON_MIN:
+            raise ValidationError(
+                {
+                    "reason": gettext("Qaytarish sababini yozing — kamida {n} ta belgi.").format(
+                        n=services.REVERSAL_REASON_MIN
+                    )
+                }
+            )
         services.reverse_payment(
             payment=payment, reason=request.data.get("reason", ""), created_by=user
         )

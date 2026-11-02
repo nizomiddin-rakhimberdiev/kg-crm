@@ -728,6 +728,19 @@ def pay_run(
         raise BusinessRuleViolation(gettext("Toʻlanadigan summa yoʻq."))
 
     when = paid_on or timezone.localdate()
+    # Pul qaysi KUNI chiqqani — tugma bosilgan vaqt emas (audit,
+    # 2026-10-30). Sana ikki tomondan chegaralangan: kelajak
+    # boʻlmaydi, va hisoblash davri boshlanishidan oldin ham
+    # boʻlmaydi — may oyligini aprelda toʻlab boʻlmaydi.
+    if when > timezone.localdate():
+        raise BusinessRuleViolation(gettext("Toʻlov sanasi kelajakda boʻlishi mumkin emas."))
+    period_start = date(run.period_year, run.period_month, 1)
+    if when < period_start:
+        raise BusinessRuleViolation(
+            gettext("Toʻlov sanasi {period} dan oldin boʻlishi mumkin emas.").format(
+                period=period_start.strftime("%d.%m.%Y")
+            )
+        )
     items = {item.id: item for item in run.items.select_related("employee")}
     # Har bir satr-qism bo'yicha allaqachon to'langan summa: qisman
     # to'lovdan keyin qayta chaqirilsa, ikki marta to'lamaslik uchun.
@@ -802,7 +815,10 @@ def pay_run(
     ] or Decimal("0")
     if paid >= owed:
         run.status = PayrollStatus.PAID
-        run.paid_at = timezone.now()
+        # Belgi ham PUL KUNIDAN olinadi: `now()` boʻlsa, sentabr
+        # oyligi oktabrda "toʻlangan" deb turardi va kassa usulidagi
+        # hisobot uni notoʻgʻri oyga qoʻyardi (audit, 2026-10-30).
+        run.paid_at = timezone.make_aware(datetime.combine(when, time.min))
         run.save(update_fields=["status", "paid_at", "updated_at"])
     return run
 

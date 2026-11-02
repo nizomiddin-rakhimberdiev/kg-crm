@@ -831,6 +831,13 @@ export interface DashboardKpis {
     income: string
     expenses: string
     payroll: string
+    /** Egasi olgan va qoʻshgan pul (audit, 2026-10-30) — usiz tenglama yopilmasdi. */
+    owner_draws: string
+    owner_contributions: string
+    /** Oʻtkazma, boshlangʻich qoldiq, sanoq farqi va qolgan operatsiyalar. */
+    other: string
+    /** Terminal/Click puli bankka tushguncha — ALOHIDA qator. */
+    in_transit: string
     balance: string
     /** Naqd qancha, terminalda qancha, bankda qancha (ADR-17). */
     accounts: CashAccountBalance[]

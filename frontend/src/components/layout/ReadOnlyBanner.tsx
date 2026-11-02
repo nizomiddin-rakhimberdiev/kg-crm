@@ -9,7 +9,7 @@ import { useState } from 'react'
 import { AlertTriangle, Clock, CreditCard, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/app/providers/AuthProvider'
-import { som } from '@/lib/format'
+import { som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { useCan } from '@/lib/rbac/useCan'
 
@@ -52,17 +52,17 @@ function BillingLink({ label }: { label: string }) {
 const DISMISS_KEY = 'radix.subscription-banner-dismissed'
 
 function useDailyDismiss(): [boolean, () => void] {
-  const today = new Date().toISOString().slice(0, 10)
+  const stamp = today()
   const [dismissed, setDismissed] = useState(() => {
     try {
-      return localStorage.getItem(DISMISS_KEY) === today
+      return localStorage.getItem(DISMISS_KEY) === stamp
     } catch {
       return false
     }
   })
   const dismiss = () => {
     try {
-      localStorage.setItem(DISMISS_KEY, today)
+      localStorage.setItem(DISMISS_KEY, stamp)
     } catch {
       // Maxfiy rejim — banner shu sessiyada yopiladi, xolos.
     }

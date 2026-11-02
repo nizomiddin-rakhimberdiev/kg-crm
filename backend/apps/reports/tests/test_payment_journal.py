@@ -55,7 +55,7 @@ def paid(tenant_a):
         reversed_payment = services.record_payment(
             child=children[1], amount=Decimal("200000"), method="cash"
         )
-        services.reverse_payment(payment=reversed_payment, reason="Xato")
+        services.reverse_payment(payment=reversed_payment, reason="Kassir xato kiritdi")
     return children
 
 

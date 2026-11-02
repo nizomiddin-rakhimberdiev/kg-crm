@@ -8,6 +8,7 @@
  */
 
 import { useState } from 'react'
+import { today } from '@/lib/format'
 import { useMutation } from '@tanstack/react-query'
 import { DateInput } from '@/components/ui/DateInput'
 import { Modal } from '@/components/ui/Modal'
@@ -28,7 +29,7 @@ export function ChildStatusDialog({
 }) {
   const [form, setForm] = useState({
     enrollment_status: child.enrollment_status,
-    status_changed_on: new Date().toISOString().slice(0, 10),
+    status_changed_on: today(),
     status_reason: '',
     status_reason_code: '',
   })
@@ -100,7 +101,7 @@ export function ChildStatusDialog({
             <DateInput
               id="cs-date"
               required
-              max={new Date().toISOString().slice(0, 10)}
+              max={today()}
               value={form.status_changed_on}
               onChange={(iso) => setForm((p) => ({ ...p, status_changed_on: iso }))}
             />

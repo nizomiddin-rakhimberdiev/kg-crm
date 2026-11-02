@@ -138,11 +138,11 @@ def test_reversing_twice_does_not_double_the_counter_entry(tenant_a: Any):
     child = _child(tenant_a)
     with organization_context(tenant_a.organization.id):
         payment = finance.record_payment(child=child, amount=Decimal("500000"), method="cash")
-        finance.reverse_payment(payment=payment, reason="Birinchi")
+        finance.reverse_payment(payment=payment, reason="Birinchi urinish")
         # Ikkinchi urinish biznes qoidasi bilan to'xtaydi; kassa ham
         # ikkinchi qarshi yozuvni olmaydi.
         with pytest.raises(BusinessRuleViolation):
-            finance.reverse_payment(payment=payment, reason="Ikkinchi")
+            finance.reverse_payment(payment=payment, reason="Ikkinchi urinish")
 
         assert _balances(tenant_a)["cash"] == Decimal("0.00")
 
@@ -350,7 +350,7 @@ def test_a_counter_movement_is_never_blocked(tenant_a: Any):
             source_type=MovementSource.EXPENSE,
         )
         # Endi qopda 0; qaytarish qarshi yozuvi uni manfiyga tushiradi.
-        finance.reverse_payment(payment=payment, reason="Xato")
+        finance.reverse_payment(payment=payment, reason="Kassir xato kiritdi")
         assert selectors.total_balance(organization_id=tenant_a.organization.id) == Decimal(
             "-1000000"
         )

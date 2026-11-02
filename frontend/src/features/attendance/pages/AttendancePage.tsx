@@ -24,7 +24,7 @@ import { AbsenceClaimsPanel } from '@/features/attendance/components/AbsenceClai
 import { HolidaysPanel } from '@/features/attendance/components/HolidaysPanel'
 import { Modal } from '@/components/ui/Modal'
 import { useCan } from '@/lib/rbac/useCan'
-import { formatDate } from '@/lib/format'
+import { formatDate, isoDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/app/providers/ToastProvider'
 import { QueryError } from '@/components/ui/QueryError'
@@ -42,7 +42,7 @@ const STATUS_BUTTONS: Array<{
   { value: 'absent', label: t('Kelmagan'), icon: X, active: 'bg-red-600 text-white' },
 ]
 
-const today = () => new Date().toISOString().slice(0, 10)
+const today = () => isoDate(new Date())
 
 function ChildrenAttendance({
   onClaim,

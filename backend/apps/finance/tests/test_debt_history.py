@@ -124,7 +124,7 @@ class TestDebtByPeriod:
             payment = services.record_payment(
                 child=child, amount=Decimal("1200000"), method="cash", paid_at=date(2026, 9, 11)
             )
-            services.reverse_payment(payment=payment, reason="xato")
+            services.reverse_payment(payment=payment, reason="Kassir xato kiritdi")
 
             row = selectors.debt_by_period(date_from=date(2026, 9, 1), date_to=date(2026, 9, 30))[0]
             assert row["paid"] == "0.00"

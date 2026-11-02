@@ -38,7 +38,7 @@ import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate } from '@/lib/utils'
 import { cashApi } from '@/features/cash/api'
 import { PayoutModal } from '@/features/payroll/components/PayoutModal'
-import { money, monthLabel } from '@/lib/format'
+import { money, monthLabel, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { Select } from '@/components/ui/Select'
 
@@ -58,7 +58,7 @@ export default function PayrollPage() {
   const [advanceForm, setAdvanceForm] = useState({
     employee_id: '',
     amount: '',
-    paid_on: new Date().toISOString().slice(0, 10),
+    paid_on: today(),
     note: '',
     // Avans QAYSI qopdan berildi (ADR-29). Ilgari u hamisha naqd
     // kassadan yechilardi va buni hech kim tanlamasdi.
@@ -539,6 +539,7 @@ export default function PayrollPage() {
         <PayoutModal
           runId={payingRun.id}
           period={monthLabel(payingRun.period_year, payingRun.period_month)}
+          periodStart={`${payingRun.period_year}-${String(payingRun.period_month).padStart(2, '0')}-01`}
           saving={markPaid.isPending}
           onClose={() => setPayingRun(null)}
           onConfirm={(payload) => markPaid.mutate({ id: payingRun.id, payload })}

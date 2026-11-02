@@ -49,8 +49,15 @@ export const payrollApi = {
    */
   plannedPayouts: (id: string) => api.get<PlannedPayout[]>(`/payroll/runs/${id}/planned-payouts`),
 
-  markPaid: (id: string, payload?: { payouts?: PayoutLine[]; allow_negative?: boolean }) =>
-    api.post<PayrollRun>(`/payroll/runs/${id}/mark-paid`, payload ?? {}),
+  markPaid: (
+    id: string,
+    payload?: {
+      payouts?: PayoutLine[]
+      allow_negative?: boolean
+      /** Pul QAYSI kuni chiqqani (audit, 2026-10-30). */
+      paid_on?: string
+    },
+  ) => api.post<PayrollRun>(`/payroll/runs/${id}/mark-paid`, payload ?? {}),
 
   /**
    * Qoralamani qayta hisoblash: yangi xodimlar va avanslar.

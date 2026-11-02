@@ -198,7 +198,12 @@ class AbsenceClaimViewSet(BranchScopedMixin, TenantViewSet):
     """
 
     permission_module = "attendance"
-    permission_action_map = {"approve": "approve", "reject": "approve", "kinds": "read"}
+    permission_action_map = {
+        "approve": "approve",
+        "reject": "approve",
+        "cancel": "approve",
+        "kinds": "read",
+    }
     model = AbsenceClaim
     serializer_class = AbsenceClaimSerializer
     select_related_fields = ("child", "approved_by")
@@ -238,7 +243,10 @@ class AbsenceClaimViewSet(BranchScopedMixin, TenantViewSet):
                 document_file=self._checked_document(data.get("document_file")),
                 created_by=user,
             )
-            if may_approve:
+            # Hujjati yetishmayotgan daʼvo KUTIB turadi, xato bermaydi
+            # (audit, 2026-10-30): qogʻoz keyin keladi, ariza esa
+            # allaqachon yozilgan boʻlishi kerak.
+            if may_approve and absence.can_approve_now(claim=claim):
                 absence.approve_claim(claim=claim, approved_by=user)
                 claim.refresh_from_db()
         audit.record(
@@ -334,6 +342,31 @@ class AbsenceClaimViewSet(BranchScopedMixin, TenantViewSet):
                 "days": claim.billable_days,
                 "credit": str(claim.credit_amount),
             },
+        )
+        return Response(AbsenceClaimSerializer(claim).data)
+
+    @action(detail=True, methods=["post"])
+    def cancel(self, request: Request, pk: str | None = None) -> Response:
+        """
+        `POST /absence-claims/{id}/cancel {reason}` — tasdiqlangan
+        daʼvoni bekor qiladi (audit, 2026-10-30).
+
+        Ilgari xato tasdiq abadiy qolardi: tasdiqlangan daʼvoni na
+        qaytarish, na rad etish mumkin edi.
+        """
+        claim = self.get_object()
+        user = request_user(request)
+        absence.cancel_claim(
+            claim=claim, reason=str(request.data.get("reason", "")), approved_by=user
+        )
+        claim.refresh_from_db()
+        audit.record(
+            action="update",
+            request=request._request,
+            actor=user,
+            entity_type="absence_claim",
+            entity_id=claim.id,
+            changes={"status": "cancelled", "reason": request.data.get("reason", "")},
         )
         return Response(AbsenceClaimSerializer(claim).data)
 

@@ -134,7 +134,9 @@ def test_a_reversed_payment_cannot_be_corrected(tenant_a):
         payment = finance.record_payment(
             child=child, amount=Decimal("500000"), method="cash", received_by=tenant_a.owner
         )
-        finance.reverse_payment(payment=payment, reason="Xato", created_by=tenant_a.owner)
+        finance.reverse_payment(
+            payment=payment, reason="Kassir xato kiritdi", created_by=tenant_a.owner
+        )
         with pytest.raises(BusinessRuleViolation):
             finance.correct_payment_method(
                 payment=payment, method="terminal", created_by=tenant_a.owner

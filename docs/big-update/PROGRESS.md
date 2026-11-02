@@ -2798,3 +2798,46 @@ barcha tanlagichlar, va davomat ekranidagi ko'rsatkichlar.
     **Bot har rolga oʻziga yarasha gapiradi** (ADR-49): yordam roʻyxati
     ruxsatdan quriladi, ya'ni bot javob bermaydigan savolni taklif
     qilmaydi.
+
+37. **Mustaqil audit — oʻn bitta aniq xato** (2026-10-30). Mijoz prod
+    maʼlumotidan oʻlchab roʻyxat berdi. Toʻrttasi bitta xatoning har
+    xil kiyimdagi koʻrinishi boʻlib chiqdi: **sana hujjatniki emas
+    edi**.
+
+    * Hisob-faktura ledger yozuvi `timezone.now()` bilan yozilardi,
+      toʻlov esa `paid_at` bilan — 30.09 holatiga ledger'da 446 ta
+      kredit bor edi va birorta ham debet yoʻq. Natijada hamma oila
+      "avansda" (526 785 200), qarz esa nol. Endi yozuv
+      `invoice.issued_date` bilan ketadi.
+    * Oylik "toʻlandi" deganda `paid_at` tugma bosilgan vaqtga
+      yozilardi. Endi oynada sana soʻraladi (kelajak ham, davr
+      boshidan oldin ham mumkin emas) va pul oʻsha kun bilan chiqadi.
+    * Frontend sanani `toISOString()` bilan qurardi — UTC+5 da
+      mahalliy yarim tun bir kun orqaga siljiydi, va "shu oy" filtri
+      30.09–30.10 ni soʻrardi. Sakkizta ekran `lib/format.ts` ga
+      oʻtkazildi; qoʻriqchi test manbada `toISOString()` ni umuman
+      rad etadi.
+    * Qabul sanasidan OLDINGI oylarga faktura va davomat yozilardi
+      (131 ta hujjat: toʻliq baza, ustiga −100%, natija 0). Endi
+      yozilmaydi; mavjudlari uchun `void_pre_enrolment_invoices`
+      (dry-run sukut).
+
+    Qolgani: qoldiqdan ortiq chiqim `422` berib ham bazada qolardi
+    (`perform_create` endi atomar); storno sababsiz oʻtardi va
+    komissiyani egasiz qoldirardi (sabab kamida 5 belgi, komissiya
+    qarshi yozuv bilan yopiladi — Bosqich 12.5 dagi qaror
+    almashtirildi); maʼlumotnoma chegirmasi preview'da koʻrinmasdi va
+    hujjatsiz tasdiqlanardi, tasdiqlangan daʼvoni bekor qilib
+    boʻlmasdi; qoralama oyda foyda oyliksiz chiqardi (endi taxminiy,
+    banner bilan); soliq stavkalari ekranda bor, bazada nol edi (ekran
+    endi bazadagini koʻrsatadi); dashboard kassa kartasi egasining
+    pulini sanamasdi (tenglik yopildi); javobgarlikdagi summa
+    muallifsiz harakatlarni tashlab yuborardi (endi "Belgilanmagan"
+    qatorida, `?as_of=` bilan).
+
+    Bitta narsa kod emas edi: 30.09 dagi manfiy bank — seed maʼlumoti.
+    Seeder terminal/Payme toʻlovlarini yozadi, lekin ularni hech
+    qachon "bankka tushdi" deb yopmaydi, va yoʻldagi pul (220 672 770)
+    oylab toʻplanib boradi. ADR-29 tekshiruvi bank uchun ham
+    ishlaydi — `post_movement` qop turidan qatʼi nazar qoldiqni
+    tekshiradi.

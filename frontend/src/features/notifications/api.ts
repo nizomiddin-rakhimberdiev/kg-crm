@@ -69,6 +69,8 @@ export const settingsApi = {
     api.get<{
       current: string
       note: string
+      /** Hozir bazada turgan qiymatlar (audit, 2026-10-30). */
+      current_values: Record<string, SettingValue>
       presets: Array<{ id: string; title: string; values: Record<string, SettingValue> }>
     }>('/settings/tax-presets'),
   applyTaxPreset: (preset: string) =>

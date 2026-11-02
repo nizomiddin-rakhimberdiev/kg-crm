@@ -91,13 +91,28 @@ export function TaxPresetPanel({ editable }: { editable: boolean }) {
           /* Kalit EMAS, nomi (ADR-45): auditda bu roʻyxat
              `payroll.income_tax_rate` boʻlib turardi. Kalitning oʻzi
              `title` da qoladi — qoʻllab-quvvatlash uchun. */
+          /* Chapda — HOZIR bazada turgan qiymat, oʻngda presetniki.
+             Auditda (2026-10-30) ekran faqat presetni koʻrsatardi va
+             bogʻcha "12 %" ni oʻqib, soliq ushlanyapti deb oʻylardi —
+             bazada esa 0 turardi va oylikda hech narsa hisoblanmasdi. */
           <ul className="grid gap-x-4 gap-y-0.5 text-xs text-slate-600 sm:grid-cols-2">
-            {Object.entries(preset.values).map(([key, item]) => (
-              <li key={key} className="flex justify-between gap-2">
-                <span title={key}>{SETTING_META[key]?.label ?? key}</span>
-                <span className="tabular-nums">{presetValue(key, item)}</span>
-              </li>
-            ))}
+            {Object.entries(preset.values).map(([key, item]) => {
+              const now = data.current_values?.[key]
+              const differs = String(now) !== String(item)
+              return (
+                <li key={key} className="flex justify-between gap-2">
+                  <span title={key}>{SETTING_META[key]?.label ?? key}</span>
+                  <span className="tabular-nums">
+                    <span className={differs ? 'text-orik-700' : ''}>{presetValue(key, now)}</span>
+                    {differs && (
+                      <span className="ml-1.5 text-slate-400">
+                        {t('→ {value}', { value: presetValue(key, item) })}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              )
+            })}
           </ul>
         )}
         {error && (

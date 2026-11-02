@@ -696,6 +696,9 @@ def _profit_vs_cash(pnl: dict[str, Any], flow: dict[str, Any]) -> dict[str, Any]
     total = operating_profit + sum((value for _key, _label, value in steps), ZERO)
     return {
         "operating_profit": _m(operating_profit),
+        # Oylik hali hisoblanmagan boʻlsa, foyda TAXMINIY (audit,
+        # 2026-10-30) — ekran ham, PDF ham buni aytadi.
+        "payroll_estimated": bool(pnl.get("payroll_estimated")),
         "steps": [{"id": key, "label": label, "value": _m(value)} for key, label, value in steps],
         "money_change": _m(change),
         "check": {"ok": total == change, "difference": _m(change - total)},

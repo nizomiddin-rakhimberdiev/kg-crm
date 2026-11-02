@@ -2917,3 +2917,45 @@ msgstr "More than the loan cannot come back — {amount} UZS is still out."
 
 msgid "Qarzga berildi"
 msgstr "Lent out"
+
+msgid "Bekor qilindi: {reason}"
+msgstr "Cancelled: {reason}"
+
+msgid "Bekor qilish sababini yozing."
+msgstr "Write the reason for cancelling."
+
+msgid "Belgilanmagan"
+msgstr "Unassigned"
+
+msgid "Bola {date} kuni hali bogʻchada boʻlmagan."
+msgstr "The child was not at the kindergarten on {date}."
+
+msgid "Bu turdagi daʼvo hujjatsiz tasdiqlanmaydi — maʼlumotnoma raqamini yozing yoki nusxasini yuklang."
+msgstr "A claim of this kind cannot be approved without a document — write the certificate number or upload a copy."
+
+msgid "Daʼvo hisob-fakturaga tushgan — uni tuzatish qatori bilan qaytaring."
+msgstr "The claim is already on an invoice — return it with a correction line."
+
+msgid "Faqat tasdiqlangan daʼvo bekor qilinadi — bu daʼvo '{status}' holatida."
+msgstr "Only an approved claim can be cancelled — this one is '{status}'."
+
+msgid "Qaytarish sababini yozing — kamida {n} ta belgi."
+msgstr "Write the reason for the reversal — at least {n} characters."
+
+msgid "Toʻlov sanasi kelajakda boʻlishi mumkin emas."
+msgstr "The payment date cannot be in the future."
+
+msgid "Toʻlov sanasi {period} dan oldin boʻlishi mumkin emas."
+msgstr "The payment date cannot be earlier than {period}."
+
+msgid "{child} {period} oyida bogʻchada boʻlmagan — hujjat yozilmaydi."
+msgstr "{child} was not at the kindergarten in {period} — no document is issued."
+
+msgid "{note}; maʼlumotnoma boʻyicha −{credit}"
+msgstr "{note}; by certificate −{credit}"
+
+msgid "maʼlumotnoma boʻyicha −{credit}"
+msgstr "by certificate −{credit}"
+
+msgid "{field}: sana notoʻgʻri."
+msgstr "{field}: the date is wrong."

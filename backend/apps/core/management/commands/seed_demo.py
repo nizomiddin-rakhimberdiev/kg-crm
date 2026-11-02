@@ -412,8 +412,10 @@ class Command(BaseCommand):
             if random.random() < 0.62:
                 enrolled = opening + timedelta(days=random.randint(0, 6))
             else:
-                span = max((today - opening).days - 10, 1)
-                enrolled = opening + timedelta(days=random.randint(7, span))
+                # Bir oylik oynada oraliq 7 kundan qisqa boʻlishi
+                # mumkin — oʻshanda hammasi ochilish kuniga tushadi.
+                span = max((today - opening).days - 10, 0)
+                enrolled = opening + timedelta(days=random.randint(min(7, span), span))
 
             source, note = self._heard_from()
             child = Child.objects.create(

@@ -67,12 +67,29 @@ def _as(tenant: Any, role: str) -> APIClient:
     return client
 
 
-def _post(client: APIClient, child: Child, start: str = "2026-09-07", end: str = "2026-09-11"):
-    return client.post(
-        URL,
-        {"child_id": str(child.id), "kind": "medical", "date_from": start, "date_to": end},
-        format="json",
-    )
+def _post(
+    client: APIClient,
+    child: Child,
+    start: str = "2026-09-07",
+    end: str = "2026-09-11",
+    document_no: str = "M-4821",
+):
+    """
+    Tibbiy daʼvo — maʼlumotnoma RAQAMI bilan.
+
+    2026-10-30 dan beri hujjat talab qiladigan tur hujjatsiz
+    tasdiqlanmaydi (audit), shuning uchun avtomatik tasdiqlashni
+    sinaydigan soʻrov raqam bilan yuboriladi.
+    """
+    payload = {
+        "child_id": str(child.id),
+        "kind": "medical",
+        "date_from": start,
+        "date_to": end,
+    }
+    if document_no:
+        payload["document_no"] = document_no
+    return client.post(URL, payload, format="json")
 
 
 @pytest.mark.parametrize("role", ["director", "attendance_manager"])
@@ -127,3 +144,16 @@ def test_the_paper_can_follow_an_approved_claim_once(tenant_a: Any):
 
     assert first.status_code == 200, first.content
     assert second.status_code == 422
+
+
+def test_a_medical_claim_without_a_paper_waits_even_for_an_approver(tenant_a: Any):
+    """
+    Hujjatsiz tibbiy daʼvo KUTIB turadi — xato bermaydi (audit, 2026-10-30).
+
+    Qogʻoz keyin kelishi mumkin, ariza esa allaqachon yozilgan
+    boʻlishi kerak: tasdiqlash qogʻoz kelganda boʻladi.
+    """
+    response = _post(tenant_a.client(), _child(tenant_a), document_no="")
+
+    assert response.status_code == 201, response.json()
+    assert response.json()["data"]["status"] == ClaimStatus.PENDING

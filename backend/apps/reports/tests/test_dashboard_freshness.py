@@ -61,5 +61,5 @@ def test_a_payment_and_its_reversal_show_up_immediately(
     assert Decimal(_kpis(tenant_a)["outstanding_debt"]) == Decimal("0")
 
     with django_capture_on_commit_callbacks(execute=True), organization_context(org.id):
-        reverse_payment(payment=payment, reason="xato")
+        reverse_payment(payment=payment, reason="Kassir xato kiritdi")
     assert Decimal(_kpis(tenant_a)["outstanding_debt"]) == Decimal("1000000")

@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import PurePosixPath
 from typing import Any
 
+from django.db import transaction
 from django.db.models import F, Max
 from django.http import FileResponse, Http404
 from django.utils.translation import gettext
@@ -99,9 +100,16 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
             ExpenseSerializer if self.request.method in ("GET", "HEAD") else ExpenseWriteSerializer
         )
 
+    @transaction.atomic
     def perform_create(self, serializer: Any) -> None:
         """
         Chiqim DARHOL tasdiqlanadi (PLAN 7.2, egasining qarori 2026-10-06).
+
+        **Hammasi yoki hech narsa** (audit, 2026-10-30). Qatorsiz
+        tarmoqda hujjat avval saqlanib, keyin tasdiqlanardi: qoldiq
+        yetmasa tasdiqlash ADR-29 ga urilib `422` berardi, saqlangan
+        `pending` qator esa bazada qolardi. Foydalanuvchi tugmani
+        qayta bosardi — va har bosish yana bitta qator qoʻshardi.
 
         Ilgari u `pending` bo'lib turar va kimdir "Tasdiqlash" tugmasini
         bosishini kutardi. Bog'chada esa chiqimni kiritadigan odam bilan

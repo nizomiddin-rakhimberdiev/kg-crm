@@ -12,6 +12,7 @@ aynan shu yerda kutilmagan narsa borligini aytib qo'yadi
 from __future__ import annotations
 
 import uuid
+from datetime import date
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
@@ -42,6 +43,18 @@ def parse_int(raw: Any, *, field: str = "") -> int | None:
     except (ValueError, TypeError) as exc:
         raise BusinessRuleViolation(
             gettext("{field}: raqam notoʻgʻri.").format(field=field or gettext("Qiymat"))
+        ) from exc
+
+
+def parse_date(raw: Any, *, field: str = "") -> date | None:
+    """`yyyy-mm-dd` → `date`. Boʻsh boʻlsa `None`, buzuq boʻlsa tushunarli xato."""
+    if raw in (None, "", []):
+        return None
+    try:
+        return date.fromisoformat(str(raw))
+    except (ValueError, TypeError) as exc:
+        raise BusinessRuleViolation(
+            gettext("{field}: sana notoʻgʻri.").format(field=field or gettext("Sana"))
         ) from exc
 
 

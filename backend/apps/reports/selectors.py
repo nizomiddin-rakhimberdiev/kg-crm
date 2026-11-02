@@ -828,10 +828,72 @@ def cash_position(*, organization_id: Any, branch_id: Any = None) -> dict[str, A
         - total(direction=MovementDirection.IN, source_type=MovementSource.ADVANCE)
     )
 
+    # Egasi olgan va qoʻshgan pul (audit, 2026-10-30). Ularsiz karta
+    # tengligi yopilmasdi: auditda farq aynan shu ikki qator edi —
+    # 263 000 000 olingan, 95 625 000 qoʻshilgan, ikkalasi ham
+    # koʻrinmasdi.
+    from apps.cash.models import MoneyOperation, OperationKind
+
+    operations = MoneyOperation.objects.filter(organization_id=organization_id)
+    if branch_id:
+        operations = operations.filter(branch_id=branch_id)
+
+    def op_total(kind: str) -> Decimal:
+        return operations.filter(kind=kind).aggregate(t=Coalesce(Sum("amount"), ZERO))["t"]
+
+    owner_draws = op_total(OperationKind.OWNER_DRAW)
+    owner_contributions = op_total(OperationKind.OWNER_CONTRIBUTION)
+
+    # Qolgan hamma harakat — "boshqa". Bu QOLDIQ emas, oʻz yigʻindisi:
+    # oʻtkazma, boshlangʻich qoldiq, qoʻlda tuzatish, sanoq farqi,
+    # ota-onaga qaytarish va qolgan operatsiyalar (kredit, soliq,
+    # boshqa daromad, qarz). Qoldiq qilib qoʻyilsa, karta har qanday
+    # xatoni yashirardi.
+    named = (
+        MovementSource.PAYMENT,
+        MovementSource.PAYMENT_REVERSAL,
+        MovementSource.EXPENSE,
+        MovementSource.PAYROLL,
+        MovementSource.ADVANCE,
+    )
+    rest = movements.exclude(source_type__in=named)
+    owner_ids = list(
+        operations.filter(
+            kind__in=[OperationKind.OWNER_DRAW, OperationKind.OWNER_CONTRIBUTION]
+        ).values_list("id", flat=True)
+    )
+    rest = rest.exclude(source_type=MovementSource.OPERATION, source_id__in=owner_ids)
+    other = (
+        rest.filter(direction=MovementDirection.IN).aggregate(t=Coalesce(Sum("amount"), ZERO))["t"]
+        - rest.filter(direction=MovementDirection.OUT).aggregate(t=Coalesce(Sum("amount"), ZERO))[
+            "t"
+        ]
+    )
+
+    # Yoʻldagi pul — ALOHIDA qator (audit, 2026-10-30). Moliya
+    # markazida u bankdan ayriladi; kartada ham shunday koʻrinishi
+    # kerak, aks holda ikki ekran bitta bankni ikki xil aytardi.
+    from apps.finance.selectors import in_transit as _in_transit
+
+    # Boshlangʻich qiymat — Decimal, `ZERO` EMAS: bu modulda `ZERO`
+    # SQL ifodasi (`Value`), va qator boʻlmaganda `sum()` oʻsha
+    # ifodani qaytarib, `_money()` ni yiqitardi.
+    transit = sum(
+        (
+            Decimal(row["expected_amount"])
+            for row in _in_transit(organization_id=organization_id, branch_id=branch_id)
+        ),
+        Decimal("0"),
+    )
+
     return {
         "income": _money(income - refunded),
         "expenses": _money(spent),
         "payroll": _money(payroll),
+        "owner_draws": _money(owner_draws),
+        "owner_contributions": _money(owner_contributions),
+        "other": _money(other),
+        "in_transit": _money(transit),
         "balance": _money(
             cash_selectors.total_balance(organization_id=organization_id, branch_id=branch_id)
         ),

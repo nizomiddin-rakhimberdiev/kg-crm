@@ -15,6 +15,7 @@ from typing import Any
 
 from django.db.models import DecimalField, Q, Sum, Value
 from django.db.models.functions import Coalesce
+from django.utils.translation import gettext
 
 from apps.cash.models import CashAccount, CashMovement, MovementDirection
 
@@ -134,28 +135,36 @@ def movement_totals(
 # --- Kimning qo'lida qancha (Bosqich 12.5) ---
 
 
-def _custody_totals(*, accounts: Any) -> dict[Any, Decimal]:
+def _custody_totals(*, accounts: Any, up_to: date | None = None) -> dict[Any, Decimal]:
     """
     Naqd kassadagi pul — odam bo'yicha.
 
     Har bir naqd harakat uni yozgan odamga tegishli (to'lovni qabul qilgan
     kassir, chiqimni tasdiqlagan rahbar, sanoqni yopgan odam); ustiga
     TASDIQLANGAN topshiriqlar: berganidan ayiriladi, olganiga qo'shiladi.
-    Yig'indi qop qoldig'iga teng (muallifsiz eski yozuvlar bundan mustasno).
+
+    **Muallifsiz harakatlar ham sanaladi** (audit, 2026-10-30) — `None`
+    kaliti ostida. Ilgari ular filtrda tashlab yuborilardi, va natija
+    jimgina notoʻgʻri boʻlardi: bank komissiyasi muallifsiz yoziladi
+    (uni kassir emas, bank ushlaydi), yaʼni odamga KIRIM yozilib,
+    unga tegishli CHIQIM yozilmasdi. Auditda javobgarlikdagi summa
+    424 823 670 boʻlib koʻrindi, hisoblarda esa 85 131 002 bor edi.
     """
     from apps.cash.models import CashHandover, HandoverStatus
 
+    movements = CashMovement.objects.filter(cash_account__in=accounts)
+    if up_to is not None:
+        movements = movements.filter(occurred_at__date__lte=up_to)
+
     totals: dict[Any, Decimal] = {}
-    for row in (
-        CashMovement.objects.filter(cash_account__in=accounts, created_by__isnull=False)
-        .values("created_by")
-        .annotate(total=_signed_sum())
-    ):
+    for row in movements.values("created_by").annotate(total=_signed_sum()):
         totals[row["created_by"]] = totals.get(row["created_by"], Decimal("0")) + row["total"]
 
     confirmed = CashHandover.objects.filter(
         cash_account__in=accounts, status=HandoverStatus.CONFIRMED
     )
+    if up_to is not None:
+        confirmed = confirmed.filter(created_at__date__lte=up_to)
     for row in confirmed.values("from_user").annotate(total=Sum("amount")):
         totals[row["from_user"]] = totals.get(row["from_user"], Decimal("0")) - row["total"]
     for row in confirmed.values("to_user").annotate(total=Sum("amount")):
@@ -164,7 +173,11 @@ def _custody_totals(*, accounts: Any) -> dict[Any, Decimal]:
 
 
 def custody(
-    *, organization_id: Any, branch_id: Any = None, user_id: Any = None
+    *,
+    organization_id: Any,
+    branch_id: Any = None,
+    user_id: Any = None,
+    as_of: date | None = None,
 ) -> list[dict[str, Any]]:
     """
     Kimning javobgarligida qancha pul — naqd va bank hisobi ALOHIDA.
@@ -179,12 +192,17 @@ def custody(
     if branch_id:
         accounts = accounts.filter(branch_id=branch_id)
     by_kind = {
-        kind: _custody_totals(accounts=accounts.filter(kind=kind)) for kind in ("cash", "bank")
+        kind: _custody_totals(accounts=accounts.filter(kind=kind), up_to=as_of)
+        for kind in ("cash", "bank")
     }
     people = set(by_kind["cash"]) | set(by_kind["bank"])
     if user_id is not None:
         people = {key for key in people if str(key) == str(user_id)}
-    names = dict(User.objects.filter(pk__in=people).values_list("pk", "full_name"))
+    names = dict(
+        User.objects.filter(pk__in=[key for key in people if key is not None]).values_list(
+            "pk", "full_name"
+        )
+    )
     rows = []
     for key in people:
         cash = by_kind["cash"].get(key, Decimal("0"))
@@ -193,8 +211,11 @@ def custody(
             continue
         rows.append(
             {
-                "user_id": str(key),
-                "full_name": names.get(key, ""),
+                "user_id": str(key) if key is not None else None,
+                # Muallifsiz yozuvlar ham koʻrinadi: yigʻindi hisob
+                # qoldigʻiga teng boʻlishi kerak, aks holda jadval
+                # tekshirib boʻlmaydigan raqam boʻlib qoladi.
+                "full_name": names.get(key, "") if key is not None else gettext("Belgilanmagan"),
                 "cash": f"{cash:.2f}",
                 "bank": f"{bank:.2f}",
                 "amount": f"{cash + bank:.2f}",

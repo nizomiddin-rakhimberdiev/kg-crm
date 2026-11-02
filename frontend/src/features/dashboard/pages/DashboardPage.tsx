@@ -146,7 +146,29 @@ function CashPanel({
       sign: '−',
       tone: 'text-slate-600',
     },
-  ]
+    // Egasi olgan va qoʻshgan pul (audit, 2026-10-30). Ularsiz
+    // tenglama yopilmasdi: auditda farq aynan shu ikki qator edi.
+    {
+      label: t('Egasi olgan'),
+      value: Number(cash?.owner_draws ?? 0),
+      sign: '−',
+      tone: 'text-slate-600',
+    },
+    {
+      label: t('Egasi qoʻshgan'),
+      value: Number(cash?.owner_contributions ?? 0),
+      sign: '+',
+      tone: 'text-emerald-600',
+    },
+    // "Boshqa" — qoldiq emas, oʻz yigʻindisi: oʻtkazma, boshlangʻich
+    // qoldiq, sanoq farqi va qolgan operatsiyalar.
+    {
+      label: t('Boshqa harakatlar'),
+      value: Number(cash?.other ?? 0),
+      sign: Number(cash?.other ?? 0) < 0 ? '−' : '+',
+      tone: 'text-slate-600',
+    },
+  ].filter((row) => row.value !== 0)
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">

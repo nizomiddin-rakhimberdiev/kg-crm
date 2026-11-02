@@ -90,6 +90,24 @@ def _amortization(organization_id: Any, branch_id: Any, year: int, month: int) -
     return total
 
 
+def _estimated_payroll(organization_id: Any, branch_id: Any, year: int, month: int) -> Decimal:
+    """
+    Yakunlangan hisoblash boʻlmaganda — faol xodimlar okladi boʻyicha
+    TAXMIN (audit, 2026-10-30).
+
+    Oy ichida ishlagan har bir xodimning bazaviy oyligi qoʻshiladi:
+    oʻsha oydan keyin ishga kirgan yoki undan oldin boʻshagan odam
+    hisobga olinmaydi. Bu aniq raqam emas va shunday deb ham
+    aytiladi — lekin nol undan ham uzoqroq.
+    """
+    from apps.hr.models import Employee
+
+    start, end = _month_bounds(year, month)
+    people = _scoped(Employee.objects, organization_id, branch_id).filter(hire_date__lte=end)
+    people = people.filter(Q(termination_date__isnull=True) | Q(termination_date__gte=start))
+    return people.aggregate(total=Sum("base_salary"))["total"] or ZERO
+
+
 def profit_and_loss(
     *, organization_id: Any, year: int, month: int, branch_id: Any = None
 ) -> dict[str, Any]:
@@ -142,6 +160,15 @@ def profit_and_loss(
     payroll_totals = payroll_rows.aggregate(gross=Sum("gross"), social=Sum("tax_social"))
     payroll = (payroll_totals["gross"] or ZERO) + (payroll_totals["social"] or ZERO)
 
+    # Hisoblash hali yakunlanmagan boʻlsa, oylik NOL emas — taxminiy
+    # (audit, 2026-10-30). Qoralama oyda foyda oyliksiz chiqib, marja
+    # 91,8 % boʻlib koʻrinardi: raqam notoʻgʻri emas, umuman boshqa
+    # savolga javob berardi. Taxmin faol xodimlarning okladidan
+    # olinadi, va javob buni OCHIQ aytadi — ekran banner koʻrsatadi.
+    payroll_estimated = not payroll_rows.exists()
+    if payroll_estimated:
+        payroll = _estimated_payroll(organization_id, branch_id, year, month)
+
     start, end = _month_bounds(year, month)
     owner_draws = (
         operations.filter(
@@ -164,6 +191,7 @@ def profit_and_loss(
             {"category": row["group"], "total": _money(row["total"])} for row in opex_rows
         ],
         "payroll": _money(payroll),
+        "payroll_estimated": payroll_estimated,
         "amortization": _money(amortization),
         "operating_profit": _money(operating_profit),
         "margin": f"{operating_profit / revenue * 100:.1f}" if revenue else None,

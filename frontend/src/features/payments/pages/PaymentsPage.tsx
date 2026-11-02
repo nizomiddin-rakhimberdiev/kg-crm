@@ -40,7 +40,7 @@ import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate, formatMoney } from '@/lib/utils'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
-import { som } from '@/lib/format'
+import { isoDate, som } from '@/lib/format'
 import { QueryError } from '@/components/ui/QueryError'
 import { t } from '@/lib/i18n'
 import { Select } from '@/components/ui/Select'
@@ -128,9 +128,9 @@ export default function PaymentsPage() {
 
   // Jurnal filtri (PLAN 1.8). Sukut — shu oy: kassir odatda "bugun va
   // kecha nima bo'ldi" degan savol bilan keladi.
-  const today = new Date().toISOString().slice(0, 10)
+  const today = isoDate(new Date())
   const monthStart = `${year}-${String(month).padStart(2, '0')}-01`
-  const monthEnd = new Date(year, month, 0).toISOString().slice(0, 10)
+  const monthEnd = isoDate(new Date(year, month, 0))
   const [journal, setJournal] = useState({
     paid_from: monthStart,
     paid_to: monthEnd,
@@ -301,10 +301,14 @@ export default function PaymentsPage() {
           <label htmlFor="rev-reason" className="mt-4 block text-xs font-medium text-slate-600">
             {t('Sabab')}
           </label>
+          {/* Server kamida besh belgi talab qiladi (audit,
+              2026-10-30) — ekran ham: odam "ok" yozib yuborib,
+              `400` olmasligi kerak. */}
           <input
             id="rev-reason"
             required
             autoFocus
+            minLength={5}
             maxLength={255}
             value={reverseReason}
             onChange={(e) => setReverseReason(e.target.value)}

@@ -17,11 +17,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle, Lock } from 'lucide-react'
+import { DateInput } from '@/components/ui/DateInput'
 import { Modal } from '@/components/ui/Modal'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { cashApi } from '@/features/cash/api'
 import { payrollApi, type PayoutLine, type PlannedPayout } from '@/features/payroll/api'
-import { money } from '@/lib/format'
+import { money, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { Select } from '@/components/ui/Select'
@@ -34,19 +35,31 @@ const PART_LABEL: Record<string, string> = {
 export function PayoutModal({
   runId,
   period,
+  periodStart,
   saving,
   onClose,
   onConfirm,
 }: {
   runId: string
   period: string
+  /** Davr boshi `yyyy-mm-dd` — undan oldin toʻlov boʻlishi mumkin emas. */
+  periodStart: string
   saving: boolean
   onClose: () => void
-  onConfirm: (payload: { payouts: PayoutLine[]; allow_negative: boolean }) => void
+  onConfirm: (payload: {
+    payouts: PayoutLine[]
+    allow_negative: boolean
+    /** Pul QAYSI kuni chiqqani (audit, 2026-10-30). */
+    paid_on: string
+  }) => void
 }) {
   const organizationId = useOrganizationId()
   const [rows, setRows] = useState<PlannedPayout[]>([])
   const [confirmed, setConfirmed] = useState(false)
+  // Toʻlov sanasi — tugma bosilgan kun EMAS (audit, 2026-10-30).
+  // Sentabr oyligi 5-oktabrda berilgan boʻlsa, pul oʻsha kuni
+  // chiqqan: kassa usulidagi hisobot buni shunday koʻrsatishi kerak.
+  const [paidOn, setPaidOn] = useState(today())
 
   const planned = useQuery({
     queryKey: ['org', organizationId, 'payroll', 'planned-payouts', runId],
@@ -199,6 +212,21 @@ export function PayoutModal({
           </>
         )}
 
+        <div className="mt-4 max-w-xs">
+          <label htmlFor="payout-date" className="mb-1 block text-xs font-medium text-slate-600">
+            {t('Qaysi kuni toʻlandi')} <span className="text-red-500">*</span>
+          </label>
+          <DateInput
+            id="payout-date"
+            required
+            min={periodStart}
+            max={today()}
+            value={paidOn}
+            onChange={setPaidOn}
+          />
+          <p className="mt-1 text-xs text-slate-500">{t('Pul shu sana bilan kassadan chiqadi.')}</p>
+        </div>
+
         <div className="sticky bottom-0 -mx-5 -mb-5 mt-5 flex flex-col-reverse gap-2 border-t border-slate-100 bg-white px-5 py-3 sm:-mx-6 sm:-mb-6 sm:flex-row sm:justify-end sm:px-6">
           <button
             type="button"
@@ -219,6 +247,7 @@ export function PayoutModal({
                   cash_account_id: row.cash_account_id,
                 })),
                 allow_negative: confirmed,
+                paid_on: paidOn,
               })
             }
             className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-nihol-600 px-4 py-2 text-sm font-semibold text-white hover:bg-nihol-700 disabled:opacity-60"

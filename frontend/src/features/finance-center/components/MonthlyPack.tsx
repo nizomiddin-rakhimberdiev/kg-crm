@@ -248,6 +248,14 @@ function Waterfall({ section }: { section: PackSection }) {
   const check = section.check as { ok: boolean }
   return (
     <div className="space-y-1 text-sm">
+      {/* Oylik hisoblanmagan oyda foyda TAXMINIY (audit, 2026-10-30):
+          raqam notoʻgʻri emas, lekin u boshqa savolga javob beradi —
+          va buni ekran aytishi kerak. */}
+      {section.payroll_estimated ? (
+        <p className="mb-2 rounded-lg bg-orik-50 px-3 py-2 text-xs text-orik-800">
+          {t('Bu oyning oyligi hali hisoblanmagan — foyda taxminiy.')}
+        </p>
+      ) : null}
       <p className="flex justify-between font-semibold">
         <span>{t('Operatsion foyda')}</span>
         <span className="tabular-nums">{cell(section.operating_profit)}</span>

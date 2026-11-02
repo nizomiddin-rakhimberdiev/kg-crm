@@ -94,6 +94,9 @@ def _absence_claim(tenant: Any) -> None:
             kind="medical",
             date_from=date(2026, 10, 13),
             date_to=date(2026, 10, 16),
+            # Hujjat raqami: tibbiy daʼvo hujjatsiz tasdiqlanmaydi
+            # (audit, 2026-10-30).
+            document_no="M-4821",
             note="Kasallik",
             created_by=tenant.owner,
         )

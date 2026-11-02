@@ -49,11 +49,22 @@ PRESETS: dict[str, tuple[Any, dict[str, Any]]] = {
 
 
 def presets() -> dict[str, Any]:
+    """
+    Rejimlar roʻyxati va HOZIR bazada turgan qiymatlar.
+
+    `current_values` auditdan keyin qoʻshildi (2026-10-30): ekran
+    presetning qiymatlarini koʻrsatardi va bogʻcha "12 %" ni oʻqib,
+    soliq ushlanyapti deb oʻylardi — bazada esa 0 turardi va oylikda
+    hech narsa hisoblanmasdi. Ekran bazadagi haqiqatni koʻrsatishi
+    kerak, presetniki esa taklif boʻlib qolishi kerak.
+    """
     from apps.settings_app.services import get_setting
 
+    keys = sorted({key for _title, values in PRESETS.values() for key in values})
     return {
         "current": get_setting(key="tax.regime"),
         "note": gettext("Qiymatlar — boshlangʻich; buxgalter tasdiqlashi kerak."),
+        "current_values": {key: get_setting(key=key) for key in keys},
         "presets": [
             {"id": key, "title": str(title), "values": values}
             for key, (title, values) in PRESETS.items()

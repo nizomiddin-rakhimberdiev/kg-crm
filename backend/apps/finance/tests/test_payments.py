@@ -250,9 +250,9 @@ class TestReversal:
             payment = services.record_payment(
                 child=child, amount=AMOUNT, method="cash", invoice=invoice
             )
-            services.reverse_payment(payment=payment)
+            services.reverse_payment(payment=payment, reason="Kassir xato kiritdi")
             with pytest.raises(BusinessRuleViolation, match="allaqachon"):
-                services.reverse_payment(payment=payment)
+                services.reverse_payment(payment=payment, reason="Kassir xato kiritdi")
 
     def test_reversed_payment_is_excluded_from_daily_summary(self, tenant_a, child, invoice):
         with organization_context(tenant_a.organization.id):
@@ -262,7 +262,7 @@ class TestReversal:
             bad = services.record_payment(
                 child=child, amount=Decimal("300000"), method="cash", invoice=invoice
             )
-            services.reverse_payment(payment=bad, reason="Xato")
+            services.reverse_payment(payment=bad, reason="Kassir xato kiritdi")
 
             summary = services.daily_cash_summary(
                 organization_id=tenant_a.organization.id, on_date=timezone.localdate()

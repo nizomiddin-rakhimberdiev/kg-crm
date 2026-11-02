@@ -105,7 +105,14 @@ def test_3_july_salary_is_a_july_cost_paid_in_august_and_september(org: Any):
 
     july, august = _pnl(org, 2026, 7), _pnl(org, 2026, 8)
     assert _d(july["payroll"]) == Decimal("4000000")
-    assert _d(august["payroll"]) == 0
+    assert july["payroll_estimated"] is False
+
+    # Avgustda hisoblash YOʻQ — va oylik nol emas, TAXMINIY (audit,
+    # 2026-10-30). Ilgari bu yerda 0 turardi va qoralama oyda foyda
+    # oyliksiz chiqardi: xodim ishlagan, xarajat esa koʻrinmasdi.
+    # Javob buni ochiq aytadi, ekran esa banner koʻrsatadi.
+    assert _d(august["payroll"]) == Decimal("4000000")
+    assert august["payroll_estimated"] is True
 
     assert _d(_flow(org, 2026, 8)["outflows"]["payroll"]) == Decimal("2000000")
     assert _d(_flow(org, 2026, 9)["outflows"]["payroll"]) == Decimal("2000000")

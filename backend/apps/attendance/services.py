@@ -51,6 +51,14 @@ def mark_bulk(
         ).values_list("child_id", flat=True)
     )
 
+    # Bola KELMAGAN kunga davomat yozilmaydi (audit, 2026-10-30).
+    #
+    # Auditda oktabrda qabul qilingan bolaning 01.05 dan boshlangan
+    # 127 ta davomat yozuvi topildi. Guruh aʼzoligi bu savolga javob
+    # bermaydi: aʼzolik keyin ochilgan boʻlsa ham, eski sanaga yozuv
+    # qilish mumkin edi.
+    enrolled_on = dict(Child.objects.filter(pk__in=allowed).values_list("id", "enrolled_on"))
+
     valid_statuses = set(AttendanceStatus.values)
     saved: list[AttendanceRecord] = []
     # What the register said before — the absence alert goes only on a
@@ -67,6 +75,14 @@ def mark_bulk(
         if child_id not in allowed:
             raise BusinessRuleViolation(
                 gettext("Bola {child_id} bu guruhda faol emas.").format(child_id=child_id)
+            )
+
+        arrived = enrolled_on.get(child_id)
+        if arrived is not None and attendance_date < arrived:
+            raise BusinessRuleViolation(
+                gettext("Bola {date} kuni hali bogʻchada boʻlmagan.").format(
+                    date=arrived.strftime("%d.%m.%Y")
+                )
             )
 
         status = row.get("status")

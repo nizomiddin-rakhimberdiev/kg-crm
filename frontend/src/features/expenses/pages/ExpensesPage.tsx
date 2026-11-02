@@ -31,7 +31,7 @@ import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { QueryError } from '@/components/ui/QueryError'
 import { EmptyRow } from '@/components/ui/EmptyState'
-import { formatDate, quantity, som, today } from '@/lib/format'
+import { formatDate, isoDate, quantity, som, today } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { groupCategories } from '@/features/expenses/categoryGroups'
 import { Select } from '@/components/ui/Select'
@@ -50,7 +50,7 @@ const monthRange = () => {
   const now = new Date()
   const first = new Date(now.getFullYear(), now.getMonth(), 1)
   const last = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-  return [first.toISOString().slice(0, 10), last.toISOString().slice(0, 10)] as const
+  return [isoDate(first), isoDate(last)] as const
 }
 
 interface ExpenseFormState {

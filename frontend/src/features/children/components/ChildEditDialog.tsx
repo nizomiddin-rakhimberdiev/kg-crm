@@ -11,6 +11,7 @@
  */
 
 import { useState } from 'react'
+import { today } from '@/lib/format'
 import { HEARD_FROM } from '@/features/children/heardFrom'
 import { useMutation } from '@tanstack/react-query'
 import { DateInput } from '@/components/ui/DateInput'
@@ -122,7 +123,7 @@ export function ChildEditDialog({
             <DateInput
               id="ce-dob"
               required
-              max={new Date().toISOString().slice(0, 10)}
+              max={today()}
               value={form.date_of_birth}
               onChange={(iso) => setForm((p) => ({ ...p, date_of_birth: iso }))}
             />

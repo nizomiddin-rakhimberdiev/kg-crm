@@ -2917,3 +2917,45 @@ msgstr "Нельзя вернуть больше долга — осталось
 
 msgid "Qarzga berildi"
 msgstr "Выдано в долг"
+
+msgid "Bekor qilindi: {reason}"
+msgstr "Отменено: {reason}"
+
+msgid "Bekor qilish sababini yozing."
+msgstr "Укажите причину отмены."
+
+msgid "Belgilanmagan"
+msgstr "Не указан"
+
+msgid "Bola {date} kuni hali bogʻchada boʻlmagan."
+msgstr "Ребёнок на {date} ещё не был в саду."
+
+msgid "Bu turdagi daʼvo hujjatsiz tasdiqlanmaydi — maʼlumotnoma raqamini yozing yoki nusxasini yuklang."
+msgstr "Заявление этого типа нельзя утвердить без документа — укажите номер справки или загрузите копию."
+
+msgid "Daʼvo hisob-fakturaga tushgan — uni tuzatish qatori bilan qaytaring."
+msgstr "Заявление уже попало в счёт — верните его корректирующей строкой."
+
+msgid "Faqat tasdiqlangan daʼvo bekor qilinadi — bu daʼvo '{status}' holatida."
+msgstr "Отменить можно только утверждённое заявление — это в статусе «{status}»."
+
+msgid "Qaytarish sababini yozing — kamida {n} ta belgi."
+msgstr "Укажите причину возврата — минимум {n} символов."
+
+msgid "Toʻlov sanasi kelajakda boʻlishi mumkin emas."
+msgstr "Дата выплаты не может быть в будущем."
+
+msgid "Toʻlov sanasi {period} dan oldin boʻlishi mumkin emas."
+msgstr "Дата выплаты не может быть раньше {period}."
+
+msgid "{child} {period} oyida bogʻchada boʻlmagan — hujjat yozilmaydi."
+msgstr "{child} не был в саду в {period} — документ не выставляется."
+
+msgid "{note}; maʼlumotnoma boʻyicha −{credit}"
+msgstr "{note}; по справке −{credit}"
+
+msgid "maʼlumotnoma boʻyicha −{credit}"
+msgstr "по справке −{credit}"
+
+msgid "{field}: sana notoʻgʻri."
+msgstr "{field}: неверная дата."

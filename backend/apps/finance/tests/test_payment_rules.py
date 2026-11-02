@@ -247,7 +247,7 @@ def test_a_payroll_deduction_is_withheld_from_that_months_salary(
             item.advance + item.tuition
         )
 
-        finance.reverse_payment(payment=Payment.objects.get(), reason="xato")
+        finance.reverse_payment(payment=Payment.objects.get(), reason="Kassir xato kiritdi")
         item.refresh_from_db()
     assert item.tuition == Decimal("0")
 

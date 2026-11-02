@@ -45,6 +45,8 @@ __all__ = [
     "billable_days",
     "daily_rate_for",
     "approve_claim",
+    "can_approve_now",
+    "cancel_claim",
     "reject_claim",
     "pending_credits",
 ]
@@ -289,6 +291,20 @@ def attach_document(*, claim: AbsenceClaim, uploaded: Any) -> AbsenceClaim:
     return claim
 
 
+def can_approve_now(*, claim: AbsenceClaim) -> bool:
+    """
+    Daʼvoni HOZIR tasdiqlab boʻladimi — hujjati joyidami?
+
+    Avtomatik tasdiqlash uchun: hujjat talab qilinadigan turda qogʻoz
+    keyinroq kelishi mumkin, va shu sabab ariza umuman yozilmay
+    qolmasligi kerak (audit, 2026-10-30).
+    """
+    kind = kind_for(organization=claim.organization, code=claim.kind)
+    if not kind.requires_document:
+        return True
+    return bool(claim.document_no.strip() or claim.document_file)
+
+
 @transaction.atomic
 def approve_claim(*, claim: AbsenceClaim, approved_by: Any = None, note: str = "") -> AbsenceClaim:
     """
@@ -305,7 +321,6 @@ def approve_claim(*, claim: AbsenceClaim, approved_by: Any = None, note: str = "
                 status=claim.get_status_display()
             )
         )
-
     child = claim.child
     days = billable_days(
         organization_id=claim.organization_id,
@@ -324,6 +339,17 @@ def approve_claim(*, claim: AbsenceClaim, approved_by: Any = None, note: str = "
     from apps.finance.charges import credit_for_days
 
     absence_kind = kind_for(organization=claim.organization, code=claim.kind)
+    # Hujjat talab qiladigan turda hujjatsiz tasdiq yoʻq (audit,
+    # 2026-10-30). Maʼlumotnoma — pulni qaytarish ASOSI; uning oʻzi
+    # boʻlmasa, qaytarishga asos ham yoʻq. Qogʻoz nusxaning raqami ham
+    # hujjat: skaner har bogʻchada ham yoʻq.
+    if absence_kind.requires_document and not (claim.document_no.strip() or claim.document_file):
+        raise BusinessRuleViolation(
+            gettext(
+                "Bu turdagi daʼvo hujjatsiz tasdiqlanmaydi — "
+                "maʼlumotnoma raqamini yozing yoki nusxasini yuklang."
+            )
+        )
     basis = absence_kind.refund_mode
     if absence_kind.full_rate_from_days and days >= absence_kind.full_rate_from_days:
         basis = RefundMode.FULL_RATE
@@ -398,6 +424,40 @@ def reject_claim(*, claim: AbsenceClaim, approved_by: Any = None, note: str = ""
     claim.approved_by = approved_by
     claim.decided_at = timezone.now()
     claim.decision_note = note[:255]
+    claim.save(update_fields=["status", "approved_by", "decided_at", "decision_note", "updated_at"])
+    return claim
+
+
+@transaction.atomic
+def cancel_claim(*, claim: AbsenceClaim, reason: str, approved_by: Any = None) -> AbsenceClaim:
+    """
+    Tasdiqlangan daʼvoni bekor qiladi — SABAB bilan (audit, 2026-10-30).
+
+    Ilgari tasdiqlangan daʼvo abadiy qolardi: xato tasdiq ham,
+    keyin oʻzgargan kelishuv ham. Daʼvoning oʻzi oʻchirilmaydi —
+    u `rad etilgan` boʻladi va sabab yozuvda qoladi.
+
+    Fakturaga TUSHGAN daʼvo bu yerda bekor qilinmaydi: u allaqachon
+    pul harakati, va uni faqat tuzatish qatori qaytaradi
+    (3-invariant).
+    """
+    if claim.status == ClaimStatus.APPLIED:
+        raise BusinessRuleViolation(
+            gettext("Daʼvo hisob-fakturaga tushgan — uni tuzatish qatori bilan qaytaring.")
+        )
+    if claim.status != ClaimStatus.APPROVED:
+        raise BusinessRuleViolation(
+            gettext(
+                "Faqat tasdiqlangan daʼvo bekor qilinadi — bu daʼvo '{status}' holatida."
+            ).format(status=claim.get_status_display())
+        )
+    if not reason.strip():
+        raise BusinessRuleViolation(gettext("Bekor qilish sababini yozing."))
+
+    claim.status = ClaimStatus.REJECTED
+    claim.approved_by = approved_by
+    claim.decided_at = timezone.now()
+    claim.decision_note = gettext("Bekor qilindi: {reason}").format(reason=reason.strip())[:255]
     claim.save(update_fields=["status", "approved_by", "decided_at", "decision_note", "updated_at"])
     return claim
 

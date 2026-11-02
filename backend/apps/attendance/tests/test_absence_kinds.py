@@ -63,9 +63,21 @@ def _child(tenant: Any) -> Child:
 
 
 def _claim(tenant: Any, child: Child, kind: str, start: str, end: str) -> Any:
+    """
+    Maʼlumotnoma RAQAMI bilan: 2026-10-30 dan beri hujjat talab
+    qiladigan tur hujjatsiz tasdiqlanmaydi (audit), bu testlar esa
+    qaytariladigan summani sinaydi — yaʼni daʼvo tasdiqlangan
+    boʻlishi kerak.
+    """
     return tenant.client().post(
         URL,
-        {"child_id": str(child.id), "kind": kind, "date_from": start, "date_to": end},
+        {
+            "child_id": str(child.id),
+            "kind": kind,
+            "date_from": start,
+            "date_to": end,
+            "document_no": "M-4821",
+        },
         format="json",
     )
 

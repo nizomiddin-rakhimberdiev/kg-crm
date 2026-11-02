@@ -389,6 +389,31 @@ def _credit_formula(claim: Any, amount: Decimal) -> str:
     return full
 
 
+def pending_absence_credit(*, child: Any, amount_due: Decimal) -> Decimal:
+    """
+    Tasdiqlangan, lekin hali qoʻllanmagan daʼvolarning YIGʻINDISI.
+
+    Hech narsa yozmaydi — preview uchun. Hisob `_apply_absence_credits`
+    bilan bir xil: daʼvolar sana boʻyicha olinadi va yigʻindi hisob-
+    faktura summasidan oshmaydi (hujjat manfiy boʻlmaydi).
+    """
+    from apps.attendance.models_absence import AbsenceClaim, ClaimStatus
+
+    remaining = amount_due
+    total = Decimal("0")
+    for claim in AbsenceClaim.objects.filter(child=child, status=ClaimStatus.APPROVED).order_by(
+        "date_from"
+    ):
+        if remaining <= 0:
+            break
+        credit = min(claim.credit_amount, remaining)
+        if credit <= 0:
+            continue
+        total += credit
+        remaining = _money(remaining - credit)
+    return _money(total)
+
+
 def _apply_absence_credits(
     *, invoice: Invoice, amount_due: Decimal, created_by: Any = None
 ) -> Decimal:
@@ -552,6 +577,17 @@ def issue_invoice(
     emas (docs/03 §26).
     """
     assert_month_open(branch=child.branch, year=period_year, month=period_month)
+    # Bola KELMAGAN oyga hujjat yozilmaydi (audit, 2026-10-30).
+    # Nomzodlar roʻyxati buni allaqachon filtrlaydi; bu yerda —
+    # bitta bolaga qoʻlda chiqarish uchun.
+    from apps.children.services import is_billable_for
+
+    if not is_billable_for(child, period_year=period_year, period_month=period_month):
+        raise BusinessRuleViolation(
+            gettext("{child} {period} oyida bogʻchada boʻlmagan — hujjat yozilmaydi.").format(
+                child=child.full_name, period=f"{period_month:02d}.{period_year}"
+            )
+        )
     # Summa va qatorlar — YAGONA hisoblagichdan (Bosqich 12.1): oldindan
     # ko'rish, qayta hisob stavkasi va "Nega?" ham aynan shuni o'qiydi.
     charge = plan_month(child, period_year, period_month)
@@ -665,7 +701,13 @@ def issue_invoice(
             source_type=SourceType.INVOICE,
             source_id=invoice.id,
             description=f"Hisob-faktura {invoice.number}",
-            occurred_at=timezone.now(),
+            # Yozuv HUJJAT sanasi bilan (audit, 2026-10-30). Ilgari bu
+            # yerda `timezone.now()` turardi: orqaga sanab yozilgan yoki
+            # import qilingan faktura ledger'da BUGUN paydo boʻlardi, va
+            # sanaga qarab tuzilgan har qanday hisobot buzilardi —
+            # toʻlovlar oʻz sanasida, hisoblangan pul esa bugun.
+            # Auditda 30.09 holatida 446 ta kredit bor, debet yoʻq edi.
+            occurred_at=timezone.make_aware(datetime.combine(invoice.issued_date, time.min)),
             created_by=created_by,
         )
     else:
@@ -786,16 +828,22 @@ def cancel_invoice(*, invoice: Invoice, reason: str = "", created_by: Any = None
     invoice.status = InvoiceStatus.CANCELLED
     invoice.save(update_fields=["status", "updated_at"])
 
-    post_ledger_entry(
-        child=invoice.child,
-        entry_type=EntryType.ADJUSTMENT,
-        direction=Direction.CREDIT,
-        amount=invoice.amount_due,
-        source_type=SourceType.INVOICE,
-        source_id=invoice.id,
-        description=f"Bekor qilindi {invoice.number}: {reason}"[:255],
-        created_by=created_by,
-    )
+    # Nol summali hujjatda qaytariladigan narsa yoʻq (audit,
+    # 2026-10-30). Ilgari bu yerda baribir yozuv urinib koʻrilardi va
+    # "ledger summasi musbat boʻlishi kerak" xatosi butun bekor
+    # qilishni yiqitardi — yaʼni toʻliq chegirmali hujjatni umuman
+    # bekor qilib boʻlmasdi.
+    if invoice.amount_due > 0:
+        post_ledger_entry(
+            child=invoice.child,
+            entry_type=EntryType.ADJUSTMENT,
+            direction=Direction.CREDIT,
+            amount=invoice.amount_due,
+            source_type=SourceType.INVOICE,
+            source_id=invoice.id,
+            description=f"Bekor qilindi {invoice.number}: {reason}"[:255],
+            created_by=created_by,
+        )
     recompute_child_balance(invoice.child)
     return invoice
 
@@ -951,6 +999,26 @@ def preview_monthly_invoices(
 
         amount = charge.amount_due
         note = charge.proration_note
+
+        # Tasdiqlangan maʼlumotnomalar — AYNI shu yerda ayriladi
+        # (audit, 2026-10-30). Ilgari ular faqat `issue_invoice` ichida
+        # qoʻllanardi, yaʼni mudira tasdiqlashdan oldin 1 500 000
+        # koʻrib, keyin 1 425 000 olardi. Preview va ish bir xil
+        # raqamni aytishi kerak — aks holda tasdiqlashning maʼnosi
+        # yoʻq. Hisob `_apply_absence_credits` bilan bir xil:
+        # tartib sana boʻyicha, yigʻindi summadan oshmaydi.
+        credit = pending_absence_credit(child=child, amount_due=amount)
+        if credit > 0:
+            amount = _money(amount - credit)
+            note = (
+                gettext("{note}; maʼlumotnoma boʻyicha −{credit}").format(
+                    note=note, credit=f"{credit:,.0f}".replace(",", " ")
+                )
+                if note
+                else gettext("maʼlumotnoma boʻyicha −{credit}").format(
+                    credit=f"{credit:,.0f}".replace(",", " ")
+                )
+            )
 
         group = (
             Enrollment.objects.filter(child=child, status=EnrollmentState.ACTIVE)
@@ -1753,8 +1821,6 @@ def correct_payment_method(
     Ledger (bolaning krediti) va taqsimot TEGILMAYDI: pul miqdori
     ham, u yopgan hujjat ham oʻzgarmadi.
     """
-    from apps.expenses.models import Expense, ExpenseStatus
-
     if payment.is_reversed:
         raise BusinessRuleViolation(gettext("Qaytarilgan toʻlovni tuzatib boʻlmaydi."))
     if Refund.objects.filter(payment=payment).exists():
@@ -1786,17 +1852,7 @@ def correct_payment_method(
         created_by=created_by,
     )
     # 2. Eski usulning komissiyasi ham — u boʻlmagan hodisaga aylandi.
-    for expense in Expense.objects.filter(payment=payment).exclude(status=ExpenseStatus.REJECTED):
-        cash.reverse_movements_for(
-            source_type=MovementSource.EXPENSE,
-            source_id=expense.id,
-            description=note,
-            created_by=created_by,
-        )
-        expense.status = ExpenseStatus.REJECTED
-        expense.decided_at = timezone.now()
-        expense.description = f"{expense.description} — {note}"[:255]
-        expense.save(update_fields=["status", "decided_at", "description", "updated_at"])
+    _cancel_payment_commission(payment=payment, reason=note, created_by=created_by)
 
     old_method = payment.method
     payment.method = method
@@ -1826,6 +1882,33 @@ def correct_payment_method(
     return payment
 
 
+#: Qaytarish sababi — kamida shuncha belgi (audit, 2026-10-30).
+REVERSAL_REASON_MIN = 5
+
+
+def _cancel_payment_commission(*, payment: Payment, reason: str, created_by: Any = None) -> None:
+    """
+    Toʻlovning avto-komissiyasini yopadi — qarshi yozuv bilan.
+
+    Usulni tuzatishda ham, stornoda ham bir xil ish: eski komissiya
+    boʻlmagan hodisaga aylanadi.
+    """
+    from apps.expenses.models import Expense, ExpenseStatus
+
+    note = reason.strip() or gettext("toʻlov qaytarildi")
+    for expense in Expense.objects.filter(payment=payment).exclude(status=ExpenseStatus.REJECTED):
+        cash.reverse_movements_for(
+            source_type=MovementSource.EXPENSE,
+            source_id=expense.id,
+            description=note,
+            created_by=created_by,
+        )
+        expense.status = ExpenseStatus.REJECTED
+        expense.decided_at = timezone.now()
+        expense.description = f"{expense.description} — {note}"[:255]
+        expense.save(update_fields=["status", "decided_at", "description", "updated_at"])
+
+
 @transaction.atomic
 def reverse_payment(*, payment: Payment, reason: str = "", created_by: Any = None) -> Payment:
     """
@@ -1837,6 +1920,15 @@ def reverse_payment(*, payment: Payment, reason: str = "", created_by: Any = Non
     """
     if payment.is_reversed:
         raise BusinessRuleViolation(gettext("Bu toʻlov allaqachon qaytarilgan."))
+    if len(reason.strip()) < REVERSAL_REASON_MIN:
+        # Sababsiz storno jurnalda javobsiz qator qoldiradi: pul
+        # qaytgani koʻrinadi, nega ekani esa hech qayerda yoʻq
+        # (audit, 2026-10-30).
+        raise BusinessRuleViolation(
+            gettext("Qaytarish sababini yozing — kamida {n} ta belgi.").format(
+                n=REVERSAL_REASON_MIN
+            )
+        )
     if Refund.objects.filter(payment=payment).exists():
         # Qismi ota-onaga qaytarilgan: butun to'lovni bekor qilish o'sha
         # pulni ikkinchi marta qaytarardi.
@@ -1866,6 +1958,16 @@ def reverse_payment(*, payment: Payment, reason: str = "", created_by: Any = Non
         description=reason or gettext("toʻlov qaytarildi"),
         created_by=created_by,
     )
+
+    # Bank komissiyasi ham yopiladi (audit, 2026-10-30).
+    #
+    # Bu Bosqich 12.5 dagi qarorni ALMASHTIRADI — u yerda "bank
+    # komissiyani qaytarmaydi" deb yozilgan edi. Amalda esa storno
+    # qilingan toʻlovning komissiyasi egasiz xarajat boʻlib qolardi:
+    # toʻlov yoʻq, uning ulushi bor. Hujjat oʻchirilmaydi (D3) —
+    # qopdagi izi qarshi yozuv bilan nolga keltiriladi va hujjat
+    # "boʻlmagan" deb belgilanadi.
+    _cancel_payment_commission(payment=payment, reason=reason, created_by=created_by)
 
     # Taqsimot bo'shaydi: pul endi hech qaysi hujjatni yopmaydi va
     # yopilgan deb belgilangan hisob-fakturalar yana ochiladi.

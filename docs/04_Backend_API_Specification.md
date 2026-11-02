@@ -397,6 +397,7 @@ A fee credit comes from an approved **document**, never from the attendance grid
 | POST | `/absence-claims/{id}/document` | `attendance.create` | `multipart/form-data`, field `file` — the certificate/application, ≤ 10 MB, `.pdf .png .jpg .jpeg .webp .heic`. Only while `pending` |
 | GET | `/absence-claims/{id}/document/download` | `attendance.read` | The file itself, as an attachment. `404` when there is none — and `404`, not `403`, for another organization's claim |
 | POST | `/absence-claims/{id}/approve` | `attendance.**approve**` | Freezes `billable_days`, `daily_rate`, `credit_amount` and `basis` (which rule produced them) |
+| POST | `/absence-claims/{id}/cancel` | `attendance.approve` | `{reason}` — cancel an **approved** claim (ADR-50). A claim already on an invoice is refused: that is money, and it returns as a correction line. A kind with `requires_document` cannot be approved without a certificate number or a file |
 | POST | `/absence-claims/{id}/reject` | `attendance.approve` | The row stays as a record of what was asked |
 | GET / POST / DELETE | `/holidays` | `attendance.read` / `.create` / `.delete` | The organization's closed days — `{holiday_date, name}` |
 
@@ -468,7 +469,7 @@ Module: `finance` (Payments module UI). The **ledger** is the source of truth ([
 | GET | `/payments` | `payments.read` | List (filters: `child`, `invoice`, `method`, `paid_at` range). Every row carries **`settled_invoices`** (the numbers the money actually closed, from the active allocations) and **`advance_amount`** (what stayed unallocated). `invoice_number` is only filled when the cashier picked a document by hand, so a journal reading it showed a settled invoice as "— avans —" (audit, 2026-10-21) |
 | POST | `/payments` | `payments.create` | Record a payment (optionally linked to invoice). Bosqich 12.4: `method` ∈ `cash · terminal · bank_transfer · click · payme · payroll` (`online` is legacy, `400`); `payer_id?` (a guardian of the child, else `422`); `employee_id` (required for `payroll`); `paid_at` in the future → `422`, older than `finance.backdate_days` → `422` unless `backdate_reason`; `invoice_id` other than the oldest open one → `422` unless `allocation_reason`. `POST /payments/batch` takes the same `paid_at`, `payer_id`, `backdate_reason`, `allocation_reason`, and `employee_id` per line. Bosqich 13.8: `payer_kind` (`guardian` · `employer` · `other`) with `payer_org` and `payer_tin` (nine digits) on both |
 | GET | `/payments/{id}` | `payments.read` | Detail, with `allocations` — which months the money settled |
-| POST | `/payments/{id}/reverse` | `payments.update` | Reverse a payment (creates counter-entry; never deletes) |
+| POST | `/payments/{id}/reverse` | `payments.update` | Reverse a payment (creates counter-entry; never deletes). `reason` is **required**, at least 5 characters — `400` otherwise (ADR-50). The payment's bank commission is countered with it and its expense marked rejected |
 | POST | `/payments/{id}/correct-method` | `payments.update` | `{method, reason}` — correct the **method** on the day it was taken (ADR-47). The money moves pots, the old commission is countered and marked rejected, a new one is written. The amount is never editable; a wrong amount is a reversal. `422` after the day, after a reversal or refund, or for payroll withholding; `403` if someone else took it and the caller's role is `payments_own_only` |
 | GET | `/payments/{id}/receipt` | `payments.read` | Receipt PDF |
 | GET | `/payments/daily-summary` | `payments.read` | Cashier daily totals (`?date=`) by method |
@@ -510,7 +511,7 @@ Module: `finance` (Payments module UI). The **ledger** is the source of truth ([
 | GET | `/cash-accounts/balances` | `payments.read` | `[{id, name, kind, balance}]` — `Σ in − Σ out`, never stored |
 | POST | `/cash-accounts/{id}/adjust` | `payments.update` | `{amount, reason, opening?, occurred_on?}` → `{id, balance}`. An opening balance or a counting difference (ADR-29) |
 | POST | `/cash-accounts/transfer` | `payments.update`, not own-only | `{from_account_id, to_account_id, amount, reason, occurred_on?, allow_negative?}` → `{transfer_group, from_balance, to_balance}`. Cash collection, bank withdrawal — neither income nor expense (Bosqich 12.5) |
-| GET | `/cash-accounts/custody` | `payments.read` | `[{user_id, full_name, amount}]` — who holds how much cash; an own-only user sees only themselves |
+| GET | `/cash-accounts/custody` | `payments.read` | `[{user_id, full_name, amount}]` — who holds how much cash; an own-only user sees only themselves. `?as_of=yyyy-mm-dd` gives the state on that day, and authorless movements are listed under "Belgilanmagan" so the rows add up to the pots (ADR-50) |
 | GET/POST | `/cash-handovers` | `payments.read` / `payments.create` | `{to_user_id, amount, note?}` — hand cash to a responsible person; an own-only user lists only their own. More than held → `422` |
 | GET | `/cash-handovers/receivers` | `payments.read` | Who can receive — people who see the whole till |
 | POST | `/cash-handovers/{id}/confirm` · `/reject` | receiver only (`403` for anyone else, `404` cross-tenant) | `reject` needs `{reason}` |

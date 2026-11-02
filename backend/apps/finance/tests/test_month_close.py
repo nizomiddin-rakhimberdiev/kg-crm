@@ -90,7 +90,15 @@ def _summary(tenant: Any, month: int = 9) -> dict[str, Any]:
 def _claim(tenant: Any, child: Child, kind: str, start: str, end: str) -> Any:
     response = tenant.client().post(
         "/api/v1/absence-claims",
-        {"child_id": str(child.id), "kind": kind, "date_from": start, "date_to": end},
+        {
+            "child_id": str(child.id),
+            "kind": kind,
+            "date_from": start,
+            "date_to": end,
+            # Hujjat raqami: tibbiy daʼvo hujjatsiz tasdiqlanmaydi
+            # (audit, 2026-10-30).
+            "document_no": "M-4821",
+        },
         format="json",
     )
     assert response.status_code == 201, response.json()
