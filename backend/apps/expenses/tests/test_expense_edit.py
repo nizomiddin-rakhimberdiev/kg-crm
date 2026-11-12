@@ -75,6 +75,8 @@ def _create(client: APIClient, category: ExpenseCategory, pot: CashAccount, pric
 
 
 def _edit(client: APIClient, expense_id: str, **payload: Any) -> Any:
+    # Pul qayta yoziladigan tahrir sabab talab qiladi (audit 2026-11-12).
+    payload.setdefault("reason", "Chek boʻyicha tuzatildi")
     return client.patch(reverse("v1:expense-detail", args=[expense_id]), payload, format="json")
 
 

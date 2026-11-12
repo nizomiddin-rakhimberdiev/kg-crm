@@ -28,12 +28,13 @@ import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { QueryError } from '@/components/ui/QueryError'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { employeesApi } from '@/features/staff/api'
 import { payrollApi, type PayoutLine } from '@/features/payroll/api'
 import { PayslipModal } from '@/features/payroll/components/PayslipModal'
 import { invalidateMoney } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
-import { ApiError, type PayrollItem, type PayrollRun } from '@/lib/api/types'
+import { ApiError, type EmployeeAdvance, type PayrollItem, type PayrollRun } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatDate } from '@/lib/utils'
 import { cashApi } from '@/features/cash/api'
@@ -107,8 +108,8 @@ export default function PayrollPage() {
   // sana bo'yicha tushadi (docs/03), shuning uchun ro'yxat shu sahifada:
   // "qancha berdim?" va "oy oxirida qancha qoldi?" bitta ekranda.
   const employeesQuery = useQuery({
-    queryKey: queryKeys.employees(organizationId, { page_size: 200 }),
-    queryFn: () => employeesApi.list({ page_size: 200 }),
+    queryKey: queryKeys.employees(organizationId, { all: true }),
+    queryFn: () => employeesApi.listAll(),
     enabled: can('payroll.read'),
   })
 
@@ -140,9 +141,16 @@ export default function PayrollPage() {
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
+  // Avansni o'chirish — kassaga qarshi yozuv tushadi, shuning uchun
+  // tasdiq va sabab so'raladi (audit 2026-11-12, A2).
+  const [advanceToRemove, setAdvanceToRemove] = useState<EmployeeAdvance | null>(null)
   const removeAdvance = useMutation({
-    mutationFn: (id: string) => payrollApi.removeAdvance(id),
-    onSuccess: invalidate,
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      payrollApi.removeAdvance(id, reason),
+    onSuccess: () => {
+      setAdvanceToRemove(null)
+      invalidate()
+    },
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
@@ -171,6 +179,9 @@ export default function PayrollPage() {
    * yuborardi va pul foydalanuvchi tanlamagan qopdan chiqib ketardi.
    */
   const [payingRun, setPayingRun] = useState<PayrollRun | null>(null)
+  // Yakunlash — qaytarib bo'lmaydigan qadam (faqat sabab bilan qayta
+  // ochiladi), shuning uchun tasdiq so'raladi (audit 2026-11-12, H2).
+  const [finalizing, setFinalizing] = useState<PayrollRun | null>(null)
   const markPaid = useMutation({
     mutationFn: ({
       id,
@@ -264,6 +275,39 @@ export default function PayrollPage() {
       </Modal>
 
       <PayslipModal item={payslip} onClose={() => setPayslip(null)} />
+      <ConfirmDialog
+        open={finalizing !== null}
+        title={t('Hisoblashni yakunlash')}
+        body={t(
+          'Yakunlangandan keyin summalar oʻzgarmaydi. Tuzatish — faqat qayta ochish orqali, sabab bilan.',
+        )}
+        confirmLabel={t('Yakunlash')}
+        busy={finalize.isPending}
+        onConfirm={() => {
+          if (finalizing) finalize.mutate(finalizing.id)
+          setFinalizing(null)
+        }}
+        onCancel={() => setFinalizing(null)}
+      />
+      <ConfirmDialog
+        open={advanceToRemove !== null}
+        title={t('Avansni bekor qilish')}
+        body={
+          advanceToRemove &&
+          t('{name} · {amount} — pul kassaga qaytgan deb yoziladi.', {
+            name: advanceToRemove.employee_name ?? '',
+            amount: money(advanceToRemove.amount),
+          })
+        }
+        confirmLabel={t('Bekor qilish')}
+        tone="danger"
+        requireReason
+        busy={removeAdvance.isPending}
+        onConfirm={(reason) =>
+          advanceToRemove && removeAdvance.mutate({ id: advanceToRemove.id, reason })
+        }
+        onCancel={() => setAdvanceToRemove(null)}
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -454,7 +498,7 @@ export default function PayrollPage() {
                     {can('payroll.delete') && (
                       <button
                         type="button"
-                        onClick={() => removeAdvance.mutate(advance.id)}
+                        onClick={() => setAdvanceToRemove(advance)}
                         title={t('Oʻchirish')}
                         aria-label={t('Oʻchirish')}
                         className="rounded-lg p-1.5 text-slate-300 transition hover:bg-red-50 hover:text-red-600"
@@ -585,7 +629,7 @@ export default function PayrollPage() {
                 {run.status === 'draft' && (
                   <button
                     type="button"
-                    onClick={() => finalize.mutate(run.id)}
+                    onClick={() => setFinalizing(run)}
                     disabled={finalize.isPending}
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-ildiz-700 px-3 py-2 text-sm font-semibold text-white hover:bg-ildiz-800 disabled:opacity-60 sm:flex-none"
                   >
@@ -599,7 +643,7 @@ export default function PayrollPage() {
                     disabled={markPaid.isPending}
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 sm:flex-none"
                   >
-                    <CheckCircle2 className="h-4 w-4" /> {t('Toʻlangan')}
+                    <CheckCircle2 className="h-4 w-4" /> {t('Toʻlash')}
                   </button>
                 )}
                 {/* Yakunlangan yoki to'langan hisoblashni tahrirlashning
@@ -817,6 +861,13 @@ export default function PayrollPage() {
             </table>
           </div>
 
+          {run.is_editable && (
+            <p className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500">
+              {t(
+                'Soliq faqat rasmiy maoshdan olinadi — bonus va ushlab qolish naqd qismga tushadi.',
+              )}
+            </p>
+          )}
           {!run.is_editable && (
             <p className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500">
               {t(

@@ -2841,3 +2841,37 @@ barcha tanlagichlar, va davomat ekranidagi ko'rsatkichlar.
     oylab toʻplanib boradi. ADR-29 tekshiruvi bank uchun ham
     ishlaydi — `post_movement` qop turidan qatʼi nazar qoldiqni
     tekshiradi.
+
+38. **Ikkinchi audit — 47 band** (2026-11-12, ADR-51). Toʻrtta qaror
+    egasidan olindi: yopilgan oyga **hech qanday** pul hujjati
+    yozilmaydi (faqat faktura emas); fakturaga tushgan daʼvo bekor
+    qilinmaydi; "Ota-ona arizasi" hujjat talab qiladi; ega yaratsa
+    avto-tasdiq qoladi. Toʻlov taqsimoti — 13-invariant boʻyicha FIFO,
+    demo seeder esa uni chetlab oʻtardi.
+
+    * **Pul:** kelajak sanali avans yoʻq; yakunlangan hisoblashga
+      kirgan avans oʻchirilmaydi, qolgani sabab bilan; chiqim summasi
+      sabab bilan tahrirlanadi, toʻlov komissiyasi — umuman yoʻq; ombor
+      xaridi qopini aytadi; topshiriqdagi naqd storno qilinmaydi va
+      tasdiq paytida qoʻldagi pul qayta tekshiriladi; qabuldan oldingi
+      toʻlov rad etiladi.
+    * **Ruxsat:** `tariffs` va `discounts` — oʻz modullari (kassir faqat
+      oʻqiydi), faktura bekor qilish — `payments.approve`; "faqat
+      oʻziniki" kassirning jurnal jami — oʻziniki; ruxsatsiz sahifa
+      endi "Bu boʻlimga ruxsat yoʻq" deydi.
+    * **Qidiruv/obuna:** bolalar `q=` bilan (vasiy ismi va telefoni
+      ham); tanlov roʻyxatlari 100 tadan sahifalab yigʻiladi
+      (`listAll`); obunasiz billing aniq xabar beradi, 422 qayta
+      soʻralmaydi; demo — 100 % chegirmali faol obuna.
+    * **Bot, foyda, hisobotlar:** xabarlarda bogʻcha nomi; ega chatida
+      ota-ona klaviaturasi yoʻq; foyda asosini aytadi (hisoblash /
+      kassa) va oylik hisoblanmagan boʻlsa "taxminiy"; eksport audit
+      jurnalida, rus fayl nomi kirillda; brifingdan ochilgan roʻyxat
+      faqat kechikkan qismni koʻrsatadi.
+    * **Jurnal va ekranlar:** audit yozuvi oʻz paytidagi nomni saqlaydi;
+      oltita `window.confirm` — ilova oynasi; komissiya toʻlov oynasida
+      va kvitansiyada; sanalar `dd.mm.yyyy`; 404 bitta tilda.
+
+    Prodda egasi ishga tushiradigan buyruqlar (hammasi dry-run sukut):
+    `require_parental_documents`, `demo_subscription --slug analiz`,
+    `restrict_cashier_role`.

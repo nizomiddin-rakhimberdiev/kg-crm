@@ -34,6 +34,9 @@ export const inventoryApi = {
     supplier_id?: string | null
     unit_cost?: string | null
     note?: string
+    /** Pul chiqadigan xaridda majburiy (17-invariant). */
+    cash_account_id?: string
+    allow_negative?: boolean
   }) => api.post<StockMovement>('/stock-movements', payload),
 
   lowStock: () =>

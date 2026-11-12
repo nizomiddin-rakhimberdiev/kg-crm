@@ -394,6 +394,7 @@ export default function CashPage() {
                     <th className="py-1.5 font-medium">{t('Kim')}</th>
                     <th className="py-1.5 text-right font-medium">{t('Naqd')}</th>
                     <th className="py-1.5 text-right font-medium">{t('Bank hisobi')}</th>
+                    <th className="py-1.5 text-right font-medium">{t('Topshirishda')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -405,6 +406,17 @@ export default function CashPage() {
                       </td>
                       <td className="py-2 text-right font-semibold tabular-nums text-slate-900">
                         {som(row.bank)}
+                      </td>
+                      {/* Va'da qilingan pul qo'lda, lekin endi bo'sh emas —
+                          tasdiqlanmaguncha u ikkinchi marta ishlatilmaydi. */}
+                      <td className="py-2 text-right tabular-nums text-slate-500">
+                        {Number(row.pending_out) > 0 ? (
+                          <span title={t('Boʻsh: {sum}', { sum: som(row.available) })}>
+                            −{som(row.pending_out)}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -782,7 +794,7 @@ export default function CashPage() {
       {/* Topshiriqlar tarixi */}
       {allHandovers.length > 0 && (
         <section className="rounded-2xl border border-slate-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-slate-900">{t('Topshiriqlar')}</h2>
+          <h2 className="text-sm font-semibold text-slate-900">{t('Topshirishlar')}</h2>
           <ul className="mt-2 divide-y divide-slate-100 text-sm">
             {allHandovers.map((row) => (
               <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 py-2">

@@ -141,9 +141,13 @@ export default function ChildDetailPage() {
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
+  const [unlinking, setUnlinking] = useState<{ id: string; name: string } | null>(null)
   const unlinkGuardian = useMutation({
     mutationFn: (linkId: string) => childrenApi.unlinkGuardian(childId, linkId),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      setUnlinking(null)
+      invalidate()
+    },
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
@@ -190,6 +194,16 @@ export default function ChildDetailPage() {
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={unlinking !== null}
+        title={t('Bogʻlanishni uzish')}
+        body={unlinking && t('{name} bu boladan uzilsinmi?', { name: unlinking.name })}
+        confirmLabel={t('Uzish')}
+        tone="danger"
+        busy={unlinkGuardian.isPending}
+        onConfirm={() => unlinking && unlinkGuardian.mutate(unlinking.id)}
+        onCancel={() => setUnlinking(null)}
+      />
       {/* Guruh va tarif TASDIQ bilan o'zgaradi (PLAN 1.4, Q4). */}
       <ConfirmDialog
         open={pendingGroup !== null}
@@ -198,11 +212,20 @@ export default function ChildDetailPage() {
           /* Yosh oraligʻi mos kelmasa — tasdiq matnida aytiladi, lekin
              BLOKLAMAYDI (audit, 2026-10-21). */
           [
-            t('{name}: {from} guruhidan {to} guruhiga', {
-              name: child.full_name,
-              from: child.current_group?.name ?? t('guruhsiz'),
-              to: groupsQuery.data?.items.find((g) => g.id === pendingGroup)?.name ?? t('guruhsiz'),
-            }),
+            child.current_group
+              ? t('{name}: {from} guruhidan {to} guruhiga', {
+                  name: child.full_name,
+                  from: child.current_group.name,
+                  to:
+                    groupsQuery.data?.items.find((g) => g.id === pendingGroup)?.name ??
+                    t('guruhsiz'),
+                })
+              : t('Guruhga qoʻshish: {name} → {to}', {
+                  name: child.full_name,
+                  to:
+                    groupsQuery.data?.items.find((g) => g.id === pendingGroup)?.name ??
+                    t('guruhsiz'),
+                }),
             groupAgeNote,
           ]
             .filter(Boolean)
@@ -443,14 +466,7 @@ export default function ChildDetailPage() {
                       type="button"
                       title={t('Bogʻlanishni uzish')}
                       aria-label={t('Bogʻlanishni uzish')}
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            t('{name} bu boladan uzilsinmi?', { name: link.guardian.full_name }),
-                          )
-                        )
-                          unlinkGuardian.mutate(link.id)
-                      }}
+                      onClick={() => setUnlinking({ id: link.id, name: link.guardian.full_name })}
                       className="rounded p-1 text-slate-300 transition hover:bg-red-50 hover:text-red-600"
                     >
                       <Unlink className="h-3.5 w-3.5" />

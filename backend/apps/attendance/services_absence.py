@@ -165,7 +165,10 @@ DEFAULT_KINDS: tuple[dict[str, Any], ...] = (
         "refund_mode": RefundMode.FULL_RATE,
         "full_rate_from_days": None,
         "min_days": 1,
-        "requires_document": False,
+        # Ariza o'zi hujjat — raqami yoki sanasi iz qoldiradi (egasining
+        # qarori, 2026-11-12). Mavjud tashkilotlar:
+        # `require_parental_documents` buyrug'i.
+        "requires_document": True,
     },
 )
 
@@ -219,6 +222,13 @@ def create_claim(
     """
     if date_to < date_from:
         raise BusinessRuleViolation(gettext("Tugash sanasi boshlanishdan oldin boʻlolmaydi."))
+    # Da'vo — bo'lib o'tgan kun uchun. Oldindan ma'lum ta'til boshqa yo'l
+    # bilan yoziladi (oyni to'xtatish), aks holda bola kelgan-kelmagani
+    # noma'lum kunlarga pul qaytarilardi (audit 2026-11-12).
+    if date_to > timezone.localdate():
+        raise BusinessRuleViolation(
+            gettext("Daʼvo kelajakdagi kunni oʻz ichiga olmaydi — tugash sanasi bugundan kech.")
+        )
 
     absence_kind = kind_for(organization=child.organization, code=kind)
     days = billable_days(
@@ -242,7 +252,8 @@ def create_claim(
     if clash is not None:
         raise BusinessRuleViolation(
             gettext("Bu kunlar uchun daʼvo allaqachon bor: {date_from} — {date_to}.").format(
-                date_from=clash.date_from, date_to=clash.date_to
+                date_from=clash.date_from.strftime("%d.%m.%Y"),
+                date_to=clash.date_to.strftime("%d.%m.%Y"),
             )
         )
 

@@ -29,7 +29,14 @@ from typing import Any
 
 from django.apps import apps as django_apps
 
-__all__ = ["ENTITY_MODELS", "KEY_ENTITY", "entity_for_key", "resolve_labels", "label_map_for"]
+__all__ = [
+    "ENTITY_MODELS",
+    "KEY_ENTITY",
+    "entity_for_key",
+    "resolve_labels",
+    "label_map_for",
+    "spoken_value",
+]
 
 #: `entity_type` / `changes` kaliti → (app, model). Nom `str(obj)` dan
 #: olinadi: har bir modelning `__str__` i allaqachon "odam o'qiydigan
@@ -40,7 +47,7 @@ ENTITY_MODELS: dict[str, tuple[str, str]] = {
     "group": ("children", "Group"),
     "guardian": ("children", "Guardian"),
     "enrollment": ("children", "Enrollment"),
-    "tariff": ("finance", "Tariff"),
+    "tariff": ("finance", "TariffPlan"),
     "invoice": ("finance", "Invoice"),
     "payment": ("finance", "Payment"),
     "discount": ("finance", "Discount"),
@@ -134,3 +141,46 @@ def resolve_labels(entries: list[Any]) -> dict[str, dict[str, str]]:
                 wanted.setdefault(target, set()).add(str(value))
 
     return {entity: label_map_for(entity, ids) for entity, ids in wanted.items()}
+
+
+def _method_label(code: Any) -> str:
+    from apps.finance.models import PaymentMethod
+
+    try:
+        return str(PaymentMethod(code).label)
+    except ValueError:
+        return str(code)
+
+
+def _role_label(code: Any) -> str:
+    from apps.accounts.constants import SYSTEM_ROLES
+    from apps.accounts.models import Role
+
+    name = Role.objects.filter(code=code).values_list("name", flat=True).first()
+    return str(name or SYSTEM_ROLES.get(str(code), code))
+
+
+def spoken_value(key: str, value: Any) -> str | None:
+    """
+    Xom qiymat → odam o'qiydigan matn (audit 2026-11-12).
+
+    `method: cash` → "Naqd", `{"before": "cash", "after": "terminal"}`
+    → "Naqd → Terminal", `period: 2026-10` → "10.2026", `role:
+    cashier` → "Kassir". Tanilmagani — `None`: ekran xom qiymatni
+    ko'rsatadi, uydirma nom emas.
+    """
+    if isinstance(value, dict) and set(value) == {"before", "after"}:
+        before = spoken_value(key, value["before"])
+        after = spoken_value(key, value["after"])
+        if before is None and after is None:
+            return None
+        return f"{before or value['before'] or '—'} → {after or value['after'] or '—'}"
+    if not isinstance(value, str) or not value:
+        return None
+    if key == "method":
+        return _method_label(value)
+    if key == "role" and not _is_uuid(value):
+        return _role_label(value)
+    if key == "period" and len(value) == 7 and value[4] == "-":
+        return f"{value[5:]}.{value[:4]}"
+    return None

@@ -18,7 +18,7 @@ import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { Modal } from '@/components/ui/Modal'
 import { paymentsApi } from '@/features/payments/api'
 import { formatDateTime } from '@/lib/utils'
-import { money } from '@/lib/format'
+import { money, periodLabel } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
 type Size = 'a4' | 'thermal'
@@ -119,9 +119,18 @@ export function ReceiptModal({ paymentId, onClose }: { paymentId: string; onClos
 
             <ul className="mt-3 space-y-1 border-t border-dashed border-slate-300 pt-3">
               {data.lines.map((line, index) => (
-                <li key={index} className="flex justify-between gap-3">
-                  <span className="text-slate-600">{line.method}</span>
-                  <span className="num font-medium text-slate-900">{money(line.amount)}</span>
+                <li key={index}>
+                  <span className="flex justify-between gap-3">
+                    <span className="text-slate-600">{line.method}</span>
+                    <span className="num font-medium text-slate-900">{money(line.amount)}</span>
+                  </span>
+                  {/* Komissiya — bog'cha to'laydi, ota-onaning summasiga
+                      tegmaydi (audit 2026-11-12, H4). */}
+                  {Number(line.commission ?? 0) > 0 && (
+                    <span className="num block text-right text-xs text-red-600">
+                      {t('komissiya −{money}', { money: money(line.commission ?? 0) })}
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>
@@ -137,7 +146,7 @@ export function ReceiptModal({ paymentId, onClose }: { paymentId: string; onClos
                 <li className="text-slate-500">{t('Hisob-fakturalarga')}</li>
                 {data.allocations.map((row) => (
                   <li key={row.invoice} className="flex justify-between gap-3">
-                    <span className="text-slate-600">{row.period}</span>
+                    <span className="text-slate-600">{periodLabel(row.period)}</span>
                     <span className="num text-slate-700">{money(row.amount)}</span>
                   </li>
                 ))}

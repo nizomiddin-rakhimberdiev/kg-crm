@@ -24,6 +24,7 @@ import type { Insight } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
+import { formatDate } from '@/lib/format'
 
 interface InsightCardProps {
   insight: Insight
@@ -93,14 +94,15 @@ export function InsightCard({ insight }: InsightCardProps) {
           {copy.severity[insight.severity]}
         </Badge>
         {insight.status === 'new' && <Badge tone="info">{copy.statusNew}</Badge>}
-        <span className="ml-auto text-xs text-slate-500">{evidence.as_of}</span>
+        <span className="ml-auto text-xs text-slate-500">{formatDate(evidence.as_of)}</span>
       </div>
 
       <h3 className="mt-3 text-base font-semibold leading-snug text-slate-900 [text-wrap:balance]">
         {title}
       </h3>
 
-      <dl className="mt-3 grid grid-cols-3 gap-3 text-sm">
+      {/* 375px da uch ustun bir-birining ustiga chiqardi (audit 2026-11-12, H9). */}
+      <dl className="mt-3 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
         <div>
           <dt className="text-xs text-slate-500">{copy.facts.totalOverdue}</dt>
           <dd className="font-semibold tabular-nums text-slate-900">

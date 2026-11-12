@@ -180,6 +180,9 @@ export const absenceApi = {
     api.post<AbsenceClaim>(`/absence-claims/${id}/approve`, { note }),
   reject: (id: string, note = '') =>
     api.post<AbsenceClaim>(`/absence-claims/${id}/reject`, { note }),
+  /** Tasdiqlangan (hali fakturaga tushmagan) da'voni sabab bilan bekor qilish. */
+  cancel: (id: string, reason: string) =>
+    api.post<AbsenceClaim>(`/absence-claims/${id}/cancel`, { reason }),
 }
 
 export const holidaysApi = {

@@ -36,12 +36,16 @@ export default function SignupPage() {
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Maydon xatosi — o'sha maydon ostida (audit 2026-11-12, J5): umumiy
+  // xabar tepada turib, qaysi maydon ekanini aytmasdi.
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const set = (patch: Partial<typeof form>) => setForm((prev) => ({ ...prev, ...patch }))
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
     setBusy(true)
     setError(null)
+    setFieldErrors({})
     try {
       await signupApi.request({
         ...form,
@@ -52,7 +56,13 @@ export default function SignupPage() {
       })
       setSent(true)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.'))
+      const fields = err instanceof ApiError ? err.fieldErrors() : {}
+      const known = Object.keys(fields).filter((key) => key in form)
+      setFieldErrors(Object.fromEntries(known.map((key) => [key, fields[key]])))
+      // Umumiy xabar faqat maydonga bog'lanmagan xato uchun.
+      if (known.length === 0) {
+        setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.'))
+      }
     } finally {
       setBusy(false)
     }
@@ -72,9 +82,16 @@ export default function SignupPage() {
         required
         value={String(form[id])}
         onChange={(event) => set({ [id]: event.target.value } as Partial<typeof form>)}
+        aria-invalid={fieldErrors[id] ? true : undefined}
+        aria-describedby={fieldErrors[id] ? `signup-${id}-error` : undefined}
         className={field}
         {...props}
       />
+      {fieldErrors[id] && (
+        <p id={`signup-${id}-error`} className="mt-1 text-sm text-orik-900">
+          {fieldErrors[id]}
+        </p>
+      )}
     </div>
   )
 

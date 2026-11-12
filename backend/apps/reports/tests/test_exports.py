@@ -212,7 +212,7 @@ class TestExportFilename:
             "tushum_2026-10-02.xlsx"
         )
         assert export_filename("debtors", language="ru", stamp="2026-10-02") == (
-            "dolzhniki_2026-10-02.xlsx"
+            "должники_2026-10-02.xlsx"
         )
         assert export_filename("payroll", language="en", stamp="2026-10-02") == (
             "payroll_2026-10-02.xlsx"

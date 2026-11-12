@@ -104,7 +104,7 @@ def _handle_staff(chat_id: str, text: str, caption: str, photos: list[Any]) -> s
 
         with _ctx(user.organization_id):
             guide = staff_bot.help_text(user=user)
-        reply(chat_id, f"Salom, {user.full_name}!\n\n{guide}")
+        reply(chat_id, f"Salom, {user.full_name}!\n\n{guide}", _staff_markup(chat_id))
         return "staff_linked"
 
     body = caption if photos else text
@@ -125,6 +125,40 @@ def _handle_staff(chat_id: str, text: str, caption: str, photos: list[Any]) -> s
         )
     reply(chat_id, answer, markup)
     return outcome
+
+
+def _staff_markup(chat_id: str) -> dict[str, Any] | None:
+    """
+    Xodim chatida ota-ona klaviaturasi turmasin (audit 2026-11-12).
+
+    Telegram klaviaturasi o'zi yo'qolmaydi: bir marta ko'rsatilgan
+    "📱 Raqamni ulashish" tugmasi ega chatida qolib, uni ota-ona qilib
+    ulashga undardi. Chat ota-ona sifatida HAM ulangan bo'lsa, menyu
+    qoladi — u o'sha odamniki.
+    """
+    from apps.parent_bot import bot as parent_bot
+
+    return None if parent_bot.is_linked(chat_id) else {"remove_keyboard": True}
+
+
+def _staff_start(chat_id: str) -> str | None:
+    """Kodsiz `/start` xodim chatida — ota-ona taklifi emas, xodim yordami."""
+    from apps.accounts import telegram as staff
+    from apps.parent_bot import bot as parent_bot
+
+    if parent_bot.is_linked(chat_id):
+        return None
+    found = staff.staff_for_chat(chat_id)
+    if found is None:
+        return None
+    organization_id, user = found
+    from apps.core.tenancy import organization_context
+    from apps.reports import bot
+
+    with organization_context(organization_id):
+        guide = bot.help_text(user=user)
+    reply(chat_id, guide, {"remove_keyboard": True})
+    return "staff_help"
 
 
 def _staff_question(chat_id: str, text: str) -> str | None:
@@ -157,7 +191,7 @@ def _staff_question(chat_id: str, text: str) -> str | None:
         understood = bot.classify(text) is not None
         if answer is None:
             answer = bot.not_understood(user=user)
-    reply(chat_id, answer)
+    reply(chat_id, answer, _staff_markup(chat_id))
     return "staff_query" if understood else "staff_help"
 
 
@@ -230,6 +264,9 @@ def handle_update(update: dict[str, Any]) -> str:
     if text.startswith("/start"):
         code = text[len("/start") :].strip()
         if not code:
+            staff_outcome = _staff_start(chat_id)
+            if staff_outcome is not None:
+                return staff_outcome
             answer = bot.menu(chat_id, language_hint)
             reply(chat_id, answer.body, answer.markup)
             return answer.outcome

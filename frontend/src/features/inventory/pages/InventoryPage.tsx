@@ -16,7 +16,9 @@ import { invalidateMoney } from '@/lib/api/invalidate'
 import { queryKeys } from '@/lib/api/queryKeys'
 import { ApiError, type Product } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
-import { quantity, unitLabel } from '@/lib/format'
+import { formatDateTime, quantity, unitLabel } from '@/lib/format'
+import { PotSelect, ShortfallNotice } from '@/features/expenses/components/PotSelect'
+import { shortfall, usePots } from '@/features/expenses/pots'
 import { cn } from '@/lib/utils'
 import { QueryError } from '@/components/ui/QueryError'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -45,7 +47,18 @@ export default function InventoryPage() {
     movement_type: 'purchase',
     quantity: '',
     unit_cost: '',
+    cash_account_id: '',
   })
+  const [allowNegative, setAllowNegative] = useState(false)
+  // Pul chiqadigan xarid — qop majburiy (audit 2026-11-12, A4).
+  const { pots } = usePots(Boolean(moving))
+  const purchaseTotal =
+    moveForm.movement_type === 'purchase'
+      ? Number(moveForm.quantity || 0) * Number(moveForm.unit_cost || 0)
+      : 0
+  const paysMoney = purchaseTotal > 0
+  const short = paysMoney ? shortfall(pots, moveForm.cash_account_id, purchaseTotal) : 0
+  const pot = pots.find((p) => p.id === moveForm.cash_account_id)
   const [productForm, setProductForm] = useState({ name: '', unit: 'kg', min_stock: '' })
   const [error, setError] = useState<string | null>(null)
 
@@ -94,10 +107,13 @@ export default function InventoryPage() {
         movement_type: moveForm.movement_type,
         quantity: moveForm.quantity,
         unit_cost: moveForm.unit_cost || null,
+        ...(paysMoney ? { cash_account_id: moveForm.cash_account_id } : {}),
+        ...(short > 0 ? { allow_negative: allowNegative } : {}),
       })
     },
     onSuccess: () => {
-      setMoveForm({ movement_type: 'purchase', quantity: '', unit_cost: '' })
+      setMoveForm((p) => ({ ...p, quantity: '', unit_cost: '' }))
+      setAllowNegative(false)
       setError(null)
       invalidate()
     },
@@ -384,13 +400,43 @@ export default function InventoryPage() {
                       />
                     </div>
                   )}
+                  {paysMoney && (
+                    <div className="w-56">
+                      <label
+                        htmlFor="mpot"
+                        className="mb-1 block text-xs font-medium text-slate-600"
+                      >
+                        {t('Qaysi hisobdan')}
+                      </label>
+                      <PotSelect
+                        id="mpot"
+                        pots={pots}
+                        value={moveForm.cash_account_id}
+                        onChange={(value) => setMoveForm((p) => ({ ...p, cash_account_id: value }))}
+                      />
+                    </div>
+                  )}
                   <button
                     type="submit"
-                    disabled={recordMovement.isPending}
+                    disabled={
+                      recordMovement.isPending ||
+                      (paysMoney && !moveForm.cash_account_id) ||
+                      (short > 0 && !allowNegative)
+                    }
                     className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
                   >
                     {t('Yozish')}
                   </button>
+                  {short > 0 && (
+                    <div className="basis-full">
+                      <ShortfallNotice
+                        pot={pot}
+                        short={short}
+                        checked={allowNegative}
+                        onChange={setAllowNegative}
+                      />
+                    </div>
+                  )}
                 </form>
               ) : null}
 
@@ -407,6 +453,10 @@ export default function InventoryPage() {
                       {m.supplier_name && (
                         <span className="text-xs text-slate-500">· {m.supplier_name}</span>
                       )}
+                      <span className="text-xs text-slate-500">
+                        · {formatDateTime(m.occurred_at)}
+                        {m.created_by_name ? ` · ${m.created_by_name}` : ''}
+                      </span>
                     </span>
                     <span
                       className={cn(

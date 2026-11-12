@@ -20,7 +20,9 @@ from django.utils.translation import gettext
 
 from apps.core.exceptions import BusinessRuleViolation
 
-__all__ = ["parse_decimal", "parse_int", "parse_uuid", "parse_bool"]
+__all__ = ["parse_decimal", "parse_int", "parse_uuid", "parse_bool", "require_reason"]
+
+REASON_MIN = 5
 
 
 def parse_decimal(raw: Any, *, field: str = "") -> Decimal | None:
@@ -77,3 +79,20 @@ def parse_uuid(raw: Any) -> str | None:
 
 def parse_bool(raw: Any) -> bool:
     return str(raw).lower() in ("true", "1", "yes", "ha")
+
+
+def require_reason(raw: Any, *, field: str = "reason") -> str:
+    """
+    Pul yoki hujjatni bekor qilish sababi — kamida `REASON_MIN` belgi.
+
+    Forma xatosi (`400`), biznes qoidasi emas: sabab — kiritilmagan
+    maydon. Bir xil chegara hamma joyda, chunki "xa" sabab emas.
+    """
+    from rest_framework.exceptions import ValidationError
+
+    reason = str(raw or "").strip()
+    if len(reason) < REASON_MIN:
+        raise ValidationError(
+            {field: gettext("Sababini yozing — kamida {n} ta belgi.").format(n=REASON_MIN)}
+        )
+    return reason

@@ -36,7 +36,7 @@ import { DebtByPeriod } from '@/features/debtors/components/DebtByPeriod'
 import { debtorsApi } from '@/features/payments/api'
 import { useExcelExport } from '@/features/reports/useExcelExport'
 import { queryKeys } from '@/lib/api/queryKeys'
-import { ApiError } from '@/lib/api/types'
+import { ApiError, type DebtorRow } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { EmptyRow } from '@/components/ui/EmptyState'
@@ -199,12 +199,15 @@ export default function DebtorsPage({ embedded = false }: { embedded?: boolean }
   const params = useMemo(() => {
     const next: Record<string, string> = { order_by: orderBy }
     if (overdueOnly) next.overdue = 'true'
-    if (minDays !== null) next.min_days = String(minDays)
+    // Brifingdan kelganda chegara serverga ham ketadi: u har bola uchun
+    // shu chegaradan oshgan qismni qaytaradi (audit 2026-11-12, F5).
+    if (aiDays !== null) next.min_days = String(aiDays)
+    else if (minDays !== null) next.min_days = String(minDays)
     if (groupId) next.group_id = groupId
     if (minAmount.trim()) next.min_amount = minAmount.trim()
     if (search.trim()) next.q = search.trim()
     return next
-  }, [overdueOnly, minDays, groupId, minAmount, orderBy, search])
+  }, [overdueOnly, aiDays, minDays, groupId, minAmount, orderBy, search])
 
   const debtorsQuery = useQuery({
     queryKey: queryKeys.debtors(organizationId, params),
@@ -253,6 +256,9 @@ export default function DebtorsPage({ embedded = false }: { embedded?: boolean }
     [debtorsQuery.data, aiDays],
   )
   const aiCopy = getCopy().debtors
+  // Brifing raqami bilan bir xil: faqat chegaradan oshgan qism.
+  const shownAmount = (row: DebtorRow) =>
+    aiDays !== null ? (row.overdue_amount ?? row.balance) : row.balance
 
   return (
     <div className="space-y-6">
@@ -499,10 +505,16 @@ export default function DebtorsPage({ embedded = false }: { embedded?: boolean }
 
             {debtorsQuery.data && (
               <p className="ml-auto text-right text-sm">
-                <span className="text-xs text-tosh-500">{t('Jami qarz')}</span>
+                <span className="text-xs text-tosh-500">
+                  {aiDays !== null ? t('Kechikkan qism') : t('Jami qarz')}
+                </span>
                 <br />
                 <span className="num text-lg font-bold text-orik-800">
-                  {money(debtorsQuery.data.total_debt)}
+                  {money(
+                    aiDays !== null
+                      ? (debtorsQuery.data.total_overdue ?? debtorsQuery.data.total_debt)
+                      : debtorsQuery.data.total_debt,
+                  )}
                 </span>
               </p>
             )}
@@ -563,7 +575,7 @@ export default function DebtorsPage({ embedded = false }: { embedded?: boolean }
                           {row.primary_guardian && ` · ${row.primary_guardian.full_name}`}
                         </p>
                         <p className="num mt-1.5 text-lg font-bold text-orik-800">
-                          {money(row.balance)}
+                          {money(shownAmount(row))}
                         </p>
                         <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
                           {row.days_overdue !== null ? (
@@ -629,7 +641,9 @@ export default function DebtorsPage({ embedded = false }: { embedded?: boolean }
                       <th className="px-4 py-3 font-medium">{t('Vasiy')}</th>
                       <th className="px-4 py-3 font-medium">{t('Kechikish')}</th>
                       <th className="px-4 py-3 font-medium">{t('Oxirgi eslatma')}</th>
-                      <th className="px-4 py-3 text-right font-medium">{t('Qarz')}</th>
+                      <th className="px-4 py-3 text-right font-medium">
+                        {aiDays !== null ? t('Kechikkan qism') : t('Qarz')}
+                      </th>
                       <th className="px-4 py-3" />
                     </tr>
                   </thead>
@@ -681,7 +695,7 @@ export default function DebtorsPage({ embedded = false }: { embedded?: boolean }
                           )}
                         </td>
                         <td className="num px-4 py-3 text-right font-semibold text-orik-800">
-                          {money(row.balance)}
+                          {money(shownAmount(row))}
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex items-center justify-end gap-1">

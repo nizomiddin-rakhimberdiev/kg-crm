@@ -44,6 +44,7 @@ import { isoDate, som } from '@/lib/format'
 import { QueryError } from '@/components/ui/QueryError'
 import { t } from '@/lib/i18n'
 import { Select } from '@/components/ui/Select'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 const money = som
 
@@ -240,9 +241,11 @@ export default function PaymentsPage() {
     onError: (err) => setError(err instanceof ApiError ? err.message : t('Xatolik yuz berdi.')),
   })
 
+  const [tariffToRemove, setTariffToRemove] = useState<{ id: string; name: string } | null>(null)
   const removeTariff = useMutation({
     mutationFn: tariffsApi.remove,
     onSuccess: () => {
+      setTariffToRemove(null)
       setError(null)
       invalidate()
     },
@@ -271,6 +274,16 @@ export default function PaymentsPage() {
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={tariffToRemove !== null}
+        title={t('Tarifni oʻchirish')}
+        body={tariffToRemove && t('«{name}» tarifi oʻchirilsinmi?', { name: tariffToRemove.name })}
+        confirmLabel={t('Oʻchirish')}
+        tone="danger"
+        busy={removeTariff.isPending}
+        onConfirm={() => tariffToRemove && removeTariff.mutate(tariffToRemove.id)}
+        onCancel={() => setTariffToRemove(null)}
+      />
       {/* To'lov oynasi — bolaning qatori bosilganda. Alohida "yangi
           to'lov" tugmasi YO'Q: kassir bolani qidiradi, ustiga bosadi
           va pulni qabul qiladi. */}
@@ -784,7 +797,21 @@ export default function PaymentsPage() {
                           Number(payment.advance_amount) === 0 &&
                           '—'}
                       </td>
-                      <td className="px-4 py-3">{paymentMethodLabel(payment.method)}</td>
+                      <td className="px-4 py-3">
+                        {paymentMethodLabel(payment.method)}
+                        {/* Usuli o'sha kuni tuzatilgan — jurnalda ko'rinsin (H4). */}
+                        {payment.method_corrected_from && (
+                          <span
+                            className="ml-1.5 rounded bg-orik-50 px-1.5 py-0.5 text-xs text-orik-800"
+                            title={t('Usul tuzatilgan: {from} → {to}', {
+                              from: paymentMethodLabel(payment.method_corrected_from),
+                              to: paymentMethodLabel(payment.method),
+                            })}
+                          >
+                            {t('tuzatilgan')}
+                          </span>
+                        )}
+                      </td>
                       {/* Kim qabul qilgani — mijoz soʻrovi (2026-10-28):
                           smena almashganda birinchi beriladigan savol. */}
                       <td className="px-4 py-3 text-slate-600">
@@ -912,7 +939,7 @@ export default function PaymentsPage() {
 
       {tab === 'tariffs' && (
         <>
-          {can('payments.create') && (
+          {can('tariffs.create') && (
             <form
               onSubmit={(event) => {
                 event.preventDefault()
@@ -1023,7 +1050,7 @@ export default function PaymentsPage() {
                       <p className="mt-0.5 text-sm text-slate-600">{money(tariff.amount)}</p>
                     </div>
                     <div className="flex shrink-0 gap-1">
-                      {can('payments.update') && (
+                      {can('tariffs.update') && (
                         <button
                           type="button"
                           onClick={() =>
@@ -1040,18 +1067,11 @@ export default function PaymentsPage() {
                           <Pencil className="h-4 w-4" />
                         </button>
                       )}
-                      {can('payments.delete') && (
+                      {can('tariffs.delete') && (
                         <button
                           type="button"
                           disabled={removeTariff.isPending}
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                t('«{name}» tarifi oʻchirilsinmi?', { name: tariff.name }),
-                              )
-                            )
-                              removeTariff.mutate(tariff.id)
-                          }}
+                          onClick={() => setTariffToRemove(tariff)}
                           className="rounded-lg p-1.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
                           title={t('Oʻchirish')}
                           aria-label={t('Oʻchirish')}

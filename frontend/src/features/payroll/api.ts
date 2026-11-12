@@ -82,5 +82,6 @@ export const payrollApi = {
     cash_account_id?: string
     allow_negative?: boolean
   }) => api.post<EmployeeAdvance>('/payroll/advances', payload),
-  removeAdvance: (id: string) => api.delete(`/payroll/advances/${id}`),
+  /** Sabab majburiy (kamida 5 belgi) va audit jurnaliga tushadi. */
+  removeAdvance: (id: string, reason: string) => api.delete(`/payroll/advances/${id}`, { reason }),
 }

@@ -185,6 +185,10 @@ def home(*, organization_id: Any, day: date, branch_id: Any = None) -> dict[str,
             ),
             margin=pnl["margin"],
             safe_withdrawal=safe,
+            # Hisobotlardagi "Sof natija" kassa usulida — bu karta esa
+            # hisoblash usulida; ekran ikkalasini yorliq bilan ajratadi.
+            basis=pnl["basis"],
+            payroll_estimated=pnl["payroll_estimated"],
         )
     )
 

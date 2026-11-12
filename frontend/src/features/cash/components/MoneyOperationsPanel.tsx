@@ -23,13 +23,18 @@ const field =
   'w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500'
 const label = 'mb-1 block text-xs font-medium text-slate-600'
 
-const KINDS: Array<{ kind: OperationKind; label: string; incoming: boolean }> = [
+const KINDS: Array<{ kind: OperationKind; label: string; incoming: boolean; form?: false }> = [
   { kind: 'other_income', label: t('Boshqa daromad'), incoming: true },
   { kind: 'owner_draw', label: t('Egasiga toʻlov'), incoming: false },
   { kind: 'owner_contribution', label: t('Egadan kiritma'), incoming: true },
   { kind: 'loan_in', label: t('Kredit olindi'), incoming: true },
   { kind: 'loan_repay', label: t('Kredit qaytarildi'), incoming: false },
   { kind: 'tax_payment', label: t('Soliq toʻlovi'), incoming: false },
+  // Qarzga berilgan pul (ADR-48) — o'z oynasida yoziladi (kimga, sabab),
+  // bu yerda faqat ro'yxatda to'g'ri nom va ishora bilan ko'rinadi
+  // (audit 2026-11-12, H1). Ilgari qator xom kod va "−" bilan turardi.
+  { kind: 'loan_out', label: t('Qarzga berildi'), incoming: false, form: false },
+  { kind: 'loan_return', label: t('Qarz qaytdi'), incoming: true, form: false },
 ]
 
 const SUBTYPES: Partial<Record<OperationKind, Array<[string, string]>>> = {
@@ -153,7 +158,7 @@ export function MoneyOperationsPanel() {
               }}
               className="mt-1"
             >
-              {KINDS.map((row) => (
+              {KINDS.filter((row) => row.form !== false).map((row) => (
                 <option key={row.kind} value={row.kind}>
                   {row.label}
                 </option>

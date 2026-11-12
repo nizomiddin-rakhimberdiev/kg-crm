@@ -60,6 +60,17 @@ interface ExpenseFormState {
   cash_account_id: string
 }
 
+/**
+ * To'lov bilan birga qaytarilgan komissiya — "Qaytarilgan", "Rad etilgan"
+ * emas: uni hech kim rad etmagan (audit 2026-11-12, G3).
+ */
+function statusBadge(e: Expense): [string, string] {
+  if (e.status === 'rejected' && e.payment) {
+    return [e.status_label ?? t('Qaytarilgan'), 'bg-slate-100 text-slate-600']
+  }
+  return STATUS[e.status] ?? [e.status, '']
+}
+
 export default function ExpensesPage() {
   const organizationId = useOrganizationId()
   const queryClient = useQueryClient()
@@ -549,7 +560,7 @@ export default function ExpensesPage() {
               edi; bu yerda ular yozuvli va 44 px.
             */}
             {expensesQuery.data?.items.map((e) => {
-              const [label, tone] = STATUS[e.status] ?? [e.status, '']
+              const [label, tone] = statusBadge(e)
               return (
                 <li key={e.id} className="px-4 py-3">
                   <div className="flex items-start justify-between gap-3">
@@ -608,10 +619,10 @@ export default function ExpensesPage() {
                       onClick={() => decide.mutate({ id: e.id, action: 'markPaid' })}
                       className="mt-2 flex min-h-11 w-full items-center justify-center rounded-lg border border-slate-200 text-sm font-semibold text-brand-600"
                     >
-                      {t('Toʻlandi')}
+                      {t('Toʻlash')}
                     </button>
                   )}
-                  {can('expenses.update') && e.status !== 'rejected' && (
+                  {can('expenses.update') && e.status !== 'rejected' && !e.payment && (
                     <button
                       type="button"
                       onClick={() => setEditing(e)}
@@ -642,7 +653,7 @@ export default function ExpensesPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {expensesQuery.data?.items.map((e) => {
-                  const [label, tone] = STATUS[e.status] ?? [e.status, '']
+                  const [label, tone] = statusBadge(e)
                   return (
                     <tr key={e.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3 text-slate-500">{formatDate(e.expense_date)}</td>
@@ -713,10 +724,10 @@ export default function ExpensesPage() {
                             onClick={() => decide.mutate({ id: e.id, action: 'markPaid' })}
                             className="rounded-lg px-2 py-1 text-xs font-medium text-brand-600 hover:bg-brand-50"
                           >
-                            {t('Toʻlandi')}
+                            {t('Toʻlash')}
                           </button>
                         )}
-                        {can('expenses.update') && e.status !== 'rejected' && (
+                        {can('expenses.update') && e.status !== 'rejected' && !e.payment && (
                           <button
                             type="button"
                             title={t('Tahrirlash')}

@@ -458,8 +458,8 @@ const uz: Copy = {
         text: 'Vasiy botni oʻzi ishga tushiradi — havolani bosgani roziligining yozuvi boʻlib qoladi. Kim hali ulanmaganini roʻyxatda koʻrib turasiz.',
       },
       {
-        title: 'SMS — ixtiyoriy',
-        text: 'Telegram xabarlari bepul. SMS kerak boʻlsa, oʻz SMS-provayderingiz hisobi ulanadi va har bir xabar alohida hisoblanadi.',
+        title: 'SMS — keyinroq',
+        text: 'Asosiy kanal — Telegram, xabarlari bepul. SMS tayyorlangan, lekin hozir yoqilmagan; yoqilganda har bir xabar qismlari boʻyicha alohida hisoblanadi.',
       },
     ],
     note: 'Bola kelmagani haqidagi xabar — standart holatda oʻchiq. Uni yoqish yoki yoqmaslik bogʻchaning qarori.',
@@ -504,7 +504,7 @@ const uz: Copy = {
       },
       {
         title: 'Rollar va ruxsatlar',
-        text: 'Kim nimani koʻrishini egasi belgilaydi. Tayyor shablon bir bosishda: Direktor, Menejer, Kassir, Davomat menejeri — keyin istalgan belgini oʻzgartirasiz. Kassir faqat oʻzi qabul qilgan pulni koʻradi. Boshqaruvchi oylik hisobotni topshiradi — kim qancha maosh olishini koʻrmasdan; rahbar raqam yonida savol beradi, qaytaradi yoki qabul qiladi. Bankka — faqat oʻqish uchun, muddatli havola.',
+        text: 'Kim nimani koʻrishini egasi belgilaydi. Tayyor shablon bir bosishda: Direktor, Menejer, Kassir, Davomat menejeri — keyin istalgan belgini oʻzgartirasiz. Kassir jurnalda hammaning toʻlovini koʻradi, lekin faqat oʻzi olgan pulni qaytaradi va tuzatadi; jami tushum unga yopiq. Boshqaruvchi oylik hisobotni topshiradi — kim qancha maosh olishini koʻrmasdan; rahbar raqam yonida savol beradi, qaytaradi yoki qabul qiladi. Bankka — faqat oʻqish uchun, muddatli havola.',
       },
       {
         title: 'Filiallar',
@@ -636,7 +636,8 @@ const uz: Copy = {
     annualFormula: 'Yillik = oylik × 12 × 0,75',
     first3: 'Ilk 3 oy — roʻyxatdan oʻtgan kuningizdagi narx boʻyicha.',
     trial: '15 kun bepul',
-    trialNote: 'Karta kerak emas. Sinov tugagach toʻlovga oʻtasiz yoki shunchaki toʻxtatasiz.',
+    trialNote:
+      'Karta kerak emas. Sinov tugagach toʻlovga oʻtasiz yoki shunchaki toʻxtatasiz. Obunaga oʻtsangiz, birinchi toʻlangan oy sinov boshlangan kundan hisoblanadi.',
     safety:
       'Toʻlov kechiksa yozish toʻxtaydi, lekin oʻqish va eksport ishlayveradi — maʼlumotingiz oʻchirilmaydi va yashirilmaydi.',
     note: 'Radix rivojlanishi va yangi imkoniyatlar qoʻshilishi bilan narxlar kelajakda oʻzgarishi mumkin.',
@@ -680,7 +681,7 @@ const uz: Copy = {
       },
       {
         q: 'Ota-onalar bilan qanday ishlaydi?',
-        a: 'Telegram bot orqali: balans, hisob-fakturalar, kvitansiyalar va toʻlov tugmasi. Ilova oʻrnatish shart emas, xabarlar bepul. SMS kerak boʻlsa — oʻz gateway hisobingiz ulanadi.',
+        a: 'Telegram bot orqali: balans, hisob-fakturalar, kvitansiyalar va toʻlov tugmasi. Ilova oʻrnatish shart emas, xabarlar bepul. SMS hozircha yoqilmagan — asosiy kanal Telegram.',
       },
       {
         q: 'Ota-ona onlayn toʻlay oladimi?',
@@ -1026,8 +1027,8 @@ const ru: Copy = {
         text: 'Родитель запускает бота сам; переход по ссылке и есть запись о согласии. В списке видно, кто ещё не подключился.',
       },
       {
-        title: 'SMS — по желанию',
-        text: 'Сообщения в Telegram бесплатны. Если нужны SMS — подключаем ваш собственный шлюз, и каждое сообщение считается отдельно.',
+        title: 'SMS — позже',
+        text: 'Основной канал — Telegram, сообщения бесплатны. SMS подготовлены, но пока не включены; после включения каждое сообщение считается по частям.',
       },
     ],
     note: 'Уведомление «ребёнка сегодня нет» по умолчанию выключено. Включать его или нет — решает сад.',
@@ -1072,7 +1073,7 @@ const ru: Copy = {
       },
       {
         title: 'Роли и права',
-        text: 'Владелец решает, кто что видит. Готовый шаблон в одно нажатие: Директор, Менеджер, Кассир, Менеджер посещаемости — потом меняете любую отметку. Кассир видит только принятые им деньги. Управляющий сдаёт месячный отчёт — не видя, кто сколько получает; руководитель задаёт вопрос у цифры, возвращает или принимает. Банку — ссылка только для чтения и со сроком.',
+        text: 'Владелец решает, кто что видит. Готовый шаблон в одно нажатие: Директор, Менеджер, Кассир, Менеджер посещаемости — потом меняете любую отметку. Кассир видит в журнале все оплаты, но возвращает и исправляет только принятые им; общая выручка ему закрыта. Управляющий сдаёт месячный отчёт — не видя, кто сколько получает; руководитель задаёт вопрос у цифры, возвращает или принимает. Банку — ссылка только для чтения и со сроком.',
       },
       {
         title: 'Филиалы',
@@ -1205,7 +1206,7 @@ const ru: Copy = {
     first3: 'Первые 3 месяца — по цене на день подписки.',
     trial: '15 дней бесплатно',
     trialNote:
-      'Карта не нужна. После пробного периода вы переходите на оплату или просто останавливаетесь.',
+      'Карта не нужна. После пробного периода вы переходите на оплату или просто останавливаетесь. При переходе на подписку первый оплачиваемый месяц считается со дня начала пробного периода.',
     safety:
       'При задержке оплаты запись останавливается, но чтение и выгрузка работают — данные не удаляются и не прячутся.',
     note: 'По мере развития Radix и появления новых возможностей цены могут измениться.',
@@ -1249,7 +1250,7 @@ const ru: Copy = {
       },
       {
         q: 'Как это работает для родителей?',
-        a: 'Через бот в Telegram: баланс, счета, квитанции и кнопка оплаты. Приложение ставить не нужно, сообщения бесплатны. Нужны SMS — подключаем ваш собственный шлюз.',
+        a: 'Через бот в Telegram: баланс, счета, квитанции и кнопка оплаты. Приложение ставить не нужно, сообщения бесплатны. SMS пока не включены — основной канал Telegram.',
       },
       {
         q: 'Родитель может оплатить онлайн?',
@@ -1587,8 +1588,8 @@ const en: Copy = {
         text: 'The parent starts the bot themselves; following the link is the consent record. The list shows who has not linked yet.',
       },
       {
-        title: 'SMS — optional',
-        text: 'Telegram messages are free. If you want SMS, we connect your own gateway and every message is counted.',
+        title: 'SMS — later',
+        text: 'Telegram is the main channel and its messages are free. SMS is built but not switched on yet; once it is, every message is counted by its parts.',
       },
     ],
     note: 'The “your child is absent today” message is off by default. Whether to turn it on is the kindergarten’s call.',
@@ -1633,7 +1634,7 @@ const en: Copy = {
       },
       {
         title: 'Roles and permissions',
-        text: 'The owner decides who sees what. A ready template is one click away — Director, Manager, Cashier, Attendance manager — and every tick stays editable. A cashier sees only the money they took. A manager submits the monthly report without seeing who earns what; a leader asks at a number, returns it or accepts it. For the bank — a read-only link that expires.',
+        text: 'The owner decides who sees what. A ready template is one click away — Director, Manager, Cashier, Attendance manager — and every tick stays editable. A cashier sees every payment in the journal but reverses and corrects only their own; the total takings stay closed to them. A manager submits the monthly report without seeing who earns what; a leader asks at a number, returns it or accepts it. For the bank — a read-only link that expires.',
       },
       {
         title: 'Branches',
@@ -1765,7 +1766,8 @@ const en: Copy = {
     annualFormula: 'Annual = monthly × 12 × 0.75',
     first3: 'First 3 months — at the price on the day you sign up.',
     trial: '15 days free',
-    trialNote: 'No card. When the trial ends you either start paying or simply stop.',
+    trialNote:
+      'No card. When the trial ends you either start paying or simply stop. If you subscribe, the first paid month counts from the day the trial began.',
     safety:
       'If payment is late, writing stops — but reading and export keep working, and nothing is deleted or hidden.',
     note: 'As Radix grows and new capabilities are added, prices may change in the future.',
@@ -1809,7 +1811,7 @@ const en: Copy = {
       },
       {
         q: 'How does it work for parents?',
-        a: 'Through a Telegram bot: balance, invoices, receipts and a pay button. Nothing to install and the messages are free. If you want SMS, we connect your own gateway.',
+        a: 'Through a Telegram bot: balance, invoices, receipts and a pay button. Nothing to install and the messages are free. SMS is not switched on yet — Telegram is the main channel.',
       },
       {
         q: 'Can a parent pay online?',

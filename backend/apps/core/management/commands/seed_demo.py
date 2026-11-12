@@ -939,11 +939,18 @@ class Command(BaseCommand):
                 # dashboard ularni (to'g'ri qilib) hisobga olmadi va
                 # "shu oy tushum" haqiqatdan uch baravar past ko'rindi.
                 last_day = today.day if is_current else 28
+                # Qabul oyida to'lov qabuldan OLDIN bo'lmaydi (A6, audit
+                # 2026-11-12): bog'cha bunday to'lovni rad etadi.
+                first_day = 1
+                arrived = child.enrolled_on
+                if arrived and (arrived.year, arrived.month) == (period.year, period.month):
+                    first_day = arrived.day
+                last_day = max(last_day, first_day)
                 paid_at = timezone.make_aware(
                     datetime(
                         period.year,
                         period.month,
-                        random.randint(1, max(1, last_day)),
+                        random.randint(first_day, max(first_day, last_day)),
                         random.randint(9, 17),
                         random.randint(0, 59),
                     )
@@ -959,12 +966,14 @@ class Command(BaseCommand):
                         [PaymentMethod.CASH, PaymentMethod.TERMINAL, PaymentMethod.BANK_TRANSFER],
                         weights=[45, 40, 15],
                     )[0],
-                    invoice=invoice,
+                    # Faktura KO'RSATILMAYDI: pul eng eski qarzga tushadi
+                    # (13-invariant, FIFO). Avval har to'lov o'z oyiga
+                    # mixlanardi va demo'da yangi oy yopilib, eskisi ochiq
+                    # qolardi — haqiqiy kassada bunday bo'lmaydi (G5).
                     paid_at=paid_at,
                     received_by=owner,
                     # Demo tarixi oylar orqaga ketadi (Bosqich 12.4 qoidalari).
                     backdate_reason="Demo maʼlumot",
-                    allocation_reason="Demo maʼlumot",
                 )
                 payments += 1
 

@@ -93,9 +93,19 @@ def debtor_queryset(
         # taqqoslash kunlarni Python'da sanashdan tez va indeksdan
         # foydalanadi: eng eski muddati shu sanadan OLDIN bo'lsa,
         # kechikish shuncha kundan ko'p.
+        cutoff = timezone.localdate() - timedelta(days=min_days)
         queryset = queryset.filter(
             oldest_overdue_date__isnull=False,
-            oldest_overdue_date__lte=timezone.localdate() - timedelta(days=min_days),
+            oldest_overdue_date__lte=cutoff,
+        ).annotate(
+            # Chegaradan oshib kechikkan qism — Radix AI brifingidagi
+            # "Kechikkan summa" bilan bir xil (audit 2026-11-12). Formula
+            # o'sha `balance.py` da, faqat "bugun" o'rniga chegara sanasi.
+            threshold_overdue=Coalesce(
+                Subquery(balance.overdue_subquery(today=cutoff)),
+                Decimal("0"),
+                output_field=balance.MONEY,
+            )
         )
     if group_id:
         queryset = queryset.filter(
@@ -162,6 +172,9 @@ def debtor_rows(
                     "group": group.name if group else None,
                 },
                 "balance": str(child.ledger_balance),
+                # Muddati o'tgan qism; `min_days` berilsa — shu chegaradan
+                # oshgani (brifing bilan bir xil raqam).
+                "overdue_amount": str(getattr(child, "threshold_overdue", child.overdue_amount)),
                 "oldest_overdue_date": (
                     child.oldest_overdue_date.isoformat() if child.oldest_overdue_date else None
                 ),

@@ -46,10 +46,12 @@ export const PAYMENT_METHODS: readonly string[] = [
 ]
 
 /**
- * Filtr va hisobotlar uchun — eski `online` ham, chunki u yozuvlarda bor.
- * `payroll` kassir tugmalarida alohida: u xodimni so'raydi.
+ * Filtr va hisobotlar uchun. `payroll` kassir tugmalarida alohida: u
+ * xodimni so'raydi. Eski `online` ro'yxatda YO'Q (audit 2026-11-12, H8):
+ * alohida Click va Payme yonida "Payme / Click" ortiqcha edi; eski
+ * yozuvlarda u baribir o'z nomi bilan ko'rinadi (`paymentMethodLabel`).
  */
-export const ALL_PAYMENT_METHODS: readonly string[] = [...PAYMENT_METHODS, 'payroll', 'online']
+export const ALL_PAYMENT_METHODS: readonly string[] = [...PAYMENT_METHODS, 'payroll']
 
 /** Noma'lum kod ham xom ko'rinmasin: baribir o'qiladigan matn qaytadi. */
 export const paymentMethodLabel = (method: string): string =>

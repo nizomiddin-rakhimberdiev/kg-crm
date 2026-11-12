@@ -182,6 +182,15 @@ class Command(SeedDemo):
         self.stdout.write(f"Tashkilot: {organization.name} (/t/{organization.slug})")
         with organization_context(organization.id):
             self._disable_sms(organization)
+            # Bepul faol obuna: sinov 15 kunda tugab demo yozishdan
+            # to'xtardi, "Obuna va to'lov" esa bo'sh ochilardi (audit
+            # 2026-11-12). Standalone'da obuna umuman yo'q (ADR-13).
+            from apps.core.deployment import is_saas
+
+            if is_saas():
+                from apps.subscriptions.services import ensure_demo_subscription
+
+                ensure_demo_subscription(organization=organization)
             self._seed(organization, CHILDREN, MONTHS)
 
     # --- Yaratish va o'chirish ---

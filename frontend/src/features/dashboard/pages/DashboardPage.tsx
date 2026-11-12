@@ -241,6 +241,13 @@ function CashPanel({
                 >
                   {isLoading ? '…' : formatUZS(group.balance)}
                 </span>
+                {/* Bankka hali tushmagan terminal/Click/Payme puli —
+                    "bankda nega kam?" savoliga javob (audit 2026-11-12). */}
+                {group.key === 'bank' && Number(cash?.in_transit ?? 0) > 0 && (
+                  <span className="block truncate text-xs text-orik-800">
+                    {t('yoʻlda {sum}', { sum: formatUZS(Number(cash?.in_transit ?? 0)) })}
+                  </span>
+                )}
                 {/* Guruhga nima kirgani — "bankda nega buncha ko'p?"
                     degan savol javobsiz qolmasin. */}
                 {group.parts.length > 1 && (

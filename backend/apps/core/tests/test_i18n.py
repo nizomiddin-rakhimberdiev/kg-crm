@@ -210,3 +210,38 @@ def test_catalogs_compile_without_duplicates():
             text=True,
         )
         assert result.returncode == 0, f"{po.parent.parent.name}: {result.stderr.strip()}"
+
+
+def test_rbac_labels_use_the_uzbek_apostrophe():
+    """
+    Ruxsat va rol nomlari ham ekranda turadi (audit 2026-11-12, H10).
+
+    `PERMISSION_LABELS` `gettext` dan o'tmaydi — u katalogga yoziladi va
+    rollar sahifasida "To'lovlar" (ASCII) bo'lib ko'rinardi.
+    """
+    from apps.accounts.constants import PERMISSION_LABELS, SYSTEM_ROLES
+
+    labels = [*PERMISSION_LABELS.values(), *SYSTEM_ROLES.values()]
+    offenders = sorted(label for label in labels if RAW_APOSTROPHE.search(label))
+    assert offenders == [], offenders
+
+
+def test_stored_permission_labels_use_the_uzbek_apostrophe(tenant_a):
+    """Bazadagi katalog ham — migratsiya eski yozuvlarni yangilaydi."""
+    import importlib
+
+    from django.apps import apps as global_apps
+
+    from apps.accounts.models import Permission
+
+    # Productionda katalog eski yorliq bilan yozilgan.
+    Permission.objects.filter(code="payments.read").update(label="To'lovlar — read")
+    migration = importlib.import_module("apps.accounts.migrations.0012_permission_labels")
+    migration.relabel(global_apps, None)
+
+    offenders = sorted(
+        label
+        for label in Permission.objects.values_list("label", flat=True)
+        if RAW_APOSTROPHE.search(label)
+    )
+    assert offenders == [], offenders[:5]

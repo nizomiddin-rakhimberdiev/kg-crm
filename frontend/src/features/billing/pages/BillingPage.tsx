@@ -58,9 +58,13 @@ export default function BillingPage() {
     queryKey: queryKeys.subscription(organizationId),
     queryFn: billingApi.subscription,
   })
+  // Obunasiz tashkilotda qolgan uchtasi ham bir xil 422 beradi — avval
+  // obuna bormi, shuni bilamiz (audit 2026-11-12).
+  const hasSubscription = subscriptionQuery.isSuccess
   const usageQuery = useQuery({
     queryKey: queryKeys.billingUsage(organizationId),
     queryFn: billingApi.usage,
+    enabled: hasSubscription,
   })
   // Back from Payme / Click (`?paid=1`): the callback may land a few seconds
   // after the redirect, so the invoices are re-read for about a minute.
@@ -69,11 +73,13 @@ export default function BillingPage() {
   const invoicesQuery = useQuery({
     queryKey: queryKeys.billingInvoices(organizationId),
     queryFn: billingApi.invoices,
+    enabled: hasSubscription,
     refetchInterval: (q) => (returnedFromPayment && q.state.dataUpdateCount < 12 ? 5000 : false),
   })
   const historyQuery = useQuery({
     queryKey: queryKeys.billingUsageHistory(organizationId),
     queryFn: billingApi.usageHistory,
+    enabled: hasSubscription,
   })
 
   const invalidate = () =>
@@ -119,6 +125,13 @@ export default function BillingPage() {
       {error && (
         <div role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
+        </div>
+      )}
+      {subscriptionQuery.isError && (
+        <div role="status" className="rounded-lg bg-orik-50 px-3 py-2 text-sm text-orik-800">
+          {subscriptionQuery.error instanceof ApiError
+            ? subscriptionQuery.error.message
+            : t('Obuna maʼlumotini yuklab boʻlmadi.')}
         </div>
       )}
       {notice && (

@@ -57,6 +57,10 @@ export interface CustodyRow {
   cash: string
   bank: string
   amount: string
+  /** Topshirishga va'da qilingan, hali tasdiqlanmagan summa. */
+  pending_out: string
+  /** Qo'lda bo'sh turgan pul: `amount − pending_out`. */
+  available: string
 }
 
 /** Bankka hali tushmagan terminal/Click/Payme puli (Bosqich 13.2c). */
@@ -73,7 +77,14 @@ export interface InTransitRow {
 }
 
 export type OperationKind =
-  'other_income' | 'owner_draw' | 'owner_contribution' | 'loan_in' | 'loan_repay' | 'tax_payment'
+  | 'other_income'
+  | 'owner_draw'
+  | 'owner_contribution'
+  | 'loan_in'
+  | 'loan_repay'
+  | 'loan_out'
+  | 'loan_return'
+  | 'tax_payment'
 
 /** Xarajat ham, tushum ham boʻlmagan pul harakati (Bosqich 13.2b). */
 export interface MoneyOperation {

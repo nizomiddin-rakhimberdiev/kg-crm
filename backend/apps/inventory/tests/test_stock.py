@@ -54,6 +54,13 @@ def product(tenant_a) -> Product:
         )
 
 
+def _cash_pot(tenant):
+    from apps.cash.models import CashAccount
+
+    with organization_context(tenant.organization.id):
+        return CashAccount.objects.get(branch=tenant.branch, kind="cash", is_active=True)
+
+
 def _in(tenant, product, warehouse, qty: str, cost: str | None = None):
     with organization_context(tenant.organization.id):
         return services.record_movement(
@@ -234,6 +241,8 @@ class TestEndpoints:
                 "movement_type": "purchase",
                 "quantity": "25.5",
                 "unit_cost": "4500",
+                # Pul chiqadigan xarid o'z qopini aytadi (audit 2026-11-12).
+                "cash_account_id": str(_cash_pot(tenant_a).id),
             },
             format="json",
         )

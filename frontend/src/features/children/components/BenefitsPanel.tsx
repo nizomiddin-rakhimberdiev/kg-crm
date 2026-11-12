@@ -114,7 +114,7 @@ export function BenefitsPanel({ childId }: { childId: string }) {
           <BadgePercent className="h-4 w-4 text-slate-500" />
           {t('Imtiyoz')}
         </h2>
-        {can('payments.create') && !open && (
+        {can('discounts.create') && !open && (
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -289,7 +289,7 @@ export function BenefitsPanel({ childId }: { childId: string }) {
                   {row.created_by_name && ` · ${row.created_by_name}`}
                 </span>
               </span>
-              {can('payments.update') && !row.valid_to && (
+              {can('discounts.update') && !row.valid_to && (
                 <span className="flex items-center gap-2">
                   {ending?.id === row.id ? (
                     <>

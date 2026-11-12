@@ -47,6 +47,9 @@ class AuditLogSerializer(serializers.ModelSerializer):
     def get_entity_label(self, obj: AuditLog) -> str:
         if not obj.entity_id:
             return ""
+        # Yozuv paytidagi nom; eski qatorlarda yo'q — jonli nom.
+        if obj.entity_label:
+            return obj.entity_label
         return self._labels().get(obj.entity_type, {}).get(str(obj.entity_id), "")
 
     def get_changes_labels(self, obj: AuditLog) -> dict[str, str]:
@@ -60,6 +63,10 @@ class AuditLogSerializer(serializers.ModelSerializer):
         labels = self._labels()
         out: dict[str, str] = {}
         for key, value in (obj.changes or {}).items():
+            spoken = audit_labels.spoken_value(key, value)
+            if spoken is not None:
+                out[key] = spoken
+                continue
             if not isinstance(value, str):
                 continue
             # Kalit turni o'zi aytmasligi mumkin (`from`, `employee_id`) —

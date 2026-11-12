@@ -77,11 +77,27 @@ def notify_user(*, user: Any, text: str) -> None:
         transaction.on_commit(lambda: _send(chat, text))
 
 
+def _header(organization_id: Any) -> str:
+    """
+    Bog'cha nomi — xabarning birinchi qatori (audit 2026-11-12).
+
+    Bitta ega ikki bog'cha ochishi mumkin, bot esa bitta: "Storno 500 000"
+    qaysi bog'chada bo'lganini xabarning o'zi aytishi kerak.
+    """
+    from apps.organizations.models import Organization
+
+    name = Organization.objects.filter(pk=organization_id).values_list("name", flat=True).first()
+    return f"🏫 {name}" if name else ""
+
+
 def notify(*, organization_id: Any, text: str) -> None:
     """Tranzaksiya tasdiqlangach har bir qabul qiluvchiga."""
     chats = recipients(organization_id)
     if not chats:
         return
+    header = _header(organization_id)
+    if header:
+        text = f"{header}\n{text}"
 
     def deliver() -> None:
         for chat in chats:
@@ -148,7 +164,11 @@ def send_digest(*, organization: Any, day: date) -> int:
         status__in=[ExpenseStatus.APPROVED, ExpenseStatus.PAID],
         expense_date=day,
     ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
-    lines = [gettext("📊 Kunlik xulosa — {day}").format(day=day.strftime("%d.%m.%Y"))]
+    lines = [
+        gettext("📊 {name} — kunlik xulosa, {day}").format(
+            name=organization.name, day=day.strftime("%d.%m.%Y")
+        )
+    ]
     income = Decimal("0")
     for row in receipts:
         income += row["total"]

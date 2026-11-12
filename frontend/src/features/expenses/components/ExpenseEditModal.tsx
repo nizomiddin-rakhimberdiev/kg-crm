@@ -12,6 +12,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { DateInput } from '@/components/ui/DateInput'
+import { REASON_MIN } from '@/components/ui/ConfirmDialog'
 import { Modal } from '@/components/ui/Modal'
 import { expensesApi, type ExpenseItemInput } from '@/features/expenses/api'
 import {
@@ -59,6 +60,7 @@ export function ExpenseEditModal({ expense, onClose }: { expense: Expense; onClo
     cash_account_id: expense.cash_account ?? '',
   })
   const [allowNegative, setAllowNegative] = useState(false)
+  const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   const total = lined ? itemsTotal(items) : Number(amount || 0)
@@ -66,6 +68,12 @@ export function ExpenseEditModal({ expense, onClose }: { expense: Expense; onClo
   const credit = form.cash_account_id === expense.cash_account ? Number(expense.amount) : 0
   const short = shortfall(pots, form.cash_account_id, total, credit)
   const pot = pots.find((p) => p.id === form.cash_account_id)
+  // Pul qayta yoziladigan tahrir — sabab majburiy (backend ham tekshiradi).
+  const moneyChanged =
+    total !== Number(expense.amount) ||
+    form.expense_date !== expense.expense_date ||
+    form.cash_account_id !== (expense.cash_account ?? '')
+  const reasonMissing = moneyChanged && reason.trim().length < REASON_MIN
 
   const save = useMutation({
     mutationFn: () =>
@@ -73,6 +81,7 @@ export function ExpenseEditModal({ expense, onClose }: { expense: Expense; onClo
         ...form,
         ...(lined ? { items: usableItems(items) } : { amount: String(amount) }),
         ...(short > 0 ? { allow_negative: allowNegative } : {}),
+        ...(moneyChanged ? { reason: reason.trim() } : {}),
       }),
     onSuccess: () => {
       invalidateMoney(queryClient, organizationId)
@@ -190,6 +199,26 @@ export function ExpenseEditModal({ expense, onClose }: { expense: Expense; onClo
           onChange={setAllowNegative}
         />
 
+        {moneyChanged && (
+          <div>
+            <label htmlFor="xreason" className="mb-1 block text-xs font-medium text-slate-600">
+              {t('Tuzatish sababi')}
+            </label>
+            <input
+              id="xreason"
+              maxLength={255}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className={field}
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              {t('Summa, sana yoki hisob oʻzgardi — pul qayta yoziladi. Kamida {n} ta belgi.', {
+                n: REASON_MIN,
+              })}
+            </p>
+          </div>
+        )}
+
         <div className="flex justify-end gap-2">
           <button
             type="button"
@@ -200,7 +229,9 @@ export function ExpenseEditModal({ expense, onClose }: { expense: Expense; onClo
           </button>
           <button
             type="submit"
-            disabled={save.isPending || total <= 0 || (short > 0 && !allowNegative)}
+            disabled={
+              save.isPending || total <= 0 || (short > 0 && !allowNegative) || reasonMissing
+            }
             className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
           >
             {save.isPending ? t('Saqlanmoqda…') : t('Saqlash')}

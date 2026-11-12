@@ -10,7 +10,7 @@ from rest_framework import serializers
 
 from apps.cash.models import CashAccount
 from apps.core.fields import TenantPrimaryKeyRelatedField
-from apps.expenses.models import Expense, ExpenseCategory, ExpenseItem
+from apps.expenses.models import Expense, ExpenseCategory, ExpenseItem, ExpenseStatus
 from apps.inventory.models import Supplier
 
 __all__ = ["ExpenseCategorySerializer", "ExpenseSerializer", "ExpenseWriteSerializer"]
@@ -81,6 +81,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
     period = serializers.SerializerMethodField()
     supplier_name = serializers.CharField(source="supplier.name", read_only=True, default=None)
     has_receipt = serializers.SerializerMethodField()
+    status_label = serializers.SerializerMethodField()
 
     class Meta:
         model = Expense
@@ -102,14 +103,27 @@ class ExpenseSerializer(serializers.ModelSerializer):
             "description",
             "items",
             "status",
+            "status_label",
             "approved_by_name",
             "decided_at",
             "decision_note",
             "cash_account",
             "cash_account_name",
+            # To'lov komissiyasi — avtomatik chiqim, tahrirlanmaydi.
+            "payment",
             "created_at",
         ]
         read_only_fields = fields
+
+    def get_status_label(self, expense: Expense) -> str:
+        """
+        To'lov bilan birga qaytarilgan komissiya — "Qaytarilgan", "Rad
+        etilgan" emas: uni hech kim rad etmagan (audit 2026-11-12). Holat
+        o'zi `rejected` qoladi — hisobotlar uni shu bilan chiqarib tashlaydi.
+        """
+        if expense.status == ExpenseStatus.REJECTED and expense.payment_id is not None:
+            return gettext("Qaytarilgan")
+        return str(expense.get_status_display())
 
     def get_has_receipt(self, expense: Expense) -> bool:
         return bool(expense.receipt)

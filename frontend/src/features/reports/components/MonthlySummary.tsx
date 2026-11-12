@@ -17,11 +17,12 @@ import { reportsApi } from '@/features/dashboard/api'
 import { paymentMethodLabel } from '@/features/payments/methods'
 import { useExcelExport } from '@/features/reports/useExcelExport'
 import { ApiError } from '@/lib/api/types'
-import { formatDate, som } from '@/lib/format'
+import { formatDate, som, periodLabel } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
 import { MonthInput } from '@/components/ui/MonthInput'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 function Amount({ value, strong = false }: { value: string; strong?: boolean }) {
   return (
@@ -71,9 +72,11 @@ export function MonthlySummary({ month: pageMonth }: { month: string }) {
   })
   const full = completeness.data
   const [error, setError] = useState<string | null>(null)
+  const [askClose, setAskClose] = useState(false)
   const close = useMutation({
     mutationFn: () => reportsApi.closeMonth(year, month),
     onSuccess: () => {
+      setAskClose(false)
       setError(null)
       void queryClient.invalidateQueries({ queryKey: key })
     },
@@ -84,6 +87,19 @@ export function MonthlySummary({ month: pageMonth }: { month: string }) {
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+      {/* Egasining qarori (2026-11-12, A7): yopilgan oyga faqat faktura
+          emas, hech qanday pul hujjati yozilmaydi. */}
+      <ConfirmDialog
+        open={askClose}
+        title={t('Oyni yopish')}
+        body={t(
+          'Yopilgan oyga toʻlov, chiqim, avans, koʻchirma va qarz yozilmaydi. Tuzatish — keyingi oyda, qarshi yozuv bilan.',
+        )}
+        confirmLabel={t('Oyni yopish')}
+        busy={close.isPending}
+        onConfirm={() => close.mutate()}
+        onCancel={() => setAskClose(false)}
+      />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-slate-900">{t('Oylik yigʻma')}</h2>
@@ -145,16 +161,7 @@ export function MonthlySummary({ month: pageMonth }: { month: string }) {
                 <button
                   type="button"
                   disabled={close.isPending || !data.check.ok}
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        t(
-                          'Oy yopilgach u faqat keyingi oyga tuzatish qatori orqali oʻzgaradi. Yopasizmi?',
-                        ),
-                      )
-                    )
-                      close.mutate()
-                  }}
+                  onClick={() => setAskClose(true)}
                   className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
                 >
                   <Lock className="h-3.5 w-3.5" />
@@ -353,7 +360,7 @@ export function MonthlySummary({ month: pageMonth }: { month: string }) {
                     {data.aging.map((row) => (
                       <li key={row.period} className="flex justify-between gap-2">
                         <span>
-                          {row.period} · {t('{n} bola', { n: row.children })}
+                          {periodLabel(row.period)} · {t('{n} bola', { n: row.children })}
                         </span>
                         <Amount value={row.outstanding} />
                       </li>

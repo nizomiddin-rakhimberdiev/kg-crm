@@ -2959,3 +2959,39 @@ msgstr "by certificate −{credit}"
 
 msgid "{field}: sana notoʻgʻri."
 msgstr "{field}: the date is wrong."
+
+msgid "Bola {date} kuni hali bogʻchada boʻlmagan — qabul sanasi {arrived}."
+msgstr "On {date} the child was not yet enrolled — enrolment date {arrived}."
+
+msgid "Bu avans yakunlangan hisoblashga kirgan — uni oʻchirib boʻlmaydi. Tuzatish keyingi oyning hisoblashida."
+msgstr "This advance is part of a finalized payroll and cannot be deleted. Correct it in next month's payroll."
+
+msgid "Bu chiqim toʻlov komissiyasi — u toʻlov bilan birga oʻzgaradi. Toʻlov usulini tuzating yoki toʻlovni qaytaring."
+msgstr "This expense is a payment commission and changes together with the payment. Correct the payment method or reverse the payment."
+
+msgid "Bu toʻlov puli topshiriqda turibdi — avval topshiriqni bekor qiling yoki qabul qiluvchi rad etsin."
+msgstr "This payment's cash is waiting in a handover — cancel the handover first or have the receiver reject it."
+
+msgid "Daʼvo kelajakdagi kunni oʻz ichiga olmaydi — tugash sanasi bugundan kech."
+msgstr "A claim cannot include future days — the end date is after today."
+
+msgid "Sababini yozing — kamida {n} ta belgi."
+msgstr "Give a reason — at least {n} characters."
+
+msgid "Summa, sana yoki hisob oʻzgardi — sababini yozing (kamida {n} ta belgi)."
+msgstr "The amount, date or account changed — give a reason (at least {n} characters)."
+
+msgid "Topshiruvchining qoʻlida {held} soʻm qoldi — {amount} soʻmni qabul qilib boʻlmaydi. Topshiriqni rad eting."
+msgstr "The sender holds only {held} UZS — {amount} UZS cannot be accepted. Reject the handover."
+
+msgid "Toʻlov sanasi bolaning qabul sanasidan ({day}) oldin boʻlishi mumkin emas."
+msgstr "The payment date cannot be before the child's enrolment date ({day})."
+
+msgid "Xarid qaysi hisobdan toʻlanganini tanlang."
+msgstr "Choose which account paid for the purchase."
+
+msgid "⚠️ Taxminiy — oylik hali hisoblanmagan."
+msgstr "⚠️ Estimate — payroll is not calculated yet."
+
+msgid "📊 {name} — kunlik xulosa, {day}"
+msgstr "📊 {name} — daily summary, {day}"

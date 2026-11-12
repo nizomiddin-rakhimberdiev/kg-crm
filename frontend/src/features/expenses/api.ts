@@ -63,6 +63,8 @@ export const expensesApi = {
       items?: ExpenseItemInput[]
       amount?: string
       allow_negative?: boolean
+      /** Summa, sana yoki qop o'zgarsa majburiy — audit jurnaliga tushadi. */
+      reason?: string
     },
   ) => api.patch<Expense>(`/expenses/${id}`, payload),
   /** Tasdiqlash — pul aynan shu yerda kassadan chiqadi (ADR-17). */
@@ -78,7 +80,7 @@ export const expensesApi = {
   categories: () => api.list<ExpenseCategory>('/expense-categories'),
   /** Oxirgi ishlatilgani tepada (Bosqich 13.3a). */
   recentCategories: () =>
-    api.list<ExpenseCategory>('/expense-categories', { ordering: 'recent', page_size: 200 }),
+    api.listAll<ExpenseCategory>('/expense-categories', { ordering: 'recent' }),
   createCategory: (payload: { name: string }) =>
     api.post<ExpenseCategory>('/expense-categories', withBranch(payload)),
   updateCategory: (id: string, payload: { name: string }) =>

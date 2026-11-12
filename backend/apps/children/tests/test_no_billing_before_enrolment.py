@@ -108,3 +108,23 @@ def test_attendance_before_the_enrolment_is_refused(tenant_a, child):
                 records=[{"child_id": child.id, "status": "present"}],
                 recorded_by=tenant_a.owner,
             )
+
+
+def test_the_monthly_run_skips_a_child_not_yet_arrived(tenant_a, child):
+    """
+    Oylik ommaviy chiqarish ham qabul oyidan oldin yozmaydi (audit 2026-11-12, G4).
+
+    Demo'da Kamola 20.06 da kelgan, lekin may fakturasi bor edi — bitta
+    hujjatni rad etish yetarli emas, ommaviy yo'l ham tekshirilishi kerak.
+    """
+    from apps.finance.models import Invoice
+
+    with organization_context(tenant_a.organization.id):
+        finance.generate_monthly_invoices(
+            organization=tenant_a.organization, period_year=2026, period_month=9
+        )
+        assert not Invoice.objects.filter(child=child, period_month=9).exists()
+        finance.generate_monthly_invoices(
+            organization=tenant_a.organization, period_year=2026, period_month=10
+        )
+        assert Invoice.objects.filter(child=child, period_month=10).exists()

@@ -92,7 +92,7 @@ export function prerenderPages(): PrerenderedPage[] {
  * (PLAN 5.6). Skriptsiz: React ishga tushsa, manzilni yana kirish
  * sahifasiga burib yuborardi.
  */
-export function notFoundPage(): { head: string; body: string } {
+export function notFoundPage(locale: Locale = 'uz'): { head: string; body: string } {
   return {
     head: [
       `<title>404 — Radix CRM</title>`,
@@ -100,6 +100,6 @@ export function notFoundPage(): { head: string; body: string } {
       // bir xil koʻrinadi.
       `<meta name="robots" content="noindex" />`,
     ].join('\n    '),
-    body: renderToString(<NotFoundPage />),
+    body: renderToString(<NotFoundPage locale={locale} />),
   }
 }

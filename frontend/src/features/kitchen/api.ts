@@ -43,7 +43,7 @@ export interface ServingPreview {
 }
 
 export const kitchenApi = {
-  dishes: () => api.list<Dish>('/dishes', { page_size: 200 }),
+  dishes: () => api.listAll<Dish>('/dishes'),
   saveDish: (
     id: string | null,
     body: {

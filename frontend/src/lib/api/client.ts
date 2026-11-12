@@ -162,6 +162,11 @@ httpClient.interceptors.response.use(
 )
 
 /** Konvertdan `data` ni ochib beradi — chaqiruvchilar `.data.data` yozmasin. */
+/** Backend `EnvelopePageNumberPagination.max_page_size` bilan bir xil. */
+export const MAX_PAGE_SIZE = 100
+/** `listAll` uchun to'xtash chegarasi — 5 000 qator. */
+const MAX_PAGES = 50
+
 export const api = {
   async get<T>(url: string, params?: Record<string, unknown>): Promise<T> {
     const response = await httpClient.get<Envelope<T>>(url, { params })
@@ -177,6 +182,29 @@ export const api = {
     }
   },
 
+  /**
+   * Ro'yxatning HAMMASI — sahifalab yig'iladi (audit 2026-11-12).
+   *
+   * Server bir sahifada ko'pi bilan `MAX_PAGE_SIZE` qator beradi
+   * (`core/pagination.py`); `page_size: 500` so'ralsa ham 100 tasi
+   * qaytadi va qolgani jimgina yo'qoladi. Tanlov ro'yxatlari shu bilan.
+   */
+  async listAll<T>(url: string, params?: Record<string, unknown>) {
+    const base = { ...(params ?? {}) }
+    delete base.page
+    delete base.page_size
+    const items: T[] = []
+    for (let page = 1; page <= MAX_PAGES; page += 1) {
+      const response = await httpClient.get<Envelope<T[]>>(url, {
+        params: { ...base, page, page_size: MAX_PAGE_SIZE },
+      })
+      items.push(...(response.data.data ?? []))
+      const total = response.data.meta?.pagination?.total_pages ?? 1
+      if (page >= total) break
+    }
+    return { items, pagination: null }
+  },
+
   /** `headers` — masalan `Idempotency-Key` (takroriy yuborishga qarshi). */
   async post<T>(url: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
     const response = await httpClient.post<Envelope<T>>(url, body, { headers })
@@ -188,8 +216,9 @@ export const api = {
     return response.data.data
   },
 
-  async delete(url: string): Promise<void> {
-    await httpClient.delete(url)
+  /** `body` — masalan bekor qilish sababi (`{ reason }`). */
+  async delete(url: string, body?: unknown): Promise<void> {
+    await httpClient.delete(url, body === undefined ? undefined : { data: body })
   },
 
   /** PUT kabi kamroq ishlatiladigan metodlar uchun. */

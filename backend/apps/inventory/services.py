@@ -249,6 +249,7 @@ def record_movement(
         reference=reference[:100],
         note=note[:255],
         expense=expense,
+        created_by=created_by,
     )
     recompute_product_stock(product)
     # "Kam qolgan mahsulot" dashboardda — kesh eskirdi.

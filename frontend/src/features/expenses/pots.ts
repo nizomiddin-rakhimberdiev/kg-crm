@@ -16,6 +16,8 @@ export interface Pot {
   name: string
   /** `null` — qoldiqni koʻrishga ruxsat yoʻq; nomi baribir tanlanadi. */
   balance: number | null
+  /** Qoldiq ichidagi, bankka hali tushmagan terminal/Click/Payme puli. */
+  inTransit: number
 }
 
 export function usePots(enabled = true): { pots: Pot[]; isPending: boolean } {
@@ -32,12 +34,14 @@ export function usePots(enabled = true): { pots: Pot[]; isPending: boolean } {
     enabled: enabled && can('payments.read'),
   })
   const byId = new Map((balances.data ?? []).map((row) => [row.id, Number(row.balance)]))
+  const transit = new Map((balances.data ?? []).map((row) => [row.id, Number(row.in_transit ?? 0)]))
   const pots = (accounts.data?.items ?? [])
     .filter((account) => account.is_active)
     .map((account) => ({
       id: account.id,
       name: account.name,
       balance: byId.has(account.id) ? (byId.get(account.id) as number) : null,
+      inTransit: transit.get(account.id) ?? 0,
     }))
   return { pots, isPending: accounts.isPending }
 }

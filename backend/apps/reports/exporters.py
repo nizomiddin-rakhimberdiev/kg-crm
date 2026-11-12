@@ -42,13 +42,15 @@ __all__ = ["COLUMNS", "rows_for", "to_csv", "to_xlsx", "export_filename"]
 #: ham, pochtada ham muammosiz ishlaydi. Faqat bo'shliq va `/` dan
 #: qochiladi.
 FILENAME_BY_TYPE: dict[str, dict[str, str]] = {
-    "revenue": {"uz": "tushum", "ru": "vyruchka", "en": "revenue"},
-    "expenses": {"uz": "chiqimlar", "ru": "rashody", "en": "expenses"},
-    "payroll": {"uz": "oylik", "ru": "zarplata", "en": "payroll"},
-    "attendance": {"uz": "davomat", "ru": "poseshchaemost", "en": "attendance"},
-    "debtors": {"uz": "qarzdorlar", "ru": "dolzhniki", "en": "debtors"},
-    "profit-loss": {"uz": "foyda-zarar", "ru": "pribyl-ubytok", "en": "profit-loss"},
-    "monthly": {"uz": "oylik-tolov-jadvali", "ru": "mesyachnaya-tablica", "en": "monthly-table"},
+    # Rus nomlari kirillda (audit 2026-11-12): transliteratsiya —
+    # "vyruchka" — rus buxgalteri uchun ham, o'zbek uchun ham begona.
+    "revenue": {"uz": "tushum", "ru": "выручка", "en": "revenue"},
+    "expenses": {"uz": "chiqimlar", "ru": "расходы", "en": "expenses"},
+    "payroll": {"uz": "oylik", "ru": "зарплата", "en": "payroll"},
+    "attendance": {"uz": "davomat", "ru": "посещаемость", "en": "attendance"},
+    "debtors": {"uz": "qarzdorlar", "ru": "должники", "en": "debtors"},
+    "profit-loss": {"uz": "foyda-zarar", "ru": "прибыль-убыток", "en": "profit-loss"},
+    "monthly": {"uz": "oylik-tolov-jadvali", "ru": "ежемесячная-таблица", "en": "monthly-table"},
 }
 
 

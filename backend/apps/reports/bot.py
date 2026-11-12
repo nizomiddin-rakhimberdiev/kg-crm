@@ -285,6 +285,7 @@ def _profit(user: Any, period: str) -> str:
         # Foyda oy bo'yicha hisoblanadi (oylik, amortizatsiya oyga tegishli).
         months, label = [(today.year, today.month)], gettext("shu oy")
     totals = {"revenue": ZERO, "expenses": ZERO, "payroll": ZERO, "profit": ZERO}
+    estimated = False
     for year, month in months:
         pnl = money.profit_and_loss(
             organization_id=user.organization_id, year=year, month=month, branch_id=user.branch_id
@@ -293,16 +294,20 @@ def _profit(user: Any, period: str) -> str:
         totals["expenses"] += Decimal(pnl["operating_expenses"]) + Decimal(pnl["amortization"])
         totals["payroll"] += Decimal(pnl["payroll"])
         totals["profit"] += Decimal(pnl["operating_profit"])
+        estimated = estimated or bool(pnl.get("payroll_estimated"))
     sign = "📈" if totals["profit"] >= 0 else "🔻"
-    return "\n".join(
-        [
-            f"{sign} {gettext('Foyda')} — {label}{_where(user)}: "
-            f"{_som(totals['profit'])} {gettext('soʻm')}",
-            f"• {gettext('Daromad')}: {_som(totals['revenue'])}",
-            f"• {gettext('Xarajatlar')}: {_som(totals['expenses'])}",
-            f"• {gettext('Ish haqi')}: {_som(totals['payroll'])}",
-        ]
-    )
+    lines = [
+        f"{sign} {gettext('Foyda')} — {label}{_where(user)}: "
+        f"{_som(totals['profit'])} {gettext('soʻm')}",
+        f"• {gettext('Daromad')}: {_som(totals['revenue'])}",
+        f"• {gettext('Xarajatlar')}: {_som(totals['expenses'])}",
+        f"• {gettext('Ish haqi')}: {_som(totals['payroll'])}",
+    ]
+    # Oylik hisoblanmagan oyda ish haqi — okladdan taxmin; ekran buni
+    # banner bilan aytadi, bot ham aytishi kerak (audit 2026-11-12).
+    if estimated:
+        lines.append(gettext("⚠️ Taxminiy — oylik hali hisoblanmagan."))
+    return "\n".join(lines)
 
 
 def _children(user: Any, period: str) -> str:

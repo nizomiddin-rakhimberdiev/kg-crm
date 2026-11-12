@@ -358,3 +358,20 @@ def test_the_digest_task_runs_only_at_the_chosen_hour(
     with _ctx(org):
         set_setting(organization=org.organization, key="alerts.digest_hour", value=now.hour)
     assert send_daily_digests()["delivered"] == 1
+
+
+# --- Qaysi bog'cha? (audit 2026-11-12, E1) ---
+
+
+def test_the_digest_names_the_kindergarten(org: Any, sent: list):
+    """Ikki bog'chasi bor ega xulosani qaysi biriniki ekanini bilmasdi."""
+    _link_owner(org)
+    with _ctx(org):
+        alerts.send_digest(organization=org.organization, day=TODAY)
+    assert org.organization.name in sent[-1][1].splitlines()[0]
+
+
+def test_an_owner_alert_names_the_kindergarten(org: Any, sent: list):
+    _link_owner(org)
+    _expense(org, "6000000", receipt="r.png")
+    assert sent and all(org.organization.name in text for _chat, text in sent)

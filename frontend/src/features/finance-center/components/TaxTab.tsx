@@ -26,7 +26,7 @@ import { Select } from '@/components/ui/Select'
 const card = 'rounded-2xl border border-slate-200 bg-white p-4'
 
 const STATUS: Record<TaxItem['status'], { label: string; tone: string }> = {
-  paid: { label: t('Toʻlandi'), tone: 'bg-emerald-50 text-emerald-800' },
+  paid: { label: t('Toʻlangan'), tone: 'bg-emerald-50 text-emerald-800' },
   upcoming: { label: t('Kutilmoqda'), tone: 'bg-slate-100 text-slate-700' },
   due: { label: t('Muddati yaqin'), tone: 'bg-orik-50 text-orik-800' },
   overdue: { label: t('Muddati oʻtdi'), tone: 'bg-red-50 text-red-700' },

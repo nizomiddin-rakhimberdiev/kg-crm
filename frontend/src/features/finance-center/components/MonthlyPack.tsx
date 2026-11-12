@@ -7,7 +7,8 @@
  * raqamlar darajasida koʻrsatiladi.
  */
 
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Download, FileText, Lock } from 'lucide-react'
 import { useAuth, useOrganizationId } from '@/app/providers/AuthProvider'
@@ -328,6 +329,12 @@ export function MonthlyPack() {
   })
 
   const data = pack.data
+  // `#pack-pnl` kabi havola — paket yuklangach o'sha bo'limga (F2).
+  const { hash } = useLocation()
+  useEffect(() => {
+    if (!data || !hash.startsWith('#pack-')) return
+    document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' })
+  }, [data, hash])
   const params = { year, month, ...(selectedBranchId ? { branch: selectedBranchId } : {}) }
   const isOwner = user?.role?.code === 'org_owner'
   const branches = useQuery({
@@ -439,7 +446,11 @@ export function MonthlyPack() {
       {pack.isError && <QueryError error={pack.error} onRetry={() => void pack.refetch()} />}
 
       {data?.sections.map((section, index) => (
-        <section key={section.key} className="rounded-2xl border border-slate-200 bg-white p-4">
+        <section
+          key={section.key}
+          id={`pack-${section.key}`}
+          className="scroll-mt-4 rounded-2xl border border-slate-200 bg-white p-4"
+        >
           <h3 className="mb-3 text-sm font-semibold text-slate-900">
             {index + 1}. {section.title}
           </h3>

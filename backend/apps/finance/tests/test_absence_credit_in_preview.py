@@ -67,6 +67,8 @@ def _claim(tenant_a: Any, child: Child, *, days: int = 2, kind: str = "parental"
         date_from=start,
         date_to=start + timedelta(days=days - 1),
         note="Ota-ona arizasi",
+        # Ariza ham hujjat — raqami bilan (ADR-51).
+        document_no="A-17",
     )
     return absence.approve_claim(claim=claim)
 

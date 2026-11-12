@@ -73,7 +73,7 @@ export interface NavItem {
  */
 const allNavItems: NavItem[] = [
   {
-    label: t('Dashboard'),
+    label: t('Boshqaruv paneli'),
     to: '/dashboard',
     section: 'today',
     icon: LayoutDashboard,

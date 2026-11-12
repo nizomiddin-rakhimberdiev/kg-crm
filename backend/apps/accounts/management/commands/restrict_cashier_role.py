@@ -11,9 +11,12 @@ rollar har bir tashkilotda maʼlumot — ular oʻz-oʻzidan oʻzgarmaydi.
 
 * `payments_own_only = True` — jurnal, kunlik hisobot va kvitansiyada
   faqat oʻzi qabul qilgan toʻlovlar;
-* `dashboard.*`, `expenses.*`, `reports.*` ruxsatlarini olib tashlaydi.
+* `dashboard.*`, `expenses.*`, `reports.*` ruxsatlarini olib tashlaydi;
+* `payments.approve` va `payments.delete` ni olib tashlaydi (audit
+  2026-11-12): faktura bekor qilish va tarif oʻchirish — rahbar ishi.
 
-`payments.*` ga tegmaydi — toʻlov doskasi kassirning asosiy ishi.
+`payments` ning qolgani (oʻqish, qabul, tuzatish, eksport) qoladi —
+toʻlov doskasi kassirning asosiy ishi.
 Boshqa rollarga — direktor, menejer, bogʻcha oʻzi yasagan rollar —
 tegmaydi.
 
@@ -39,6 +42,8 @@ from apps.core.tenancy import organization_context, platform_context
 CASHIER = "cashier"
 #: Kassirdan olinadigan modullar — umumiy pul manzarasi.
 HIDDEN_MODULES: frozenset[str] = frozenset({"dashboard", "expenses", "reports"})
+#: Kassirdan olinadigan alohida ruxsatlar — hujjatni yoʻqqa chiqarish.
+HIDDEN_CODES: frozenset[str] = frozenset({"payments.approve", "payments.delete"})
 
 
 class Command(BaseCommand):
@@ -79,7 +84,11 @@ class Command(BaseCommand):
         changed = 0
         for role in Role.objects.filter(code=CASHIER, is_system=True):
             grants = RolePermission.objects.filter(role=role).select_related("permission")
-            drop = [rp for rp in grants if rp.permission.module in HIDDEN_MODULES]
+            drop = [
+                rp
+                for rp in grants
+                if rp.permission.module in HIDDEN_MODULES or rp.permission.code in HIDDEN_CODES
+            ]
             if role.payments_own_only and not drop:
                 continue
             codes = ", ".join(sorted(rp.permission.code for rp in drop)) or "—"

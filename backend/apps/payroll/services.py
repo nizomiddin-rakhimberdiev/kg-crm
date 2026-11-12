@@ -516,6 +516,10 @@ def record_advance(
     """
     if amount <= 0:
         raise BusinessRuleViolation(gettext("Avans summasi musbat boʻlishi kerak."))
+    # Kassadan hali chiqmagan pul — "hozir qancha pulim bor?" degan
+    # savolga noto'g'ri javob. `pay_run` bilan bir xil matn.
+    if paid_on > timezone.localdate():
+        raise BusinessRuleViolation(gettext("Toʻlov sanasi kelajakda boʻlishi mumkin emas."))
 
     account = cash_account or cash.account_for_method(branch=employee.branch, method="cash")
     if account.organization_id != employee.organization_id:
@@ -552,8 +556,29 @@ def record_advance(
 
 
 @transaction.atomic
-def delete_advance(*, advance: EmployeeAdvance, created_by: Any = None) -> None:
-    """Avansni o'chiradi (yakunlangan davrga tegmaydi)."""
+def delete_advance(*, advance: EmployeeAdvance, reason: str = "", created_by: Any = None) -> None:
+    """
+    Avansni o'chiradi (yakunlangan davrga tegmaydi).
+
+    Yakunlangan hisoblash YARATILGANDA mavjud bo'lgan avans uning sof
+    maoshiga allaqachon tushgan: uni olib tashlash hisoblashni
+    o'zgartirmaydi, faqat summaning ortidagi sababni yo'qotadi.
+    Yakunlashdan KEYIN berilgan avans hisoblashga tushmagan — uni
+    o'chirish xavfsiz.
+    """
+    closed = PayrollRun.objects.filter(
+        branch=advance.branch,
+        period_year=advance.paid_on.year,
+        period_month=advance.paid_on.month,
+        finalized_at__gte=advance.created_at,
+    ).exclude(status=PayrollStatus.DRAFT)
+    if closed.exists():
+        raise BusinessRuleViolation(
+            gettext(
+                "Bu avans yakunlangan hisoblashga kirgan — uni oʻchirib boʻlmaydi. "
+                "Tuzatish keyingi oyning hisoblashida."
+            )
+        )
     run = _draft_run_for(advance)
     # Kassa yozuvi O'CHIRILMAYDI — qarshi yozuv qo'shiladi (D3).
     # Avansning o'zi o'chiriladi, chunki u hali hisoblashga tushmagan
@@ -561,7 +586,7 @@ def delete_advance(*, advance: EmployeeAdvance, created_by: Any = None) -> None:
     cash.reverse_movements_for(
         source_type=MovementSource.ADVANCE,
         source_id=advance.id,
-        description=gettext("avans bekor qilindi"),
+        description=(reason.strip() or gettext("avans bekor qilindi"))[:255],
         created_by=created_by,
     )
     advance.delete()

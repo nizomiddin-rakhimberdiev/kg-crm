@@ -30,6 +30,7 @@ import { useToast } from '@/app/providers/ToastProvider'
 import { QueryError } from '@/components/ui/QueryError'
 import { t } from '@/lib/i18n'
 import { Select } from '@/components/ui/Select'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 const STATUS_BUTTONS: Array<{
   value: AttendanceStatus
@@ -213,9 +214,13 @@ function ChildrenAttendance({
     return () => window.removeEventListener('beforeunload', warn)
   }, [dirty])
 
-  /** Tanlovni almashtirishdan oldin soʻraydi — qoralama boʻlsa. */
+  /** Tanlovni almashtirishdan oldin soʻraydi — qoralama boʻlsa (H3: ilova oynasi). */
+  const [pendingSwitch, setPendingSwitch] = useState<(() => void) | null>(null)
   const switchGuarded = (apply: () => void) => {
-    if (dirty && !window.confirm(t('Saqlanmagan belgilar yoʻqoladi. Davom etasizmi?'))) return
+    if (dirty) {
+      setPendingSwitch(() => apply)
+      return
+    }
     apply()
   }
 
@@ -223,6 +228,18 @@ function ChildrenAttendance({
 
   return (
     <div className="space-y-4 pb-24 sm:pb-0">
+      <ConfirmDialog
+        open={pendingSwitch !== null}
+        title={t('Saqlanmagan belgilar')}
+        body={t('Saqlanmagan belgilar yoʻqoladi. Davom etasizmi?')}
+        confirmLabel={t('Davom etish')}
+        tone="danger"
+        onConfirm={() => {
+          pendingSwitch?.()
+          setPendingSwitch(null)
+        }}
+        onCancel={() => setPendingSwitch(null)}
+      />
       {/* Sabab oynasi — "Sababli" bosilganda darhol chiqadi. Sabab
           davomat bilan BIRGA saqlanadi: alohida so'rov yuborilsa,
           tarbiyachi "Saqlash" ni bosmasdan chiqib ketganda yarim

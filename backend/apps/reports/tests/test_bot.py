@@ -375,3 +375,61 @@ def test_a_parent_button_still_reaches_the_parent_bot(tenant_a: Any, monkeypatch
         {"message": {"chat": {"id": 7007}, "text": "💰 Balans", "from": {}}}
     )
     assert outcome not in ("staff_help", "staff_query")
+
+
+# --- Ega chatida ota-ona klaviaturasi yo'q (audit 2026-11-12, E2) ---
+
+
+def _capture(monkeypatch: Any) -> list[tuple[str, Any]]:
+    from apps.notifications import telegram_updates
+
+    sent: list[tuple[str, Any]] = []
+
+    def fake(chat: str, text: str, markup: Any = None, *args: Any, **kwargs: Any) -> None:
+        sent.append((text, markup))
+
+    monkeypatch.setattr(telegram_updates, "reply", fake)
+    return sent
+
+
+def test_a_bare_start_in_a_staff_chat_does_not_offer_the_parent_keyboard(
+    tenant_a: Any, monkeypatch: Any
+):
+    from apps.notifications import telegram_updates
+
+    sent = _capture(monkeypatch)
+    _remember_staff(tenant_a, "5005")
+    sent.clear()
+
+    outcome = telegram_updates.handle_update(
+        {"message": {"chat": {"id": 5005}, "text": "/start", "from": {}}}
+    )
+    assert outcome == "staff_help"
+    text, markup = sent[-1]
+    # Ota-onaning "telefon raqamini ulashish" tugmasi emas.
+    assert "keyboard" not in (markup or {})
+    assert (markup or {}).get("remove_keyboard") is True
+
+
+def test_linking_a_staff_chat_clears_an_old_parent_keyboard(tenant_a: Any, monkeypatch: Any):
+    from apps.accounts import telegram as staff
+    from apps.notifications import telegram_updates
+
+    sent = _capture(monkeypatch)
+    with _ctx(tenant_a):
+        code = staff.link_url(tenant_a.owner).rsplit("start=", 1)[-1]
+    outcome = telegram_updates.handle_update(
+        {"message": {"chat": {"id": 5006}, "text": f"/start {code}", "from": {}}}
+    )
+    assert outcome == "staff_linked"
+    text, markup = sent[-1]
+    assert text.startswith("Salom")
+    assert (markup or {}).get("remove_keyboard") is True
+
+
+def test_profit_says_it_is_an_estimate_while_payroll_is_a_draft(tenant_a: Any):
+    """Oylik hisoblanmagan oyda foyda — taxmin, va bot buni aytadi (E4)."""
+    _pay(tenant_a, "500000")
+    reply = _ask(tenant_a, "bu oy foyda")
+    assert reply is not None
+    assert "taxminiy" in reply.lower()

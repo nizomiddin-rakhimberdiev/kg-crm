@@ -24,14 +24,7 @@ import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { MonthInput } from '@/components/ui/MonthInput'
 import { Select } from '@/components/ui/Select'
-
-/** Toʻlov usullari — odam tilida (hisobotda kod turishi yaramaydi). */
-const METHOD: Record<string, string> = {
-  cash: t('Naqd'),
-  terminal: t('Terminal'),
-  bank_transfer: t('Oʻtkazma'),
-  online: t('Payme / Click'),
-}
+import { paymentMethodLabel } from '@/features/payments/methods'
 
 /** Oxirgi 12 oy — "qachonniki?" savoli odatda shu oraliqda. */
 const defaultRange = () => {
@@ -237,7 +230,7 @@ export function DebtByPeriod() {
                                             {formatDate(payment.paid_at)}
                                           </span>
                                           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
-                                            {METHOD[payment.method] ?? payment.method}
+                                            {paymentMethodLabel(payment.method)}
                                           </span>
                                           <span className="font-semibold tabular-nums text-slate-800">
                                             {som(payment.amount)}

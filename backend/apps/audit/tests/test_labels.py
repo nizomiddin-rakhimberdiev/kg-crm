@@ -134,7 +134,12 @@ class TestLabels:
         assert row["changes_labels"]["employee_id"] == str(employee)
 
     def test_a_deleted_row_leaves_the_entry_in_place(self, tenant_a, child):
-        """Nom topilmasa yozuv YO'QOLMAYDI — u faqat nomsiz qoladi."""
+        """
+        Yozuv YO'QOLMAYDI va o'chirilgan bolaning nomini saqlaydi.
+
+        2026-11-12 gacha nom jonli olinardi va o'chirilgandan keyin bo'sh
+        qolardi; endi u yozuv paytida saqlanadi (`entity_label`).
+        """
         with organization_context(tenant_a.organization.id):
             audit.record(
                 action="delete",
@@ -147,7 +152,7 @@ class TestLabels:
             child.delete()
         response = tenant_a.client().get(reverse("v1:audit-log-list"))
         row = response.json()["data"][0]
-        assert row["entity_label"] == ""
+        assert row["entity_label"] == child.full_name
         assert row["entity_id"] is not None
 
     @pytest.mark.tenancy

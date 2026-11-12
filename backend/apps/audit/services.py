@@ -7,6 +7,7 @@ edi). docs/02 §20.3.
 
 from __future__ import annotations
 
+import contextlib
 from typing import Any
 
 from django.http import HttpRequest
@@ -43,6 +44,15 @@ def record(
     else:
         actor = None
 
+    from apps.audit.labels import label_map_for
+
+    label = ""
+    if entity_id:
+        # Bitta so'rov; o'chirilgan yozuvda bo'sh qoladi — xato emas. Nom
+        # topilmasligi jurnal yozuvini hech qachon to'xtatmaydi.
+        with contextlib.suppress(Exception):
+            label = label_map_for(entity_type, {str(entity_id)}).get(str(entity_id), "")
+
     return AuditLog.objects.create(
         organization=organization,
         actor=actor,
@@ -50,6 +60,7 @@ def record(
         action=action,
         entity_type=entity_type,
         entity_id=entity_id,
+        entity_label=label[:255],
         changes=changes or {},
         ip=client_ip(request),
         user_agent=(request.META.get("HTTP_USER_AGENT", "")[:255] if request else ""),

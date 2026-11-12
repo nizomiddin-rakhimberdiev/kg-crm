@@ -4,16 +4,19 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.audit import services as audit
+from apps.core.exceptions import BusinessRuleViolation
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchCreateMixin, BranchScopedMixin, TenantViewSet
 from apps.inventory import services
 from apps.inventory.models import (
+    MovementType,
     Product,
     ProductCategory,
     StockMovement,
@@ -97,7 +100,7 @@ class StockMovementViewSet(BranchScopedMixin, TenantViewSet):
 
     permission_module = "inventory"
     model = StockMovement
-    select_related_fields = ("product", "warehouse", "supplier")
+    select_related_fields = ("product", "warehouse", "supplier", "expense", "created_by")
     filterset_fields = ["product", "warehouse", "direction", "movement_type"]
     ordering_fields = ["occurred_at"]
     http_method_names = ["get", "post", "head", "options"]
@@ -113,6 +116,16 @@ class StockMovementViewSet(BranchScopedMixin, TenantViewSet):
         serializer = MovementWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        # Pul chiqadigan xarid o'z qopini aytadi (17-invariant). Sukut
+        # naqd kassa bo'lganda bankdan to'langan xarid jimgina kassadan
+        # yozilardi (audit 2026-11-12).
+        pays = (
+            data["movement_type"] == MovementType.PURCHASE
+            and (data.get("unit_cost") or 0) > 0
+            and data.get("create_expense", True)
+        )
+        if pays and data.get("cash_account") is None:
+            raise BusinessRuleViolation(gettext("Xarid qaysi hisobdan toʻlanganini tanlang."))
 
         movement = services.record_movement(
             product=data["product"],

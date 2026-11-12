@@ -56,6 +56,9 @@ class AuditLog(models.Model):
         ("approve", "Tasdiqlandi"),
         ("reject", "Rad etildi"),
         ("view", "Ochildi"),
+        # Hisobot fayli bog'chadan chiqib ketadigan yagona yo'l — kim,
+        # qachon, qaysi hisobotni olgani (audit 2026-11-12).
+        ("export", "Eksport qilindi"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -83,6 +86,11 @@ class AuditLog(models.Model):
     action = models.CharField(max_length=32, choices=ACTION_CHOICES)
     entity_type = models.CharField(max_length=60, blank=True)
     entity_id = models.UUIDField(null=True, blank=True)
+    # Yozuv PAYTIDAGI nom (audit 2026-11-12). Jonli nom keyingi
+    # o'zgarishni o'tmishga yozardi: "Ali" yaratilib "Alisher" bo'lsa,
+    # yaratish yozuvi ham "Alisher" derdi. Eski qatorlarda bo'sh —
+    # ular uchun jonli nom olinadi.
+    entity_label = models.CharField(max_length=255, blank=True)
 
     changes = models.JSONField(default=dict, blank=True)
     ip = models.GenericIPAddressField(null=True, blank=True)

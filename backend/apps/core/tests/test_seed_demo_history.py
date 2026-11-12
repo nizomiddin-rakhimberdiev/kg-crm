@@ -186,3 +186,48 @@ def test_reset_clears_a_full_history_and_keeps_the_tenant(seeded: Any):
         assert Branch.objects.filter(organization_id=organization.id).exists()
         assert User.objects.filter(organization_id=organization.id).exists()
         assert Child.objects.count() == 1
+
+
+@pytest.fixture
+def seeded_wide(tenant_a: Any) -> Any:
+    """Kattaroq demo: qisman to'lovlar va surunkali qarzdorlar albatta chiqadi."""
+    call_command(
+        "seed_demo",
+        "--slug",
+        tenant_a.organization.slug,
+        "--children",
+        "60",
+        "--months",
+        "4",
+        stdout=StringIO(),
+    )
+    return tenant_a
+
+
+def test_payments_settle_the_oldest_debt_first(seeded_wide: Any):
+    """
+    To'lov eng eski qarzga tushadi (13-invariant, audit 2026-11-12 G5).
+
+    Demo har to'lovni o'z oyining fakturasiga mixlardi ("Demo ma'lumot"
+    sababi bilan), va ro'yxatda yangi oy yopilgan, eskisi esa ochiq
+    turardi — haqiqiy kassada FIFO buni hech qachon qilmaydi.
+    """
+    from apps.finance.models import Invoice, InvoiceStatus
+
+    with organization_context(seeded_wide.organization.id):
+        invoices = list(
+            Invoice.objects.exclude(status=InvoiceStatus.CANCELLED)
+            .filter(amount_due__gt=0)
+            .order_by("child_id", "due_date")
+            .values("child_id", "due_date", "amount_due", "amount_paid")
+        )
+    by_child: dict[Any, list[dict[str, Any]]] = {}
+    for row in invoices:
+        by_child.setdefault(row["child_id"], []).append(row)
+    for rows in by_child.values():
+        open_seen = False
+        for row in rows:
+            if row["amount_paid"] < row["amount_due"]:
+                open_seen = True
+            elif open_seen:
+                raise AssertionError(f"newer invoice settled before an older one: {row}")

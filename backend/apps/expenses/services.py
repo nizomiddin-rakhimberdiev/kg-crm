@@ -14,6 +14,7 @@ from django.utils.translation import gettext
 from apps.cash import services as cash
 from apps.cash.models import MovementDirection, MovementSource
 from apps.core.exceptions import BusinessRuleViolation
+from apps.core.params import REASON_MIN
 from apps.expenses.models import Expense, ExpenseCategory, ExpenseItem, ExpenseStatus
 
 __all__ = [
@@ -62,6 +63,9 @@ def create_expense_with_items(
     Har bir qator uchun `line_total = miqdor × narx` shu yerda
     hisoblanib SAQLANADI (modeldagi izoh).
     """
+    # Nasiya chiqim ham yopilgan oyning foyda-zarariga tushadi — pul
+    # harakati bo'lmasa ham (egasining qarori, 2026-11-12).
+    _assert_month_open(branch=branch, day=expense_date, extra=extra)
     rows, total = _build_items(organization=organization, branch=branch, items=items)
 
     expense = Expense.objects.create(
@@ -84,6 +88,18 @@ def create_expense_with_items(
         cash_account=cash_account,
         allow_negative=allow_negative,
     )
+
+
+def _assert_month_open(*, branch: Any, day: Any, extra: dict[str, Any] | None = None) -> None:
+    """Chiqim sanasi — va tegishli oyi bo'lsa, o'sha oy ham — yopilmagan bo'lsin."""
+    from apps.finance.services import assert_month_open
+
+    assert_month_open(branch=branch, year=day.year, month=day.month)
+    extra = extra or {}
+    if extra.get("period_year") and extra.get("period_month"):
+        assert_month_open(
+            branch=branch, year=int(extra["period_year"]), month=int(extra["period_month"])
+        )
 
 
 def _build_items(
@@ -135,6 +151,7 @@ def update_expense(
     amount: Decimal | None = None,
     cash_account: Any = None,
     allow_negative: bool = False,
+    reason: str = "",
     updated_by: Any = None,
 ) -> Expense:
     """
@@ -157,6 +174,16 @@ def update_expense(
     expense = Expense.objects.select_for_update().get(pk=expense.pk)
     if expense.status == ExpenseStatus.REJECTED:
         raise BusinessRuleViolation(gettext("Rad etilgan chiqimni tahrirlab boʻlmaydi."))
+    # To'lov komissiyasi to'lovning bir qismi: u to'lov bilan birga
+    # yoziladi va birga bekor bo'ladi. Qo'lda tahrir ikkalasini
+    # ajratib qo'yardi (audit 2026-11-12).
+    if expense.payment_id is not None:
+        raise BusinessRuleViolation(
+            gettext(
+                "Bu chiqim toʻlov komissiyasi — u toʻlov bilan birga oʻzgaradi. "
+                "Toʻlov usulini tuzating yoki toʻlovni qaytaring."
+            )
+        )
 
     touches_lines = items is not None or amount is not None
     if touches_lines and expense.stock_movements.exists():
@@ -180,7 +207,9 @@ def update_expense(
     if description is not None:
         expense.description = description[:255]
         fields.append("description")
+    _assert_month_open(branch=expense.branch, day=expense.expense_date)
     if expense_date is not None and expense_date != expense.expense_date:
+        _assert_month_open(branch=expense.branch, day=expense_date)
         expense.expense_date = expense_date
         fields.append("expense_date")
         money_changed = True
@@ -205,6 +234,14 @@ def update_expense(
         fields.append("amount")
         money_changed = True
 
+    # Pul qayta yoziladi — nega ekani jurnalda turishi kerak.
+    if money_changed and len(reason.strip()) < REASON_MIN:
+        raise BusinessRuleViolation(
+            gettext(
+                "Summa, sana yoki hisob oʻzgardi — sababini yozing (kamida {n} ta belgi)."
+            ).format(n=REASON_MIN)
+        )
+
     expense.save(update_fields=fields)
     if new_rows is not None:
         expense.items.all().delete()
@@ -224,7 +261,7 @@ def update_expense(
         cash.reverse_movements_for(
             source_type=MovementSource.EXPENSE,
             source_id=expense.id,
-            description=gettext("chiqim tahrirlandi"),
+            description=(reason.strip() or gettext("chiqim tahrirlandi"))[:255],
             created_by=updated_by,
         )
         cash.post_movement(

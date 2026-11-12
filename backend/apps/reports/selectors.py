@@ -489,10 +489,12 @@ def profit_loss(
     payroll_in_periods = group_by in ("month", "quarter", "year")
     payroll_total = Decimal("0")
     payroll_by_period: dict[date, Decimal] = {}
+    covered: set[tuple[int, int]] = set()
     for run in payroll_queryset.values("period_year", "period_month", "total_gross"):
         period = date(run["period_year"], run["period_month"], 1)
         if not date_from.replace(day=1) <= period <= date_to:
             continue
+        covered.add((run["period_year"], run["period_month"]))
         payroll_total += run["total_gross"]
         if payroll_in_periods:
             key = _bucket_start(period, group_by)
@@ -532,6 +534,13 @@ def profit_loss(
         "expenses": expenses["total"],
         "payroll": _money(payroll_total),
         "net": _money(net),
+        # Oyligi hali yakunlanmagan oylar: ularning `net` i oyliksiz —
+        # ekran "Taxminiy — oylik hisoblanmagan" deydi (audit 2026-11-12).
+        "payroll_missing": [
+            f"{year}-{month:02d}"
+            for year, month in _months_between(date_from, min(date_to, timezone.localdate()))
+            if (year, month) not in covered
+        ],
         "by_period": rows,
         # "Sof foyda qaysi puldan yig'ilgan?" — mijozning so'ragan
         # kesimi (5-vazifa). Bu HISOBLASH usulidagi `net` emas, davr

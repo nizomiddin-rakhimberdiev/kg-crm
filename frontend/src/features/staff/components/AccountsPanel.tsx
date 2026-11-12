@@ -120,8 +120,8 @@ export function AccountsPanel() {
   })
   // Bog'lash uchun xodimlar ro'yxati (PLAN 9.1b) — faqat forma ochilganda.
   const employeesQuery = useQuery({
-    queryKey: queryKeys.employees(organizationId, { page_size: 200 }),
-    queryFn: () => employeesApi.list({ page_size: 200 }),
+    queryKey: queryKeys.employees(organizationId, { all: true }),
+    queryFn: () => employeesApi.listAll(),
     enabled: showForm,
   })
   const rolesQuery = useQuery({

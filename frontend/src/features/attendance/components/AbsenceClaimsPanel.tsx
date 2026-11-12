@@ -20,6 +20,8 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarX2, Check, Download, Paperclip, Plus, X } from 'lucide-react'
 import { DateInput } from '@/components/ui/DateInput'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { EmptyRow } from '@/components/ui/EmptyState'
 import { absenceApi, absenceKindsApi } from '@/features/attendance/api'
@@ -90,11 +92,21 @@ export function AbsenceClaimsPanel({
     queryKey: queryKeys.absenceClaims(organizationId),
     queryFn: () => absenceApi.list(),
   })
+  // Bola tanlovi — server qidiruvi bilan (`q`: ism, shartnoma, ID).
+  // Ilgari `page_size: 500` so'ralardi, server esa 100 tasini berardi —
+  // 120 bolali bog'chada oxirgi 20 nafar ro'yxatda yo'q edi (audit B2).
+  const [childSearch, setChildSearch] = useState('')
+  const childQ = useDebouncedValue(childSearch.trim(), 300)
   const childrenQuery = useQuery({
-    queryKey: queryKeys.children(organizationId, { page_size: 500 }),
-    queryFn: () => childrenApi.list({ page_size: 500 }),
+    queryKey: queryKeys.children(organizationId, { all: true, q: childQ }),
+    queryFn: () => childrenApi.listAll(childQ.length >= 2 ? { q: childQ } : undefined),
     enabled: can('attendance.create'),
   })
+  // Tanlangan bola qidiruv natijasidan tushib qolsa ham ro'yxatda qoladi.
+  const [picked, setPicked] = useState<{ id: string; name: string } | null>(null)
+  const childOptions = childrenQuery.data?.items ?? []
+  const showPicked =
+    picked !== null && picked.id === form.child_id && !childOptions.some((c) => c.id === picked.id)
 
   const invalidate = () => {
     // Qaytarish hisob-fakturaga, balansga va qarzdorlarga ta'sir qiladi.
@@ -148,6 +160,22 @@ export function AbsenceClaimsPanel({
     onError: fail,
   })
 
+  // Tasdiqlangan da'voni bekor qilish — sabab bilan (audit B3). Fakturaga
+  // tushgani bekor qilinmaydi: u endi pul, tuzatish faktura orqali.
+  const [cancelling, setCancelling] = useState<AbsenceClaim | null>(null)
+  const cancel = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => absenceApi.cancel(id, reason),
+    onSuccess: () => {
+      setCancelling(null)
+      setError(null)
+      invalidate()
+    },
+    onError: (err) => {
+      setCancelling(null)
+      fail(err)
+    },
+  })
+
   const claims = claimsQuery.data?.items ?? []
 
   return (
@@ -181,19 +209,36 @@ export function AbsenceClaimsPanel({
             <label htmlFor="ac-child" className="mb-1 block text-xs font-medium text-slate-600">
               {t('Bola')}
             </label>
-            <Select
-              id="ac-child"
-              required
-              value={form.child_id}
-              onChange={(e) => setForm((p) => ({ ...p, child_id: e.target.value }))}
-            >
-              <option value="">{t('Tanlang…')}</option>
-              {childrenQuery.data?.items.map((child) => (
-                <option key={child.id} value={child.id}>
-                  {child.full_name}
-                </option>
-              ))}
-            </Select>
+            <div className="flex gap-2">
+              <input
+                type="search"
+                aria-label={t('Bolani qidirish')}
+                placeholder={t('Ism yoki shartnoma')}
+                value={childSearch}
+                onChange={(e) => setChildSearch(e.target.value)}
+                className="w-32 shrink-0 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+              />
+              <Select
+                id="ac-child"
+                required
+                value={form.child_id}
+                onChange={(e) => {
+                  const id = e.target.value
+                  const child = childOptions.find((c) => c.id === id)
+                  setPicked(child ? { id, name: child.full_name } : null)
+                  setForm((p) => ({ ...p, child_id: id }))
+                }}
+                className="min-w-0 flex-1"
+              >
+                <option value="">{t('Tanlang…')}</option>
+                {showPicked && picked && <option value={picked.id}>{picked.name}</option>}
+                {childOptions.map((child) => (
+                  <option key={child.id} value={child.id}>
+                    {child.full_name}
+                  </option>
+                ))}
+              </Select>
+            </div>
           </div>
 
           <div>
@@ -401,6 +446,20 @@ export function AbsenceClaimsPanel({
                         </button>
                       </div>
                     )}
+                    {claim.status === 'approved' && can('attendance.approve') && (
+                      <button
+                        type="button"
+                        onClick={() => setCancelling(claim)}
+                        className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-red-50 hover:text-red-600"
+                      >
+                        {t('Bekor qilish')}
+                      </button>
+                    )}
+                    {claim.status === 'applied' && (
+                      <span className="text-xs text-slate-500">
+                        {t('Tuzatish — faktura orqali')}
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -418,6 +477,24 @@ export function AbsenceClaimsPanel({
           </table>
         </div>
       </div>
+      <ConfirmDialog
+        open={cancelling !== null}
+        title={t('Daʼvoni bekor qilish')}
+        body={
+          cancelling &&
+          t('{name} · {from} — {to}. Kredit endi fakturaga tushmaydi.', {
+            name: cancelling.child_name ?? '',
+            from: formatDate(cancelling.date_from),
+            to: formatDate(cancelling.date_to),
+          })
+        }
+        confirmLabel={t('Bekor qilish')}
+        tone="danger"
+        requireReason
+        busy={cancel.isPending}
+        onConfirm={(reason) => cancelling && cancel.mutate({ id: cancelling.id, reason })}
+        onCancel={() => setCancelling(null)}
+      />
     </div>
   )
 }

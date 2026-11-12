@@ -1192,6 +1192,7 @@ def record_payment(
 
     paid_at = paid_at or timezone.now()
     backdate_reason = check_payment_date(paid_at, backdate_reason)
+    _check_after_enrolment(child, paid_at)
     payer_name = _check_payer(child, payer)
     payer_kind, payer_name, payer_tin = _check_payer_kind(
         payer_kind, payer_name, payer_org, payer_tin
@@ -1339,6 +1340,27 @@ def check_payment_date(paid_at: Any, reason: str = "") -> str:
             gettext("{days} kundan eski sana faqat sabab bilan kiritiladi.").format(days=limit)
         )
     return reason
+
+
+def _check_after_enrolment(child: Child, paid_at: Any) -> None:
+    """
+    Qabul sanasidan oldingi to'lov — kiritishdagi xato (audit 2026-11-12).
+
+    U bolaning kartasida "kelmasdan oldin to'lagan" degan tarix va o'sha
+    kunning kassasida bo'lmagan tushum qoldirardi.
+    """
+    if child.enrolled_on is None:
+        return
+    if isinstance(paid_at, datetime):
+        day = timezone.localtime(paid_at).date() if timezone.is_aware(paid_at) else paid_at.date()
+    else:
+        day = paid_at
+    if day < child.enrolled_on:
+        raise BusinessRuleViolation(
+            gettext(
+                "Toʻlov sanasi bolaning qabul sanasidan ({day}) oldin boʻlishi mumkin emas."
+            ).format(day=child.enrolled_on.strftime("%d.%m.%Y"))
+        )
 
 
 def _check_payer(child: Child, payer: Any) -> str:
@@ -1856,7 +1878,10 @@ def correct_payment_method(
 
     old_method = payment.method
     payment.method = method
-    payment.save(update_fields=["method", "updated_at"])
+    # Birinchi (kassir haqiqatan bosgan) usul saqlanadi — ikkinchi
+    # tuzatish uni ustidan yozmaydi.
+    payment.method_corrected_from = payment.method_corrected_from or old_method
+    payment.save(update_fields=["method", "method_corrected_from", "updated_at"])
 
     # 3. Pul yangi qopga tushadi, komissiya esa yangisiga qarab yoziladi.
     pot = cash.account_for_method(branch=payment.branch, method=method)
@@ -1909,6 +1934,46 @@ def _cancel_payment_commission(*, payment: Payment, reason: str, created_by: Any
         expense.save(update_fields=["status", "decided_at", "description", "updated_at"])
 
 
+def _assert_not_in_pending_handover(payment: Payment) -> None:
+    """
+    Naqd to'lovning puli boshqa odamga topshirilib, tasdiq kutayotgan
+    bo'lsa — storno qilinmaydi (audit 2026-11-12).
+
+    To'lovlar va topshiriqlar bir-biriga bog'lanmagan: pul — bitta
+    kassada. Shuning uchun savol "pulni ushlab turgan odamning qo'lida,
+    va'da qilinganidan tashqari, shuncha qoldimi?" deb qo'yiladi.
+    """
+    from apps.cash.models import CashHandover, CashMovement, HandoverStatus
+    from apps.cash.selectors import custody_of
+
+    original = (
+        CashMovement.objects.filter(
+            source_type=MovementSource.PAYMENT,
+            source_id=payment.id,
+            direction=MovementDirection.IN,
+            cash_account__kind="cash",
+        )
+        .select_related("cash_account", "created_by")
+        .first()
+    )
+    if original is None or original.created_by is None:
+        return
+    pending = CashHandover.objects.filter(
+        cash_account=original.cash_account,
+        from_user=original.created_by,
+        status=HandoverStatus.PENDING,
+    )
+    if not pending.exists():
+        return
+    if custody_of(user=original.created_by, account=original.cash_account) < payment.amount:
+        raise BusinessRuleViolation(
+            gettext(
+                "Bu toʻlov puli topshiriqda turibdi — avval topshiriqni bekor qiling "
+                "yoki qabul qiluvchi rad etsin."
+            )
+        )
+
+
 @transaction.atomic
 def reverse_payment(*, payment: Payment, reason: str = "", created_by: Any = None) -> Payment:
     """
@@ -1935,6 +2000,7 @@ def reverse_payment(*, payment: Payment, reason: str = "", created_by: Any = Non
         raise BusinessRuleViolation(
             gettext("Bu toʻlovdan ota-onaga pul qaytarilgan — uni bekor qilib boʻlmaydi.")
         )
+    _assert_not_in_pending_handover(payment)
 
     payment.reversed_at = timezone.now()
     payment.reversal_reason = reason[:255]
@@ -2043,6 +2109,15 @@ def receipt_for(payment: Payment) -> dict[str, Any]:
         .order_by("allocated_at")
     )
     detail = balance.child_balance(first.child)
+    from apps.expenses.models import Expense, ExpenseStatus
+
+    commissions = {
+        row["payment_id"]: row["total"]
+        for row in Expense.objects.filter(payment__in=lines)
+        .exclude(status=ExpenseStatus.REJECTED)
+        .values("payment_id")
+        .annotate(total=Sum("amount"))
+    }
 
     return {
         "number": receipt_number(first),
@@ -2057,6 +2132,9 @@ def receipt_for(payment: Payment) -> dict[str, Any]:
                 "method": str(PaymentMethod(line.method).label),
                 "amount": f"{line.amount:.2f}",
                 "reference": line.reference,
+                # Bog'chaning bankka bergan ulushi — ota-ona to'lagan
+                # summaga tegmaydi, lekin ko'rinadi (audit 2026-11-12).
+                "commission": f"{commissions.get(line.id, Decimal('0')):.2f}",
             }
             for line in lines
         ],

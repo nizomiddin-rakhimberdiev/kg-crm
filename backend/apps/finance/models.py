@@ -341,6 +341,10 @@ class Payment(BranchScopedModel):
     child = models.ForeignKey("children.Child", on_delete=models.RESTRICT, related_name="payments")
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     method = models.CharField(max_length=20, choices=PaymentMethod.choices)
+    # Usul o'sha kuni tuzatilgan bo'lsa — avvalgisi (ADR-47). Jurnalda
+    # "Naqd → Terminal" belgisi shundan; to'liq iz audit jurnalida
+    # (audit 2026-11-12).
+    method_corrected_from = models.CharField(max_length=20, blank=True)
     reference = models.CharField(max_length=100, blank=True)
     paid_at = models.DateTimeField()
     received_by = models.ForeignKey(

@@ -57,6 +57,7 @@ class TestDebtByPeriod:
                 amount=Decimal("1500000"),
                 method="cash",
                 paid_at=date(2026, 10, 12),
+                backdate_reason="Qogʻozdagi kvitansiya",
             )
 
             rows = {
@@ -85,6 +86,7 @@ class TestDebtByPeriod:
                 amount=Decimal("1000000"),
                 method="bank_transfer",
                 paid_at=date(2026, 9, 8),
+                backdate_reason="Qogʻozdagi kvitansiya",
             )
 
             row = selectors.debt_by_period(date_from=date(2026, 9, 1), date_to=date(2026, 9, 30))[0]
@@ -99,10 +101,18 @@ class TestDebtByPeriod:
             child = _child(tenant_a, "Said", "1800000")
             services.issue_invoice(child=child, period_year=2026, period_month=9)
             services.record_payment(
-                child=child, amount=Decimal("800000"), method="cash", paid_at=date(2026, 9, 20)
+                child=child,
+                amount=Decimal("800000"),
+                method="cash",
+                paid_at=date(2026, 9, 20),
+                backdate_reason="Qogʻozdagi kvitansiya",
             )
             services.record_payment(
-                child=child, amount=Decimal("600000"), method="online", paid_at=date(2026, 10, 3)
+                child=child,
+                amount=Decimal("600000"),
+                method="online",
+                paid_at=date(2026, 10, 3),
+                backdate_reason="Qogʻozdagi kvitansiya",
             )
 
             rows = selectors.debt_period_children(period_year=2026, period_month=9)
@@ -122,7 +132,11 @@ class TestDebtByPeriod:
             child = _child(tenant_a, "Zilola", "1200000")
             services.issue_invoice(child=child, period_year=2026, period_month=9)
             payment = services.record_payment(
-                child=child, amount=Decimal("1200000"), method="cash", paid_at=date(2026, 9, 11)
+                child=child,
+                amount=Decimal("1200000"),
+                method="cash",
+                paid_at=date(2026, 9, 11),
+                backdate_reason="Qogʻozdagi kvitansiya",
             )
             services.reverse_payment(payment=payment, reason="Kassir xato kiritdi")
 

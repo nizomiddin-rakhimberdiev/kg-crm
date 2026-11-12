@@ -178,6 +178,14 @@ export function PayoutModal({
                         left: money(account.balance),
                       })}
                     </p>
+                    {/* Qancha yetmaydi — "manfiyga tushadi" o'rniga raqam (H2). */}
+                    {!enough && (
+                      <p className="num text-xs font-semibold text-orik-900">
+                        {t('yetmaydi {sum}', {
+                          sum: money(account.outgoing - account.balance),
+                        })}
+                      </p>
+                    )}
                   </li>
                 )
               })}

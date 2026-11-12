@@ -212,7 +212,8 @@ export interface Receipt {
   /** Toʻlovchi vasiy (Bosqich 12.4) — boʻsh boʻlishi mumkin. */
   payer?: string
   reversed: boolean
-  lines: Array<{ method: string; amount: string; reference: string }>
+  /** `commission` — bog'chaning bankka bergan ulushi (to'langan summaga tegmaydi). */
+  lines: Array<{ method: string; amount: string; reference: string; commission?: string }>
   total: string
   allocations: Array<{ invoice: string; period: string; amount: string }>
   balance_after: string
@@ -332,6 +333,8 @@ export const paymentsApi = {
     ),
 
   receipt: (id: string) => api.get<Receipt>(`/payments/${id}/receipt`),
+  /** Usul → komissiya foizi (`"0.2"`); to'lov oynasi uchun, kassirga ochiq. */
+  commissionRates: () => api.get<Record<string, string>>('/payments/commission-rates'),
 
   /** Bitta toʻlov — taqsimot va fiskal chek holati bilan (Bosqich 13.8). */
   detail: (id: string) => api.get<Payment>(`/payments/${id}`),

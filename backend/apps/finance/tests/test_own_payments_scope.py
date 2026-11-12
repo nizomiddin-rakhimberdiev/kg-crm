@@ -163,15 +163,35 @@ def test_another_cashiers_payment_can_be_opened_but_not_touched(
     assert refused.status_code == 403
 
 
-def test_the_journal_total_follows_the_filter(tenant_a: Any, desk: dict[str, Any]):
+def test_the_journal_total_is_their_own_for_an_own_only_cashier(
+    tenant_a: Any, desk: dict[str, Any]
+):
+    """
+    Qatorlar hammaga ochiq (ADR-47), JAMI esa yo'q (audit 2026-11-12, C2).
+
+    Oyning jami tushumi — kassirdan ataylab yopilgan raqam (ADR-30);
+    jurnal ochilgach u shu yig'indi orqali qaytib chiqqan edi.
+    """
     client = _client(tenant_a, desk["cashier"])
+    everything = client.get(reverse("v1:payment-journal-summary"))
+    assert Decimal(_data(everything)["total"]) == Decimal("300000")
+
+    # Boshqa kassirni so'rasa ham — o'zi.
+    theirs = client.get(
+        reverse("v1:payment-journal-summary"), {"received_by": str(desk["other"].id)}
+    )
+    assert Decimal(_data(theirs)["total"]) == Decimal("300000")
+
+
+def test_the_journal_total_follows_the_filter_for_a_director(tenant_a: Any, desk: dict[str, Any]):
+    client = _client(tenant_a, desk["director"])
     everything = client.get(reverse("v1:payment-journal-summary"))
     assert Decimal(_data(everything)["total"]) == Decimal("1000000")
 
-    mine = client.get(
+    one = client.get(
         reverse("v1:payment-journal-summary"), {"received_by": str(desk["cashier"].id)}
     )
-    assert Decimal(_data(mine)["total"]) == Decimal("300000")
+    assert Decimal(_data(one)["total"]) == Decimal("300000")
 
 
 def test_the_daily_summary_is_their_own(tenant_a: Any, desk: dict[str, Any]):
@@ -270,7 +290,15 @@ def _legacy_cashier(tenant: Any) -> Role:
         role = Role.objects.get(code="cashier")
         role.payments_own_only = False
         role.save(update_fields=["payments_own_only"])
-        for code in ("reports.read", "expenses.read", "dashboard.read"):
+        for code in (
+            "reports.read",
+            "expenses.read",
+            "dashboard.read",
+            # 2026-11-12 gacha kassirda `payments` to'liq edi: faktura
+            # bekor qilish (`approve`) va tarif o'chirish (`delete`) ham.
+            "payments.approve",
+            "payments.delete",
+        ):
             RolePermission.objects.get_or_create(
                 role=role, permission=Permission.objects.get(code=code)
             )
@@ -310,6 +338,7 @@ def test_the_command_restricts_existing_cashier_roles(tenant_a: Any, tenant_b: A
         assert role.payments_own_only is True
         assert not {c for c in codes if c.split(".")[0] in {"reports", "expenses", "dashboard"}}
         assert {"payments.read", "payments.create"} <= codes
+        assert not codes & {"payments.approve", "payments.delete"}
     with organization_context(tenant_a.organization.id):
         assert tenant_a.role("director").role_permissions.count() == director_before
     assert "0 ta" in second

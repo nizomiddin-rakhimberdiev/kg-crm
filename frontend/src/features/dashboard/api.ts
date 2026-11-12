@@ -99,6 +99,10 @@ export interface HomeCard {
   }
   top?: Array<{ category: string; total: string }>
   margin?: string | null
+  /** Foyda kartasi: hisoblash usuli (oy bo'yicha) — `/reports` dagi kassa usuli emas. */
+  basis?: 'accrual' | 'cash'
+  /** Shu oyning oyligi hali yakunlanmagan — ish haqi okladdan taxmin. */
+  payroll_estimated?: boolean
   attention?: number
   occupancy?: number | null
   capacity?: number

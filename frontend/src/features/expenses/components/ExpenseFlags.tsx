@@ -127,7 +127,7 @@ export function ExpenseFlags({ expense }: { expense: Expense }) {
             onClick={() => pay.mutate()}
             className="rounded-md bg-brand-600 px-2 py-1 text-xs font-semibold text-white disabled:opacity-50"
           >
-            {t('Toʻlandi')}
+            {t('Toʻlash')}
           </button>
         </span>
       )}

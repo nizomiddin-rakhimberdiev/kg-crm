@@ -104,6 +104,8 @@ export const childrenApi = {
     URL.revokeObjectURL(link.href)
   },
   list: (params?: Record<string, unknown>) => api.list<Child>('/children', params),
+  /** Hammasi — tanlov ro'yxatlari uchun (server sahifasi 100 tadan). */
+  listAll: (params?: Record<string, unknown>) => api.listAll<Child>('/children', params),
   get: (id: string) => api.get<Child>(`/children/${id}`),
   create: (payload: ChildInput) => api.post<Child>('/children', withoutEmpty(payload)),
   update: (id: string, payload: Partial<ChildInput>) =>

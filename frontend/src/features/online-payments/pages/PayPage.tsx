@@ -24,7 +24,7 @@ import {
   type OnlineProvider,
 } from '@/features/online-payments/api'
 import { ApiError } from '@/lib/api/types'
-import { som } from '@/lib/format'
+import { som, periodLabel } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
 /** How long to keep re-reading after the parent returns from the provider. */
@@ -107,7 +107,7 @@ export default function PayPage() {
             </div>
             <h1 className="mt-1 text-xl font-bold text-tosh-900">{data.child}</h1>
             <p className="mt-0.5 text-sm text-tosh-500">
-              {t('{period} uchun toʻlov', { period: data.period })}
+              {t('{period} uchun toʻlov', { period: periodLabel(data.period) })}
               <span className="text-tosh-300"> · </span>
               <span className="font-mono text-xs">{data.invoice}</span>
             </p>

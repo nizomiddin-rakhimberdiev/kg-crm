@@ -85,6 +85,9 @@ class StockMovementSerializer(serializers.ModelSerializer):
     expense_amount = serializers.DecimalField(
         source="expense.amount", max_digits=12, decimal_places=2, read_only=True, default=None
     )
+    created_by_name = serializers.CharField(
+        source="created_by.full_name", read_only=True, default=None
+    )
 
     class Meta:
         model = StockMovement
@@ -105,6 +108,7 @@ class StockMovementSerializer(serializers.ModelSerializer):
             "note",
             "expense",
             "expense_amount",
+            "created_by_name",
             "created_at",
         ]
         read_only_fields = fields

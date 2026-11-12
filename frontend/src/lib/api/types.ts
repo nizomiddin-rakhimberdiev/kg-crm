@@ -409,6 +409,8 @@ export interface Payment {
   /** Hech qaysi hujjatga tegishli bo'lmagan qism — avans. */
   advance_amount: string
   amount: string
+  /** Usul o'sha kuni tuzatilgan bo'lsa — avvalgisi (ADR-47). */
+  method_corrected_from?: string
   /** `online` — 2026-10-15 gacha yozilgan eski birlashgan Payme / Click. */
   method: 'cash' | 'terminal' | 'bank_transfer' | 'click' | 'payme' | 'payroll' | 'online'
   reference: string
@@ -448,6 +450,8 @@ export interface PaymentFiscal {
 export interface DebtorRow {
   child: { id: string; full_name: string; group: string | null }
   balance: string
+  /** Muddati o'tgan qism; `min_days` bilan — shu chegaradan oshgani. */
+  overdue_amount?: string
   oldest_overdue_date: string | null
   /** Kechikkan kunlar — serverda hisoblanadi, ekranda emas (PLAN 3.5). */
   days_overdue: number | null
@@ -459,6 +463,8 @@ export interface DebtorRow {
 export interface DebtorList {
   count: number
   total_debt: string
+  /** Ro'yxatdagi muddati o'tgan qismlar yig'indisi. */
+  total_overdue?: string
   results: DebtorRow[]
 }
 
@@ -639,6 +645,8 @@ export interface StockMovement {
   occurred_at: string
   reference: string
   note: string
+  /** Kim yozgan; eski qatorlarda bo'sh. */
+  created_by_name?: string | null
   created_at: string
 }
 
@@ -662,6 +670,10 @@ export interface Expense {
   amount: string
   expense_date: string
   description: string
+  /** To'lov komissiyasi bo'lsa — o'sha to'lov; bunday chiqim tahrirlanmaydi. */
+  payment?: string | null
+  /** Serverdagi holat nomi; storno komissiyasi uchun "Qaytarilgan". */
+  status_label?: string
   status: 'pending' | 'approved' | 'rejected' | 'paid'
   approved_by_name: string | null
   decided_at: string | null
@@ -944,6 +956,8 @@ export interface ProfitLoss {
    * bo'lardi. Jami (`payroll`, `net`) kesimdan qat'i nazar bir xil.
    */
   payroll_in_periods: boolean
+  /** Oyligi hali yakunlanmagan oylar (`YYYY-MM`) — ularning natijasi oyliksiz. */
+  payroll_missing?: string[]
   revenue: string
   expenses: string
   payroll: string

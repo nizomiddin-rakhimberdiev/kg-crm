@@ -55,8 +55,8 @@ export default function GroupsPage() {
 
   // Tarbiyachi tanlash uchun xodimlar ro'yxati (PLAN 2.6).
   const employeesQuery = useQuery({
-    queryKey: queryKeys.employees(organizationId),
-    queryFn: () => employeesApi.list({ page_size: 200 }),
+    queryKey: queryKeys.employees(organizationId, { all: true }),
+    queryFn: () => employeesApi.listAll(),
   })
 
   const closeForm = () => {

@@ -55,7 +55,8 @@ export function Faq({ locale }: { locale: Locale }) {
                 <span
                   className={`hidden text-[12px] tabular-nums sm:block ${on ? 'text-brand-700' : 'text-slate-500'}`}
                 >
-                  0{i + 1}
+                  {/* `0{i + 1}` 10-savolda "010" berardi (audit 2026-11-12). */}
+                  {String(i + 1).padStart(2, '0')}
                 </span>
                 {item.q}
               </span>

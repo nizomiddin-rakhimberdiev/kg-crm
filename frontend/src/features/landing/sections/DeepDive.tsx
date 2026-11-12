@@ -55,6 +55,9 @@ function blendAt(p: number): { from: number; to: number; t: number } {
   return { from: i, to: Math.min(i + 1, STOPS.length), t }
 }
 
+/** Kechikish birligi — maket ham sahifa tilida (audit 2026-11-12, J5). */
+const DAYS: Record<Locale, string> = { uz: 'kun', ru: 'дн.', en: 'days' }
+
 export function DeepDive({ locale }: { locale: Locale }) {
   const t = copy[locale]
   const ref = useRef<HTMLElement>(null)
@@ -171,17 +174,17 @@ export function DeepDive({ locale }: { locale: Locale }) {
               <div className="mt-1.5 space-y-0.5">
                 <Row
                   name="Karimov Ali"
-                  meta="Quyosh · 42 kun"
+                  meta={`Quyosh · 42 ${DAYS[locale]}`}
                   right={<Pill tone="debt">1 500 000</Pill>}
                 />
                 <Row
                   name="Yusupova Dilnoza"
-                  meta="Yulduzcha · 31 kun"
+                  meta={`Yulduzcha · 31 ${DAYS[locale]}`}
                   right={<Pill tone="debt">600 000</Pill>}
                 />
                 <Row
                   name="Rasulov Bekzod"
-                  meta="Kamalak · 18 kun"
+                  meta={`Kamalak · 18 ${DAYS[locale]}`}
                   right={<Pill tone="wait">450 000</Pill>}
                 />
               </div>

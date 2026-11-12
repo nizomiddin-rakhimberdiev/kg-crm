@@ -79,9 +79,15 @@ def mark_bulk(
 
         arrived = enrolled_on.get(child_id)
         if arrived is not None and attendance_date < arrived:
+            # Kun — belgilanayotgan sana, qabul sanasi esa alohida
+            # (audit 2026-11-12): ilgari xabar qabul sanasini "bog'chada
+            # bo'lmagan kun" deb aytardi, ya'ni teskarisini.
             raise BusinessRuleViolation(
-                gettext("Bola {date} kuni hali bogʻchada boʻlmagan.").format(
-                    date=arrived.strftime("%d.%m.%Y")
+                gettext(
+                    "Bola {date} kuni hali bogʻchada boʻlmagan — qabul sanasi {arrived}."
+                ).format(
+                    date=attendance_date.strftime("%d.%m.%Y"),
+                    arrived=arrived.strftime("%d.%m.%Y"),
                 )
             )
 
@@ -224,7 +230,12 @@ def daily_register(*, group: Group, attendance_date: date) -> list[dict[str, Any
             enrollments__status=EnrollmentState.ACTIVE,
             enrollments__end_date__isnull=True,
             is_active=True,
-        ).order_by("last_name", "first_name")
+        )
+        # Hali kelmagan bola o'sha kunning jurnalida turmaydi: uni
+        # belgilab bo'lmaydi (`mark_bulk` rad etadi), lekin ro'yxatda
+        # ko'rinib turardi (audit 2026-11-12).
+        .exclude(enrolled_on__gt=attendance_date)
+        .order_by("last_name", "first_name")
     )
 
     existing = {

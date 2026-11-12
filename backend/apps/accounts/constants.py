@@ -24,6 +24,11 @@ MODULES: Final[tuple[str, ...]] = (
     "dashboard",
     "children",
     "payments",
+    # Tarif va imtiyoz — bolaning oylik summasini belgilaydi. `payments`
+    # da turganda to'lov qabul qiladigan kassir ularni ham yaratardi
+    # (audit 2026-11-12).
+    "tariffs",
+    "discounts",
     "debtors",
     "attendance",
     "payroll",
@@ -61,7 +66,9 @@ EXTRA_ACTIONS: Final[dict[str, tuple[str, ...]]] = {
 PERMISSION_LABELS: Final[dict[str, str]] = {
     "dashboard": "Boshqaruv paneli",
     "children": "Bolalar",
-    "payments": "To'lovlar",
+    "payments": "Toʻlovlar",
+    "tariffs": "Tariflar",
+    "discounts": "Imtiyozlar",
     "debtors": "Qarzdorlar",
     "attendance": "Davomat",
     "payroll": "Oylik maoshlar",
@@ -71,7 +78,7 @@ PERMISSION_LABELS: Final[dict[str, str]] = {
     "notifications": "Bildirishnomalar",
     "settings": "Sozlamalar",
     "branches": "Filiallar",
-    "billing": "Obuna va to'lov",
+    "billing": "Obuna va toʻlov",
     "users": "Foydalanuvchilar va rollar",
     "audit": "Audit jurnali",
 }
@@ -127,6 +134,8 @@ ROLE_MATRIX: Final[dict[str, dict[str, tuple[str, ...]]]] = {
         "dashboard": _F,
         "children": _FA,
         "payments": _F,
+        "tariffs": _F,
+        "discounts": _F,
         "debtors": _F,
         "attendance": _FA,
         "payroll": _F,
@@ -144,6 +153,8 @@ ROLE_MATRIX: Final[dict[str, dict[str, tuple[str, ...]]]] = {
         "dashboard": _F,
         "children": _FA,
         "payments": _F,
+        "tariffs": _F,
+        "discounts": _F,
         "debtors": _F,
         "attendance": _FA,
         "payroll": _F,
@@ -161,6 +172,8 @@ ROLE_MATRIX: Final[dict[str, dict[str, tuple[str, ...]]]] = {
         "dashboard": _R,
         "children": _WA,
         "payments": _R,
+        "tariffs": _R,
+        "discounts": _R,
         "debtors": _R,
         "attendance": _WA,
         "payroll": _N,
@@ -183,7 +196,11 @@ ROLE_MATRIX: Final[dict[str, dict[str, tuple[str, ...]]]] = {
     "cashier": {
         "dashboard": _N,
         "children": _RA,
-        "payments": _F,
+        # Faktura bekor qilish — `approve`, o'chirish — `delete`: ikkalasi ham
+        # kassirda yo'q (audit 2026-11-12).
+        "payments": ("read", "create", "update", "export"),
+        "tariffs": _R,
+        "discounts": _R,
         "debtors": _W,
         "attendance": _N,
         "payroll": _N,
@@ -201,6 +218,8 @@ ROLE_MATRIX: Final[dict[str, dict[str, tuple[str, ...]]]] = {
         "dashboard": _R,
         "children": _RA,
         "payments": _N,
+        "tariffs": _N,
+        "discounts": _N,
         "debtors": _N,
         "attendance": _FA,
         "payroll": _N,

@@ -180,6 +180,10 @@ def profit_and_loss(
     revenue = tuition + other_income
     operating_profit = revenue - operating_expenses - payroll - amortization
     return {
+        # Hisoblash usuli: oy oyligi o'z oyiga, amortizatsiya oylarga.
+        # Hisobotlardagi "Sof natija" — kassa usuli (`selectors.BASIS`);
+        # ikkalasi o'z asosini aytadi (audit 2026-11-12).
+        "basis": "accrual",
         "period": f"{year}-{month:02d}",
         "revenue": {
             "tuition": _money(tuition),

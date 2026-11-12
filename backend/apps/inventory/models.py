@@ -204,6 +204,15 @@ class StockMovement(BranchScopedModel):
         null=True,
         blank=True,
     )
+    # Kim yozgani — ro'yxatda "kim tuzatdi?" degan savolga javob
+    # (audit 2026-11-12). Eski qatorlarda bo'sh: ularni o'zgartirmaymiz.
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="stock_movements",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         db_table = "stock_movement"

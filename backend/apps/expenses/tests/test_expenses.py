@@ -179,7 +179,7 @@ class TestEndpoints:
         client.post(reverse("v1:expense-approve", args=[expense.id]))
         response = client.patch(
             reverse("v1:expense-detail", args=[expense.id]),
-            {"amount": "1"},
+            {"amount": "1", "reason": "Chek boʻyicha tuzatildi"},
             format="json",
         )
         assert response.status_code == 200

@@ -159,7 +159,7 @@ export const legal: Record<Locale, LegalCopy> = {
       },
       {
         title: '3. Obuna va toʻlov',
-        text: 'Narx roʻyxatdagi bolalar soniga bogʻliq: oyiga 400 000 soʻm, 50 nafargacha bola kiradi; har qoʻshimcha 10 nafar bola uchun +50 000 soʻm. Toʻlov muddati: oylik, yarim yillik (−15 %) yoki yillik (−25 %). Toʻlov hisob-faktura asosida bank orqali amalga oshiriladi.\nNarx oʻzgarsa, bu kamida 30 kun oldin xabar qilinadi va allaqachon toʻlangan davrga taʼsir qilmaydi.',
+        text: 'Narx roʻyxatdagi bolalar soniga bogʻliq: oyiga 400 000 soʻm, 50 nafargacha bola kiradi; har boshlangan 10 nafar bola uchun +50 000 soʻm (masalan, 51 nafar — 450 000). Toʻlov muddati: oylik, yarim yillik (−15 %) yoki yillik (−25 %). Toʻlov hisob-faktura asosida bank orqali amalga oshiriladi.\nNarx oʻzgarsa, bu kamida 30 kun oldin xabar qilinadi va allaqachon toʻlangan davrga taʼsir qilmaydi.',
       },
       {
         title: '4. Sinov muddati',
@@ -262,7 +262,7 @@ export const legal: Record<Locale, LegalCopy> = {
       },
       {
         title: '3. Подписка и оплата',
-        text: 'Цена зависит от числа детей в списке: 400 000 сум в месяц, включено до 50 детей; каждые следующие 10 детей — +50 000 сум. Период оплаты: месяц, полгода (−15 %) или год (−25 %). Оплата по счёту, банковским переводом.\nОб изменении цены сообщается не менее чем за 30 дней; уже оплаченный период не меняется.',
+        text: 'Цена зависит от числа детей в списке: 400 000 сум в месяц, включено до 50 детей; каждые начатые 10 детей — +50 000 сум (например, 51 ребёнок — 450 000). Период оплаты: месяц, полгода (−15 %) или год (−25 %). Оплата по счёту, банковским переводом.\nОб изменении цены сообщается не менее чем за 30 дней; уже оплаченный период не меняется.',
       },
       {
         title: '4. Пробный период',
@@ -365,7 +365,7 @@ export const legal: Record<Locale, LegalCopy> = {
       },
       {
         title: '3. Subscription and payment',
-        text: 'The price depends on the number of enrolled children: 400 000 UZS per month including up to 50 children; +50 000 UZS for every further 10 children. Billing period: monthly, semi-annual (−15 %) or annual (−25 %). Payment by bank transfer against an invoice.\nPrice changes are announced at least 30 days in advance and do not affect periods already paid.',
+        text: 'The price depends on the number of enrolled children: 400 000 UZS per month including up to 50 children; +50 000 UZS for every started 10 children (51 children, for example, is 450 000). Billing period: monthly, semi-annual (−15 %) or annual (−25 %). Payment by bank transfer against an invoice.\nPrice changes are announced at least 30 days in advance and do not affect periods already paid.',
       },
       {
         title: '4. Trial',

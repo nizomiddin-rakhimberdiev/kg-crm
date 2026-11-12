@@ -37,6 +37,8 @@ export interface EmployeeInput {
 
 export const employeesApi = {
   list: (params?: Record<string, unknown>) => api.list<Employee>('/employees', params),
+  /** Hammasi — tanlov ro'yxatlari uchun (server sahifasi 100 tadan). */
+  listAll: (params?: Record<string, unknown>) => api.listAll<Employee>('/employees', params),
   create: (payload: EmployeeInput) => api.post<Employee>('/employees', payload),
   update: (id: string, payload: Partial<EmployeeInput>) =>
     api.patch<Employee>(`/employees/${id}`, payload),

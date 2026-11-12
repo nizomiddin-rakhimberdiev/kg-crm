@@ -192,6 +192,7 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
             amount=data.get("amount"),
             cash_account=data.get("cash_account"),
             allow_negative=_allow_negative(self.request),
+            reason=str(self.request.data.get("reason", "")),
             updated_by=user,
         )
         after = serializer.instance
@@ -208,6 +209,7 @@ class ExpenseViewSet(BranchScopedMixin, TenantViewSet):
                     "cash_account": str(after.cash_account_id) if after.cash_account_id else None,
                     "expense_date": after.expense_date.isoformat(),
                 },
+                "reason": str(self.request.data.get("reason", "")).strip(),
             },
         )
 

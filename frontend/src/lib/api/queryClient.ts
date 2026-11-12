@@ -16,6 +16,9 @@ export const queryClient = new QueryClient({
             'NOT_FOUND',
             'VALIDATION_ERROR',
             'SUBSCRIPTION_INACTIVE',
+            // 422 — biznes qoidasi: javob qayta so'raganda o'zgarmaydi
+            // (audit 2026-11-12: obunasiz billing 4 × 3 = 12 so'rov).
+            'BUSINESS_RULE_VIOLATION',
           ]
           if (noRetry.includes(error.code)) return false
         }

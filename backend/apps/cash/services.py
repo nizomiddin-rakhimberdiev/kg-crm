@@ -176,6 +176,21 @@ def post_movement(
     if amount <= 0:
         raise BusinessRuleViolation(gettext("Summa musbat boʻlishi kerak."))
 
+    # Yopilgan oyga pul yozilmaydi (egasining qarori, 2026-11-12). Bu —
+    # har bir pul hujjati o'tadigan yagona joy: to'lov, chiqim, avans,
+    # ko'chirma, qarz. Tuzatishning qarshi yozuvi BUGUNGI sana bilan
+    # tushadi, ya'ni ochiq oyga — u to'xtamaydi.
+    from apps.finance.services import assert_month_open
+
+    when = occurred_at or timezone.now()
+    if not isinstance(when, datetime):
+        day = when  # sana sifatida kelgan (to'lov `paid_at=date(...)`)
+    elif timezone.is_aware(when):
+        day = timezone.localtime(when).date()
+    else:
+        day = when.date()
+    assert_month_open(branch=account.branch, year=day.year, month=day.month)
+
     if direction == MovementDirection.OUT and not allow_negative:
         from apps.cash import selectors as cash_selectors
 
@@ -203,7 +218,7 @@ def post_movement(
         source_type=source_type,
         source_id=source_id,
         transfer_group=transfer_group,
-        occurred_at=occurred_at or timezone.now(),
+        occurred_at=when,
         description=description[:255],
         created_by=created_by,
     )
@@ -445,8 +460,27 @@ def _decide(handover: CashHandover, user: Any, status: str, note: str) -> CashHa
 
 @transaction.atomic
 def confirm_handover(*, handover: CashHandover, user: Any) -> CashHandover:
-    """Qabul qiluvchi "oldim" deydi — pul endi uning qo'lida hisoblanadi."""
+    """
+    Qabul qiluvchi "oldim" deydi — pul endi uning qo'lida hisoblanadi.
+
+    Topshiruvchining qo'lidagi pul TASDIQ paytida ham tekshiriladi
+    (audit 2026-11-12): yaratilgandan keyin u o'sha naqddan chiqim
+    qilgan bo'lishi mumkin, va unda qabul qiluvchi yo'q pulni "olardi".
+    """
+    from apps.cash.selectors import custody_of
+
     locked = CashHandover.objects.select_for_update().get(pk=handover.pk)
+    if locked.status == HandoverStatus.PENDING:
+        # `custody_of` kutilayotgan topshiriqlarni — shu jumladan bunisini
+        # ham — ayiradi; manfiy bo'lsa, va'da qilingan pul qo'lda yo'q.
+        held = custody_of(user=locked.from_user, account=locked.cash_account) + locked.amount
+        if held < locked.amount:
+            raise BusinessRuleViolation(
+                gettext(
+                    "Topshiruvchining qoʻlida {held} soʻm qoldi — {amount} soʻmni "
+                    "qabul qilib boʻlmaydi. Topshiriqni rad eting."
+                ).format(held=_som(max(held, Decimal("0"))), amount=_som(locked.amount))
+            )
     return _decide(locked, user, HandoverStatus.CONFIRMED, "")
 
 

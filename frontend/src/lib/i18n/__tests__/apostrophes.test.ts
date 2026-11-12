@@ -66,3 +66,13 @@ describe('Q11 — apostroflar', () => {
     expect(CURRENCY.uz).toBe('soʻm')
   })
 })
+
+describe('index.html (audit 2026-11-12, H6)', () => {
+  it("sarlavha va meta'da o'zbek apostrofi", () => {
+    const html = readFileSync(resolve(SRC, '..', 'index.html'), 'utf8')
+    const text = html.replace(/<!--[\s\S]*?-->/g, '')
+    expect(
+      text.match(/<title>[^<]*<\/title>|content="[^"]*"/g)?.filter((s) => RAW.test(s)) ?? [],
+    ).toEqual([])
+  })
+})

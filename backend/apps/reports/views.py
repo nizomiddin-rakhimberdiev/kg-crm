@@ -1262,6 +1262,18 @@ class ReportViewSet(_ScopeMixin, viewsets.ViewSet):
         # `on_commit` vazifani commit'dan KEYIN yuboradi; tranzaksiya
         # bo'lmasa esa darhol chaqiradi, ya'ni oddiy holatda xatti-harakat
         # o'zgarmaydi.
+        from apps.audit import services as audit
+
+        # Hisobot fayli bog'chadan chiqadigan yo'l — kim va nimani
+        # olgani jurnalda (audit 2026-11-12).
+        audit.record(
+            action="export",
+            request=request._request,
+            actor=user,
+            entity_type="report_export",
+            entity_id=export.id,
+            changes={"report_type": pk, "params": params},
+        )
         export_id, organization_id = str(export.id), str(user.organization_id)
         transaction.on_commit(lambda: generate_export.delay(export_id, organization_id))
         return Response(ReportExportSerializer(export).data, status=status.HTTP_202_ACCEPTED)

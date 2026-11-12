@@ -165,7 +165,9 @@ def test_an_advance_is_not_counted_twice_when_the_run_is_paid(tenant_a: Any):
     with organization_context(tenant_a.organization.id):
         finance.record_payment(child=child, amount=Decimal("10000000"), method="cash")
         payroll.record_advance(
-            employee=employee, amount=Decimal("1000000"), paid_on=today.replace(day=15)
+            employee=employee,
+            amount=Decimal("1000000"),
+            paid_on=today.replace(day=min(15, today.day)),
         )
         run = payroll.create_run(
             organization=tenant_a.organization,

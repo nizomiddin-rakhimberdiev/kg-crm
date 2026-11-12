@@ -114,3 +114,19 @@ def test_the_child_balance_returns_to_where_it_was(tenant_a):
         )
         child.refresh_from_db()
     assert child.balance == before
+
+
+def test_a_reversed_commission_reads_as_returned_not_rejected(tenant_a):
+    """Storno komissiyasi "Rad etilgan" emas — hech kim uni rad etmagan (G3)."""
+    child = _child(tenant_a)
+    with organization_context(tenant_a.organization.id):
+        payment = finance.record_payment(
+            child=child, amount=Decimal("1500000"), method="terminal", received_by=tenant_a.owner
+        )
+        commission = Expense.objects.get(payment=payment)
+        finance.reverse_payment(
+            payment=payment, reason="Xato summa kiritilgan", created_by=tenant_a.owner
+        )
+    row = tenant_a.client().get(reverse("v1:expense-detail", args=[commission.id])).json()["data"]
+    assert row["status"] == "rejected"
+    assert row["status_label"] == "Qaytarilgan"

@@ -18,19 +18,30 @@ interface ModalProps {
  * Rendered through a portal to <body> so it's never clipped/mis-positioned by
  * the page-transition transform.
  */
+/**
+ * Ochiq oynalar to'plami. Tasdiq oynasi boshqa oyna USTIDA ochiladi
+ * (to'lov oynasidagi "avansga tushadi, davom etasizmi?"), va Esc faqat
+ * eng ustidagisini yopishi kerak — aks holda kiritilgan to'lov ham
+ * yo'qolardi (audit 2026-11-12, H3).
+ */
+const stack: symbol[] = []
+
 export function Modal({ open, onClose, children, className }: ModalProps) {
   const panel = useFocusTrap<HTMLDivElement>(open)
 
   useEffect(() => {
     if (!open) return
+    const id = Symbol('modal')
+    stack.push(id)
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape' && stack[stack.length - 1] === id) onClose()
     }
     document.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = ''
+      stack.splice(stack.indexOf(id), 1)
+      if (stack.length === 0) document.body.style.overflow = ''
     }
   }, [open, onClose])
 

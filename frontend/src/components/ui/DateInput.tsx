@@ -74,6 +74,10 @@ export function DateInput({
     setText(toLocalDate(value))
   }, [value])
 
+  // Yozib kiritilgan sana ham chegarada qoladi (audit 2026-11-12, H5):
+  // `min`/`max` faqat kalendarni cheklardi, klaviatura esa o'tib ketardi.
+  const inRange = (iso: string) => (!min || iso >= min) && (!max || iso <= max)
+
   const handleText = (raw: string) => {
     const next = withDots(raw)
     setText(next)
@@ -82,14 +86,15 @@ export function DateInput({
       return
     }
     const iso = parseLocalDate(next)
-    if (iso) onChange(iso)
+    if (iso && inRange(iso)) onChange(iso)
   }
 
   const handleBlur = () => {
     // Yarim yozilgan sana maydonda QOLMAYDI: u keyin jimgina
     // yuborilib, boshqa sanaga aylanib ketishi mumkin.
     if (text === '') return
-    if (!parseLocalDate(text)) setText(toLocalDate(value))
+    const iso = parseLocalDate(text)
+    if (!iso || !inRange(iso)) setText(toLocalDate(value))
   }
 
   const openCalendar = () => {
@@ -111,7 +116,8 @@ export function DateInput({
     element.click()
   }
 
-  const invalid = text !== '' && !parseLocalDate(text)
+  const parsed = text === '' ? null : parseLocalDate(text)
+  const invalid = text !== '' && (!parsed || !inRange(parsed))
 
   return (
     <div className={cn('relative', className)}>

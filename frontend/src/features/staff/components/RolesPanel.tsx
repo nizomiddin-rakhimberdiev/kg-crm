@@ -38,6 +38,8 @@ const MODULE_ORDER: string[] = [
   'dashboard',
   'attendance',
   'payments',
+  'tariffs',
+  'discounts',
   'children',
   'debtors',
   'expenses',
@@ -346,11 +348,11 @@ export function RolesPanel() {
                 />
                 <span>
                   <span className="block text-sm font-medium text-slate-900">
-                    {t('Faqat oʻzi qabul qilgan toʻlovlarni koʻradi')}
+                    {t('Faqat oʻz toʻlovini qaytaradi va tuzatadi; jami tushumni koʻrmaydi')}
                   </span>
                   <span className="mt-0.5 block text-xs text-slate-600">
                     {t(
-                      'Jurnal va kunlik hisobotda faqat shu xodim olgan pul; oyning umumiy tushumi koʻrinmaydi.',
+                      'Jurnalda hammaning toʻlovi koʻrinadi (smena almashinuvi uchun), lekin storno va usulni tuzatish — faqat shu xodim olgan pulga. Oyning va kunning jami summasi — faqat oʻziniki.',
                     )}
                   </span>
                 </span>

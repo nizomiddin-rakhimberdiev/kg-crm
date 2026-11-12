@@ -87,19 +87,31 @@ for (const page of entry.prerenderPages()) {
 // SPA skripti OLIB TASHLANADI: React ishga tushsa, notoʻgʻri manzilni
 // oʻzi "tuzatib" kirish sahifasiga yuborardi va `404` maʼnosiz
 // boʻlardi. Uslublar (Tailwind CSS) qoladi — sahifa brend koʻrinishida.
-const notFound = entry.notFoundPage()
-const notFoundHtml = stripDefaultMeta(template)
-  .replace(/\s*<script type="module"[^>]*><\/script>/, '')
-  .replace('</head>', `    ${notFound.head}\n  </head>`)
-  .replace('<div id="root"></div>', `<div id="root">${notFound.body}</div>`)
-if (notFoundHtml.includes('type="module"')) {
-  throw new Error('prerender: 404.html ichida SPA skripti qoldi')
+//
+// Har til — o'z fayli (audit 2026-11-12): nginx `$kg_404_page` manzil
+// prefiksidan yoki brauzer tilidan tanlaydi. `404.html` — o'zbekcha
+// nusxa; nginx'ning boshqa konfiguratsiyalari (demo stend) uni oladi.
+for (const [file, locale] of [
+  ['404.html', 'uz'],
+  ['404-uz.html', 'uz'],
+  ['404-ru.html', 'ru'],
+  ['404-en.html', 'en'],
+]) {
+  const notFound = entry.notFoundPage(locale)
+  const notFoundHtml = stripDefaultMeta(template)
+    .replace(/\s*<script type="module"[^>]*><\/script>/, '')
+    .replace(/<html lang="[a-z]+"/, `<html lang="${locale}"`)
+    .replace('</head>', `    ${notFound.head}\n  </head>`)
+    .replace('<div id="root"></div>', `<div id="root">${notFound.body}</div>`)
+  if (notFoundHtml.includes('type="module"')) {
+    throw new Error(`prerender: ${file} ichida SPA skripti qoldi`)
+  }
+  if (/fonts\.googleapis|fonts\.gstatic/.test(notFoundHtml)) {
+    throw new Error(`prerender: ${file} da tashqi shrift havolasi bor`)
+  }
+  await writeFile(path.join(dist, file), notFoundHtml)
+  count += 1
+  console.log(`prerender: /${file.padEnd(12)} statik, skriptsiz`)
 }
-if (/fonts\.googleapis|fonts\.gstatic/.test(notFoundHtml)) {
-  throw new Error('prerender: 404.html da tashqi shrift havolasi bor')
-}
-await writeFile(path.join(dist, '404.html'), notFoundHtml)
-count += 1
-console.log('prerender: /404.html      statik, skriptsiz')
 
 console.log(`prerender: ${count} sahifa yozildi`)

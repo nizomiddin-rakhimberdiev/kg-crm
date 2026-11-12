@@ -1,6 +1,6 @@
 import ReactDOM from 'react-dom/client'
 import { installValidationMessages } from './lib/forms/validity'
-import { initI18n } from './lib/i18n'
+import { initI18n, t } from './lib/i18n'
 import './fonts'
 import './index.css'
 
@@ -19,6 +19,12 @@ const rootEl = document.getElementById('root')!
  */
 async function bootstrap() {
   await initI18n()
+  // Brauzer yorlig'i ham tanlangan tilda (audit 2026-11-12, H6): ilova
+  // ichida sarlavha `index.html` dagi o'zbekchasida qolardi. Sotuv sayti
+  // o'z sarlavhasini `applyPageMeta` bilan baribir yozadi.
+  if (document.title === 'Radix CRM — Xususiy bogʻchalarni boshqarish tizimi') {
+    document.title = t('Radix CRM — Xususiy bogʻchalarni boshqarish tizimi')
+  }
   installValidationMessages()
   const { App, preloadLanding } = await import('./app/App')
   if (rootEl.hasChildNodes() && /^\/(uz|ru|en)(\/|$)/.test(window.location.pathname)) {

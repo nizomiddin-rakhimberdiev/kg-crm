@@ -138,6 +138,44 @@ def start_trial(*, organization: Any, plan: SubscriptionPlan | None = None) -> S
 
 
 @transaction.atomic
+def ensure_demo_subscription(*, organization: Any) -> Subscription:
+    """
+    Demo tashkilotga bepul, ISHLAYOTGAN obuna (audit 2026-11-12).
+
+    Faol, 100 % chegirma bilan: "Obuna va to'lov" sahifasi haqiqiy
+    holatni ko'rsatadi, hisoblar esa nol so'm va hech qachon muddati
+    o'tmaydi (`mark_past_due`). Sinov emas — u 15 kunda tugab, demo
+    yozishdan to'xtardi. Idempotent: jonli obuna bo'lsa, o'shani
+    100 % ga keltiradi.
+    """
+    live = (
+        Subscription.objects.filter(organization=organization)
+        .exclude(status=SubscriptionStatus.CANCELLED)
+        .first()
+    )
+    if live is not None:
+        if live.status != SubscriptionStatus.ACTIVE or live.discount_percent != 100:
+            live.status = SubscriptionStatus.ACTIVE
+            live.discount_percent = Decimal("100")
+            live.trial_ends_at = None
+            live.save(update_fields=["status", "discount_percent", "trial_ends_at", "updated_at"])
+        return live
+
+    today = timezone.localdate()
+    return Subscription.objects.create(
+        organization=organization,
+        plan=current_plan(),
+        status=SubscriptionStatus.ACTIVE,
+        payment_term=PaymentTerm.MONTHLY,
+        discount_percent=Decimal("100"),
+        current_period_start=today,
+        current_period_end=_month_end(today)
+        if _month_end(today) > today
+        else today + timedelta(days=1),
+    )
+
+
+@transaction.atomic
 def accept_trial(
     *,
     subscription: Subscription,
@@ -544,8 +582,10 @@ def mark_past_due() -> int:
     today = timezone.localdate()
     with platform_context():
         overdue = list(
+            # Nol so'mlik hisob (demo, 100 % chegirma) qarz emas — uning
+            # "muddati o'tishi" yozishni to'xtatardi (audit 2026-11-12).
             SubscriptionInvoice.all_objects.filter(
-                status=SubscriptionInvoiceStatus.ISSUED, due_at__lt=today
+                status=SubscriptionInvoiceStatus.ISSUED, due_at__lt=today, total_amount__gt=0
             ).select_related("subscription")
         )
 

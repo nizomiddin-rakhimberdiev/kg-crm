@@ -37,6 +37,7 @@ export const ACTION_LABELS: Record<string, [string, string]> = {
   approve: [t('Tasdiqlandi'), 'bg-emerald-50 text-emerald-700'],
   reject: [t('Rad etildi'), 'bg-red-50 text-red-700'],
   view: [t('Koʻrildi'), 'bg-slate-100 text-slate-600'],
+  export: [t('Eksport qilindi'), 'bg-slate-100 text-slate-600'],
 }
 
 export const ENTITY_LABELS: Record<string, string> = {
@@ -94,6 +95,7 @@ export const ENTITY_LABELS: Record<string, string> = {
   report_annual: t('Yillik hisobot'),
   report_pack: t('Oylik hisobot toʻplami'),
   report_review: t('Hisobotni topshirish'),
+  report_export: t('Hisobot fayli'),
   report_share_link: t('Hisobot havolasi'),
   report_snapshot: t('Hisobot surati'),
   setting: t('Sozlama'),

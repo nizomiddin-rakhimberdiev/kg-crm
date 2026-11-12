@@ -66,6 +66,10 @@ PADDINGTON_MANAGER = {
         "payments": ("approve", "create", "delete", "export", "read", "update"),
         "reports": ("approve", "create", "delete", "export", "read", "update"),
         "users": ("approve", "create", "delete", "export", "read", "update"),
+        # `accounts/0011` (ADR-51): `payments.read` bor rolga tarif va
+        # imtiyozni o'qish beriladi — migratsiyadan keyingi holat.
+        "tariffs": ("read",),
+        "discounts": ("read",),
     }.items()
     for action in actions
 }
@@ -81,7 +85,7 @@ def manager(tenant_a) -> User:
     # `children.read_all` / `attendance.read_all` (ADR-21) — the role the
     # owner customised keeps them, as a migrated manager role would.
     _grant(tenant_a, "manager", PADDINGTON_MANAGER | READ_ALL)
-    assert len(_codes(tenant_a, "manager")) == 54
+    assert len(_codes(tenant_a, "manager")) == 56
     return _member(tenant_a, "manager", "anita@alfa.uz")
 
 

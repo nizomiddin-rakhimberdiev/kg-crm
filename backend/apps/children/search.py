@@ -31,10 +31,24 @@ def child_search(term: str) -> Q:
     if not cleaned:
         return Q()
 
-    found = Q(search_key__contains=translit.search_key(cleaned))
+    key = translit.search_key(cleaned)
+    found = Q(search_key__contains=key)
     # Shartnoma raqami qogʻozdan koʻchiriladi: registr va oraliq boʻshliq
     # odamning ishi emas.
     found |= Q(contract_number__icontains=cleaned)
+    # Vasiy ismi yoki telefoni (audit 2026-11-12): ota-ona qoʻngʻiroq
+    # qilib oʻzini aytadi, bolaning shartnomasini emas. Vasiyning
+    # kaliti telefonni ham oʻz ichiga oladi ("90 123 45 67" →
+    # "901234567"). Pastki soʻrov — JOIN emas, aks holda ikki vasiyli
+    # bola roʻyxatda ikki marta chiqardi.
+    if key:
+        from apps.children.models import ChildGuardian
+
+        found |= Q(
+            id__in=ChildGuardian.objects.filter(guardian__search_key__contains=key).values(
+                "child_id"
+            )
+        )
     # ID emas boʻlishi — xato emas, odatiy hol: odam koʻpincha ism yozadi.
     with contextlib.suppress(ValueError, AttributeError, TypeError):
         found |= Q(id=uuid.UUID(cleaned))

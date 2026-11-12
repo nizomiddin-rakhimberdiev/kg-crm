@@ -62,3 +62,21 @@ describe('DateInput', () => {
     expect(screen.getByLabelText('Kalendardan tanlash')).toBeInTheDocument()
   })
 })
+
+describe('DateInput chegaralari (audit 2026-11-12, H5)', () => {
+  it('yozib kiritilgan sana ham `max` dan oshmaydi', () => {
+    const onChange = vi.fn()
+    render(<DateInput value="" onChange={onChange} max="2026-11-12" aria-label="Kun" />)
+    const field = screen.getByLabelText('Kun') as HTMLInputElement
+    fireEvent.change(field, { target: { value: '20.11.2026' } })
+    expect(onChange).not.toHaveBeenCalledWith('2026-11-20')
+    expect(field).toHaveAttribute('aria-invalid', 'true')
+  })
+
+  it('`min` dan oldingi sana ham yuborilmaydi', () => {
+    const onChange = vi.fn()
+    render(<DateInput value="" onChange={onChange} min="2026-11-01" aria-label="Kun" />)
+    fireEvent.change(screen.getByLabelText('Kun'), { target: { value: '30.10.2026' } })
+    expect(onChange).not.toHaveBeenCalledWith('2026-10-30')
+  })
+})

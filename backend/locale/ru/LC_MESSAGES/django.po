@@ -2959,3 +2959,39 @@ msgstr "по справке −{credit}"
 
 msgid "{field}: sana notoʻgʻri."
 msgstr "{field}: неверная дата."
+
+msgid "Bola {date} kuni hali bogʻchada boʻlmagan — qabul sanasi {arrived}."
+msgstr "{date} ребёнок ещё не был в саду — дата приёма {arrived}."
+
+msgid "Bu avans yakunlangan hisoblashga kirgan — uni oʻchirib boʻlmaydi. Tuzatish keyingi oyning hisoblashida."
+msgstr "Этот аванс вошёл в завершённый расчёт — удалить его нельзя. Исправление — в расчёте следующего месяца."
+
+msgid "Bu chiqim toʻlov komissiyasi — u toʻlov bilan birga oʻzgaradi. Toʻlov usulini tuzating yoki toʻlovni qaytaring."
+msgstr "Этот расход — комиссия за оплату, он меняется вместе с оплатой. Исправьте способ оплаты или верните оплату."
+
+msgid "Bu toʻlov puli topshiriqda turibdi — avval topshiriqni bekor qiling yoki qabul qiluvchi rad etsin."
+msgstr "Деньги этой оплаты ожидают передачи — сначала отмените передачу или пусть получатель её отклонит."
+
+msgid "Daʼvo kelajakdagi kunni oʻz ichiga olmaydi — tugash sanasi bugundan kech."
+msgstr "Заявление не может включать будущие дни — дата окончания позже сегодняшней."
+
+msgid "Sababini yozing — kamida {n} ta belgi."
+msgstr "Укажите причину — не меньше {n} символов."
+
+msgid "Summa, sana yoki hisob oʻzgardi — sababini yozing (kamida {n} ta belgi)."
+msgstr "Сумма, дата или счёт изменились — укажите причину (не меньше {n} символов)."
+
+msgid "Topshiruvchining qoʻlida {held} soʻm qoldi — {amount} soʻmni qabul qilib boʻlmaydi. Topshiriqni rad eting."
+msgstr "У передающего осталось {held} сум — принять {amount} сум нельзя. Отклоните передачу."
+
+msgid "Toʻlov sanasi bolaning qabul sanasidan ({day}) oldin boʻlishi mumkin emas."
+msgstr "Дата оплаты не может быть раньше даты приёма ребёнка ({day})."
+
+msgid "Xarid qaysi hisobdan toʻlanganini tanlang."
+msgstr "Выберите, с какого счёта оплачена закупка."
+
+msgid "⚠️ Taxminiy — oylik hali hisoblanmagan."
+msgstr "⚠️ Оценка — зарплата ещё не рассчитана."
+
+msgid "📊 {name} — kunlik xulosa, {day}"
+msgstr "📊 {name} — сводка за день, {day}"

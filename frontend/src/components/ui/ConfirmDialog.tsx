@@ -11,7 +11,7 @@
  * "nimadan nimaga" ko'rsatiladi.
  */
 
-import type { ReactNode } from 'react'
+import { useEffect, useId, useState, type ReactNode } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { cn } from '@/lib/utils'
@@ -25,9 +25,18 @@ interface Props {
   confirmLabel?: string
   tone?: 'default' | 'danger'
   busy?: boolean
-  onConfirm: () => void
+  /**
+   * Sabab so'raladi va `onConfirm` ga beriladi. Pul yoki hujjatni
+   * bekor qilish izsiz qolmasin — backend ham kamida
+   * `REASON_MIN` belgini talab qiladi.
+   */
+  requireReason?: boolean
+  onConfirm: (reason: string) => void
   onCancel: () => void
 }
+
+/** Backend `apps/core/params.py` dagi `REASON_MIN` bilan bir xil. */
+export const REASON_MIN = 5
 
 export function ConfirmDialog({
   open,
@@ -36,9 +45,17 @@ export function ConfirmDialog({
   confirmLabel,
   tone = 'default',
   busy = false,
+  requireReason = false,
   onConfirm,
   onCancel,
 }: Props) {
+  const [reason, setReason] = useState('')
+  const reasonId = useId()
+  useEffect(() => {
+    if (open) setReason('')
+  }, [open])
+  const reasonMissing = requireReason && reason.trim().length < REASON_MIN
+
   return (
     <Modal open={open} onClose={onCancel} className="max-w-sm">
       <div className="p-6">
@@ -57,6 +74,25 @@ export function ConfirmDialog({
           </div>
         </div>
 
+        {requireReason && (
+          <div className="mt-4">
+            <label htmlFor={reasonId} className="text-xs font-semibold text-slate-600">
+              {t('Sabab')}
+            </label>
+            <textarea
+              id={reasonId}
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              rows={2}
+              maxLength={255}
+              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              {t('Kamida {n} ta belgi — audit jurnaliga yoziladi.', { n: REASON_MIN })}
+            </p>
+          </div>
+        )}
+
         <div className="mt-5 flex items-center justify-end gap-2">
           <button
             type="button"
@@ -67,8 +103,8 @@ export function ConfirmDialog({
           </button>
           <button
             type="button"
-            onClick={onConfirm}
-            disabled={busy}
+            onClick={() => onConfirm(reason.trim())}
+            disabled={busy || reasonMissing}
             className={cn(
               'rounded-lg px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-50',
               tone === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-brand-600 hover:bg-brand-700',

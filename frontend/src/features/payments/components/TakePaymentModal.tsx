@@ -27,6 +27,7 @@ import { Ban, Banknote, X } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
 import { DateInput } from '@/components/ui/DateInput'
 import { Modal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { invoicesApi, paymentsApi, type BoardRow, type OpenInvoice } from '@/features/payments/api'
 import { employeesApi } from '@/features/staff/api'
 import {
@@ -40,7 +41,7 @@ import { invalidateMoney } from '@/lib/api/invalidate'
 import { ApiError } from '@/lib/api/types'
 import { useCan } from '@/lib/rbac/useCan'
 import { cn } from '@/lib/utils'
-import { money, today } from '@/lib/format'
+import { money, today, periodLabel } from '@/lib/format'
 import { t } from '@/lib/i18n'
 import { Select } from '@/components/ui/Select'
 
@@ -163,10 +164,19 @@ export function TakePaymentModal({
   const [employeeId, setEmployeeId] = useState('')
   const employeesQuery = useQuery({
     queryKey: ['org', organizationId, 'employees', 'active'],
-    queryFn: () => employeesApi.list({ employment_status: 'active', page_size: 200 }),
+    queryFn: () => employeesApi.listAll({ employment_status: 'active' }),
     enabled: payrollOpen && canWithhold,
   })
   const employees = employeesQuery.data?.items ?? []
+
+  // Komissiya pul qabul qilinishidan OLDIN ko'rinadi (audit 2026-11-12, H4).
+  const ratesQuery = useQuery({
+    queryKey: ['org', organizationId, 'payments', 'commission-rates'],
+    queryFn: paymentsApi.commissionRates,
+    staleTime: 5 * 60_000,
+  })
+  const commissionOf = (method: string, amount: number) =>
+    Math.round((amount * Number(ratesQuery.data?.[method] ?? 0)) / 100)
 
   const taken = tenders.reduce((sum, tender) => sum + tender.amount, 0)
   const left = Math.max(0, due - taken)
@@ -290,16 +300,13 @@ export function TakePaymentModal({
   const ADVANCE_ASK_FROM = 50_000
   const needsConfirm = advance > ADVANCE_ASK_FROM
 
+  // Tasdiq — brauzer oynasi emas, ilova oynasi (audit 2026-11-12, H3).
+  const [askAdvance, setAskAdvance] = useState(false)
+  const [askCancel, setAskCancel] = useState(false)
   const submit = () => {
     if (save.isPending || taken <= 0 || isFuture || missingReason) return
-    if (
-      needsConfirm &&
-      !window.confirm(
-        t('{money} soʻm qarzdan ortiq va avansga tushadi. Davom etasizmi?', {
-          money: money(advance),
-        }),
-      )
-    ) {
+    if (needsConfirm) {
+      setAskAdvance(true)
       return
     }
     save.mutate()
@@ -377,7 +384,7 @@ export function TakePaymentModal({
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-xs font-medium text-slate-700">
-                      {invoice.period}
+                      {periodLabel(invoice.period)}
                       <span className="ml-1.5 font-mono text-xs text-slate-500">
                         {invoice.number}
                       </span>
@@ -635,6 +642,13 @@ export function TakePaymentModal({
                   {tender.employeeName && (
                     <span className="block text-xs text-slate-500">{tender.employeeName}</span>
                   )}
+                  {commissionOf(tender.method, tender.amount) > 0 && (
+                    <span className="block text-xs text-red-600">
+                      {t('komissiya −{money}', {
+                        money: money(commissionOf(tender.method, tender.amount)),
+                      })}
+                    </span>
+                  )}
                 </span>
                 <span className="text-sm font-semibold tabular-nums text-slate-900">
                   {money(tender.amount)}
@@ -690,7 +704,7 @@ export function TakePaymentModal({
                   className="flex items-center justify-between gap-2 text-sm"
                 >
                   <span className="min-w-0 truncate text-slate-600">
-                    {allocation.invoice.period}
+                    {periodLabel(allocation.invoice.period)}
                     {allocation.amount >= Number(allocation.invoice.outstanding) && (
                       <span className="ml-1.5 text-xs font-medium text-emerald-700">
                         {t('yopiladi')}
@@ -727,13 +741,10 @@ export function TakePaymentModal({
             aynan bu yerda ko'rinadi. Ataylab asosiy oqimdan tashqarida
             va so'nik: u pul qabul qilish tugmasi bilan adashtirilmasin.
             Hujjat tahrirlanmaydi — bekor qilinadi (D3). */}
-        {row.invoice_id && can('payments.update') && tenders.length === 0 && (
+        {row.invoice_id && can('payments.approve') && tenders.length === 0 && (
           <button
             type="button"
-            onClick={() => {
-              const reason = window.prompt(t('Bekor qilish sababi:'))
-              if (reason !== null) cancel.mutate(reason)
-            }}
+            onClick={() => setAskCancel(true)}
             disabled={cancel.isPending}
             className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-slate-500 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-60"
           >
@@ -764,6 +775,34 @@ export function TakePaymentModal({
               : t('Usulni tanlang')}
         </button>
       </form>
+      <ConfirmDialog
+        open={askAdvance}
+        title={t('Avansga tushadi')}
+        body={t('{money} soʻm qarzdan ortiq va avansga tushadi. Davom etasizmi?', {
+          money: money(advance),
+        })}
+        confirmLabel={t('Qabul qilish')}
+        busy={save.isPending}
+        onConfirm={() => {
+          setAskAdvance(false)
+          save.mutate()
+        }}
+        onCancel={() => setAskAdvance(false)}
+      />
+      <ConfirmDialog
+        open={askCancel}
+        title={t('Hisob-fakturani bekor qilish')}
+        body={t('Faktura oʻchirilmaydi — qarshi yozuv bilan bekor qilinadi.')}
+        confirmLabel={t('Bekor qilish')}
+        tone="danger"
+        requireReason
+        busy={cancel.isPending}
+        onConfirm={(reason) => {
+          setAskCancel(false)
+          cancel.mutate(reason)
+        }}
+        onCancel={() => setAskCancel(false)}
+      />
     </Modal>
   )
 }

@@ -512,6 +512,7 @@ Module: `finance` (Payments module UI). The **ledger** is the source of truth ([
 | POST | `/cash-accounts/{id}/adjust` | `payments.update` | `{amount, reason, opening?, occurred_on?}` → `{id, balance}`. An opening balance or a counting difference (ADR-29) |
 | POST | `/cash-accounts/transfer` | `payments.update`, not own-only | `{from_account_id, to_account_id, amount, reason, occurred_on?, allow_negative?}` → `{transfer_group, from_balance, to_balance}`. Cash collection, bank withdrawal — neither income nor expense (Bosqich 12.5) |
 | GET | `/cash-accounts/custody` | `payments.read` | `[{user_id, full_name, amount}]` — who holds how much cash; an own-only user sees only themselves. `?as_of=yyyy-mm-dd` gives the state on that day, and authorless movements are listed under "Belgilanmagan" so the rows add up to the pots (ADR-50) |
+| — | (custody, cont.) | | Each row also carries `pending_out` (handed over, not yet confirmed) and `available = amount − pending_out`. Confirming a handover re-checks what the sender still holds (ADR-51) |
 | GET/POST | `/cash-handovers` | `payments.read` / `payments.create` | `{to_user_id, amount, note?}` — hand cash to a responsible person; an own-only user lists only their own. More than held → `422` |
 | GET | `/cash-handovers/receivers` | `payments.read` | Who can receive — people who see the whole till |
 | POST | `/cash-handovers/{id}/confirm` · `/reject` | receiver only (`403` for anyone else, `404` cross-tenant) | `reject` needs `{reason}` |
@@ -1205,4 +1206,27 @@ Module: `platform`. **Not part of the customer API surface** — separate auth p
 | DELETE | `/children/{id}/documents/{doc_id}` | `children.update` | Removes the row and the stored file; audited |
 | GET | `/children/import-template` | `children.create` | `.xlsx` template with the kindergarten's own groups and tariffs; since 12.7 also "Imtiyoz" and "Imtiyoz sababi" columns; since 14 "Qayerdan eshitgan" (Instagram, Telegram, Facebook, sayt, tanish-bilish, aka-uka, banner, yonidan oʻtib, boshqa — an unknown word is a row error) |
 | POST | `/children/import` | `children.create` | `multipart`: `file`, `dry_run` (default `true`), `branch_id?`, `duplicate_decision?` (`skip` · `keep`). Report: `total_rows`, `created`, `skipped_duplicates` (exact re-uploads), `errors` (row, field, message — any error writes nothing), and since 12.7 `warnings` (one family — one guardian phone — at different prices; "aka-uka" without a shared guardian) and `possible_duplicates` (names equal after transliteration — Oʻ/O', X/H, vowel drift — inside the file or against children already in the system). A real run with possible duplicates and no decision writes nothing. Phones are normalised to `+998…`, so one parent written two ways is one guardian and one family. The benefit column becomes a typed `discount` with its reason, or "Excel importidan: …" when the reason column is empty |
+
+---
+
+## Audit 2026-11-12 additions (ADR-51)
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| DELETE | `/payroll/advances/{id}` | `payroll.delete` | Body `{reason}` (≥ 5 characters, `400` otherwise), stored in the audit log. Refused (`422`) when the advance already sits inside a finalized or paid run |
+| POST | `/payroll/advances` | `payroll.create` | `paid_on` in the future → `422` |
+| PATCH | `/expenses/{id}` | `expenses.update` | Changing amount, date or pot needs `reason` (≥ 5 characters); the audit entry carries before → after and the reason. A payment commission (`payment` set) is never edited (`422`) |
+| POST | `/stock-movements` | `inventory.create` | A `purchase` with `unit_cost > 0` that creates an expense needs `cash_account_id` (`422`). Rows carry `created_by_name` |
+| GET | `/payments/commission-rates` | `payments.read` | `{method: percent}` for the user's branch — the payment modal shows the commission before the money is taken |
+| GET | `/payments/{id}/receipt` | `payments.read` | Each line carries `commission` |
+| GET | `/payments`, `/payments/{id}` | `payments.read` | `method_corrected_from` — the method the cashier first pressed, when it was corrected the same day |
+| GET | `/payments/journal-summary` | `payments.read` | With `payments_own_only` the total is always the caller's own, whatever `received_by` says |
+| GET | `/debtors` | `debtors.read` | Rows carry `overdue_amount`; with `min_days` it is the part overdue beyond that threshold (the Radix AI brief's number). The list carries `total_overdue` |
+| GET | `/tariffs`, `/discounts` | `tariffs.*`, `discounts.*` | Own modules (were `payments.*`). `POST /invoices/{id}/cancel` needs `payments.approve` |
+| GET | `/reports/profit-loss` | `reports.read` | `payroll_missing: ["YYYY-MM", …]` — months in range whose payroll is not finalized; `basis: "cash"` |
+| GET | `/reports/home` | `reports.read` | The profit card carries `basis: "accrual"` and `payroll_estimated` |
+| POST | `/reports/{type}/export` | `reports.export` | Recorded in the audit log (`action: export`) |
+| GET | `/billing/*` | `billing.read` | An organization with no live subscription answers `422` with "Bu tashkilotda faol obuna yoʻq." — the client does not retry a `422` |
+
+Money documents (payment, expense, advance, transfer, loan) dated into a **closed month** are refused with `422`. A claim (`/absence-claims`) whose `date_to` is after today is refused; a payment dated before the child's `enrolled_on` is refused.
 

@@ -27,6 +27,7 @@ import { ApiError, type GuardianLink } from '@/lib/api/types'
 import { cn } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { Select } from '@/components/ui/Select'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 const LANGUAGES: Array<[string, string]> = [
   ['', t('Bogʻcha tili (sukut)')],
@@ -94,6 +95,7 @@ export function GuardianEditDialog({
     },
   })
 
+  const [askUnlink, setAskUnlink] = useState(false)
   const unlink = useMutation({
     mutationFn: () => childrenApi.unlinkGuardian(childId, link.id),
     onSuccess: () => {
@@ -270,10 +272,7 @@ export function GuardianEditDialog({
           <button
             type="button"
             disabled={unlink.isPending}
-            onClick={() => {
-              if (window.confirm(t('{name} bu boladan uzilsinmi?', { name: guardian.full_name })))
-                unlink.mutate()
-            }}
+            onClick={() => setAskUnlink(true)}
             className="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
           >
             {t('Bogʻlanishni uzish')}
@@ -299,6 +298,19 @@ export function GuardianEditDialog({
           </div>
         </div>
       </form>
+      <ConfirmDialog
+        open={askUnlink}
+        title={t('Bogʻlanishni uzish')}
+        body={t('{name} bu boladan uzilsinmi?', { name: guardian.full_name })}
+        confirmLabel={t('Uzish')}
+        tone="danger"
+        busy={unlink.isPending}
+        onConfirm={() => {
+          setAskUnlink(false)
+          unlink.mutate()
+        }}
+        onCancel={() => setAskUnlink(false)}
+      />
     </Modal>
   )
 }

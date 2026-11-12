@@ -64,15 +64,15 @@ TEMPLATE_VARIABLES: dict[str, tuple[str, ...]] = {
 # tahrirlashi mumkin — matn mahsulot qarori emas, mijoz qarori.
 DEFAULT_TEMPLATES: dict[str, str] = {
     TemplateCode.PAYMENT_RECEIVED: (
-        "Hurmatli ${guardian}! ${child} uchun ${amount} so'm to'lov qabul qilindi. "
+        "Hurmatli ${guardian}! ${child} uchun ${amount} soʻm toʻlov qabul qilindi. "
         "Rahmat! ${organization}"
     ),
     TemplateCode.DEBT_REMINDER: (
-        "Hurmatli ${guardian}! ${child} bo'yicha ${amount} so'm qarzdorlik mavjud. "
-        "Iltimos, to'lovni amalga oshiring. ${organization}"
+        "Hurmatli ${guardian}! ${child} boʻyicha ${amount} soʻm qarzdorlik mavjud. "
+        "Iltimos, toʻlovni amalga oshiring. ${organization}"
     ),
     TemplateCode.ABSENCE_NOTICE: (
-        "Hurmatli ${guardian}! ${child} bugun bog'chaga kelmadi. ${organization}"
+        "Hurmatli ${guardian}! ${child} bugun bogʻchaga kelmadi. ${organization}"
     ),
 }
 
@@ -105,18 +105,18 @@ DEFAULT_TEMPLATES_RU: dict[str, str] = {
 TELEGRAM_TEMPLATES: dict[str, str] = {
     TemplateCode.PAYMENT_RECEIVED: (
         "Hurmatli ${guardian}!\n\n"
-        "${child} uchun ${amount} so'm to'lov qabul qilindi. Rahmat!\n\n"
+        "${child} uchun ${amount} soʻm toʻlov qabul qilindi. Rahmat!\n\n"
         "${organization}"
     ),
     TemplateCode.DEBT_REMINDER: (
         "Hurmatli ${guardian}!\n\n"
-        "${child} bo'yicha ${amount} so'm qarzdorlik mavjud.\n"
-        "Iltimos, to'lovni amalga oshiring.\n\n"
-        "Savollar bo'lsa, bog'chaga murojaat qiling.\n"
+        "${child} boʻyicha ${amount} soʻm qarzdorlik mavjud.\n"
+        "Iltimos, toʻlovni amalga oshiring.\n\n"
+        "Savollar boʻlsa, bogʻchaga murojaat qiling.\n"
         "${organization}"
     ),
     TemplateCode.ABSENCE_NOTICE: (
-        "Hurmatli ${guardian}!\n\n${child} bugun bog'chaga kelmadi.\n\n${organization}"
+        "Hurmatli ${guardian}!\n\n${child} bugun bogʻchaga kelmadi.\n\n${organization}"
     ),
 }
 

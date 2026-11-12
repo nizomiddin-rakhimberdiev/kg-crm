@@ -59,7 +59,7 @@ __all__ = [
 
 
 class TariffPlanViewSet(BranchScopedMixin, TenantViewSet):
-    permission_module = "payments"
+    permission_module = "tariffs"
     model = TariffPlan
     serializer_class = TariffPlanSerializer
     search_fields = ["name"]
@@ -89,7 +89,7 @@ class TariffPlanViewSet(BranchScopedMixin, TenantViewSet):
 
 
 class DiscountViewSet(BranchScopedMixin, TenantViewSet):
-    permission_module = "payments"
+    permission_module = "discounts"
     model = Discount
     serializer_class = DiscountSerializer
     select_related_fields = ("child",)
@@ -184,7 +184,9 @@ class InvoiceViewSet(BranchScopedMixin, TenantReadOnlyViewSet):
     """
 
     permission_module = "payments"
-    permission_action_map = {"generate": "create", "preview_run": "create", "cancel": "update"}
+    # Bekor qilish — hujjatni yo'qqa chiqaradi, ya'ni tasdiqlash darajasidagi
+    # amal; oddiy `update` (kassirda bor) emas (audit 2026-11-12).
+    permission_action_map = {"generate": "create", "preview_run": "create", "cancel": "approve"}
     model = Invoice
     serializer_class = InvoiceSerializer
     select_related_fields = ("child", "tariff")
@@ -390,6 +392,7 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
         "journal_summary": "read",
         "receipt": "read",
         "fiscal": "update",
+        "commission_rates": "read",
     }
     model = Payment
     select_related_fields = ("child", "invoice")
@@ -623,6 +626,26 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
         """
         return Response(services.receipt_for(self.get_object()))
 
+    @action(detail=False, methods=["get"], url_path="commission-rates")
+    def commission_rates(self, request: Request) -> Response:
+        """
+        `GET /payments/commission-rates` — usul bo'yicha komissiya foizi.
+
+        To'lov oynasi "terminal: komissiya −3 000" ni pul qabul qilinishidan
+        OLDIN ko'rsatadi (audit 2026-11-12). Sozlamalar kassirga yopiq,
+        shuning uchun foizlar shu yerda — faqat o'qish.
+        """
+        from apps.expenses.services import commission_percent
+        from apps.finance.models import PaymentMethod
+
+        user = request_user(request)
+        return Response(
+            {
+                method: f"{commission_percent(branch=user.branch, method=method):g}"
+                for method in PaymentMethod.values
+            }
+        )
+
     @action(detail=False, methods=["get"], url_path="in-transit")
     def in_transit(self, request: Request) -> Response:
         """
@@ -847,10 +870,13 @@ class PaymentViewSet(BranchScopedMixin, TenantViewSet):
             branch_id=self._branch_scope(request, user),
             method=params.get("method") or "",
             child_id=params.get("child") or None,
-            # "Faqat mening toʻlovlarim" endi TANLOV, majburiyat emas
-            # (mijoz soʻrovi, 2026-10-28): ekrandagi katakcha shu
-            # parametrni yuboradi.
-            received_by=params.get("received_by") or None,
+            # "Faqat mening toʻlovlarim" — boshqalar uchun TANLOV (mijoz
+            # soʻrovi, 2026-10-28). `payments_own_only` rolida esa
+            # MAJBURIY: qatorlar ochiq, lekin jami tushum — ADR-30 yopgan
+            # raqam (audit 2026-11-12).
+            received_by=(
+                str(user.id) if payments_own_only(user) else (params.get("received_by") or None)
+            ),
         )
         return Response(summary)
 
@@ -975,7 +1001,15 @@ class DebtorViewSet(viewsets.ViewSet):
             search=(params.get("q") or "").strip(),
         )
         total = sum(D(row["balance"]) for row in rows)
-        return Response({"count": len(rows), "total_debt": str(total), "results": rows})
+        overdue = sum(D(row["overdue_amount"]) for row in rows)
+        return Response(
+            {
+                "count": len(rows),
+                "total_debt": str(total),
+                "total_overdue": f"{overdue:.2f}",
+                "results": rows,
+            }
+        )
 
     @action(detail=False, methods=["get"], url_path="by-period")
     def by_period(self, request: Request) -> Response:

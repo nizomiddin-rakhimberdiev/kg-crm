@@ -218,7 +218,9 @@ export default function ChildrenPage() {
   const params = {
     page,
     page_size: pageSize,
-    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    // `q` — yagona qidiruv ta'rifi (`children/search.py`): ism, shartnoma,
+    // ID, vasiy ismi va telefoni. DRF `search` faqat ismni bilardi.
+    ...(debouncedSearch ? { q: debouncedSearch } : {}),
     ...(statusFilter ? { enrollment_status: statusFilter } : {}),
     ...(selectedBranchId ? { branch: selectedBranchId } : {}),
   }
@@ -529,13 +531,23 @@ export default function ChildrenPage() {
       <ConfirmDialog
         open={pendingGroup !== null}
         title={t('Guruhni oʻzgartirish')}
-        body={t('{name}: {from} guruhidan {to} guruhiga', {
-          name: pendingGroup?.child.full_name ?? '',
-          from: pendingGroup?.child.current_group?.name ?? t('guruhsiz'),
-          to:
-            groupsQuery.data?.items.find((g) => g.id === pendingGroup?.groupId)?.name ??
-            t('guruhsiz'),
-        })}
+        body={
+          // Guruhsiz bola uchun "guruhsiz guruhidan" emas (audit 2026-11-12, H8).
+          pendingGroup?.child.current_group
+            ? t('{name}: {from} guruhidan {to} guruhiga', {
+                name: pendingGroup.child.full_name,
+                from: pendingGroup.child.current_group.name,
+                to:
+                  groupsQuery.data?.items.find((g) => g.id === pendingGroup.groupId)?.name ??
+                  t('guruhsiz'),
+              })
+            : t('Guruhga qoʻshish: {name} → {to}', {
+                name: pendingGroup?.child.full_name ?? '',
+                to:
+                  groupsQuery.data?.items.find((g) => g.id === pendingGroup?.groupId)?.name ??
+                  t('guruhsiz'),
+              })
+        }
         busy={enrollMutation.isPending}
         onCancel={() => setPendingGroup(null)}
         onConfirm={() => {
@@ -1133,7 +1145,8 @@ export default function ChildrenPage() {
                       {primary && (
                         <a
                           href={`tel:${primary.guardian.phone}`}
-                          className="col-span-2 inline-flex min-h-[24px] items-center gap-1 py-0.5 text-slate-500 hover:text-brand-600"
+                          // Telefonda barmoq uchun 44px (audit 2026-11-12, H9).
+                          className="col-span-2 inline-flex min-h-11 items-center gap-1 py-0.5 text-slate-500 hover:text-brand-600"
                         >
                           <Phone className="h-3 w-3" />
                           {primary.guardian.phone}

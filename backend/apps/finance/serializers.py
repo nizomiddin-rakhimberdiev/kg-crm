@@ -235,6 +235,7 @@ class PaymentSerializer(serializers.ModelSerializer):
             "advance_amount",
             "amount",
             "method",
+            "method_corrected_from",
             "reference",
             "paid_at",
             "batch_id",

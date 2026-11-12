@@ -13,7 +13,7 @@
  */
 
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle, CheckCircle2, Info, MinusCircle, XCircle } from 'lucide-react'
 import { useOrganizationId } from '@/app/providers/AuthProvider'
@@ -52,7 +52,10 @@ const CARD_LINK: Record<HomeCard['key'], string> = {
   money: '/cash',
   debts: '/payments?tab=debtors',
   spending: '/expenses',
-  profit: '/reports',
+  // Kartadagi raqam aynan shu yerda turadi — Oylik hisobot, foyda-zarar
+  // bo'limi (audit 2026-11-12, F2). `/reports` dagi "Sof natija" boshqa
+  // asosda (kassa) va boshqa raqam beradi.
+  profit: '/finance?tab=pack#pack-pnl',
   checks: '/finance?tab=control',
   growth: '/children',
 }
@@ -119,6 +122,16 @@ function TodayTab() {
               )}
             </p>
             <p className="mt-1 text-sm text-slate-600">{card.note}</p>
+            {card.key === 'profit' && (
+              <p className="mt-1 text-xs text-slate-500">
+                {t('Hisoblash usuli — oy boʻyicha')}
+                {card.payroll_estimated && (
+                  <span className="ml-1 font-semibold text-orik-800">
+                    · {t('Taxminiy — oylik hisoblanmagan')}
+                  </span>
+                )}
+              </p>
+            )}
             {card.detail && (
               <dl className="mt-2 grid grid-cols-3 gap-2 text-xs">
                 <div>
@@ -342,11 +355,16 @@ function ControlTab() {
   )
 }
 
+const TABS: Tab[] = ['today', 'day', 'control', 'pack', 'plan', 'tax']
+
 export default function FinanceCenterPage() {
-  const initial = new URLSearchParams(window.location.search).get('tab')
-  const [tab, setTab] = useState<Tab>(
-    ['control', 'day', 'pack', 'plan', 'tax'].includes(initial ?? '') ? (initial as Tab) : 'today',
-  )
+  // Tab manzilda turadi: shu sahifadagi karta boshqa tabni ochganda
+  // (`?tab=pack`) komponent qayta yaratilmaydi, ya'ni bir martalik
+  // boshlang'ich qiymat yangi manzilni sezmasdi.
+  const [params, setParams] = useSearchParams()
+  const requested = params.get('tab') as Tab | null
+  const tab: Tab = requested && TABS.includes(requested) ? requested : 'today'
+  const setTab = (key: Tab) => setParams(key === 'today' ? {} : { tab: key }, { replace: true })
   const tabs: Array<[Tab, string]> = [
     ['today', t('Bugun')],
     ['day', t('Kun')],

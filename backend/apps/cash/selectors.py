@@ -195,6 +195,19 @@ def custody(
         kind: _custody_totals(accounts=accounts.filter(kind=kind), up_to=as_of)
         for kind in ("cash", "bank")
     }
+    # Topshirishga va'da qilingan, hali tasdiqlanmagan pul — u qo'lda,
+    # lekin endi bo'sh emas (audit 2026-11-12).
+    from apps.cash.models import CashHandover, HandoverStatus
+
+    pending_rows = CashHandover.objects.filter(
+        cash_account__in=accounts, status=HandoverStatus.PENDING
+    )
+    if as_of is not None:
+        pending_rows = pending_rows.filter(created_at__date__lte=as_of)
+    pending = {
+        row["from_user"]: row["total"]
+        for row in pending_rows.values("from_user").annotate(total=Sum("amount"))
+    }
     people = set(by_kind["cash"]) | set(by_kind["bank"])
     if user_id is not None:
         people = {key for key in people if str(key) == str(user_id)}
@@ -209,6 +222,7 @@ def custody(
         bank = by_kind["bank"].get(key, Decimal("0"))
         if cash == 0 and bank == 0:
             continue
+        promised = pending.get(key, Decimal("0"))
         rows.append(
             {
                 "user_id": str(key) if key is not None else None,
@@ -219,6 +233,8 @@ def custody(
                 "cash": f"{cash:.2f}",
                 "bank": f"{bank:.2f}",
                 "amount": f"{cash + bank:.2f}",
+                "pending_out": f"{promised:.2f}",
+                "available": f"{cash + bank - promised:.2f}",
             }
         )
     return sorted(rows, key=lambda row: Decimal(row["amount"]), reverse=True)

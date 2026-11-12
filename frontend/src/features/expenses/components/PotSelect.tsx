@@ -40,6 +40,10 @@ export function PotSelect({
       {pots.map((pot) => (
         <option key={pot.id} value={pot.id}>
           {pot.balance === null ? pot.name : `${pot.name} — ${som(pot.balance)}`}
+          {/* Qoldiqning qancha qismi hali yo'lda — bankka tushmagan (audit F3). */}
+          {pot.balance !== null && pot.inTransit > 0
+            ? ` · ${t('yoʻlda {sum}', { sum: som(pot.inTransit) })}`
+            : ''}
         </option>
       ))}
     </Select>

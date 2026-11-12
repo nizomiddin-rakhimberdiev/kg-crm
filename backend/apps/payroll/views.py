@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from apps.audit import services as audit
 from apps.branches.selectors import resolve_branch
 from apps.core.exceptions import BusinessRuleViolation
+from apps.core.params import require_reason
 from apps.core.typing import request_user
 from apps.core.viewsets import BranchScopedMixin, TenantViewSet
 from apps.payroll import services
@@ -295,12 +296,17 @@ class EmployeeAdvanceViewSet(BranchScopedMixin, TenantViewSet):
         return Response(EmployeeAdvanceSerializer(advance).data, status=status.HTTP_201_CREATED)
 
     def perform_destroy(self, instance: Any) -> None:
+        reason = require_reason(self.request.data.get("reason"))
+        amount = str(instance.amount)
+        entity_id = instance.id
+        services.delete_advance(
+            advance=instance, reason=reason, created_by=request_user(self.request)
+        )
         audit.record(
             action="delete",
             request=self.request._request,
             actor=request_user(self.request),
             entity_type="employee_advance",
-            entity_id=instance.id,
-            changes={"amount": str(instance.amount)},
+            entity_id=entity_id,
+            changes={"amount": amount, "reason": reason},
         )
-        services.delete_advance(advance=instance, created_by=request_user(self.request))

@@ -25,7 +25,7 @@
 
 import { useState } from 'react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Download, FileDown, Info, RefreshCw } from 'lucide-react'
+import { Download, FileDown, FileSpreadsheet, Info, RefreshCw } from 'lucide-react'
 import {
   Bar,
   BarChart,
@@ -56,7 +56,7 @@ import { useCan, type PermissionCode } from '@/lib/rbac/useCan'
 import { Modal } from '@/components/ui/Modal'
 import { BRAND, CHART, CHART_SEQUENCE } from '@/lib/brand'
 import { QueryError } from '@/components/ui/QueryError'
-import { axisMoney, formatDateTime } from '@/lib/format'
+import { axisMoney, formatDateTime, periodLabel } from '@/lib/format'
 import { cn, formatMoney, formatUZS } from '@/lib/utils'
 import { t } from '@/lib/i18n'
 import { BenefitsReport } from '@/features/reports/components/BenefitsReport'
@@ -254,7 +254,20 @@ export default function ReportsPage() {
               mijoz ularni koʻrmasdi. Tayyor fayllar roʻyxati esa
               pastda qoladi — u bir marta bosilgandan keyin kerak. */}
           {can('reports.export') && (
-            <div className="flex flex-wrap gap-2 lg:justify-end">
+            // Guruh sarlavhasi bilan (audit 2026-11-12): oltita "Tushum",
+            // "Chiqimlar"… tugmasi filtr tugmalari deb o'qilardi.
+            <div
+              role="group"
+              aria-labelledby="export-heading"
+              className="flex flex-wrap items-center gap-2 lg:justify-end"
+            >
+              <span
+                id="export-heading"
+                className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-slate-500"
+              >
+                <FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
+                {t('Eksport (Excel)')}
+              </span>
               {EXPORTABLE.filter(([type]) => can(REPORT_SCOPE[type])).map(([type, label]) => (
                 <button
                   key={type}
@@ -339,7 +352,13 @@ export default function ReportsPage() {
                   t('Sof natija'),
                   pl?.net,
                   Number(pl?.net ?? 0) < 0 ? 'text-red-600' : 'text-emerald-600',
-                  t('tushum − chiqim − oylik'),
+                  // Asos yorlig'i (audit 2026-11-12, F1): Moliya markazidagi
+                  // foyda hisoblash usulida — raqamlar farqi shundan.
+                  (pl?.payroll_missing?.length ?? 0) > 0
+                    ? t('Kassa usuli · Taxminiy — oylik hisoblanmagan: {months}', {
+                        months: (pl?.payroll_missing ?? []).map(periodLabel).join(', '),
+                      })
+                    : t('Kassa usuli: tushum − chiqim − oylik'),
                 ],
               ].filter(Boolean) as Array<[string, string | undefined, string, string]>
             ).map(([label, value, tone, hint]) => {
