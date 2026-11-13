@@ -244,14 +244,22 @@ services:
   certbot:
     image: certbot/certbot:latest
     profiles: ["tls"]
+    # Server qayta yuklanganda ham qaytib tursin: `restart` yo'qligida
+    # konteyner 7 hafta to'xtab yotdi va sertifikat yangilanmadi
+    # (2026-11-13).
+    restart: unless-stopped
     volumes:
       - certs_letsencrypt:/etc/letsencrypt
       - certbot_webroot:/var/www/certbot
+      # nginx o'qiydigan nusxa — deploy-hook yangilangan sertifikatni
+      # shu yerga ko'chiradi (`deploy/certbot/copy-to-nginx.sh`).
+      - certs:/out
+      - ./deploy/certbot:/hooks:ro
     # Har 12 soatda yangilashga urinadi; muddati yaqinlashmagan bo'lsa
-    # certbot hech narsa qilmaydi.
+    # certbot hech narsa qilmaydi, hook ham ishlamaydi.
     entrypoint: >
       sh -c "trap exit TERM;
-      while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"
+      while :; do certbot renew --webroot -w /var/www/certbot --quiet --deploy-hook 'sh /hooks/copy-to-nginx.sh'; sleep 12h & wait $${!}; done"
 
 volumes:
   postgres_data:

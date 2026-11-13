@@ -111,6 +111,15 @@ step "Ilova ko'tarilmoqda"
 $COMPOSE up -d
 ok "konteynerlar ishga tushdi"
 
+# Sertifikat yangilovchi `tls` profilida — oddiy `up -d` uni na
+# ko'taradi, na yangi sozlama bilan qayta yaratadi. TLS yoqilgan
+# serverda (nginx sertifikatni ko'radi) har deploy'da ko'tariladi:
+# u 7 hafta to'xtab yotgan va sertifikat yangilanmagan (2026-11-13).
+if $COMPOSE exec -T nginx test -s /etc/nginx/certs/fullchain.pem 2>/dev/null; then
+    $COMPOSE --profile tls up -d certbot
+    ok "sertifikat yangilovchi (certbot) ishlayapti"
+fi
+
 # --- 8. Health ---
 step "Tiriklik tekshiruvi"
 PORT="${HTTP_PORT:-80}"

@@ -52,6 +52,24 @@ echo "[kg-crm] SPA rejimi: ${DEPLOYMENT_MODE:-saas}"
 if [ -s "$CERT" ] && [ -s "$KEY" ]; then
     echo "[kg-crm] sertifikat topildi → HTTPS rejim ($DOMAIN, $WWW_DOMAIN)"
     envsubst '${DOMAIN} ${WWW_DOMAIN}' < /etc/nginx/kg-templates/tls.conf > "$OUT"
+
+    # Yangilangan sertifikatni sezish: certbot'ning deploy-hook'i
+    # `certs` ga yangi fayl yozadi (`deploy/certbot/copy-to-nginx.sh`),
+    # nginx esa uni faqat `reload` da o'qiydi. Konteynerni docker
+    # soketisiz boshqarish uchun — har 6 soatda fayl yuklangan paytdan
+    # yangiroqmi, tekshiriladi. Fon jarayoni nginx'ning o'zi bilan
+    # yashaydi (`docker-entrypoint.d` skripti tugagach ham).
+    LOADED=/tmp/kg-cert-loaded
+    touch "$LOADED"
+    (
+        while :; do
+            sleep 21600
+            if [ "$CERT" -nt "$LOADED" ]; then
+                touch "$LOADED"
+                nginx -s reload && echo "[kg-crm] yangi sertifikat yuklandi"
+            fi
+        done
+    ) &
 else
     echo "[kg-crm] sertifikat yo'q → HTTP rejim. TLS uchun: scripts/tls-setup.sh"
     envsubst '${DOMAIN} ${WWW_DOMAIN}' < /etc/nginx/kg-templates/http-only.conf > "$OUT"

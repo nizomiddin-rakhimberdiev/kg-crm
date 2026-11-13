@@ -44,6 +44,8 @@ Then, once DNS resolves to the server:
 
 Until certificates exist nginx serves plain HTTP — deliberately. TLS needs a certificate, the certificate needs an ACME request to reach port 80, and that needs nginx already running. A configuration that always demanded TLS would make the first deploy impossible.
 
+**Renewal is automatic, and it is a chain of four links** — break one and the site closes on the expiry date without warning. (1) `certbot` (profile `tls`, `restart: unless-stopped`) runs `certbot renew` every 12 hours; `deploy.sh` brings it up on every deploy once nginx has a certificate. (2) Its `--deploy-hook` (`deploy/certbot/copy-to-nginx.sh`) copies the renewed pair into the `certs` volume — nginx never sees the `letsencrypt` volume, so without the hook a renewal reaches nobody. (3) nginx checks every 6 hours whether `fullchain.pem` is newer than what it loaded and reloads (`deploy/nginx/entrypoint.sh`). (4) `frontend/src/__tests__/tls-renewal.test.ts` guards all three. Until 2026-11-13 links 1–3 were missing: certbot had no restart policy, stayed down for seven weeks after a host reboot, and the certificate would have expired on 2026-12-15. Check the date with `echo | openssl s_client -connect <domain>:443 -servername <domain> 2>/dev/null | openssl x509 -noout -enddate`.
+
 ---
 
 ## 3. Configuration
